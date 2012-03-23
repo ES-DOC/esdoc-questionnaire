@@ -1,0 +1,6 @@
+/* custom js for the metadata application */
+
+function removeForm(data) {
+  alert(data);
+};
+

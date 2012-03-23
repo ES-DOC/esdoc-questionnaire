@@ -1,0 +1,36 @@
+==========
+Django-CIM
+==========
+
+Django-CIM is a Django Application that generates webforms based on CIM-compatible metadata models and controlled vocabularies for use in a Django Framework.
+
+#############################
+# installation instructions #
+#############################
+
+1. download django-cim-<version>.tar.gz
+2. run pip install django-cim-<version>.tar.gz
+3. in your main settings.py file, add "django_cim" to the list of INSTALLED_APPS
+4. create appropriate symlinks from your main "site_media" directory to "django_cim/media/django_cim"
+5. write your code like this:
+
+MyApp/models.py:
+
+from django_cim.models import *
+
+class MyModel(<CIM-Model-Class-To-Inherit-From>):
+  _name = "MyModel"
+  _title = "My Model"
+
+  pass
+
+MyApp/forms.py:
+
+from django_cim.forms import *
+
+MyModel_form = MetadataFormFactory(MyModel)
+MyModel_formset = MetadataFormsetFactory(MyModel)
+
+6. run python manage.py syncdb
+
+7. navigate to "http://<MyServer>/<MyProject>/metadata/MyApp" 

@@ -1,0 +1,123 @@
+{% extends "django_cim_forms/metadata_base.html" %}
+
+{% load metadata_filters %}
+
+{% block scripts %}
+
+    /* enable jquery widgets */
+    $(function() {
+
+        /* enable tabs */
+        $("#tabs").tabs();
+        $("#tabs ul li a").keydown(function(event) {
+            var keyCode = event.keyCode || event.which;
+            if (keyCode == 9) {
+                /* make the tab key shift focus the the next tab */
+                var nTabs = $("#tabs").tabs("length");
+                var selected = $("#tabs").tabs("option", "selected");
+                /* the modulus operator ensures the tabs wrap around */
+                $("#tabs").tabs("option", "selected", (selected + 1)%nTabs);
+            }
+        });
+
+        /* enable calendar widgets */
+        $(".datepicker").datepicker(
+            { changeYear : true, showButtonPanel : true, showOn : 'button', buttonImage : '{{ MEDIA_URL }}/django_cim_forms/img/calendar.gif' }
+        );
+        $(".ui-datepicker-trigger").mouseover(function() {
+            $(this).css('cursor', 'pointer');
+        });
+        $(".ui-datepicker-trigger").attr("title","click to select date");
+        $(".ui-datepicker-trigger").css("vertical-align","middle");
+
+        /* add functionality to help-buttons (icons masquerading as buttons) */
+        $("#help-dialog").dialog({autoOpen:false,hide:'explode',modal:true});
+        $(".help-button").hover (
+            function() { $(this).children(".ui-icon-info").addClass('hover-help-icon'); },
+            function() { $(this).children(".ui-icon-info").removeClass('hover-help-icon'); }
+        );
+        $(".help-button").mouseover(function() {
+            $(this).css('cursor', 'pointer');
+        });
+        $(".help-button").click(function() {
+            /* since metadata works with sub-applications, there may be periods in the ids */
+            /* I escape them so that javascript doesn't interepret them as class selectors */
+            var id = "#" + $(this).attr("id").replace(/(:|\.)/g,'\\$1');
+            var x = $(this).offset().left - $(document).scrollLeft();
+            var y = $(this).offset().top - $(document).scrollTop();
+            var $description = $(id + " > .help-description");
+            var title = $description.attr("title");
+            var text = $description.html();
+            $("#help-dialog").html(text);
+            $("#help-dialog").dialog("option",{title: title, position: [x,y], height: 150, width: 250}).dialog("open");
+            return false;
+        });
+
+
+    });
+
+{% endblock %} {# /scripts #}
+
+{% block content %}
+
+    <div class="title">
+        {{ form|getModelTitle }} Entry Form
+    </div> <!-- /.title -->
+
+     <p>
+        <i>
+            Use this form to create or modify an instance of {{ form|getModelTitle }} metadata.  Fill out the fields on each tab.  When you have finished, click the "submit" buttom at the bottom of the page.
+        </i>
+    </p>
+
+        <form method="POST" action="">
+
+        {% csrf_token %}
+
+        <div id="tabs">
+
+            <ul> <!-- tab menu -->
+                {% for fieldType in form|getActiveFieldTypes %}
+                    <li><a href="#tab-{{fieldType.getType}}">{{ fieldType.getName }}</a></li>
+                {% endfor %} {# /fieldType #}
+            </ul> <!-- e/tab menu -->
+
+            {% for fieldType in form|getActiveFieldTypes %}
+                <div id="tab-{{fieldType.getType}}">
+                    <div class="tab-content">
+                        {% with fieldsOfType=form|getFieldsOfType:fieldType %}
+                            {% for field in form.visible_fields %}
+                                {% if field.name in fieldsOfType %}
+                                    {% if form|isInSubForms:field %}
+                                    
+                                        subForm
+                                        
+                                    {% else %}
+
+                                        {% include "django_cim_forms/_field.html" %}
+                                    
+                                    {% endif %} {# / form|isInSubForms:field #}
+
+                                {% endif %} {# field.name in fieldsOfType #}
+                            {% endfor %} {# /field in form.visible_fields #}
+                        {% endwith %} {# /fieldsOfType #}
+
+                    </div> <!-- /.tab-content -->
+                </div> <!-- /#tab-{{fieldType.getType}} -->
+            {% endfor %} {# /fieldType #}
+
+        </div> <!-- /.tabs -->
+        
+        <div class="submit">
+            <input class="button" type="submit" value="Submit"/>
+        </div> <!-- /.submit -->
+
+        <div style="clear: both;">&nbsp;</div>
+
+    </form>
+
+
+{% endblock %} {# /content #}
+
+
+
