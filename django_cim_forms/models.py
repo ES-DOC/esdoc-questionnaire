@@ -209,3 +209,4 @@ class ResponsibleParty(MetadataModel):
     def __init__(self,*args,**kwargs):
         super(ResponsibleParty,self).__init__(*args,**kwargs)
         self.registerFieldType(self.FieldTypes.BASIC,["individualName","organizationName","positionName","contactInfo"])
+        

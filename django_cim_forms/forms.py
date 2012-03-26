@@ -1,4 +1,6 @@
 import sys
+import inspect
+
 # module imports
 
 from django.forms import *
@@ -106,6 +108,16 @@ class MetadataForm(ModelForm):
     def getSubForms(self):
         return self._subForms
 
+    def getAllSubForms(self):
+        # returns the union of all subforms for all ancestor classes
+        allSubForms = {}
+        for ancestor in reversed(inspect.getmro(self.Meta.model)):
+            if issubclass(ancestor,MetadataModel):
+                ancestorForm = getFormClassFromModelClass(ancestor)
+                if ancestorForm:
+                    allSubForms = dict(allSubForms.items() + ancestorForm._subForms.items())
+        return allSubForms
+    
     @log_class_fn()
     def __init__(self,*args,**kwargs):
         self._request = kwargs.pop('request', None)
@@ -116,9 +128,8 @@ class MetadataForm(ModelForm):
         for key,value in self._subForms.iteritems():
             subFormType = value[0]
             subFormClass = value[1]
-
+            print subFormType.getName()
             if subFormType == SubFormTypes.FORMSET:
-
                 # note that the form attribute is now a curried function
                 # (in order for me to propagate request to all subforms)
                 # so I have to _call_ it in order to access the subForm
@@ -134,7 +145,6 @@ class MetadataForm(ModelForm):
                     value[2] = subFormClass(queryset=qs,prefix=key,request=self._request)
 
             elif subFormType == SubFormTypes.FORM:
-
                 subInstance = None
                 if self.instance:
                     subInstance = getattr(self.instance,key,None)
@@ -151,6 +161,7 @@ class MetadataForm(ModelForm):
             else:
                 print "unable to determine the type of subform that %s should use for %s" % (self.getName(),key)
                 pass
+
 
     @log_class_fn(LoggingTypes.FULL)
     def clean(self):

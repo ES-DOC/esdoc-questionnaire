@@ -56,7 +56,10 @@ def getFieldsOfType(form,fieldType):
 
 @register.filter
 def isInSubForms(form,field):
-    if form._subForms.has_key(field.name):
+    subForms = form.getAllSubForms()    # this gets all subforms used by all ancestor models as well
+#    subForms = form.getSubForms()       # this only gets subforms used by the current model
+    if subForms.has_key(field.name):
         return True
     return False
+
 
