@@ -1,6 +1,6 @@
 # module imports
 
-from django.db import models
+from django.db import models, DatabaseError
 from uuid import uuid4
 
 # intra/inter-package imports
@@ -43,6 +43,21 @@ class MetadataManyToManyField(models.ManyToManyField):
             raise MetadataError("you must provide a related_name kwarg to a MetadataManyToManyField")
         kwargs["related_name"] = "%(app_label)s;%(class)s;" + related_name
         super(MetadataManyToManyField,self).__init__(*args,**kwargs)
+
+class MetadataEnumerationField(models.ForeignKey):
+
+    _open = False
+
+    def isOpen(self):
+        return self._open
+
+    def __init__(self,*args,**kwargs):
+        open = kwargs.pop('open',False)
+        kwargs["blank"] = False
+        kwargs["null"] = True
+        super(MetadataEnumerationField,self).__init__(*args,**kwargs)
+        self._open = open
+
 
 ########################################
 # base classes for all Metadata Models #
@@ -111,6 +126,14 @@ class MetadataModel(models.Model):
 # (CIM models are just MetdataModels w/ content that work w/ Controlled Vocabularies) #
 #######################################################################################
 
+class ResponsibleParty_Role_enumeration(MetadataEnumeration):
+    _enum = []
+
+try:
+    ResponsibleParty_Role_enumeration.loadEnumerations(enum=['Author','Principle Investigator',])
+except DatabaseError:
+    pass
+
 
 ####################################################
 # This is the CIMDocument Stereotype               #
@@ -127,7 +150,7 @@ class CimDocument(models.Model):
     class Meta:
         abstract = True
 
-    documentID = models.CharField(max_length=LIL_STRING,blank=False)
+    documentID = models.CharField(max_length=36,blank=False,editable=False)
 #    documentVersion
 #    metadataId
 #    metadataVersion
@@ -137,6 +160,14 @@ class CimDocument(models.Model):
 #    documentGenealogy
 #    quality
 #    documentStatus
+
+    def __init__(self, *args, **kwargs):
+        super(CimDocument, self).__init__(*args, **kwargs)
+        # these attributes aren't displayed on the forms (editable=False),
+        # so I need to initialize some of them automatically.
+        if not self.documentID:
+           self.documentID = str(uuid4())
+    
 
 class SoftwareComponent(MetadataModel):
     
@@ -153,43 +184,24 @@ class SoftwareComponent(MetadataModel):
     description.help_text = "a free-text description of the component"
     license = models.CharField(max_length=BIG_STRING,blank=True)
     license.help_text = "the license held by this piece of software"
+    embedded = models.BooleanField(blank=True)
+    embedded.help_text = "An embedded component cannot exist on its own as an atomic piece of software; instead it is embedded within another (parent) component. When embedded equals 'true', the SoftwareComponent has a corresponding piece of software (otherwise it is acting as a 'virtual' component which may be inexorably nested within a piece of software along with several other virtual components)."
     # CHANGE TO THE CIM HERE
     # (using a container of responsibleParties instead of a series of them)
     responsibleParties = MetadataManyToManyField('ResponsibleParty',related_name="responsibleParties")
-
-
-    version = models.CharField(max_length=LIL_STRING,blank=True)
     releaseDate = models.DateField()
     releaseDate.help_text = "The date of publication of the software component code (as opposed to the date of publication of the metadata document, or the date of deployment of the model)"
+    previousVersion = models.CharField(max_length=LIL_STRING,blank=True)
+    fundingSource = models.CharField(max_length=BIG_STRING,blank=True)
+    fundingSource.help_text = "The entities that funded this software component."
+    citations = MetadataManyToManyField("Citation",related_name="citations")
+
     
-#    project = models.CharField(max_length=BIG_STRING,blank=False)
-#    realm = MetadataEnumerationField("Realm_enumeration",open=False)
-#    creationDate = models.DateField()
-#    agency = models.CharField(max_length=BIG_STRING,blank=True)
-#    institution = models.CharField(max_length=BIG_STRING,blank=True)
-#
-# .   shortName
-# .   longName
-# .   description
-# .   license
-#    componentProperties
-#    scientificProperties
-#    numericalProperties
-#    embedded (boolean)
-#    responsibleParty
-# .   releaseDate
-#    previousVersion
-#    fundingSource
-#    citation
-#    onlineResource
-#    couplingFramework
-#    componentLanguage
-#    grid (reference)
 
     def __init__(self, *args, **kwargs):
         super(SoftwareComponent, self).__init__(*args, **kwargs)
         self.registerFieldType(self.FieldTypes.MODEL_DESCRIPTION, ["shortName","longName","description",])
-        self.registerFieldType(self.FieldTypes.BASIC, ['releaseDate',"license",'agency','institution','responsibleParties','references'])
+        self.registerFieldType(self.FieldTypes.BASIC, ['releaseDate',"license",'agency','institution','responsibleParties','fundingSource','citations','references'])
 
 
 class ModelComponent(SoftwareComponent,CimDocument):
@@ -201,12 +213,48 @@ class ModelComponent(SoftwareComponent,CimDocument):
         
 
 class ResponsibleParty(MetadataModel):
-    individualName = models.CharField(max_length=LIL_STRING,blank=True)
-    organizationName = models.CharField(max_length=LIL_STRING,blank=True)
+    _name = "ResponsibleParty"
+    _title = "Responsible Party"
+    
+    individualName = models.CharField(max_length=LIL_STRING,blank=False)
+    organizationName = models.CharField(max_length=LIL_STRING,blank=False)
+    role = MetadataEnumerationField("ResponsibleParty_role_enumeration",open=True)
+
     positionName = models.CharField(max_length=LIL_STRING,blank=True)
     contactInfo = models.CharField(max_length=LIL_STRING,blank=True)
 
     def __init__(self,*args,**kwargs):
         super(ResponsibleParty,self).__init__(*args,**kwargs)
-        self.registerFieldType(self.FieldTypes.BASIC,["individualName","organizationName","positionName","contactInfo"])
-        
+        self.registerFieldType(self.FieldTypes.BASIC,["individualName","organizationName","role","positionName","contactInfo"])
+
+    def __unicode__(self):
+        name = u'%s' % self.getName()
+        if self.role:
+            name = u'%s: %s' % (name, self.role)
+        if self.individualName:
+            name = u'%s: %s' % (name, self.individualName)
+        return name
+
+
+class Citation(MetadataModel):
+    _name = "Citation"
+    _title = "Citation"
+
+    title = models.CharField(max_length=BIG_STRING,blank=False)
+    alternateTitle = models.CharField(max_length=BIG_STRING,blank=True)
+    edition = models.CharField(max_length=BIG_STRING,blank=True)
+    editionDate = models.DateField(blank=True,null=True)
+    identifier = models.CharField(max_length=BIG_STRING,blank=True)
+  #  citedResponsibleParty = MetadataManyToManyField('ResponsibleParty',related_name="citedResponsibleParty")
+    otherCitationDetails = models.TextField(blank=True)
+    collectiveTitle = models.CharField(max_length=BIG_STRING,blank=True)
+    isbn = models.CharField(max_length=LIL_STRING,blank=True)
+    issn = models.CharField(max_length=LIL_STRING,blank=True)
+
+    def __init__(self,*args,**kwargs):
+        super(Citation,self).__init__(*args,**kwargs)
+        self.registerFieldType(self.FieldTypes.BASIC,["title","alternateTitle","date","otherCitationDetails"])
+
+    def __unicode__(self):
+        return u'%s: %s' % (self.getName(), self.title)
+

@@ -11,8 +11,9 @@ urlpatterns = patterns('',
     # the index page (doesn't do anything yet)...
     url(r'^$', 'django_cim_forms.views.index'),
 
-    url(r'^test/$', 'django_cim_forms.views.test'),
-    
+    # cvs...
+    url(r'^cv/(?P<cv_name>\w+)/$', 'django_cim_forms.views_cv.detail'),
+
     # the forms can be generated for _any_ model in _any_ application...
     url(r'^(?P<app_name>[^/]+)/(?P<model_name>[^/]+)/$', 'django_cim_forms.views.detail'),
     url(r'^(?P<app_name>[^/]+)/(?P<model_name>[^/]+)/(?P<model_id>\d+)/$', 'django_cim_forms.views.detail'),

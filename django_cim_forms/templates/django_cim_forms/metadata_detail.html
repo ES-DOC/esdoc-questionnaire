@@ -20,6 +20,9 @@
             }
         });
 
+        /* enable collapsible fieldsets */
+        $(".coolfieldset").coolfieldset({speed:"fast"});
+
         /* enable calendar widgets */
         $(".datepicker").datepicker(
             { changeYear : true, showButtonPanel : true, showOn : 'button', buttonImage : '{{ MEDIA_URL }}/django_cim_forms/img/calendar.gif' }
@@ -29,6 +32,16 @@
         });
         $(".ui-datepicker-trigger").attr("title","click to select date");
         $(".ui-datepicker-trigger").css("vertical-align","middle");
+
+        $( ".accordion" ).multiOpenAccordion({active:"All"});
+        /* had to do this in two steps b/c the accordion JQuery method above cannot handle any content inbetween accordion panes */
+        /* but I need a container for dynamic formsets to be bound to */
+        /* so _after_ multiopenaccordion() is called, I stick a div into each pane and bind the formset() method to it */
+        $(".accordion").find(".accordion-header").each(function() {
+            var prefix = $(this).closest(".accordion").attr("class").split(' ')[1];
+            var div = "<div class='subform " + prefix + "'></div>";
+            $(this).next().andSelf().wrapAll(div);
+        });
 
         /* add functionality to help-buttons (icons masquerading as buttons) */
         $("#help-dialog").dialog({autoOpen:false,hide:'explode',modal:true});
@@ -53,7 +66,58 @@
             return false;
         });
 
+        /* enable _fancy_ buttons */
+        $(".button").button();
+        $(".subform-toolbar button").mouseover(function() {
+            $(this).css('cursor', 'pointer');
+        });
+        $(".subform-toolbar button.expand" ).button({
+             icons : { primary: "ui-icon-circle-triangle-s" },
+             text : false,
+        }).click(function(event) {
+        // TODO: THIS IS NO LONGER WORKING B/C THERE IS CONTENT BETWEEN ACCORDIONS
+            var formset = $(event.target).closest("fieldset");
+            var accordion = $(formset).find(".accordion:first");
+            $(accordion).multiOpenAccordion("option","active","All");
+        });
+        $(".subform-toolbar button.collapse" ).button({
+            icons : { primary: "ui-icon-circle-triangle-n" },
+            text: false,
+        }).click(function() {
+        // TODO: THIS IS NO LONGER WORKING B/C THERE IS CONTENT BETWEEN ACCORDIONS
+            var formset = $(event.target).closest("fieldset");
+            var accordion = $(formset).find(".accordion:first");
+            $(accordion).multiOpenAccordion("option","active","None");
 
+        });
+        $(".subform-toolbar button.add").button({
+            icons: { primary: "ui-icon-circle-plus" },
+            text: false
+        }).click(function(event) {
+        // TODO
+            alert("you pushed add");
+        });
+          $("button.remove").button({
+            icons: { primary: "ui-icon-circle-minus" },
+            text: false
+        });
+        $("button.remove").bind("click", function(e) {
+            /* prevent the delete button from _actually_ opening the accordian tab */
+            e.stopPropagation();
+        });
+        $("button.remove").click(function(event) {
+        // TODO
+            alert("you pushed remove");
+        });
+
+        /* some selects (open enums) should be able to be overridden */
+        $(".editable").jec({blinkingCursor:true});
+        $('.editable').change(function(event) {
+            combobox = $(event.target);
+            if (combobox.selectedIndex==0) {
+                combobox.val($(combobox).jecValue());
+            }
+        });
     });
 
 {% endblock %} {# /scripts #}
@@ -90,7 +154,38 @@
                                 {% if field.name in fieldsOfType %}
                                     {% if form|isInSubForms:field %}
                                     
-                                        subForm
+                                        <fieldset class="coolfieldset">
+                                            <legend title="click to show/hide content"> {{ field.name }} </legend>
+                                            <div class="coolfieldset-content">
+                                               {% with subForm=field|getSubForm:form %}
+                                                    {% with subFormType=subForm|getSubFormType %}
+                                                        {% if subFormType == "FORM" %}
+
+                                                            {% with form=subForm %}
+                                                                {% include "django_cim_forms/_form.html" %}
+                                                            {% endwith %}
+
+                                                        {% else %} {% if subFormType == "FORMSET" %}
+
+                                                            {% with formset=subForm %}
+                                                                {% include "django_cim_forms/_formset.html" %}
+                                                            {% endwith %}
+                                                            
+                                                        {% else %} {% if subFormType == "INLINE_FORMSET" %}
+
+                                                            {% with formset=subForm %}
+                                                                {% include "django_cim_forms/_inlineformset.html" %}
+                                                            {% endwith %}
+
+
+                                                        {% endif %} {% endif %} {% endif %} {# /subFormType #}
+
+
+                                                    {% endwith %} {# subFormType #}
+                                               {% endwith %} {# subForm #}
+
+                                            </div> <!-- /.coolfieldset-content -->
+                                        </fieldset> <!-- /.coolfieldset -->
                                         
                                     {% else %}
 
@@ -116,7 +211,8 @@
 
     </form>
 
-
+    {{ form.errors }}
+    
 {% endblock %} {# /content #}
 
 

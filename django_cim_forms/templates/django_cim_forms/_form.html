@@ -1,0 +1,64 @@
+{# this displays a metadata subform #}
+
+    {% load metadata_filters %}
+
+    {# required b/c the individual form ids are here #}
+    {% for hiddenField in form.hidden_fields %}
+        {{ hiddenField }}
+    {% endfor %} {# /hiddenField #}
+
+    {% for field in form.visible_fields %}
+        {% if form|isInSubForms:field %}
+
+            <fieldset class="coolfieldset">
+                <legend title="click to show/hide content"> {{ field.name }} </legend>
+                <div class="coolfieldset-content">
+
+                    {{ form.errors}}
+
+                    {% with subForm=field|getSubForm:form %}
+                        {% with subFormType=subForm|getSubFormType %}
+
+                            {% if subFormType == "FORM" %}
+
+                                {# in theory, django doesn't have recursive templates #}
+                                {# but this gets around that limitation #}
+                                {% with "django_cim_forms/_form.html" as template %}
+                                    {% with form=subForm %}
+                                        {% include template %}
+                                    {% endwith %}
+                                {% endwith %}
+
+                            {% else %} {% if subFormType == "FORMSET" %}
+
+                                {% with "django_cim_forms/_formset.html" as template %}
+                                    {% with formset=subForm %}
+                                        {% include template %}
+                                    {% endwith %}
+                                {% endwith %}
+
+                            {% else %} {% if subFormType == "INLINE_FORMSET" %}
+
+                                {% with "django_cim_forms/_inlineformset.html" as template %}
+                                    {% with formset=subForm %}
+                                        {% include template %}
+                                    {% endwith %}
+                                {% endwith %}
+
+                            {% endif %} {% endif %} {% endif %}
+
+                        {% endwith %} {# /subFormType #}
+                    {% endwith %} {# /subForm #}
+
+                </div> <!-- /.coolfieldset-content -->
+            </fieldset> <!-- /.coolfieldset -->
+        {% else %}
+
+            {% include "django_cim_forms/_field.html" %}
+
+        {% endif %} {# /form|isInSubForms:field #}
+
+
+    {% endfor %} {# / field in form.visible_fields #}
+
+{# end of displaying a metadata subform #}

@@ -25,7 +25,6 @@ from django_cim_forms.models import *
 # to see which one had ModelClass as their meta model
 # but that would have broken if for some reason an app had more than one form for the same model
 
-@log_fn(LoggingTypes.FULL)
 def getFormClassFromModelClass(ModelClass):
     form_name = ModelClass._name + "_form"
     app_name = ModelClass._meta.app_label
@@ -69,9 +68,9 @@ def customize_metadata_widgets(field):
 
     if isinstance(field,models.DateField):
         formfield.widget.attrs.update({"class" : "datepicker"})
-#    if isinstance(field,MetadataEnumerationField):
-#        if field.isOpen():
-#            formfield.widget.attrs.update({"class" : "editable"})
+    if isinstance(field,MetadataEnumerationField):
+        if field.isOpen():
+            formfield.widget.attrs.update({"class" : "editable"})
 
     # TODO: other if branches for other field types?
 
@@ -102,6 +101,10 @@ class MetadataForm(ModelForm):
     def getName(self):
         return self._name
 
+    def getFullyQualifiedName(self):
+        # returns the unicode name of the model
+        return u'%s' % self.instance
+    
     def getSubFormType(self):
         return self._subFormType
 
@@ -125,10 +128,11 @@ class MetadataForm(ModelForm):
         self._id = self.instance.id
         self._guid = self.instance.guid
 
-        for key,value in self._subForms.iteritems():
+        for key,value in self.getAllSubForms().iteritems():
+        #for key,value in self._subForms.iteritems():
             subFormType = value[0]
             subFormClass = value[1]
-            print subFormType.getName()
+
             if subFormType == SubFormTypes.FORMSET:
                 # note that the form attribute is now a curried function
                 # (in order for me to propagate request to all subforms)
@@ -138,6 +142,7 @@ class MetadataForm(ModelForm):
                     qs = getattr(self.instance,key,None).all()
                 except ValueError:
                     pass
+                
                 if self._request and self._request.method == "POST":
                     # TODO: NOT SURE IF I NEED THE QUERYSET KWARG HERE (DON'T THINK SO)
                     value[2] = subFormClass(self._request.POST,prefix=key,request=self._request)
@@ -163,11 +168,12 @@ class MetadataForm(ModelForm):
                 pass
 
 
-    @log_class_fn(LoggingTypes.FULL)
+    @log_class_fn()
     def clean(self):
         cleaned_data = self.cleaned_data
 
-        for key,value in self._subForms.iteritems():
+        for key,value in self.getAllSubForms().iteritems():
+        #for key,value in self._subForms.iteritems():
             subFormType = value[0]
             subFormClass = value[1]
             subFormInstance = value[2]
@@ -176,6 +182,15 @@ class MetadataForm(ModelForm):
 
                 # set the field to the set of subForms that are not marked for deletion and are not empty
                 # (is_valid() will have been called by this point so empty forms that _shouldn't_ be empty won't exist)
+                for subForm in subFormInstance:
+                    if subForm in subFormInstance.deleted_forms:
+                        print "deleted"
+                    elif subForm.cleaned_data:
+                        print "cleaned"
+                    else:
+                        print "going to save"
+                        print subForm.save()
+
                 activeSubForms = [subForm.save() for subForm in subFormInstance if subForm not in subFormInstance.deleted_forms and subForm.cleaned_data]
                 cleaned_data[key] = activeSubForms
 
@@ -191,8 +206,11 @@ class MetadataForm(ModelForm):
 
     @log_class_fn(LoggingTypes.FULL)
     def is_valid(self):
-        validity = [subForm[2].is_valid() for subForm in self._subForms.itervalues() if subForm[2]]
+        validity = [subForm[2].is_valid() for subForm in self.getAllSubForms().itervalues() if subForm[2]]
+        print "initial validity = %s" % all(validity)
+        #validity = [subForm[2].is_valid() for subForm in self._subForms.itervalues() if subForm[2]]
         validity = all(validity) and super(MetadataForm,self).is_valid()
+        print "final validity = %s" % validity
         return validity
 
 
@@ -207,7 +225,6 @@ class MetadataFormSet(BaseModelFormSet):
     _request = None # the individual forms of a formset need to have HTTP requests passed to them
     _prefix = None
 
-
     _name = ""  # the name of the form class
     _title = "" # the title (to display) of the form class
 
@@ -218,14 +235,23 @@ class MetadataFormSet(BaseModelFormSet):
         return self._prefix
 
     @log_class_fn()
+    def is_valid(self,*args,**kwargs):
+        return super(MetadataFormSet,self).is_valid(*args,**kwargs)
+
     def __init__(self,*args,**kwargs):
         # this adds an extra kwarg, 'request,' to the subforms of this formset
         self._request = kwargs.pop('request', None)
         self.form = curry(self.form,request=self._request)
+
+        print "BLAH"
+        print self._name
+        print kwargs
+        print "BLAH"
         super(MetadataFormSet,self).__init__(*args,**kwargs)
 
         # TODO: do I need to ensure a more unique prefix?
         self._prefix = kwargs.get("prefix",self.get_default_prefix())
+
 
 
 # NOT DEALING w/ INLINE-FORMSETS 
@@ -309,4 +335,7 @@ def MetadataFormSetFactory(ModelClass,FormClass,*args,**kwargs):
 ResponsibleParty_form = MetadataFormFactory(ResponsibleParty,name="ResponsibleParty_form")
 ResponsibleParty_formset = MetadataFormSetFactory(ResponsibleParty,ResponsibleParty_form,name="ResponsibleParty_formset")
 
-ModelComponent_form = MetadataFormFactory(ModelComponent,name="ModelComponent_form",subForms={"responsibleParties" : "ResponsibleParty_formset", })
+Citation_form = MetadataFormFactory(Citation,name="Citation_form")#,subForms={"citedResponsibleParty" : "ResponsibleParty_formset",})
+Citation_formset = MetadataFormSetFactory(Citation,Citation_form,name="Citation_formset")
+
+ModelComponent_form = MetadataFormFactory(ModelComponent,name="ModelComponent_form",subForms={"responsibleParties" : "ResponsibleParty_formset", "citations" : "Citation_formset",})

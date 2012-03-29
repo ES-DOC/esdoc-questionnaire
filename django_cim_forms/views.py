@@ -18,7 +18,7 @@ from django_cim_forms.helpers import *
 def index(request):
     return HttpResponse("this is the index page for the metadata application")
 
-def detail(request, model_name, app_name="django_cim", model_id=None):
+def detail(request, model_name, app_name="django_cim_forms", model_id=None):
     
     # get the model & form...
     try:
@@ -28,8 +28,6 @@ def detail(request, model_name, app_name="django_cim", model_id=None):
         return HttpResponseBadRequest(msg)
     ModelClass = ModelType.model_class()
     FormClass  = getFormClassFromModelClass(ModelClass)
-
-    print FormClass
     
     # sanity checks on the model & form...
     if not(ModelClass and issubclass(ModelClass,MetadataModel)):
@@ -42,7 +40,12 @@ def detail(request, model_name, app_name="django_cim", model_id=None):
 
     if model_id:
         # try to load the specified model...
-        model = get_object_or_404(ModelClass, pk=model_id)
+        #model = get_object_or_404(ModelClass, pk=model_id)
+        try:
+            model = ModelClass.objects.get(pk=model_id)
+        except ModelClass.DoesNotExist:
+            msg = "unable to find '%s' with id of '%s'" % (model_name, model_id)
+            return HttpResponseBadRequest(msg)
     else:
         # or just create a new one...
         model = ModelClass()
@@ -54,15 +57,12 @@ def detail(request, model_name, app_name="django_cim", model_id=None):
             model = form.save(commit=False)
             model.save()
             form.save_m2m()
-            return HttpResponseRedirect(reverse('metadata.views.detail', args=(app_name,model_name,model.id)))
+            return HttpResponseRedirect(reverse('django_cim_forms.views.detail', args=(app_name,model_name,model.id)))
+        else:
+            print "invalid!"
+
 
     else:
         form = FormClass(instance=model,request=request)#,initial=model.initialize())
 
     return render_to_response('django_cim_forms/metadata_detail.html', {'form' : form, "id" : model.id}, context_instance=RequestContext(request))
-
-def test(request):
-    model = TestModel()
-    form = TestForm()
-    return render_to_response('django_cim_forms/test.html', {'form' : form},context_instance=RequestContext(request))
-    return HttpResponse("this is the test page for the metadata application")

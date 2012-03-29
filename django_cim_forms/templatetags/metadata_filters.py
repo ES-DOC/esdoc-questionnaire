@@ -63,3 +63,22 @@ def isInSubForms(form,field):
     return False
 
 
+##############################################################
+# gets the actual subform associated with a particular field #
+##############################################################
+
+@register.filter
+def getSubForm(field,form):
+    subForms = form.getAllSubForms() # not that I'm checking the full class hierarchy of the model associated w/ form
+    subField = subForms[field.name]
+    return subField[2]
+
+#############################################
+# gets the subform type of a given subform  #
+#############################################
+
+@register.filter
+def getSubFormType(subForm):
+    return subForm.getSubFormType().getType()
+
+

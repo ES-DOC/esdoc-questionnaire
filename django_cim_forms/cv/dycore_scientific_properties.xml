@@ -1,0 +1,444 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<cv>
+    <item>
+        <shortName>equations_of_motion</shortName>
+        <longName>equations of motion</longName>
+        <values>
+            <value>
+                <shortName>shallow_atmosphere</shortName>
+                <longName>shallow atmosphere, hydrostatic</longName>
+            </value>
+            <value>
+                <shortName>deep_atmosphere</shortName>
+                <longName>deep atmosphere, non-hydrostatic</longName>
+            </value>
+        </values>
+    </item>
+    <item>
+        <shortName>numerical_method</shortName>
+        <longName>numerical method</longName>
+        <values>
+            <value>
+                <shortName>spectral_transform</shortName>
+                <longName>spectral transform, Eulerian</longName>
+            </value>
+            <value>
+                <shortName>finite_volume</shortName>
+                <longName>fine volume with Eulerian with semi-Lagrangian extension in longitudinal direction</longName>
+            </value>
+            <value>
+                <shortName>finite_difference</shortName>
+                <longName>finite difference Eulerian</longName>
+            </value>
+            <value>
+                <shortName>finite_volume</shortName>
+                <longName>finite volume Eulerian</longName>
+            </value>
+            
+        </values>
+    </item>
+    <item>
+        <shortName>spatial_approximation</shortName>
+        <longName>spatial approximation</longName>
+        <values>
+            <value>
+                <shortName>spectral</shortName>
+                <longName>spectral</longName>
+            </value>
+            <value>
+                <shortName>trianglular_truncation</shortName>
+                <longName>triangular truncation</longName>
+            </value>
+            <value>
+                <shortName>quadratic_transform_grid</shortName>
+                <longName>quadtratic transform grid</longName>
+            </value>            
+            <value>
+                <shortName>piecewise_parabolic_method</shortName>
+                <longName>picewise parabolic method (PPM) by Coella and Woodward</longName>
+            </value>
+            <value>
+                <shortName>third_order_finite_differences</shortName>
+                <longName>third order finite differences</longName>
+            </value>                        
+            <value>
+                <shortName>second_order_finite_differences</shortName>
+                <longName>second order finite differences</longName>
+            </value>
+            <value>
+                <shortName>hybrid_piecewise_parabolic_method</shortName>
+                <longName>hybrid form of the picewise parabolic method (PPM) by Coella and Woodward</longName>
+            </value>
+            <value>
+                <shortName>second_order_centered_differences</shortName>
+                <longName>second order centered differences for mass/momentum flux and pressure gradient force</longName>
+            </value>            
+            <value>
+                <shortName>second_order</shortName>
+                <longName>second order</longName>
+            </value>
+            <value>
+                <shortName>piecewise_co_polynomials</shortName>
+                <longName>picewise CO polynomials (fourth order)</longName>
+            </value>
+            <value>
+                <shortName>centered_finite_differences</shortName>
+                <longName>centered finite differences</longName>
+            </value>
+            <value>
+                <shortName>second_order_crowly</shortName>
+                <longName>second order Crowley-type method</longName>
+            </value>            
+        </values>
+    </item>
+    <item>
+        <shortName>advection_scheme</shortName>
+        <longName>advection scheme</longName>
+        <values>
+            <value>
+                <shortName>spectral_transform</shortName>
+                <longName>spectral transform</longName>
+            </value>
+        </values>
+    </item>
+    <item>
+        <shortName>conservation_size</shortName>
+        <longName>conservation type</longName>
+        <values>
+            <value>
+                <shortName>pretend_val_one</shortName>
+                <longName>pretend val one</longName>
+            </value>
+            <value>
+                <shortName>pretend_val_two</shortName>
+                <longName>pretend val two</longName>
+            </value>
+            </values>
+    </item>
+    <item>
+        <shortName>conservation_fixers</shortName>
+        <longName>conservation fixers (a posteriori)</longName>
+        <values>
+            <value>
+                <shortName>pretend_val_one</shortName>
+                <longName>pretend val one</longName>
+            </value>
+            <value>
+                <shortName>pretend_val_two</shortName>
+                <longName>pretend val two</longName>
+            </value>
+        </values>            
+    </item>
+    <item>
+        <shortName>time_stepping</shortName>
+        <longName>time stepping</longName>
+        <values>
+            <value>
+                <shortName>pretend_val_one</shortName>
+                <longName>pretend val one</longName>
+            </value>
+            <value>
+                <shortName>pretend_val_two</shortName>
+                <longName>pretend val two</longName>
+            </value>
+        </values>
+    </item>
+    <item>
+        <shortName>time_step_size</shortName>
+        <longName>time step size</longName>
+        <values>
+            <value>
+                <shortName>pretend_val_one</shortName>
+                <longName>pretend val one</longName>
+            </value>
+            <value>
+                <shortName>pretend_val_two</shortName>
+                <longName>pretend val two</longName>
+            </value>
+        </values>
+    </item>
+    <item>
+        <shortName>temporal_approximation</shortName>
+        <longName>temporal approximation</longName>
+        <values>
+            <value>
+                <shortName>pretend_val_one</shortName>
+                <longName>pretend val one</longName>
+            </value>
+            <value>
+                <shortName>pretend_val_two</shortName>
+                <longName>pretend val two</longName>
+            </value>
+        </values> 
+    </item>
+    <item>
+        <shortName>temporal_filter</shortName>
+        <longName>temporal filter</longName>
+        <values>
+            <value>
+                <shortName>pretend_val_one</shortName>
+                <longName>pretend val one</longName>
+            </value>
+            <value>
+                <shortName>pretend_val_two</shortName>
+                <longName>pretend val two</longName>
+            </value>
+        </values>
+    </item>
+    <item>
+        <shortName>explicit_spacial_diffusion</shortName>
+        <longName>explicit spatial diffusion</longName>
+        <values>
+            <value>
+                <shortName>pretend_val_one</shortName>
+                <longName>pretend val one</longName>
+            </value>
+            <value>
+                <shortName>pretend_val_two</shortName>
+                <longName>pretend val two</longName>
+            </value>
+        </values>
+    </item>
+    <item>
+        <shortName>prognostic_variable</shortName>
+        <longName>prognostic variable</longName>
+        <values>
+            <value>
+                <shortName>pretend_val_one</shortName>
+                <longName>pretend val one</longName>
+            </value>
+            <value>
+                <shortName>pretend_val_two</shortName>
+                <longName>pretend val two</longName>
+            </value>
+        </values>
+    </item>
+    <item>
+        <shortName>tracer_transport</shortName>
+        <longName>tracer_transport</longName>
+        <values>
+            <value>
+                <shortName>pretend_val_one</shortName>
+                <longName>pretend val one</longName>
+            </value>
+            <value>
+                <shortName>pretend_val_two</shortName>
+                <longName>pretend val two</longName>
+            </value>
+        </values>
+    </item>
+    <item>
+        <shortName>tracer_transport_scheme</shortName>
+        <longName>tracer transport scheme</longName>
+    </item>
+    <item>
+        <shortName>tracer_conservation_type</shortName>
+        <longName>tracer conservation type</longName>
+        <values>
+            <value>
+                <shortName>pretend_val_one</shortName>
+                <longName>pretend val one</longName>
+            </value>
+            <value>
+                <shortName>pretend_val_two</shortName>
+                <longName>pretend val two</longName>
+            </value>
+        </values>
+    </item>
+    <item>
+        <shortName>tracer_fixer</shortName>
+        <longName>tracer fixer (a posteriori)</longName>
+        <values>
+            <value>
+                <shortName>pretend_val_one</shortName>
+                <longName>pretend val one</longName>
+            </value>
+            <value>
+                <shortName>pretend_val_two</shortName>
+                <longName>pretend val two</longName>
+            </value>
+        </values>
+    </item>
+    <item>
+        <shortName>tracer_spatial_approximation</shortName>
+        <longName>tracer spatial approximation</longName>
+        <values>
+            <value>
+                <shortName>pretend_val_one</shortName>
+                <longName>pretend val one</longName>
+            </value>
+            <value>
+                <shortName>pretend_val_two</shortName>
+                <longName>pretend val two</longName>
+            </value>
+        </values>
+    </item>
+    <item>
+        <shortName>tracer_spatial_diffusion</shortName>
+        <longName>tracer spatial diffusion</longName>
+        <values>
+            <value>
+                <shortName>pretend_val_one</shortName>
+                <longName>pretend val one</longName>
+            </value>
+            <value>
+                <shortName>pretend_val_two</shortName>
+                <longName>pretend val two</longName>
+            </value>
+        </values>
+    </item>
+    <item>
+        <shortName>tracer_temporal_filter</shortName>
+        <longName>tracer temporal filter</longName>
+        <values>
+            <value>
+                <shortName>pretend_val_one</shortName>
+                <longName>pretend val one</longName>
+            </value>
+            <value>
+                <shortName>pretend_val_two</shortName>
+                <longName>pretend val two</longName>
+            </value>
+        </values>
+    </item>
+    <item>
+        <shortName>tracer_temporal_approximation</shortName>
+        <longName>tracer temporal approximation</longName>
+        <values>
+            <value>
+                <shortName>pretend_val_one</shortName>
+                <longName>pretend val one</longName>
+            </value>
+            <value>
+                <shortName>pretend_val_two</shortName>
+                <longName>pretend val two</longName>
+            </value>
+        </values>
+    </item>
+    <item>
+        <shortName>tracer_time_stepping</shortName>
+        <longName>tracer time stepping</longName>
+        <values>
+            <value>
+                <shortName>pretend_val_one</shortName>
+                <longName>pretend val one</longName>
+            </value>
+            <value>
+                <shortName>pretend_val_two</shortName>
+                <longName>pretend val two</longName>
+            </value>
+        </values>
+    </item>
+    <item>
+        <shortName>grid</shortName>
+        <longName>grid</longName>
+        <values>
+            <value>
+                <shortName>pretend_val_one</shortName>
+                <longName>pretend val one</longName>
+            </value>
+            <value>
+                <shortName>pretend_val_two</shortName>
+                <longName>pretend val two</longName>
+            </value>
+        </values>
+    </item>
+    <item>
+        <shortName>projection</shortName>
+        <longName>projection</longName>
+        <values>
+            <value>
+                <shortName>pretend_val_one</shortName>
+                <longName>pretend val one</longName>
+            </value>
+            <value>
+                <shortName>pretend_val_two</shortName>
+                <longName>pretend val two</longName>
+            </value>
+        </values>
+    </item>
+    <item>
+        <shortName>horizontal_staggering</shortName>
+        <longName>horizontal staggering</longName>
+        <values>
+            <value>
+                <shortName>pretend_val_one</shortName>
+                <longName>pretend val one</longName>
+            </value>
+            <value>
+                <shortName>pretend_val_two</shortName>
+                <longName>pretend val two</longName>
+            </value>
+        </values>
+    </item>
+    <item>
+        <shortName>horizontal_resolution</shortName>
+        <longName>horizonal resolution</longName>
+        <values>
+            <value>
+                <shortName>pretend_val_one</shortName>
+                <longName>pretend val one</longName>
+            </value>
+            <value>
+                <shortName>pretend_val_two</shortName>
+                <longName>pretend val two</longName>
+            </value>
+        </values>
+    </item>
+    <item>
+        <shortName>vertical_coordinate</shortName>
+        <longName>vertical coordinate</longName>
+        <values>
+            <value>
+                <shortName>pretend_val_one</shortName>
+                <longName>pretend val one</longName>
+            </value>
+            <value>
+                <shortName>pretend_val_two</shortName>
+                <longName>pretend val two</longName>
+            </value>
+        </values>
+    </item>
+    <item>
+        <shortName>vertical_staggering</shortName>
+        <longName>vertical staggering</longName>
+        <values>
+            <value>
+                <shortName>pretend_val_one</shortName>
+                <longName>pretend val one</longName>
+            </value>
+            <value>
+                <shortName>pretend_val_two</shortName>
+                <longName>pretend val two</longName>
+            </value>
+        </values>
+    </item>
+    <item>
+        <shortName>vertical_resolution</shortName>
+        <longName>vertical resolution</longName>
+        <values>
+            <value>
+                <shortName>pretend_val_one</shortName>
+                <longName>pretend val one</longName>
+            </value>
+            <value>
+                <shortName>pretend_val_two</shortName>
+                <longName>pretend val two</longName>
+            </value>
+        </values>
+    </item>
+    <item>
+        <shortName>typical_location_of_top_model_level</shortName>
+        <longName>typical location of top model level (full level)</longName>
+        <values>
+            <value>
+                <shortName>pretend_val_one</shortName>
+                <longName>pretend val one</longName>
+            </value>
+            <value>
+                <shortName>pretend_val_two</shortName>
+                <longName>pretend val two</longName>
+            </value>
+        </values>        
+    </item>
+</cv>
