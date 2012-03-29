@@ -58,6 +58,27 @@ class MetadataEnumerationField(models.ForeignKey):
         super(MetadataEnumerationField,self).__init__(*args,**kwargs)
         self._open = open
 
+class MetadataCVField(models.ManyToManyField):
+
+    cv_name = None
+
+    def __init__(self,*args,**kwargs):
+        kwargs["max_length"] = 123
+        _cv_name = kwargs.pop("cv_name",None)
+
+        if _cv_name:
+            try:
+                models = MetadataCV.objects.filter(cv_name=_cv_name)
+                if not models:
+                    # we haven't loaded the cv yet...
+                    models = MetadataCV.loadCV(cv_name=_cv_name)                    
+            except DatabaseError:
+                pass
+            
+         # I AM HERE
+
+        super(MetadataCVField,self).__init__(MetadataCV)
+        self.cv_name = _cv_name
 
 ########################################
 # base classes for all Metadata Models #
@@ -82,6 +103,8 @@ class MetadataModel(models.Model):
     # can overrwite / append to this list in child classes...
     FieldTypes = EnumeratedTypeList([
         FieldType("MODEL_DESCRIPTION","Component Description"),
+        FieldType("SIMULATION_DESCRIPTION", "Simulation Description"),
+        FieldType("EXPERIMENT_DESCRIPTION", "Experiment Description"),
         FieldType("BASIC","Basic Properties"),
         FieldType("SCIENTIFIC","Scientific Properties"),
     ])
@@ -121,6 +144,91 @@ class MetadataModel(models.Model):
         if not fieldType in self.FieldTypes:
             self.FieldTypes.append(fieldType)
 
+######
+# CV #
+######
+
+class MetadataCV(MetadataModel):
+    cv_name = models.CharField(max_length=BIG_STRING,blank=False,editable=False)
+    shortName = models.CharField(max_length=BIG_STRING,blank=False)
+    longName = models.CharField(max_length=BIG_STRING,blank=True)
+    value = models.CharField(max_length=BIG_STRING,blank=False)
+
+    @log_class_fn(LoggingTypes.FULL)
+    def __init__(self,*args,**kwargs):
+        super(MetadataCV,self).__init__(*args,**kwargs)
+
+
+
+    @classmethod
+    def loadCV(cls,*args,**kwargs):
+        _cv_name = kwargs.pop("cv_name",None)
+        if _cv_name:
+            print _cv_name
+            parser = et.XMLParser(remove_blank_text=True)
+            cv = et.fromstring(get_cv(_cv_name),parser)
+            xpath_item_expression = "//item"
+            items = cv.xpath(xpath_item_expression)
+            for item in items:
+                shortName = item.xpath("shortName/text()")[0] or None
+                longName = item.xpath("longName/text()")[0] or None
+                model = MetadataCV()
+                model.cv_name = _cv_name
+                if shortName:
+                    model.shortName = shortName
+                if longName:
+                    model.longName = longName
+                # TODO: values / choices
+                xpath_value_expression="//item[shortName/text()='%s']/values/value" % shortName
+                values = cv.xpath(xpath_value_expression)
+                value_choices = []
+                for value in values:
+                    valueShortName = item.xpath("shortName/text()")
+                    valueLongName = item.xpath("longName/text()")
+                    if not valueLongName:
+                        value_choices.append((valueShortName[0],valueShortName[0]))
+                    else:
+                        value_choices.append((valueShortName[0],valueLongName[0]))
+                model._meta.get_field_by_name("value")[0]._choices = value_choices
+                model.fields["value"].choices = value_choices
+
+                model.save()
+
+    def __unicode__(self):
+        name = u'%s' % "MetadataCV"
+        if self.cv_name:
+            name = u'%s' % self.cv_name
+        if self.value:
+            name = u'%s: %s' % (name, self.value)
+        return name
+
+########
+# Enum #
+########
+
+class MetadataEnumeration(models.Model):
+
+    name = models.CharField(max_length=25,blank=False)
+
+    class Meta:
+        abstract = True
+
+    def __unicode__(self):
+        return u'%s' % self.name
+
+    @classmethod
+    def add(cls,*args,**kwargs):
+        name = kwargs.pop("name",None)
+        if name:
+            cls.objects.get_or_create(name=name)
+
+    @classmethod
+    def loadEnumerations(cls,*args,**kwargs):
+        enum = kwargs.pop("enum",[])
+        cls._enum = enum
+        for name in enum:
+            cls.add(name=name)
+
 #######################################################################################
 # base classes for all CIM Models                                                     #
 # (CIM models are just MetdataModels w/ content that work w/ Controlled Vocabularies) #
@@ -129,8 +237,12 @@ class MetadataModel(models.Model):
 class ResponsibleParty_Role_enumeration(MetadataEnumeration):
     _enum = []
 
+class Activity_project_enumeration(MetadataEnumeration):
+    _enum = []
+
 try:
     ResponsibleParty_Role_enumeration.loadEnumerations(enum=['Author','Principle Investigator',])
+    Activity_project_enumeration.loadEnumerations(enum=['CMIP5','AMIP','TAMIP'])
 except DatabaseError:
     pass
 
@@ -168,13 +280,86 @@ class CimDocument(models.Model):
         if not self.documentID:
            self.documentID = str(uuid4())
     
+class Activity(MetadataModel):
+    class Meta:
+        abstract = True
+
+    _name = "Activity"
+    _fieldsByType = {}
+
+    responsibleParties = MetadataManyToManyField('ResponsibleParty',related_name="responsibleParties")
+    fundingSource = models.CharField(max_length=BIG_STRING,blank=True)
+    rationale = models.TextField(blank=True)
+    rationale.help_text = "For what purpose is this activity being performed?"
+    project = MetadataEnumerationField("Activity_project_enumeration",open=True)
+
+    def __init__(self, *args, **kwargs):
+        super(Activity, self).__init__(*args, **kwargs)
+        self.registerFieldType(self.FieldTypes.SIMULATION_DESCRIPTION, ["project","rationale",])
+        self.registerFieldType(self.FieldTypes.BASIC, ['fundingSource','responsibleParties'])
+
+class NumericalActivity(Activity):
+    class Meta:
+        abstract = True
+
+    _name = "NumericalActivity"
+
+    shortName = models.CharField(max_length=LIL_STRING,blank=False)
+    longName = models.CharField(max_length=BIG_STRING,blank=False)
+    description = models.TextField(blank=True)
+
+    def __init__(self, *args, **kwargs):
+        super(NumericalActivity, self).__init__(*args, **kwargs)
+        self.registerFieldType(self.FieldTypes.SIMULATION_DESCRIPTION, ["shortName","longName","description"])
+
+class Simulation(NumericalActivity):
+    class Meta:
+        abstract = True
+        
+    _name = "Simulation"
+    _fieldsByType = {}
+
+    simulationID = models.CharField(max_length=BIG_STRING,blank=True)
+    calendar = models.DateField(blank=False)
+
+    def __init__(self,*args,**kwargs):
+        super(Simulation,self).__init__(*args,**kwargs)
+        self.registerFieldType(self.FieldTypes.SIMULATION_DESCRIPTION, ["simulationID"])
+        self.registerFieldType(self.FieldTypes.BASIC, ["calendar"])
+
+class SimulationRun(Simulation,CimDocument):
+    _name = "SimulationRun"
+
+    pass
+
+class Experiment(Activity):
+    _name = "Experiment"
+    _fieldsByType = {}
+
+    
+    def __init__(self,*args,**kwargs):
+        super(Experiment,self).__init__(*args,**kwargs)
+
+class NumericalExperiment(Experiment,CimDocument):
+    _name = "NumericalExperiment"
+
+    shortName = models.CharField(max_length=LIL_STRING,blank=False)
+    longName = models.CharField(max_length=BIG_STRING,blank=False)
+    description = models.TextField(blank=True)
+    experimentID = models.CharField(max_length=LIL_STRING,blank=True)
+    calendar = models.DateField(blank=False)
+
+    def __init__(self,*args,**kwargs):
+        super(NumericalExperiment,self).__init__(*args,**kwargs)
+        self.registerFieldType(self.FieldTypes.EXPERIMENT_DESCRIPTION, ["shortName","longName","description","experimentID"])
+        self.registerFieldType(self.FieldTypes.BASIC, ["calendar"])
 
 class SoftwareComponent(MetadataModel):
     
     class Meta:
         abstract = True
 
-    _name = "ModelComponent"
+    _name = "SoftwareComponent"
 
     shortName = models.CharField(max_length=LIL_STRING,blank=False)
     shortName.help_text = "the name of the model that is used internally"

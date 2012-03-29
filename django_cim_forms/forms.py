@@ -243,10 +243,6 @@ class MetadataFormSet(BaseModelFormSet):
         self._request = kwargs.pop('request', None)
         self.form = curry(self.form,request=self._request)
 
-        print "BLAH"
-        print self._name
-        print kwargs
-        print "BLAH"
         super(MetadataFormSet,self).__init__(*args,**kwargs)
 
         # TODO: do I need to ensure a more unique prefix?
@@ -296,11 +292,18 @@ def PotentialSubForm(subFormType=SubFormType("UNKNOWN","Unknown")):
 def MetadataFormFactory(ModelClass,*args,**kwargs):
     name = kwargs.pop("name","Unnamed Form")
     subForms = kwargs.pop("subForms",{})
+    fieldOrder = kwargs.pop("reorder",None)
     # these two kwarg _must_ have these values
     kwargs["form"] = MetadataForm
     kwargs["formfield_callback"] = customize_metadata_widgets
     # the remaining kwargs can be passed into the constructor as needed
     _form = modelform_factory(ModelClass,**kwargs)
+    if fieldOrder:
+        #_form.fields.keyOrder = fieldOrder
+        #_form.Meta.fields = fieldOrder
+        #_form.meta.fields = fieldOrder
+        # TODO: I AM HERE; REORDER THE FIELDS
+        pass
     _form._name = name
     _form._subForms = {} # reset any existing subForms...
     for key,value in subForms.iteritems():
@@ -337,5 +340,8 @@ ResponsibleParty_formset = MetadataFormSetFactory(ResponsibleParty,ResponsiblePa
 
 Citation_form = MetadataFormFactory(Citation,name="Citation_form")#,subForms={"citedResponsibleParty" : "ResponsibleParty_formset",})
 Citation_formset = MetadataFormSetFactory(Citation,Citation_form,name="Citation_formset")
+
+MetadataCV_form = MetadataFormFactory(MetadataCV,name="MetadataCV_form")
+MetadataCV_formset = MetadataFormSetFactory(MetadataCV,MetadataCV_form,name="MetadataCV_formset")
 
 ModelComponent_form = MetadataFormFactory(ModelComponent,name="ModelComponent_form",subForms={"responsibleParties" : "ResponsibleParty_formset", "citations" : "Citation_formset",})

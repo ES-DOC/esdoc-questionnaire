@@ -3,6 +3,9 @@ from lxml import etree as et
 from django.db import models
 from django.core.urlresolvers import reverse
 
+import os
+rel = lambda *x: os.path.join(os.path.abspath(os.path.dirname(__file__)), *x)
+
 from django_cim_forms.helpers import *
 
 ###############################
@@ -13,10 +16,10 @@ CV_PROTOCOL = "http"
 CV_DOMAIN = "localhost"
 CV_PORT= "8000"
 CV_PATH = "/medatadata/cv"
-
+CV_ROOT = rel('cv/')
 CV_URL = CV_PROTOCOL + "://" + CV_DOMAIN + ":" + CV_PORT + CV_PATH
 
-def get_cv(cv_name):
+def get_cv_remote(cv_name):
     CV_URL = reverse('django_cim_forms.views_cv.detail')
     cv_url = CV_URL + cv_name
     cv_request = urllib2.Request(cv_url)
@@ -31,28 +34,25 @@ def get_cv(cv_name):
     else:
         return cv_response.read()
 
-class MetadataCV(models.Model):
-    pass
+def get_cv_local(cv_name):
+    try:
+        cv_filepath  = CV_ROOT + cv_name + ".xml"
+        print cv_filepath
+        cv_file = open(cv_filepath, 'r')
+        cv_text = cv_file.read()
+        cv_file.close()
+        return cv_text
+    except IOError, e:
+        msg = e.strerror
+        raise MetadataError(msg)
 
-class MetadataEnumeration(models.Model):
+def get_cv(cv_name):
+    # TODO: get_cv_remote is timing out... why?
+    return get_cv_local(cv_name)
+    cv = None
+    try:
+        cv = get_cv_remote(cv_name)
+    except CvError:
+        cv = get_cv_local(cv_name)
+    return cv
 
-    name = models.CharField(max_length=25,blank=False)
-
-    class Meta:
-        abstract = True
-
-    def __unicode__(self):
-        return u'%s' % self.name
-
-    @classmethod
-    def add(cls,*args,**kwargs):
-        name = kwargs.pop("name",None)
-        if name:
-            cls.objects.get_or_create(name=name)
-
-    @classmethod
-    def loadEnumerations(cls,*args,**kwargs):
-        enum = kwargs.pop("enum",[])
-        cls._enum = enum
-        for name in enum:
-            cls.add(name=name)
