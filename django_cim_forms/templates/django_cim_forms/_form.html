@@ -14,6 +14,14 @@
                 <legend title="click to show/hide content"> {{ field.name }} </legend>
                 <div class="coolfieldset-content">
 
+                    <div class="hidden">
+                        <span class="current_guid">{{form.getGuid}}</span>
+                        <span class="current_id">{{form.getId}}</span>
+                        <span class="current_app">{{form|getAppName}}</span>
+                        <span class="current_model">{{form|getModelName}}</span>
+                        <span class="current_field">{{field.name}}</span>
+                    </div>
+
                     {{ form.errors}}
 
                     {% with subForm=field|getSubForm:form %}

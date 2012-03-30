@@ -1,4 +1,5 @@
 # module imports
+
 from functools import wraps
 from django.conf import settings
 from collections import deque
@@ -38,14 +39,13 @@ class EnumeratedType(object):
     def getClass(self):
         return self._class
 
-    # comparisons of ets are made via their _type attribute...
+    # comparisons are made via the _type attribute...
     def __eq__(self,other):
         if isinstance(other,self.__class__):
             return self.getType() == other.getType()
         return False
     def __ne__(self,other):
         return not self.__eq__(other)
-
 
 class EnumeratedTypeError(Exception):
     def __init__(self,msg='invalid enumerated type'):

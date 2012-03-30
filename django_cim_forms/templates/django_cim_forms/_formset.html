@@ -20,6 +20,13 @@
             </h3> <!-- /.accordion-header -->
             <div class="accordion-content">
 
+               <div class="hidden">
+                    <span class="current_guid">{{form.getGuid}}</span>
+                    <span class="current_id">{{form.getId}}</span>
+                    <span class="current_app">{{form|getAppName}}</span>
+                    <span class="current_model">{{form|getModelName}}</span>
+                </div>
+
                 {% with "django_cim_forms/_form.html" as template %}
                     {% include template %}
                 {% endwith %}

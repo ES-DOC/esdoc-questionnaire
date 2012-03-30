@@ -56,3 +56,24 @@ def get_cv(cv_name):
         cv = get_cv_local(cv_name)
     return cv
 
+
+#########
+# Enums #
+#########
+
+class MetadataEnumeration(models.Model):
+
+    name = models.CharField(max_length=BIG_STRING,blank=False)
+
+    class Meta:
+        abstract = True
+
+    def __unicode__(self):
+        return u'%s' % self.name
+
+    @classmethod
+    def loadEnumerations(cls,*args,**kwargs):
+        enum = kwargs.pop("enum",cls._enum)
+        for name in enum:
+            cls.objects.get_or_create(name=name)
+

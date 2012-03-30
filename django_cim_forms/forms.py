@@ -71,9 +71,8 @@ def customize_metadata_widgets(field):
     if isinstance(field,MetadataEnumerationField):
         if field.isOpen():
             formfield.widget.attrs.update({"class" : "editable"})
-
     # TODO: other if branches for other field types?
-
+    
     return formfield
 
 #######################################
@@ -104,7 +103,7 @@ class MetadataForm(ModelForm):
     def getFullyQualifiedName(self):
         # returns the unicode name of the model
         return u'%s' % self.instance
-    
+
     def getSubFormType(self):
         return self._subFormType
 
@@ -120,7 +119,7 @@ class MetadataForm(ModelForm):
                 if ancestorForm:
                     allSubForms = dict(allSubForms.items() + ancestorForm._subForms.items())
         return allSubForms
-    
+
     @log_class_fn()
     def __init__(self,*args,**kwargs):
         self._request = kwargs.pop('request', None)
@@ -142,7 +141,7 @@ class MetadataForm(ModelForm):
                     qs = getattr(self.instance,key,None).all()
                 except ValueError:
                     pass
-                
+
                 if self._request and self._request.method == "POST":
                     # TODO: NOT SURE IF I NEED THE QUERYSET KWARG HERE (DON'T THINK SO)
                     value[2] = subFormClass(self._request.POST,prefix=key,request=self._request)
@@ -250,7 +249,7 @@ class MetadataFormSet(BaseModelFormSet):
 
 
 
-# NOT DEALING w/ INLINE-FORMSETS 
+# NOT DEALING w/ INLINE-FORMSETS
 # (they are an unneccessary complication)
 ####################################################
 ## the base class for all Metadata Inline Formsets #
@@ -287,7 +286,6 @@ def PotentialSubForm(subFormType=SubFormType("UNKNOWN","Unknown")):
     return decorator
 
 
-@log_fn()
 @PotentialSubForm(SubFormTypes.FORM)
 def MetadataFormFactory(ModelClass,*args,**kwargs):
     name = kwargs.pop("name","Unnamed Form")
@@ -310,7 +308,6 @@ def MetadataFormFactory(ModelClass,*args,**kwargs):
         _form._subForms[key] = PotentialSubForms[value]
     return _form
 
-@log_fn()
 @PotentialSubForm(SubFormTypes.FORMSET)
 def MetadataFormSetFactory(ModelClass,FormClass,*args,**kwargs):
     name = kwargs.pop("name","Unnamed FormSet")
@@ -335,13 +332,42 @@ def MetadataFormSetFactory(ModelClass,FormClass,*args,**kwargs):
 # the non-abstract forms used by the CIM #
 ##########################################
 
+
+DataSource_form = MetadataFormFactory(DataSource,name="DataSource_form")
+DataSource_formset = MetadataFormSetFactory(DataSource,DataSource_form,name="DataSource_formset")
+
+ComponentLanguage_form = MetadataFormFactory(ComponentLanguage,name="ComponentLanguage_form")
+ComponentLanguage_formset = MetadataFormSetFactory(ComponentLanguage,ComponentLanguage_form,name="ComponentLanguage_formset")
+
+SoftwareComponent_form = MetadataFormFactory(SoftwareComponent,name="SoftwareComponent_form")
+SoftwareComponent_formset = MetadataFormSetFactory(SoftwareComponent,SoftwareComponent_form,name="SoftwareComponent_formset")
+
 ResponsibleParty_form = MetadataFormFactory(ResponsibleParty,name="ResponsibleParty_form")
 ResponsibleParty_formset = MetadataFormSetFactory(ResponsibleParty,ResponsibleParty_form,name="ResponsibleParty_formset")
 
-Citation_form = MetadataFormFactory(Citation,name="Citation_form")#,subForms={"citedResponsibleParty" : "ResponsibleParty_formset",})
+Citation_form = MetadataFormFactory(Citation,name="Citation_form")
 Citation_formset = MetadataFormSetFactory(Citation,Citation_form,name="Citation_formset")
 
-MetadataCV_form = MetadataFormFactory(MetadataCV,name="MetadataCV_form")
-MetadataCV_formset = MetadataFormSetFactory(MetadataCV,MetadataCV_form,name="MetadataCV_formset")
+Timing_form = MetadataFormFactory(Timing,name="Timing_form")
+Timing_formset = MetadataFormSetFactory(Timing,Timing_form,name="Timing_formset")
 
-ModelComponent_form = MetadataFormFactory(ModelComponent,name="ModelComponent_form",subForms={"responsibleParties" : "ResponsibleParty_formset", "citations" : "Citation_formset",})
+ModelComponent_form = MetadataFormFactory(ModelComponent,name="ModelComponent_form",subForms={"responsibleParties" : "ResponsibleParty_formset", "citations" : "Citation_formset"})
+ModelComponent_formset = MetadataFormSetFactory(ModelComponent,ModelComponent_form,name="ModelComponent_formset")
+
+Activity_form = MetadataFormFactory(Activity,name="Activity_form",subForms={"responsibleParties" : "ResponsibleParty_formset"})
+Activity_formset = MetadataFormSetFactory(Activity,Activity_form,name="Activity_formset")
+
+DateRange_form = MetadataFormFactory(DateRange,name="DateRange_form")
+DateRange_formset = MetadataFormSetFactory(DateRange,DateRange_form,name="DateRange_formset")
+
+Calendar_form = MetadataFormFactory(Calendar,name="Calendar_form",subForms={"range":"DateRange_form"})
+Calendar_formset = MetadataFormSetFactory(Calendar,Calendar_form,name="Calendar_formset")
+
+NumericalActivity_form = MetadataFormFactory(NumericalActivity,name="NumericalActivity_form")
+NumericalActivity_formset = MetadataFormSetFactory(NumericalActivity,NumericalActivity_form,name="NumericalActivity_formset")
+
+Simulation_form = MetadataFormFactory(Simulation,name="Simulation_form",subForms={"calendar":"Calendar_form"})
+Simulation_formset = MetadataFormSetFactory(Simulation,Simulation_form,name="Simulation_formset")
+
+SimulationRun_form = MetadataFormFactory(SimulationRun,name="SimulationRun_form")
+SimulationRun_formset = MetadataFormSetFactory(SimulationRun,SimulationRun_form,name="SimulationRun_formset")

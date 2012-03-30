@@ -29,7 +29,7 @@ def getModelTitle(form):
 @register.filter
 def getActiveFieldTypes(form):
     model = form.Meta.model
-    fieldTypes = list(model.FieldTypes)
+    fieldTypes = list(model._fieldTypes)
     return [fieldType for fieldType in fieldTypes if (fieldType.getType() in model._fieldsByType)]
 
 ##########################################################
@@ -39,7 +39,7 @@ def getActiveFieldTypes(form):
 @register.filter
 def getAllFieldTypes(form):
     model = form.Meta.model
-    return model.FieldTypes
+    return model._fieldTypes
 
 ################################################################
 # return all fields of a form assigned to a specific fieldType #
@@ -81,4 +81,18 @@ def getSubForm(field,form):
 def getSubFormType(subForm):
     return subForm.getSubFormType().getType()
 
+##############################################
+# work out the app and model of a given form #
+##############################################
 
+@register.filter
+def getAppName(form):
+    # get the application_label of the model
+    model = form.Meta.model
+    return model._meta.app_label.lower()
+
+@register.filter
+def getModelName(form):
+    # get the name of hte model
+    model = form.Meta.model
+    return model._name.lower()

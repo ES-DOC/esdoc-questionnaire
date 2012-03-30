@@ -4,11 +4,157 @@
 
 {% block scripts %}
 
+    /* not a huge fan of global variables */
+    /* but by the time I've got to the add/remove fns below */
+    /* I've lost the context to find these tags anymore */
+
+    var guid_to_add_to = "";
+    var app_to_add_to = "";
+    var model_to_add_to = "";
+    var field_to_add_to = ""
+
+    var row_to_add = "";
+    var row_to_delete = "";
+
+    subform_to_remove = "";
+
+    var app_to_add = "";
+    var model_to_add = "";
+    var id_to_add = "";
+    var ids_to_exclude = "";
+
+    var app_to_remove_from = "";
+    var model_to_remove_from = "";
+    var field_to_remove_from = "";
+
+    function populate(data, form) {
+        $.each(data, function(key, value){
+            if (key=="pk") {
+                $(form).find("input[name$='id']:first").val(value[key]);
+            }
+            else if (key=="fields") {
+                for (key in value) {
+                    if (value.hasOwnProperty(key)) {
+                        var selector = "[name$='"+key+"']:first";
+                        $(form).find(selector).val(value[key]);
+                    }
+                }
+            }
+        });
+    }
+
+    function add_step_one(row) {
+      var url = window.document.location.protocol + "//" + window.document.location.host + "/metadata/get_lil_form/";
+      url += "?a=" + app_to_add_to + "&m=" + model_to_add_to + "&f=" + field_to_add_to + "&i=" + ids_to_exclude;
+      $.ajax({
+        url : url,
+        type : 'get',
+        success : function(data) {
+            row_to_add = row;
+            var content = "<div style='text-align: center; margin-left: auto; margin-right: auto;'>" + data + "</div>";
+            $("#add-dialog").html(content);
+        }
+      });
+      $("#add-dialog").dialog("open");
+      // ideally, this fn would continue adding content to the new row
+      // but the dialog fn doesn't block
+      // so I'm doing this in two steps w/ a callback on the "close" event of the dialog
+      return true;
+    };
+
+      function add_step_two() {
+        var url = window.document.location.protocol + "//" + window.document.location.host + "/metadata/get_lil_content/";
+        url += "?a=" + app_to_add + "&m=" + model_to_add + "&i=" + id_to_add;
+
+        form = row_to_add;
+        $.ajax({
+            url : url,
+            type : 'get',
+            success : function(data) {
+                populate($.parseJSON(data),form);
+            }
+
+        });
+        return true;
+    };
+
     /* enable jquery widgets */
     $(function() {
 
+        /* enable popups */
+        $("#remove-dialog").dialog({
+            autoOpen:false,hide:'explode',modal:true,
+            buttons : {
+                ok : function() {
+                    $(this).dialog("close");
+//                    var selector = ".subform span.current_guid:contains('" + guid_to_remove + "')";
+//                    var delete_button = $(selector).closest(".subform").find(".delete-row");
+
+                      var delete_button = $(subform_to_remove).find(".delete-row:first");
+
+                    $(delete_button).click();
+                },
+                cancel : function() {
+                    id_to_remove = "";
+                    $(this).dialog("close");
+                }
+            }
+        });
+        $("#add-dialog").dialog({
+            autoOpen:false,hide:'explode',modal:true,
+            buttons : {
+                ok : function() {
+                    id_to_add = $(this).find("select").val();
+                    $(this).dialog("close");
+                },
+                cancel : function() {
+                    id_to_add = "";
+                    $(this).dialog("close");
+                }
+            },
+            close : function() {
+                if (id_to_add != "") {
+                    // continue the adding process if the user specified a model to add
+                    add_step_two();
+                }
+            }
+        });
+
         /* enable tabs */
-        $("#tabs").tabs();
+        /* TODO: this is no good; tabs and dynamic-formsets are fighting with one another */
+        /* the dynamic formset controls only appear if the tab is active */
+        /* so I've overloaded the "show" event to initialize dynamic-formsets as needed */
+        $("#tabs").tabs({
+            show : function(event, ui) {
+                if ($(ui.tab).attr("class")!="dynamic-formset-initialized") {
+                    $(ui.tab).addClass("dynamic-formset-initialized");
+                    var tab_selector = $(ui.tab).attr("href");
+                    $(tab_selector).find(".accordion").each(function() {
+                        var prefix = $(this).attr("class").split(' ')[1];
+                        var subform_selector = ".subform."+prefix;
+                        $(subform_selector).formset({
+                            added : function(row) {
+
+                                add_step_one(row);
+                            },
+                            prefix : prefix.split("-formset")[0],
+                            // this _needs_ to be completely unique
+                            formCssClass : "dynamic-"+prefix
+                        });
+                    });
+                }
+            }
+        });
+        $("#tabs ul li a").keydown(function(event) {
+            var keyCode = event.keyCode || event.which;
+            if (keyCode == 9) {
+                /* make the tab key shift focus the the next tab */
+                var nTabs = $("#tabs").tabs("length");
+                var selected = $("#tabs").tabs("option", "selected");
+                /* the modulus operator ensures the tabs wrap around */
+                $("#tabs").tabs("option", "selected", (selected + 1)%nTabs);
+            }
+        });
         $("#tabs ul li a").keydown(function(event) {
             var keyCode = event.keyCode || event.which;
             if (keyCode == 9) {
@@ -94,8 +240,26 @@
             icons: { primary: "ui-icon-circle-plus" },
             text: false
         }).click(function(event) {
-        // TODO
-            alert("you pushed add");
+            var formset = $(event.target).closest("fieldset")
+            var guid = $(formset).find("span.current_guid:first").text();
+            var app_name = $(formset).find("span.current_app:first").text();
+            var model_name = $(formset).find("span.current_model:first").text();
+            var field_name = $(formset).find("span.current_field:first").text();
+            var active_subform_ids = $(formset).find(".subform span.current_id").map(function() {
+                return $(this).text();
+            }).get().join(",");
+
+            guid_to_add_to = guid;
+            app_to_add_to = app_name;
+            model_to_add_to = model_name;
+            field_to_add_to = field_name;
+
+            app_to_add = $(formset).find(".subform span.current_app:first").text()
+            model_to_add = $(formset).find(".subform span.current_model:first").text()
+            ids_to_exclude = active_subform_ids
+
+            var formset_add_button = $(formset).find(".add-row:first");
+            $(formset_add_button).click();
         });
           $("button.remove").button({
             icons: { primary: "ui-icon-circle-minus" },
@@ -106,9 +270,25 @@
             e.stopPropagation();
         });
         $("button.remove").click(function(event) {
-        // TODO
-            alert("you pushed remove");
+            var formset = $(event.target).closest("fieldset")
+            var subform = $(event.target).closest(".subform")
+
+            app_to_remove = $(subform).find("span.current_app").text();
+            model_to_remove = $(subform).find("span.current_model").text();
+            model_to_remove_from = $(formset).find("span.current_model:first").text();
+            id_to_remove = $(subform).find("span.current_id").text();
+            guid_to_remove = $(subform).find("span.current_guid").text();
+
+            subform_to_remove = subform;
+
+            var content = "<div style='text-align: center; margin-left: auto; margin-right: auto;'>Do you really wish to remove this " + model_to_remove + "?<p><em>(It will not be deleted, only removed from this " + model_to_remove_from + ")</em></p></div>";
+            $("#remove-dialog").html(content);
+            $("#remove-dialog").dialog("open");
+
+            //var formset_delete_button = $(this).closest(".subform").find(".delete-row");
+            //$(formset_delete_button).click();
         });
+
 
         /* some selects (open enums) should be able to be overridden */
         $(".editable").jec({blinkingCursor:true});
@@ -157,6 +337,15 @@
                                         <fieldset class="coolfieldset">
                                             <legend title="click to show/hide content"> {{ field.name }} </legend>
                                             <div class="coolfieldset-content">
+
+                                               <div class="hidden">
+                                                    <span class="current_guid">{{form.getGuid}}</span>
+                                                    <span class="current_id">{{form.getId}}</span>
+                                                    <span class="current_app">{{form|getAppName}}</span>
+                                                    <span class="current_model">{{form|getModelName}}</span>
+                                                    <span class="current_field">{{field.name}}</span>
+                                                </div>
+
                                                {% with subForm=field|getSubForm:form %}
                                                     {% with subFormType=subForm|getSubFormType %}
                                                         {% if subFormType == "FORM" %}
