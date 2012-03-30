@@ -238,6 +238,8 @@ class DataSource(MetadataModel):
     class Meta:
         abstract = True
 
+    _fieldsByType = {}
+
     purpose = MetadataEnumerationField(enumeration=DataPurpose_enumeration,open=True)
 
     def __init__(self,*args,**kwargs):
@@ -248,6 +250,8 @@ class DataSource(MetadataModel):
 class Activity(MetadataModel):
     class Meta:
         abstract = True
+
+    _fieldsByType = {}
 
     responsibleParties = MetadataManyToManyField('ResponsibleParty',related_name="responsibleParties")
     fundingSource = models.CharField(max_length=BIG_STRING,blank=True)
@@ -264,6 +268,8 @@ class Activity(MetadataModel):
 class DateRange(MetadataModel):
     _name = "DateRange"
 
+    _fieldsByType = {}
+
     duration = models.CharField(max_length=BIG_STRING,blank=True)
     startDate = models.DateField(blank=True,null=True)
     endDate = models.DateField(blank=True,null=True)
@@ -274,6 +280,8 @@ class DateRange(MetadataModel):
 
 class Calendar(MetadataModel):
     _name = "Calendar"
+
+    _fieldsByType = {}
 
     units = MetadataEnumerationField(enumeration=CalendarUnitType_enumeration,open=False)
     length = models.IntegerField(blank=True)
@@ -290,6 +298,8 @@ class NumericalActivity(Activity):
 
     _name = "NumericalActivity"
 
+    _fieldsByType = {}
+
     shortName = models.CharField(max_length=LIL_STRING,blank=False)
     longName = models.CharField(max_length=BIG_STRING,blank=False)
     description = models.TextField(blank=True)
@@ -304,11 +314,15 @@ class Experiment(Activity):
 
     _name = "Experiment"
 
+    _fieldsByType = {}
+
     def __init__(self, *args, **kwargs):
         super(Experiment, self).__init__(*args, **kwargs)
 
 class NumericalRequirement(MetadataModel):
     _name = "NumericalRequirement"
+
+    _fieldsByType = {}
 
     name = models.CharField(max_length=BIG_STRING,blank=False)
     type = MetadataEnumerationField(enumeration=NumericalRequirementType_enumeration,open=False)
@@ -328,6 +342,8 @@ class NumericalRequirement(MetadataModel):
 class NumericalExperiment(Experiment):
     _name = "NumericalExperiment"
     _title = "Numerical Experiment"
+
+    _fieldsByType = {}
 
     shortName = models.CharField(max_length=LIL_STRING,blank=False)
     longName = models.CharField(max_length=BIG_STRING,blank=False)
@@ -349,6 +365,8 @@ class Simulation(NumericalActivity):
 
     _name = "Simulation"
 
+    _fieldsByType = {}
+
     simulationID = models.CharField(max_length=BIG_STRING,blank=True)
     calendar = MetadataForeignKey("Calendar",related_name="calendar")
 
@@ -359,6 +377,8 @@ class Simulation(NumericalActivity):
 
 class SimulationRun(Simulation):
     _name = "SimulationRun"
+
+    _fieldsByType = {}
 
     pass
 
@@ -372,6 +392,8 @@ class ComponentLanguage(MetadataModel):
     # TODO: PROPERTIES
     #componentLanguageProperty = MetadataPropertyField(property=ComponentLanguage_property)
 
+    _fieldsByType = {}
+
     def __init__(self,*args,**kwargs):
         super(ComponentLanguage, self).__init__(*args, **kwargs)
         self.registerFieldType(FieldType("BASIC","Basic Properties"),["name"])
@@ -380,7 +402,9 @@ class ComponentLanguage(MetadataModel):
 class SoftwareComponent(DataSource):
     class Meta:
         abstract = True
-        
+
+    _fieldsByType = {}
+
     embedded = models.BooleanField(blank=True)
     embedded.help_text = "An embedded component cannot exist on its own as an atomic piece of software; instead it is embedded within another (parent) component. When embedded equals 'true', the SoftwareComponent has a corresponding piece of software (otherwise it is acting as a 'virtual' component which may be inexorably nested within a piece of software along with several other virtual components)."
     couplingFramework = MetadataEnumerationField(enumeration=CouplingFrameworkType_enumeration,open=True)
@@ -414,6 +438,8 @@ class ResponsibleParty(MetadataModel):
     _name = "ResponsibleParty"
     _title = "Responsible Party"
 
+    _fieldsByType = {}
+
     individualName = models.CharField(max_length=LIL_STRING,blank=False)
     organizationName = models.CharField(max_length=LIL_STRING,blank=False)
     role = MetadataEnumerationField(enumeration=ResponsiblePartyRole_enumeration,open=True)
@@ -437,6 +463,8 @@ class Citation(MetadataModel):
     _name = "Citation"
     _title = "Citation"
 
+    _fieldsByType = {}
+
     title = models.CharField(max_length=BIG_STRING,blank=False)
     alternateTitle = models.CharField(max_length=BIG_STRING,blank=True)
     edition = models.CharField(max_length=BIG_STRING,blank=True)
@@ -456,6 +484,9 @@ class Citation(MetadataModel):
         return u'%s: %s' % (self.getName(), self.title)
 
 class Timing(MetadataModel):
+
+    _fieldsByType = {}
+
     units = MetadataEnumerationField(enumeration=TimingUnits_enumeration,open=False)
     variableRate = models.BooleanField(blank=True)
     start = models.DateTimeField(blank=True,null=True)
@@ -467,6 +498,9 @@ class Timing(MetadataModel):
         self.registerFieldType(FieldType("BASIC","Basic Properties"), ["units","variableRate","start","end","rate"])
 
 class ModelComponent(SoftwareComponent):
+
+    _fieldsByType = {}
+
     type = MetadataEnumerationField(enumeration=ModelComponentType_enumeration,open=True)
     timing = MetadataForeignKey("Timing",related_name="timing")
 
