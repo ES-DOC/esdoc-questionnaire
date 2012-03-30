@@ -228,6 +228,9 @@ class Activity_Project_enumeration(MetadataEnumeration):
 class CalendarUnitType_enumeration(MetadataEnumeration):
     _enum = ['days','months','years']
     
+class NumericalRequirementType_enumeration(MetadataEnumeration):
+    _enum = ['Initial Condition','Boundary Condition','Output Requirement','SpatioTemporal Constraint']
+
 #####
 
 
@@ -294,6 +297,51 @@ class NumericalActivity(Activity):
     def __init__(self, *args, **kwargs):
         super(NumericalActivity, self).__init__(*args, **kwargs)
         self.registerFieldType(FieldType("SIMULATION_DESCRIPTION","Simulation Description"),["shortName","longName","description"])
+
+class Experiment(Activity):
+    class Meta:
+        abstract = True
+
+    _name = "Experiment"
+
+    def __init__(self, *args, **kwargs):
+        super(Experiment, self).__init__(*args, **kwargs)
+
+class NumericalRequirement(MetadataModel):
+    _name = "NumericalRequirement"
+
+    name = models.CharField(max_length=BIG_STRING,blank=False)
+    type = MetadataEnumerationField(enumeration=NumericalRequirementType_enumeration,open=False)
+    description = models.TextField()
+
+    def __init__(self,*args,**kwargs):
+        super(NumericalRequirement,self).__init__(*args,**kwargs)
+
+    def __unicode__(self):
+        name = u'Requirement'
+        if self.type:
+            name = u'%s: %s' % (name, self.type)
+        if self.name:
+            name = u'%s: %s' % (name, self.name)
+        return name
+
+class NumericalExperiment(Experiment):
+    _name = "NumericalExperiment"
+    _title = "Numerical Experiment"
+
+    shortName = models.CharField(max_length=LIL_STRING,blank=False)
+    longName = models.CharField(max_length=BIG_STRING,blank=False)
+    description = models.TextField(blank=True)
+    experimentID = models.CharField(max_length=LIL_STRING,blank=True)
+    calendar = MetadataForeignKey("Calendar",related_name="calendar")
+    numericalRequirements = MetadataManyToManyField("NumericalRequirement",related_name="numericalRequirements")
+
+    def __init__(self,*args,**kwargs):
+        super(NumericalExperiment,self).__init__(*args,**kwargs)
+        self.registerFieldType(FieldType("EXPERIMENT_DESCRIPTION","Experiment Description"),["shortName","longName","description","experimentID"])
+        self.registerFieldType(FieldType("BASIC","Basic Properties"), ["calendar"])
+        self.registerFieldType(FieldType("REQUIREMENT","Experiment Requirements"), ["numericalRequirements"])
+
 
 class Simulation(NumericalActivity):
     class Meta:
@@ -438,6 +486,7 @@ try:
     TimingUnits_enumeration.loadEnumerations()
     Activity_Project_enumeration.loadEnumerations()
     CalendarUnitType_enumeration.loadEnumerations()
+    NumericalRequirementType_enumeration.loadEnumerations()
 except:
     # this will fail on syncdb; once I move to South, it won't matter
     pass

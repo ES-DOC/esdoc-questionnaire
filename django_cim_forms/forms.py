@@ -371,3 +371,13 @@ Simulation_formset = MetadataFormSetFactory(Simulation,Simulation_form,name="Sim
 
 SimulationRun_form = MetadataFormFactory(SimulationRun,name="SimulationRun_form")
 SimulationRun_formset = MetadataFormSetFactory(SimulationRun,SimulationRun_form,name="SimulationRun_formset")
+
+Experiment_form = MetadataFormFactory(Experiment,name="Experiment_form")
+Experiment_formset = MetadataFormSetFactory(Experiment,Experiment_form,name="Experiment_formset")
+
+NumericalRequirement_form = MetadataFormFactory(NumericalRequirement,name="NumericalRequirement_form")
+NumericalRequirement_formset = MetadataFormSetFactory(NumericalRequirement,NumericalRequirement_form,name="NumericalRequirement_formset")
+
+
+NumericalExperiment_form = MetadataFormFactory(NumericalExperiment,name="NumericalExperiment_form",subForms={"calendar":"Calendar_form","numericalRequirements":"NumericalRequirement_formset"})
+NumericalExperiment_formset = MetadataFormSetFactory(NumericalExperiment,NumericalExperiment_form,name="NumericalExperiment_formset")

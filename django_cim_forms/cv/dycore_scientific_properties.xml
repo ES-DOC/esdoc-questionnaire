@@ -230,6 +230,12 @@
     <item>
         <shortName>tracer_transport_scheme</shortName>
         <longName>tracer transport scheme</longName>
+        <values>
+          <value>
+             <shortName>pretend_val_one</shortName>
+             <longName>pretend val one</longName>
+          </value>
+        </values>
     </item>
     <item>
         <shortName>tracer_conservation_type</shortName>
