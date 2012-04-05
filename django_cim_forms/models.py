@@ -1,6 +1,9 @@
+import django.forms.widgets
+import django.forms.fields
 # module imports
 
 from django.db import models, DatabaseError
+from django.utils.functional import curry
 from uuid import uuid4
 
 # intra/inter-package imports
@@ -38,7 +41,7 @@ class MetadataEnumerationField(models.ForeignKey):
         super(MetadataEnumerationField,self).__init__(enumerationClass,**kwargs)
         self._open = open
 
-class MetadataCVField(models.ManyToManyField):
+class MetadataCVField_bak(models.ManyToManyField):
 
     def __init__(self,*args,**kwargs):
         cvClass = kwargs.pop('cv',None)
@@ -47,8 +50,79 @@ class MetadataCVField(models.ManyToManyField):
         #    cvClass.loadCV()
         kwargs["blank"] = True
         kwargs["null"] = True
-        super(MetadataCVField,self).__init__(cvClass,**kwargs)
+        super(MetadataCVField_bak,self).__init__(cvClass,**kwargs)
 
+class _MetadataCVWidget(django.forms.widgets.MultiWidget):
+    def __init__(self,*args,**kwargs):
+
+        shortName = kwargs.pop("shortName",None)
+        longName = kwargs.pop("longName",None)
+        value_choices = kwargs.pop("values",[])
+        widgets = (
+            django.forms.fields.TextInput(),
+            django.forms.fields.TextInput(),
+            django.forms.fields.Select(choices=value_choices),
+        )
+
+        super(_MetadataCVWidget, self).__init__(widgets,*args,**kwargs)        
+
+    # TODO: CHECK THIS
+    def decompress(self, value):
+        if value:
+            return value.split(':::')[0:2]
+        return ['', '']
+
+
+class _MetadataCVFormField(django.forms.fields.MultiValueField):
+    widget = _MetadataCVWidget
+    
+    def __init__(self,*args,**kwargs):
+        self.cv = kwargs.pop("cv",None)
+        self.cv_model=self.cv.objects.get(pk=20)
+
+        shortName = self.cv_model.shortName
+        longName = self.cv_model.longName
+        value_choices = self.cv_model.values
+
+        print shortName
+        print longName
+        print value_choices
+        
+        fields = (
+            django.forms.fields.CharField(label="short name",initial=shortName),    # CV property: shortName
+            django.forms.fields.CharField(label="long name",initial=longName),      # CV property: longName
+            django.forms.fields.ChoiceField(label="value",choices=value_choices),   # choices for CV Property: values
+        )
+        super(_MetadataCVFormField,self).__init__(fields,*args,**kwargs)
+        # make sure the widget renders what this formfield contains...
+        self.widget = _MetadataCVWidget(shortName=shortName,longName=longName,values=value_choices)
+
+    # TODO: CHECK THIS
+    def compress(self, data_list):
+        if data_list:
+            data = { "shortName" : data_list[0], "longName" : data_list[1], "value" : data_list[2]}
+            #return join data somehow into a string
+            return data
+        return { "shortName" : None, "longName" : None, "value" : None}
+
+class MetadataCVField(models.Field):
+
+    cv = None
+
+    def __init__(self,*args,**kwargs):
+        self.cv = kwargs.pop("cv",None)
+        super(MetadataCVField,self).__init__(*args,**kwargs)
+
+    def formfield(self,*args,**kwargs):
+
+#        defaults = {'form_class': _MetadataCVFormField}
+#        defaults.update(kwargs)
+#        super(MetadataCVField,self).formfield(**defaults)
+        return _MetadataCVFormField(cv=self.cv)
+
+    def get_internal_type(self):
+        return 'MetadataCVField'
+        
 class MetadataManyToManyField(models.ManyToManyField):
     
     def __init__(self,*args,**kwargs):
@@ -116,13 +190,17 @@ class MetadataModel(models.Model):
     def getGuid(self):
         return self.guid
 
-    @log_class_fn()
     def __init__(self,*args,**kwargs):
         super(MetadataModel,self).__init__(*args,**kwargs)
         if not self.guid:
             self.guid = str(uuid4())
 
     def registerFieldType(self,fieldType,fields):
+##        # first make sure the fields exist...
+##        if not all(f in [field.name for field in self._meta.fields] for f in fields):
+##            msg = "'%s' is an invalid set of fields for %s" % (fields,self.getName())
+##            raise MetadataError(msg)
+        
         # add to _fieldTypes if the fieldType is new
         if not fieldType in self._fieldTypes:
             self._fieldTypes.append(fieldType)
@@ -231,12 +309,30 @@ class CalendarUnitType_enumeration(MetadataEnumeration):
 class NumericalRequirementType_enumeration(MetadataEnumeration):
     _enum = ['Initial Condition','Boundary Condition','Output Requirement','SpatioTemporal Constraint']
 
+class ConnectionType_enumeration(MetadataEnumeration):
+    _enum = ['CCSM Flux Coupler','ESMF','FMS','Files','MCT','OASIS3','OASIS4','Shared Memory','Embedded']
+
+class SpatialRegriddingDimensionType_enumeration(MetadataEnumeration):
+    _enum = ['1D','2D','3D']
+
+class SpatialRegriddingStandardMethodType_enumeration(MetadataEnumeration):
+    _enum = ['linear','near-neighbour','cubic','conservative-first-order','conservative-second-order','conservative','non-conservative']
+
+class TimeMappingType_enumeration(MetadataEnumeration):
+    _enum = ['TimeAccumulation','TimeAverage','LastAvailable','TimeInterpolation','Exact']
+
+class ConformanceType_enumeration(MetadataEnumeration):
+    _enum = ['not conformant','standard config','via inputs','via model mods','combination']
+
+class FrequencyType_enumeration(MetadataEnumeration):
+    _enum = ['daily','monthly','yearly','hourly']
+
 #####
 
 
 class DataSource(MetadataModel):
     class Meta:
-        abstract = True
+        abstract = False#True
 
     _fieldsByType = {}
 
@@ -254,7 +350,9 @@ class Activity(MetadataModel):
     _fieldsByType = {}
 
     responsibleParties = MetadataManyToManyField('ResponsibleParty',related_name="responsibleParties")
+    responsibleParties.help_text = "The point of contact(s) for this activity.This includes, among others, the principle investigator."
     fundingSource = models.CharField(max_length=BIG_STRING,blank=True)
+    fundingSource.help_text = "The entities that funded this activity."
     rationale = models.TextField(blank=True)
     rationale.help_text = "For what purpose is this activity being performed?"
     project = MetadataEnumerationField(enumeration=Activity_Project_enumeration,open=True)
@@ -291,6 +389,24 @@ class Calendar(MetadataModel):
     def __init__(self, *args, **kwargs):
         super(Calendar, self).__init__(*args, **kwargs)
         self.registerFieldType(FieldType("BASIC","Basic Properties"),['units','length','description','range'])
+
+class DataObject(DataSource):
+    _name = "DataObject"
+    _title = "Data Object"
+
+    _fieldsByType = {}
+
+    fileName = models.CharField(max_length=BIG_STRING,blank=False)
+    
+    def __init__(self, *args, **kwargs):
+        super(DataObject, self).__init__(*args, **kwargs)
+        self.registerFieldType(FieldType("BASIC","Basic Properties"),["fileName"])
+
+    def __unicode__(self):
+        name = self.getName()
+        if self.fileName:
+            name = u'%s: %s' % (name, self.fileName)
+        return name
 
 class NumericalActivity(Activity):
     class Meta:
@@ -358,6 +474,101 @@ class NumericalExperiment(Experiment):
         self.registerFieldType(FieldType("BASIC","Basic Properties"), ["calendar"])
         self.registerFieldType(FieldType("REQUIREMENT","Experiment Requirements"), ["numericalRequirements"])
 
+class TimeTransformation(MetadataModel):
+    _name = "TimeTransformation"
+    _fieldsByType = {}
+
+    mappingType = MetadataEnumerationField(enumeration=TimeMappingType_enumeration,open=True)
+    mappingType.help_text = "Enumerates the different ways that time can be mapped when transforming from one field to another."
+    description = models.TextField(blank=True)
+
+    def __init__(self,*args,**kwargs):
+        super(TimeTransformation,self).__init__(*args,**kwargs)
+        self.registerFieldType(FieldType("BASIC","Basic Properties"), ["mappingType","description"])
+
+class CouplingEndPoint(MetadataModel):
+    _name = "CouplingEndPoint"
+
+    _fieldsByType = {}
+
+    dataSource = models.CharField(max_length=BIG_STRING,blank=False)
+    # TODO: THIS SHOULD BE AN "IDENTIFIER" CLASS
+    instanceID = models.CharField(max_length=LIL_STRING,blank=True)
+    instanceID.help_text = "If the same datasource is used more than once in a coupled model then a method for identifying which particular instance is being referenced is needed (for BFG)."
+
+    def __init__(self,*args,**kwargs):
+        super(CouplingEndPoint,self).__init__(*args,**kwargs)
+        self.registerFieldType(FieldType("BASIC","Basic Properties"), ["dataSource","instanceID"])
+        
+class Coupling(MetadataModel):
+    _name = "Coupling"
+    _title = "Coupling"
+
+    _fieldsByType = {}
+
+    purpose = MetadataEnumerationField(enumeration=DataPurpose_enumeration,open=True)
+    fullySpecified = models.BooleanField()
+    fullySpecified.help_text="If \"true\" then the coupling is fully-specified.  If \"false\" then not every Connection has been described within the coupling."
+    description = models.TextField(blank=True)
+    description.help_text="A free-text description of the coupling"
+    connectionType = MetadataEnumerationField(enumeration=ConnectionType_enumeration,open=True)
+    connectionType.help_text="Describes the method of coupling"
+    timeProfile = MetadataForeignKey("Timing",related_name="timeProfile")
+    timeProfile.help_text="Describes how often the coupling takes place."
+    timeLag = MetadataForeignKey("TimeLag",related_name="timeLag")
+    timeLag.help_text="The coupling field used in the target at a given time corresponds to a field produced by the source at a previous time."
+    spatialRegridding = MetadataManyToManyField("SpatialRegridding",related_name="spatialRegridding")
+    spatialRegridding.help_text="Characteristics of the scheme used to interpolate a field from one grid (source grid) to another (target grid)"
+    timeTransformation = MetadataForeignKey("TimeTransformation",related_name="timeTransformation")
+    timeTransformation.help_text="Temporal transformation performed on the coupling field before or after regridding onto the target grid. "
+    couplingSource = MetadataForeignKey("CouplingEndPoint",related_name="couplingSource")
+    couplingTarget = MetadataForeignKey("CouplingEndPoint",related_name="couplingTarget")
+    priming = models.CharField(max_length=BIG_STRING,blank=False)
+    priming.help_text = "A priming source is one that is active on the first available timestep only (before \"proper\" coupling can ocurr).  It can either be described here explicitly, or else a separate coupling/connection with a timing profile that is active on only the first timestep can be created."
+    
+    def __init__(self,*args,**kwargs):
+        super(Coupling,self).__init__(*args,**kwargs)
+        self.registerFieldType(FieldType("BASIC","Basic Properties"), ["purpose","fullySpecified","description","timeProfile","timeLag","spatialRegridding","timeTransformation","couplingSource","couplingTarget"])
+
+    def __unicode__(self):
+        name = u'%s' % self.getName()
+        if self.connectionType:
+            name = u'%s: %s' % (name, self.connectionType)
+        return name
+
+class Conformance(MetadataModel):
+    _name = "Conformance"
+    _title = "Conformance"
+
+    _fieldsByType = {}
+
+    conformant = models.BooleanField()
+    conformant.help_text = "Records whether or not this conformance satisfies the requirement.  A simulation should have at least one conformance mapping to every experimental requirement.  If a simulation satisfies the requirement - the usual case - then conformant should have a value of \"true.\"  If conformant is true but there is no reference to a source for the conformance, then we can assume that the simulation conforms to the requirement _naturally_, that is without having to modify code or inputs. If a simulation does not conform to a requirement then conformant should be set to \"false.\""
+    type = MetadataEnumerationField(enumeration=ConformanceType_enumeration,open=False)
+    type.help_text = "Describes the method that this simulation conforms to an experimental requirement (in case it is not specified by the change property of the reference to the source of this conformance)"
+    description = models.TextField(blank=True)
+    frequency = MetadataEnumerationField(enumeration=FrequencyType_enumeration,open=True)
+    # TODO: DOUBLE-CHECK THAT THIS WORKS W/ ABSTRACT CLASSES
+    requirements = models.ManyToManyField("NumericalRequirement")
+    requirements.help_text="Points to the NumericalRequirement that the simulation in question is conforming to."
+    sources = models.ManyToManyField("DataSource")
+    sources.help_text = "Points to the DataSource used to conform to a particular Requirement.   This may be part of an activity::simulation or a software::component.  It can be either a DataObject or a SoftwareComponent or a ComponentProperty.  It could also be by using particular attributes of, say, a SoftwareComponent, but in that case the recommended practise is to reference the component and add appropriate text in the conformance description attribute."
+    
+    def __init__(self,*args,**kwargs):
+        super(Conformance,self).__init__(*args,**kwargs)
+        self.registerFieldType(FieldType("BASIC","Basic Properties"), ["conformant","type","description","frequency"])
+        self.registerFieldType(FieldType("REQUIREMENTS","Experimental Requirements"), ["requirements"])
+        self.registerFieldType(FieldType("SOURCES","Conformant Methods"), ["sources"])
+
+    def __unicode__(self):
+        name = u'%s' % self.getName()
+        # TODO: map requirements and sources to (truncated) lists
+##        if self.requirements:
+##            name = u'%s: %s' % (name, "requirements")
+##        if self.sources:
+##            name = u'%s: %s' % (name, "sources")
+        return name
+
 
 class Simulation(NumericalActivity):
     class Meta:
@@ -369,11 +580,20 @@ class Simulation(NumericalActivity):
 
     simulationID = models.CharField(max_length=BIG_STRING,blank=True)
     calendar = MetadataForeignKey("Calendar",related_name="calendar")
+    inputs = MetadataManyToManyField("Coupling",related_name="inputs")
+    inputs.help_text="implemented as a mapping from a source to target; can be a forcing file, a boundary condition, etc."
+
+    outputs = MetadataManyToManyField("DataObject",related_name="outputs")
+    restarts = MetadataManyToManyField("DataObject",related_name="restarts")
+    
+    conformances = MetadataManyToManyField("Conformance",related_name="conformances")
 
     def __init__(self,*args,**kwargs):
         super(Simulation,self).__init__(*args,**kwargs)
         self.registerFieldType(FieldType("SIMULATION_DESCRIPTION","Simulation Description"), ["simulationID"])
         self.registerFieldType(FieldType("BASIC","Basic Properties"), ["calendar"])
+        self.registerFieldType(FieldType("COUPLINGS","Inputs & Outputs"),["inputs","outputs","restarts"])
+        self.registerFieldType(FieldType("CONFORMANCES","Conformances"), ["conformances"])
 
 class SimulationRun(Simulation):
     _name = "SimulationRun"
@@ -497,6 +717,52 @@ class Timing(MetadataModel):
         super(Timing,self).__init__(*args,**kwargs)
         self.registerFieldType(FieldType("BASIC","Basic Properties"), ["units","variableRate","start","end","rate"])
 
+class TimeLag(MetadataModel):
+    _fieldsByType = {}
+
+    units = MetadataEnumerationField(enumeration=TimingUnits_enumeration,open=False)
+    value = models.IntegerField()
+
+    def __init__(self,*args,**kwargs):
+        super(TimeLag,self).__init__(*args,**kwargs)
+        self.registerFieldType(FieldType("BASIC","Basic Properties"), ["units","value"])
+
+class SpatialRegriddingUserMethod(MetadataModel):
+    _fieldsByType = {}
+
+    name = models.CharField(max_length=BIG_STRING,blank=False)
+    file = models.CharField(max_length=BIG_STRING,blank=True)
+
+    def __init__(self,*args,**kwargs):
+        super(SpatialRegriddingUserMethod,self).__init__(*args,**kwargs)
+        self.registerFieldType(FieldType("BASIC","Basic Properties"), ["name","file"])
+
+
+class SpatialRegridding(MetadataModel):
+
+    _name = "SpatialRegridding"
+
+    _fieldsByType = {}
+
+    spatialRegriddingDimension = MetadataEnumerationField(enumeration=SpatialRegriddingDimensionType_enumeration,open=False,blank=True)
+    spatialRegriddingStandardMethod = MetadataEnumerationField(enumeration=SpatialRegriddingStandardMethodType_enumeration,open=False)
+    spatialRegriddingUserMethod = MetadataForeignKey("SpatialRegriddingUserMethod",related_name="spatialRegriddingUserMethod")
+    spatialRegriddingUserMethod.help_text = "Allows users to bypass the SpatialRegriddingStandardMethod and instead provide a set of weights and addresses for regridding via a file."
+
+    def __init__(self,*args,**kwargs):
+        super(SpatialRegridding,self).__init__(*args,**kwargs)
+        self.registerFieldType(FieldType("BASIC","Basic Properties"), ["spatialRegriddingDimension","spatialRegriddingStandardMethod","spatialRegriddingUserMethod"])
+
+    def __unicode__(self):
+        name = u'%s' % self.getName()
+        if self.spatialRegriddingDimension:
+            name = u'%s: %s' % (name, self.spatialRegriddingDimension)
+        if self.spatialRegriddingStandardMethod:
+            name = u'%s: %s' % (name, self.spatialRegriddingStandardMethod)
+        elif self.spatialRegriddingUserMethod:
+            name = u'%s: %s' % (name, self.spatialRegriddingUserMethod)
+        return name
+
 class ModelComponent(SoftwareComponent):
 
     _fieldsByType = {}
@@ -521,6 +787,12 @@ try:
     Activity_Project_enumeration.loadEnumerations()
     CalendarUnitType_enumeration.loadEnumerations()
     NumericalRequirementType_enumeration.loadEnumerations()
+    ConnectionType_enumeration.loadEnumerations()
+    SpatialRegriddingDimensionType_enumeration.loadEnumerations()
+    SpatialRegriddingStandardMethodType_enumeration.loadEnumerations()
+    TimeMappingType_enumeration.loadEnumerations()
+    ConformanceType_enumeration.loadEnumerations()
+    FrequencyType_enumeration.loadEnumerations()
 except:
     # this will fail on syncdb; once I move to South, it won't matter
     pass

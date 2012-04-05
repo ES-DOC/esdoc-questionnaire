@@ -37,7 +37,6 @@ def get_cv_remote(cv_name):
 def get_cv_local(cv_name):
     try:
         cv_filepath  = CV_ROOT + cv_name + ".xml"
-        print cv_filepath
         cv_file = open(cv_filepath, 'r')
         cv_text = cv_file.read()
         cv_file.close()
@@ -76,4 +75,89 @@ class MetadataEnumeration(models.Model):
         enum = kwargs.pop("enum",cls._enum)
         for name in enum:
             cls.objects.get_or_create(name=name)
+#######
+# CVs #
+#######
 
+class MetadataControlledVocabularyValueField(models.TextField):
+    # values is a list of '||' separated terms;
+    # each term is a list of '|' separated terms
+    # eg: "shortName1|longName1||shortName2|longName2||shortName3||shortName4|longName4"
+    # this gets serialized to a list of tuples
+    # eg: [(shortname1,longName1),(shortName2,longName2),(shortName3,shortName3),(shortName4,longName4)]
+
+    __metaclass__ = models.SubfieldBase
+
+    value_separator_token = "||"
+    value_name_separator_token = "|"
+
+    def to_python(self, values):
+        if not values:
+            # return nothing if there is no value
+            return
+        elif isinstance(values,list):
+            # return value if it's already a list
+            return values
+        else:
+            # otherwise create a list (of lists)
+            return [tuple(val.split(self.value_name_separator_token)) for val in values.split(self.value_separator_token) if val]
+
+    def get_db_prep_value(self, values):
+        if not values:
+            return
+        assert(isinstance(values, list) or isinstance(values, tuple))
+
+        return self.value_separator_token.join([self.value_name_separator_token.join(val) for val in values])
+
+    def value_to_string(self, obj):
+        value = self._get_val_from_obj(obj)
+        return self.get_db_prep_value(value)
+
+class MetadataControlledVocabulary(models.Model):
+
+    class Meta:
+        abstract = True
+
+    _name = "MetadataControlledVocabulary"
+
+    shortName = models.CharField(max_length=BIG_STRING,blank=False)
+    longName = models.CharField(max_length=BIG_STRING,blank=True)
+
+    values = MetadataControlledVocabularyValueField(blank=True,null=True)
+
+    def getName(self):
+        return self._name
+
+    def __unicode__(self):
+        name = u'%s' % self.getName()
+        if self.longName:
+            name = u'%s' % self.longName
+        else:
+            name = u'%s' % self.shortName
+        return name
+
+    @classmethod
+    def loadCV(cls,*args,**kwargs):
+        cv_name = kwargs.pop("cv_name",cls._cv_name)
+        parser = et.XMLParser(remove_blank_text=True)
+        cv = et.fromstring(get_cv(cv_name),parser)
+        xpath_item_expression = "//item"
+        items = cv.xpath(xpath_item_expression)
+        for item in items:
+            shortName = item.xpath("shortName/text()") or None
+            longName = item.xpath("longName/text()") or None
+            if shortName: shortName = shortName[0]
+            if longName: longName = longName[0]
+            (model,created) = cls.objects.get_or_create(shortName=shortName,longName=longName)
+            xpath_value_expression="//item[shortName/text()='%s']/values/value" % shortName
+            values = cv.xpath(xpath_value_expression)
+            value_choices = ""
+            for value in values:
+                valueShortName = value.xpath("shortName/text()")
+                valueLongName = value.xpath("longName/text()")
+                if not valueLongName:
+                    value_choices += "%s|%s||" % (valueShortName[0],valueShortName[0])
+                else:
+                    value_choices += "%s|%s||" % (valueShortName[0],valueLongName[0])
+            model.values = value_choices
+            model.save()
