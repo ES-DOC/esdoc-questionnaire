@@ -177,8 +177,9 @@ class MetadataModel(models.Model):
     _title = "" # the title (to display) of the model class
 
     _fieldTypes = EnumeratedTypeList([])
+    _fieldTypeOrder = None
     _fieldsByType = {}
-    
+
     # every model has a guid
     guid = models.CharField(max_length=64,editable=False,blank=True,unique=True)
 
@@ -191,6 +192,9 @@ class MetadataModel(models.Model):
     def getGuid(self):
         return self.guid
 
+    def setFieldTypeOrder(self,order):
+        self._fieldTypeOrder = order
+        
     def __init__(self,*args,**kwargs):
         super(MetadataModel,self).__init__(*args,**kwargs)
         if not self.guid:
@@ -214,10 +218,15 @@ class MetadataModel(models.Model):
             self._fieldsByType[fieldType.getType()] = fields
 
     def getAllFieldTypes(self):
+        if self._fieldTypeOrder:
+            # if an order is defined, return _fieldTypes according to that order
+            return self._fieldTypes.sort(key=lambda fieldType: EnumeratedTypeList.comparator(fieldType,self._fieldTypeOrder))
         return self._fieldTypes
 
     def getActiveFieldTypes(self):
-        return [fieldType for fieldType in list(self._fieldTypes) if (fieldType.getType() in self._fieldsByType)]
+        orderedFieldTypes = self.getActiveFieldTypes()
+        #return [fieldType for fieldType in list(self._fieldTypes) if (fieldType.getType() in self._fieldsByType)]
+        return [fieldType for fieldType in orderedFieldTypes if (fieldType.getType() in self._fieldsByType)]
 
     def serialize(self,format="JSON"):
         # sticking self in a list simulates a queryset

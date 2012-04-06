@@ -53,14 +53,29 @@ class EnumeratedTypeError(Exception):
     def __str__(self):
         return "EnumeratedTypeError: " + self.msg
 
-# basing this on deque preserves FIFO order...
-class EnumeratedTypeList(deque):
+# this used to be based on deque to preserve FIFO order...
+# but since I changed to adding fields to this list as needed in class's __init__() fn,
+# that doesn't make much sense; so I'm basing it on a simple list
+# and adding an ordering fn
+class EnumeratedTypeList(list):
 
     def __getattr__(self,type):
         for et in self:
             if et.getType() == type:
                 return et
         raise EnumeratedTypeError("unable to find %s" % str(type))
+
+    # a method for sorting these lists
+    # order is a list of EnumeratatedType._types
+    @classmethod
+    def comparator(cls,et,etOrderList):
+        etType = et.getType()
+        if etType in etOrderList:
+            # if the type being compared is in the orderList, return it's position
+            return etOrderList.index(etType)
+        # otherwise return a value greater than the last position of the orderList
+        return len(etOrderList)+1
+
 
 #################################################################################
 # decorators to log methods/classes                                             #

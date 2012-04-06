@@ -29,7 +29,9 @@ def getModelTitle(form):
 @register.filter
 def getActiveFieldTypes(form):
     model = form.Meta.model
-    fieldTypes = list(model._fieldTypes)
+    fieldTypes = model._fieldTypes
+    if model._fieldTypeOrder:
+        fieldTypes.sort(key=lambda fieldType: EnumeratedTypeList.comparator(fieldType,model._fieldTypeOrder))
     return [fieldType for fieldType in fieldTypes if (fieldType.getType() in model._fieldsByType)]
 
 ##########################################################
@@ -39,6 +41,8 @@ def getActiveFieldTypes(form):
 @register.filter
 def getAllFieldTypes(form):
     model = form.Meta.model
+    if model._fieldTypeOrder:
+        return model._fieldTypes.sort(key=lambda fieldType: EnumeratedTypeList.comparator(fieldType,model._fieldTypeOrder))
     return model._fieldTypes
 
 ################################################################
