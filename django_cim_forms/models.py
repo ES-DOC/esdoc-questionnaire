@@ -138,6 +138,7 @@ class MetadataManyToManyField(models.ManyToManyField):
             raise MetadataError("you must provide a related_name kwarg to a MetadataManyToManyField")
         kwargs["related_name"] = "%(app_label)s;%(class)s;" + related_name
         super(MetadataManyToManyField,self).__init__(*args,**kwargs)
+        self.help_text = None # this is the default setting; it can be overridden in the class definitions below
 
 class MetadataForeignKey(models.ForeignKey):
 
@@ -155,7 +156,7 @@ class MetadataForeignKey(models.ForeignKey):
             raise AttributeError("you must provide a related_name kwarg to a MetadataForeignKey")
         kwargs["related_name"] = "%(app_label)s;%(class)s;" + related_name
         super(MetadataForeignKey,self).__init__(*args,**kwargs)
-
+        self.help_text = None # this is the default setting; it can be overridden in the class definitions below
 
 ########################################
 # base classes for all Metadata Models #
@@ -301,7 +302,7 @@ class TimingUnits_enumeration(MetadataEnumeration):
     _enum = ["seconds", "minutes", "hours", "days", "months", "years", "decades", "centuries"]
     
 class Activity_Project_enumeration(MetadataEnumeration):
-    _enum = ['CMIP5','AMIP','TAMIP']
+    _enum = ['CMIP5','AMIP','TAMIP', 'CASCADE', "DCMIP"]
 
 class CalendarUnitType_enumeration(MetadataEnumeration):
     _enum = ['days','months','years']
@@ -326,6 +327,9 @@ class ConformanceType_enumeration(MetadataEnumeration):
 
 class FrequencyType_enumeration(MetadataEnumeration):
     _enum = ['daily','monthly','yearly','hourly']
+
+class LogicalRelationshipType_enumeration(MetadataEnumeration):
+    _enum = ['AND','OR','XOR']
 
 #####
 
@@ -360,7 +364,7 @@ class Activity(MetadataModel):
 
     def __init__(self, *args, **kwargs):
         super(Activity, self).__init__(*args, **kwargs)
-        self.registerFieldType(FieldType("SIMULATION_DESCRIPTION","Simulation Description"), ["project","rationale",])
+        
         self.registerFieldType(FieldType("BASIC","Basic Properties"),['fundingSource','responsibleParties'])
 
 class DateRange(MetadataModel):
@@ -434,18 +438,25 @@ class Experiment(Activity):
 
     def __init__(self, *args, **kwargs):
         super(Experiment, self).__init__(*args, **kwargs)
+        self.registerFieldType(FieldType("EXPERIMENT_DESCRIPTION","Experiment Description"), ["project","rationale",])
 
 class NumericalRequirement(MetadataModel):
     _name = "NumericalRequirement"
-
+    _title = "Numerical Requirement"
+    
     _fieldsByType = {}
 
+    requirementId = models.CharField(max_length=LIL_STRING,blank=False)
     name = models.CharField(max_length=BIG_STRING,blank=False)
     type = MetadataEnumerationField(enumeration=NumericalRequirementType_enumeration,open=False)
     description = models.TextField()
+    requirementOption = MetadataForeignKey("RequirementOption",related_name="requirementOption")
+    sources = models.ManyToManyField("DataSource",blank=True,null=True)
+    sources.help_text = None
 
     def __init__(self,*args,**kwargs):
         super(NumericalRequirement,self).__init__(*args,**kwargs)
+        self.registerFieldType(FieldType("BASIC","Basic Properties"), ["requirementId","name","type","description","requirementOption","sources"])
 
     def __unicode__(self):
         name = u'Requirement'
@@ -454,6 +465,19 @@ class NumericalRequirement(MetadataModel):
         if self.name:
             name = u'%s: %s' % (name, self.name)
         return name
+
+class RequirementOption(MetadataModel):
+    _name = "RequirementOption"
+    _title = "Requirement Option"
+    _fieldsByType = {}
+    optionRelationship = MetadataEnumerationField(enumeration=LogicalRelationshipType_enumeration,open=False)
+    optionRelationship.help_text = "Describes how this optional (child) requirement is related to its sibling requirements.  For example, a NumericalRequirement could consist of a set of optional requirements each with an \"OR\" relationship meaning use this boundary condition _or_ that one."
+    requirements = models.ManyToManyField("NumericalRequirement",related_name="requirements")
+    requirements.help_text = "A NumericalRequirement that is being used as a set of related requirements; For example if a requirement is to use 1 of 3 boundary conditions, then that \"parent\" requirement would have three \"child\" RequirmentOptions (each of one with the XOR optionRelationship)."
+
+    def __init__(self,*args,**kwargs):
+        super(RequirementOption,self).__init__(*args,**kwargs)
+        self.registerFieldType(FieldType("BASIC","Basic Properties"), ["optionRelationship","requirements"])
 
 class NumericalExperiment(Experiment):
     _name = "NumericalExperiment"
@@ -464,7 +488,7 @@ class NumericalExperiment(Experiment):
     shortName = models.CharField(max_length=LIL_STRING,blank=False)
     longName = models.CharField(max_length=BIG_STRING,blank=False)
     description = models.TextField(blank=True)
-    experimentID = models.CharField(max_length=LIL_STRING,blank=True)
+    experimentID = models.CharField(max_length=LIL_STRING,blank=False)
     calendar = MetadataForeignKey("Calendar",related_name="calendar")
     numericalRequirements = MetadataManyToManyField("NumericalRequirement",related_name="numericalRequirements")
 
@@ -472,7 +496,7 @@ class NumericalExperiment(Experiment):
         super(NumericalExperiment,self).__init__(*args,**kwargs)
         self.registerFieldType(FieldType("EXPERIMENT_DESCRIPTION","Experiment Description"),["shortName","longName","description","experimentID"])
         self.registerFieldType(FieldType("BASIC","Basic Properties"), ["calendar"])
-        self.registerFieldType(FieldType("REQUIREMENT","Experiment Requirements"), ["numericalRequirements"])
+        self.registerFieldType(FieldType("REQUIREMENT","Numerical Requirements"), ["numericalRequirements"])
 
 class TimeTransformation(MetadataModel):
     _name = "TimeTransformation"
@@ -578,7 +602,7 @@ class Simulation(NumericalActivity):
 
     _fieldsByType = {}
 
-    simulationID = models.CharField(max_length=BIG_STRING,blank=True)
+    simulationID = models.CharField(max_length=BIG_STRING,blank=False)
     calendar = MetadataForeignKey("Calendar",related_name="calendar")
     inputs = MetadataManyToManyField("Coupling",related_name="inputs")
     inputs.help_text="implemented as a mapping from a source to target; can be a forcing file, a boundary condition, etc."
@@ -590,7 +614,7 @@ class Simulation(NumericalActivity):
 
     def __init__(self,*args,**kwargs):
         super(Simulation,self).__init__(*args,**kwargs)
-        self.registerFieldType(FieldType("SIMULATION_DESCRIPTION","Simulation Description"), ["simulationID"])
+        self.registerFieldType(FieldType("SIMULATION_DESCRIPTION","Simulation Description"), ["simulationID","project","rationale"])        
         self.registerFieldType(FieldType("BASIC","Basic Properties"), ["calendar"])
         self.registerFieldType(FieldType("COUPLINGS","Inputs & Outputs"),["inputs","outputs","restarts"])
         self.registerFieldType(FieldType("CONFORMANCES","Conformances"), ["conformances"])
@@ -638,7 +662,7 @@ class SoftwareComponent(DataSource):
     license = models.CharField(max_length=BIG_STRING,blank=True)
     license.help_text = "the license held by this piece of software"
     # TODO: PROPERTIES (componentProperties, scientificProperties, numericalProperties)
-    responsibleParties = MetadataManyToManyField('ResponsibleParty',related_name="responsibleParties")
+    #responsibleParties = MetadataManyToManyField('ResponsibleParty',related_name="responsibleParties")
     releaseDate = models.DateField(null=True)
     releaseDate.help_text = "The date of publication of the software component code (as opposed to the date of publication of the metadata document, or the date of deployment of the model)"
     previousVersion = models.CharField(max_length=BIG_STRING,blank=True)
@@ -650,7 +674,7 @@ class SoftwareComponent(DataSource):
 
     def __init__(self,*args,**kwargs):
         super(SoftwareComponent, self).__init__(*args, **kwargs)
-        self.registerFieldType(FieldType("BASIC","Basic Properties"),["embedded","couplingFramework","license","responsibleParties","releaseDate","componentLanguage","fundingSource","previousVersion"])
+        self.registerFieldType(FieldType("BASIC","Basic Properties"),["embedded","couplingFramework","license","releaseDate","componentLanguage","fundingSource","previousVersion"])
         self.registerFieldType(FieldType("MODEL_DESCRIPTION","Component Description"),["shortName","longName","description", "citations", "onlineResource"])
 
 
@@ -793,6 +817,7 @@ try:
     TimeMappingType_enumeration.loadEnumerations()
     ConformanceType_enumeration.loadEnumerations()
     FrequencyType_enumeration.loadEnumerations()
+    LogicalRelationshipType_enumeration.loadEnumerations()
 except:
     # this will fail on syncdb; once I move to South, it won't matter
     pass

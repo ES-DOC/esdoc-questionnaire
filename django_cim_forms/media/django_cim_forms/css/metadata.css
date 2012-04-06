@@ -18,6 +18,8 @@
 
 #metadata .field { display: block; margin-top: 12px; }
 
+#metadata .field * { vertical-align: top; }
+
 #metadata .help-button { display: inline; }
 #metadata .help-button .help-description { display: none !important; }
 

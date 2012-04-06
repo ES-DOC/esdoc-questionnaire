@@ -12,9 +12,15 @@
 (function($) {
 	function hideFieldsetContent(obj, options){
 		if(options.animation==true)
-			obj.find('div').slideUp(options.speed);
+                    /* MODIFIED BY AT */
+                        // no need to hide help buttons,
+                        // since they form part of the legend
+			//obj.find('div').slideUp(options.speed);
+                        obj.find('div:not(.help-button)').slideUp(options.speed);
 		else
-			obj.find('div').hide();
+			//obj.find('div').hide();
+                        obj.find('div:not(.help-button)').hide();
+                    /* END MODIFIED BY AT */
 		
 		obj.removeClass("expanded");
 		obj.addClass("collapsed");

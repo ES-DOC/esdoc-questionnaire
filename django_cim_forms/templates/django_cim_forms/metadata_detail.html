@@ -310,7 +310,7 @@
 
      <p>
         <i>
-            Use this form to create or modify an instance of {{ form|getModelTitle }} metadata.  Fill out the fields on each tab.  When you have finished, click the "submit" buttom at the bottom of the page.
+            Use this form to create or modify an instance of {{ form|getModelTitle }} metadata.  Fill out the fields on each tab.  Fields with bold labels are required.  When you have finished, click the "submit" buttom at the bottom of the page.
         </i>
     </p>
 
@@ -335,7 +335,18 @@
                                     {% if form|isInSubForms:field %}
                                     
                                         <fieldset class="coolfieldset">
-                                            <legend title="click to show/hide content"> {{ field.name }} </legend>
+                                            <legend title="click to show/hide content">
+                                                    {% if field.help_text %}
+                                                    <div class="help-button" title="click for more info" id="{{form.getName}}_{{field.auto_id}}">
+                                                        <!-- JQuery ui-icons are handled via <spans>; weird, I know -->
+                                                        <span class="default-help-icon ui-icon-info" style="display: inline-block;">&nbsp;</span>
+                                                        <div class="help-description" title="{{ field.name|escape }}">
+                                                            {{ field.help_text|safe }} {# the safe filter prevents inline HTML from being escaped  #}
+                                                        </div> <!-- /.help-description -->
+                                                    </div> <!-- /.help-button -->                                                    
+                                                {% endif %} {# /field.help_text #}
+                                                {{ field.name }}
+                                            </legend>
                                             <div class="coolfieldset-content">
 
                                                <div class="hidden">
@@ -346,19 +357,7 @@
                                                     <span class="current_field">{{field.name}}</span>
                                                 </div>
 
-                                               {# TODO: IS THIS OVERKILL? #}
-                                               {# SHOULD I JUST DISPLAY field.help_text HERE? #}
-                                               {% if field.help_text %}
-                                                    <div class="help-button" title="click for more info" id="{{form.getName}}_{{field.auto_id}}">
-                                                        <!-- JQuery ui-icons are handled via <spans>; weird, I know -->
-                                                        <span class="default-help-icon ui-icon-info" style="display: inline-block;">&nbsp;</span>
-                                                        <div class="help-description" title="{{ field.name|escape }}">
-                                                            {{ field.help_text|safe }} {# the safe filter prevents inline HTML from being escaped  #}
-                                                        </div> <!-- /.help-description -->
-                                                    </div> <!-- /.help-button -->
-                                                    <i>(this is probably overkill; I should just show the help_text directly)</i>
-                                                {% endif %} {# /field.help_text #}
-
+                                           
 
                                                {% with subForm=field|getSubForm:form %}
                                                     {% with subFormType=subForm|getSubFormType %}

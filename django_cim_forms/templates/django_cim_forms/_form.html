@@ -11,7 +11,18 @@
         {% if form|isInSubForms:field %}
 
             <fieldset class="coolfieldset">
-                <legend title="click to show/hide content"> {{ field.name }} </legend>
+                <legend title="click to show/hide content">
+                    {% if field.help_text %}
+                        <div class="help-button" title="click for more info" id="{{form.getName}}_{{field.auto_id}}">
+                            <!-- JQuery ui-icons are handled via <spans>; weird, I know -->
+                            <span class="default-help-icon ui-icon-info" style="display: inline-block;">&nbsp;</span>
+                            <div class="help-description" title="{{ field.name|escape }}">
+                                {{ field.help_text|safe }} {# the safe filter prevents inline HTML from being escaped  #}
+                            </div> <!-- /.help-description -->
+                        </div> <!-- /.help-button -->
+                    {% endif %} {# /field.help_text #}
+                    {{ field.name }}
+                </legend>
                 <div class="coolfieldset-content">
 
                     <div class="hidden">
@@ -23,18 +34,6 @@
                     </div>
 
                     {{ form.errors}}
-
-                   {# TODO: IS THIS OVERKILL? #}
-                   {# SHOULD I JUST DISPLAY field.help_text HERE? #}
-                   {% if field.help_text %}
-                        <div class="help-button" title="click for more info" id="{{form.getName}}_{{field.auto_id}}">
-                            <!-- JQuery ui-icons are handled via <spans>; weird, I know -->
-                            <span class="default-help-icon ui-icon-info" style="display: inline-block;">&nbsp;</span>
-                            <div class="help-description" title="{{ field.name|escape }}">
-                                {{ field.help_text|safe }} {# the safe filter prevents inline HTML from being escaped  #}
-                            </div> <!-- /.help-description -->
-                        </div> <!-- /.help-button -->
-                    {% endif %} {# /field.help_text #}
 
                     {% with subForm=field|getSubForm:form %}
                         {% with subFormType=subForm|getSubFormType %}
