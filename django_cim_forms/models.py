@@ -55,22 +55,25 @@ class MetadataCVField_bak(models.ManyToManyField):
 class _MetadataCVWidget(django.forms.widgets.MultiWidget):
     def __init__(self,*args,**kwargs):
 
-        shortName = kwargs.pop("shortName",None)
-        longName = kwargs.pop("longName",None)
-        value_choices = kwargs.pop("values",[])
+        self.shortName = kwargs.pop("shortName",None)
+        self.longName = kwargs.pop("longName",None)
+        self.value_choices = kwargs.pop("values",[])
         widgets = (
-            django.forms.fields.TextInput(),
-            django.forms.fields.TextInput(),
-            django.forms.fields.Select(choices=value_choices),
+            django.forms.fields.TextInput(attrs={'readonly':'readonly'}),
+            django.forms.fields.TextInput(attrs={'readonly':'readonly'}),
+            django.forms.fields.Select(choices=self.value_choices),
         )
 
+        
         super(_MetadataCVWidget, self).__init__(widgets,*args,**kwargs)        
 
     # TODO: CHECK THIS
     def decompress(self, value):
+        print "DECOMPRESS"
+        print value
         if value:
-            return value.split(':::')[0:2]
-        return ['', '']
+            return [value,None,None]
+        return [self.shortName,self.longName,None]
 
 
 class _MetadataCVFormField(django.forms.fields.MultiValueField):
@@ -78,16 +81,17 @@ class _MetadataCVFormField(django.forms.fields.MultiValueField):
     
     def __init__(self,*args,**kwargs):
         self.cv = kwargs.pop("cv",None)
-        self.cv_model=self.cv.objects.get(pk=20)
+        shortName = ""
+        longName = ""
+        value_choices = []
+        try:
+            self.cv_model=self.cv.objects.get(pk=18)
+            shortName = self.cv_model.shortName
+            longName = self.cv_model.longName
+            value_choices = self.cv_model.values
+        except DatabaseError:
+            print "YOU MESSED UP!"
 
-        shortName = self.cv_model.shortName
-        longName = self.cv_model.longName
-        value_choices = self.cv_model.values
-
-        print shortName
-        print longName
-        print value_choices
-        
         fields = (
             django.forms.fields.CharField(label="short name",initial=shortName),    # CV property: shortName
             django.forms.fields.CharField(label="long name",initial=longName),      # CV property: longName
@@ -99,6 +103,7 @@ class _MetadataCVFormField(django.forms.fields.MultiValueField):
 
     # TODO: CHECK THIS
     def compress(self, data_list):
+        print "COMPRESS"
         if data_list:
             data = { "shortName" : data_list[0], "longName" : data_list[1], "value" : data_list[2]}
             #return join data somehow into a string
@@ -122,7 +127,46 @@ class MetadataCVField(models.Field):
 
     def get_internal_type(self):
         return 'MetadataCVField'
-        
+
+class MetadataEnablerField(models.BooleanField):
+
+    _fieldsToEnable = []
+    _startEnabled = False
+
+    def __init__(self,*args,**kwargs):
+        fieldsToEnable = kwargs.pop("fields",None)
+        startEnabled = kwargs.pop("startEnabled",False)
+        super(MetadataEnablerField,self).__init__(*args,**kwargs)
+        self._fieldsToEnable = fieldsToEnable
+        self._startEnabled = startEnabled
+
+    def getFieldsToEnable(self):
+        return self._fieldsToEnable
+
+    def getStartEnabled(self):
+        return self._startEnabled
+      
+
+
+class MetadataDocumentField(models.ManyToManyField):
+
+    _app_name = ""
+    _model_name = ""
+
+    def __init__(self,*args,**kwargs):
+        appName = kwargs.pop("appName","django_cim_forms")
+        modelName = kwargs.pop("modelName",None)
+        if not modelName:
+            raise MetadataError("you must specify the appName and modelName for a MetadataDocumentField")
+        super(MetadataDocumentField,self).__init__(*args,**kwargs)
+        self._app_name = appName.lower()
+        self._model_name = modelName.lower()
+
+    def getAppName(self):
+        return self._app_name
+
+    def getModelName(self):
+        return self._model_name
 class MetadataManyToManyField(models.ManyToManyField):
     
     def __init__(self,*args,**kwargs):
@@ -173,7 +217,8 @@ class MetadataModel(models.Model):
     class Meta:
         abstract = True
 
-    _name = ""  # the name of the model class
+
+    _name = ""  # the name of the model class; THIS MUST BE UNIQUE!
     _title = "" # the title (to display) of the model class
 
     _fieldTypes = EnumeratedTypeList([])
@@ -340,6 +385,11 @@ class FrequencyType_enumeration(MetadataEnumeration):
 class LogicalRelationshipType_enumeration(MetadataEnumeration):
     _enum = ['AND','OR','XOR']
 
+class DataStatusType_enumeration(MetadataEnumeration):
+    _enum = ['complete','metadataOnly','continuouslySupplemented']
+    
+class DataHierarchyType_enumeration(MetadataEnumeration):
+    _enum = ['run','stream','institute','model','product','experiment','frequency','realm','variable','ensembleMember']
 #####
 
 
@@ -355,6 +405,48 @@ class DataSource(MetadataModel):
         super(DataSource, self).__init__(*args, **kwargs)
         self.registerFieldType(FieldType("BASIC","Basic Properties"),["purpose"])
 
+class ComponentProperty(MetadataModel):
+    # a ComponentProperty is a special type of model
+    # it is bound to a CV
+
+    class Meta:
+        abstract = True
+
+    _name = "ComponentProperty"
+    _title = "Component Property"
+
+    _fieldsByType = {}
+
+    cv = None
+
+    shortName = models.CharField(max_length=BIG_STRING,blank=False)
+    longName  = models.CharField(max_length=BIG_STRING,blank=True)
+    value = models.CharField(max_length=BIG_STRING,blank=True,null=True)
+
+    def __unicode__(self):
+        name = u'%s' % self.getTitle()
+        if self.longName:
+            name = u'%s' % self.longName
+        elif self.shortName:
+            name = u'%s' % self.shortName
+        if self.value:
+            name = u'%s: %s' % (name,self.value)
+        return name
+
+    def __init__(self,*args,**kwargs):
+        cv = kwargs.pop("cv",None)
+        super(ComponentProperty, self).__init__(*args, **kwargs)
+        self.registerFieldType(FieldType("BASIC","Basic Properties"),["shortName","longName","value"])
+
+        self._meta.get_field_by_name("shortName")[0].default = cv.shortName
+        self._meta.get_field_by_name("longName")[0].default = cv.longName
+        self._meta.get_field_by_name("value")[0]._choices = cv.values
+        self._meta.get_field_by_name("value")[0].widget = django.forms.Select()
+
+
+
+
+    
 
 class Activity(MetadataModel):
     class Meta:
@@ -409,16 +501,22 @@ class DataObject(DataSource):
 
     _fieldsByType = {}
 
-    fileName = models.CharField(max_length=BIG_STRING,blank=False)
-    
+    dataStatus = MetadataEnumerationField(enumeration=DataStatusType_enumeration,open=False,blank=True)
+    dataStatus.help_text = "The current status of the data - is it complete, or is this metadata description all that is available, or is the data continuously supplemented."
+    acronym = models.CharField(max_length=LIL_STRING,blank=False)
+    description = models.TextField(blank=True)
+    hierarchyLevelName = MetadataEnumerationField(enumeration=DataHierarchyType_enumeration,open=True,blank=True)
+    hierarchyLevelName.help_text = "What level in the data hierarchy (constructed by the self-referential parent/child aggregations) is this DataObject."
+
+
     def __init__(self, *args, **kwargs):
         super(DataObject, self).__init__(*args, **kwargs)
-        self.registerFieldType(FieldType("BASIC","Basic Properties"),["fileName"])
+        self.registerFieldType(FieldType("BASIC","Basic Properties"),["dataStatus","acronym","description","hierarchyLevelName"])
 
     def __unicode__(self):
         name = self.getName()
-        if self.fileName:
-            name = u'%s: %s' % (name, self.fileName)
+        if self.acronym:
+            name = u'%s: %s' % (name, self.acronym)
         return name
 
 class NumericalActivity(Activity):
@@ -459,34 +557,61 @@ class NumericalRequirement(MetadataModel):
     name = models.CharField(max_length=BIG_STRING,blank=False)
     type = MetadataEnumerationField(enumeration=NumericalRequirementType_enumeration,open=False)
     description = models.TextField()
-    requirementOption = MetadataForeignKey("RequirementOption",related_name="requirementOption")
-    sources = models.ManyToManyField("DataSource",blank=True,null=True)
+    sources = MetadataDocumentField("DataObject",modelName="dataobject",blank=True,null=True)
     sources.help_text = None
 
     def __init__(self,*args,**kwargs):
         super(NumericalRequirement,self).__init__(*args,**kwargs)
-        self.registerFieldType(FieldType("BASIC","Basic Properties"), ["requirementId","name","type","description","requirementOption","sources"])
+        self.registerFieldType(FieldType("BASIC","Basic Properties"), ["requirementId","name","type","description","sources"])
 
     def __unicode__(self):
         name = u'Requirement'
         if self.type:
-            name = u'%s: %s' % (name, self.type)
+            name = u'%s (%s)' % (name, self.type)
         if self.name:
-            name = u'%s: %s' % (name, self.name)
+            name = u'%s: "%s"' % (name, self.name)
         return name
+
+class CompositeNumericalRequirement(NumericalRequirement):
+    _name = "CompositeNumericalRequirement"
+    _title = "Numerical Requirement"
+
+    _fieldsByType = {}
+
+
+    isComposite = MetadataEnablerField(fields=["requirementOptions","sources"])
+    isComposite.help_text = "is this requirement composed of other child requirements?"
+
+    requirementOptions = MetadataManyToManyField("RequirementOption",related_name="requirementOptions")
+    #requirementOptions.verbose_name = "sub-requirements"
+
+    def __init__(self,*args,**kwargs):
+        super(NumericalRequirement,self).__init__(*args,**kwargs)
+        self.registerFieldType(FieldType("BASIC","Basic Properties"), ["isComposite","requirementOptions"])
+
 
 class RequirementOption(MetadataModel):
     _name = "RequirementOption"
     _title = "Requirement Option"
+
     _fieldsByType = {}
+
     optionRelationship = MetadataEnumerationField(enumeration=LogicalRelationshipType_enumeration,open=False)
     optionRelationship.help_text = "Describes how this optional (child) requirement is related to its sibling requirements.  For example, a NumericalRequirement could consist of a set of optional requirements each with an \"OR\" relationship meaning use this boundary condition _or_ that one."
-    requirements = models.ManyToManyField("NumericalRequirement",related_name="requirements")
-    requirements.help_text = "A NumericalRequirement that is being used as a set of related requirements; For example if a requirement is to use 1 of 3 boundary conditions, then that \"parent\" requirement would have three \"child\" RequirmentOptions (each of one with the XOR optionRelationship)."
+    requirement = MetadataForeignKey("NumericalRequirement",related_name="requirement")
+    requirement.help_text = "A NumericalRequirement that is being used as a set of related requirements; For example if a requirement is to use 1 of 3 boundary conditions, then that \"parent\" requirement would have three \"child\" RequirmentOptions (each of one with the XOR optionRelationship)."
+
+    def __unicode__(self):
+        name = u'Requirement Option'
+        if self.optionRelationship:
+            name = u'%s: %s' % (name, self.type)
+        if self.requirement:
+            name = u'%s: %s' % (name, self.requirement)
+        return name
 
     def __init__(self,*args,**kwargs):
         super(RequirementOption,self).__init__(*args,**kwargs)
-        self.registerFieldType(FieldType("BASIC","Basic Properties"), ["optionRelationship","requirements"])
+        self.registerFieldType(FieldType("BASIC","Basic Properties"), ["optionRelationship","requirement"])
 
 class NumericalExperiment(Experiment):
     _name = "NumericalExperiment"
@@ -499,7 +624,7 @@ class NumericalExperiment(Experiment):
     description = models.TextField(blank=True)
     experimentID = models.CharField(max_length=LIL_STRING,blank=False)
     calendar = MetadataForeignKey("Calendar",related_name="calendar")
-    numericalRequirements = MetadataManyToManyField("NumericalRequirement",related_name="numericalRequirements")
+    numericalRequirements = MetadataManyToManyField("CompositeNumericalRequirement",related_name="numericalRequirements")
 
     def __init__(self,*args,**kwargs):
         super(NumericalExperiment,self).__init__(*args,**kwargs)
@@ -671,7 +796,7 @@ class SoftwareComponent(DataSource):
     license = models.CharField(max_length=BIG_STRING,blank=True)
     license.help_text = "the license held by this piece of software"
     # TODO: PROPERTIES (componentProperties, scientificProperties, numericalProperties)
-    #responsibleParties = MetadataManyToManyField('ResponsibleParty',related_name="responsibleParties")
+    responsibleParties = MetadataManyToManyField('ResponsibleParty',related_name="responsibleParties")
     releaseDate = models.DateField(null=True)
     releaseDate.help_text = "The date of publication of the software component code (as opposed to the date of publication of the metadata document, or the date of deployment of the model)"
     previousVersion = models.CharField(max_length=BIG_STRING,blank=True)
@@ -683,8 +808,8 @@ class SoftwareComponent(DataSource):
 
     def __init__(self,*args,**kwargs):
         super(SoftwareComponent, self).__init__(*args, **kwargs)
-        self.registerFieldType(FieldType("BASIC","Basic Properties"),["embedded","couplingFramework","license","releaseDate","componentLanguage","fundingSource","previousVersion"])
-        self.registerFieldType(FieldType("MODEL_DESCRIPTION","Component Description"),["shortName","longName","description", "citations", "onlineResource"])
+        self.registerFieldType(FieldType("BASIC","Basic Properties"),["couplingFramework","license","releaseDate","componentLanguage","citations", "onlineResource","fundingSource","previousVersion","responsibleParties"])
+        self.registerFieldType(FieldType("MODEL_DESCRIPTION","Component Description"),["shortName","longName","description", "embedded",])
 
 
 class ResponsibleParty(MetadataModel):
@@ -827,6 +952,8 @@ try:
     ConformanceType_enumeration.loadEnumerations()
     FrequencyType_enumeration.loadEnumerations()
     LogicalRelationshipType_enumeration.loadEnumerations()
+    DataStatusType_enumeration.loadEnumerations()
+    DataHierarchyType_enumeration.loadEnumerations()
 except:
     # this will fail on syncdb; once I move to South, it won't matter
     pass

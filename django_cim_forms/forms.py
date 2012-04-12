@@ -1,5 +1,6 @@
 import sys
 import inspect
+from django.utils.datastructures import SortedDict
 
 # module imports
 
@@ -72,7 +73,19 @@ def customize_metadata_widgets(field):
         if field.isOpen():
             formfield.widget.attrs.update({"class" : "editable"})
     if isinstance(field,MetadataCVField):
-        print "found a cv; what now?"
+        pass
+    if isinstance(field,MetadataEnablerField):
+        java_string = "toggleFields([%s])" % ",".join([u'"%s"'%f for f in field.getFieldsToEnable()])
+        formfield.widget.attrs.update({"onclick" : java_string})
+        if not field.getStartEnabled():
+            formfield.widget.attrs.update({"class" : "enabler start-disabled"})
+        else:
+            formfield.widget.attrs.update({"class" : "enabler start-enabled"})
+    if isinstance(field,MetadataDocumentField):
+        formfield.widget.attrs.update({"class" : "adder"})
+        formfield.widget.attrs.update({"title": u'%s/%s'%(field.getAppName(),field.getModelName())})
+
+        
     # TODO: other if branches for other field types?
     
     return formfield
@@ -85,6 +98,9 @@ class MetadataForm(ModelForm):
 
     _subFormType = SubFormTypes.FORM
 
+    _fieldOrder = ()
+    _ordered = False
+    
     _subForms = {}      # a form can have subforms
     _request = None     # those subforms need to have HTTP requests passed to them
 
@@ -126,11 +142,30 @@ class MetadataForm(ModelForm):
     def __init__(self,*args,**kwargs):
         self._request = kwargs.pop('request', None)
         super(MetadataForm,self).__init__(*args,**kwargs)
+
         self._id = self.instance.id
         self._guid = self.instance.guid
 
-        for key,value in self.getAllSubForms().iteritems():
+        if self._fieldOrder and not self._ordered:
+            # going to re-order the fields...
+            # (if you do this, then any fields that aren't specified will not be displayed)
+            tmpFields = self.fields.copy()
+            self.fields = SortedDict()
+            for field in self._fieldOrder:
+                self.fields[field] = tmpFields[field]
+            self._ordered = True
+
+        # because there are no forward declarations in Python,
+        # double-check that all subforms have been set properly
+        for key,value in self._subForms.iteritems():
+            if isinstance(value,basestring):
+                self._subForms[key] = PotentialSubForms[value]
+                print "%s in %s was still set to %s; it is now set to %s" % (key,self.getName(),value,self._subForms[key])
+                
+                
+        for key,value in self.getAllSubForms().iteritems():                
         #for key,value in self._subForms.iteritems():
+        
             subFormType = value[0]
             subFormClass = value[1]
 
@@ -140,8 +175,11 @@ class MetadataForm(ModelForm):
                 # so I have to _call_ it in order to access the subForm
                 qs = subFormClass.form().Meta.model.objects.none()
                 try:
+                    print "TRYING TO GET QUERYSET FOR %s FROM %s" % (key,self.instance)
                     qs = getattr(self.instance,key,None).all()
-                except ValueError:
+                except ValueError,AttributeError:
+                    # TODO: this doesn't seem to be catching the possible error if the form is malformed?
+                    print "failed to get queryset"
                     pass
 
                 if self._request and self._request.method == "POST":
@@ -299,15 +337,24 @@ def MetadataFormFactory(ModelClass,*args,**kwargs):
     # the remaining kwargs can be passed into the constructor as needed
     _form = modelform_factory(ModelClass,**kwargs)
     if fieldOrder:
-        #_form.fields.keyOrder = fieldOrder
-        #_form.Meta.fields = fieldOrder
-        #_form.meta.fields = fieldOrder
-        # TODO: I AM HERE; REORDER THE FIELDS
-        pass
+        # the presence of this attribute
+        # indicates that the form's fields have a custom order
+        # which gets implemented in the __init__ fn
+        _form._fieldOrder = fieldOrder
     _form._name = name
     _form._subForms = {} # reset any existing subForms...
     for key,value in subForms.iteritems():
-        _form._subForms[key] = PotentialSubForms[value]
+        try:
+            _form._subForms[key] = PotentialSubForms[value]
+            if key == "requirementOptions":
+                print "SUCCESS: subform[%s] equals %s" % (key,_form._subForms[key])
+        except KeyError:
+            # no forward declarations in Python
+            # I'll try setting this in the __init__ fn
+            _form._subForms[key] = value
+            print "FAILED; subform[%s] still equals %s" % (key,_form._subForms[key])
+            print type(value)
+            pass
     return _form
 
 @PotentialSubForm(SubFormTypes.FORMSET)
@@ -329,6 +376,17 @@ def MetadataFormSetFactory(ModelClass,FormClass,*args,**kwargs):
 #@PotentialSubForm(SubFormTypeList.INLINE_FORMSET)
 #def MetadataInlineFormSetFactory(SourceModelClass,TargetModelClass,FormClass,*args,**kwargs):
 #    pass
+
+class ComponentProperty_form(MetadataForm):
+    class Meta:
+        model = ComponentProperty
+        widgets = {
+            'shortName' : django.forms.fields.TextInput(attrs={'readonly':'readonly'}),
+            'longName' : django.forms.fields.TextInput(attrs={'readonly':'readonly'}),
+            'value' : django.forms.fields.Select(),
+        }
+        
+    pass
 
 ##########################################
 # the non-abstract forms used by the CIM #
@@ -401,12 +459,16 @@ SimulationRun_formset = MetadataFormSetFactory(SimulationRun,SimulationRun_form,
 Experiment_form = MetadataFormFactory(Experiment,name="Experiment_form")
 Experiment_formset = MetadataFormSetFactory(Experiment,Experiment_form,name="Experiment_formset")
 
-RequirementOption_form = MetadataFormFactory(RequirementOption,name="RequirementOption_form")
-RequirementOption_formset = MetadataFormSetFactory(RequirementOption,RequirementOption_form,name="RequirementOption_formset")
 
-NumericalRequirement_form = MetadataFormFactory(NumericalRequirement,name="NumericalRequirement_form",subForms={"requirementOption":"RequirementOption_form"})
+NumericalRequirement_form = MetadataFormFactory(NumericalRequirement,name="NumericalRequirement_form",reorder=("type","requirementId","name","description","sources"))
 NumericalRequirement_formset = MetadataFormSetFactory(NumericalRequirement,NumericalRequirement_form,name="NumericalRequirement_formset")
 
 
-NumericalExperiment_form = MetadataFormFactory(NumericalExperiment,name="NumericalExperiment_form",subForms={"calendar":"Calendar_form","numericalRequirements":"NumericalRequirement_formset","responsibleParties":"ResponsibleParty_formset"})
+RequirementOption_form = MetadataFormFactory(RequirementOption,name="RequirementOption_form",subForms={"requirement":"NumericalRequirement_form"})
+RequirementOption_formset = MetadataFormSetFactory(RequirementOption,RequirementOption_form,name="RequirementOption_formset")
+
+CompositeNumericalRequirement_form = MetadataFormFactory(CompositeNumericalRequirement,name="CompositeNumericalRequirement_form",subForms={"requirementOptions":"RequirementOption_formset"},reorder=("type","requirementId","name","description","isComposite","requirementOptions","sources"))
+CompositeNumericalRequirement_formset = MetadataFormSetFactory(CompositeNumericalRequirement,CompositeNumericalRequirement_form,name="CompositeNumericalRequirement_formset")
+
+NumericalExperiment_form = MetadataFormFactory(NumericalExperiment,name="NumericalExperiment_form",subForms={"calendar":"Calendar_form","numericalRequirements":"CompositeNumericalRequirement_formset","responsibleParties":"ResponsibleParty_formset"})
 NumericalExperiment_formset = MetadataFormSetFactory(NumericalExperiment,NumericalExperiment_form,name="NumericalExperiment_formset")

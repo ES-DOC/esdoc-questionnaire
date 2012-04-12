@@ -66,6 +66,7 @@ class MetadataEnumeration(models.Model):
 
     class Meta:
         abstract = True
+        #order_with_respect_to = 'name'
 
     def __unicode__(self):
         return u'%s' % self.name
@@ -73,6 +74,7 @@ class MetadataEnumeration(models.Model):
     @classmethod
     def loadEnumerations(cls,*args,**kwargs):
         enum = kwargs.pop("enum",cls._enum)
+        enum.sort()
         for name in enum:
             cls.objects.get_or_create(name=name)
 #######

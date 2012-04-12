@@ -169,6 +169,38 @@
         /* enable collapsible fieldsets */
         $(".coolfieldset").coolfieldset({speed:"fast"});
 
+        /* enable fields that show/hide other fields */
+        $(".enabler, start-disabled").each(function() {            
+            $(this).trigger('click');
+        });
+
+        /* enable manytomanyfields */
+        $(".adder").each(function() {
+            var url = location.protocol+"//"+location.hostname+(location.port ? ":"+location.port : "")+"/metadata/"+$(this).attr("title");
+            var button = $("<button type='button' title='add a new item'>add</button>");
+            button.css("margin-left","6px");
+            button.button({
+                icons: { primary: "ui-icon-circle-plus" },
+                text: false,
+            }).click(function() {
+                var confirmDialog = "<div><p><span class='ui-icon ui-icon-alert' style='float:left;'></span>Please ensure your work is saved before proceeding</p></div>";
+                $(confirmDialog).dialog({
+                    modal: true,
+                    buttons: {
+                        "Proceed": function() {                          
+                            $(this).dialog("close");
+                            window.location = url;
+                        },
+                        "Cancel": function() {
+                            $(this).dialog("close");
+                        }
+                    }
+
+                });
+            });
+            $(this).after(button);
+        });
+        
         /* enable calendar widgets */
         $(".datepicker").datepicker(
             { changeYear : true, showButtonPanel : true, showOn : 'button', buttonImage : '{{ MEDIA_URL }}/django_cim_forms/img/calendar.gif' }
@@ -310,7 +342,7 @@
 
      <p>
         <i>
-            Use this form to create or modify an instance of {{ form|getModelTitle }} metadata.  Fill out the fields on each tab.  Fields with bold labels are required.  When you have finished, click the "submit" buttom at the bottom of the page.
+            Use this form to create or modify an instance of {{ form|getModelTitle }} metadata.  Fill out the fields on each tab.  <b>Fields or subforms with bold labels are required.</b>  When you have finished, click the "submit" buttom at the bottom of the page.
         </i>
     </p>
 
@@ -334,7 +366,7 @@
                                 {% if field.name in fieldsOfType %}
                                     {% if form|isInSubForms:field %}
                                     
-                                        <fieldset class="coolfieldset">
+                                        <fieldset class="coolfieldset" name="{{field.name}}">
                                             <legend title="click to show/hide content">
                                                     {% if field.help_text %}
                                                     <div class="help-button" title="click for more info" id="{{form.getName}}_{{field.auto_id}}">

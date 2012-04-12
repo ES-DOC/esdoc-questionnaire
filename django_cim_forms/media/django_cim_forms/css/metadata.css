@@ -16,6 +16,9 @@
 #metadata fieldset { border: 2px solid #B9E0E3; padding: 0.5em; margin-right: 1.0em; margin-top: 1.0em; margin-bottom: 1.0em; margin-left: 0px; }
 #metadata fieldset legend { color: #358C92; font-size: 90%; padding-left: 13px; padding-right: 0.5em; }
 
+#metadata fieldset.required { border: 2px solid #000000; }
+#metadata fieldset.required legend { color: #000000; }
+
 #metadata .field { display: block; margin-top: 12px; }
 
 #metadata .field * { vertical-align: top; }
