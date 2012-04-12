@@ -345,15 +345,11 @@ def MetadataFormFactory(ModelClass,*args,**kwargs):
     _form._subForms = {} # reset any existing subForms...
     for key,value in subForms.iteritems():
         try:
-            _form._subForms[key] = PotentialSubForms[value]
-            if key == "requirementOptions":
-                print "SUCCESS: subform[%s] equals %s" % (key,_form._subForms[key])
+            _form._subForms[key] = PotentialSubForms[value]        
         except KeyError:
             # no forward declarations in Python
             # I'll try setting this in the __init__ fn
             _form._subForms[key] = value
-            print "FAILED; subform[%s] still equals %s" % (key,_form._subForms[key])
-            print type(value)
             pass
     return _form
 

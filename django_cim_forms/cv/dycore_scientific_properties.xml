@@ -1,450 +1,1125 @@
-<?xml version="1.0" encoding="UTF-8"?>
 <cv>
-    <item>
-        <shortName>equations_of_motion</shortName>
-        <longName>equations of motion</longName>
-        <values>
-            <value>
-                <shortName>shallow_atmosphere</shortName>
-                <longName>shallow atmosphere, hydrostatic</longName>
-            </value>
-            <value>
-                <shortName>deep_atmosphere</shortName>
-                <longName>deep atmosphere, non-hydrostatic</longName>
-            </value>
-        </values>
-    </item>
-    <item>
-        <shortName>numerical_method</shortName>
-        <longName>numerical method</longName>
-        <values>
-            <value>
-                <shortName>spectral_transform</shortName>
-                <longName>spectral transform, Eulerian</longName>
-            </value>
-            <value>
-                <shortName>finite_volume</shortName>
-                <longName>fine volume with Eulerian with semi-Lagrangian extension in longitudinal direction</longName>
-            </value>
-            <value>
-                <shortName>finite_difference</shortName>
-                <longName>finite difference Eulerian</longName>
-            </value>
-            <value>
-                <shortName>finite_volume</shortName>
-                <longName>finite volume Eulerian</longName>
-            </value>
-            
-        </values>
-    </item>
-    <item>
-        <shortName>spatial_approximation</shortName>
-        <longName>spatial approximation</longName>
-        <values>
-            <value>
-                <shortName>spectral</shortName>
-                <longName>spectral</longName>
-            </value>
-            <value>
-                <shortName>trianglular_truncation</shortName>
-                <longName>triangular truncation</longName>
-            </value>
-            <value>
-                <shortName>quadratic_transform_grid</shortName>
-                <longName>quadtratic transform grid</longName>
-            </value>            
-            <value>
-                <shortName>piecewise_parabolic_method</shortName>
-                <longName>picewise parabolic method (PPM) by Coella and Woodward</longName>
-            </value>
-            <value>
-                <shortName>third_order_finite_differences</shortName>
-                <longName>third order finite differences</longName>
-            </value>                        
-            <value>
-                <shortName>second_order_finite_differences</shortName>
-                <longName>second order finite differences</longName>
-            </value>
-            <value>
-                <shortName>hybrid_piecewise_parabolic_method</shortName>
-                <longName>hybrid form of the picewise parabolic method (PPM) by Coella and Woodward</longName>
-            </value>
-            <value>
-                <shortName>second_order_centered_differences</shortName>
-                <longName>second order centered differences for mass/momentum flux and pressure gradient force</longName>
-            </value>            
-            <value>
-                <shortName>second_order</shortName>
-                <longName>second order</longName>
-            </value>
-            <value>
-                <shortName>piecewise_co_polynomials</shortName>
-                <longName>picewise CO polynomials (fourth order)</longName>
-            </value>
-            <value>
-                <shortName>centered_finite_differences</shortName>
-                <longName>centered finite differences</longName>
-            </value>
-            <value>
-                <shortName>second_order_crowly</shortName>
-                <longName>second order Crowley-type method</longName>
-            </value>            
-        </values>
-    </item>
-    <item>
-        <shortName>advection_scheme</shortName>
-        <longName>advection scheme</longName>
-        <values>
-            <value>
-                <shortName>spectral_transform</shortName>
-                <longName>spectral transform</longName>
-            </value>
-        </values>
-    </item>
-    <item>
-        <shortName>conservation_size</shortName>
-        <longName>conservation type</longName>
-        <values>
-            <value>
-                <shortName>pretend_val_one</shortName>
-                <longName>pretend val one</longName>
-            </value>
-            <value>
-                <shortName>pretend_val_two</shortName>
-                <longName>pretend val two</longName>
-            </value>
-            </values>
-    </item>
-    <item>
-        <shortName>conservation_fixers</shortName>
-        <longName>conservation fixers (a posteriori)</longName>
-        <values>
-            <value>
-                <shortName>pretend_val_one</shortName>
-                <longName>pretend val one</longName>
-            </value>
-            <value>
-                <shortName>pretend_val_two</shortName>
-                <longName>pretend val two</longName>
-            </value>
-        </values>            
-    </item>
-    <item>
-        <shortName>time_stepping</shortName>
-        <longName>time stepping</longName>
-        <values>
-            <value>
-                <shortName>pretend_val_one</shortName>
-                <longName>pretend val one</longName>
-            </value>
-            <value>
-                <shortName>pretend_val_two</shortName>
-                <longName>pretend val two</longName>
-            </value>
-        </values>
-    </item>
-    <item>
-        <shortName>time_step_size</shortName>
-        <longName>time step size</longName>
-        <values>
-            <value>
-                <shortName>pretend_val_one</shortName>
-                <longName>pretend val one</longName>
-            </value>
-            <value>
-                <shortName>pretend_val_two</shortName>
-                <longName>pretend val two</longName>
-            </value>
-        </values>
-    </item>
-    <item>
-        <shortName>temporal_approximation</shortName>
-        <longName>temporal approximation</longName>
-        <values>
-            <value>
-                <shortName>pretend_val_one</shortName>
-                <longName>pretend val one</longName>
-            </value>
-            <value>
-                <shortName>pretend_val_two</shortName>
-                <longName>pretend val two</longName>
-            </value>
-        </values> 
-    </item>
-    <item>
-        <shortName>temporal_filter</shortName>
-        <longName>temporal filter</longName>
-        <values>
-            <value>
-                <shortName>pretend_val_one</shortName>
-                <longName>pretend val one</longName>
-            </value>
-            <value>
-                <shortName>pretend_val_two</shortName>
-                <longName>pretend val two</longName>
-            </value>
-        </values>
-    </item>
-    <item>
-        <shortName>explicit_spacial_diffusion</shortName>
-        <longName>explicit spatial diffusion</longName>
-        <values>
-            <value>
-                <shortName>pretend_val_one</shortName>
-                <longName>pretend val one</longName>
-            </value>
-            <value>
-                <shortName>pretend_val_two</shortName>
-                <longName>pretend val two</longName>
-            </value>
-        </values>
-    </item>
-    <item>
-        <shortName>prognostic_variable</shortName>
-        <longName>prognostic variable</longName>
-        <values>
-            <value>
-                <shortName>pretend_val_one</shortName>
-                <longName>pretend val one</longName>
-            </value>
-            <value>
-                <shortName>pretend_val_two</shortName>
-                <longName>pretend val two</longName>
-            </value>
-        </values>
-    </item>
-    <item>
-        <shortName>tracer_transport</shortName>
-        <longName>tracer_transport</longName>
-        <values>
-            <value>
-                <shortName>pretend_val_one</shortName>
-                <longName>pretend val one</longName>
-            </value>
-            <value>
-                <shortName>pretend_val_two</shortName>
-                <longName>pretend val two</longName>
-            </value>
-        </values>
-    </item>
-    <item>
-        <shortName>tracer_transport_scheme</shortName>
-        <longName>tracer transport scheme</longName>
-        <values>
-          <value>
-             <shortName>pretend_val_one</shortName>
-             <longName>pretend val one</longName>
-          </value>
-        </values>
-    </item>
-    <item>
-        <shortName>tracer_conservation_type</shortName>
-        <longName>tracer conservation type</longName>
-        <values>
-            <value>
-                <shortName>pretend_val_one</shortName>
-                <longName>pretend val one</longName>
-            </value>
-            <value>
-                <shortName>pretend_val_two</shortName>
-                <longName>pretend val two</longName>
-            </value>
-        </values>
-    </item>
-    <item>
-        <shortName>tracer_fixer</shortName>
-        <longName>tracer fixer (a posteriori)</longName>
-        <values>
-            <value>
-                <shortName>pretend_val_one</shortName>
-                <longName>pretend val one</longName>
-            </value>
-            <value>
-                <shortName>pretend_val_two</shortName>
-                <longName>pretend val two</longName>
-            </value>
-        </values>
-    </item>
-    <item>
-        <shortName>tracer_spatial_approximation</shortName>
-        <longName>tracer spatial approximation</longName>
-        <values>
-            <value>
-                <shortName>pretend_val_one</shortName>
-                <longName>pretend val one</longName>
-            </value>
-            <value>
-                <shortName>pretend_val_two</shortName>
-                <longName>pretend val two</longName>
-            </value>
-        </values>
-    </item>
-    <item>
-        <shortName>tracer_spatial_diffusion</shortName>
-        <longName>tracer spatial diffusion</longName>
-        <values>
-            <value>
-                <shortName>pretend_val_one</shortName>
-                <longName>pretend val one</longName>
-            </value>
-            <value>
-                <shortName>pretend_val_two</shortName>
-                <longName>pretend val two</longName>
-            </value>
-        </values>
-    </item>
-    <item>
-        <shortName>tracer_temporal_filter</shortName>
-        <longName>tracer temporal filter</longName>
-        <values>
-            <value>
-                <shortName>pretend_val_one</shortName>
-                <longName>pretend val one</longName>
-            </value>
-            <value>
-                <shortName>pretend_val_two</shortName>
-                <longName>pretend val two</longName>
-            </value>
-        </values>
-    </item>
-    <item>
-        <shortName>tracer_temporal_approximation</shortName>
-        <longName>tracer temporal approximation</longName>
-        <values>
-            <value>
-                <shortName>pretend_val_one</shortName>
-                <longName>pretend val one</longName>
-            </value>
-            <value>
-                <shortName>pretend_val_two</shortName>
-                <longName>pretend val two</longName>
-            </value>
-        </values>
-    </item>
-    <item>
-        <shortName>tracer_time_stepping</shortName>
-        <longName>tracer time stepping</longName>
-        <values>
-            <value>
-                <shortName>pretend_val_one</shortName>
-                <longName>pretend val one</longName>
-            </value>
-            <value>
-                <shortName>pretend_val_two</shortName>
-                <longName>pretend val two</longName>
-            </value>
-        </values>
-    </item>
-    <item>
-        <shortName>grid</shortName>
-        <longName>grid</longName>
-        <values>
-            <value>
-                <shortName>pretend_val_one</shortName>
-                <longName>pretend val one</longName>
-            </value>
-            <value>
-                <shortName>pretend_val_two</shortName>
-                <longName>pretend val two</longName>
-            </value>
-        </values>
-    </item>
-    <item>
-        <shortName>projection</shortName>
-        <longName>projection</longName>
-        <values>
-            <value>
-                <shortName>pretend_val_one</shortName>
-                <longName>pretend val one</longName>
-            </value>
-            <value>
-                <shortName>pretend_val_two</shortName>
-                <longName>pretend val two</longName>
-            </value>
-        </values>
-    </item>
-    <item>
-        <shortName>horizontal_staggering</shortName>
-        <longName>horizontal staggering</longName>
-        <values>
-            <value>
-                <shortName>pretend_val_one</shortName>
-                <longName>pretend val one</longName>
-            </value>
-            <value>
-                <shortName>pretend_val_two</shortName>
-                <longName>pretend val two</longName>
-            </value>
-        </values>
-    </item>
-    <item>
-        <shortName>horizontal_resolution</shortName>
-        <longName>horizonal resolution</longName>
-        <values>
-            <value>
-                <shortName>pretend_val_one</shortName>
-                <longName>pretend val one</longName>
-            </value>
-            <value>
-                <shortName>pretend_val_two</shortName>
-                <longName>pretend val two</longName>
-            </value>
-        </values>
-    </item>
-    <item>
-        <shortName>vertical_coordinate</shortName>
-        <longName>vertical coordinate</longName>
-        <values>
-            <value>
-                <shortName>pretend_val_one</shortName>
-                <longName>pretend val one</longName>
-            </value>
-            <value>
-                <shortName>pretend_val_two</shortName>
-                <longName>pretend val two</longName>
-            </value>
-        </values>
-    </item>
-    <item>
-        <shortName>vertical_staggering</shortName>
-        <longName>vertical staggering</longName>
-        <values>
-            <value>
-                <shortName>pretend_val_one</shortName>
-                <longName>pretend val one</longName>
-            </value>
-            <value>
-                <shortName>pretend_val_two</shortName>
-                <longName>pretend val two</longName>
-            </value>
-        </values>
-    </item>
-    <item>
-        <shortName>vertical_resolution</shortName>
-        <longName>vertical resolution</longName>
-        <values>
-            <value>
-                <shortName>pretend_val_one</shortName>
-                <longName>pretend val one</longName>
-            </value>
-            <value>
-                <shortName>pretend_val_two</shortName>
-                <longName>pretend val two</longName>
-            </value>
-        </values>
-    </item>
-    <item>
-        <shortName>typical_location_of_top_model_level</shortName>
-        <longName>typical location of top model level (full level)</longName>
-        <values>
-            <value>
-                <shortName>pretend_val_one</shortName>
-                <longName>pretend val one</longName>
-            </value>
-            <value>
-                <shortName>pretend_val_two</shortName>
-                <longName>pretend val two</longName>
-            </value>
-        </values>        
-    </item>
+  <!--Dynamical core-->
+  <item>
+    <shortName>equation_set</shortName>
+    <longName>Dynamical Core: Equation Set</longName>
+    <values>
+      <value>
+        <shortName>deep-atmosphere non-hydrostatic (unapproximated Euler equations)</shortName>
+        <longName>deep-atmosphere non-hydrostatic (unapproximated Euler equations)</longName>
+      </value>
+      <value>
+        <shortName>deep-atmosphere, non-hydrostatic, spherical geopotential approximation </shortName>
+        <longName>deep-atmosphere, non-hydrostatic, spherical geopotential approximation </longName>
+      </value>
+      <value>
+        <shortName>deep-atmosphere, hydrostatic, spherical geopotential approximation
+          (quasi-hydrostatic)</shortName>
+        <longName>deep-atmosphere, hydrostatic, spherical geopotential approximation
+          (quasi-hydrostatic)</longName>
+      </value>
+      <value>
+        <shortName>shallow-atmosphere, non-hydrostatic, spherical geopotential
+          approximation</shortName>
+        <longName>shallow-atmosphere, non-hydrostatic, spherical geopotential
+          approximation</longName>
+      </value>
+      <value>
+        <shortName>shallow-atmosphere, hydrostatic, spherical geopotential approximation (primitive
+          equations)</shortName>
+        <longName>shallow-atmosphere, hydrostatic, spherical geopotential approximation (primitive
+          equations)</longName>
+      </value>
+      <value>
+        <shortName>sound-proof: anelastic, non-hydrostatic, spherical geopotential approximation </shortName>
+        <longName>sound-proof: anelastic, non-hydrostatic, spherical geopotential approximation
+        </longName>
+      </value>
+      <value>
+        <shortName>sound-proof: unified, non-hydrostatic, spherical geopotential
+          approximation</shortName>
+        <longName>sound-proof: unified, non-hydrostatic, spherical geopotential
+          approximation</longName>
+      </value>
+      <value>
+        <shortName>other</shortName>
+        <longName>other</longName>
+      </value>
+    </values>
+  </item>
+  <item>
+    <shortName>Generic class</shortName>
+    <longName>Generic class</longName>
+    <values>
+      <value>
+        <shortName>Eulerian</shortName>
+        <longName>Eulerian</longName>
+      </value>
+      <value>
+        <shortName>Eulerian with semi-Lagrangian extension in the longitudinal direction</shortName>
+        <longName>Eulerian with semi-Lagrangian extension in the longitudinal direction</longName>
+      </value>
+      <value>
+        <shortName>semi-Lagrangian</shortName>
+        <longName>semi-Lagrangian</longName>
+      </value>
+      <value>> <shortName>semi-Lagrangian, except Eulerian-type continuity equation</shortName>
+        <longName>semi-Lagrangian, except Eulerian-type continuity equation</longName>
+      </value>
+    </values>
+  </item>
+  <item>
+    <shortName>Dynamical core: Type of horizontal discretization</shortName>
+    <longName>Dynamical core: Type of horizontal discretization</longName>
+    <values>
+      <value>
+        <shortName>discontinuous Galerkin</shortName>
+        <longName>discontinuous Galerkin</longName>
+      </value>
+      <value>
+        <shortName>finite difference</shortName>
+        <longName>finite difference</longName>
+      </value>
+      <value>
+        <shortName>finite element</shortName>
+        <longName>finite element</longName>
+      </value>
+      <value>
+        <shortName>finite volume</shortName>
+        <longName>finite volume</longName>
+      </value>
+      <value>
+        <shortName>finite volume and finite difference</shortName>
+        <longName>finite volume and finite difference</longName>
+      </value>
+      <value>
+        <shortName>spectral element</shortName>
+        <longName>spectral element</longName>
+      </value>
+      <value>
+        <shortName>spectral finite volume</shortName>
+        <longName>spectral finite volume</longName>
+      </value>
+      <value>
+        <shortName>spectral-transform</shortName>
+        <longName>spectral-transform</longName>
+      </value>
+    </values>
+  </item>
+  <item>
+    <shortName>Dynamical core: Type of vertical discretization</shortName>
+    <longName>Dynamical core: Type of vertical discretization</longName>
+    <values>
+      <value>
+        <shortName>finite difference</shortName>
+        <longName>finite difference</longName>
+      </value>
+      <value>
+        <shortName>finite element</shortName>
+        <longName>finite element</longName>
+      </value>
+      <value>
+        <shortName>finite volume</shortName>
+        <longName>finite volume</longName>
+      </value>
+      <value>
+        <shortName>vertical remapping (with floating Lagrangian coordinate)</shortName>
+        <longName>vertical remapping (with floating Lagrangian coordinate)</longName>
+      </value>
+    </values>
+  </item>
+  <item>
+    <shortName>Dynamical core: Temporal discretization (generic class)</shortName>
+    <longName>Dynamical core: Temporal discretization (generic class)</longName>
+    <values>
+      <value>
+        <shortName>fully explicit</shortName>
+        <longName>fully explicit</longName>
+      </value>
+      <value>
+        <shortName>explicit (horizontal), vertically implicit</shortName>
+        <longName>explicit (horizontal), vertically implicit</longName>
+      </value>
+      <value>
+        <shortName>semi-implicit (horizontal), vertically explicit</shortName>
+        <longName>semi-implicit (horizontal), vertically explicit</longName>
+      </value>
+      <value>
+        <shortName>semi-implicit (horizontal), vertically implicit</shortName>
+        <longName>semi-implicit (horizontal), vertically implicit</longName>
+      </value>
+      <value>
+        <shortName>split-explicit</shortName>
+        <longName>split-explicit</longName>
+      </value>
+      <value>
+        <shortName>other</shortName>
+        <longName>other</longName>
+      </value>
+    </values>
+  </item>
+  <item>
+    <shortName>Dynamical core: Specifics on spatial discretizations (keywords), select all that
+      apply and/or add items</shortName>
+    <longName>Dynamical core: Specifics on spatial discretizations (keywords), select all that apply
+      and/or add items</longName>
+    <values>
+      <value>
+        <shortName>horizontal: first-order</shortName>
+        <longName>horizontal: first-order</longName>
+      </value>
+      <value>
+        <shortName>horizontal: second-order</shortName>
+        <longName>horizontal: second-order</longName>
+      </value>
+      <value>
+        <shortName>horizontal: third-order</shortName>
+        <longName>horizontal: third-order</longName>
+      </value>
+      <value>
+        <shortName>horizontal: fourth-order</shortName>
+        <longName>horizontal: fourth-order</longName>
+      </value>
+      <value>
+        <shortName>horizontal: higher than fourth-order</shortName>
+        <longName>horizontal: higher than fourth-order</longName>
+      </value>
+      <value>
+        <shortName>vertical: first-order</shortName>
+        <longName>vertical: first-order</longName>
+      </value>
+      <value>
+        <shortName>vertical: second-order</shortName>
+        <longName>vertical: second-order</longName>
+      </value>
+      <value>
+        <shortName>vertical: higher than second-order</shortName>
+        <longName>vertical: higher than second-order</longName>
+      </value>
+      <!--textbox (optional)-->
+    </values>
+  </item>
+  <item>
+    <shortName>Dynamical core: Specifics on temporal discretizations (keywords), select all that
+      apply and/or add items</shortName>
+    <longName>Dynamical core: Specifics on temporal discretizations (keywords), select all that
+      apply and/or add items</longName>
+    <values>
+      <value>
+        <shortName>2-time-level scheme</shortName>
+        <longName>2-time-level scheme</longName>
+      </value>
+      <value>
+        <shortName>3-time-level scheme</shortName>
+        <longName>3-time-level scheme</longName>
+      </value>
+      <value>
+        <shortName>4-time-level scheme</shortName>
+        <longName>4-time-level scheme</longName>
+      </value>
+      <value>
+        <shortName>2 time-level scheme with multiple stages</shortName>
+        <longName>2 time-level scheme with multiple stages</longName>
+      </value>
+      <value>
+        <shortName>2-stage Runge-Kutta (RK2)</shortName>
+        <longName>2-stage Runge-Kutta (RK2)</longName>
+      </value>
+      <value>
+        <shortName>3-stage Runge-Kutta (RK3)</shortName>
+        <longName>3-stage Runge-Kutta (RK3)</longName>
+      </value>
+      <value>
+        <shortName>4-stage Runge-Kutta (RK4)</shortName>
+        <longName>4-stage Runge-Kutta (RK4)</longName>
+      </value>
+      <value>
+        <shortName>Adams-Bashforth</shortName>
+        <longName>Adams-Bashforth</longName>
+      </value>
+      <value>
+        <shortName>Crank-Nicolson</shortName>
+        <longName>Crank-Nicolson</longName>
+      </value>
+      <value>
+        <shortName>Forward-backward scheme</shortName>
+        <longName>Forward-backward scheme</longName>
+      </value>
+      <value>
+        <shortName>Leapfrog with Robert-Asselin filter</shortName>
+        <longName>Leapfrog with Robert-Asselin filter</longName>
+      </value>
+      <value>
+        <shortName>predictor-corrector scheme</shortName>
+        <longName>predictor-corrector scheme</longName>
+      </value>
+      <value>
+        <shortName>strong-stability-preserving (SSP)</shortName>
+        <longName>strong-stability-preserving (SSP)</longName>
+      </value>
+      <value>
+        <shortName>temporal: first-order</shortName>
+        <longName>temporal: first-order</longName>
+      </value>
+      <value>
+        <shortName>temporal: second-order</shortName>
+        <longName>temporal: second-order</longName>
+      </value>
+      <value>
+        <shortName>temporal: third-order</shortName>
+        <longName>temporal: third-order</longName>
+      </value>
+      <value>
+        <shortName>temporal: fourth-order</shortName>
+        <longName>temporal: fourth-order</longName>
+      </value>
+      <!--textbox (optional)-->
+    </values>
+  </item>
+  <item>
+    <shortName>Dynamical core: Prognostic variables (moist setup with water vapor), select all that
+      apply and/or add items</shortName>
+    <longName>Dynamical core: Prognostic variables (moist setup with water vapor), select all that
+      apply and/or add items</longName>
+    <values>
+      <value>
+        <shortName>3D vorticity</shortName>
+        <longName>3D vorticity</longName>
+      </value>
+      <value>
+        <shortName>absolute vorticity</shortName>
+        <longName>absolute vorticity</longName>
+      </value>
+      <value>
+        <shortName>air density (dry)</shortName>
+        <longName>air density (dry)</longName>
+      </value>
+      <value>
+        <shortName>air density (moist)</shortName>
+        <longName>air density (moist)</longName>
+      </value>
+      <value>
+        <shortName>air density perturbation (relative to hydrostatic reference profile,
+          dry)</shortName>
+        <longName>air density perturbation (relative to hydrostatic reference profile,
+          dry)</longName>
+      </value>
+      <value>
+        <shortName>air density perturbation (relative to reference profile, moist)</shortName>
+        <longName>air density perturbation (relative to reference profile, moist)</longName>
+      </value>
+      <value>
+        <shortName>density of water vapor</shortName>
+        <longName>density of water vapor</longName>
+      </value>
+      <value>
+        <shortName>divergence</shortName>
+        <longName>divergence</longName>
+      </value>
+      <value>
+        <shortName>Exner pressure (dry)</shortName>
+        <longName>Exner pressure (dry)</longName>
+      </value>
+      <value>
+        <shortName>Exner pressure (moist)</shortName>
+        <longName>Exner pressure (moist)</longName>
+      </value>
+      <value>
+        <shortName>hydrostatic mass of dry air</shortName>
+        <longName>hydrostatic mass of dry air</longName>
+      </value>
+      <value>
+        <shortName>hydrostatic mass of moist air</shortName>
+        <longName>hydrostatic mass of moist air</longName>
+      </value>
+      <value>
+        <shortName>internal energy</shortName>
+        <longName>internal energy</longName>
+      </value>
+      <value>
+        <shortName>meridional momentum (weighted by dry density/mass/pressure thickness)</shortName>
+        <longName>meridional momentum (weighted by dry density/mass/pressure thickness)</longName>
+      </value>
+      <value>
+        <shortName>meridional momentum (weighted by moist density/mass/pressure
+          thickness)</shortName>
+        <longName>meridional momentum (weighted by moist density/mass/pressure thickness)</longName>
+      </value>
+      <value>
+        <shortName>meridional velocity v</shortName>
+        <longName>meridional velocity v</longName>
+      </value>
+      <value>
+        <shortName>natural logarithm of surface pressure (dry)</shortName>
+        <longName>natural logarithm of surface pressure (dry)</longName>
+      </value>
+      <value>
+        <shortName>natural logarithm of surface pressure (moist)</shortName>
+        <longName>natural logarithm of surface pressure (moist)</longName>
+      </value>
+      <value>
+        <shortName>potential temperature</shortName>
+        <longName>potential temperature</longName>
+      </value>
+      <value>
+        <shortName>potential temperature perturbation (relative to hydrostatic reference
+          profile)</shortName>
+        <longName>potential temperature perturbation (relative to hydrostatic reference
+          profile)</longName>
+      </value>
+      <value>
+        <shortName>potential temperature density (weighted by dry density/mass/pressure
+          thickness)</shortName>
+        <longName>potential temperature density (weighted by dry density/mass/pressure
+          thickness)</longName>
+      </value>
+      <value>
+        <shortName>potential temperature density (weighted by moist density/mass/pressure
+          thickness)</shortName>
+        <longName>potential temperature density (weighted by moist density/mass/pressure
+          thickness)</longName>
+      </value>
+      <value>
+        <shortName>potential temperature density (weighted by dry density/mass/pressure thickness)
+          perturbation (relative to hydrostatic reference profile)</shortName>
+        <longName>potential temperature density (weighted by dry density/mass/pressure thickness)
+          perturbation (relative to hydrostatic reference profile)</longName>
+      </value>
+      <value>
+        <shortName>potential temperature density (weighted by moist density/mass/pressure thickness)
+          perturbation (relative to hydrostatic reference profile)</shortName>
+        <longName>potential temperature density (weighted by moist density/mass/pressure thickness)
+          perturbation (relative to hydrostatic reference profile)</longName>
+      </value>
+      <value>
+        <shortName>pressure (dry)</shortName>
+        <longName>pressure (dry)</longName>
+      </value>
+      <value>
+        <shortName>pressure (moist)</shortName>
+        <longName>pressure (moist)</longName>
+      </value>
+      <value>
+        <shortName>pressure thickness (moist)</shortName>
+        <longName>pressure thickness (moist)</longName>
+      </value>
+      <value>
+        <shortName>relative vorticity</shortName>
+        <longName>relative vorticity</longName>
+      </value>
+      <value>
+        <shortName>specific humidity</shortName>
+        <longName>specific humidity</longName>
+      </value>
+      <value>
+        <shortName>specific humidity weighted by dry density/mass/pressure thickness</shortName>
+        <longName>specific humidity weighted by dry density/mass/pressure thickness</longName>
+      </value>
+      <value>
+        <shortName>surface pressure (dry)</shortName>
+        <longName>surface pressure (dry)</longName>
+      </value>
+      <value>
+        <shortName>surface pressure (moist)</shortName>
+        <longName>surface pressure (moist)</longName>
+      </value>
+      <value>
+        <shortName>temperature</shortName>
+        <longName>temperature</longName>
+      </value>
+      <value>
+        <shortName>total energy</shortName>
+        <longName>total energy</longName>
+      </value>
+      <value>
+        <shortName>vertical momentum (weighted by dry density/mass/pressure thickness)</shortName>
+        <longName>vertical momentum (weighted by dry density/mass/pressure thickness)</longName>
+      </value>
+      <value>
+        <shortName>vertical momentum (weighted by moist density/mass/pressure thickness)</shortName>
+        <longName>vertical momentum (weighted by moist density/mass/pressure thickness)</longName>
+      </value>
+      <value>
+        <shortName>vertical velocity w</shortName>
+        <longName>vertical velocity w</longName>
+      </value>
+      <value>
+        <shortName>virtual potential temperature</shortName>
+        <longName>virtual potential temperature</longName>
+      </value>
+      <value>
+        <shortName>virtual potential temperature perturbation (relative to hydrostatic reference
+          profile)</shortName>
+        <longName>virtual potential temperature perturbation (relative to hydrostatic reference
+          profile)</longName>
+      </value>
+      <value>
+        <shortName>virtual potential temperature density (weighted by dry density/mass/pressure
+          thickness)</shortName>
+        <longName>virtual potential temperature density (weighted by dry density/mass/pressure
+          thickness)</longName>
+      </value>
+      <value>
+        <shortName>virtual potential temperature density (weighted by moist density/mass/pressure
+          thickness)</shortName>
+        <longName>virtual potential temperature density (weighted by moist density/mass/pressure
+          thickness)</longName>
+      </value>
+      <value>
+        <shortName>virtual potential temperature density (weighted by dry density/mass/pressure
+          thickness) perturbation (relative to hydrostatic reference profile)</shortName>
+        <longName>virtual potential temperature density (weighted by dry density/mass/pressure
+          thickness) perturbation (relative to hydrostatic reference profile)</longName>
+      </value>
+      <value>
+        <shortName>virtual potential temperature density (weighted by moist density/mass/pressure
+          thickness) perturbation (relative to hydrostatic reference profile)</shortName>
+        <longName>virtual potential temperature density (weighted by moist density/mass/pressure
+          thickness) perturbation (relative to hydrostatic reference profile)</longName>
+      </value>
+      <value>
+        <shortName>water vapor mixing ratio</shortName>
+        <longName>water vapor mixing ratio</longName>
+      </value>
+      <value>
+        <shortName>zonal momentum (weighted by dry density/mass/pressure thickness)</shortName>
+        <longName>zonal momentum (weighted by dry density/mass/pressure thickness)</longName>
+      </value>
+      <value>
+        <shortName>zonal momentum (weighted by moist density/mass/pressure thickness)</shortName>
+        <longName>zonal momentum (weighted by moist density/mass/pressure thickness)</longName>
+      </value>
+      <value>
+        <shortName>zonal velocity u</shortName>
+        <longName>zonal velocity u</longName>
+      </value>
+      <!--textbox (optional)-->
+    </values>
+  </item>
+  <item>
+    <shortName>Dynamical core: Type of vertical coordinate</shortName>
+    <longName>Dynamical core: Type of vertical coordinate</longName>
+    <values>
+      <value>
+        <shortName>floating Lagrangian with vertical remapping to fixed reference grid</shortName>
+        <longName>floating Lagrangian with vertical remapping to fixed reference grid</longName>
+      </value>
+      <value>
+        <shortName>height, with shaved or cut cells</shortName>
+        <longName>height, with shaved or cut cells</longName>
+      </value>
+      <value>
+        <shortName>height-based, terrain-following</shortName>
+        <longName>height-based, terrain-following</longName>
+      </value>
+      <value>
+        <shortName>hybrid sigma-pressure, terrain-following</shortName>
+        <longName>hybrid sigma-pressure, terrain-following</longName>
+      </value>
+      <value>
+        <shortName>hybrid sigma-isentropic, terrain-following</shortName>
+        <longName>hybrid sigma-isentropic, terrain-following</longName>
+      </value>
+      <value>
+        <shortName>mass coordinate, based on hydrostatic pressure, terrain-following</shortName>
+        <longName>mass coordinate, based on hydrostatic pressure, terrain-following</longName>
+      </value>
+      <value>
+        <shortName>sigma (pressure-based terrain-following)</shortName>
+        <longName>sigma (pressure-based terrain-following)</longName>
+      </value>
+      <value>
+        <shortName>step-mountain coordinate</shortName>
+        <longName>step-mountain coordinate</longName>
+      </value>
+      <value>
+        <shortName>other</shortName>
+        <longName>other</longName>
+      </value>
+    </values>
+  </item>
+
+  <!--
+Model nomenclature for approximate 1x1 degree grid spacing (110 km x 110 km):
+textbox
+
+
+Typical dynamics time step (in s) for approximate 1x1 degree grid spacing (110 km x 110 km):
+textbox
+-->
+
+  <!--Tracer advection scheme-->
+
+  <item>
+    <shortName>Tracer advection: Generic class</shortName>
+    <longName>Tracer advection: Generic class</longName>
+    <values>
+      <value>
+        <shortName>Eulerian</shortName>
+        <longName>Eulerian</longName>
+      </value>
+      <value>
+        <shortName>Eulerian with semi-Lagrangian extension in the longitudinal direction</shortName>
+        <longName>Eulerian with semi-Lagrangian extension in the longitudinal direction</longName>
+      </value>
+      <value>
+        <shortName>semi-Lagrangian</shortName>
+        <longName>semi-Lagrangian</longName>
+      </value>
+    </values>
+  </item>
+  <item>
+    <shortName>Tracer advection: Type of horizontal discretization</shortName>
+    <longName>Tracer advection: Type of horizontal discretization</longName>
+    <values>
+      <value>
+        <shortName>discontinuous Galerkin</shortName>
+        <longName>discontinuous Galerkin</longName>
+      </value>
+      <value>
+        <shortName>finite difference</shortName>
+        <longName>finite difference</longName>
+      </value>
+      <value>
+        <shortName>finite element</shortName>
+        <longName>finite element</longName>
+      </value>
+      <value>
+        <shortName>finite volume</shortName>
+        <longName>finite volume</longName>
+      </value>
+      <value>
+        <shortName>spectral element</shortName>
+        <longName>spectral element</longName>
+      </value>
+      <value>
+        <shortName>spectral finite volume</shortName>
+        <longName>spectral finite volume</longName>
+      </value>
+      <value>
+        <shortName>spectral-transform</shortName>
+        <longName>spectral-transform</longName>
+      </value>
+    </values>
+  </item>
+  <item>
+    <shortName>Tracer advection: Type of vertical discretization</shortName>
+    <longName>Tracer advection: Type of vertical discretization</longName>
+    <values>
+      <value>
+        <shortName>finite difference</shortName>
+        <longName>finite difference</longName>
+      </value>
+      <value>
+        <shortName>finite element</shortName>
+        <longName>finite element</longName>
+      </value>
+      <value>
+        <shortName>finite volume</shortName>
+        <longName>finite volume</longName>
+      </value>
+      <value>
+        <shortName>vertical remapping (with floating Lagrangian coordinate)</shortName>
+        <longName>vertical remapping (with floating Lagrangian coordinate)</longName>
+      </value>
+    </values>
+  </item>
+  <item>
+    <shortName>Tracer advection: Specifics on spatial discretizations (keywords), select all that
+      apply and/or add items</shortName>
+    <longName>Tracer advection: Specifics on spatial discretizations (keywords), select all that
+      apply and/or add items</longName>
+    <values>
+      <value>
+        <shortName>horizontal: first-order</shortName>
+        <longName>horizontal: first-order</longName>
+      </value>
+      <value>
+        <shortName>horizontal: second-order</shortName>
+        <longName>horizontal: second-order</longName>
+      </value>
+      <value>
+        <shortName>horizontal: third-order</shortName>
+        <longName>horizontal: third-order</longName>
+      </value>
+      <value>
+        <shortName>horizontal: fourth-order</shortName>
+        <longName>horizontal: fourth-order</longName>
+      </value>
+      <value>
+        <shortName>horizontal: higher than fourth-order</shortName>
+        <longName>horizontal: higher than fourth-order</longName>
+      </value>
+      <value>
+        <shortName>vertical: first-order</shortName>
+        <longName>vertical: first-order</longName>
+      </value>
+      <value>
+        <shortName>vertical: second-order</shortName>
+        <longName>vertical: second-order</longName>
+      </value>
+      <value>
+        <shortName>vertical: higher than second-order</shortName>
+        <longName>vertical: higher than second-order</longName>
+      </value>
+      <!--textbox (optional)-->
+    </values>
+  </item>
+  <item>
+    <shortName>Tracer advection: Specifics on temporal discretizations (keywords), select all that
+      apply and/or add items</shortName>
+    <longName>Tracer advection: Specifics on temporal discretizations (keywords), select all that
+      apply and/or add items</longName>
+    <values>
+      <value>
+        <shortName>2-time-level scheme</shortName>
+        <longName>2-time-level scheme</longName>
+      </value>
+      <value>
+        <shortName>3-time-level scheme</shortName>
+        <longName>3-time-level scheme</longName>
+      </value>
+      <value>
+        <shortName>4-time-level scheme</shortName>
+        <longName>4-time-level scheme</longName>
+      </value>
+      <value>
+        <shortName>2 time-level scheme with multiple stages</shortName>
+        <longName>2 time-level scheme with multiple stages</longName>
+      </value>
+      <value>
+        <shortName>2-stage Runge-Kutta (RK2)</shortName>
+        <longName>2-stage Runge-Kutta (RK2)</longName>
+      </value>
+      <value>
+        <shortName>3-stage Runge-Kutta (RK3)</shortName>
+        <longName>3-stage Runge-Kutta (RK3)</longName>
+      </value>
+      <value>
+        <shortName>4-stage Runge-Kutta (RK4)</shortName>
+        <longName>4-stage Runge-Kutta (RK4)</longName>
+      </value>
+      <value>
+        <shortName>Adams-Bashforth</shortName>
+        <longName>Adams-Bashforth</longName>
+      </value>
+      <value>
+        <shortName>Crank-Nicolson</shortName>
+        <longName>Crank-Nicolson</longName>
+      </value>
+      <value>
+        <shortName>Forward-backward scheme</shortName>
+        <longName>Forward-backward scheme</longName>
+      </value>
+      <value>
+        <shortName>Leapfrog with Robert-Asselin filter</shortName>
+        <longName>Leapfrog with Robert-Asselin filter</longName>
+      </value>
+      <value>
+        <shortName>strong-stability-preserving (SSP)</shortName>
+        <longName>strong-stability-preserving (SSP)</longName>
+      </value>
+      <value>
+        <shortName>temporal: first-order</shortName>
+        <longName>temporal: first-order</longName>
+      </value>
+      <value>
+        <shortName>temporal: second-order</shortName>
+        <longName>temporal: second-order</longName>
+      </value>
+      <value>
+        <shortName>temporal: third-order</shortName>
+        <longName>temporal: third-order</longName>
+      </value>
+      <value>
+        <shortName>temporal: fourth-order</shortName>
+        <longName>temporal: fourth-order</longName>
+      </value>
+      <!--textbox (optional)-->
+    </values>
+  </item>
+
+
+
+  <!--
+Typical tracer advection time step (in s) for approximate 1x1 degree grid spacing (110 km x 110 km):
+textbox
+-->
+
+  <!-- 
+grid stuff will be handled in reference to gridspec... 
+
+Computational grid and grid staggering
+
+
+Base computational grid:
+cubed-sphere
+Gaussian latitude-longitude
+hexagonal-pentagonal
+icosahedral (triangular)
+latitude-longitude
+octagonal
+reduced Gaussian latitude-longitude
+reduced latitude-longitude
+spherical centroidal Voronoi tesselation
+triangular-icosahedral
+unstructured (polygons)
+Yin-Yang
+other
+
+
+Grid projection:
+conformal
+gnomonic: equi-angular cubed-sphere
+gnomonic: equi-distant cubed-sphere
+gnomonic: equal-distance along cubed-sphere edges
+other
+none
+
+
+Option for variable-resolution grid:
+nested grid (static)
+nested grid (dynamic)
+stretched grid
+none
+
+
+Additional grid design choices (select all that apply):
+Gauss-Lobatto-Legendre (GLL) quadrature points, nodal basis set
+Gauss-Legendre (GL) quadrature points, modal basis set
+linear transform grid
+quadratic transform grid
+polygons: triangles
+polygons: quadrilaterals
+polygons: varying shape
+optimized via spring dynamics
+Schmidt-transformation
+rotated Pole points
+other
+none
+
+
+Horizontal grid staggering:
+Arakawa A-grid (unstaggered)
+Arakawa B-grid
+Arakawa C-grid
+Arakawa D-grid
+Arakawa E-grid
+mixed Arakawa C-D grid
+R-grid
+Z-grid
+ZM-grid
+other
+
+
+Vertical grid staggering:
+Charney-Phillips grid
+Lorenz grid
+unstaggered (co-located at full model levels)
+other
+-->
+
+  <!--Conservation and Fixers-->
+
+  <item>
+    <shortName>Built-in conservation property (select all that apply):</shortName>
+    <longName>Built-in conservation property (select all that apply):</longName>
+    <values>
+      <value>
+        <shortName>mass of dry air</shortName>
+        <longName>mass of dry air</longName>
+      </value>
+      <value>
+        <shortName>mass/density-weighted potential temperature</shortName>
+        <longName>mass/density-weighted potential temperature</longName>
+      </value>
+      <value>
+        <shortName>momentum</shortName>
+        <longName>momentum</longName>
+      </value>
+      <value>
+        <shortName>tracer mass</shortName>
+        <longName>tracer mass</longName>
+      </value>
+      <value>
+        <shortName>total energy</shortName>
+        <longName>total energy</longName>
+      </value>
+      <value>
+        <shortName>other</shortName>
+        <longName>other</longName>
+      </value>
+      <value>
+        <shortName>none</shortName>
+        <longName>none</longName>
+      </value>
+    </values>
+  </item>
+  <item>
+    <shortName>A-posteriori fixers (select all that apply):</shortName>
+    <longName>A-posteriori fixers (select all that apply):</longName>
+    <values>
+      <value>
+        <shortName>mass fixer for dry air</shortName>
+        <longName>mass fixer for dry air</longName>
+      </value>
+      <value>
+        <shortName>mass fixer for dry air and water vapor specific humidity</shortName>
+        <longName>mass fixer for dry air and water vapor specific humidity</longName>
+      </value>
+      <value>
+        <shortName>mass fixer for tracers</shortName>
+        <longName>mass fixer for tracers</longName>
+      </value>
+      <value>
+        <shortName>positive-definite tracers: Borrow-and-fill algorithm
+          (mass-conservative)</shortName>
+        <longName>positive-definite tracers: Borrow-and-fill algorithm
+          (mass-conservative)</longName>
+      </value>
+      <value>
+        <shortName>positive-definite tracers: Clipping of negative tracer values (no mass
+          conservation)</shortName>
+        <longName>positive-definite tracers: Clipping of negative tracer values (no mass
+          conservation)</longName>
+      </value>
+      <value>
+        <shortName>total energy fixer</shortName>
+        <longName>total energy fixer</longName>
+      </value>
+      <value>
+        <shortName>other</shortName>
+        <longName>other</longName>
+      </value>
+      <value>
+        <shortName>none</shortName>
+        <longName>none</longName>
+      </value>
+    </values>
+  </item>
+
+  <!--Dissipation mechanisms-->
+
+  <item>
+    <shortName>Explicitly added dissipation mechanisms (select all that are typically
+      activated):</shortName>
+    <longName>Explicitly added dissipation mechanisms (select all that are typically
+      activated):</longName>
+    <values>
+      <value>
+        <shortName>2D divergence damping (second-order)</shortName>
+        <longName>2D divergence damping (second-order)</longName>
+      </value>
+      <value>
+        <shortName>2D divergence damping (fourth-order)</shortName>
+        <longName>2D divergence damping (fourth-order)</longName>
+      </value>
+      <value>
+        <shortName>2D divergence damping (higher than fourth-order)</shortName>
+        <longName>2D divergence damping (higher than fourth-order)</longName>
+      </value>
+      <value>
+        <shortName>3D divergence damping (second-order)</shortName>
+        <longName>3D divergence damping (second-order)</longName>
+      </value>
+      <value>
+        <shortName>Courant limiter</shortName>
+        <longName>Courant limiter</longName>
+      </value>
+      <value>
+        <shortName>digital filter (other than Shapiro filter)</shortName>
+        <longName>digital filter (other than Shapiro filter)</longName>
+      </value>
+      <value>
+        <shortName>external-mode damping</shortName>
+        <longName>external-mode damping</longName>
+      </value>
+      <value>
+        <shortName>horizontal diffusion, linear (second-order)</shortName>
+        <longName>horizontal diffusion, linear (second-order)</longName>
+      </value>
+      <value>
+        <shortName>horizontal diffusion, nonlinear (second-order)</shortName>
+        <longName>horizontal diffusion, nonlinear (second-order)</longName>
+      </value>
+      <value>
+        <shortName>horizontal hyper-diffusion, linear (fourth-order)</shortName>
+        <longName>horizontal hyper-diffusion, linear (fourth-order)</longName>
+      </value>
+      <value>
+        <shortName>horizontal hyper-diffusion, nonlinear (fourth-order)</shortName>
+        <longName>horizontal hyper-diffusion, nonlinear (fourth-order)</longName>
+      </value>
+      <value>
+        <shortName>horizontal hyper-diffusion, linear (higher than fourth-order)</shortName>
+        <longName>horizontal hyper-diffusion, linear (higher than fourth-order)</longName>
+      </value>
+      <value>
+        <shortName>local spectral filter (e.g. Boyd-Vandeven filter)</shortName>
+        <longName>local spectral filter (e.g. Boyd-Vandeven filter)</longName>
+      </value>
+      <value>
+        <shortName>polar Fast Fourier Transform (FFT) filter</shortName>
+        <longName>polar Fast Fourier Transform (FFT) filter</longName>
+      </value>
+      <value>
+        <shortName>sponge-layer horizontal diffusion (second-order, near model top)</shortName>
+        <longName>sponge-layer horizontal diffusion (second-order, near model top)</longName>
+      </value>
+      <value>
+        <shortName>sponge-layer Rayleigh friction, applied to u-wind (near model top)</shortName>
+        <longName>sponge-layer Rayleigh friction, applied to u-wind (near model top)</longName>
+      </value>
+      <value>
+        <shortName>sponge-layer Rayleigh friction, applied to u,v-winds (near model top)</shortName>
+        <longName>sponge-layer Rayleigh friction, applied to u,v-winds (near model top)</longName>
+      </value>
+      <value>
+        <shortName>sponge-layer Rayleigh friction, applied to u,v,w-winds (near model
+          top)</shortName>
+        <longName>sponge-layer Rayleigh friction, applied to u,v,w-winds (near model top)</longName>
+      </value>
+      <value>
+        <shortName>Robert-Asselin temporal filter</shortName>
+        <longName>Robert-Asselin temporal filter</longName>
+      </value>
+      <value>
+        <shortName>Shapiro filter (second-order)</shortName>
+        <longName>Shapiro filter (second-order)</longName>
+      </value>
+      <value>
+        <shortName>Shapiro filter (fourth-order)</shortName>
+        <longName>Shapiro filter (fourth-order)</longName>
+      </value>
+      <value>
+        <shortName>Shapiro filter (eighth-order)</shortName>
+        <longName>Shapiro filter (eighth-order)</longName>
+      </value>
+      <value>
+        <shortName>Shapiro filter (higher than eighth-order)</shortName>
+        <longName>Shapiro filter (higher than eighth-order)</longName>
+      </value>
+      <value>
+        <shortName>vertical diffusion (second-order)</shortName>
+        <longName>vertical diffusion (second-order)</longName>
+      </value>
+      <value>
+        <shortName>vertical hyper-diffusion (fourth-order or higher)</shortName>
+        <longName>vertical hyper-diffusion (fourth-order or higher)</longName>
+      </value>
+      <value>
+        <shortName>vertical velocity damping</shortName>
+        <longName>vertical velocity damping</longName>
+      </value>
+      <value>
+        <shortName>vorticity damping</shortName>
+        <longName>vorticity damping</longName>
+      </value>
+      <value>
+        <shortName>other</shortName>
+        <longName>other</longName>
+      </value>
+      <value>
+        <shortName>none</shortName>
+        <longName>none</longName>
+      </value>
+    </values>
+  </item>
+
+  <item>
+    <shortName>Implicit (numerical) dissipation mechanisms (select all that are typically
+      activated):</shortName>
+    <longName>Implicit (numerical) dissipation mechanisms (select all that are typically
+      activated):</longName>
+    <values>
+      <value>
+        <shortName>damping via semi-Lagrangian interpolations</shortName>
+        <longName>damping via semi-Lagrangian interpolations</longName>
+      </value>
+      <value>
+        <shortName>implicit Rayleigh damping of vertical velocity</shortName>
+        <longName>implicit Rayleigh damping of vertical velocity</longName>
+      </value>
+      <value>
+        <shortName>monotonicity constraint: flux limiter</shortName>
+        <longName>monotonicity constraint: flux limiter</longName>
+      </value>
+      <value>
+        <shortName>monotonicity constraint: slope/curvature limiter for subgrid
+          distribution</shortName>
+        <longName>monotonicity constraint: slope/curvature limiter for subgrid
+          distribution</longName>
+      </value>
+      <value>
+        <shortName>monotonicity constraint for tracer advection scheme</shortName>
+        <longName>monotonicity constraint for tracer advection scheme</longName>
+      </value>
+      <value>
+        <shortName>off-centering of implicit terms</shortName>
+        <longName>off-centering of implicit terms</longName>
+      </value>
+      <value>
+        <shortName>positive-definite constraint for tracer advection scheme</shortName>
+        <longName>positive-definite constraint for tracer advection scheme</longName>
+      </value>
+      <value>
+        <shortName>shape-preservation in semi-Lagrangian tracer advection schemes</shortName>
+        <longName>shape-preservation in semi-Lagrangian tracer advection schemes</longName>
+      </value>
+      <value>
+        <shortName>sponge-layer: lower-order numerical scheme (near model top)</shortName>
+        <longName>sponge-layer: lower-order numerical scheme (near model top)</longName>
+      </value>
+      <value>
+        <shortName>upwind-biased advection</shortName>
+        <longName>upwind-biased advection</longName>
+      </value>
+      <value>
+        <shortName>other</shortName>
+        <longName>other</longName>
+      </value>
+      <value>
+        <shortName>none</shortName>
+        <longName>none</longName>
+      </value>
+    </values>
+  </item>
+
+  <!--
+List of all dissipation coefficients (include resolution dependencies and physical units):
+textbox
+-->
+
+  <!--Coupling to moist physics-->
+
+  <item>
+    <shortName>Physics-Dynamics coupling strategy:</shortName>
+    <longName>Physics-Dynamics coupling strategy:</longName>
+    <values>
+      <value>
+        <shortName>process-split (a.k.a. parallel-split), including tracers</shortName>
+        <longName>process-split (a.k.a. parallel-split), including tracers</longName>
+      </value>
+      <value>
+        <shortName>time-split (a.k.a. sequential-split), including tracers</shortName>
+        <longName>time-split (a.k.a. sequential-split), including tracers</longName>
+      </value>
+      <value>
+        <shortName>process-split (a.k.a. parallel-split), except time-split for tracers</shortName>
+        <longName>process-split (a.k.a. parallel-split), except time-split for tracers</longName>
+      </value>
+      <value>
+        <shortName>other</shortName>
+        <longName>other</longName>
+      </value>
+    </values>
+  </item>
+
+  <!--
+Typical physics time step (in s) for approximate 1x1 degree grid spacing (110 km x 110 km):
+textbox
+
+-->
+
+
 </cv>

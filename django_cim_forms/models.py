@@ -390,6 +390,10 @@ class DataStatusType_enumeration(MetadataEnumeration):
     
 class DataHierarchyType_enumeration(MetadataEnumeration):
     _enum = ['run','stream','institute','model','product','experiment','frequency','realm','variable','ensembleMember']
+
+class ComponentLanguageType_enumeration(MetadataEnumeration):
+    _enum = ['Fortran','C/C++','Hybrid (Fortran and C/C++)']
+    
 #####
 
 
@@ -804,7 +808,9 @@ class SoftwareComponent(DataSource):
     fundingSource.help_text = "The entities that funded this software component"
     citations = MetadataManyToManyField("Citation",related_name="citations")
     onlineResource = models.URLField(verify_exists=False)
-    componentLanguage = MetadataForeignKey("ComponentLanguage",related_name="componentLanguage")
+
+    #componentLanguage = MetadataForeignKey("ComponentLanguage",related_name="componentLanguage")
+    componentLanguage = MetadataEnumerationField(enumeration=ComponentLanguageType_enumeration,open=True)
 
     def __init__(self,*args,**kwargs):
         super(SoftwareComponent, self).__init__(*args, **kwargs)
@@ -927,6 +933,7 @@ class ModelComponent(SoftwareComponent):
 
     type = MetadataEnumerationField(enumeration=ModelComponentType_enumeration,open=True)
     timing = MetadataForeignKey("Timing",related_name="timing")
+    timing.help_text = "Describes information about how this component simulates time."
 
     def __init__(self,*args,**kwargs):
         super(ModelComponent,self).__init__(*args,**kwargs)
@@ -954,6 +961,7 @@ try:
     LogicalRelationshipType_enumeration.loadEnumerations()
     DataStatusType_enumeration.loadEnumerations()
     DataHierarchyType_enumeration.loadEnumerations()
+    ComponentLanguageType_enumeration.loadEnumerations()
 except:
     # this will fail on syncdb; once I move to South, it won't matter
     pass
