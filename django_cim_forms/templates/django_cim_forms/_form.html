@@ -10,7 +10,8 @@
     {% for field in form.visible_fields %}
         {% if form|isInSubForms:field %}
 
-            {% if field.field.required %}
+        
+            {% if field.field.required or field.isRequired %}
             <fieldset class="coolfieldset required" name="{{field.name}}">
             {% else %}
             <fieldset class="coolfieldset" name="{{field.name}}">

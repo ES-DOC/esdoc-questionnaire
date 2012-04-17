@@ -156,6 +156,7 @@ class MetadataDocumentField(models.ManyToManyField):
     def __init__(self,*args,**kwargs):
         appName = kwargs.pop("appName","django_cim_forms")
         modelName = kwargs.pop("modelName",None)
+
         if not modelName:
             raise MetadataError("you must specify the appName and modelName for a MetadataDocumentField")
         super(MetadataDocumentField,self).__init__(*args,**kwargs)
@@ -167,9 +168,16 @@ class MetadataDocumentField(models.ManyToManyField):
 
     def getModelName(self):
         return self._model_name
+
 class MetadataManyToManyField(models.ManyToManyField):
-    
+
+    _required = False
+
+    def isRequired(self):
+        return self._required        
+
     def __init__(self,*args,**kwargs):
+        required = not(kwargs.pop("blank",True))
         # force this field to be blank and null; so that validation is essentially skipped
         # (I do it manually in MetadataForm.clean)
         kwargs["blank"] = True
@@ -182,11 +190,18 @@ class MetadataManyToManyField(models.ManyToManyField):
             raise MetadataError("you must provide a related_name kwarg to a MetadataManyToManyField")
         kwargs["related_name"] = "%(app_label)s;%(class)s;" + related_name
         super(MetadataManyToManyField,self).__init__(*args,**kwargs)
+        self._required = required
         self.help_text = None # this is the default setting; it can be overridden in the class definitions below
 
 class MetadataForeignKey(models.ForeignKey):
 
+    _required = False
+
+    def isRequired(self):
+        return self._required
+
     def __init__(self,*args,**kwargs):
+        required = not(kwargs.pop("blank",True))
         # force this field to be blank and null; so that validation is essentially skipped
         # (I do it manually in MetadataForm.clean)
         kwargs["blank"] = True
@@ -200,6 +215,7 @@ class MetadataForeignKey(models.ForeignKey):
             raise AttributeError("you must provide a related_name kwarg to a MetadataForeignKey")
         kwargs["related_name"] = "%(app_label)s;%(class)s;" + related_name
         super(MetadataForeignKey,self).__init__(*args,**kwargs)
+        self._required = required
         self.help_text = None # this is the default setting; it can be overridden in the class definitions below
 
 ########################################
@@ -423,9 +439,9 @@ class ComponentProperty(MetadataModel):
 
     cv = None
 
-    shortName = models.CharField(max_length=BIG_STRING,blank=False)
-    longName  = models.CharField(max_length=BIG_STRING,blank=True)
-    value = models.CharField(max_length=BIG_STRING,blank=True,null=True)
+    shortName = models.CharField(max_length=HUGE_STRING,blank=False)
+    longName  = models.CharField(max_length=HUGE_STRING,blank=True)
+    value = models.CharField(max_length=HUGE_STRING,blank=True,null=True)
 
     def __unicode__(self):
         name = u'%s' % self.getTitle()
@@ -932,13 +948,25 @@ class ModelComponent(SoftwareComponent):
     _fieldsByType = {}
 
     type = MetadataEnumerationField(enumeration=ModelComponentType_enumeration,open=True)
-    timing = MetadataForeignKey("Timing",related_name="timing")
+    timing = MetadataForeignKey("Timing",related_name="timing",blank=False)
     timing.help_text = "Describes information about how this component simulates time."
 
     def __init__(self,*args,**kwargs):
         super(ModelComponent,self).__init__(*args,**kwargs)
         self.registerFieldType(FieldType("MODEL_DESCRIPTION","Component Description"), ["type"])
         self.registerFieldType(FieldType("BASIC","Basic Properties"), ["timing"])
+
+class GridSpec(MetadataModel):
+    _name = "GridSpec"
+    _title = "Grid"
+
+    _fieldsByType = {}
+
+    def __init__(self,*args,**kwargs):
+        super(GridSpec,self).__init__(*args,**kwargs)
+
+        
+
 
 ##############
 

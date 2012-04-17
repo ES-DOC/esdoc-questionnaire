@@ -365,8 +365,13 @@
                             {% for field in form.visible_fields %}
                                 {% if field.name in fieldsOfType %}
                                     {% if form|isInSubForms:field %}
+
+                                    {% if field.field.required or form|required:field %}
                                     
+                                        <fieldset class="coolfieldset required" name="{{field.name}}">
+                                        {% else %}
                                         <fieldset class="coolfieldset" name="{{field.name}}">
+                                        {% endif %}
                                             <legend title="click to show/hide content">
                                                     {% if field.help_text %}
                                                     <div class="help-button" title="click for more info" id="{{form.getName}}_{{field.auto_id}}">

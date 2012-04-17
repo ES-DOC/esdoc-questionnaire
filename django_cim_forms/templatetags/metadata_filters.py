@@ -54,6 +54,21 @@ def getFieldsOfType(form,fieldType):
     model = form.Meta.model
     return model._fieldsByType[fieldType.getType()]
 
+#############################################################################
+# return whether or not this field is _really_ required                     #
+# (some Metadata Relationship Fields always have blank=True set internally) #
+#############################################################################
+
+@register.filter
+def required(form,field):
+    #return field.isRequired
+    model = form.Meta.model
+    modelField = model._meta.get_field_by_name(field.name)[0]    
+    try:
+        return modelField.isRequired()
+    except AttributeError:
+        return None
+
 ##########################################################
 # checks whether a field should be rendered as a subform #
 ##########################################################
