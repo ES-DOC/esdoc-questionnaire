@@ -35,7 +35,7 @@ class _MetadataAbstractFormField(django.forms.fields.ChoiceField):
     def __init__(self,*args,**kwargs):
         choices = kwargs.pop("choices",None)
         super(_MetadataAbstractFormField,self).__init__(*args,**kwargs)
-        self.widget = django.forms.widgets.RadioSelect(choices=choices,renderer=HorizontalRadioRenderer)
+        self.widget = django.forms.widgets.RadioSelect(choices=choices,renderer=HorizontalRadioRenderer)        
  
 class MetadataAbstractField(models.CharField):
 
@@ -56,6 +56,7 @@ class MetadataAbstractField(models.CharField):
         super(MetadataAbstractField,self).__init__(*args,**kwargs)
         self._subclasses = subclasses
         self._choices = choices
+        
 
     def getSubclasses(self):
         return self._subclasses
@@ -64,7 +65,7 @@ class MetadataAbstractField(models.CharField):
         return self._choices
     
     def formfield(self,*args,**kwargs):
-        return _MetadataAbstractFormField(choices=self._choices)
+        return _MetadataAbstractFormField(choices=self._choices,help_text=self.help_text)
 
     def get_internal_type(self):
         return 'MetadataAbstractField'
@@ -788,7 +789,16 @@ class DBStorage(DataStorage):
 
     def __init__(self, *args, **kwargs):
         super(DBStorage, self).__init__(*args, **kwargs)
-        
+
+
+class SelfRelationship(models.Model):
+    
+    from_model = models.ForeignKey('DataObject', related_name='from_model')
+    to_model = models.ForeignKey('DataObject', related_name='to_model')
+
+    class Meta:
+        unique_together = ('from_model', 'to_model')
+
 class DataObject(DataSource):
     _name = "DataObject"
     _title = "Data Object"
@@ -807,11 +817,13 @@ class DataObject(DataSource):
     distribution = MetadataForeignKey("DataDistribution",related_name="distribution")
     restriction = MetadataManyToManyField("DataRestriction",related_name="restriction")
     storage = MetadataAbstractField(abstractModel=DataStorage,related_name="storage",blank=True)
+    storage.help_text = "Describes the method that the DataObject is stored. An abstract <u>class</u> with specific child classes for each supported method."
     fileStorage = MetadataForeignKey("FileStorage",related_name="fileStorage",blank=True)
     dBStorage = MetadataForeignKey("DBStorage",related_name="dBStorage",blank=True)
     iPStorage = MetadataForeignKey("IPStorage",related_name="iPStorage",blank=True)
     keyword = models.CharField(max_length=BIG_STRING,blank=True)
     keyword.help_text = "Descriptive keyword used when searching for DataObjects (this is not the same as shortName / longName / description)."
+#    childObjects = models.ManyToManyField("self",related_name="childObjects",symmetrical=False,through="SelfRelationship")
 
     def __init__(self, *args, **kwargs):
         super(DataObject, self).__init__(*args, **kwargs)

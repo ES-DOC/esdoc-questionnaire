@@ -122,8 +122,8 @@ class MetadataControlledVocabulary(models.Model):
 
     _name = "MetadataControlledVocabulary"
 
-    shortName = models.CharField(max_length=BIG_STRING,blank=False)
-    longName = models.CharField(max_length=BIG_STRING,blank=True)
+    shortName = models.CharField(max_length=HUGE_STRING,blank=False)
+    longName = models.CharField(max_length=HUGE_STRING,blank=True)
 
     values = MetadataControlledVocabularyValueField(blank=True,null=True)
 

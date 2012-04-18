@@ -48,8 +48,8 @@
     </values>
   </item>
   <item>
-    <shortName>Generic class</shortName>
-    <longName>Generic class</longName>
+    <shortName>Dynamical Core: Generic class</shortName>
+    <longName>Dynamical Core: Generic class</longName>
     <values>
       <value>
         <shortName>Eulerian</shortName>
