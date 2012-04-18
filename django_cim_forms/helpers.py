@@ -19,7 +19,6 @@ LIL_STRING  = 25
 
 json_serializer = serializers.get_serializer("json")()
 
-
 ########
 # get the subclasses of a class
 #########

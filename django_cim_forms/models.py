@@ -32,9 +32,9 @@ class HorizontalRadioRenderer(django.forms.widgets.RadioSelect.renderer):
 class _MetadataAbstractFormField(django.forms.fields.ChoiceField):
     widget = django.forms.widgets.RadioSelect
 
-    def __init__(self,*args,**kwargs):
-        choices = kwargs.pop("choices",None)
+    def __init__(self,*args,**kwargs):        
         super(_MetadataAbstractFormField,self).__init__(*args,**kwargs)
+        choices = kwargs.pop("choices",None)
         self.widget = django.forms.widgets.RadioSelect(choices=choices,renderer=HorizontalRadioRenderer)        
  
 class MetadataAbstractField(models.CharField):
@@ -47,12 +47,13 @@ class MetadataAbstractField(models.CharField):
         if not abstractModel:
             raise MetadataError("you must specify the abstract model for a MetadataAbstractField")
         if not related_name:
-            raise MetadataError("you must specify a related_name for a MetadataDocumentField")
+            raise MetadataError("you must specify a related_name for a MetadataAbstractField")
 
         subclasses = [subclass for subclass in get_subclasses(abstractModel) if not subclass._meta.abstract ]
         choices = [(subclass._name[0].lower()+subclass._name[1:],subclass._title) for subclass in subclasses]
 
         kwargs["max_length"] = BIG_STRING
+        kwargs["null"] = True
         super(MetadataAbstractField,self).__init__(*args,**kwargs)
         self._subclasses = subclasses
         self._choices = choices
@@ -83,7 +84,7 @@ class MetadataEnumerationField(models.ForeignKey):
         # TODO: why doesn't this work from here?
         #if enumerationClass:
         #   enumerationClass.loadEnumerations()
-        kwargs["blank"] = open
+        #kwargs["blank"] = open
         kwargs["null"] = True
         super(MetadataEnumerationField,self).__init__(enumerationClass,**kwargs)
         self._open = open
@@ -482,7 +483,7 @@ class DataSource(MetadataModel):
 
     _fieldsByType = {}
 
-    purpose = MetadataEnumerationField(enumeration=DataPurpose_enumeration,open=True)
+    purpose = MetadataEnumerationField(enumeration=DataPurpose_enumeration,open=True,blank=True)
 
     def __init__(self,*args,**kwargs):
         super(DataSource, self).__init__(*args, **kwargs)
@@ -695,14 +696,14 @@ class License(MetadataModel):
 
     _fieldsByType = {}
 
+    unrestricted = MetadataEnablerField(fields=["licenseName","licenseContact","licenseDescription"])
+    unrestricted.help_text = "If unrestricted=\"true\" then the artifact can be downloaded with no restrictions (ie: there are no administrative steps for the user to deal with; code or data can be downloaded and used directly)."
     licenseName = models.CharField(max_length=LIL_STRING,blank=True)
     licenseName.help_text = "The name that the license goes by (ie: 'GPL')"
     licenseContact = models.CharField(max_length=HUGE_STRING,blank=True)
     licenseContact.help_text = "The point of contact for access to this artifact; may be either a person or an institution"
     licenseDescription = models.TextField(blank=True)
     licenseDescription.help_text = "A textual description of the license; might be the full text of the license, more likely to be a brief summary"
-    unrestricted = models.BooleanField()
-    unrestricted.help_text = "If unrestricted=\"true\" then the artifact can be downloaded with no restrictions (ie: there are no administrative steps for the user to deal with; code or data can be downloaded and used directly)."
 
     def __unicode__(self):
         name = self.getTitle()
@@ -1255,6 +1256,18 @@ class ModelComponent(SoftwareComponent):
         self.registerFieldType(FieldType("MODEL_DESCRIPTION","Component Description"), ["type"])
         self.registerFieldType(FieldType("BASIC","Basic Properties"), ["timing"])
 
+class GridMosaic(MetadataModel):
+    _name = "GridMosaic"
+    _title = "Grid Mosaic"
+
+    _fieldsByType = {}
+
+    congruentTiles = models.BooleanField()
+    gridMosaic = models.ManyToManyField("self",symmetrical=False)
+    #gridMosaic = MetadataManyToManyField("GridMosaic",related_name="asdf",recursive=False)
+
+    def __init__(self,*args,**kwargs):
+        super(GridMosaic,self).__init__(*args,**kwargs)
 
 
 class GridSpec(MetadataModel):
@@ -1266,11 +1279,13 @@ class GridSpec(MetadataModel):
     shortName = models.CharField(max_length=LIL_STRING,blank=False)
     longName = models.CharField(max_length=BIG_STRING,blank=False)
     description = models.TextField(blank=True)
-    gridType = MetadataEnumerationField(enumeration=GridType_enumeration,open=True)
+    gridType = MetadataEnumerationField(enumeration=GridType_enumeration,open=True,blank=False)
 
+    esmModelGrids = MetadataManyToManyField("GridMosaic",related_name="esmModelGrid")
+    
     def __init__(self,*args,**kwargs):
         super(GridSpec,self).__init__(*args,**kwargs)
-        self.registerFieldType(FieldType("GRID_DESCRIPTION","Grid Description"),["shortName","longName","gridType","description"])
+        self.registerFieldType(FieldType("GRID_DESCRIPTION","Grid Description"),["shortName","longName","gridType","description","esmModelGrids"])
 
         
 

@@ -190,8 +190,8 @@ class MetadataForm(ModelForm):
                 if self._request and self._request.method == "POST":
                     # TODO: NOT SURE IF I NEED THE QUERYSET KWARG HERE (DON'T THINK SO)
                     value[2] = subFormClass(self._request.POST,prefix=key,request=self._request)
-                else:
-                    value[2] = subFormClass(queryset=qs,prefix=key,request=self._request)
+                else:                    
+                    value[2] = subFormClass(queryset=qs,prefix=key,request=self._request)                    
 
             elif subFormType == SubFormTypes.FORM:
                 subInstance = None
@@ -463,7 +463,7 @@ DataContent_formset = MetadataFormSetFactory(DataContent,DataContent_form,name="
 DataDistribution_form = MetadataFormFactory(DataDistribution,name="DataDistribution_form",subForms={"responsibleParties":"ResponsibleParty_formset"})
 DataDistribution_formset = MetadataFormSetFactory(DataDistribution,DataDistribution_form,name="DataDistribution_formset")
 
-License_form = MetadataFormFactory(License,name="License_form")
+License_form = MetadataFormFactory(License,name="License_form",reorder=("unrestricted","licenseName","licenseContact","licenseDescription"))
 License_formset = MetadataFormSetFactory(License,License_form,name="License_formset")
 
 DataRestriction_form = MetadataFormFactory(DataRestriction,name="DataRestriction_form",subForms={"license":"License_form"})
@@ -507,5 +507,8 @@ CompositeNumericalRequirement_formset = MetadataFormSetFactory(CompositeNumerica
 NumericalExperiment_form = MetadataFormFactory(NumericalExperiment,name="NumericalExperiment_form",subForms={"calendar":"Calendar_form","numericalRequirements":"CompositeNumericalRequirement_formset","responsibleParties":"ResponsibleParty_formset"})
 NumericalExperiment_formset = MetadataFormSetFactory(NumericalExperiment,NumericalExperiment_form,name="NumericalExperiment_formset")
 
-GridSpec_form = MetadataFormFactory(GridSpec,name="GridSpec_form")
+GridMosaic_form = MetadataFormFactory(GridMosaic,name="GridMosaic_form",subForms={"gridMosaic":"GridMosaic_formset"})
+GridMosaic_formset = MetadataFormSetFactory(GridMosaic,GridMosaic_form,name="GridMosaic_formset")
+
+GridSpec_form = MetadataFormFactory(GridSpec,name="GridSpec_form",subForms={"esmModelGrids":"GridMosaic_formset"})
 GridSpec_formset = MetadataFormSetFactory(GridSpec,GridSpec_form,name="GridSpec_formset")
