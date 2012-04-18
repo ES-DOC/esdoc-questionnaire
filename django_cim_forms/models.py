@@ -1,6 +1,7 @@
+import django.utils.safestring
 import django.forms.widgets
 import django.forms.fields
-# module imports
+from django.utils.encoding import force_unicode
 
 from django.db import models, DatabaseError
 from django.utils.functional import curry
@@ -22,6 +23,51 @@ class FieldType(EnumeratedType):
 ##############################
 # custom fields for metadata #
 ##############################
+
+
+class HorizontalRadioRenderer(django.forms.widgets.RadioSelect.renderer):
+    def render(self):
+        return django.utils.safestring.mark_safe(u'\n'.join([u'%s\n' % w for w in self]))
+
+class _MetadataAbstractFormField(django.forms.fields.ChoiceField):
+    widget = django.forms.widgets.RadioSelect
+
+    def __init__(self,*args,**kwargs):
+        choices = kwargs.pop("choices",None)
+        super(_MetadataAbstractFormField,self).__init__(*args,**kwargs)
+        self.widget = django.forms.widgets.RadioSelect(choices=choices,renderer=HorizontalRadioRenderer)
+ 
+class MetadataAbstractField(models.CharField):
+
+    _subclasses = []
+    
+    def __init__(self,*args,**kwargs):
+        abstractModel = kwargs.pop("abstractModel",None)
+        related_name = kwargs.pop("related_name",None)
+        if not abstractModel:
+            raise MetadataError("you must specify the abstract model for a MetadataAbstractField")
+        if not related_name:
+            raise MetadataError("you must specify a related_name for a MetadataDocumentField")
+
+        subclasses = [subclass for subclass in get_subclasses(abstractModel) if not subclass._meta.abstract ]
+        choices = [(subclass._name[0].lower()+subclass._name[1:],subclass._title) for subclass in subclasses]
+
+        kwargs["max_length"] = BIG_STRING
+        super(MetadataAbstractField,self).__init__(*args,**kwargs)
+        self._subclasses = subclasses
+        self._choices = choices
+
+    def getSubclasses(self):
+        return self._subclasses
+
+    def getChoices(self):
+        return self._choices
+    
+    def formfield(self,*args,**kwargs):
+        return _MetadataAbstractFormField(choices=self._choices)
+
+    def get_internal_type(self):
+        return 'MetadataAbstractField'
 
 class MetadataEnumerationField(models.ForeignKey):
 
@@ -409,6 +455,22 @@ class DataHierarchyType_enumeration(MetadataEnumeration):
 
 class ComponentLanguageType_enumeration(MetadataEnumeration):
     _enum = ['Fortran','C/C++','Hybrid (Fortran and C/C++)']
+
+class GridType_enumeration(MetadataEnumeration):
+    _enum = ["cubed_sphere","displaced_pole","icosahedral_geodesic","reduced_gaussian","regular_lat_lon","spectral_gaussian","tripolar","yin_yang","composite",]
+
+
+class UnitType_enumeration(MetadataEnumeration):
+    _enum = ["meter","hectopascal","pascal","sigma","degrees"]
+
+class DataFormatType_enumeration(MetadataEnumeration):
+    _enum = ["Excel","HDF","NetCDF","GRIB 1","GRIB 2","PP","ASCII","HDF EOS","ENCEP ON29","ENCEP ON129","Binary"]
+
+class DataAccessType_enumeration(MetadataEnumeration):
+    _enum = ["CD-ROM","DISCDB","DVD","Microfiche","OnlineFileHTTP","OnlineFileFTP"]
+
+class DataRestrictionScopeType_enumeration(MetadataEnumeration):
+    _enum = ["metadataAccessConstraint","metadataUseConstraint","dataAccessConstraint","dataUseConstraint"]
     
 #####
 
@@ -515,6 +577,218 @@ class Calendar(MetadataModel):
         super(Calendar, self).__init__(*args, **kwargs)
         self.registerFieldType(FieldType("BASIC","Basic Properties"),['units','length','description','range'])
 
+class Standard(MetadataModel):
+    _name = "Standard"
+    _title = "Standard"
+
+    _fieldsByType = {}
+
+    name = models.CharField(max_length=BIG_STRING,blank=False)
+    version = models.CharField(max_length=LIL_STRING,blank=True)
+    description = models.TextField(blank=True)
+
+    def __init__(self,*args,**kwargs):
+        super(Standard,self).__init__(*args,**kwargs)
+
+    def __unicode__(self):
+        name = self.getName()
+        if self.name:
+            name = u'%s: %s' % (name, self.name)
+        return name
+
+class StandardName(MetadataModel):
+    _name = "StandardName"
+    _title = "Standard Name"
+
+    _fieldsByType = {}
+
+    value = models.CharField(max_length=BIG_STRING,blank=False)
+    standard = MetadataManyToManyField("Standard",related_name="standard")
+
+    def __init__(self,*args,**kwargs):
+        super(StandardName,self).__init__(*args,**kwargs)
+
+class DataTopic(MetadataModel):
+    _name = "DataTopic"
+    _title = "Data Topic"
+
+    _fieldsByType = {}
+
+    name = models.CharField(max_length=BIG_STRING,blank=False)
+    standardName = MetadataForeignKey("StandardName",related_name="standardName",blank=False)
+    description = models.CharField(max_length=BIG_STRING,blank=True)
+    unit = MetadataEnumerationField(enumeration=UnitType_enumeration,open=True)
+
+
+    def __init__(self, *args, **kwargs):
+        super(DataTopic, self).__init__(*args, **kwargs)
+
+class DataCitation(MetadataModel):
+    _name = "DataCitation"
+    _title = "Data Citation"
+
+    _fieldsByType = {}
+
+    abstract = models.TextField(blank=True)
+    citation = MetadataForeignKey("Citation",related_name="citation",blank=False)
+
+    def __init__(self, *args, **kwargs):
+        super(DataCitation, self).__init__(*args, **kwargs)
+
+    def __unicode__(self):
+        name = self.getTitle()
+        return name
+
+class DataContent(MetadataModel):
+    _name = "DataContent"
+    _title = "Data Content"
+
+    _fieldsByType = {}
+
+    topic = MetadataForeignKey("DataTopic",related_name="topic",blank=False)
+    aggregation = models.CharField(max_length=BIG_STRING,blank=True)
+    aggregation.help_text = "Describes how the content has been aggregated together: sum, min, mean, max, ..."
+    frequency = MetadataEnumerationField(enumeration=FrequencyType_enumeration,open=True)
+    frequency.help_text = "Describes the frequency of the data content: daily, hourly, ..."
+    citation = MetadataManyToManyField("DataCitation",related_name="citation")
+
+    def __init__(self, *args, **kwargs):
+        super(DataContent, self).__init__(*args, **kwargs)
+        self.registerFieldType(FieldType("BASIC","Basic Properties"),["topic","aggregation","frequency","citation"])
+    
+    def __unicode__(self):
+        name = self.getTitle()
+        if self.topic:
+            name = u'%s: %s' % (name, self.topic)
+        return name
+
+class DataExtent(MetadataModel):
+    _name = "DataExtent"
+    _title = "Data Extent"
+
+    _fieldsByType = {}
+
+    description = models.CharField(max_length=HUGE_STRING,blank=True)
+    geographicElement = models.CharField(max_length=HUGE_STRING,blank=True)
+    temporalElement = models.CharField(max_length=HUGE_STRING,blank=True)
+    verticalElement = models.CharField(max_length=HUGE_STRING,blank=True)
+
+    def __init__(self, *args, **kwargs):
+        super(DataExtent, self).__init__(*args, **kwargs)
+        self.registerFieldType(FieldType("BASIC","Basic Properties"),["description","geographicElement","description","temporalElement","verticalElement"])
+
+class DataDistribution(MetadataModel):
+    _name = "DataDistribution"
+    _title = "Data Distribution"
+
+    _fieldsByType = {}
+
+    distributionFee = models.CharField(max_length=BIG_STRING,blank=True)
+    distributionFormat = MetadataEnumerationField(enumeration=DataFormatType_enumeration,open=False,blank=True)
+    distributionAccess = MetadataEnumerationField(enumeration=DataAccessType_enumeration,open=False,blank=True)
+    responsibleParties = MetadataManyToManyField("ResponsibleParty",related_name="responsibleParties")
+
+class License(MetadataModel):
+    _name = "License"
+    _title = "License"
+
+    _fieldsByType = {}
+
+    licenseName = models.CharField(max_length=LIL_STRING,blank=True)
+    licenseName.help_text = "The name that the license goes by (ie: 'GPL')"
+    licenseContact = models.CharField(max_length=HUGE_STRING,blank=True)
+    licenseContact.help_text = "The point of contact for access to this artifact; may be either a person or an institution"
+    licenseDescription = models.TextField(blank=True)
+    licenseDescription.help_text = "A textual description of the license; might be the full text of the license, more likely to be a brief summary"
+    unrestricted = models.BooleanField()
+    unrestricted.help_text = "If unrestricted=\"true\" then the artifact can be downloaded with no restrictions (ie: there are no administrative steps for the user to deal with; code or data can be downloaded and used directly)."
+
+    def __unicode__(self):
+        name = self.getTitle()
+        if self.licenseName:
+            name = u'%s: %s' % (name, self.licenseName)
+        return name
+    
+class DataRestriction(MetadataModel):
+    _name = "DataRestriction"
+    _title = "Data Restriction"
+
+    _fieldsByType = {}
+
+    restrictionScope = MetadataEnumerationField(enumeration=DataRestrictionScopeType_enumeration,open=False,blank=True)
+    # TODO: THIS IS A GMD FIELD
+    #restriction =
+    license = MetadataForeignKey("License",related_name="license")
+    
+    def __unicode__(self):
+        name = self.getTitle()
+        if self.restrictionScope:
+            name = u'%s: %s' % (name, self.restrictionScope)
+        if self.license:
+            name = u'%s: %s' % (name, self.license)
+        return name
+
+class DataStorage(MetadataModel):
+    class Meta:
+        abstract = True
+
+    _name = "DataStorage"
+    _title = "Data Storage"
+
+    _fieldsByType = {}
+
+    dataSize = models.IntegerField()
+    dataFormat = MetadataEnumerationField(enumeration=DataFormatType_enumeration,open=False,blank=True)
+    dataLocation = models.URLField(verify_exists=False)
+    modificationDate = models.DateField(null=True)
+    modificationDate.help_text = "The date that the file (or other storage medium) has been updated"
+    
+    def __init__(self, *args, **kwargs):
+        super(DataStorage, self).__init__(*args, **kwargs)
+
+class IPStorage(DataStorage):
+    _name = "IPStorage"
+    _title = "IP Storage"
+
+    _fieldsByType = {}
+
+    protocol = models.CharField(max_length=BIG_STRING,blank=True)
+    host = models.CharField(max_length=BIG_STRING,blank=True)
+    path = models.CharField(max_length=BIG_STRING,blank=True)
+    fileName = models.CharField(max_length=BIG_STRING,blank=False)
+
+    def __init__(self, *args, **kwargs):
+        super(IPStorage, self).__init__(*args, **kwargs)
+
+class FileStorage(DataStorage):
+        
+    _name = "FileStorage"
+    _title = "File Storage"
+
+    _fieldsByType = {}
+
+    fileSystem = models.CharField(max_length=BIG_STRING,blank=True)
+    path = models.CharField(max_length=HUGE_STRING,blank=True)
+    fileName = models.CharField(max_length=BIG_STRING,blank=False)
+
+    def __init__(self, *args, **kwargs):
+        super(FileStorage, self).__init__(*args, **kwargs)
+
+
+class DBStorage(DataStorage):
+    _name = "DBStorage"
+    _title = "Database Storage"
+
+    _fieldsByType = {}
+
+    dbAccessString = models.CharField(max_length=LIL_STRING,blank=True)
+    dbName = models.CharField(max_length=BIG_STRING,blank=False)
+    owner = models.CharField(max_length=HUGE_STRING,blank=True)
+    dbTable = models.CharField(max_length=HUGE_STRING,blank=True)
+
+    def __init__(self, *args, **kwargs):
+        super(DBStorage, self).__init__(*args, **kwargs)
+        
 class DataObject(DataSource):
     _name = "DataObject"
     _title = "Data Object"
@@ -527,11 +801,24 @@ class DataObject(DataSource):
     description = models.TextField(blank=True)
     hierarchyLevelName = MetadataEnumerationField(enumeration=DataHierarchyType_enumeration,open=True,blank=True)
     hierarchyLevelName.help_text = "What level in the data hierarchy (constructed by the self-referential parent/child aggregations) is this DataObject."
-
+    content = MetadataManyToManyField("DataContent",related_name="content")
+    extent = MetadataForeignKey("DataExtent",related_name="extent")
+    citation = MetadataForeignKey("DataCitation",related_name="citation",blank=True)
+    distribution = MetadataForeignKey("DataDistribution",related_name="distribution")
+    restriction = MetadataManyToManyField("DataRestriction",related_name="restriction")
+    storage = MetadataAbstractField(abstractModel=DataStorage,related_name="storage",blank=True)
+    fileStorage = MetadataForeignKey("FileStorage",related_name="fileStorage",blank=True)
+    dBStorage = MetadataForeignKey("DBStorage",related_name="dBStorage",blank=True)
+    iPStorage = MetadataForeignKey("IPStorage",related_name="iPStorage",blank=True)
+    keyword = models.CharField(max_length=BIG_STRING,blank=True)
+    keyword.help_text = "Descriptive keyword used when searching for DataObjects (this is not the same as shortName / longName / description)."
 
     def __init__(self, *args, **kwargs):
         super(DataObject, self).__init__(*args, **kwargs)
-        self.registerFieldType(FieldType("BASIC","Basic Properties"),["dataStatus","acronym","description","hierarchyLevelName"])
+        self.registerFieldType(FieldType("BASIC","Basic Properties"),["dataStatus","acronym","description","hierarchyLevelName","citation","keyword"])
+        self.registerFieldType(FieldType("CONTENT","Data Content"),["content"])
+        self.registerFieldType(FieldType("EXTENT","Data Extent"),["extent"])
+        self.registerFieldType(FieldType("ACCESS","Data Access"),["storage","fileStorage","dBStorage","iPStorage","distribution","restriction"])
 
     def __unicode__(self):
         name = self.getName()
@@ -956,14 +1243,22 @@ class ModelComponent(SoftwareComponent):
         self.registerFieldType(FieldType("MODEL_DESCRIPTION","Component Description"), ["type"])
         self.registerFieldType(FieldType("BASIC","Basic Properties"), ["timing"])
 
+
+
 class GridSpec(MetadataModel):
     _name = "GridSpec"
     _title = "Grid"
 
     _fieldsByType = {}
 
+    shortName = models.CharField(max_length=LIL_STRING,blank=False)
+    longName = models.CharField(max_length=BIG_STRING,blank=False)
+    description = models.TextField(blank=True)
+    gridType = MetadataEnumerationField(enumeration=GridType_enumeration,open=True)
+
     def __init__(self,*args,**kwargs):
         super(GridSpec,self).__init__(*args,**kwargs)
+        self.registerFieldType(FieldType("GRID_DESCRIPTION","Grid Description"),["shortName","longName","gridType","description"])
 
         
 
@@ -990,6 +1285,11 @@ try:
     DataStatusType_enumeration.loadEnumerations()
     DataHierarchyType_enumeration.loadEnumerations()
     ComponentLanguageType_enumeration.loadEnumerations()
+    GridType_enumeration.loadEnumerations()
+    UnitType_enumeration.loadEnumerations()
+    DataFormatType_enumeration.loadEnumerations()
+    DataAccessType_enumeration.loadEnumerations()
+    DataRestrictionScopeType_enumeration.loadEnumerations()
 except:
     # this will fail on syncdb; once I move to South, it won't matter
     pass

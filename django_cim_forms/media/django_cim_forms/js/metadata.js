@@ -16,3 +16,17 @@ function toggleFields(fields) {
         $(fieldset_selector).toggle();                
     }
 };
+
+function toggleForm(activeForm,allForms) {
+    var len=allForms.length;
+    for(var i=0; i<len; i++) {
+        var formName = allForms[i];
+        var fieldset_selector = "fieldset[name="+formName+"]";
+        if (activeForm == formName) {
+            $(fieldset_selector).show();
+        }
+        else {
+            $(fieldset_selector).hide();
+        }
+    }
+};

@@ -13,10 +13,34 @@ from django.core import serializers
 # some constants #
 ##################
 
-BIG_STRING = 100
-LIL_STRING = 25
+HUGE_STRING = 200
+BIG_STRING  = 100
+LIL_STRING  = 25
 
 json_serializer = serializers.get_serializer("json")()
+
+
+########
+# get the subclasses of a class
+#########
+
+def get_subclasses(parent,_subclasses=None):
+    if _subclasses is None:
+        _subclasses = set()
+    subclasses = parent.__subclasses__()
+    for subclass in subclasses:
+        if subclass not in _subclasses:
+            _subclasses.add(subclass)
+            get_subclasses(subclass,_subclasses)
+    return _subclasses
+
+
+#############################################
+# a global dictionary of forms and formsets #
+# to access when assigning subforms         #
+#############################################
+
+PotentialSubForms = {}
 
 ################################################################################
 # some classes to manage lists of enumerated types (not metadata enumerations) #

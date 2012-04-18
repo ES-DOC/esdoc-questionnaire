@@ -81,10 +81,15 @@ def customize_metadata_widgets(field):
             formfield.widget.attrs.update({"class" : "enabler start-disabled"})
         else:
             formfield.widget.attrs.update({"class" : "enabler start-enabled"})
+
     if isinstance(field,MetadataDocumentField):
         formfield.widget.attrs.update({"class" : "adder"})
         formfield.widget.attrs.update({"title": u'%s/%s'%(field.getAppName(),field.getModelName())})
 
+    if isinstance(field,MetadataAbstractField):
+        java_string = "toggleForm($(this).val(),[%s])" % ",".join([u'"%s"' % choice[0] for choice in field.getChoices()])
+        formfield.widget.attrs.update({"onclick" : java_string})
+        formfield.widget.attrs.update({"class":"abstract-choice"})
         
     # TODO: other if branches for other field types?
     
@@ -300,13 +305,6 @@ class MetadataFormSet(BaseModelFormSet):
 #    _subFormType = SubFormTypes.INLINE_FORMSET
 
 
-#############################################
-# a global dictionary of forms and formsets #
-# to access when assigning subforms         #
-#############################################
-
-PotentialSubForms = {}
-
 
 # decorator which adds generated forms & formsets to the above dictionary
 def PotentialSubForm(subFormType=SubFormType("UNKNOWN","Unknown")):
@@ -443,7 +441,47 @@ Coupling_formset = MetadataFormSetFactory(Coupling,Coupling_form,name="Coupling_
 Conformance_form = MetadataFormFactory(Conformance,name="Conformance_form")
 Conformance_formset = MetadataFormSetFactory(Conformance,Conformance_form,name="Conformance_formset")
 
-DataObject_form = MetadataFormFactory(DataObject,name="DataObject_form")
+Standard_form = MetadataFormFactory(Standard,name="Standard_form")
+Standard_formset = MetadataFormSetFactory(Standard,Standard_form,name="Standard_formset")
+
+
+StandardName_form = MetadataFormFactory(StandardName,name="StandardName_form",subForms={"standard":"Standard_formset"})
+StandardName_formset = MetadataFormSetFactory(StandardName,StandardName_form,name="StandardName_formset")
+
+DataCitation_form = MetadataFormFactory(DataCitation,name="DataCitation_form",subForms={"citation":"Citation_form"})
+DataCitation_formset = MetadataFormSetFactory(DataCitation,DataCitation_form,name="DataCitation_formset")
+
+DataExtent_form = MetadataFormFactory(DataExtent,name="DataExtent_form")
+DataExtent_formset = MetadataFormSetFactory(DataExtent,DataExtent_form,name="DataExtent_formset")
+
+DataTopic_form = MetadataFormFactory(DataTopic,name="DataTopic_form",subForms={"standardName":"StandardName_form"})
+DataTopic_formset = MetadataFormSetFactory(DataTopic,DataTopic_form,name="DataTopic_formset")
+
+DataContent_form = MetadataFormFactory(DataContent,name="DataContent_form",subForms={"topic":"DataTopic_form","citation":"DataCitation_formset"},reorder=("topic","frequency","aggregation","citation"))
+DataContent_formset = MetadataFormSetFactory(DataContent,DataContent_form,name="DataContent_formset")
+
+DataDistribution_form = MetadataFormFactory(DataDistribution,name="DataDistribution_form",subForms={"responsibleParties":"ResponsibleParty_formset"})
+DataDistribution_formset = MetadataFormSetFactory(DataDistribution,DataDistribution_form,name="DataDistribution_formset")
+
+License_form = MetadataFormFactory(License,name="License_form")
+License_formset = MetadataFormSetFactory(License,License_form,name="License_formset")
+
+DataRestriction_form = MetadataFormFactory(DataRestriction,name="DataRestriction_form",subForms={"license":"License_form"})
+DataRestriction_formset = MetadataFormSetFactory(DataRestriction,DataRestriction_form,name="DataRestriction_formset")
+
+#DataStorage_form = MetadataFormFactory(DataStorage,name="DataStorage_form")
+#DataStorage_formset = MetadataFormSetFactory(DataStorage,DataStorage_form,name="DataStorage_formset")
+
+FileStorage_form = MetadataFormFactory(FileStorage,name="FileStorage_form",reorder=("fileName","path","fileSystem","dataFormat","dataSize","dataLocation","modificationDate"))
+FileStorage_formset = MetadataFormSetFactory(FileStorage,FileStorage_form,name="FileStorage_formset")
+
+DBStorage_form = MetadataFormFactory(DBStorage,name="DBStorage_form",reorder=("dbName","dbAccessString","dbTable","owner","dataFormat","dataSize","dataLocation","modificationDate"))
+DBStorage_formset = MetadataFormSetFactory(DBStorage,DBStorage_form,name="DBStorage_formset")
+
+IPStorage_form = MetadataFormFactory(IPStorage,name="IPStorage_form",reorder=("fileName","path","host","protocol","dataFormat","dataSize","dataLocation","modificationDate"))
+IPStorage_formset = MetadataFormSetFactory(IPStorage,IPStorage_form,name="IPStorage_formset")
+
+DataObject_form = MetadataFormFactory(DataObject,name="DataObject_form",subForms={"content":"DataContent_formset","extent":"DataExtent_form","citation":"DataCitation_form","distribution":"DataDistribution_form","restriction":"DataRestriction_formset","fileStorage":"FileStorage_form","dBStorage":"DBStorage_form","iPStorage":"IPStorage_form"})
 DataObject_formset = MetadataFormSetFactory(DataObject,DataObject_form,name="DataObject_formset")
 
 Simulation_form = MetadataFormFactory(Simulation,name="Simulation_form",subForms={"calendar":"Calendar_form", "inputs" : "Coupling_formset", "outputs":"DataObject_formset", "restarts":"DataObject_formset","conformances":"Conformance_formset"})
@@ -468,3 +506,6 @@ CompositeNumericalRequirement_formset = MetadataFormSetFactory(CompositeNumerica
 
 NumericalExperiment_form = MetadataFormFactory(NumericalExperiment,name="NumericalExperiment_form",subForms={"calendar":"Calendar_form","numericalRequirements":"CompositeNumericalRequirement_formset","responsibleParties":"ResponsibleParty_formset"})
 NumericalExperiment_formset = MetadataFormSetFactory(NumericalExperiment,NumericalExperiment_form,name="NumericalExperiment_formset")
+
+GridSpec_form = MetadataFormFactory(GridSpec,name="GridSpec_form")
+GridSpec_formset = MetadataFormSetFactory(GridSpec,GridSpec_form,name="GridSpec_formset")
