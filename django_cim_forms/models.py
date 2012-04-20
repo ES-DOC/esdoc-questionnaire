@@ -58,7 +58,6 @@ class MetadataAbstractField(models.CharField):
         self._subclasses = subclasses
         self._choices = choices
         
-
     def getSubclasses(self):
         return self._subclasses
 
@@ -337,6 +336,11 @@ class MetadataModel(models.Model):
         #return [fieldType for fieldType in list(self._fieldTypes) if (fieldType.getType() in self._fieldsByType)]
         return [fieldType for fieldType in orderedFieldTypes if (fieldType.getType() in self._fieldsByType)]
 
+    def initialize(self):
+        #TODO: initialize all submodels?
+        # or does this belong in forms?
+        pass
+    
     def serialize(self,format="JSON"):
         # sticking self in a list simulates a queryset
         qs = [self]
@@ -502,6 +506,7 @@ class ComponentProperty(MetadataModel):
     _fieldsByType = {}
 
     cv = None
+    value_choices = []
 
     shortName = models.CharField(max_length=HUGE_STRING,blank=False)
     longName  = models.CharField(max_length=HUGE_STRING,blank=True)
@@ -521,16 +526,16 @@ class ComponentProperty(MetadataModel):
         cv = kwargs.pop("cv",None)
         super(ComponentProperty, self).__init__(*args, **kwargs)
         self.registerFieldType(FieldType("BASIC","Basic Properties"),["shortName","longName","value"])
-
-        self._meta.get_field_by_name("shortName")[0].default = cv.shortName
-        self._meta.get_field_by_name("longName")[0].default = cv.longName
-        self._meta.get_field_by_name("value")[0]._choices = cv.values
         self._meta.get_field_by_name("value")[0].widget = django.forms.Select()
+        if cv:
+            self._meta.get_field_by_name("shortName")[0].default = cv.shortName
+            self._meta.get_field_by_name("longName")[0].default = cv.longName
+            #self._meta.get_field_by_name("value")[0]._choices = cv.values
+            self.value_choices = cv.values
+            print "INITIALIZED COMPONENT PROPERTY"
+        else:
+            print "ERROR INITIALIZING COMPONENT PROPERTY"
 
-
-
-
-    
 
 class Activity(MetadataModel):
     class Meta:

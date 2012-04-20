@@ -77,6 +77,15 @@ class MetadataEnumeration(models.Model):
         enum.sort()
         for name in enum:
             cls.objects.get_or_create(name=name)
+
+
+def get_enumeration(enumerationClass,enumerationName):
+    try:
+        enumeration = enumerationClass.objects.get(name=enumerationName)
+        return enumeration
+    except enumerationClass.DoesNotExist:
+        return None
+        
 #######
 # CVs #
 #######
