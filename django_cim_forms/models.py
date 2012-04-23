@@ -287,6 +287,7 @@ class MetadataModel(models.Model):
     _fieldTypes = EnumeratedTypeList([])
     _fieldTypeOrder = None
     _fieldsByType = {}
+    _initialValues = {}
 
     # every model has a guid
     guid = models.CharField(max_length=64,editable=False,blank=True,unique=True)
@@ -300,6 +301,14 @@ class MetadataModel(models.Model):
     def getGuid(self):
         return self.guid
 
+    def getInitialValues(self):
+        return self._initialValues
+
+    def setInitialValues(self,initialValues):
+        # this fn will overwrite existing initialValues
+        for (key,value) in initialValues.iteritems():
+            self._initialValues[key] = value
+            
     def setFieldTypeOrder(self,order):
         self._fieldTypeOrder = order
         
@@ -505,13 +514,34 @@ class ComponentProperty(MetadataModel):
 
     _fieldsByType = {}
 
-    cv = None
+    cvClass = None
     value_choices = []
 
     shortName = models.CharField(max_length=HUGE_STRING,blank=False)
     longName  = models.CharField(max_length=HUGE_STRING,blank=True)
     value = models.CharField(max_length=HUGE_STRING,blank=True,null=True)
 
+    # this field is exluded by ComponentProperty_form
+    valueChoices = MetadataControlledVocabularyValueField(blank=True,null=True)
+    
+    def getCV(self):
+        return  self.cvInstance
+
+    def getCVClass(self):
+        return self.cvClass
+
+    @classmethod
+    def getCVClass(cls):
+        return cls.cvClass
+
+    def getValueChoices(self):
+        #return self._meta.get_field_by_name("value")[0].choices
+        choices = [("----------","----------")]
+        if self.valueChoices:
+            return choices+self.valueChoices
+        else:
+            return choices
+            
     def __unicode__(self):
         name = u'%s' % self.getTitle()
         if self.longName:
@@ -528,13 +558,14 @@ class ComponentProperty(MetadataModel):
         self.registerFieldType(FieldType("BASIC","Basic Properties"),["shortName","longName","value"])
         self._meta.get_field_by_name("value")[0].widget = django.forms.Select()
         if cv:
+            self.cvInstance = cv
             self._meta.get_field_by_name("shortName")[0].default = cv.shortName
             self._meta.get_field_by_name("longName")[0].default = cv.longName
             #self._meta.get_field_by_name("value")[0]._choices = cv.values
-            self.value_choices = cv.values
-            print "INITIALIZED COMPONENT PROPERTY"
+            self.valueChoices = cv.values
+            
         else:
-            print "ERROR INITIALIZING COMPONENT PROPERTY"
+            print "Error initializing ComponentProperty; no CV specified"
 
 
 class Activity(MetadataModel):
@@ -1325,4 +1356,39 @@ try:
 except:
     # this will fail on syncdb; once I move to South, it won't matter
     pass
+
+
+
+#################
+# testing stuff #
+
+class Bar(MetadataModel):
+    _name = "Bar"
+    name = models.CharField(max_length=BIG_STRING,blank=True)
+
+    def __unicode__(self):
+        name = u'%s' % self.getName()
+        if self.name:
+            name = u'%s' % self.name
+        return name
+
+    def __init__(self,*args,**kwargs):
+        super(Bar,self).__init__(*args,**kwargs)
+
+class Foo(MetadataModel):
+    _name = "Foo"
+
+    name = models.CharField(max_length=BIG_STRING,blank=True)
+    bars = models.ManyToManyField("Bar",related_name="bars")
+
+    def __unicode__(self):
+        name = u'%s' % self.getName()
+        if self.name:
+            name = u'%s' % self.name
+        return name
+
+    def __init__(self,*args,**kwargs):
+        default_bars=kwargs.pop("default_bars",[])
+        super(Foo,self).__init__(*args,**kwargs)
+#        self.bars.default = default_bars
 

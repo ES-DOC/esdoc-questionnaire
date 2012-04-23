@@ -6,6 +6,9 @@ from django.core.urlresolvers import reverse
 import os
 rel = lambda *x: os.path.join(os.path.abspath(os.path.dirname(__file__)), *x)
 
+import re
+strip_completely = lambda *s: re.sub(r'\s+',' ',*s).strip()
+
 from django_cim_forms.helpers import *
 
 ###############################
@@ -157,8 +160,8 @@ class MetadataControlledVocabulary(models.Model):
         for item in items:
             shortName = item.xpath("shortName/text()") or None
             longName = item.xpath("longName/text()") or None
-            if shortName: shortName = shortName[0]
-            if longName: longName = longName[0]
+            if shortName: shortName = strip_completely(shortName[0])
+            if longName: longName = strip_completely(longName[0])
             (model,created) = cls.objects.get_or_create(shortName=shortName,longName=longName)
             xpath_value_expression="//item[shortName/text()='%s']/values/value" % shortName
             values = cv.xpath(xpath_value_expression)
@@ -166,9 +169,13 @@ class MetadataControlledVocabulary(models.Model):
             for value in values:
                 valueShortName = value.xpath("shortName/text()")
                 valueLongName = value.xpath("longName/text()")
+                valueShortName = strip_completely(valueShortName[0])
                 if not valueLongName:
-                    value_choices += "%s|%s||" % (valueShortName[0],valueShortName[0])
+                    value_choices += "%s|%s||" % (valueShortName,valueShortName)
                 else:
-                    value_choices += "%s|%s||" % (valueShortName[0],valueLongName[0])
+                    valueLongName = strip_completely(valueLongName[0])
+                    value_choices += "%s|%s||" % (valueShortName,valueLongName)
             model.values = value_choices
-            model.save()
+            if created:
+                print "storing %s" % model
+                model.save()

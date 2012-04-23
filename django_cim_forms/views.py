@@ -15,6 +15,12 @@ from django_cim_forms.models import *
 from django_cim_forms.forms import *
 from django_cim_forms.helpers import *
 
+def test(request):
+
+    FormSet = modelformset_factory(Foo,extra=2)
+    formset = FormSet(initial=[{"name":"ofsdafadf"}])
+    
+    return render_to_response('django_cim_forms/test.html', {"formset":formset}, context_instance=RequestContext(request))
 
 def index(request):
     return HttpResponse("this is the index page for the metadata application")
@@ -48,8 +54,9 @@ def detail(request, model_name, app_name="django_cim_forms", model_id=None):
             msg = "unable to find '%s' with id of '%s'" % (model_name, model_id)
             return HttpResponseBadRequest(msg)
     else:
-        # or just create a new one...
+        # or just create a new one (with default values pre-set)...
         model = ModelClass()
+#        model.initialize()
 
     if request.method == 'POST':
         form = FormClass(request.POST,instance=model,request=request)
@@ -64,7 +71,8 @@ def detail(request, model_name, app_name="django_cim_forms", model_id=None):
 
 
     else:
-        form = FormClass(instance=model,request=request)#,initial=model.initialize())
+        # if this the the first time I'm loading this model, then initialize=True
+        form = FormClass(instance=model,request=request,initialize=not(model.id))
 
     return render_to_response('django_cim_forms/metadata_detail.html', {'form' : form, "id" : model.id}, context_instance=RequestContext(request))
 

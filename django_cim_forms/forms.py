@@ -1,3 +1,4 @@
+import django.forms.fields
 import sys
 import inspect
 from django.utils.datastructures import SortedDict
@@ -146,8 +147,9 @@ class MetadataForm(ModelForm):
     @log_class_fn()
     def __init__(self,*args,**kwargs):
         self._request = kwargs.pop('request', None)
+        self._initalize = kwargs.pop("initialize",False)
         super(MetadataForm,self).__init__(*args,**kwargs)
-
+        
         self._id = self.instance.id
         self._guid = self.instance.guid
 
@@ -160,6 +162,9 @@ class MetadataForm(ModelForm):
                 self.fields[field] = tmpFields[field]
             self._ordered = True
 
+        if self._initalize:            
+            self.initialize()
+            
         # because there are no forward declarations in Python,
         # double-check that all subforms have been set properly
         for key,value in self._subForms.iteritems():
@@ -173,6 +178,7 @@ class MetadataForm(ModelForm):
         
             subFormType = value[0]
             subFormClass = value[1]
+            
 
             if subFormType == SubFormTypes.FORMSET:
                 # note that the form attribute is now a curried function
@@ -190,8 +196,10 @@ class MetadataForm(ModelForm):
                 if self._request and self._request.method == "POST":
                     # TODO: NOT SURE IF I NEED THE QUERYSET KWARG HERE (DON'T THINK SO)
                     value[2] = subFormClass(self._request.POST,prefix=key,request=self._request)
-                else:                    
-                    value[2] = subFormClass(queryset=qs,prefix=key,request=self._request)                    
+                else:
+                    if self._initalize:
+                        qs=subFormClass.initialize()
+                    value[2] = subFormClass(queryset=qs,prefix=key,request=self._request,initialize=self._initalize)
 
             elif subFormType == SubFormTypes.FORM:
                 subInstance = None
@@ -211,6 +219,13 @@ class MetadataForm(ModelForm):
                 print "unable to determine the type of subform that %s should use for %s" % (self.getName(),key)
                 pass
 
+
+    def initialize(self):
+        instance = self.save(commit=False)
+        initial_values = instance.getInitialValues()
+        for (key,value) in initial_values.iteritems():
+            self.initial[key] = value
+            
 
     @log_class_fn()
     def clean(self):
@@ -278,6 +293,41 @@ class MetadataFormSet(BaseModelFormSet):
     def getPrefix(self):
         return self._prefix
 
+    @classmethod
+    def initialize(cls):
+        # initializing a formset is a bit different from initializing a form
+        # it returns a queryset of initial models to base the formset on
+        # as opposed to setting values for the individual forms
+        # (the individual forms will be initialized later)
+        modelClass = cls.form().Meta.model
+        if issubclass(modelClass,ComponentProperty):
+            cv = modelClass.getCVClass()
+            if cv:
+                new_items = set()
+                for cvInstance in cv.objects.all():
+                    modelInstance = modelClass(cv=cvInstance)
+                    modelInstance.save()
+                    new_items.add(modelInstance.pk)
+                return modelClass.objects.filter(pk__in=new_items)
+
+        return modelClass.objects.none()
+
+## this is no longer needed
+##
+##    @classmethod
+##    def getNumberOfExtraForms(self):
+##        # if this formset is bound to a component_property,
+##        # then return the number of cv items.
+##        # otherwise just return 1.
+##        instance = self.form().save(commit=False)
+##        if isinstance(instance,ComponentProperty):
+##            cv = instance.getCVClass()
+##            if cv:
+##                return len(cv.objects.all())
+##        return 1
+
+
+
     @log_class_fn()
     def is_valid(self,*args,**kwargs):
         return super(MetadataFormSet,self).is_valid(*args,**kwargs)
@@ -285,14 +335,40 @@ class MetadataFormSet(BaseModelFormSet):
     def __init__(self,*args,**kwargs):
         # this adds an extra kwarg, 'request,' to the subforms of this formset
         self._request = kwargs.pop('request', None)
+        self._initalize = kwargs.pop("initialize",False)
         self.form = curry(self.form,request=self._request)
 
         super(MetadataFormSet,self).__init__(*args,**kwargs)
 
+        if self._initalize:
+            self.initialize()
+
         # TODO: do I need to ensure a more unique prefix?
         self._prefix = kwargs.get("prefix",self.get_default_prefix())
 
+    def initialize2(self):
 
+        print "INITIALIZING FORMSET"
+        instance = self.form().save(commit=False)
+        initial_values = instance.getInitialValues()
+        # b/c this is a formset
+        # the models bound to the corresponding form ought to return
+        # lists (of dictionaries) for getInitialValues()
+        print self._name
+        if self._name == "DycoreScientificProperties_formset":
+            self.initial = [
+                {"shortName":"foo",},
+                {"shortName":"bar",},
+            ]
+
+##
+##
+##
+##    def initialize(self):
+##        instance = self.save(commit=False)
+##        initial_values = instance.getInitialValues
+##        for (key,value) in initial_values.iteritems():
+##            self.initial[key] = value
 
 # NOT DEALING w/ INLINE-FORMSETS
 # (they are an unneccessary complication)
@@ -330,7 +406,8 @@ def MetadataFormFactory(ModelClass,*args,**kwargs):
     subForms = kwargs.pop("subForms",{})
     fieldOrder = kwargs.pop("reorder",None)
     # these two kwarg _must_ have these values
-    kwargs["form"] = MetadataForm
+
+    kwargs["form"] = kwargs.pop("form",MetadataForm)
     kwargs["formfield_callback"] = customize_metadata_widgets
     # the remaining kwargs can be passed into the constructor as needed
     _form = modelform_factory(ModelClass,**kwargs)
@@ -374,13 +451,25 @@ def MetadataFormSetFactory(ModelClass,FormClass,*args,**kwargs):
 class ComponentProperty_form(MetadataForm):
     class Meta:
         model = ComponentProperty
-        widgets = {
-            'shortName' : django.forms.fields.TextInput(attrs={'readonly':'readonly'}),
-            'longName' : django.forms.fields.TextInput(attrs={'readonly':'readonly'}),
-            'value' : django.forms.fields.Select(),
-        }
-        
+        #exclude = ("valueChoicesfsadf")
+        fields = ('shortName', 'longName','value')
+# cannot specify this in meta class due to error in django [https://code.djangoproject.com/ticket/13095]
+#        widgets = {
+#            'shortName' : django.forms.fields.TextInput(attrs={'readonly':'readonly'}),
+#            'longName' : django.forms.fields.TextInput(attrs={'readonly':'readonly'}),
+#            'value' : django.forms.fields.Select(),
+#        }
+#
     pass
+
+    def __init__(self,*args,**kwargs):
+        super(ComponentProperty_form,self).__init__(*args,**kwargs)
+        self.fields["shortName"].widget = django.forms.fields.TextInput(attrs={'readonly':'readonly'})
+        self.fields["longName"].widget = django.forms.fields.TextInput(attrs={'readonly':'readonly'})
+        self.fields["value"].widget = django.forms.fields.Select(choices=self.instance.getValueChoices())
+        # this isn't needed; seems to default to the 1st choice anyway
+        #self.fields["value"].initial = self.fields["value"].widget.choices[0]
+        
 
 ##########################################
 # the non-abstract forms used by the CIM #
