@@ -23,6 +23,9 @@
 
 #metadata .field * { vertical-align: top; }
 
+#metadata .enumeration-value { margin-right: 4px; }
+#metadata .enumeration-other { margin-left: 4px; }
+
 #metadata .help-button { display: inline; }
 #metadata .help-button .help-description { display: none !important; }
 

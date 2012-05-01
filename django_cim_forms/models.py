@@ -1,8 +1,9 @@
+import django.forms.models
 import django.utils.safestring
 import django.forms.widgets
 import django.forms.fields
 from django.utils.encoding import force_unicode
-
+from django.core.exceptions import ValidationError
 from django.db import models, DatabaseError
 from django.utils.functional import curry
 from uuid import uuid4
@@ -69,24 +70,6 @@ class MetadataAbstractField(models.CharField):
 
     def get_internal_type(self):
         return 'MetadataAbstractField'
-
-class MetadataEnumerationField(models.ForeignKey):
-
-    _open = False
-
-    def isOpen(self):
-        return self._open
-
-    def __init__(self,*args,**kwargs):
-        open = kwargs.pop('open',False)
-        enumerationClass = kwargs.pop('enumeration',None)
-        # TODO: why doesn't this work from here?
-        #if enumerationClass:
-        #   enumerationClass.loadEnumerations()
-        #kwargs["blank"] = open
-        kwargs["null"] = True
-        super(MetadataEnumerationField,self).__init__(enumerationClass,**kwargs)
-        self._open = open
 
 class MetadataCVField_bak(models.ManyToManyField):
 
@@ -174,6 +157,138 @@ class MetadataCVField(models.Field):
 
     def get_internal_type(self):
         return 'MetadataCVField'
+
+
+
+class _MetadataEnumerationWidget(django.forms.widgets.MultiWidget):
+    def __init__(self,*args,**kwargs):
+
+        enumeration = kwargs.pop("enumeration",None)
+        open = kwargs.pop("open",False)
+        custom_choices=[]
+        try:
+            custom_choices=[(e.name,e.name) for e in enumeration.objects.all()]
+        except:
+            pass
+        if open:
+            custom_choices.insert(0,("NEW_ENUMERATION","OTHER"))
+        widgets = (
+            django.forms.fields.Select(choices=custom_choices,attrs={"class":"enumeration-value"}),
+            django.forms.fields.TextInput(attrs={'class':'enumeration-other'}),
+        )
+        super(_MetadataEnumerationWidget, self).__init__(widgets,*args,**kwargs)
+
+    # TODO: CHECK THIS
+    def decompress(self, value):
+        print "DECOMPRESS"
+        print value
+        if value:
+            return [value,None]
+        return [None,None]
+
+
+class _MetadataEnumerationFormField(django.forms.fields.MultiValueField):
+
+    _enumeration = None
+    _open = False
+    
+    def __init__(self,*args,**kwargs):
+        enumeration = kwargs.pop("enumeration",None)
+        open = kwargs.pop("open",False)
+
+##        custom_empty_label = "---------"
+##        if open:
+##            empty_label="OTHER"
+        try:
+            custom_choices=[(e.name,e.name) for e in enumeration.objects.all()]
+            if open:
+                custom_choices.insert(0,("NEW_ENUMERATION","OTHER"))
+        except:
+            custom_choices=[]
+        fields = (
+            #django.forms.models.ModelChoiceField(queryset=enumeration.objects.all(),empty_label=custom_empty_label),
+            #django.forms.fields.ChoiceField(choices=custom_choices),
+            django.forms.fields.CharField(),
+            django.forms.fields.CharField(label="new value",),
+
+        )
+        super(_MetadataEnumerationFormField,self).__init__(fields,*args,**kwargs)
+        # make sure the widget renders what this formfield contains...
+        self.widget = _MetadataEnumerationWidget(enumeration=enumeration,open=open)
+        self._enumeration = enumeration
+        self._open = open
+
+    def clean(self,value):
+        print "VALIDATING THINGIEfsdaf!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+        enumerationValue = value[0]
+        enumerationOther = value[1]
+        print "value:",enumerationValue
+        print "other:",enumerationOther
+        if enumerationValue == "NEW_ENUMERATION":
+            if enumerationOther:
+                (newEnumeration,created) = self._enumeration.objects.get_or_create(name=enumerationOther)
+#                if not created:
+#                    raise ValidationError('enumeration already exists')
+#                else:
+#                    value[0] = newEnumeration.name
+                value[0] = newEnumeration.name
+            else:
+                raise ValidationError('invalid choice')
+        clean_data = super(_MetadataEnumerationFormField, self).clean(value)
+        print "value:",value
+        print "clean_data:",clean_data
+
+    # TODO: CHECK THIS
+    def compress(self, data_list):
+        print "COMPRESS"
+        print data_list
+        if data_list:
+            return [data_list[0],data_list[1]]
+        return [None,None]
+
+    
+class MetadataEnumerationField(models.CharField):# models.Field):
+
+    _open = False
+    _enumerationClass = None
+
+    def isOpen(self):
+        return self._open
+
+    def getEnumeration(self):
+        return self._enumerationClass
+    
+    def __init__(self,*args,**kwargs):
+        open = kwargs.pop('open',False)
+        enumerationClass = kwargs.pop('enumeration',None)
+        kwargs["max_length"] = HUGE_STRING
+        super(MetadataEnumerationField,self).__init__(*args,**kwargs)
+        self._open = open
+        self._enumerationClass = enumerationClass
+
+    def formfield(self,*args,**kwargs):
+        return _MetadataEnumerationFormField(enumeration=self._enumerationClass,open=self._open)
+        
+    def get_internal_type(self):
+        return 'MetadataEnumerationField'
+
+class MetadataEnumerationField2(models.ForeignKey):
+
+    _open = False
+
+    def isOpen(self):
+        return self._open
+
+    def __init__(self,*args,**kwargs):
+        open = kwargs.pop('open',False)
+        enumerationClass = kwargs.pop('enumeration',None)
+        # TODO: why doesn't this work from here?
+        #if enumerationClass:
+        #   enumerationClass.loadEnumerations()
+        #kwargs["blank"] = open
+        kwargs["null"] = True
+        super(MetadataEnumerationField,self).__init__(enumerationClass,**kwargs)
+        self._open = open
 
 class MetadataEnablerField(models.BooleanField):
 
@@ -496,7 +611,7 @@ class DataSource(MetadataModel):
 
     _fieldsByType = {}
 
-    purpose = MetadataEnumerationField(enumeration=DataPurpose_enumeration,open=True,blank=True)
+    purpose = MetadataEnumerationField(enumeration=DataPurpose_enumeration,open=False,blank=True)
 
     def __init__(self,*args,**kwargs):
         super(DataSource, self).__init__(*args, **kwargs)
@@ -519,6 +634,7 @@ class ComponentProperty(MetadataModel):
 
     shortName = models.CharField(max_length=HUGE_STRING,blank=False)
     longName  = models.CharField(max_length=HUGE_STRING,blank=True)
+    longName.verbose_name = "name"
     value = models.CharField(max_length=HUGE_STRING,blank=True,null=True)
 
     # this field is exluded by ComponentProperty_form
@@ -565,12 +681,13 @@ class ComponentProperty(MetadataModel):
             self.valueChoices = cv.values
             
         else:
-            print "Error initializing ComponentProperty; no CV specified"
+            #print "Error initializing ComponentProperty; no CV specified"
+            pass
 
 
 class Activity(MetadataModel):
     class Meta:
-        abstract = True
+        abstract = False
 
     _fieldsByType = {}
 
@@ -586,7 +703,7 @@ class Activity(MetadataModel):
     def __init__(self, *args, **kwargs):
         super(Activity, self).__init__(*args, **kwargs)
         
-        self.registerFieldType(FieldType("BASIC","Basic Properties"),['fundingSource','responsibleParties'])
+        self.registerFieldType(FieldType("BASIC","Basic Properties"),['fundingSource',"project",'responsibleParties'])
 
 class DateRange(MetadataModel):
     _name = "DateRange"
@@ -848,6 +965,7 @@ class DataObject(DataSource):
     description = models.TextField(blank=True)
     hierarchyLevelName = MetadataEnumerationField(enumeration=DataHierarchyType_enumeration,open=True,blank=True)
     hierarchyLevelName.help_text = "What level in the data hierarchy (constructed by the self-referential parent/child aggregations) is this DataObject."
+    hierarchyLevelName.verbose_name = "Hierarchy Level Name"
     content = MetadataManyToManyField("DataContent",related_name="content")
     extent = MetadataForeignKey("DataExtent",related_name="extent")
     citation = MetadataForeignKey("DataCitation",related_name="citation",blank=True)
@@ -911,14 +1029,15 @@ class NumericalRequirement(MetadataModel):
 
     requirementId = models.CharField(max_length=LIL_STRING,blank=False)
     name = models.CharField(max_length=BIG_STRING,blank=False)
-    type = MetadataEnumerationField(enumeration=NumericalRequirementType_enumeration,open=False)
+    requirementType = MetadataEnumerationField(enumeration=NumericalRequirementType_enumeration,open=False)
+    requirementType.verbose_name = "Requirement"
     description = models.TextField()
     sources = MetadataDocumentField("DataObject",modelName="dataobject",blank=True,null=True)
     sources.help_text = None
 
     def __init__(self,*args,**kwargs):
         super(NumericalRequirement,self).__init__(*args,**kwargs)
-        self.registerFieldType(FieldType("BASIC","Basic Properties"), ["requirementId","name","type","description","sources"])
+        self.registerFieldType(FieldType("BASIC","Basic Properties"), ["requirementId","name","requirementType","description","sources"])
 
     def __unicode__(self):
         name = u'Requirement'
@@ -1093,6 +1212,8 @@ class Simulation(NumericalActivity):
     _fieldsByType = {}
 
     simulationID = models.CharField(max_length=BIG_STRING,blank=False)
+    simulationID.verbose_name = "the identifier for the simulation"
+    
     calendar = MetadataForeignKey("Calendar",related_name="calendar")
     inputs = MetadataManyToManyField("Coupling",related_name="inputs")
     inputs.help_text="implemented as a mapping from a source to target; can be a forcing file, a boundary condition, etc."
@@ -1159,10 +1280,12 @@ class SoftwareComponent(DataSource):
     fundingSource = models.CharField(max_length=BIG_STRING,blank=True)
     fundingSource.help_text = "The entities that funded this software component"
     citations = MetadataManyToManyField("Citation",related_name="citations")
-    onlineResource = models.URLField(verify_exists=False)
+    citations.verbose_name = "References"
+    citations.help_text = "A published reference to this component."
+    onlineResource = models.URLField(verify_exists=False,blank=True)
 
     #componentLanguage = MetadataForeignKey("ComponentLanguage",related_name="componentLanguage")
-    componentLanguage = MetadataEnumerationField(enumeration=ComponentLanguageType_enumeration,open=True)
+    componentLanguage = MetadataEnumerationField(enumeration=ComponentLanguageType_enumeration,open=False)
 
     def __init__(self,*args,**kwargs):
         super(SoftwareComponent, self).__init__(*args, **kwargs)
@@ -1202,13 +1325,16 @@ class Citation(MetadataModel):
     _fieldsByType = {}
 
     title = models.CharField(max_length=BIG_STRING,blank=False)
+    title.help_text = "The title of this publication"
     alternateTitle = models.CharField(max_length=BIG_STRING,blank=True)
     edition = models.CharField(max_length=BIG_STRING,blank=True)
+    edition.help_text = "The edition that this publication is published in "
     editionDate = models.DateField(blank=True,null=True)
     identifier = models.CharField(max_length=BIG_STRING,blank=True)
   #  citedResponsibleParty = MetadataManyToManyField('ResponsibleParty',related_name="citedResponsibleParty")
     otherCitationDetails = models.TextField(blank=True)
     collectiveTitle = models.CharField(max_length=BIG_STRING,blank=True)
+    collectiveTitle.help_text = "The complete bibliographic reference of this publication."
     isbn = models.CharField(max_length=LIL_STRING,blank=True)
     issn = models.CharField(max_length=LIL_STRING,blank=True)
 

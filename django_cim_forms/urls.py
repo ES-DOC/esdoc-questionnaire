@@ -8,6 +8,8 @@ admin.autodiscover()
 
 urlpatterns = patterns('',
 
+    url(r'^test$','django_cim_forms.views.test'),
+
     # the index page (doesn't do anything yet)...
     url(r'^$', 'django_cim_forms.views.index'),
 

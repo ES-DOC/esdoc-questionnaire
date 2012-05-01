@@ -23,11 +23,11 @@
 
             {% if field.field.required %}
                 <span class="required">
-                    {{ field.label_tag }}:&nbsp;
+                    {{ field|verbose_name:form}}:&nbsp;
                 </span>
             {% else %}
                 <span class="optional">
-                    {{ field.label_tag }}:&nbsp;
+                    {{ field|verbose_name:form}}:&nbsp;
                 </span>
             {% endif %}
 

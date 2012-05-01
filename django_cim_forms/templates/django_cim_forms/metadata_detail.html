@@ -120,6 +120,17 @@
             }
         });
 
+        /* enable appropriately sized field widgets */
+//        $(".field input").each(function() {
+//            var val = $(this).val();
+//            if (val) {
+//                // size = ?!@?
+//                //    $(this).width(size)
+//                }
+//            }
+//
+//        });
+        
         /* enable tabs */
         /* TODO: this is no good; tabs and dynamic-formsets are fighting with one another */
         /* the dynamic formset controls only appear if the tab is active */
@@ -342,6 +353,24 @@
                 combobox.val($(combobox).jecValue());
             }
         });
+
+        /* the above fns are obsolete */
+        /* this is how open enums are being handled now */
+        $(".enumeration-value").change(function(event) {
+            enumerationValue = $(event.target);
+            enumerationOther = enumerationValue.next(".enumeration-other");
+            if (enumerationValue.val()=="NEW_ENUMERATION") {
+                enumerationOther.show();
+            }
+            else {
+                enumerationOther.hide();
+            }
+        });
+        $(".enumeration-other").hide();
+
+
+
+
     });
 
 {% endblock %} {# /scripts #}
@@ -405,7 +434,7 @@
                                                     <span class="current_field">{{field.name}}</span>
                                                 </div>
 
-                                           
+                             
 
                                                {% with subForm=field|getSubForm:form %}
                                                     {% with subFormType=subForm|getSubFormType %}

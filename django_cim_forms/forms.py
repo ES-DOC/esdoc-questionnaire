@@ -70,9 +70,11 @@ def customize_metadata_widgets(field):
 
     if isinstance(field,models.DateField):
         formfield.widget.attrs.update({"class" : "datepicker"})
-    if isinstance(field,MetadataEnumerationField):
-        if field.isOpen():
-            formfield.widget.attrs.update({"class" : "editable"})
+# rewrote EnumerationField to be a MultiValueField
+# JQuery logic is handled in the Widget definition
+    #if isinstance(field,MetadataEnumerationField):
+    #    if field.isOpen():
+    #        formfield.widget.attrs.update({"class" : "editable"})
     if isinstance(field,MetadataCVField):
         pass
     if isinstance(field,MetadataEnablerField):
@@ -197,6 +199,7 @@ class MetadataForm(ModelForm):
                     # TODO: NOT SURE IF I NEED THE QUERYSET KWARG HERE (DON'T THINK SO)
                     value[2] = subFormClass(self._request.POST,prefix=key,request=self._request)
                 else:
+                    #subFormClass.extra = 0
                     if self._initalize:
                         qs=subFormClass.initialize()
                     value[2] = subFormClass(queryset=qs,prefix=key,request=self._request,initialize=self._initalize)
@@ -241,17 +244,19 @@ class MetadataForm(ModelForm):
 
                 # set the field to the set of subForms that are not marked for deletion and are not empty
                 # (is_valid() will have been called by this point so empty forms that _shouldn't_ be empty won't exist)
-                for subForm in subFormInstance:
-                    if subForm in subFormInstance.deleted_forms:
-                        print "deleted"
-                    elif subForm.cleaned_data:
-                        print "cleaned"
-                    else:
-                        print "going to save"
-                        print subForm.save()
+#                for subForm in subFormInstance:
+#                    if subForm in subFormInstance.deleted_forms:
+#                        print "deleted"
+#                    elif subForm.cleaned_data:
+#                        print "cleaned"
+#                    else:
+#                        print "going to save"
+#                        print subForm.save()
 
-                activeSubForms = [subForm.save() for subForm in subFormInstance if subForm not in subFormInstance.deleted_forms and subForm.cleaned_data]
-                cleaned_data[key] = activeSubForms
+                # TODO: SHOULDN'T is_valid() HAVE ALREADY BEEN CALLED BY THIS POINT!?!
+                if subFormInstance.is_valid():
+                    activeSubForms = [subForm.save() for subForm in subFormInstance if subForm not in subFormInstance.deleted_forms and subForm.cleaned_data]
+                    cleaned_data[key] = activeSubForms
 
             elif subFormType == SubFormTypes.FORM:
                 # TODO: SHOULDN'T is_valid() HAVE ALREADY BEEN CALLED BY THIS POINT!?!
@@ -272,6 +277,12 @@ class MetadataForm(ModelForm):
         print "final validity = %s" % validity
         return validity
 
+    def getModelClass(self):
+        return self.Meta.model
+
+    def getModelInstance(self):
+        return self.instance
+        #return self.save(commit=False)  # whoops; this causes is_valid to be called prematurely
 
 ############################################
 # the base class for all Metadata Formsets #
@@ -452,7 +463,7 @@ class ComponentProperty_form(MetadataForm):
     class Meta:
         model = ComponentProperty
         #exclude = ("valueChoicesfsadf")
-        fields = ('shortName', 'longName','value')
+        fields = ('longName','value')
 # cannot specify this in meta class due to error in django [https://code.djangoproject.com/ticket/13095]
 #        widgets = {
 #            'shortName' : django.forms.fields.TextInput(attrs={'readonly':'readonly'}),
@@ -464,7 +475,7 @@ class ComponentProperty_form(MetadataForm):
 
     def __init__(self,*args,**kwargs):
         super(ComponentProperty_form,self).__init__(*args,**kwargs)
-        self.fields["shortName"].widget = django.forms.fields.TextInput(attrs={'readonly':'readonly'})
+        #self.fields["shortName"].widget = django.forms.fields.TextInput(attrs={'readonly':'readonly'})
         self.fields["longName"].widget = django.forms.fields.TextInput(attrs={'readonly':'readonly'})
         self.fields["value"].widget = django.forms.fields.Select(choices=self.instance.getValueChoices())
         # this isn't needed; seems to default to the 1st choice anyway
@@ -488,7 +499,7 @@ SoftwareComponent_formset = MetadataFormSetFactory(SoftwareComponent,SoftwareCom
 ResponsibleParty_form = MetadataFormFactory(ResponsibleParty,name="ResponsibleParty_form")
 ResponsibleParty_formset = MetadataFormSetFactory(ResponsibleParty,ResponsibleParty_form,name="ResponsibleParty_formset")
 
-Citation_form = MetadataFormFactory(Citation,name="Citation_form")
+Citation_form = MetadataFormFactory(Citation,name="Citation_form",reorder=("title","edition","collectiveTitle"))
 Citation_formset = MetadataFormSetFactory(Citation,Citation_form,name="Citation_formset")
 
 Timing_form = MetadataFormFactory(Timing,name="Timing_form")
@@ -532,7 +543,6 @@ Conformance_formset = MetadataFormSetFactory(Conformance,Conformance_form,name="
 
 Standard_form = MetadataFormFactory(Standard,name="Standard_form")
 Standard_formset = MetadataFormSetFactory(Standard,Standard_form,name="Standard_formset")
-
 
 StandardName_form = MetadataFormFactory(StandardName,name="StandardName_form",subForms={"standard":"Standard_formset"})
 StandardName_formset = MetadataFormSetFactory(StandardName,StandardName_form,name="StandardName_formset")
@@ -582,10 +592,8 @@ SimulationRun_formset = MetadataFormSetFactory(SimulationRun,SimulationRun_form,
 Experiment_form = MetadataFormFactory(Experiment,name="Experiment_form")
 Experiment_formset = MetadataFormSetFactory(Experiment,Experiment_form,name="Experiment_formset")
 
-
 NumericalRequirement_form = MetadataFormFactory(NumericalRequirement,name="NumericalRequirement_form",reorder=("type","requirementId","name","description","sources"))
 NumericalRequirement_formset = MetadataFormSetFactory(NumericalRequirement,NumericalRequirement_form,name="NumericalRequirement_formset")
-
 
 RequirementOption_form = MetadataFormFactory(RequirementOption,name="RequirementOption_form",subForms={"requirement":"NumericalRequirement_form"})
 RequirementOption_formset = MetadataFormSetFactory(RequirementOption,RequirementOption_form,name="RequirementOption_formset")

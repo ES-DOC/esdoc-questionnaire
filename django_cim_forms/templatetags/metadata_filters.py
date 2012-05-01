@@ -12,6 +12,21 @@ register = template.Library()
 
 
 ####################################
+# gets the verbose name of a field #
+####################################
+
+@register.filter
+def verbose_name(field,form):
+    modelInstance = form.getModelInstance()
+    modelField = modelInstance._meta.get_field_by_name(field.name)[0]
+    verbose_name = modelField.verbose_name
+    if verbose_name != modelField.name:
+        return verbose_name
+    # split camelcase and capitalize the 1st letter...
+    verbose_name = re.sub('(?<=[a-z])(?=[A-Z])', ' ', verbose_name).title()
+    return verbose_name
+
+####################################
 # returns a pretty name for a form #
 ####################################
 

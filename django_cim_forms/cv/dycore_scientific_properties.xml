@@ -751,73 +751,250 @@ grid stuff will be handled in reference to gridspec...
 
 Computational grid and grid staggering
 
-
-Base computational grid:
-cubed-sphere
-Gaussian latitude-longitude
-hexagonal-pentagonal
-icosahedral (triangular)
-latitude-longitude
-octagonal
-reduced Gaussian latitude-longitude
-reduced latitude-longitude
-spherical centroidal Voronoi tesselation
-triangular-icosahedral
-unstructured (polygons)
-Yin-Yang
-other
-
-
-Grid projection:
-conformal
-gnomonic: equi-angular cubed-sphere
-gnomonic: equi-distant cubed-sphere
-gnomonic: equal-distance along cubed-sphere edges
-other
-none
-
-
-Option for variable-resolution grid:
-nested grid (static)
-nested grid (dynamic)
-stretched grid
-none
-
-
-Additional grid design choices (select all that apply):
-Gauss-Lobatto-Legendre (GLL) quadrature points, nodal basis set
-Gauss-Legendre (GL) quadrature points, modal basis set
-linear transform grid
-quadratic transform grid
-polygons: triangles
-polygons: quadrilaterals
-polygons: varying shape
-optimized via spring dynamics
-Schmidt-transformation
-rotated Pole points
-other
-none
-
-
-Horizontal grid staggering:
-Arakawa A-grid (unstaggered)
-Arakawa B-grid
-Arakawa C-grid
-Arakawa D-grid
-Arakawa E-grid
-mixed Arakawa C-D grid
-R-grid
-Z-grid
-ZM-grid
-other
-
-
-Vertical grid staggering:
-Charney-Phillips grid
-Lorenz grid
-unstaggered (co-located at full model levels)
-other
 -->
+  <item>
+    <shortName>Base computational grid</shortName>
+    <longName>Base computational grid</longName>
+    <values>
+      <value>
+        <shortName>cubed-sphere</shortName>
+        <longName>cubed-sphere</longName>
+      </value>
+      <value>
+        <shortName>hexagonal-pentagonal</shortName>
+        <longName>hexagonal-pentagonal</longName>
+      </value>
+      <value>
+        <shortName>Gaussian latitude-longitude</shortName>
+        <longName>Gaussian latitude-longitude</longName>
+      </value>
+      <value>
+        <shortName>hexagonal-pentagonal</shortName>
+        <longName>hexagonal-pentagonal</longName>
+      </value>
+      <value>
+        <shortName>icosahedral (triangular)</shortName>
+        <longName>icosahedral (triangular)</longName>
+      </value>
+      <value>
+        <shortName>latitude-longitude</shortName>
+        <longName>latitude-longitude</longName>
+      </value>
+      <value>
+        <shortName>octagonal</shortName>
+        <longName>octagonal</longName>
+      </value>
+      <value>
+        <shortName>reduced Gaussian latitude-longitude</shortName>
+        <longName>reduced Gaussian latitude-longitude</longName>
+      </value>
+      <value>
+        <shortName>reduced latitude-longitude</shortName>
+        <longName>reduced latitude-longitude</longName>
+      </value>
+      <value>
+        <shortName>spherical centroidal Voronoi tesselation</shortName>
+        <longName>spherical centroidal Voronoi tesselation</longName>
+      </value>
+      <value>
+        <shortName>triangular-icosahedral</shortName>
+        <longName>triangular-icosahedral</longName>
+      </value>
+      <value>
+        <shortName>unstructured (polygons)</shortName>
+        <longName>unstructured (polygons)</longName>
+      </value>
+      <value>
+        <shortName>Yin-Yang</shortName>
+        <longName>Yin-Yang</longName>
+      </value>
+      <value>
+        <shortName>other</shortName>
+        <longName>other</longName>
+      </value>
+    </values>
+  </item>
+
+
+  <item>
+    <shortName>Grid projection</shortName>
+    <longName>Grid projection</longName>
+    <values>
+      <value>
+        <shortName>conformal</shortName>
+        <longName>conformal</longName>
+      </value>
+      <value>
+        <shortName>gnomonic: equi-angular cubed-sphere</shortName>
+        <longName>gnomonic: equi-angular cubed-sphere</longName>
+      </value>
+      <value>
+        <shortName>gnomonic: equi-distant cubed-sphere</shortName>
+        <longName>gnomonic: equi-distant cubed-sphere</longName>
+      </value>
+      <value>
+        <shortName>gnomonic: equal-distance along cubed-sphere edges</shortName>
+        <longName>gnomonic: equal-distance along cubed-sphere edges</longName>
+      </value>
+      <value>
+        <shortName>other</shortName>
+        <longName>other</longName>
+      </value>
+      <value>
+        <shortName>none</shortName>
+        <longName>none</longName>
+      </value>
+    </values>
+  </item>
+
+  <item>
+    <shortName>Option for variable-resolution grid</shortName>
+    <longName>Option for variable-resolution grid</longName>
+    <values>
+      <value>
+        <shortName>nested grid (static)</shortName>
+        <longName>nested grid (static)</longName>
+      </value>
+      <value>
+        <shortName>nested grid (dynamic)</shortName>
+        <longName>nested grid (dynamic)</longName>
+      </value>
+      <value>
+        <shortName>stretched grid</shortName>
+        <longName>stretched grid</longName>
+      </value>
+      <value>
+        <shortName>none</shortName>
+        <longName>none</longName>
+      </value>
+    </values>
+  </item>
+
+  <item>
+    <shortName>Additional grid design choices (select all that apply)</shortName>
+    <longName>Additional grid design choices (select all that apply)</longName>
+    <values>
+      <value>
+        <shortName>Gauss-Lobatto-Legendre (GLL) quadrature points, nodal basis set</shortName>
+        <longName>Gauss-Lobatto-Legendre (GLL) quadrature points, nodal basis set</longName>
+      </value>
+      <value>
+        <shortName>Gauss-Legendre (GL) quadrature points, modal basis set</shortName>
+        <longName>Gauss-Legendre (GL) quadrature points, modal basis set</longName>
+      </value>
+      <value>
+        <shortName>linear transform grid</shortName>
+        <longName>linear transform grid</longName>
+      </value>
+      <value>
+        <shortName>quadratic transform grid</shortName>
+        <longName>quadratic transform grid</longName>
+      </value>
+      <value>
+        <shortName>polygons: triangles</shortName>
+        <longName>polygons: triangles</longName>
+      </value>
+      <value>
+        <shortName>polygons: quadrilaterals</shortName>
+        <longName>polygons: quadrilaterals</longName>
+      </value>
+      <value>
+        <shortName>polygons: varying shape</shortName>
+        <longName>polygons: varying shape</longName>
+      </value>
+      <value>
+        <shortName>optimized via spring dynamics</shortName>
+        <longName>optimized via spring dynamics</longName>
+      </value>
+      <value>
+        <shortName>Schmidt-transformation</shortName>
+        <longName>Schmidt-transformation</longName>
+      </value>
+      <value>
+        <shortName>rotated Pole points</shortName>
+        <longName>rotated Pole points</longName>
+      </value>
+      <value>
+        <shortName>other</shortName>
+        <longName>other</longName>
+      </value>
+      <value>
+        <shortName>none</shortName>
+        <longName>none</longName>
+      </value>
+    </values>
+  </item>
+
+  <item>
+    <shortName>Horizontal grid staggering</shortName>
+    <longName>Horizontal grid staggering</longName>
+    <values>
+      <value>
+        <shortName>Arakawa A-grid (unstaggered)</shortName>
+        <longName>Arakawa A-grid (unstaggered)</longName>
+      </value>
+      <value>
+        <shortName>Arakawa B-grid</shortName>
+        <longName>Arakawa B-grid</longName>
+      </value>
+      <value>
+        <shortName>Arakawa C-grid</shortName>
+        <longName>Arakawa C-grid</longName>
+      </value>
+      <value>
+        <shortName>Arakawa D-grid</shortName>
+        <longName>Arakawa D-grid</longName>
+      </value>
+      <value>
+        <shortName>Arakawa E-grid</shortName>
+        <longName>Arakawa E-grid</longName>
+      </value>
+      <value>
+        <shortName>mixed Arakawa C-D grid</shortName>
+        <longName>mixed Arakawa C-D grid</longName>
+      </value>
+      <value>
+        <shortName>R-grid</shortName>
+        <longName>R-grid</longName>
+      </value>
+      <value>
+        <shortName>Z-grid</shortName>
+        <longName>Z-grid</longName>
+      </value>
+      <value>
+        <shortName>ZM-grid</shortName>
+        <longName>ZM-grid</longName>
+      </value>
+      <value>
+        <shortName>other</shortName>
+        <longName>other</longName>
+      </value>
+    </values>
+  </item>
+
+
+  <item>
+    <shortName>Vertical grid staggering</shortName>
+    <longName>Vertical grid staggering</longName>
+    <values>
+      <value>
+        <shortName>Charney-Phillips grid</shortName>
+        <longName>Charney-Phillips grid</longName>
+      </value>
+      <value>
+        <shortName>Lorenz grid</shortName>
+        <longName>Lorenz grid</longName>
+      </value>
+      <value>
+        <shortName>unstaggered (co-located at full model levels)</shortName>
+        <longName>unstaggered (co-located at full model levels)</longName>
+      </value>
+      <value>
+        <shortName>other</shortName>
+        <longName>other</longName>
+      </value>
+    </values>
+  </item>
 
   <!--Conservation and Fixers-->
 
