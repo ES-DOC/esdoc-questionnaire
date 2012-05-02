@@ -111,11 +111,14 @@ class MetadataForm(ModelForm):
     
     _subForms = {}      # a form can have subforms
     _request = None     # those subforms need to have HTTP requests passed to them
+    _recursion = 0
 
     _id = None      # the form's corresponding model id
     _guid = None    # the form's corresponding model guid
 
     _name = ""  # the name of the form class
+
+    ModelClass = None
 
     def getId(self):
         return self._id
@@ -146,11 +149,14 @@ class MetadataForm(ModelForm):
                     allSubForms = dict(allSubForms.items() + ancestorForm._subForms.items())
         return allSubForms
 
-    @log_class_fn()
+    #@log_class_fn()
     def __init__(self,*args,**kwargs):
         self._request = kwargs.pop('request', None)
         self._initalize = kwargs.pop("initialize",False)
+        self._recursion=kwargs.pop("recursion",0)
         super(MetadataForm,self).__init__(*args,**kwargs)
+
+        #print "INITIALIZING %s; RECURSION=%s" % (self._name,self._recursion)
         
         self._id = self.instance.id
         self._guid = self.instance.guid
@@ -166,7 +172,13 @@ class MetadataForm(ModelForm):
 
         if self._initalize:            
             self.initialize()
-            
+
+        if self._recursion >= MAXIMUM_SUBFORM_RECURSION_DEPTH:
+            self._subForms = {}
+            return
+        self._recursion += 1
+
+        
         # because there are no forward declarations in Python,
         # double-check that all subforms have been set properly
         for key,value in self._subForms.iteritems():
@@ -174,19 +186,27 @@ class MetadataForm(ModelForm):
                 self._subForms[key] = PotentialSubForms[value]
                 print "%s in %s was still set to %s; it is now set to %s" % (key,self.getName(),value,self._subForms[key])
                 
-                
+
+
         for key,value in self.getAllSubForms().iteritems():                
         #for key,value in self._subForms.iteritems():
-        
+
+
             subFormType = value[0]
             subFormClass = value[1]
             
 
             if subFormType == SubFormTypes.FORMSET:
+                
                 # note that the form attribute is now a curried function
                 # (in order for me to propagate request to all subforms)
                 # so I have to _call_ it in order to access the subForm
                 qs = subFormClass.form().Meta.model.objects.none()
+                #qs = self.ModelClass.objects.none()
+                
+                print key
+                print self._recursion
+                
                 try:
                     print "TRYING TO GET QUERYSET FOR %s FROM %s" % (key,self.instance)
                     qs = getattr(self.instance,key,None).all()
@@ -197,23 +217,26 @@ class MetadataForm(ModelForm):
 
                 if self._request and self._request.method == "POST":
                     # TODO: NOT SURE IF I NEED THE QUERYSET KWARG HERE (DON'T THINK SO)
-                    value[2] = subFormClass(self._request.POST,prefix=key,request=self._request)
+                    value[2] = subFormClass(self._request.POST,prefix=key,request=self._request,recursion=self._recursion)
                 else:
                     #subFormClass.extra = 0
                     if self._initalize:
                         qs=subFormClass.initialize()
-                    value[2] = subFormClass(queryset=qs,prefix=key,request=self._request,initialize=self._initalize)
+
+                    print "ABOUT TO CALL CONSTRUCTOR FOR %s WITH RECURSION=%s" % (self._name,self._recursion)
+                    value[2] = subFormClass(queryset=qs,prefix=key,request=self._request,initialize=self._initalize,recursion=self._recursion)
 
             elif subFormType == SubFormTypes.FORM:
+                
                 subInstance = None
                 if self.instance:
                     subInstance = getattr(self.instance,key,None)
 
                 if self._request and self._request.method == "POST":
                     # TODO: NOT SURE IF I NEED THE INSTANCE KWARG HERE (DON'T THINK SO)
-                    value[2] = subFormClass(self._request.POST,request=self._request)
+                    value[2] = subFormClass(self._request.POST,request=self._request,recursion=self._recursion)
                 else:
-                    value[2] = subFormClass(instance=subInstance,request=self._request)
+                    value[2] = subFormClass(instance=subInstance,request=self._request,recursion=self._recursion)
 
 #            elif subFormType == SubFormTypeList.INLINE_FORMSET:
 #                pass
@@ -293,10 +316,13 @@ class MetadataFormSet(BaseModelFormSet):
     _subFormType = SubFormTypes.FORMSET
 
     _request = None # the individual forms of a formset need to have HTTP requests passed to them
+    _recursion = 0
     _prefix = None
 
     _name = ""  # the name of the form class
     _title = "" # the title (to display) of the form class
+
+    ModelClass = None
 
     def getSubFormType(self):
         return self._subFormType
@@ -310,7 +336,8 @@ class MetadataFormSet(BaseModelFormSet):
         # it returns a queryset of initial models to base the formset on
         # as opposed to setting values for the individual forms
         # (the individual forms will be initialized later)
-        modelClass = cls.form().Meta.model
+        #modelClass = cls.form().Meta.model
+        modelClass = cls.ModelClass
         if issubclass(modelClass,ComponentProperty):
             cv = modelClass.getCVClass()
             if cv:
@@ -343,34 +370,24 @@ class MetadataFormSet(BaseModelFormSet):
     def is_valid(self,*args,**kwargs):
         return super(MetadataFormSet,self).is_valid(*args,**kwargs)
 
+    @log_class_fn()
     def __init__(self,*args,**kwargs):
         # this adds an extra kwarg, 'request,' to the subforms of this formset
         self._request = kwargs.pop('request', None)
         self._initalize = kwargs.pop("initialize",False)
-        self.form = curry(self.form,request=self._request)
+        self._recursion = kwargs.pop("recursion",0)
 
+        if self._recursion < MAXIMUM_SUBFORM_RECURSION_DEPTH:
+            self.form = curry(self.form,request=self._request,recursion=self._recursion)
         super(MetadataFormSet,self).__init__(*args,**kwargs)
-
-        if self._initalize:
-            self.initialize()
 
         # TODO: do I need to ensure a more unique prefix?
         self._prefix = kwargs.get("prefix",self.get_default_prefix())
 
-    def initialize2(self):
+        if self._initalize:
+            self.initialize()
 
-        print "INITIALIZING FORMSET"
-        instance = self.form().save(commit=False)
-        initial_values = instance.getInitialValues()
-        # b/c this is a formset
-        # the models bound to the corresponding form ought to return
-        # lists (of dictionaries) for getInitialValues()
-        print self._name
-        if self._name == "DycoreScientificProperties_formset":
-            self.initial = [
-                {"shortName":"foo",},
-                {"shortName":"bar",},
-            ]
+
 
 ##
 ##
@@ -393,7 +410,7 @@ class MetadataFormSet(BaseModelFormSet):
 
 
 
-# decorator which adds generated forms & formsets to the above dictionary
+# decorator which adds generated forms & formsets to a global dictionary
 def PotentialSubForm(subFormType=SubFormType("UNKNOWN","Unknown")):
     def decorator(factoryFunction):
         @wraps(factoryFunction)
@@ -428,6 +445,7 @@ def MetadataFormFactory(ModelClass,*args,**kwargs):
         # which gets implemented in the __init__ fn
         _form._fieldOrder = fieldOrder
     _form._name = name
+    _form.ModelClass = ModelClass
     _form._subForms = {} # reset any existing subForms...
     for key,value in subForms.iteritems():
         try:
@@ -449,8 +467,10 @@ def MetadataFormSetFactory(ModelClass,FormClass,*args,**kwargs):
     _formset = modelformset_factory(ModelClass,**kwargs)
 # TODO: DOUBLE-CHECK THIS CALL TO staticmethod(curry(...))
     # this ensures that the request kwarg passed to formsets gets propagated to all the child forms
-    _formset.form = staticmethod(curry(FormClass,request=MetadataFormSet._request))
+    # TODO: SHOULD THE CURRIED ARGS ACTUALLY BE _formset._request, _formset._recursion
+    _formset.form = staticmethod(curry(FormClass,request=_formset._request,recursion=_formset._recursion))
     _formset._name = name
+    _formset.ModelClass = ModelClass
     return _formset
 
 # nothing to see here,
@@ -499,7 +519,8 @@ SoftwareComponent_formset = MetadataFormSetFactory(SoftwareComponent,SoftwareCom
 ResponsibleParty_form = MetadataFormFactory(ResponsibleParty,name="ResponsibleParty_form")
 ResponsibleParty_formset = MetadataFormSetFactory(ResponsibleParty,ResponsibleParty_form,name="ResponsibleParty_formset")
 
-Citation_form = MetadataFormFactory(Citation,name="Citation_form",reorder=("title","edition","collectiveTitle"))
+
+Citation_form = MetadataFormFactory(Citation,name="Citation_form")
 Citation_formset = MetadataFormSetFactory(Citation,Citation_form,name="Citation_formset")
 
 Timing_form = MetadataFormFactory(Timing,name="Timing_form")
@@ -592,13 +613,13 @@ SimulationRun_formset = MetadataFormSetFactory(SimulationRun,SimulationRun_form,
 Experiment_form = MetadataFormFactory(Experiment,name="Experiment_form")
 Experiment_formset = MetadataFormSetFactory(Experiment,Experiment_form,name="Experiment_formset")
 
-NumericalRequirement_form = MetadataFormFactory(NumericalRequirement,name="NumericalRequirement_form",reorder=("type","requirementId","name","description","sources"))
+NumericalRequirement_form = MetadataFormFactory(NumericalRequirement,name="NumericalRequirement_form",reorder=("requirementType","requirementId","name","description","sources"))
 NumericalRequirement_formset = MetadataFormSetFactory(NumericalRequirement,NumericalRequirement_form,name="NumericalRequirement_formset")
 
 RequirementOption_form = MetadataFormFactory(RequirementOption,name="RequirementOption_form",subForms={"requirement":"NumericalRequirement_form"})
 RequirementOption_formset = MetadataFormSetFactory(RequirementOption,RequirementOption_form,name="RequirementOption_formset")
 
-CompositeNumericalRequirement_form = MetadataFormFactory(CompositeNumericalRequirement,name="CompositeNumericalRequirement_form",subForms={"requirementOptions":"RequirementOption_formset"},reorder=("type","requirementId","name","description","isComposite","requirementOptions","sources"))
+CompositeNumericalRequirement_form = MetadataFormFactory(CompositeNumericalRequirement,name="CompositeNumericalRequirement_form",subForms={"requirementOptions":"RequirementOption_formset"},reorder=("requirementType","requirementId","name","description","isComposite","requirementOptions","sources"))
 CompositeNumericalRequirement_formset = MetadataFormSetFactory(CompositeNumericalRequirement,CompositeNumericalRequirement_form,name="CompositeNumericalRequirement_formset")
 
 NumericalExperiment_form = MetadataFormFactory(NumericalExperiment,name="NumericalExperiment_form",subForms={"calendar":"Calendar_form","numericalRequirements":"CompositeNumericalRequirement_formset","responsibleParties":"ResponsibleParty_formset"})

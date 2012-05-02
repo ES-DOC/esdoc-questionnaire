@@ -8,6 +8,8 @@ from django.db import models, DatabaseError
 from django.utils.functional import curry
 from uuid import uuid4
 
+import re
+
 # intra/inter-package imports
 
 from django_cim_forms.helpers import *
@@ -167,7 +169,7 @@ class _MetadataEnumerationWidget(django.forms.widgets.MultiWidget):
         open = kwargs.pop("open",False)
         custom_choices=[]
         try:
-            custom_choices=[(e.name,e.name) for e in enumeration.objects.all()]
+            custom_choices=[(e.name,make_pretty(e.name)) for e in enumeration.objects.all()]
         except:
             pass
         if open:
@@ -200,11 +202,13 @@ class _MetadataEnumerationFormField(django.forms.fields.MultiValueField):
 ##        if open:
 ##            empty_label="OTHER"
         try:
-            custom_choices=[(e.name,e.name) for e in enumeration.objects.all()]
+
+            custom_choices=[(e.name,re.sub('(?<=[a-z])(?=[A-Z])', ' ', e.name).title()) for e in enumeration.objects.all()]
             if open:
                 custom_choices.insert(0,("NEW_ENUMERATION","OTHER"))
         except:
             custom_choices=[]
+        
         fields = (
             #django.forms.models.ModelChoiceField(queryset=enumeration.objects.all(),empty_label=custom_empty_label),
             #django.forms.fields.ChoiceField(choices=custom_choices),
@@ -1030,7 +1034,7 @@ class NumericalRequirement(MetadataModel):
     requirementId = models.CharField(max_length=LIL_STRING,blank=False)
     name = models.CharField(max_length=BIG_STRING,blank=False)
     requirementType = MetadataEnumerationField(enumeration=NumericalRequirementType_enumeration,open=False)
-    requirementType.verbose_name = "Requirement"
+    requirementType.verbose_name = "Requirement Type"
     description = models.TextField()
     sources = MetadataDocumentField("DataObject",modelName="dataobject",blank=True,null=True)
     sources.help_text = None
@@ -1041,8 +1045,8 @@ class NumericalRequirement(MetadataModel):
 
     def __unicode__(self):
         name = u'Requirement'
-        if self.type:
-            name = u'%s (%s)' % (name, self.type)
+        if self.requirementType:
+            name = u'%s (%s)' % (name, self.requirementType)
         if self.name:
             name = u'%s: "%s"' % (name, self.name)
         return name
@@ -1425,8 +1429,8 @@ class GridMosaic(MetadataModel):
     _fieldsByType = {}
 
     congruentTiles = models.BooleanField()
-    gridMosaic = models.ManyToManyField("self",symmetrical=False)
-    #gridMosaic = MetadataManyToManyField("GridMosaic",related_name="asdf",recursive=False)
+    gridMosaic = models.ManyToManyField("self",related_name="gridMosaic")
+    #gridMosaic = MetadataDocumentField("GridSpec",modelName="gridspec",blank=True,null=True)
 
     def __init__(self,*args,**kwargs):
         super(GridMosaic,self).__init__(*args,**kwargs)
@@ -1444,6 +1448,7 @@ class GridSpec(MetadataModel):
     gridType = MetadataEnumerationField(enumeration=GridType_enumeration,open=True,blank=False)
 
     esmModelGrids = MetadataManyToManyField("GridMosaic",related_name="esmModelGrid")
+    esmModelGrids.verboseName = "ESM Model Grids"
     
     def __init__(self,*args,**kwargs):
         super(GridSpec,self).__init__(*args,**kwargs)

@@ -4,6 +4,7 @@ from functools import wraps
 from django.conf import settings
 from collections import deque
 from django.core import serializers
+import re
 
 ####################################################
 # some useful helpers for the metadata application #
@@ -17,7 +18,14 @@ HUGE_STRING = 200
 BIG_STRING  = 100
 LIL_STRING  = 25
 
+MAXIMUM_SUBFORM_RECURSION_DEPTH = 3
+
 json_serializer = serializers.get_serializer("json")()
+
+def make_pretty(ugly_string):
+    if ugly_string.isupper():
+        return ugly_string
+    return re.sub('(?<=[a-z])(?=[A-Z])', ' ', ugly_string).title()
 
 ########
 # get the subclasses of a class
