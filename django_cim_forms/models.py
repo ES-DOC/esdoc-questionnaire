@@ -1,395 +1,18 @@
+from django.db import models, DatabaseError
+from uuid import uuid4
 import django.forms.models
-import django.utils.safestring
 import django.forms.widgets
 import django.forms.fields
-from django.utils.encoding import force_unicode
-from django.core.exceptions import ValidationError
-from django.db import models, DatabaseError
-from django.utils.functional import curry
-from uuid import uuid4
 
-import re
+from final.helpers import *
+from final.fields import *
+from final.controlled_vocabulary import *
 
-# intra/inter-package imports
-
-from django_cim_forms.helpers import *
-from django_cim_forms.controlled_vocabulary import *
-
-############################################################
-# the types of fields that a model can have                #
-# (these are specified as needed in the models themselves) #
-############################################################
-
-class FieldType(EnumeratedType):
-    pass
-
-##############################
-# custom fields for metadata #
-##############################
-
-
-class HorizontalRadioRenderer(django.forms.widgets.RadioSelect.renderer):
-    def render(self):
-        return django.utils.safestring.mark_safe(u'\n'.join([u'%s\n' % w for w in self]))
-
-class _MetadataAbstractFormField(django.forms.fields.ChoiceField):
-    widget = django.forms.widgets.RadioSelect
-
-    def __init__(self,*args,**kwargs):        
-        super(_MetadataAbstractFormField,self).__init__(*args,**kwargs)
-        choices = kwargs.pop("choices",None)
-        self.widget = django.forms.widgets.RadioSelect(choices=choices,renderer=HorizontalRadioRenderer)        
- 
-class MetadataAbstractField(models.CharField):
-
-    _subclasses = []
-    
-    def __init__(self,*args,**kwargs):
-        abstractModel = kwargs.pop("abstractModel",None)
-        related_name = kwargs.pop("related_name",None)
-        if not abstractModel:
-            raise MetadataError("you must specify the abstract model for a MetadataAbstractField")
-        if not related_name:
-            raise MetadataError("you must specify a related_name for a MetadataAbstractField")
-
-        subclasses = [subclass for subclass in get_subclasses(abstractModel) if not subclass._meta.abstract ]
-        choices = [(subclass._name[0].lower()+subclass._name[1:],subclass._title) for subclass in subclasses]
-
-        kwargs["max_length"] = BIG_STRING
-        kwargs["null"] = True
-        super(MetadataAbstractField,self).__init__(*args,**kwargs)
-        self._subclasses = subclasses
-        self._choices = choices
-        
-    def getSubclasses(self):
-        return self._subclasses
-
-    def getChoices(self):
-        return self._choices
-    
-    def formfield(self,*args,**kwargs):
-        return _MetadataAbstractFormField(choices=self._choices,help_text=self.help_text)
-
-    def get_internal_type(self):
-        return 'MetadataAbstractField'
-
-class MetadataCVField_bak(models.ManyToManyField):
-
-    def __init__(self,*args,**kwargs):
-        cvClass = kwargs.pop('cv',None)
-        # TODO: again, not sure why I can't call this from here?
-        #if cvClass:
-        #    cvClass.loadCV()
-        kwargs["blank"] = True
-        kwargs["null"] = True
-        super(MetadataCVField_bak,self).__init__(cvClass,**kwargs)
-
-class _MetadataCVWidget(django.forms.widgets.MultiWidget):
-    def __init__(self,*args,**kwargs):
-
-        self.shortName = kwargs.pop("shortName",None)
-        self.longName = kwargs.pop("longName",None)
-        self.value_choices = kwargs.pop("values",[])
-        widgets = (
-            django.forms.fields.TextInput(attrs={'readonly':'readonly'}),
-            django.forms.fields.TextInput(attrs={'readonly':'readonly'}),
-            django.forms.fields.Select(choices=self.value_choices),
-        )
-
-        
-        super(_MetadataCVWidget, self).__init__(widgets,*args,**kwargs)        
-
-    # TODO: CHECK THIS
-    def decompress(self, value):
-        print "DECOMPRESS"
-        print value
-        if value:
-            return [value,None,None]
-        return [self.shortName,self.longName,None]
-
-
-class _MetadataCVFormField(django.forms.fields.MultiValueField):
-    widget = _MetadataCVWidget
-    
-    def __init__(self,*args,**kwargs):
-        self.cv = kwargs.pop("cv",None)
-        shortName = ""
-        longName = ""
-        value_choices = []
-        try:
-            self.cv_model=self.cv.objects.get(pk=18)
-            shortName = self.cv_model.shortName
-            longName = self.cv_model.longName
-            value_choices = self.cv_model.values
-        except DatabaseError:
-            print "YOU MESSED UP!"
-
-        fields = (
-            django.forms.fields.CharField(label="short name",initial=shortName),    # CV property: shortName
-            django.forms.fields.CharField(label="long name",initial=longName),      # CV property: longName
-            django.forms.fields.ChoiceField(label="value",choices=value_choices),   # choices for CV Property: values
-        )
-        super(_MetadataCVFormField,self).__init__(fields,*args,**kwargs)
-        # make sure the widget renders what this formfield contains...
-        self.widget = _MetadataCVWidget(shortName=shortName,longName=longName,values=value_choices)
-
-    # TODO: CHECK THIS
-    def compress(self, data_list):
-        print "COMPRESS"
-        if data_list:
-            data = { "shortName" : data_list[0], "longName" : data_list[1], "value" : data_list[2]}
-            #return join data somehow into a string
-            return data
-        return { "shortName" : None, "longName" : None, "value" : None}
-
-class MetadataCVField(models.Field):
-
-    cv = None
-
-    def __init__(self,*args,**kwargs):
-        self.cv = kwargs.pop("cv",None)
-        super(MetadataCVField,self).__init__(*args,**kwargs)
-
-    def formfield(self,*args,**kwargs):
-
-#        defaults = {'form_class': _MetadataCVFormField}
-#        defaults.update(kwargs)
-#        super(MetadataCVField,self).formfield(**defaults)
-        return _MetadataCVFormField(cv=self.cv)
-
-    def get_internal_type(self):
-        return 'MetadataCVField'
-
-
-
-class _MetadataEnumerationWidget(django.forms.widgets.MultiWidget):
-    def __init__(self,*args,**kwargs):
-
-        enumeration = kwargs.pop("enumeration",None)
-        open = kwargs.pop("open",False)
-        custom_choices=[]
-        try:
-            custom_choices=[(e.name,make_pretty(e.name)) for e in enumeration.objects.all()]
-        except:
-            pass
-        if open:
-            custom_choices.insert(0,("NEW_ENUMERATION","OTHER"))
-        widgets = (
-            django.forms.fields.Select(choices=custom_choices,attrs={"class":"enumeration-value"}),
-            django.forms.fields.TextInput(attrs={'class':'enumeration-other'}),
-        )
-        super(_MetadataEnumerationWidget, self).__init__(widgets,*args,**kwargs)
-
-    # TODO: CHECK THIS
-    def decompress(self, value):
-        print "DECOMPRESS"
-        print value
-        if value:
-            return [value,None]
-        return [None,None]
-
-
-class _MetadataEnumerationFormField(django.forms.fields.MultiValueField):
-
-    _enumeration = None
-    _open = False
-    
-    def __init__(self,*args,**kwargs):
-        enumeration = kwargs.pop("enumeration",None)
-        open = kwargs.pop("open",False)
-
-##        custom_empty_label = "---------"
-##        if open:
-##            empty_label="OTHER"
-        try:
-
-            custom_choices=[(e.name,re.sub('(?<=[a-z])(?=[A-Z])', ' ', e.name).title()) for e in enumeration.objects.all()]
-            if open:
-                custom_choices.insert(0,("NEW_ENUMERATION","OTHER"))
-        except:
-            custom_choices=[]
-        
-        fields = (
-            #django.forms.models.ModelChoiceField(queryset=enumeration.objects.all(),empty_label=custom_empty_label),
-            #django.forms.fields.ChoiceField(choices=custom_choices),
-            django.forms.fields.CharField(),
-            django.forms.fields.CharField(label="new value",),
-
-        )
-        super(_MetadataEnumerationFormField,self).__init__(fields,*args,**kwargs)
-        # make sure the widget renders what this formfield contains...
-        self.widget = _MetadataEnumerationWidget(enumeration=enumeration,open=open)
-        self._enumeration = enumeration
-        self._open = open
-
-    def clean(self,value):
-        print "VALIDATING THINGIEfsdaf!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-        enumerationValue = value[0]
-        enumerationOther = value[1]
-        print "value:",enumerationValue
-        print "other:",enumerationOther
-        if enumerationValue == "NEW_ENUMERATION":
-            if enumerationOther:
-                (newEnumeration,created) = self._enumeration.objects.get_or_create(name=enumerationOther)
-#                if not created:
-#                    raise ValidationError('enumeration already exists')
-#                else:
-#                    value[0] = newEnumeration.name
-                value[0] = newEnumeration.name
-            else:
-                raise ValidationError('invalid choice')
-        clean_data = super(_MetadataEnumerationFormField, self).clean(value)
-        print "value:",value
-        print "clean_data:",clean_data
-
-    # TODO: CHECK THIS
-    def compress(self, data_list):
-        print "COMPRESS"
-        print data_list
-        if data_list:
-            return [data_list[0],data_list[1]]
-        return [None,None]
-
-    
-class MetadataEnumerationField(models.CharField):# models.Field):
-
-    _open = False
-    _enumerationClass = None
-
-    def isOpen(self):
-        return self._open
-
-    def getEnumeration(self):
-        return self._enumerationClass
-    
-    def __init__(self,*args,**kwargs):
-        open = kwargs.pop('open',False)
-        enumerationClass = kwargs.pop('enumeration',None)
-        kwargs["max_length"] = HUGE_STRING
-        super(MetadataEnumerationField,self).__init__(*args,**kwargs)
-        self._open = open
-        self._enumerationClass = enumerationClass
-
-    def formfield(self,*args,**kwargs):
-        return _MetadataEnumerationFormField(enumeration=self._enumerationClass,open=self._open)
-        
-    def get_internal_type(self):
-        return 'MetadataEnumerationField'
-
-class MetadataEnumerationField2(models.ForeignKey):
-
-    _open = False
-
-    def isOpen(self):
-        return self._open
-
-    def __init__(self,*args,**kwargs):
-        open = kwargs.pop('open',False)
-        enumerationClass = kwargs.pop('enumeration',None)
-        # TODO: why doesn't this work from here?
-        #if enumerationClass:
-        #   enumerationClass.loadEnumerations()
-        #kwargs["blank"] = open
-        kwargs["null"] = True
-        super(MetadataEnumerationField,self).__init__(enumerationClass,**kwargs)
-        self._open = open
-
-class MetadataEnablerField(models.BooleanField):
-
-    _fieldsToEnable = []
-    _startEnabled = False
-
-    def __init__(self,*args,**kwargs):
-        fieldsToEnable = kwargs.pop("fields",None)
-        startEnabled = kwargs.pop("startEnabled",False)
-        super(MetadataEnablerField,self).__init__(*args,**kwargs)
-        self._fieldsToEnable = fieldsToEnable
-        self._startEnabled = startEnabled
-
-    def getFieldsToEnable(self):
-        return self._fieldsToEnable
-
-    def getStartEnabled(self):
-        return self._startEnabled
-      
-
-
-class MetadataDocumentField(models.ManyToManyField):
-
-    _app_name = ""
-    _model_name = ""
-
-    def __init__(self,*args,**kwargs):
-        appName = kwargs.pop("appName","django_cim_forms")
-        modelName = kwargs.pop("modelName",None)
-
-        if not modelName:
-            raise MetadataError("you must specify the appName and modelName for a MetadataDocumentField")
-        super(MetadataDocumentField,self).__init__(*args,**kwargs)
-        self._app_name = appName.lower()
-        self._model_name = modelName.lower()
-
-    def getAppName(self):
-        return self._app_name
-
-    def getModelName(self):
-        return self._model_name
-
-class MetadataManyToManyField(models.ManyToManyField):
-
-    _required = False
-
-    def isRequired(self):
-        return self._required        
-
-    def __init__(self,*args,**kwargs):
-        required = not(kwargs.pop("blank",True))
-        # force this field to be blank and null; so that validation is essentially skipped
-        # (I do it manually in MetadataForm.clean)
-        kwargs["blank"] = True
-        kwargs["null"] = True
-        # require a related_name; so that I can have multiple relations to the same model
-        # and so that I can work out exactly which app/model/field combination I should query when adding new subforms
-        # TODO: I don't like this approach, but I can't figure out a better way to do it right now
-        related_name=kwargs.pop('related_name',None)
-        if not related_name:
-            raise MetadataError("you must provide a related_name kwarg to a MetadataManyToManyField")
-        kwargs["related_name"] = "%(app_label)s;%(class)s;" + related_name
-        super(MetadataManyToManyField,self).__init__(*args,**kwargs)
-        self._required = required
-        self.help_text = None # this is the default setting; it can be overridden in the class definitions below
-
-class MetadataForeignKey(models.ForeignKey):
-
-    _required = False
-
-    def isRequired(self):
-        return self._required
-
-    def __init__(self,*args,**kwargs):
-        required = not(kwargs.pop("blank",True))
-        # force this field to be blank and null; so that validation is essentially skipped
-        # (I do it manually in MetadataForm.clean)
-        kwargs["blank"] = True
-        kwargs["null"] = True
-
-        # require a related_name; so that I can have multiple relations to the same model
-        # and so that I can work out exactly which app/model/field combination I should query when adding new subforms
-        # TODO: I don't like this approach, but I can't figure out a better way to do it right now
-        related_name=kwargs.pop('related_name',None)
-        if not related_name:
-            raise AttributeError("you must provide a related_name kwarg to a MetadataForeignKey")
-        kwargs["related_name"] = "%(app_label)s;%(class)s;" + related_name
-        super(MetadataForeignKey,self).__init__(*args,**kwargs)
-        self._required = required
-        self.help_text = None # this is the default setting; it can be overridden in the class definitions below
-
-########################################
-# base classes for all Metadata Models #
-########################################
+############################################
+# the base classes for all metadata models #
+############################################
 
 class MetadataModel(models.Model):
-
     # ideally, MetadataModel should be an ABC
     # but Django Models already have a metaclass: django.db.models.base.ModelBase
     # see http://stackoverflow.com/questions/8723639/a-django-model-that-subclasses-an-abc-gives-a-metaclass-conflict for a description of the problem
@@ -399,1127 +22,227 @@ class MetadataModel(models.Model):
     class Meta:
         abstract = True
 
-
-    _name = ""  # the name of the model class; THIS MUST BE UNIQUE!
-    _title = "" # the title (to display) of the model class
-
-    _fieldTypes = EnumeratedTypeList([])
-    _fieldTypeOrder = None
-    _fieldsByType = {}
-    _initialValues = {}
+    # every subclass needs to have its own instances of this next set of attributes:
+    _name = "MetadataModel"     # the name of the model; required
+    _title = "Metadata Model"   # a pretty title for the model for display purposes
+    _fieldTypes = {}            # a dictionary associating fieldTypes with lists of fields
+    _fieldTypeOrder = None      # a list describing the order of fieldTypes (tabs); if a type is absent from this list it is not rendered
+    _fieldOrder = None          # a list describing the order of fields; if a field is absent from this list it is not rendered
+    _initialValues = {}         # a dictionary of initial values for the first time a model is created
 
     # every model has a guid
+    # (but since 'editable=False', it won't show up in forms)
     guid = models.CharField(max_length=64,editable=False,blank=True,unique=True)
 
-    def getName(self):
-        return self._name
+    def __init__(self,*args,**kwargs):
+        super(MetadataModel,self).__init__(*args,**kwargs)
+   
+        if not self.guid:
+            self.guid = str(uuid4())
+   
+        ModelClass = type(self)
+        ParentClass = ModelClass.__bases__[0]
 
-    def getTitle(self):
-        return self._title
+        # MetadataModel instances must have unique names & titles
+        name = ModelClass.getName()
+        title = ModelClass.getTitle()
+        if re.match(r'.*\s+', name):
+            msg = "invalid MetadataModel: name ('%s') must not contain spaces" % name
+            raise MetadataError(msg)
+        if not name or (name == ParentClass.getName()):
+            msg = "invalid MetadataModel: no unique name supplied for %s" % ModelClass
+            raise MetadataError(msg)
+        if not title: #or (title == ParentClass.getTitle()):
+            msg = "invalid MetadataModel: no title supplied for %s" % ModelClass
+            raise MetadataError(msg)
 
-    def getGuid(self):
-        return self.guid
+    @classmethod
+    def getName(cls):
+        name = cls._name
+        if name:
+            return name.strip()
+        return name
 
+    @classmethod
+    def getTitle(cls):
+        title = cls._title
+        if title:
+            return title.strip()
+        return title
+
+    def getField(self,fieldName):
+        # return the actual field (not the db representation of the field)
+        try:
+            return self._meta.get_field_by_name(fieldName)[0]
+        except models.fields.FieldDoesNotExist:
+            return None
+
+    @classmethod
+    def customizeFields(cls,customizeDictionary):
+        for (fieldToCustomize,propertiesToCustomize) in customizeDictionary.iteritems():
+
+            field = cls._meta.get_field(fieldToCustomize)
+
+            for (propertyName,propertyValue) in propertiesToCustomize.iteritems():
+                setattr(field,propertyName,propertyValue)
+        
+    def registerFieldType(self,fieldType,fieldNames):
+        for ft in self._fieldTypes:
+            if fieldType == ft: # fieldType equality is based on .getType()
+                                # therefore, even if a new FieldType instance is being registered
+                                # a new key will only be added if it has a new type
+                currentTypes = self._fieldTypes[ft]
+                self._fieldTypes[ft] = list(set(currentTypes)|set(fieldNames)) # union of the new set of fields and the existing set
+                return
+        self._fieldTypes[fieldType] = fieldNames
+
+    def setFieldTypeOrder(self,order):
+        # this will override any parent orders
+        self._fieldTypeOrder = order
+
+    def setFieldOrder(self,order):
+        # this will override any parent orders
+        self._fieldOrder = order
+
+    @classmethod
+    def setFieldOrder(cls,order):
+        cls._fieldOrder = order
+        
     def getInitialValues(self):
         return self._initialValues
 
     def setInitialValues(self,initialValues):
         # this fn will overwrite existing initialValues
+        # (this ensures that subclass's initialValues have precedence over superclasses)
         for (key,value) in initialValues.iteritems():
+            field = self.getField(key)
+            if not field:
+                msg = "invalid field ('%s') specified in setInitialValues for '%s'" % (key,self._name)
+                raise MetadataError(msg)
+            if isinstance(field,MetadataEnumerationField):
+                # if I'm initializing an enumeration, I have to deal w/ the peculiarities of MultiValueFields
+                value = [value,""]#"%s|%s" & (value,"")
+
+            # TODO: DO ANY OTHER FIELD TYPES NEED SPECIAL INITIALIZATION LOGIC?
+
             self._initialValues[key] = value
-            
-    def setFieldTypeOrder(self,order):
-        self._fieldTypeOrder = order
-        
-    def __init__(self,*args,**kwargs):
-        super(MetadataModel,self).__init__(*args,**kwargs)
-        if not self.guid:
-            self.guid = str(uuid4())
 
-    def registerFieldType(self,fieldType,fields):
-##        # first make sure the fields exist...
-##        if not all(f in [field.name for field in self._meta.fields] for f in fields):
-##            msg = "'%s' is an invalid set of fields for %s" % (fields,self.getName())
-##            raise MetadataError(msg)
-        
-        # add to _fieldTypes if the fieldType is new
-        if not fieldType in self._fieldTypes:
-            self._fieldTypes.append(fieldType)
 
-        if fieldType.getType() in self._fieldsByType:
-            # append the fields to an existing set...
-            self._fieldsByType[fieldType.getType()] += fields
-        else:
-            # or create a new set...
-            self._fieldsByType[fieldType.getType()] = fields
-
-    def getAllFieldTypes(self):
-        if self._fieldTypeOrder:
-            # if an order is defined, return _fieldTypes according to that order
-            return self._fieldTypes.sort(key=lambda fieldType: EnumeratedTypeList.comparator(fieldType,self._fieldTypeOrder))
-        return self._fieldTypes
-
-    def getActiveFieldTypes(self):
-        orderedFieldTypes = self.getActiveFieldTypes()
-        #return [fieldType for fieldType in list(self._fieldTypes) if (fieldType.getType() in self._fieldsByType)]
-        return [fieldType for fieldType in orderedFieldTypes if (fieldType.getType() in self._fieldsByType)]
-
-    def initialize(self):
-        #TODO: initialize all submodels?
-        # or does this belong in forms?
-        pass
-    
     def serialize(self,format="JSON"):
         # sticking self in a list simulates a queryset
         qs = [self]
         if format.upper() == "JSON":
-            data = json_serializer.serialize(qs)
+            data = JSON_SERIALIZER.serialize(qs)
             return data[1:len(data)-1]
         else:
             msg = "Unknown serialization format: %s" % format
-            raise AttributeError(msg)
-
-#######
-# CVs #
-#######
-
-class MetadataCV(MetadataModel):
-    _name = "MetadataCV"
-    _cv = None
-    _choices = []
-    
-    shortName = models.CharField(max_length=BIG_STRING,blank=False)
-    longName = models.CharField(max_length=BIG_STRING,blank=True)
-    value = models.CharField(max_length=BIG_STRING,blank=False)
-
-    def getName(self):
-        return self._name
-
-    def __unicode__(self):
-        name = u'%s' % self.getName()
-        if self.longName:
-            name = u'%s' % self.longName
-        if self.value:
-            name = u'%s: %s' % (name, self.value)
-        return name
-
-    @classmethod
-    def loadCV(cls,*args,**kwargs):
-        cv_name = kwargs.pop("cv_name",cls._cv_name)
-        parser = et.XMLParser(remove_blank_text=True)
-        cv = et.fromstring(get_cv(cv_name),parser)
-        xpath_item_expression = "//item"
-        items = cv.xpath(xpath_item_expression)
-        for item in items:
-            shortName = item.xpath("shortName/text()") or None
-            longName = item.xpath("longName/text()") or None
-            (model,created) = cls.objects.get_or_create(shortName=shortName[0],longName=longName[0])
-#            xpath_value_expression="//item[shortName/text()='%s']/values/value" % shortName[0]
-#            values = cv.xpath(xpath_value_expression)
-#            value_choices = []
-#            for value in values:
-#                valueShortName = value.xpath("shortName/text()")
-#                valueLongName = value.xpath("longName/text()")
-#                if not valueLongName:
-#                    value_choices.append((valueShortName[0],valueShortName[0]))
-#                else:
-#                    value_choices.append((valueShortName[0],valueLongName[0]))
-#            model._cv = cv
-#            model._choices = value_choices
-            model.save()
-
-####################
-# CIM v1.5 Content #
-####################
-
-#########
-# Enums #
-#########
-
-class DataPurpose_enumeration(MetadataEnumeration):
-   _enum = ["ancillaryFile","initialCondition","boundaryCondition"]
-
-class CouplingFrameworkType_enumeration(MetadataEnumeration):
-   _enum = ["BFG","ESMF","OASIS"]
-
-class ResponsiblePartyRole_enumeration(MetadataEnumeration):
-   _enum = ["Author","Principle Investigator",]
-
-class ModelComponentType_enumeration(MetadataEnumeration):
-    _enum = [ "Advection", "Aerosol3D", "Aerosol2D", "AerolEmissionAndConc", "AerosolKeyProperties", "AerosolModel", "Aerosols", "AerosolSpaceConfig", "AerosolTransport", "AtmChem2D", "AtmChem3D", "AtmChemEmissionAndConc", "AtmChemKeyProperties", "AtmChemSpaceConfig", "AtmChemTransport", "AtmGasPhaseChemistry", "AtmHeterogeneousChemistry", "AtmosAdvection", "AtmosCloudScheme", "AtmosConvectTurbulCloud", "AtmosDynamicalCore", "AtmosHorizontalDomain", "AtmosKeyProperties", "AtmosOrographyAndWaves", "Atmosphere", "AtmosphericChemistry", "AtmosRadiation", "AtmosSpaceConfiguration", "Climate", "CloudSimulator", "IceSheetDynamics", "LandIce", "LandIceGlaciers", "LandIceKeyProperties", "LandIceSheet", "LandIceShelves", "LandIceShelvesDynamics", "LandSurface", "LandSurfaceAlbedo", "LandSurfaceCarbonCycle", "LandSurfaceEnergyBalance", "LandSurfaceKeyProperties", "LandSurfaceLakes", "LandSurfaceSnow", "LandSurfaceSoil", "LandSurfaceSpaceConfiguration", "LandSurfaceVegetation", "LandSurfSoilHeatTreatment", "LandSurfSoilHydrology", "Ocean", "OceanAdvection", "OceanBioBoundaryForcing", "OceanBioChemistry", "OceanBioGasExchange", "OceanBioGeoChemistry", "OceanBioKeyProperties", "OceanBioSpaceConfig", "OceanBioTimeStepFramework", "OceanBioTracers", "OceanBioTracersEcosystem", "OceanBoundaryForcing", "OceanBoundaryForcingTracers", "OceanHorizontalDomain", "OceanInteriorMixing", "OceanKeyProperties", "OceanLateralPhysics", "OceanLateralPhysMomentum", "OceanLateralPhysTracers", "OceanMixedLayer", "OceanNudging", "OceanSpaceConfiguration", "OceanUpAndLowBoundaries", "OceanVerticalPhysics", "PhotoChemistry", "RiverRouting", "SeaIce", "SeaIceDynamics", "SeaIceKeyProperties", "SeaIceSpaceConfiguration", "SeaIceThermodynamics", "StratosphericHeterChem", "TopOfAtmosInsolation", "ToposphericHeterChem", "VegetationCarbonCycle",]
-
-class TimingUnits_enumeration(MetadataEnumeration):
-    _enum = ["seconds", "minutes", "hours", "days", "months", "years", "decades", "centuries"]
-    
-class Activity_Project_enumeration(MetadataEnumeration):
-    _enum = ['CMIP5','AMIP','TAMIP', 'CASCADE', "DCMIP"]
-
-class CalendarUnitType_enumeration(MetadataEnumeration):
-    _enum = ['days','months','years']
-    
-class NumericalRequirementType_enumeration(MetadataEnumeration):
-    _enum = ['Initial Condition','Boundary Condition','Output Requirement','SpatioTemporal Constraint']
-
-class ConnectionType_enumeration(MetadataEnumeration):
-    _enum = ['CCSM Flux Coupler','ESMF','FMS','Files','MCT','OASIS3','OASIS4','Shared Memory','Embedded']
-
-class SpatialRegriddingDimensionType_enumeration(MetadataEnumeration):
-    _enum = ['1D','2D','3D']
-
-class SpatialRegriddingStandardMethodType_enumeration(MetadataEnumeration):
-    _enum = ['linear','near-neighbour','cubic','conservative-first-order','conservative-second-order','conservative','non-conservative']
-
-class TimeMappingType_enumeration(MetadataEnumeration):
-    _enum = ['TimeAccumulation','TimeAverage','LastAvailable','TimeInterpolation','Exact']
-
-class ConformanceType_enumeration(MetadataEnumeration):
-    _enum = ['not conformant','standard config','via inputs','via model mods','combination']
-
-class FrequencyType_enumeration(MetadataEnumeration):
-    _enum = ['daily','monthly','yearly','hourly']
-
-class LogicalRelationshipType_enumeration(MetadataEnumeration):
-    _enum = ['AND','OR','XOR']
-
-class DataStatusType_enumeration(MetadataEnumeration):
-    _enum = ['complete','metadataOnly','continuouslySupplemented']
-    
-class DataHierarchyType_enumeration(MetadataEnumeration):
-    _enum = ['run','stream','institute','model','product','experiment','frequency','realm','variable','ensembleMember']
-
-class ComponentLanguageType_enumeration(MetadataEnumeration):
-    _enum = ['Fortran','C/C++','Hybrid (Fortran and C/C++)']
-
-class GridType_enumeration(MetadataEnumeration):
-    _enum = ["cubed_sphere","displaced_pole","icosahedral_geodesic","reduced_gaussian","regular_lat_lon","spectral_gaussian","tripolar","yin_yang","composite",]
+            raise MetadataError(msg)
 
 
-class UnitType_enumeration(MetadataEnumeration):
-    _enum = ["meter","hectopascal","pascal","sigma","degrees"]
+##########################################
+# properties are a special type of model #
+# that are bound to CVs                  #
+##########################################
 
-class DataFormatType_enumeration(MetadataEnumeration):
-    _enum = ["Excel","HDF","NetCDF","GRIB 1","GRIB 2","PP","ASCII","HDF EOS","ENCEP ON29","ENCEP ON129","Binary"]
-
-class DataAccessType_enumeration(MetadataEnumeration):
-    _enum = ["CD-ROM","DISCDB","DVD","Microfiche","OnlineFileHTTP","OnlineFileFTP"]
-
-class DataRestrictionScopeType_enumeration(MetadataEnumeration):
-    _enum = ["metadataAccessConstraint","metadataUseConstraint","dataAccessConstraint","dataUseConstraint"]
-    
-#####
-
-
-class DataSource(MetadataModel):
-    class Meta:
-        abstract = False#True
-
-    _fieldsByType = {}
-
-    purpose = MetadataEnumerationField(enumeration=DataPurpose_enumeration,open=False,blank=True)
-
-    def __init__(self,*args,**kwargs):
-        super(DataSource, self).__init__(*args, **kwargs)
-        self.registerFieldType(FieldType("BASIC","Basic Properties"),["purpose"])
-
-class ComponentProperty(MetadataModel):
-    # a ComponentProperty is a special type of model
-    # it is bound to a CV
-
+class MetadataProperty(MetadataModel):
     class Meta:
         abstract = True
 
-    _name = "ComponentProperty"
-    _title = "Component Property"
+    _name = "MetadataProperty"
+    _title = "Metadata Property"
 
-    _fieldsByType = {}
+    _fieldTypes = {}
+    _fieldTypeOrder = None
+    _fieldOrder = None
+    _initialValues = {}
 
     cvClass = None
-    value_choices = []
+    cvInstance = None
 
-    shortName = models.CharField(max_length=HUGE_STRING,blank=False)
-    longName  = models.CharField(max_length=HUGE_STRING,blank=True)
-    longName.verbose_name = "name"
-    value = models.CharField(max_length=HUGE_STRING,blank=True,null=True)
+    shortName = MetadataAtomicField.Factory("charfield",max_length=HUGE_STRING,blank=False)
+    longName  = MetadataAtomicField.Factory("charfield",max_length=HUGE_STRING,blank=False)
 
-    # this field is exluded by ComponentProperty_form
+    #value = MetadataAtomicField.Factory("charfield",max_length=HUGE_STRING,blank=False)
+    value = MetadataPropertyField(blank=False,null=True)
     valueChoices = MetadataControlledVocabularyValueField(blank=True,null=True)
-    
-    def getCV(self):
-        return  self.cvInstance
 
-    def getCVClass(self):
-        return self.cvClass
+    parentShortName = MetadataAtomicField.Factory("charfield",max_length=HUGE_STRING,blank=True)
+    parentLongName = MetadataAtomicField.Factory("charfield",max_length=HUGE_STRING,blank=True)
 
-    @classmethod
-    def getCVClass(cls):
-        return cls.cvClass
+    open = models.NullBooleanField()        # can a user override the bound values?
+    multi = models.NullBooleanField()       # can a user select more than one bound value?
+    nullable = models.NullBooleanField()    # can a user select no bound values?
 
-    def getValueChoices(self):
-        #return self._meta.get_field_by_name("value")[0].choices
-        choices = [("----------","----------")]
-        if self.valueChoices:
-            return choices+self.valueChoices
-        else:
-            return choices
-            
     def __unicode__(self):
         name = u'%s' % self.getTitle()
         if self.longName:
             name = u'%s' % self.longName
         elif self.shortName:
             name = u'%s' % self.shortName
-        if self.value:
-            name = u'%s: %s' % (name,self.value)
+#        if self.value:
+#            name = u'%s: %s' % (name,self.value)
         return name
+
+    @classmethod
+    def getProperties(cls,*args,**kwargs):
+        # returns the queryset sepecified by "filter"
+        # this is generally used to work out which properties to assign to a model as its initial values
+        filter = kwargs.pop("filter","ALL")
+
+        # first, check if the cv has been loaded...
+        cvObjects = cls.cvClass.objects.all()
+        if not cvObjects:
+            msg = "failed to load " % cvClass
+            raise MetadataError(msg)
+
+        # next create a new set of properties corresponding to the CV...
+        newProperties = set()
+        for cvInstance in cvObjects:            
+            newPropertyInstance = cls(cv=cvInstance)
+            newPropertyInstance.save()
+            newProperties.add(newPropertyInstance.id)            
+        
+
+        # TODO: ADDRESS THIS ISSUE...
+        if (filter.upper()!="ALL"):
+            msg = "Error: custom filters are not yet supported for retrieving initial properties"
+            raise MetadataError(msg)
+        
+        # finally, return a queryset assuming I want ALL of the newly created properties...
+        return cls.objects.filter(pk__in=newProperties)
+
+    def getValueChoices(self):
+        # TODO: COORDINATE THIS W/ OPEN/NONE/MULTI
+        return self.valueChoices
+
+    def hasParent(self):
+        return self.parentShortName != ""
+
+    def hasValues(self):
+        return self.valueChoices != None
+        
+    def hasSubItems(self):
+        return not self.hasValues()
 
     def __init__(self,*args,**kwargs):
         cv = kwargs.pop("cv",None)
-        super(ComponentProperty, self).__init__(*args, **kwargs)
-        self.registerFieldType(FieldType("BASIC","Basic Properties"),["shortName","longName","value"])
-        self._meta.get_field_by_name("value")[0].widget = django.forms.Select()
+        
+        super(MetadataProperty,self).__init__(*args,**kwargs)
+        
+ #       self.getField("value").widget = django.forms.Select()
         if cv:
             self.cvInstance = cv
-            self._meta.get_field_by_name("shortName")[0].default = cv.shortName
-            self._meta.get_field_by_name("longName")[0].default = cv.longName
-            #self._meta.get_field_by_name("value")[0]._choices = cv.values
+            self.shortName = cv.shortName
+            self.longName = cv.longName
+            self.open = cv.open
+            self.multi = cv.multi
+            self.nullable = cv.nullable
             self.valueChoices = cv.values
+            if cv.parent:
+                self.parentShortName = cv.parent.shortName
+                self.parentLongName = cv.parent.longName
+
+
+  #          #self.getField("anotherValue")._choices = [("one","one")]
+  #          self._meta.get_field_by_name('anotherValue')[0]._choices = self.valueChoices
             
-        else:
-            #print "Error initializing ComponentProperty; no CV specified"
-            pass
-
-
-class Activity(MetadataModel):
-    class Meta:
-        abstract = False
-
-    _fieldsByType = {}
-
-    responsibleParties = MetadataManyToManyField('ResponsibleParty',related_name="responsibleParties")
-    responsibleParties.help_text = "The point of contact(s) for this activity.This includes, among others, the principle investigator."
-    fundingSource = models.CharField(max_length=BIG_STRING,blank=True)
-    fundingSource.help_text = "The entities that funded this activity."
-    rationale = models.TextField(blank=True)
-    rationale.help_text = "For what purpose is this activity being performed?"
-    project = MetadataEnumerationField(enumeration=Activity_Project_enumeration,open=True)
-    project.help_text = "The project that this activity is associated with"
-
-    def __init__(self, *args, **kwargs):
-        super(Activity, self).__init__(*args, **kwargs)
-        
-        self.registerFieldType(FieldType("BASIC","Basic Properties"),['fundingSource',"project",'responsibleParties'])
-
-class DateRange(MetadataModel):
-    _name = "DateRange"
-
-    _fieldsByType = {}
-
-    duration = models.CharField(max_length=BIG_STRING,blank=True)
-    startDate = models.DateField(blank=True,null=True)
-    endDate = models.DateField(blank=True,null=True)
-
-    def __init__(self,*args,**kwargs):
-        super(DateRange,self).__init__(*args,**kwargs)
-        self.registerFieldType(FieldType("BASIC","Basic Properties"),['duration','startDate','endDate'])
-
-class Calendar(MetadataModel):
-    _name = "Calendar"
-
-    _fieldsByType = {}
-
-    units = MetadataEnumerationField(enumeration=CalendarUnitType_enumeration,open=False)
-    length = models.IntegerField(blank=True)
-    description = models.TextField(blank=True)
-    range = MetadataForeignKey("DateRange",related_name="range")
-
-    def __init__(self, *args, **kwargs):
-        super(Calendar, self).__init__(*args, **kwargs)
-        self.registerFieldType(FieldType("BASIC","Basic Properties"),['units','length','description','range'])
-
-class Standard(MetadataModel):
-    _name = "Standard"
-    _title = "Standard"
-
-    _fieldsByType = {}
-
-    name = models.CharField(max_length=BIG_STRING,blank=False)
-    version = models.CharField(max_length=LIL_STRING,blank=True)
-    description = models.TextField(blank=True)
-
-    def __init__(self,*args,**kwargs):
-        super(Standard,self).__init__(*args,**kwargs)
-
-    def __unicode__(self):
-        name = self.getName()
-        if self.name:
-            name = u'%s: %s' % (name, self.name)
-        return name
-
-class StandardName(MetadataModel):
-    _name = "StandardName"
-    _title = "Standard Name"
-
-    _fieldsByType = {}
-
-    value = models.CharField(max_length=BIG_STRING,blank=False)
-    standard = MetadataManyToManyField("Standard",related_name="standard")
-
-    def __init__(self,*args,**kwargs):
-        super(StandardName,self).__init__(*args,**kwargs)
-
-class DataTopic(MetadataModel):
-    _name = "DataTopic"
-    _title = "Data Topic"
-
-    _fieldsByType = {}
-
-    name = models.CharField(max_length=BIG_STRING,blank=False)
-    standardName = MetadataForeignKey("StandardName",related_name="standardName",blank=False)
-    description = models.CharField(max_length=BIG_STRING,blank=True)
-    unit = MetadataEnumerationField(enumeration=UnitType_enumeration,open=True)
-
-
-    def __init__(self, *args, **kwargs):
-        super(DataTopic, self).__init__(*args, **kwargs)
-
-class DataCitation(MetadataModel):
-    _name = "DataCitation"
-    _title = "Data Citation"
-
-    _fieldsByType = {}
-
-    abstract = models.TextField(blank=True)
-    citation = MetadataForeignKey("Citation",related_name="citation",blank=False)
-
-    def __init__(self, *args, **kwargs):
-        super(DataCitation, self).__init__(*args, **kwargs)
-
-    def __unicode__(self):
-        name = self.getTitle()
-        return name
-
-class DataContent(MetadataModel):
-    _name = "DataContent"
-    _title = "Data Content"
-
-    _fieldsByType = {}
-
-    topic = MetadataForeignKey("DataTopic",related_name="topic",blank=False)
-    aggregation = models.CharField(max_length=BIG_STRING,blank=True)
-    aggregation.help_text = "Describes how the content has been aggregated together: sum, min, mean, max, ..."
-    frequency = MetadataEnumerationField(enumeration=FrequencyType_enumeration,open=True)
-    frequency.help_text = "Describes the frequency of the data content: daily, hourly, ..."
-    citation = MetadataManyToManyField("DataCitation",related_name="citation")
-
-    def __init__(self, *args, **kwargs):
-        super(DataContent, self).__init__(*args, **kwargs)
-        self.registerFieldType(FieldType("BASIC","Basic Properties"),["topic","aggregation","frequency","citation"])
-    
-    def __unicode__(self):
-        name = self.getTitle()
-        if self.topic:
-            name = u'%s: %s' % (name, self.topic)
-        return name
-
-class DataExtent(MetadataModel):
-    _name = "DataExtent"
-    _title = "Data Extent"
-
-    _fieldsByType = {}
-
-    description = models.CharField(max_length=HUGE_STRING,blank=True)
-    geographicElement = models.CharField(max_length=HUGE_STRING,blank=True)
-    temporalElement = models.CharField(max_length=HUGE_STRING,blank=True)
-    verticalElement = models.CharField(max_length=HUGE_STRING,blank=True)
-
-    def __init__(self, *args, **kwargs):
-        super(DataExtent, self).__init__(*args, **kwargs)
-        self.registerFieldType(FieldType("BASIC","Basic Properties"),["description","geographicElement","description","temporalElement","verticalElement"])
-
-class DataDistribution(MetadataModel):
-    _name = "DataDistribution"
-    _title = "Data Distribution"
-
-    _fieldsByType = {}
-
-    distributionFee = models.CharField(max_length=BIG_STRING,blank=True)
-    distributionFormat = MetadataEnumerationField(enumeration=DataFormatType_enumeration,open=False,blank=True)
-    distributionAccess = MetadataEnumerationField(enumeration=DataAccessType_enumeration,open=False,blank=True)
-    responsibleParties = MetadataManyToManyField("ResponsibleParty",related_name="responsibleParties")
-
-class License(MetadataModel):
-    _name = "License"
-    _title = "License"
-
-    _fieldsByType = {}
-
-    unrestricted = MetadataEnablerField(fields=["licenseName","licenseContact","licenseDescription"])
-    unrestricted.help_text = "If unrestricted=\"true\" then the artifact can be downloaded with no restrictions (ie: there are no administrative steps for the user to deal with; code or data can be downloaded and used directly)."
-    licenseName = models.CharField(max_length=LIL_STRING,blank=True)
-    licenseName.help_text = "The name that the license goes by (ie: 'GPL')"
-    licenseContact = models.CharField(max_length=HUGE_STRING,blank=True)
-    licenseContact.help_text = "The point of contact for access to this artifact; may be either a person or an institution"
-    licenseDescription = models.TextField(blank=True)
-    licenseDescription.help_text = "A textual description of the license; might be the full text of the license, more likely to be a brief summary"
-
-    def __unicode__(self):
-        name = self.getTitle()
-        if self.licenseName:
-            name = u'%s: %s' % (name, self.licenseName)
-        return name
-    
-class DataRestriction(MetadataModel):
-    _name = "DataRestriction"
-    _title = "Data Restriction"
-
-    _fieldsByType = {}
-
-    restrictionScope = MetadataEnumerationField(enumeration=DataRestrictionScopeType_enumeration,open=False,blank=True)
-    # TODO: THIS IS A GMD FIELD
-    #restriction =
-    license = MetadataForeignKey("License",related_name="license")
-    
-    def __unicode__(self):
-        name = self.getTitle()
-        if self.restrictionScope:
-            name = u'%s: %s' % (name, self.restrictionScope)
-        if self.license:
-            name = u'%s: %s' % (name, self.license)
-        return name
-
-class DataStorage(MetadataModel):
-    class Meta:
-        abstract = True
-
-    _name = "DataStorage"
-    _title = "Data Storage"
-
-    _fieldsByType = {}
-
-    dataSize = models.IntegerField()
-    dataFormat = MetadataEnumerationField(enumeration=DataFormatType_enumeration,open=False,blank=True)
-    dataLocation = models.URLField(verify_exists=False)
-    modificationDate = models.DateField(null=True)
-    modificationDate.help_text = "The date that the file (or other storage medium) has been updated"
-    
-    def __init__(self, *args, **kwargs):
-        super(DataStorage, self).__init__(*args, **kwargs)
-
-class IPStorage(DataStorage):
-    _name = "IPStorage"
-    _title = "IP Storage"
-
-    _fieldsByType = {}
-
-    protocol = models.CharField(max_length=BIG_STRING,blank=True)
-    host = models.CharField(max_length=BIG_STRING,blank=True)
-    path = models.CharField(max_length=BIG_STRING,blank=True)
-    fileName = models.CharField(max_length=BIG_STRING,blank=False)
-
-    def __init__(self, *args, **kwargs):
-        super(IPStorage, self).__init__(*args, **kwargs)
-
-class FileStorage(DataStorage):
-        
-    _name = "FileStorage"
-    _title = "File Storage"
-
-    _fieldsByType = {}
-
-    fileSystem = models.CharField(max_length=BIG_STRING,blank=True)
-    path = models.CharField(max_length=HUGE_STRING,blank=True)
-    fileName = models.CharField(max_length=BIG_STRING,blank=False)
-
-    def __init__(self, *args, **kwargs):
-        super(FileStorage, self).__init__(*args, **kwargs)
-
-
-class DBStorage(DataStorage):
-    _name = "DBStorage"
-    _title = "Database Storage"
-
-    _fieldsByType = {}
-
-    dbAccessString = models.CharField(max_length=LIL_STRING,blank=True)
-    dbName = models.CharField(max_length=BIG_STRING,blank=False)
-    owner = models.CharField(max_length=HUGE_STRING,blank=True)
-    dbTable = models.CharField(max_length=HUGE_STRING,blank=True)
-
-    def __init__(self, *args, **kwargs):
-        super(DBStorage, self).__init__(*args, **kwargs)
-
-
-class SelfRelationship(models.Model):
-    
-    from_model = models.ForeignKey('DataObject', related_name='from_model')
-    to_model = models.ForeignKey('DataObject', related_name='to_model')
-
-    class Meta:
-        unique_together = ('from_model', 'to_model')
-
-class DataObject(DataSource):
-    _name = "DataObject"
-    _title = "Data Object"
-
-    _fieldsByType = {}
-
-    dataStatus = MetadataEnumerationField(enumeration=DataStatusType_enumeration,open=False,blank=True)
-    dataStatus.help_text = "The current status of the data - is it complete, or is this metadata description all that is available, or is the data continuously supplemented."
-    acronym = models.CharField(max_length=LIL_STRING,blank=False)
-    description = models.TextField(blank=True)
-    hierarchyLevelName = MetadataEnumerationField(enumeration=DataHierarchyType_enumeration,open=True,blank=True)
-    hierarchyLevelName.help_text = "What level in the data hierarchy (constructed by the self-referential parent/child aggregations) is this DataObject."
-    hierarchyLevelName.verbose_name = "Hierarchy Level Name"
-    content = MetadataManyToManyField("DataContent",related_name="content")
-    extent = MetadataForeignKey("DataExtent",related_name="extent")
-    citation = MetadataForeignKey("DataCitation",related_name="citation",blank=True)
-    distribution = MetadataForeignKey("DataDistribution",related_name="distribution")
-    restriction = MetadataManyToManyField("DataRestriction",related_name="restriction")
-    storage = MetadataAbstractField(abstractModel=DataStorage,related_name="storage",blank=True)
-    storage.help_text = "Describes the method that the DataObject is stored. An abstract <u>class</u> with specific child classes for each supported method."
-    fileStorage = MetadataForeignKey("FileStorage",related_name="fileStorage",blank=True)
-    dBStorage = MetadataForeignKey("DBStorage",related_name="dBStorage",blank=True)
-    iPStorage = MetadataForeignKey("IPStorage",related_name="iPStorage",blank=True)
-    keyword = models.CharField(max_length=BIG_STRING,blank=True)
-    keyword.help_text = "Descriptive keyword used when searching for DataObjects (this is not the same as shortName / longName / description)."
-#    childObjects = models.ManyToManyField("self",related_name="childObjects",symmetrical=False,through="SelfRelationship")
-
-    def __init__(self, *args, **kwargs):
-        super(DataObject, self).__init__(*args, **kwargs)
-        self.registerFieldType(FieldType("BASIC","Basic Properties"),["dataStatus","acronym","description","hierarchyLevelName","citation","keyword"])
-        self.registerFieldType(FieldType("CONTENT","Data Content"),["content"])
-        self.registerFieldType(FieldType("EXTENT","Data Extent"),["extent"])
-        self.registerFieldType(FieldType("ACCESS","Data Access"),["storage","fileStorage","dBStorage","iPStorage","distribution","restriction"])
-
-    def __unicode__(self):
-        name = self.getName()
-        if self.acronym:
-            name = u'%s: %s' % (name, self.acronym)
-        return name
-
-class NumericalActivity(Activity):
-    class Meta:
-        abstract = True
-
-    _name = "NumericalActivity"
-
-    _fieldsByType = {}
-
-    shortName = models.CharField(max_length=LIL_STRING,blank=False)
-    longName = models.CharField(max_length=BIG_STRING,blank=False)
-    description = models.TextField(blank=True)
-
-    def __init__(self, *args, **kwargs):
-        super(NumericalActivity, self).__init__(*args, **kwargs)
-        self.registerFieldType(FieldType("SIMULATION_DESCRIPTION","Simulation Description"),["shortName","longName","description"])
-
-class Experiment(Activity):
-    class Meta:
-        abstract = True
-
-    _name = "Experiment"
-
-    _fieldsByType = {}
-
-    def __init__(self, *args, **kwargs):
-        super(Experiment, self).__init__(*args, **kwargs)
-        self.registerFieldType(FieldType("EXPERIMENT_DESCRIPTION","Experiment Description"), ["project","rationale",])
-
-class NumericalRequirement(MetadataModel):
-    _name = "NumericalRequirement"
-    _title = "Numerical Requirement"
-    
-    _fieldsByType = {}
-
-    requirementId = models.CharField(max_length=LIL_STRING,blank=False)
-    name = models.CharField(max_length=BIG_STRING,blank=False)
-    requirementType = MetadataEnumerationField(enumeration=NumericalRequirementType_enumeration,open=False)
-    requirementType.verbose_name = "Requirement Type"
-    description = models.TextField()
-    sources = MetadataDocumentField("DataObject",modelName="dataobject",blank=True,null=True)
-    sources.help_text = None
-
-    def __init__(self,*args,**kwargs):
-        super(NumericalRequirement,self).__init__(*args,**kwargs)
-        self.registerFieldType(FieldType("BASIC","Basic Properties"), ["requirementId","name","requirementType","description","sources"])
-
-    def __unicode__(self):
-        name = u'Requirement'
-        if self.requirementType:
-            name = u'%s (%s)' % (name, self.requirementType)
-        if self.name:
-            name = u'%s: "%s"' % (name, self.name)
-        return name
-
-class CompositeNumericalRequirement(NumericalRequirement):
-    _name = "CompositeNumericalRequirement"
-    _title = "Numerical Requirement"
-
-    _fieldsByType = {}
-
-
-    isComposite = MetadataEnablerField(fields=["requirementOptions","sources"])
-    isComposite.help_text = "is this requirement composed of other child requirements?"
-
-    requirementOptions = MetadataManyToManyField("RequirementOption",related_name="requirementOptions")
-    #requirementOptions.verbose_name = "sub-requirements"
-
-    def __init__(self,*args,**kwargs):
-        super(NumericalRequirement,self).__init__(*args,**kwargs)
-        self.registerFieldType(FieldType("BASIC","Basic Properties"), ["isComposite","requirementOptions"])
-
-
-class RequirementOption(MetadataModel):
-    _name = "RequirementOption"
-    _title = "Requirement Option"
-
-    _fieldsByType = {}
-
-    optionRelationship = MetadataEnumerationField(enumeration=LogicalRelationshipType_enumeration,open=False)
-    optionRelationship.help_text = "Describes how this optional (child) requirement is related to its sibling requirements.  For example, a NumericalRequirement could consist of a set of optional requirements each with an \"OR\" relationship meaning use this boundary condition _or_ that one."
-    requirement = MetadataForeignKey("NumericalRequirement",related_name="requirement")
-    requirement.help_text = "A NumericalRequirement that is being used as a set of related requirements; For example if a requirement is to use 1 of 3 boundary conditions, then that \"parent\" requirement would have three \"child\" RequirmentOptions (each of one with the XOR optionRelationship)."
-
-    def __unicode__(self):
-        name = u'Requirement Option'
-        if self.optionRelationship:
-            name = u'%s: %s' % (name, self.type)
-        if self.requirement:
-            name = u'%s: %s' % (name, self.requirement)
-        return name
-
-    def __init__(self,*args,**kwargs):
-        super(RequirementOption,self).__init__(*args,**kwargs)
-        self.registerFieldType(FieldType("BASIC","Basic Properties"), ["optionRelationship","requirement"])
-
-class NumericalExperiment(Experiment):
-    _name = "NumericalExperiment"
-    _title = "Numerical Experiment"
-
-    _fieldsByType = {}
-
-    shortName = models.CharField(max_length=LIL_STRING,blank=False)
-    longName = models.CharField(max_length=BIG_STRING,blank=False)
-    description = models.TextField(blank=True)
-    experimentID = models.CharField(max_length=LIL_STRING,blank=False)
-    calendar = MetadataForeignKey("Calendar",related_name="calendar")
-    numericalRequirements = MetadataManyToManyField("CompositeNumericalRequirement",related_name="numericalRequirements")
-
-    def __init__(self,*args,**kwargs):
-        super(NumericalExperiment,self).__init__(*args,**kwargs)
-        self.registerFieldType(FieldType("EXPERIMENT_DESCRIPTION","Experiment Description"),["shortName","longName","description","experimentID"])
-        self.registerFieldType(FieldType("BASIC","Basic Properties"), ["calendar"])
-        self.registerFieldType(FieldType("REQUIREMENT","Numerical Requirements"), ["numericalRequirements"])
-
-class TimeTransformation(MetadataModel):
-    _name = "TimeTransformation"
-    _fieldsByType = {}
-
-    mappingType = MetadataEnumerationField(enumeration=TimeMappingType_enumeration,open=True)
-    mappingType.help_text = "Enumerates the different ways that time can be mapped when transforming from one field to another."
-    description = models.TextField(blank=True)
-
-    def __init__(self,*args,**kwargs):
-        super(TimeTransformation,self).__init__(*args,**kwargs)
-        self.registerFieldType(FieldType("BASIC","Basic Properties"), ["mappingType","description"])
-
-class CouplingEndPoint(MetadataModel):
-    _name = "CouplingEndPoint"
-
-    _fieldsByType = {}
-
-    dataSource = models.CharField(max_length=BIG_STRING,blank=False)
-    # TODO: THIS SHOULD BE AN "IDENTIFIER" CLASS
-    instanceID = models.CharField(max_length=LIL_STRING,blank=True)
-    instanceID.help_text = "If the same datasource is used more than once in a coupled model then a method for identifying which particular instance is being referenced is needed (for BFG)."
-
-    def __init__(self,*args,**kwargs):
-        super(CouplingEndPoint,self).__init__(*args,**kwargs)
-        self.registerFieldType(FieldType("BASIC","Basic Properties"), ["dataSource","instanceID"])
-        
-class Coupling(MetadataModel):
-    _name = "Coupling"
-    _title = "Coupling"
-
-    _fieldsByType = {}
-
-    purpose = MetadataEnumerationField(enumeration=DataPurpose_enumeration,open=True)
-    fullySpecified = models.BooleanField()
-    fullySpecified.help_text="If \"true\" then the coupling is fully-specified.  If \"false\" then not every Connection has been described within the coupling."
-    description = models.TextField(blank=True)
-    description.help_text="A free-text description of the coupling"
-    connectionType = MetadataEnumerationField(enumeration=ConnectionType_enumeration,open=True)
-    connectionType.help_text="Describes the method of coupling"
-    timeProfile = MetadataForeignKey("Timing",related_name="timeProfile")
-    timeProfile.help_text="Describes how often the coupling takes place."
-    timeLag = MetadataForeignKey("TimeLag",related_name="timeLag")
-    timeLag.help_text="The coupling field used in the target at a given time corresponds to a field produced by the source at a previous time."
-    spatialRegridding = MetadataManyToManyField("SpatialRegridding",related_name="spatialRegridding")
-    spatialRegridding.help_text="Characteristics of the scheme used to interpolate a field from one grid (source grid) to another (target grid)"
-    timeTransformation = MetadataForeignKey("TimeTransformation",related_name="timeTransformation")
-    timeTransformation.help_text="Temporal transformation performed on the coupling field before or after regridding onto the target grid. "
-    couplingSource = MetadataForeignKey("CouplingEndPoint",related_name="couplingSource")
-    couplingTarget = MetadataForeignKey("CouplingEndPoint",related_name="couplingTarget")
-    priming = models.CharField(max_length=BIG_STRING,blank=False)
-    priming.help_text = "A priming source is one that is active on the first available timestep only (before \"proper\" coupling can ocurr).  It can either be described here explicitly, or else a separate coupling/connection with a timing profile that is active on only the first timestep can be created."
-    
-    def __init__(self,*args,**kwargs):
-        super(Coupling,self).__init__(*args,**kwargs)
-        self.registerFieldType(FieldType("BASIC","Basic Properties"), ["purpose","fullySpecified","description","timeProfile","timeLag","spatialRegridding","timeTransformation","couplingSource","couplingTarget"])
-
-    def __unicode__(self):
-        name = u'%s' % self.getName()
-        if self.connectionType:
-            name = u'%s: %s' % (name, self.connectionType)
-        return name
-
-class Conformance(MetadataModel):
-    _name = "Conformance"
-    _title = "Conformance"
-
-    _fieldsByType = {}
-
-    conformant = models.BooleanField()
-    conformant.help_text = "Records whether or not this conformance satisfies the requirement.  A simulation should have at least one conformance mapping to every experimental requirement.  If a simulation satisfies the requirement - the usual case - then conformant should have a value of \"true.\"  If conformant is true but there is no reference to a source for the conformance, then we can assume that the simulation conforms to the requirement _naturally_, that is without having to modify code or inputs. If a simulation does not conform to a requirement then conformant should be set to \"false.\""
-    type = MetadataEnumerationField(enumeration=ConformanceType_enumeration,open=False)
-    type.help_text = "Describes the method that this simulation conforms to an experimental requirement (in case it is not specified by the change property of the reference to the source of this conformance)"
-    description = models.TextField(blank=True)
-    frequency = MetadataEnumerationField(enumeration=FrequencyType_enumeration,open=True)
-    # TODO: DOUBLE-CHECK THAT THIS WORKS W/ ABSTRACT CLASSES
-    requirements = models.ManyToManyField("NumericalRequirement")
-    requirements.help_text="Points to the NumericalRequirement that the simulation in question is conforming to."
-    sources = models.ManyToManyField("DataSource")
-    sources.help_text = "Points to the DataSource used to conform to a particular Requirement.   This may be part of an activity::simulation or a software::component.  It can be either a DataObject or a SoftwareComponent or a ComponentProperty.  It could also be by using particular attributes of, say, a SoftwareComponent, but in that case the recommended practise is to reference the component and add appropriate text in the conformance description attribute."
-    
-    def __init__(self,*args,**kwargs):
-        super(Conformance,self).__init__(*args,**kwargs)
-        self.registerFieldType(FieldType("BASIC","Basic Properties"), ["conformant","type","description","frequency"])
-        self.registerFieldType(FieldType("REQUIREMENTS","Experimental Requirements"), ["requirements"])
-        self.registerFieldType(FieldType("SOURCES","Conformant Methods"), ["sources"])
-
-    def __unicode__(self):
-        name = u'%s' % self.getName()
-        # TODO: map requirements and sources to (truncated) lists
-##        if self.requirements:
-##            name = u'%s: %s' % (name, "requirements")
-##        if self.sources:
-##            name = u'%s: %s' % (name, "sources")
-        return name
-
-
-class Simulation(NumericalActivity):
-    class Meta:
-        abstract = True
-
-    _name = "Simulation"
-
-    _fieldsByType = {}
-
-    simulationID = models.CharField(max_length=BIG_STRING,blank=False)
-    simulationID.verbose_name = "the identifier for the simulation"
-    
-    calendar = MetadataForeignKey("Calendar",related_name="calendar")
-    inputs = MetadataManyToManyField("Coupling",related_name="inputs")
-    inputs.help_text="implemented as a mapping from a source to target; can be a forcing file, a boundary condition, etc."
-
-    outputs = MetadataManyToManyField("DataObject",related_name="outputs")
-    restarts = MetadataManyToManyField("DataObject",related_name="restarts")
-    
-    conformances = MetadataManyToManyField("Conformance",related_name="conformances")
-
-    def __init__(self,*args,**kwargs):
-        super(Simulation,self).__init__(*args,**kwargs)
-        self.registerFieldType(FieldType("SIMULATION_DESCRIPTION","Simulation Description"), ["simulationID","project","rationale"])        
-        self.registerFieldType(FieldType("BASIC","Basic Properties"), ["calendar"])
-        self.registerFieldType(FieldType("COUPLINGS","Inputs & Outputs"),["inputs","outputs","restarts"])
-        self.registerFieldType(FieldType("CONFORMANCES","Conformances"), ["conformances"])
-
-class SimulationRun(Simulation):
-    _name = "SimulationRun"
-
-    _fieldsByType = {}
-
-    pass
-
-    def __init__(self,*args,**kwargs):
-        super(SimulationRun,self).__init__(*args,**kwargs)
-
-
-
-class ComponentLanguage(MetadataModel):
-    name = models.CharField(max_length=BIG_STRING,blank=False)
-    # TODO: PROPERTIES
-    #componentLanguageProperty = MetadataPropertyField(property=ComponentLanguage_property)
-
-    _fieldsByType = {}
-
-    def __init__(self,*args,**kwargs):
-        super(ComponentLanguage, self).__init__(*args, **kwargs)
-        self.registerFieldType(FieldType("BASIC","Basic Properties"),["name"])
-
-
-class SoftwareComponent(DataSource):
-    class Meta:
-        abstract = True
-
-    _fieldsByType = {}
-
-    embedded = models.BooleanField(blank=True)
-    embedded.help_text = "An embedded component cannot exist on its own as an atomic piece of software; instead it is embedded within another (parent) component. When embedded equals 'true', the SoftwareComponent has a corresponding piece of software (otherwise it is acting as a 'virtual' component which may be inexorably nested within a piece of software along with several other virtual components)."
-    couplingFramework = MetadataEnumerationField(enumeration=CouplingFrameworkType_enumeration,open=True)
-    couplingFramework.help_text = "The coupling framework that this entire component conforms to"
-    shortName = models.CharField(max_length=LIL_STRING,blank=False)
-    shortName.help_text = "the name of the model that is used internally"
-    longName = models.CharField(max_length=BIG_STRING,blank=False)
-    longName.help_text = "the name of the model that is used externally"
-    description = models.TextField(blank=True)
-    description.help_text = "a free-text description of the component"
-    license = models.CharField(max_length=BIG_STRING,blank=True)
-    license.help_text = "the license held by this piece of software"
-    # TODO: PROPERTIES (componentProperties, scientificProperties, numericalProperties)
-    responsibleParties = MetadataManyToManyField('ResponsibleParty',related_name="responsibleParties")
-    releaseDate = models.DateField(null=True)
-    releaseDate.help_text = "The date of publication of the software component code (as opposed to the date of publication of the metadata document, or the date of deployment of the model)"
-    previousVersion = models.CharField(max_length=BIG_STRING,blank=True)
-    fundingSource = models.CharField(max_length=BIG_STRING,blank=True)
-    fundingSource.help_text = "The entities that funded this software component"
-    citations = MetadataManyToManyField("Citation",related_name="citations")
-    citations.verbose_name = "References"
-    citations.help_text = "A published reference to this component."
-    onlineResource = models.URLField(verify_exists=False,blank=True)
-
-    #componentLanguage = MetadataForeignKey("ComponentLanguage",related_name="componentLanguage")
-    componentLanguage = MetadataEnumerationField(enumeration=ComponentLanguageType_enumeration,open=False)
-
-    def __init__(self,*args,**kwargs):
-        super(SoftwareComponent, self).__init__(*args, **kwargs)
-        self.registerFieldType(FieldType("BASIC","Basic Properties"),["couplingFramework","license","releaseDate","componentLanguage","citations", "onlineResource","fundingSource","previousVersion","responsibleParties"])
-        self.registerFieldType(FieldType("MODEL_DESCRIPTION","Component Description"),["shortName","longName","description", "embedded",])
-
-
-class ResponsibleParty(MetadataModel):
-    _name = "ResponsibleParty"
-    _title = "Responsible Party"
-
-    _fieldsByType = {}
-
-    individualName = models.CharField(max_length=LIL_STRING,blank=False)
-    organizationName = models.CharField(max_length=LIL_STRING,blank=False)
-    role = MetadataEnumerationField(enumeration=ResponsiblePartyRole_enumeration,open=True)
-
-    positionName = models.CharField(max_length=LIL_STRING,blank=True)
-    contactInfo = models.CharField(max_length=LIL_STRING,blank=True)
-
-    def __init__(self,*args,**kwargs):
-        super(ResponsibleParty,self).__init__(*args,**kwargs)
-        self.registerFieldType(FieldType("BASIC","Basic Properties"), ["individualName","organizationName","role","positionName","contactInfo"])
-
-    def __unicode__(self):
-        name = u'%s' % self.getName()
-        if self.role:
-            name = u'%s: %s' % (name, self.role)
-        if self.individualName:
-            name = u'%s: %s' % (name, self.individualName)
-        return name
-
-class Citation(MetadataModel):
-    _name = "Citation"
-    _title = "Citation"
-
-    _fieldsByType = {}
-
-    title = models.CharField(max_length=BIG_STRING,blank=False)
-    title.help_text = "The title of this publication"
-    alternateTitle = models.CharField(max_length=BIG_STRING,blank=True)
-    edition = models.CharField(max_length=BIG_STRING,blank=True)
-    edition.help_text = "The edition that this publication is published in "
-    editionDate = models.DateField(blank=True,null=True)
-    identifier = models.CharField(max_length=BIG_STRING,blank=True)
-  #  citedResponsibleParty = MetadataManyToManyField('ResponsibleParty',related_name="citedResponsibleParty")
-    otherCitationDetails = models.TextField(blank=True)
-    collectiveTitle = models.CharField(max_length=BIG_STRING,blank=True)
-    collectiveTitle.help_text = "The complete bibliographic reference of this publication."
-    isbn = models.CharField(max_length=LIL_STRING,blank=True)
-    issn = models.CharField(max_length=LIL_STRING,blank=True)
-
-    def __init__(self,*args,**kwargs):
-        super(Citation,self).__init__(*args,**kwargs)
-        self.registerFieldType(FieldType("BASIC","Basic Properties"), ["title","alternateTitle","edition","editionDate","identifier","otherCitationDetails","collectiveTitle","isbn","issn"])
-
-    def __unicode__(self):
-        return u'%s: %s' % (self.getName(), self.title)
-
-class Timing(MetadataModel):
-
-    _fieldsByType = {}
-
-    units = MetadataEnumerationField(enumeration=TimingUnits_enumeration,open=False)
-    variableRate = models.BooleanField(blank=True)
-    start = models.DateTimeField(blank=True,null=True)
-    end = models.DateTimeField(blank=True,null=True)
-    rate = models.IntegerField(blank=True,null=True)
-
-    def __init__(self,*args,**kwargs):
-        super(Timing,self).__init__(*args,**kwargs)
-        self.registerFieldType(FieldType("BASIC","Basic Properties"), ["units","variableRate","start","end","rate"])
-
-class TimeLag(MetadataModel):
-    _fieldsByType = {}
-
-    units = MetadataEnumerationField(enumeration=TimingUnits_enumeration,open=False)
-    value = models.IntegerField()
-
-    def __init__(self,*args,**kwargs):
-        super(TimeLag,self).__init__(*args,**kwargs)
-        self.registerFieldType(FieldType("BASIC","Basic Properties"), ["units","value"])
-
-class SpatialRegriddingUserMethod(MetadataModel):
-    _fieldsByType = {}
-
-    name = models.CharField(max_length=BIG_STRING,blank=False)
-    file = models.CharField(max_length=BIG_STRING,blank=True)
-
-    def __init__(self,*args,**kwargs):
-        super(SpatialRegriddingUserMethod,self).__init__(*args,**kwargs)
-        self.registerFieldType(FieldType("BASIC","Basic Properties"), ["name","file"])
-
-
-class SpatialRegridding(MetadataModel):
-
-    _name = "SpatialRegridding"
-
-    _fieldsByType = {}
-
-    spatialRegriddingDimension = MetadataEnumerationField(enumeration=SpatialRegriddingDimensionType_enumeration,open=False,blank=True)
-    spatialRegriddingStandardMethod = MetadataEnumerationField(enumeration=SpatialRegriddingStandardMethodType_enumeration,open=False)
-    spatialRegriddingUserMethod = MetadataForeignKey("SpatialRegriddingUserMethod",related_name="spatialRegriddingUserMethod")
-    spatialRegriddingUserMethod.help_text = "Allows users to bypass the SpatialRegriddingStandardMethod and instead provide a set of weights and addresses for regridding via a file."
-
-    def __init__(self,*args,**kwargs):
-        super(SpatialRegridding,self).__init__(*args,**kwargs)
-        self.registerFieldType(FieldType("BASIC","Basic Properties"), ["spatialRegriddingDimension","spatialRegriddingStandardMethod","spatialRegriddingUserMethod"])
-
-    def __unicode__(self):
-        name = u'%s' % self.getName()
-        if self.spatialRegriddingDimension:
-            name = u'%s: %s' % (name, self.spatialRegriddingDimension)
-        if self.spatialRegriddingStandardMethod:
-            name = u'%s: %s' % (name, self.spatialRegriddingStandardMethod)
-        elif self.spatialRegriddingUserMethod:
-            name = u'%s: %s' % (name, self.spatialRegriddingUserMethod)
-        return name
-
-class ModelComponent(SoftwareComponent):
-
-    _fieldsByType = {}
-
-    type = MetadataEnumerationField(enumeration=ModelComponentType_enumeration,open=True)
-    timing = MetadataForeignKey("Timing",related_name="timing",blank=False)
-    timing.help_text = "Describes information about how this component simulates time."
-
-    def __init__(self,*args,**kwargs):
-        super(ModelComponent,self).__init__(*args,**kwargs)
-        self.registerFieldType(FieldType("MODEL_DESCRIPTION","Component Description"), ["type"])
-        self.registerFieldType(FieldType("BASIC","Basic Properties"), ["timing"])
-
-class GridMosaic(MetadataModel):
-    _name = "GridMosaic"
-    _title = "Grid Mosaic"
-
-    _fieldsByType = {}
-
-    congruentTiles = models.BooleanField()
-    gridMosaic = models.ManyToManyField("self",related_name="gridMosaic")
-    #gridMosaic = MetadataDocumentField("GridSpec",modelName="gridspec",blank=True,null=True)
-
-    def __init__(self,*args,**kwargs):
-        super(GridMosaic,self).__init__(*args,**kwargs)
-
-
-class GridSpec(MetadataModel):
-    _name = "GridSpec"
-    _title = "Grid"
-
-    _fieldsByType = {}
-
-    shortName = models.CharField(max_length=LIL_STRING,blank=False)
-    longName = models.CharField(max_length=BIG_STRING,blank=False)
-    description = models.TextField(blank=True)
-    gridType = MetadataEnumerationField(enumeration=GridType_enumeration,open=True,blank=False)
-
-    esmModelGrids = MetadataManyToManyField("GridMosaic",related_name="esmModelGrid")
-    esmModelGrids.verboseName = "ESM Model Grids"
-    
-    def __init__(self,*args,**kwargs):
-        super(GridSpec,self).__init__(*args,**kwargs)
-        self.registerFieldType(FieldType("GRID_DESCRIPTION","Grid Description"),["shortName","longName","gridType","description","esmModelGrids"])
-
-        
-
-
-##############
-
-# TODO: move these functions into the MetadataEnumerationField.__init__ fn
-try:
-    DataPurpose_enumeration.loadEnumerations()
-    CouplingFrameworkType_enumeration.loadEnumerations()
-    ResponsiblePartyRole_enumeration.loadEnumerations()
-    ModelComponentType_enumeration.loadEnumerations()
-    TimingUnits_enumeration.loadEnumerations()
-    Activity_Project_enumeration.loadEnumerations()
-    CalendarUnitType_enumeration.loadEnumerations()
-    NumericalRequirementType_enumeration.loadEnumerations()
-    ConnectionType_enumeration.loadEnumerations()
-    SpatialRegriddingDimensionType_enumeration.loadEnumerations()
-    SpatialRegriddingStandardMethodType_enumeration.loadEnumerations()
-    TimeMappingType_enumeration.loadEnumerations()
-    ConformanceType_enumeration.loadEnumerations()
-    FrequencyType_enumeration.loadEnumerations()
-    LogicalRelationshipType_enumeration.loadEnumerations()
-    DataStatusType_enumeration.loadEnumerations()
-    DataHierarchyType_enumeration.loadEnumerations()
-    ComponentLanguageType_enumeration.loadEnumerations()
-    GridType_enumeration.loadEnumerations()
-    UnitType_enumeration.loadEnumerations()
-    DataFormatType_enumeration.loadEnumerations()
-    DataAccessType_enumeration.loadEnumerations()
-    DataRestrictionScopeType_enumeration.loadEnumerations()
-except:
-    # this will fail on syncdb; once I move to South, it won't matter
-    pass
-
-
-
-#################
-# testing stuff #
-
-class Bar(MetadataModel):
-    _name = "Bar"
-    name = models.CharField(max_length=BIG_STRING,blank=True)
-
-    def __unicode__(self):
-        name = u'%s' % self.getName()
-        if self.name:
-            name = u'%s' % self.name
-        return name
-
-    def __init__(self,*args,**kwargs):
-        super(Bar,self).__init__(*args,**kwargs)
-
-class Foo(MetadataModel):
-    _name = "Foo"
-
-    name = models.CharField(max_length=BIG_STRING,blank=True)
-    bars = models.ManyToManyField("Bar",related_name="bars")
-
-    def __unicode__(self):
-        name = u'%s' % self.getName()
-        if self.name:
-            name = u'%s' % self.name
-        return name
-
-    def __init__(self,*args,**kwargs):
-        default_bars=kwargs.pop("default_bars",[])
-        super(Foo,self).__init__(*args,**kwargs)
-#        self.bars.default = default_bars
-

@@ -1,17 +1,24 @@
-import django.forms.fields
-import sys
-import inspect
-from django.utils.datastructures import SortedDict
-
-# module imports
-
 from django.forms import *
 from django.forms.models import BaseForm, BaseFormSet, BaseInlineFormSet, BaseModelFormSet, formset_factory, inlineformset_factory, modelform_factory, modelformset_factory
+from django.utils.datastructures import SortedDict
 from django.utils.functional import curry
 
-# intra/inter-package imports
+import inspect
+import sys
 
-from django_cim_forms.models import *
+from final.models import *
+
+##############################################
+# the types of subforms that a form can have #
+##############################################
+
+class SubFormType(EnumeratedType):
+    pass
+
+SubFormTypes = EnumeratedTypeList([
+    SubFormType("FORM","Form",BaseForm),
+    SubFormType("FORMSET","FormSet",BaseFormSet),
+])
 
 ###########################
 # get a form from a model #
@@ -28,7 +35,7 @@ from django_cim_forms.models import *
 # but that would have broken if for some reason an app had more than one form for the same model
 
 def getFormClassFromModelClass(ModelClass):
-    form_name = ModelClass._name + "_form"
+    form_name = ModelClass.getName() + "_form"
     app_name = ModelClass._meta.app_label
     # I assume that the form class is defined in 'app_name.forms.form_name' but I can't be certain
     # so I loop through all valid variants of app_name using this list comprehension
@@ -40,345 +47,248 @@ def getFormClassFromModelClass(ModelClass):
             pass
     return None
 
-##############################################
-# the types of subforms that a form can have #
-##############################################
-
-class SubFormType(EnumeratedType):
-    pass
-
-SubFormTypes = EnumeratedTypeList([
-    SubFormType("FORM","Form",BaseForm),
-    SubFormType("FORMSET","FormSet",BaseFormSet),
-    SubFormType("INLINE_FORMSET","Inline FormSet",BaseInlineFormSet),
-])
-
-##########################################################################
-# this is a way to customise _any_ widgets used by metadata forms        #
-# without having to hard-code _all_ of them; it inserts some css classes #
-# and the template knows what to do with that (currently JQuery stuff)   #
-##########################################################################
-
-def customize_metadata_widgets(field):
-    formfield = field.formfield()
-    try:
-        # some fields have the isFixed method, which means they should be readonly
-        if field.isFixed():
-            formfield.widget.attrs.update({"readonly" : "readonly"})
-    except AttributeError:
-        pass
-
-    if isinstance(field,models.DateField):
-        formfield.widget.attrs.update({"class" : "datepicker"})
-# rewrote EnumerationField to be a MultiValueField
-# JQuery logic is handled in the Widget definition
-    #if isinstance(field,MetadataEnumerationField):
-    #    if field.isOpen():
-    #        formfield.widget.attrs.update({"class" : "editable"})
-    if isinstance(field,MetadataCVField):
-        pass
-    if isinstance(field,MetadataEnablerField):
-        java_string = "toggleFields([%s])" % ",".join([u'"%s"'%f for f in field.getFieldsToEnable()])
-        formfield.widget.attrs.update({"onclick" : java_string})
-        if not field.getStartEnabled():
-            formfield.widget.attrs.update({"class" : "enabler start-disabled"})
-        else:
-            formfield.widget.attrs.update({"class" : "enabler start-enabled"})
-
-    if isinstance(field,MetadataDocumentField):
-        formfield.widget.attrs.update({"class" : "adder"})
-        formfield.widget.attrs.update({"title": u'%s/%s'%(field.getAppName(),field.getModelName())})
-
-    if isinstance(field,MetadataAbstractField):
-        java_string = "toggleForm($(this).val(),[%s])" % ",".join([u'"%s"' % choice[0] for choice in field.getChoices()])
-        formfield.widget.attrs.update({"onclick" : java_string})
-        formfield.widget.attrs.update({"class":"abstract-choice"})
-        
-    # TODO: other if branches for other field types?
-    
-    return formfield
-
-#######################################
-# base classes for all Metadata Forms #
-#######################################
+########################################
+# the base class for all MetadataForms #
+########################################
 
 class MetadataForm(ModelForm):
 
     _subFormType = SubFormTypes.FORM
 
-    _fieldOrder = ()
-    _ordered = False
+    _initialize = False # flag indicating whether or not the underlying model should use initial values
+    _request = None     # store the HTTP request so that it can be passed onto subForms
+    _subForms = {}      # a dictionary associating fields with subForms (the field should be replaced with a subform during rendering)
+
+    def getModelClass(self):
+        return self.Meta.model
+
+    def getModelInstance(self):
+        return self.instance          
+        #return self.save(commit=False)  # whoops; this causes is_valid to be called prematurely
+
+    def getModelName(self):
+        return u'%s' % self.getModelInstance()
     
-    _subForms = {}      # a form can have subforms
-    _request = None     # those subforms need to have HTTP requests passed to them
-    _recursion = 0
-
-    _id = None      # the form's corresponding model id
-    _guid = None    # the form's corresponding model guid
-
-    _name = ""  # the name of the form class
-
-    ModelClass = None
-
-    def getId(self):
-        return self._id
-
-    def getGuid(self):
-        return self._guid
-
-    def getName(self):
-        return self._name
-
-    def getFullyQualifiedName(self):
-        # returns the unicode name of the model
-        return u'%s' % self.instance
+    def getModelId(self):
+        modelInstance = self.getModelInstance()
+        return modelInstance.getGuid()
 
     def getSubFormType(self):
         return self._subFormType
 
-    def getSubForms(self):
-        return self._subForms
-
     def getAllSubForms(self):
         # returns the union of all subforms for all ancestor classes
         allSubForms = {}
-        for ancestor in reversed(inspect.getmro(self.Meta.model)):
+        modelClass = self.getModelClass()
+        for ancestor in reversed(inspect.getmro(modelClass)):
             if issubclass(ancestor,MetadataModel):
                 ancestorForm = getFormClassFromModelClass(ancestor)
                 if ancestorForm:
                     allSubForms = dict(allSubForms.items() + ancestorForm._subForms.items())
         return allSubForms
 
-    #@log_class_fn()
-    def __init__(self,*args,**kwargs):
-        self._request = kwargs.pop('request', None)
-        self._initalize = kwargs.pop("initialize",False)
-        self._recursion=kwargs.pop("recursion",0)
-        super(MetadataForm,self).__init__(*args,**kwargs)
-
-        #print "INITIALIZING %s; RECURSION=%s" % (self._name,self._recursion)
+    
+    def isPropertyForm(self):
+        # MetadataProperties are treated a bit differently, b/c they can have nested tabs
+        ModelClass = self.getModelClass()
+        return issubclass(ModelClass,MetadataProperty)
         
-        self._id = self.instance.id
-        self._guid = self.instance.guid
+    def __init__(self,*args,**kwargs):
+        initialize = kwargs.pop("initialize",False)
+        request = kwargs.pop('request', None)
+        super(MetadataForm,self).__init__(*args,**kwargs)
+        
+        
+        
+        #modelInstance = self.getModelInstance()
+        modelInstance = self.instance
+        self._initialize = initialize
+        self._request = request
 
-        if self._fieldOrder and not self._ordered:
-            # going to re-order the fields...
-            # (if you do this, then any fields that aren't specified will not be displayed)
+        # order / exclude the fields according to the order of the corresponding model        
+        fieldOrder = modelInstance._fieldOrder
+        if fieldOrder:
             tmpFields = self.fields.copy()
             self.fields = SortedDict()
-            for field in self._fieldOrder:
-                self.fields[field] = tmpFields[field]
-            self._ordered = True
+            for fieldName in fieldOrder:
+                try:
+                    self.fields[fieldName] = tmpFields[fieldName]
+                except KeyError:
+                    msg = "invalid field ('%s') specified in fieldOrder" % fieldName
+                    raise MetadataError(msg)
 
-        if self._initalize:            
+        if initialize:
             self.initialize()
 
-        if self._recursion >= MAXIMUM_SUBFORM_RECURSION_DEPTH:
-            self._subForms = {}
-            return
-        self._recursion += 1
-
-        
-        # because there are no forward declarations in Python,
-        # double-check that all subforms have been set properly
-        for key,value in self._subForms.iteritems():
+        # have to setup the subForms here
+        # (by the time this fn is called, I can be certain POTENTIAL_SUBFORMS is complete)
+        for (key,value) in self._subForms.iteritems():
+            # if the subForm hasn't yet been set, then set it
             if isinstance(value,basestring):
-                self._subForms[key] = PotentialSubForms[value]
-                print "%s in %s was still set to %s; it is now set to %s" % (key,self.getName(),value,self._subForms[key])
-                
+                self._subForms[key] = POTENTIAL_SUBFORMS[value]
 
-
-        for key,value in self.getAllSubForms().iteritems():                
-        #for key,value in self._subForms.iteritems():
-
+        for (key,value) in self._subForms.iteritems():
 
             subFormType = value[0]
             subFormClass = value[1]
-            
+            #value[2] = subFormInstance
 
-            if subFormType == SubFormTypes.FORMSET:
-                
-                # note that the form attribute is now a curried function
-                # (in order for me to propagate request to all subforms)
-                # so I have to _call_ it in order to access the subForm
-                qs = subFormClass.form().Meta.model.objects.none()
-                #qs = self.ModelClass.objects.none()
-                
-                print key
-                print self._recursion
-                
+            if subFormType == SubFormTypes.FORM:
+
+                subModelInstance = getattr(modelInstance,key,None)
+                if self._request and self._request.method == "POST":
+                    value[2] = subFormClass(self._request.POST,instance=subModelInstance,request=self._request,prefix=key)
+                else:
+                    value[2] = subFormClass(instance=subModelInstance,request=self._request,initialize=self._initialize,prefix=key)
+
+            elif subFormType == SubFormTypes.FORMSET:
+
                 try:
-                    print "TRYING TO GET QUERYSET FOR %s FROM %s" % (key,self.instance)
-                    qs = getattr(self.instance,key,None).all()
-                except ValueError,AttributeError:
-                    # TODO: this doesn't seem to be catching the possible error if the form is malformed?
-                    print "failed to get queryset"
-                    pass
+                    qs = getattr(modelInstance,key,None).all()
+                except (ValueError,AttributeError):
+                    # note that the form is a curried function
+                    # so I have to _call_ it in order to access the subForm class
+                    qs = subFormClass.form().getModelClass().objects.none()
 
                 if self._request and self._request.method == "POST":
-                    # TODO: NOT SURE IF I NEED THE QUERYSET KWARG HERE (DON'T THINK SO)
-                    value[2] = subFormClass(self._request.POST,prefix=key,request=self._request,recursion=self._recursion)
+                    value[2] = subFormClass(self._request.POST,request=self._request,prefix=key)
                 else:
-                    #subFormClass.extra = 0
-                    if self._initalize:
-                        qs=subFormClass.initialize()
-
-                    print "ABOUT TO CALL CONSTRUCTOR FOR %s WITH RECURSION=%s" % (self._name,self._recursion)
-                    value[2] = subFormClass(queryset=qs,prefix=key,request=self._request,initialize=self._initalize,recursion=self._recursion)
-
-            elif subFormType == SubFormTypes.FORM:
-                
-                subInstance = None
-                if self.instance:
-                    subInstance = getattr(self.instance,key,None)
-
-                if self._request and self._request.method == "POST":
-                    # TODO: NOT SURE IF I NEED THE INSTANCE KWARG HERE (DON'T THINK SO)
-                    value[2] = subFormClass(self._request.POST,request=self._request,recursion=self._recursion)
-                else:
-                    value[2] = subFormClass(instance=subInstance,request=self._request,recursion=self._recursion)
-
-#            elif subFormType == SubFormTypeList.INLINE_FORMSET:
-#                pass
-
+                    if self._initialize:
+                        # b/c formsets are used w/ relationship fields
+                        # and relationship fields can't be set until both models have a pk
+                        # I have to copy the initial values for this field here in the form constructor
+                        try:
+                            qs = modelInstance.getInitialValues()[key]
+                        except KeyError:
+                            # if we get here, it means this formset must not have had initialValues specified
+                            pass
+                    value[2] = subFormClass(queryset=qs,request=self._request,initialize=self._initialize,prefix=key)
             else:
-                print "unable to determine the type of subform that %s should use for %s" % (self.getName(),key)
-                pass
+                msg = "unknown or invalid subFormType"
+                raise MetadataError(msg)
 
 
     def initialize(self):
-        instance = self.save(commit=False)
-        initial_values = instance.getInitialValues()
+        # every model can have a set of initial values
+        # if this is is a new model then those initial values should be set
+        modelInstance = self.getModelInstance()
+        initial_values = modelInstance.getInitialValues()
         for (key,value) in initial_values.iteritems():
             self.initial[key] = value
-            
-
-    @log_class_fn()
+       
     def clean(self):
         cleaned_data = self.cleaned_data
-
+        
         for key,value in self.getAllSubForms().iteritems():
-        #for key,value in self._subForms.iteritems():
             subFormType = value[0]
             subFormClass = value[1]
             subFormInstance = value[2]
 
-            if subFormType == SubFormTypes.FORMSET:
-
-                # set the field to the set of subForms that are not marked for deletion and are not empty
-                # (is_valid() will have been called by this point so empty forms that _shouldn't_ be empty won't exist)
-#                for subForm in subFormInstance:
-#                    if subForm in subFormInstance.deleted_forms:
-#                        print "deleted"
-#                    elif subForm.cleaned_data:
-#                        print "cleaned"
-#                    else:
-#                        print "going to save"
-#                        print subForm.save()
-
+            if subFormType == SubFormTypes.FORM:
                 # TODO: SHOULDN'T is_valid() HAVE ALREADY BEEN CALLED BY THIS POINT!?!
                 if subFormInstance.is_valid():
-                    activeSubForms = [subForm.save() for subForm in subFormInstance if subForm not in subFormInstance.deleted_forms and subForm.cleaned_data]
-                    cleaned_data[key] = activeSubForms
-
-            elif subFormType == SubFormTypes.FORM:
-                # TODO: SHOULDN'T is_valid() HAVE ALREADY BEEN CALLED BY THIS POINT!?!
-                if subFormInstance.is_valid():
+                    ModelClass = subFormInstance.getModelClass()
+                    modelInstance = subFormInstance.getModelInstance()
+                    try:
+                        # if I'm replacing an existing modelInstance...
+                        model = ModelClass.objects.get(guid=modelInstance.guid)
+                        # just delete it
+                        model.delete()
+                    except ModelClass.DoesNotExist:
+                        pass
                     cleaned_data[key] = subFormInstance.save()
-                pass
-#            elif subFormType == SubFormTypes.INLINE_FORMSET:
-#                pass
+
+            elif subFormType == SubFormTypes.FORMSET:
+                # TODO: SHOULDN'T is_valid() HAVE ALREADY BEEN CALLED BY THIS POINT!?!
+                if subFormInstance.is_valid():
+
+                    # set the field to the set of subForms that are not marked for deletion and are not empty
+                    # (is_valid() will have been called by this point so empty forms that _shouldn't_ be empty won't exist)
+                    activeSubForms = [subForm.save() for subForm in subFormInstance if subForm.cleaned_data and subForm not in subFormInstance.deleted_forms]
+                    cleaned_data[key] = activeSubForms
 
         return cleaned_data
 
-    @log_class_fn(LoggingTypes.FULL)
     def is_valid(self):
         validity = [subForm[2].is_valid() for subForm in self.getAllSubForms().itervalues() if subForm[2]]
-        print "initial validity = %s" % all(validity)
-        #validity = [subForm[2].is_valid() for subForm in self._subForms.itervalues() if subForm[2]]
         validity = all(validity) and super(MetadataForm,self).is_valid()
-        print "final validity = %s" % validity
         return validity
 
-    def getModelClass(self):
-        return self.Meta.model
+#########################################
+# MetadataProperties are a special case #
+#########################################
 
-    def getModelInstance(self):
-        return self.instance
-        #return self.save(commit=False)  # whoops; this causes is_valid to be called prematurely
+class Property_form(MetadataForm):
 
-############################################
-# the base class for all Metadata Formsets #
-############################################
+    class Meta:
+        model = MetadataProperty
+        fields = ("shortName","longName","value")
+
+    _fieldTypes = {}            # a dictionary associating fieldTypes with lists of fields
+    _fieldTypeOrder = None      # a list describing the order of fieldTypes (tabs); if a type is absent from this list it is not rendered
+    
+#    def registerFieldType(self,fieldType,fieldNames):
+#        for ft in self._fieldTypes:
+#            if fieldType == ft: # fieldType equality is based on .getType()
+#                                # therefore, even if a new FieldType instance is being registered
+#                                # a new key will only be added if it has a new type
+#                currentTypes = self._fieldTypes[ft]
+#                #self._fieldTypes[ft] += fieldNames
+#                self._fieldTypes[ft] = list(set(currentTypes)|set(fieldNames)) # union of the new set of fields and the existing set
+#                return
+#        self._fieldTypes[fieldType] = fieldNames
+
+
+    def __init__(self,*args,**kwargs):
+        super(Property_form,self).__init__(*args,**kwargs)
+        modelInstance = self.instance
+
+        self.fields["shortName"].widget = django.forms.fields.TextInput(attrs={"readonly":"readonly"})
+        self.fields["longName"].widget = django.forms.fields.TextInput(attrs={"readonly":"readonly"})
+
+        if modelInstance.hasValues():
+            custom_choices = modelInstance.getValueChoices()
+            if modelInstance.open:
+                custom_choices += OTHER_CHOICE
+            if modelInstance.nullable:
+                custom_choices += NONE_CHOICE
+            
+            self.fields["value"] = MetadataBoundFormField(choices=custom_choices,multi=modelInstance.multi)
+        
+
+
+#        if modelInstance.hasValues():
+#            self.fields["value"].widget = django.forms.fields.Select(choices=modelInstance.getValueChoices())
+#
+#        if modelInstance.hasParent():
+#            self.registerFieldType(FieldType(modelInstance.parentShortName,modelInstance.parentLongName),[])
+            
+
+        
+###########################################
+# the base class for all MetadataFormSets #
+###########################################
 
 class MetadataFormSet(BaseModelFormSet):
 
     _subFormType = SubFormTypes.FORMSET
 
-    _request = None # the individual forms of a formset need to have HTTP requests passed to them
-    _recursion = 0
-    _prefix = None
-
-    _name = ""  # the name of the form class
-    _title = "" # the title (to display) of the form class
-
-    ModelClass = None
+    _initialize = False # flag indicating whether or not the underlying models should use initial values
+    _request = None     # store the HTTP request so that it can be passed onto child forms
+    _prefix = None      # a prefix to distinguish this formset from others on the same page
 
     def getSubFormType(self):
         return self._subFormType
 
     def getPrefix(self):
         return self._prefix
-
-    @classmethod
-    def initialize(cls):
-        # initializing a formset is a bit different from initializing a form
-        # it returns a queryset of initial models to base the formset on
-        # as opposed to setting values for the individual forms
-        # (the individual forms will be initialized later)
-        #modelClass = cls.form().Meta.model
-        modelClass = cls.ModelClass
-        if issubclass(modelClass,ComponentProperty):
-            cv = modelClass.getCVClass()
-            if cv:
-                new_items = set()
-                for cvInstance in cv.objects.all():
-                    modelInstance = modelClass(cv=cvInstance)
-                    modelInstance.save()
-                    new_items.add(modelInstance.pk)
-                return modelClass.objects.filter(pk__in=new_items)
-
-        return modelClass.objects.none()
-
-## this is no longer needed
-##
-##    @classmethod
-##    def getNumberOfExtraForms(self):
-##        # if this formset is bound to a component_property,
-##        # then return the number of cv items.
-##        # otherwise just return 1.
-##        instance = self.form().save(commit=False)
-##        if isinstance(instance,ComponentProperty):
-##            cv = instance.getCVClass()
-##            if cv:
-##                return len(cv.objects.all())
-##        return 1
-
-
-
-    @log_class_fn()
-    def is_valid(self,*args,**kwargs):
-        return super(MetadataFormSet,self).is_valid(*args,**kwargs)
-
-    @log_class_fn()
+    
     def __init__(self,*args,**kwargs):
         # this adds an extra kwarg, 'request,' to the subforms of this formset
         self._request = kwargs.pop('request', None)
         self._initalize = kwargs.pop("initialize",False)
-        self._recursion = kwargs.pop("recursion",0)
+        self.form = curry(self.form,request=self._request,initialize=self._initalize)
 
-        if self._recursion < MAXIMUM_SUBFORM_RECURSION_DEPTH:
-            self.form = curry(self.form,request=self._request,recursion=self._recursion)
         super(MetadataFormSet,self).__init__(*args,**kwargs)
 
         # TODO: do I need to ensure a more unique prefix?
@@ -387,30 +297,49 @@ class MetadataFormSet(BaseModelFormSet):
         if self._initalize:
             self.initialize()
 
+    def is_valid(self,*args,**kwargs):
+        validity = super(MetadataFormSet,self).is_valid(*args,**kwargs)
+        return validity
 
-
-##
-##
-##
-##    def initialize(self):
-##        instance = self.save(commit=False)
-##        initial_values = instance.getInitialValues
-##        for (key,value) in initial_values.iteritems():
-##            self.initial[key] = value
-
-# NOT DEALING w/ INLINE-FORMSETS
-# (they are an unneccessary complication)
-####################################################
-## the base class for all Metadata Inline Formsets #
-####################################################
-#
-#class MetadataInlineFormSet(BaseModelFormSet):
-#
-#    _subFormType = SubFormTypes.INLINE_FORMSET
+    @classmethod
+    def isPropertyForm(self):
+        # MetadataProperties are treated a bit differently, b/c they can have nested tabs
+        # (other forms can have sub-tabs, but properties can potentially have infinitely nested tabs)
+        FormClass = self.form()
+        return FormClass.isPropertyForm()
 
 
 
-# decorator which adds generated forms & formsets to a global dictionary
+    def nestPropertyForms(self,nestedProperties,parent,properties):
+        # call this recursively;
+        # start w/ nestedProperties={}, parent=None, properties=[form.getModelInstance() for form in formset.forms]
+
+        parentShortName = ""
+        if parent:
+            parentShortName = parent.shortName
+        children = [p for p in properties if (p.parentShortName==parentShortName)]
+
+        for child in children:
+#           nestedProperties[child] = {}
+# the filter will convert models to strings, so if I use guids I can figure out which form they mean
+            nestedProperties[child.shortName] = {}
+            self.nestPropertyForms(nestedProperties[child.shortName],child,properties)
+        return nestedProperties
+        
+    def initialize(self):
+        for i in range(0,self.total_form_count()):
+            form = self.forms[i]
+            form.initialize()
+        
+
+
+####################################
+# how to create forms and formsets #
+####################################
+
+POTENTIAL_SUBFORMS = {}
+
+# decorator which adds generated forms & formsets to the above dictionary
 def PotentialSubForm(subFormType=SubFormType("UNKNOWN","Unknown")):
     def decorator(factoryFunction):
         @wraps(factoryFunction)
@@ -418,7 +347,7 @@ def PotentialSubForm(subFormType=SubFormType("UNKNOWN","Unknown")):
             _form = factoryFunction(*args,**kwargs)
             try:
                 name  = kwargs["name"]
-                PotentialSubForms[name] = [subFormType, _form, None]
+                POTENTIAL_SUBFORMS[name] = [subFormType, _form, None]
             except KeyError:
                 msg = "'name' kwarg is required for %s" % _form
                 raise MetadataError(msg)
@@ -430,203 +359,44 @@ def PotentialSubForm(subFormType=SubFormType("UNKNOWN","Unknown")):
 
 @PotentialSubForm(SubFormTypes.FORM)
 def MetadataFormFactory(ModelClass,*args,**kwargs):
-    name = kwargs.pop("name","Unnamed Form")
+
     subForms = kwargs.pop("subForms",{})
-    fieldOrder = kwargs.pop("reorder",None)
-    # these two kwarg _must_ have these values
+    name = kwargs.pop("name",None)
 
     kwargs["form"] = kwargs.pop("form",MetadataForm)
     kwargs["formfield_callback"] = customize_metadata_widgets
-    # the remaining kwargs can be passed into the constructor as needed
+
     _form = modelform_factory(ModelClass,**kwargs)
-    if fieldOrder:
-        # the presence of this attribute
-        # indicates that the form's fields have a custom order
-        # which gets implemented in the __init__ fn
-        _form._fieldOrder = fieldOrder
     _form._name = name
-    _form.ModelClass = ModelClass
-    _form._subForms = {} # reset any existing subForms...
-    for key,value in subForms.iteritems():
+
+    # reset any existing subForms.
+    _form._subForms = {}
+    for (key,value) in subForms.iteritems():
         try:
-            _form._subForms[key] = PotentialSubForms[value]        
+            # then try to assign the subform to the list of information in POTENTIAL_SUBFORMS
+            _form._subForms[key] = POTENTIAL_SUBFORMS[value]
         except KeyError:
-            # no forward declarations in Python
-            # I'll try setting this in the __init__ fn
+            # this might fail if that information isn't in POTENTIAL_SUBFORMS yet
+            # that's okay, I'll try again in the __init__ function
             _form._subForms[key] = value
-            pass
+        # Python doesn't have forward declarataions!
     return _form
+
+
 
 @PotentialSubForm(SubFormTypes.FORMSET)
 def MetadataFormSetFactory(ModelClass,FormClass,*args,**kwargs):
-    name = kwargs.pop("name","Unnamed FormSet")
-    # these two kwargs _must_ have these values
-    kwargs["formset"] = MetadataFormSet
+
+    name = kwargs.pop("name",None)
+
+    kwargs["formset"] = kwargs.pop("formset",MetadataFormSet)
     kwargs["can_delete"] = True
-    # the remaining kwargs can be passed into the constructor as needed
+
     _formset = modelformset_factory(ModelClass,**kwargs)
-# TODO: DOUBLE-CHECK THIS CALL TO staticmethod(curry(...))
-    # this ensures that the request kwarg passed to formsets gets propagated to all the child forms
-    # TODO: SHOULD THE CURRIED ARGS ACTUALLY BE _formset._request, _formset._recursion
-    _formset.form = staticmethod(curry(FormClass,request=_formset._request,recursion=_formset._recursion))
     _formset._name = name
-    _formset.ModelClass = ModelClass
+
+    # TODO: DOUBLE-CHECK THIS CALL TO staticmethod(curry(...))
+    # this ensures that the request and other kwargs passed to formsets gets propagated to all the child forms
+    _formset.form = staticmethod(curry(FormClass,request=MetadataFormSet._request))#,initialize=MetadataFormSet._initialize))
+
     return _formset
-
-# nothing to see here,
-# move along
-#@PotentialSubForm(SubFormTypeList.INLINE_FORMSET)
-#def MetadataInlineFormSetFactory(SourceModelClass,TargetModelClass,FormClass,*args,**kwargs):
-#    pass
-
-class ComponentProperty_form(MetadataForm):
-    class Meta:
-        model = ComponentProperty
-        #exclude = ("valueChoicesfsadf")
-        fields = ('longName','value')
-# cannot specify this in meta class due to error in django [https://code.djangoproject.com/ticket/13095]
-#        widgets = {
-#            'shortName' : django.forms.fields.TextInput(attrs={'readonly':'readonly'}),
-#            'longName' : django.forms.fields.TextInput(attrs={'readonly':'readonly'}),
-#            'value' : django.forms.fields.Select(),
-#        }
-#
-    pass
-
-    def __init__(self,*args,**kwargs):
-        super(ComponentProperty_form,self).__init__(*args,**kwargs)
-        #self.fields["shortName"].widget = django.forms.fields.TextInput(attrs={'readonly':'readonly'})
-        self.fields["longName"].widget = django.forms.fields.TextInput(attrs={'readonly':'readonly'})
-        self.fields["value"].widget = django.forms.fields.Select(choices=self.instance.getValueChoices())
-        # this isn't needed; seems to default to the 1st choice anyway
-        #self.fields["value"].initial = self.fields["value"].widget.choices[0]
-        
-
-##########################################
-# the non-abstract forms used by the CIM #
-##########################################
-
-
-DataSource_form = MetadataFormFactory(DataSource,name="DataSource_form")
-DataSource_formset = MetadataFormSetFactory(DataSource,DataSource_form,name="DataSource_formset")
-
-ComponentLanguage_form = MetadataFormFactory(ComponentLanguage,name="ComponentLanguage_form")
-ComponentLanguage_formset = MetadataFormSetFactory(ComponentLanguage,ComponentLanguage_form,name="ComponentLanguage_formset")
-
-SoftwareComponent_form = MetadataFormFactory(SoftwareComponent,name="SoftwareComponent_form")
-SoftwareComponent_formset = MetadataFormSetFactory(SoftwareComponent,SoftwareComponent_form,name="SoftwareComponent_formset")
-
-ResponsibleParty_form = MetadataFormFactory(ResponsibleParty,name="ResponsibleParty_form")
-ResponsibleParty_formset = MetadataFormSetFactory(ResponsibleParty,ResponsibleParty_form,name="ResponsibleParty_formset")
-
-
-Citation_form = MetadataFormFactory(Citation,name="Citation_form")
-Citation_formset = MetadataFormSetFactory(Citation,Citation_form,name="Citation_formset")
-
-Timing_form = MetadataFormFactory(Timing,name="Timing_form")
-Timing_formset = MetadataFormSetFactory(Timing,Timing_form,name="Timing_formset")
-
-TimeLag_form = MetadataFormFactory(TimeLag,name="TimeLag_form")
-TimeLag_formset = MetadataFormSetFactory(TimeLag,TimeLag_form,name="TimeLag_formset")
-
-SpatialRegriddingUserMethod_form = MetadataFormFactory(SpatialRegriddingUserMethod,name="SpatialRegriddingUserMethod_form")
-SpatialRegriddingUserMethod_formset = MetadataFormSetFactory(SpatialRegriddingUserMethod,SpatialRegriddingUserMethod_form,name="SpatialRegriddingUserMethod_formset")
-
-SpatialRegridding_form = MetadataFormFactory(SpatialRegridding,name="SpatialRegridding_form",subForms={"spatialRegriddingUserMethod":"SpatialRegriddingUserMethod_form"})
-SpatialRegridding_formset = MetadataFormSetFactory(SpatialRegridding,SpatialRegridding_form,name="SpatialRegridding_formset",extra=3)
-
-TimeTransformation_form = MetadataFormFactory(TimeTransformation,name="TimeTransformation_form")
-TimeTransformation_formset = MetadataFormSetFactory(TimeTransformation,TimeTransformation_form,name="TimeTransformation_formset")
-
-ModelComponent_form = MetadataFormFactory(ModelComponent,name="ModelComponent_form",subForms={"responsibleParties" : "ResponsibleParty_formset", "citations" : "Citation_formset"})
-ModelComponent_formset = MetadataFormSetFactory(ModelComponent,ModelComponent_form,name="ModelComponent_formset")
-
-Activity_form = MetadataFormFactory(Activity,name="Activity_form",subForms={"responsibleParties" : "ResponsibleParty_formset"})
-Activity_formset = MetadataFormSetFactory(Activity,Activity_form,name="Activity_formset")
-
-DateRange_form = MetadataFormFactory(DateRange,name="DateRange_form")
-DateRange_formset = MetadataFormSetFactory(DateRange,DateRange_form,name="DateRange_formset")
-
-Calendar_form = MetadataFormFactory(Calendar,name="Calendar_form",subForms={"range":"DateRange_form"})
-Calendar_formset = MetadataFormSetFactory(Calendar,Calendar_form,name="Calendar_formset")
-
-NumericalActivity_form = MetadataFormFactory(NumericalActivity,name="NumericalActivity_form")
-NumericalActivity_formset = MetadataFormSetFactory(NumericalActivity,NumericalActivity_form,name="NumericalActivity_formset")
-
-CouplingEndPoint_form = MetadataFormFactory(CouplingEndPoint,name="CouplingEndPoint_form")
-CouplingEndPoint_formset = MetadataFormSetFactory(CouplingEndPoint,CouplingEndPoint_form,name="CouplingEndPoint_formset")
-
-Coupling_form = MetadataFormFactory(Coupling,name="Coupling_form",subForms={"timeProfile" : "Timing_form", "timeLag" : "TimeLag_form","spatialRegridding":"SpatialRegridding_formset","timeTransformation":"TimeTransformation_form","couplingSource":"CouplingEndPoint_form","couplingTarget":"CouplingEndPoint_form"})
-Coupling_formset = MetadataFormSetFactory(Coupling,Coupling_form,name="Coupling_formset")
-
-Conformance_form = MetadataFormFactory(Conformance,name="Conformance_form")
-Conformance_formset = MetadataFormSetFactory(Conformance,Conformance_form,name="Conformance_formset")
-
-Standard_form = MetadataFormFactory(Standard,name="Standard_form")
-Standard_formset = MetadataFormSetFactory(Standard,Standard_form,name="Standard_formset")
-
-StandardName_form = MetadataFormFactory(StandardName,name="StandardName_form",subForms={"standard":"Standard_formset"})
-StandardName_formset = MetadataFormSetFactory(StandardName,StandardName_form,name="StandardName_formset")
-
-DataCitation_form = MetadataFormFactory(DataCitation,name="DataCitation_form",subForms={"citation":"Citation_form"})
-DataCitation_formset = MetadataFormSetFactory(DataCitation,DataCitation_form,name="DataCitation_formset")
-
-DataExtent_form = MetadataFormFactory(DataExtent,name="DataExtent_form")
-DataExtent_formset = MetadataFormSetFactory(DataExtent,DataExtent_form,name="DataExtent_formset")
-
-DataTopic_form = MetadataFormFactory(DataTopic,name="DataTopic_form",subForms={"standardName":"StandardName_form"})
-DataTopic_formset = MetadataFormSetFactory(DataTopic,DataTopic_form,name="DataTopic_formset")
-
-DataContent_form = MetadataFormFactory(DataContent,name="DataContent_form",subForms={"topic":"DataTopic_form","citation":"DataCitation_formset"},reorder=("topic","frequency","aggregation","citation"))
-DataContent_formset = MetadataFormSetFactory(DataContent,DataContent_form,name="DataContent_formset")
-
-DataDistribution_form = MetadataFormFactory(DataDistribution,name="DataDistribution_form",subForms={"responsibleParties":"ResponsibleParty_formset"})
-DataDistribution_formset = MetadataFormSetFactory(DataDistribution,DataDistribution_form,name="DataDistribution_formset")
-
-License_form = MetadataFormFactory(License,name="License_form",reorder=("unrestricted","licenseName","licenseContact","licenseDescription"))
-License_formset = MetadataFormSetFactory(License,License_form,name="License_formset")
-
-DataRestriction_form = MetadataFormFactory(DataRestriction,name="DataRestriction_form",subForms={"license":"License_form"})
-DataRestriction_formset = MetadataFormSetFactory(DataRestriction,DataRestriction_form,name="DataRestriction_formset")
-
-#DataStorage_form = MetadataFormFactory(DataStorage,name="DataStorage_form")
-#DataStorage_formset = MetadataFormSetFactory(DataStorage,DataStorage_form,name="DataStorage_formset")
-
-FileStorage_form = MetadataFormFactory(FileStorage,name="FileStorage_form",reorder=("fileName","path","fileSystem","dataFormat","dataSize","dataLocation","modificationDate"))
-FileStorage_formset = MetadataFormSetFactory(FileStorage,FileStorage_form,name="FileStorage_formset")
-
-DBStorage_form = MetadataFormFactory(DBStorage,name="DBStorage_form",reorder=("dbName","dbAccessString","dbTable","owner","dataFormat","dataSize","dataLocation","modificationDate"))
-DBStorage_formset = MetadataFormSetFactory(DBStorage,DBStorage_form,name="DBStorage_formset")
-
-IPStorage_form = MetadataFormFactory(IPStorage,name="IPStorage_form",reorder=("fileName","path","host","protocol","dataFormat","dataSize","dataLocation","modificationDate"))
-IPStorage_formset = MetadataFormSetFactory(IPStorage,IPStorage_form,name="IPStorage_formset")
-
-DataObject_form = MetadataFormFactory(DataObject,name="DataObject_form",subForms={"content":"DataContent_formset","extent":"DataExtent_form","citation":"DataCitation_form","distribution":"DataDistribution_form","restriction":"DataRestriction_formset","fileStorage":"FileStorage_form","dBStorage":"DBStorage_form","iPStorage":"IPStorage_form"})
-DataObject_formset = MetadataFormSetFactory(DataObject,DataObject_form,name="DataObject_formset")
-
-Simulation_form = MetadataFormFactory(Simulation,name="Simulation_form",subForms={"calendar":"Calendar_form", "inputs" : "Coupling_formset", "outputs":"DataObject_formset", "restarts":"DataObject_formset","conformances":"Conformance_formset"})
-Simulation_formset = MetadataFormSetFactory(Simulation,Simulation_form,name="Simulation_formset")
-
-SimulationRun_form = MetadataFormFactory(SimulationRun,name="SimulationRun_form")
-SimulationRun_formset = MetadataFormSetFactory(SimulationRun,SimulationRun_form,name="SimulationRun_formset")
-
-Experiment_form = MetadataFormFactory(Experiment,name="Experiment_form")
-Experiment_formset = MetadataFormSetFactory(Experiment,Experiment_form,name="Experiment_formset")
-
-NumericalRequirement_form = MetadataFormFactory(NumericalRequirement,name="NumericalRequirement_form",reorder=("requirementType","requirementId","name","description","sources"))
-NumericalRequirement_formset = MetadataFormSetFactory(NumericalRequirement,NumericalRequirement_form,name="NumericalRequirement_formset")
-
-RequirementOption_form = MetadataFormFactory(RequirementOption,name="RequirementOption_form",subForms={"requirement":"NumericalRequirement_form"})
-RequirementOption_formset = MetadataFormSetFactory(RequirementOption,RequirementOption_form,name="RequirementOption_formset")
-
-CompositeNumericalRequirement_form = MetadataFormFactory(CompositeNumericalRequirement,name="CompositeNumericalRequirement_form",subForms={"requirementOptions":"RequirementOption_formset"},reorder=("requirementType","requirementId","name","description","isComposite","requirementOptions","sources"))
-CompositeNumericalRequirement_formset = MetadataFormSetFactory(CompositeNumericalRequirement,CompositeNumericalRequirement_form,name="CompositeNumericalRequirement_formset")
-
-NumericalExperiment_form = MetadataFormFactory(NumericalExperiment,name="NumericalExperiment_form",subForms={"calendar":"Calendar_form","numericalRequirements":"CompositeNumericalRequirement_formset","responsibleParties":"ResponsibleParty_formset"})
-NumericalExperiment_formset = MetadataFormSetFactory(NumericalExperiment,NumericalExperiment_form,name="NumericalExperiment_formset")
-
-GridMosaic_form = MetadataFormFactory(GridMosaic,name="GridMosaic_form",subForms={"gridMosaic":"GridMosaic_formset"})
-GridMosaic_formset = MetadataFormSetFactory(GridMosaic,GridMosaic_form,name="GridMosaic_formset")
-
-GridSpec_form = MetadataFormFactory(GridSpec,name="GridSpec_form",subForms={"esmModelGrids":"GridMosaic_formset"})
-GridSpec_formset = MetadataFormSetFactory(GridSpec,GridSpec_form,name="GridSpec_formset")

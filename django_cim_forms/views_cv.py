@@ -9,13 +9,13 @@ rel = lambda *x: os.path.join(os.path.abspath(os.path.dirname(__file__)), *x)
 
 et_parser = et.XMLParser(remove_blank_text=True)
 
-from django_cim_forms.helpers import *
+from final.helpers import *
 
 def detail(request,cv_name):
     cv_filename = cv_name + ".xml"
     cv_filepath = rel('cv/') + cv_filename
     cv_query = request.GET.get('q')
-    
+
     try:
         cv_text = open(cv_filepath, "rb").read()
         if cv_query:

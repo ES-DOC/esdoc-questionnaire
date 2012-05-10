@@ -9,7 +9,7 @@ rel = lambda *x: os.path.join(os.path.abspath(os.path.dirname(__file__)), *x)
 import re
 strip_completely = lambda *s: re.sub(r'\s+',' ',*s).strip()
 
-from django_cim_forms.helpers import *
+from final.helpers import *
 
 ###############################
 # code for CVs & Enumerations #
@@ -66,13 +66,25 @@ def get_cv(cv_name):
 class MetadataEnumeration(models.Model):
 
     name = models.CharField(max_length=BIG_STRING,blank=False)
+    _enum = []
 
     class Meta:
         abstract = True
-        #order_with_respect_to = 'name'
 
     def __unicode__(self):
         return u'%s' % self.name
+
+#    @classmethod
+#    def addEnum(self,*args,**kwargs):
+#        enum = kwargs.pop("enum",[])
+#        self._enum.append(enum)
+
+    @classmethod
+    def isLoaded(cls,*args,**kwargs):
+        # an enumeration class is "loaded" if it doesn't have more items
+        # than are already in the database
+        enum = kwargs.pop("enum",cls._enum)
+        return len(enum) <= len(cls.objects.all())
 
     @classmethod
     def loadEnumerations(cls,*args,**kwargs):
@@ -82,13 +94,7 @@ class MetadataEnumeration(models.Model):
             cls.objects.get_or_create(name=name)
 
 
-def get_enumeration(enumerationClass,enumerationName):
-    try:
-        enumeration = enumerationClass.objects.get(name=enumerationName)
-        return enumeration
-    except enumerationClass.DoesNotExist:
-        return None
-        
+
 #######
 # CVs #
 #######
@@ -102,10 +108,16 @@ class MetadataControlledVocabularyValueField(models.TextField):
 
     __metaclass__ = models.SubfieldBase
 
-    value_separator_token = "||"
-    value_name_separator_token = "|"
+    VALUE_SEPARATOR_TOKEN = "||"
+    VALUE_NAME_SEPARATOR_TOKEN = "|"
 
-    def to_python(self, values):
+    def isRequired(self):
+        return True
+
+    def getVerboseName(self):
+        return "Value"
+
+    def to_python(self, values, *args, **kwargs):
         if not values:
             # return nothing if there is no value
             return
@@ -114,21 +126,19 @@ class MetadataControlledVocabularyValueField(models.TextField):
             return values
         else:
             # otherwise create a list (of lists)
-            return [tuple(val.split(self.value_name_separator_token)) for val in values.split(self.value_separator_token) if val]
+            return [tuple(val.split(self.VALUE_NAME_SEPARATOR_TOKEN)) for val in values.split(self.VALUE_SEPARATOR_TOKEN) if val]
 
-    def get_db_prep_value(self, values):
+    def get_db_prep_value(self, values, *args, **kwargs):
         if not values:
             return
         assert(isinstance(values, list) or isinstance(values, tuple))
+        return self.VALUE_SEPARATOR_TOKEN.join([self.VALUE_NAME_SEPARATOR_TOKEN.join(val) for val in values])
 
-        return self.value_separator_token.join([self.value_name_separator_token.join(val) for val in values])
-
-    def value_to_string(self, obj):
+    def value_to_string(self, obj, *args, **kwargs):
         value = self._get_val_from_obj(obj)
         return self.get_db_prep_value(value)
 
 class MetadataControlledVocabulary(models.Model):
-
     class Meta:
         abstract = True
 
@@ -136,8 +146,12 @@ class MetadataControlledVocabulary(models.Model):
 
     shortName = models.CharField(max_length=HUGE_STRING,blank=False)
     longName = models.CharField(max_length=HUGE_STRING,blank=True)
-
     values = MetadataControlledVocabularyValueField(blank=True,null=True)
+    parent = models.ForeignKey("self",blank=True,null=True)
+
+    open = models.NullBooleanField()        # can a user override the bound values?
+    multi = models.NullBooleanField()       # can a user select more than one bound value?
+    nullable = models.NullBooleanField()    # can a user select no bound values?
 
     def getName(self):
         return self._name
@@ -158,24 +172,53 @@ class MetadataControlledVocabulary(models.Model):
         xpath_item_expression = "//item"
         items = cv.xpath(xpath_item_expression)
         for item in items:
+            # create the property if it doesn't already exist...
             shortName = item.xpath("shortName/text()") or None
             longName = item.xpath("longName/text()") or None
             if shortName: shortName = strip_completely(shortName[0])
             if longName: longName = strip_completely(longName[0])
+
             (model,created) = cls.objects.get_or_create(shortName=shortName,longName=longName)
+
+            # figure out if it has values
+            # and, if so, work out if they are "open," "multi," or "nullable"...
+            xpath_values_expression="//item[shortName/text()='%s']/values" % shortName
+            values = cv.xpath(xpath_values_expression)
+            if values:
+                model.open = values[0].xpath("@open")
+                model.multi = values[0].xpath("@multi")
+                model.nullable = values[0].xpath("@nullable")
+
+            # figure out its specific value choices...
             xpath_value_expression="//item[shortName/text()='%s']/values/value" % shortName
             values = cv.xpath(xpath_value_expression)
-            value_choices = ""
+            valueChoices = ""
             for value in values:
                 valueShortName = value.xpath("shortName/text()")
                 valueLongName = value.xpath("longName/text()")
                 valueShortName = strip_completely(valueShortName[0])
                 if not valueLongName:
-                    value_choices += "%s|%s||" % (valueShortName,valueShortName)
+                    valueChoices += "%s|%s||" % (valueShortName,valueShortName)
                 else:
                     valueLongName = strip_completely(valueLongName[0])
-                    value_choices += "%s|%s||" % (valueShortName,valueLongName)
-            model.values = value_choices
+                    valueChoices += "%s|%s||" % (valueShortName,valueLongName)
+            model.values = valueChoices
+
+            # figure out if it has a parent...
+            parent = None
+            xpath_parent_expression = "//item[shortName/text()='%s']/parent::items/parent::item" % shortName
+            parents = cv.xpath(xpath_parent_expression)
+            if parents:
+                parentShortName = parents[0].xpath("shortName/text()") or None
+                parentLongName = parents[0].xpath("longName/text()") or None
+                if parentShortName: parentShortName = strip_completely(parentShortName[0])
+                if parentLongName: parentLongName = strip_completely(parentLongName[0])
+                try:
+                    parent = cls.objects.get(shortName=parentShortName,longName=parentLongName)
+                except:
+                    pass
+            model.parent = parent
+
             if created:
                 print "storing %s" % model
                 model.save()

@@ -1,0 +1,120 @@
+{% extends "final/metadata_base.html" %}
+
+{% load metadata_filters %}
+
+{% block scripts %}
+    $(document).ready(enableJQueryWidgets());
+{% endblock %} {# /scripts #}
+
+{% block content %}
+
+    <div class="title">
+        {{ form|getModelTitle }} Entry Form
+    </div> <!-- /.title -->
+
+    <p>
+        <i>
+            Use this form to create or modify an instance of {{ form|getModelTitle }} metadata.  Fill out the fields on each tab.  <b>Fields or subforms with bold labels are required.</b>  When you have finished, click the "submit" button at the bottom of the page.
+        </i>
+    </p>
+
+    <form method="POST" action="">
+
+        {% csrf_token %}
+
+        <div class="tabs">
+
+            <ul> <!-- tab menu -->
+                {% for fieldType in form|getActiveFieldTypes %}
+                    <li><a href="#tab-{{fieldType.getType}}-{{form|getModelGuid}}">{{ fieldType.getName }}</a></li>
+                {% endfor %} {# /fieldType #}
+            </ul> <!-- /tab menu -->
+
+            {% for fieldType in form|getActiveFieldTypes %}
+                <div id="tab-{{fieldType.getType}}-{{form|getModelGuid}}">
+                    <div class="tab-content">
+                        {% with fieldsOfType=form|getFieldsOfType:fieldType %}
+                            {% for field in form.visible_fields %}
+                                {% if field.name in fieldsOfType %}
+                                    {% if field|isInSubForms:form %}
+                                        {% if field|required:form %}
+                                            <fieldset class="coolfieldset required" name="{{field.name}}">
+                                        {% else %}
+                                            <fieldset class="coolfieldset" name="{{field.name}}">
+                                        {% endif %} {# /field|required #}
+                                                <legend title="click to show/hide content">
+
+                                                    {% if field.help_text %}
+                                                        <div class="help-button" title="click for more info" id="{{form.getName}}_{{field.auto_id}}">
+                                                            <!-- JQuery ui-icons are handled via <spans>; weird, I know -->
+                                                            <span class="default-help-icon ui-icon-info" style="display: inline-block;">&nbsp;</span>
+                                                            <div class="help-description" title="{{ field.name|escape }}">
+                                                                {{ field.help_text|safe }} {# the safe filter prevents inline HTML from being escaped  #}
+                                                            </div> <!-- /.help-description -->
+                                                        </div> <!-- /.help-button -->
+                                                    {% endif %} {# /field.help_text #}
+                                                    {{ field|verbose_name:form}}
+                                                </legend>
+                                                <div class="coolfieldset-content">
+
+                                                    <div class="hidden">
+                                                        <span class="current_guid">{{form|getModelGuid}}</span>
+                                                        <span class="current_app">{{form|getAppName}}</span>
+                                                        <span class="current_model">{{form|getModelName}}</span>
+                                                        <span class="current_field">{{field.name}}</span>
+
+                                                    </div> <!-- /.hidden -->
+                                                    {% with subForm=form|getSubForm:field %}
+                                                        {% with subFormType=subForm.getSubFormType.getType %}
+
+
+                                                            {% if subFormType == "FORM" %}
+
+                                                                {% if field|canAddRemote:form %}
+
+                                                                    <span class="subform-toolbar ui-widget-header ui-corner-all">
+                                                                        <button type="button" class="add {{subFormType}}" title="add new {{ field|verbose_name:form }}">add</button>
+                                                                    </span> <!-- /.subform-toolbar -->
+                                                                    <div style="clear: both;">&nbsp;</div>
+
+                                                                {% endif %}
+
+                                                                {% with form=subForm %}
+                                                                    {% include "final/_form.html" %}
+                                                                {% endwith %}
+
+                                                            {% else %} {% if subFormType == "FORMSET" %}
+
+                                                            {% with formset=subForm %}
+                                                                    {% include "final/_formset.html" %}
+                                                                {% endwith %}
+
+                                                            {% endif %} {% endif %} {# /subFormType==FORM|FORMSET #}
+                                                        {% endwith %} {# /subFormType #}
+                                                    {% endwith %} {# /subForm #}
+
+                                                </div> <!-- /.coolfieldset-content -->
+                                            </fieldset> <!-- /.coolfieldset -->
+                                    {% else %}
+
+                                        {% include "final/_field.html" %}
+
+                                    {% endif %} {# / field|isInSubForms:form #}
+                                {% endif %} {# /field.name in fieldsOfType #}
+                            {% endfor %} {# / field in form.visible_fields #}
+                        {% endwith %} {# / fieldsOfType #}
+                    </div> <!-- /.tab-content -->
+                </div> <!-- /#tab-{{fieldType.getType}}-{{form|getModelGuid}} -->
+            {% endfor %} {# /fieldType #}
+
+        </div> <!-- /.tabs -->
+
+        <div class="submit">
+            <input class="button" type="submit" value="Submit"/>
+        </div> <!-- /.submit -->
+
+        <div style="clear: both;">&nbsp;</div>
+
+    </form>
+
+{% endblock %} {# /content #}
