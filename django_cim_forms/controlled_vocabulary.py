@@ -9,7 +9,7 @@ rel = lambda *x: os.path.join(os.path.abspath(os.path.dirname(__file__)), *x)
 import re
 strip_completely = lambda *s: re.sub(r'\s+',' ',*s).strip()
 
-from final.helpers import *
+from django_cim_forms.helpers import *
 
 ###############################
 # code for CVs & Enumerations #
@@ -18,7 +18,7 @@ from final.helpers import *
 CV_PROTOCOL = "http"
 CV_DOMAIN = "localhost"
 CV_PORT= "8000"
-CV_PATH = "/medatadata/cv"
+CV_PATH = "/medadata/cv"
 CV_ROOT = rel('cv/')
 CV_URL = CV_PROTOCOL + "://" + CV_DOMAIN + ":" + CV_PORT + CV_PATH
 

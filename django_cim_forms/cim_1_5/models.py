@@ -6,7 +6,7 @@
 
 from django.db import models
 
-from final.models import *
+from django_cim_forms.models import *
 
 ################
 # enumerations #

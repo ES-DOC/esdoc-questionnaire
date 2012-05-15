@@ -1,5 +1,5 @@
-from final.forms import *
-from final.cim_1_5.models import *
+from django_cim_forms.forms import *
+from django_cim_forms.cim_1_5.models import *
 
 ##########################################
 # all non-abstract forms used by the CIM #

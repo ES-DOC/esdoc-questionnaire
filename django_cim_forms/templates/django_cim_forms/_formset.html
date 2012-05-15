@@ -1,39 +1,51 @@
-{# this displays a metadata subform #}
+{# this displays a metadata formset #}
 
     {% load metadata_filters %}
 
+    {{ formset.non_form_errors }}
+    {{ formset.management_form }}
+    
+    {% if formset|isPropertyForm %}
+
+        <div class="metadata-properties">
+
+            {% with nested_properties=formset|nestProperties %}
+                {% with "django_cim_forms/_propertyform.html" as template %}
+                    {% with keys=nested_properties.keys values=nested_properties.values %}
+                        {% include template %}
+                    {% endwith %}
+                {% endwith %}
+            {% endwith %}  
+            
+        </div> <!-- /.metadata-properties -->
+
+    {% else %}
+
     <span class="subform-toolbar ui-widget-header ui-corner-all">
-        <button type="button" class="add" title="add new {{ field.name|escape }}">add</button>
-        <button type="button" class="expand" title="expand all {{ field.name|escape }}">expand</button>
-        <button type="button" class="collapse" title="collapse all {{ field.name|escape }}">collapse</button>
+        <button type="button" class="add" title="add new {{ field|verbose_name:form }}">add</button>
+        <button type="button" class="expand" title="expand all {{ field|verbose_name:form }}">expand</button>
+        <button type="button" class="collapse" title="collapse all {{ field|verbose_name:form }}">collapse</button>
     </span> <!-- /.subform-toolbar -->
     <div style="clear: both;">&nbsp;</div>
 
-    {{ formset.management_form }}
-    {{ formset.non_form_errors }}
-
-        <div class="accordion {{formset.getPrefix}}-formset">
+    <div class="accordion {{formset.getPrefix}}-formset" >
         {% for form in formset.forms %}
             <h3 class="accordion-header">
-                <a> {{ form.getFullyQualifiedName }} &nbsp; <button type="button" class="remove" title="remove">remove</button></a>
+                <a> {{ form.getModelName }} &nbsp; <button type="button" class="remove" title="remove">remove</button></a>
                 <div style="clear: both;"/>
             </h3> <!-- /.accordion-header -->
             <div class="accordion-content">
-
-               <div class="hidden">
-                    <span class="current_guid">{{form.getGuid}}</span>
-                    <span class="current_id">{{form.getId}}</span>
-                    <span class="current_app">{{form|getAppName}}</span>
-                    <span class="current_model">{{form|getModelName}}</span>
-                </div>
 
                 {% with "django_cim_forms/_form.html" as template %}
                     {% include template %}
                 {% endwith %}
 
+
             </div> <!-- /.accordion-content -->
-        {% endfor %} {# /form in formset.forms #}
+        {% endfor %} {# form in formset.forms #}
     </div> <!-- /.accordion -->
 
+    {% endif %} {# form|isPropertyForm #}
+    
 {# end of displaying a metadata formset #}
 

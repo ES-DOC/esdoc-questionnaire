@@ -5,5 +5,5 @@
 # if you don't do this,
 # icky things will happen
 
-import final.cim_1_5.models
-import final.cim_1_5.forms
+import django_cim_forms.cim_1_5.models
+import django_cim_forms.cim_1_5.forms

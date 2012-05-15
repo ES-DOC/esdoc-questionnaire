@@ -1,7 +1,7 @@
-####################################################################
-# helpers.py                                                       #
-# some useful code (that doesn't relate to models/forms) for final #
-####################################################################
+###############################################################################
+# helpers.py                                                                  #
+# some useful code (that doesn't relate to models/forms) for django_cim_forms #
+###############################################################################
 
 from functools import wraps
 from django.conf import settings

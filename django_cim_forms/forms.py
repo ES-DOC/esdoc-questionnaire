@@ -6,7 +6,7 @@ from django.utils.functional import curry
 import inspect
 import sys
 
-from final.models import *
+from django_cim_forms.models import *
 
 ##############################################
 # the types of subforms that a form can have #

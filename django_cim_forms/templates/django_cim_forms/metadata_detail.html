@@ -3,376 +3,7 @@
 {% load metadata_filters %}
 
 {% block scripts %}
-
-    /* not a huge fan of global variables */
-    /* but by the time I've got to the add/remove fns below */
-    /* I've lost the context to find these tags anymore */
-
-    var guid_to_add_to = "";
-    var app_to_add_to = "";
-    var model_to_add_to = "";
-    var field_to_add_to = ""
-
-    var row_to_add = "";
-    var row_to_delete = "";
-
-    subform_to_remove = "";
-
-    var app_to_add = "";
-    var model_to_add = "";
-    var id_to_add = "";
-    var ids_to_exclude = "";
-
-    var app_to_remove_from = "";
-    var model_to_remove_from = "";
-    var field_to_remove_from = "";
-
-    function populate(data, form) {
-        $.each(data, function(key, value){
-            if (key=="pk") {
-                $(form).find("input[name$='id']:first").val(value[key]);
-            }
-            else if (key=="fields") {
-                for (key in value) {
-                    if (value.hasOwnProperty(key)) {
-                        var selector = "[name$='"+key+"']:first";
-                        $(form).find(selector).val(value[key]);
-                    }
-                }
-            }
-        });
-    }
-
-    function add_step_one(row) {
-      var url = window.document.location.protocol + "//" + window.document.location.host + "/metadata/get_lil_form/";
-      url += "?a=" + app_to_add_to + "&m=" + model_to_add_to + "&f=" + field_to_add_to + "&i=" + ids_to_exclude;
-      $.ajax({
-        url : url,
-        type : 'get',
-        success : function(data) {
-            row_to_add = row;
-            var content = "<div style='text-align: center; margin-left: auto; margin-right: auto;'>" + data + "</div>";
-            $("#add-dialog").html(content);
-        }
-      });
-      $("#add-dialog").dialog("open");
-      // ideally, this fn would continue adding content to the new row
-      // but the dialog fn doesn't block
-      // so I'm doing this in two steps w/ a callback on the "close" event of the dialog
-      return true;
-    };
-
-      function add_step_two() {
-        var url = window.document.location.protocol + "//" + window.document.location.host + "/metadata/get_lil_content/";
-        url += "?a=" + app_to_add + "&m=" + model_to_add + "&i=" + id_to_add;
-
-        form = row_to_add;
-        $.ajax({
-            url : url,
-            type : 'get',
-            success : function(data) {
-                populate($.parseJSON(data),form);
-            }
-
-        });
-        return true;
-    };
-
-    /* enable jquery widgets */
-    $(function() {
-
-        /* enable popups */
-        $("#remove-dialog").dialog({
-            autoOpen:false,hide:'explode',modal:true,
-            buttons : {
-                ok : function() {
-                    $(this).dialog("close");
-//                    var selector = ".subform span.current_guid:contains('" + guid_to_remove + "')";
-//                    var delete_button = $(selector).closest(".subform").find(".delete-row");
-
-                      var delete_button = $(subform_to_remove).find(".delete-row:first");
-
-                    $(delete_button).click();
-                },
-                cancel : function() {
-                    id_to_remove = "";
-                    $(this).dialog("close");
-                }
-            }
-        });
-        $("#add-dialog").dialog({
-            autoOpen:false,hide:'explode',modal:true,
-            buttons : {
-                ok : function() {
-                    id_to_add = $(this).find("select").val();
-                    $(this).dialog("close");
-                },
-                cancel : function() {
-                    id_to_add = "";
-                    $(this).dialog("close");
-                }
-            },
-            close : function() {
-                if (id_to_add != "") {
-                    // continue the adding process if the user specified a model to add
-                    add_step_two();
-                }
-            }
-        });
-
-        /* enable appropriately sized field widgets */
-//        $(".field input").each(function() {
-//            var val = $(this).val();
-//            if (val) {
-//                // size = ?!@?
-//                //    $(this).width(size)
-//                }
-//            }
-//
-//        });
-        
-        /* enable tabs */
-        /* TODO: this is no good; tabs and dynamic-formsets are fighting with one another */
-        /* the dynamic formset controls only appear if the tab is active */
-        /* so I've overloaded the "show" event to initialize dynamic-formsets as needed */
-        $("#tabs").tabs({
-            show : function(event, ui) {
-                if ($(ui.tab).attr("class")!="dynamic-formset-initialized") {
-                    $(ui.tab).addClass("dynamic-formset-initialized");
-                    var tab_selector = $(ui.tab).attr("href");
-                    $(tab_selector).find(".accordion").each(function() {
-                        var prefix = $(this).attr("class").split(' ')[1];
-                        var subform_selector = ".subform."+prefix;
-                        $(subform_selector).formset({
-                            added : function(row) {
-
-                                add_step_one(row);
-                            },
-                            prefix : prefix.split("-formset")[0],
-                            // this _needs_ to be completely unique
-                            formCssClass : "dynamic-"+prefix
-                        });
-                    });
-                }
-            }
-        });
-        $("#tabs ul li a").keydown(function(event) {
-            var keyCode = event.keyCode || event.which;
-            if (keyCode == 9) {
-                /* make the tab key shift focus the the next tab */
-                var nTabs = $("#tabs").tabs("length");
-                var selected = $("#tabs").tabs("option", "selected");
-                /* the modulus operator ensures the tabs wrap around */
-                $("#tabs").tabs("option", "selected", (selected + 1)%nTabs);
-            }
-        });
-        $("#tabs ul li a").keydown(function(event) {
-            var keyCode = event.keyCode || event.which;
-            if (keyCode == 9) {
-                /* make the tab key shift focus the the next tab */
-                var nTabs = $("#tabs").tabs("length");
-                var selected = $("#tabs").tabs("option", "selected");
-                /* the modulus operator ensures the tabs wrap around */
-                $("#tabs").tabs("option", "selected", (selected + 1)%nTabs);
-            }
-        });
-
-        /* enable collapsible fieldsets */
-        $(".coolfieldset").coolfieldset({speed:"fast"});
-
-        /* enable fields that show/hide other fields */
-        $(".enabler, start-disabled").each(function() {            
-            $(this).trigger('click');
-        });
-
-        /* enable fields that show/hide other subforms */
-        /* (this applies when there is a relationship to an abstract class) */
-        $(".abstract-choice").each(function() {
-            if ($(this).attr("checked") == "undefined") {
-                // if this select is not checked...
-                $("fieldset[name='"+$(this).val()+"']").hide()
-            }
-            else {
-                $("fieldset[name='"+$(this).val()+"']").hide()
-            }
-        });
-
-        /* enable manytomanyfields */
-        $(".adder").each(function() {
-            var url = location.protocol+"//"+location.hostname+(location.port ? ":"+location.port : "")+"/metadata/"+$(this).attr("title");
-            var button = $("<button type='button' title='add a new item'>add</button>");
-            button.css("margin-left","6px");
-            button.button({
-                icons: { primary: "ui-icon-circle-plus" },
-                text: false,
-            }).click(function() {
-                var confirmDialog = "<div><p><span class='ui-icon ui-icon-alert' style='float:left;'></span>Please ensure your work is saved before proceeding</p></div>";
-                $(confirmDialog).dialog({
-                    modal: true,
-                    buttons: {
-                        "Proceed": function() {                          
-                            $(this).dialog("close");
-                            window.location = url;
-                        },
-                        "Cancel": function() {
-                            $(this).dialog("close");
-                        }
-                    }
-
-                });
-            });
-            $(this).after(button);
-        });
-        
-        /* enable calendar widgets */
-        $(".datepicker").datepicker(
-            { changeYear : true, showButtonPanel : true, showOn : 'button', buttonImage : '{{ MEDIA_URL }}/django_cim_forms/img/calendar.gif' }
-        );
-        $(".ui-datepicker-trigger").mouseover(function() {
-            $(this).css('cursor', 'pointer');
-        });
-        $(".ui-datepicker-trigger").attr("title","click to select date");
-        $(".ui-datepicker-trigger").css("vertical-align","middle");
-
-        $( ".accordion" ).multiOpenAccordion({active:"All"});
-        /* had to do this in two steps b/c the accordion JQuery method above cannot handle any content inbetween accordion panes */
-        /* but I need a container for dynamic formsets to be bound to */
-        /* so _after_ multiopenaccordion() is called, I stick a div into each pane and bind the formset() method to it */
-        $(".accordion").find(".accordion-header").each(function() {
-            var prefix = $(this).closest(".accordion").attr("class").split(' ')[1];
-            var div = "<div class='subform " + prefix + "'></div>";
-            $(this).next().andSelf().wrapAll(div);
-        });
-
-        /* add functionality to help-buttons (icons masquerading as buttons) */
-        $("#help-dialog").dialog({autoOpen:false,hide:'explode',modal:true});
-        $(".help-button").hover (
-            function() { $(this).children(".ui-icon-info").addClass('hover-help-icon'); },
-            function() { $(this).children(".ui-icon-info").removeClass('hover-help-icon'); }
-        );
-        $(".help-button").mouseover(function() {
-            $(this).css('cursor', 'pointer');
-        });
-        $(".help-button").click(function() {
-            /* since metadata works with sub-applications, there may be periods in the ids */
-            /* I escape them so that javascript doesn't interepret them as class selectors */
-            var id = "#" + $(this).attr("id").replace(/(:|\.)/g,'\\$1');
-            var x = $(this).offset().left - $(document).scrollLeft();
-            var y = $(this).offset().top - $(document).scrollTop();
-            var $description = $(id + " > .help-description");
-            var title = $description.attr("title");
-            var text = $description.html();
-            $("#help-dialog").html(text);
-            $("#help-dialog").dialog("option",{title: title, position: [x,y], height: 200, width: 400}).dialog("open");
-            return false;
-        });
-
-        /* enable _fancy_ buttons */
-        $(".button").button();
-        $(".subform-toolbar button").mouseover(function() {
-            $(this).css('cursor', 'pointer');
-        });
-        $(".subform-toolbar button.expand" ).button({
-             icons : { primary: "ui-icon-circle-triangle-s" },
-             text : false,
-        }).click(function(event) {
-        // TODO: THIS IS NO LONGER WORKING B/C THERE IS CONTENT BETWEEN ACCORDIONS
-            var formset = $(event.target).closest("fieldset");
-            var accordion = $(formset).find(".accordion:first");
-            $(accordion).multiOpenAccordion("option","active","All");
-        });
-        $(".subform-toolbar button.collapse" ).button({
-            icons : { primary: "ui-icon-circle-triangle-n" },
-            text: false,
-        }).click(function() {
-        // TODO: THIS IS NO LONGER WORKING B/C THERE IS CONTENT BETWEEN ACCORDIONS
-            var formset = $(event.target).closest("fieldset");
-            var accordion = $(formset).find(".accordion:first");
-            $(accordion).multiOpenAccordion("option","active","None");
-
-        });
-        $(".subform-toolbar button.add").button({
-            icons: { primary: "ui-icon-circle-plus" },
-            text: false
-        }).click(function(event) {
-            var formset = $(event.target).closest("fieldset")
-            var guid = $(formset).find("span.current_guid:first").text();
-            var app_name = $(formset).find("span.current_app:first").text();
-            var model_name = $(formset).find("span.current_model:first").text();
-            var field_name = $(formset).find("span.current_field:first").text();
-            var active_subform_ids = $(formset).find(".subform span.current_id").map(function() {
-                return $(this).text();
-            }).get().join(",");
-
-            guid_to_add_to = guid;
-            app_to_add_to = app_name;
-            model_to_add_to = model_name;
-            field_to_add_to = field_name;
-
-            app_to_add = $(formset).find(".subform span.current_app:first").text()
-            model_to_add = $(formset).find(".subform span.current_model:first").text()
-            ids_to_exclude = active_subform_ids
-
-            var formset_add_button = $(formset).find(".add-row:first");
-            $(formset_add_button).click();
-        });
-          $("button.remove").button({
-            icons: { primary: "ui-icon-circle-minus" },
-            text: false
-        });
-        $("button.remove").bind("click", function(e) {
-            /* prevent the delete button from _actually_ opening the accordian tab */
-            e.stopPropagation();
-        });
-        $("button.remove").click(function(event) {
-            var formset = $(event.target).closest("fieldset")
-            var subform = $(event.target).closest(".subform")
-
-            app_to_remove = $(subform).find("span.current_app").text();
-            model_to_remove = $(subform).find("span.current_model").text();
-            model_to_remove_from = $(formset).find("span.current_model:first").text();
-            id_to_remove = $(subform).find("span.current_id").text();
-            guid_to_remove = $(subform).find("span.current_guid").text();
-
-            subform_to_remove = subform;
-
-            var content = "<div style='text-align: center; margin-left: auto; margin-right: auto;'>Do you really wish to remove this " + model_to_remove + "?<p><em>(It will not be deleted, only removed from this " + model_to_remove_from + ")</em></p></div>";
-            $("#remove-dialog").html(content);
-            $("#remove-dialog").dialog("open");
-
-            //var formset_delete_button = $(this).closest(".subform").find(".delete-row");
-            //$(formset_delete_button).click();
-        });
-
-
-        /* some selects (open enums) should be able to be overridden */
-        $(".editable").jec({blinkingCursor:true});
-        $('.editable').change(function(event) {
-            combobox = $(event.target);
-            if (combobox.selectedIndex==0) {
-                combobox.val($(combobox).jecValue());
-            }
-        });
-
-        /* the above fns are obsolete */
-        /* this is how open enums are being handled now */
-        $(".enumeration-value").change(function(event) {
-            enumerationValue = $(event.target);
-            enumerationOther = enumerationValue.next(".enumeration-other");
-            if (enumerationValue.val()=="NEW_ENUMERATION") {
-                enumerationOther.show();
-            }
-            else {
-                enumerationOther.hide();
-            }
-        });
-        $(".enumeration-other").hide();
-
-
-
-
-    });
-
+    $(document).ready(enableJQueryWidgets());
 {% endblock %} {# /scripts #}
 
 {% block content %}
@@ -381,107 +12,103 @@
         {{ form|getModelTitle }} Entry Form
     </div> <!-- /.title -->
 
-     <p>
+    <p>
         <i>
             Use this form to create or modify an instance of {{ form|getModelTitle }} metadata.  Fill out the fields on each tab.  <b>Fields or subforms with bold labels are required.</b>  When you have finished, click the "submit" button at the bottom of the page.
         </i>
     </p>
 
-        <form method="POST" action="">
+    <form method="POST" action="">
 
         {% csrf_token %}
 
-        <div id="tabs">
+        <div class="tabs">
 
             <ul> <!-- tab menu -->
                 {% for fieldType in form|getActiveFieldTypes %}
-                    <li><a href="#tab-{{fieldType.getType}}">{{ fieldType.getName }}</a></li>
+                    <li><a href="#tab-{{fieldType.getType}}-{{form|getModelGuid}}">{{ fieldType.getName }}</a></li>
                 {% endfor %} {# /fieldType #}
-            </ul> <!-- e/tab menu -->
+            </ul> <!-- /tab menu -->
 
             {% for fieldType in form|getActiveFieldTypes %}
-                <div id="tab-{{fieldType.getType}}">
+                <div id="tab-{{fieldType.getType}}-{{form|getModelGuid}}">
                     <div class="tab-content">
                         {% with fieldsOfType=form|getFieldsOfType:fieldType %}
                             {% for field in form.visible_fields %}
                                 {% if field.name in fieldsOfType %}
-                                    {% if form|isInSubForms:field %}
-
-                                    {% if field.field.required or form|required:field %}                                    
-                                        <fieldset class="coolfieldset required" name="{{field.name}}">
+                                    {% if field|isInSubForms:form %}
+                                        {% if field|required:form %}
+                                            <fieldset class="coolfieldset required" name="{{field.name}}">
                                         {% else %}
-                                        <fieldset class="coolfieldset" name="{{field.name}}">
-                                        {% endif %}
-                                            <legend title="click to show/hide content">
+                                            <fieldset class="coolfieldset" name="{{field.name}}">
+                                        {% endif %} {# /field|required #}
+                                                <legend title="click to show/hide content">
+
                                                     {% if field.help_text %}
-                                                    <div class="help-button" title="click for more info" id="{{form.getName}}_{{field.auto_id}}">
-                                                        <!-- JQuery ui-icons are handled via <spans>; weird, I know -->
-                                                        <span class="default-help-icon ui-icon-info" style="display: inline-block;">&nbsp;</span>
-                                                        <div class="help-description" title="{{ field.name|escape }}">
-                                                            {{ field.help_text|safe }} {# the safe filter prevents inline HTML from being escaped  #}
-                                                        </div> <!-- /.help-description -->
-                                                    </div> <!-- /.help-button -->                                                    
-                                                {% endif %} {# /field.help_text #}
-                                                {{ field.name }}
-                                            </legend>
-                                            <div class="coolfieldset-content">
+                                                        <div class="help-button" title="click for more info" id="{{form.getName}}_{{field.auto_id}}">
+                                                            <!-- JQuery ui-icons are handled via <spans>; weird, I know -->
+                                                            <span class="default-help-icon ui-icon-info" style="display: inline-block;">&nbsp;</span>
+                                                            <div class="help-description" title="{{ field.name|escape }}">
+                                                                {{ field.help_text|safe }} {# the safe filter prevents inline HTML from being escaped  #}
+                                                            </div> <!-- /.help-description -->
+                                                        </div> <!-- /.help-button -->
+                                                    {% endif %} {# /field.help_text #}
+                                                    {{ field|verbose_name:form}}
+                                                </legend>
+                                                <div class="coolfieldset-content">
 
-                                               <div class="hidden">
-                                                    <span class="current_guid">{{form.getGuid}}</span>
-                                                    <span class="current_id">{{form.getId}}</span>
-                                                    <span class="current_app">{{form|getAppName}}</span>
-                                                    <span class="current_model">{{form|getModelName}}</span>
-                                                    <span class="current_field">{{field.name}}</span>
-                                                </div>
+                                                    <div class="hidden">
+                                                        <span class="current_guid">{{form|getModelGuid}}</span>
+                                                        <span class="current_app">{{form|getAppName}}</span>
+                                                        <span class="current_model">{{form|getModelName}}</span>
+                                                        <span class="current_field">{{field.name}}</span>
 
-                             
+                                                    </div> <!-- /.hidden -->
+                                                    {% with subForm=form|getSubForm:field %}
+                                                        {% with subFormType=subForm.getSubFormType.getType %}
 
-                                               {% with subForm=field|getSubForm:form %}
-                                                    {% with subFormType=subForm|getSubFormType %}
-                                                        {% if subFormType == "FORM" %}
 
-                                                            {% with form=subForm %}
-                                                                {% include "django_cim_forms/_form.html" %}
-                                                            {% endwith %}
+                                                            {% if subFormType == "FORM" %}
 
-                                                        {% else %} {% if subFormType == "FORMSET" %}
+                                                                {% if field|canAddRemote:form %}
+
+                                                                    <span class="subform-toolbar ui-widget-header ui-corner-all">
+                                                                        <button type="button" class="add {{subFormType}}" title="add new {{ field|verbose_name:form }}">add</button>
+                                                                    </span> <!-- /.subform-toolbar -->
+                                                                    <div style="clear: both;">&nbsp;</div>
+
+                                                                {% endif %}
+
+                                                                {% with form=subForm %}
+                                                                    {% include "django_cim_forms/_form.html" %}
+                                                                {% endwith %}
+
+                                                            {% else %} {% if subFormType == "FORMSET" %}
 
                                                             {% with formset=subForm %}
-                                                                {% include "django_cim_forms/_formset.html" %}
-                                                            {% endwith %}
-                                                            
-                                                        {% else %} {% if subFormType == "INLINE_FORMSET" %}
+                                                                    {% include "django_cim_forms/_formset.html" %}
+                                                                {% endwith %}
 
-                                                            {% with formset=subForm %}
-                                                                {% include "django_cim_forms/_inlineformset.html" %}
-                                                            {% endwith %}
+                                                            {% endif %} {% endif %} {# /subFormType==FORM|FORMSET #}
+                                                        {% endwith %} {# /subFormType #}
+                                                    {% endwith %} {# /subForm #}
 
-
-                                                        {% endif %} {% endif %} {% endif %} {# /subFormType #}
-
-
-                                                    {% endwith %} {# subFormType #}
-                                               {% endwith %} {# subForm #}
-
-                                            </div> <!-- /.coolfieldset-content -->
-                                        </fieldset> <!-- /.coolfieldset -->
-                                        
+                                                </div> <!-- /.coolfieldset-content -->
+                                            </fieldset> <!-- /.coolfieldset -->
                                     {% else %}
 
                                         {% include "django_cim_forms/_field.html" %}
-                                    
-                                    {% endif %} {# / form|isInSubForms:field #}
 
-                                {% endif %} {# field.name in fieldsOfType #}
-                            {% endfor %} {# /field in form.visible_fields #}
-                        {% endwith %} {# /fieldsOfType #}
-
+                                    {% endif %} {# / field|isInSubForms:form #}
+                                {% endif %} {# /field.name in fieldsOfType #}
+                            {% endfor %} {# / field in form.visible_fields #}
+                        {% endwith %} {# / fieldsOfType #}
                     </div> <!-- /.tab-content -->
-                </div> <!-- /#tab-{{fieldType.getType}} -->
+                </div> <!-- /#tab-{{fieldType.getType}}-{{form|getModelGuid}} -->
             {% endfor %} {# /fieldType #}
 
         </div> <!-- /.tabs -->
-        
+
         <div class="submit">
             <input class="button" type="submit" value="Submit"/>
         </div> <!-- /.submit -->
@@ -489,8 +116,5 @@
         <div style="clear: both;">&nbsp;</div>
 
     </form>
-    
+
 {% endblock %} {# /content #}
-
-
-

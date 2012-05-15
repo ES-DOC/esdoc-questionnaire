@@ -4,9 +4,9 @@ import django.forms.models
 import django.forms.widgets
 import django.forms.fields
 
-from final.helpers import *
-from final.fields import *
-from final.controlled_vocabulary import *
+from django_cim_forms.helpers import *
+from django_cim_forms.fields import *
+from django_cim_forms.controlled_vocabulary import *
 
 ############################################
 # the base classes for all metadata models #

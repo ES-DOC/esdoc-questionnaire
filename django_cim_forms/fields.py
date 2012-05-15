@@ -6,8 +6,8 @@ import django.forms.fields
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes import generic
 
-from final.controlled_vocabulary import *
-from final.helpers import *
+from django_cim_forms.controlled_vocabulary import *
+from django_cim_forms.helpers import *
 
 ############################################################
 # the types of fields that a model can have                #

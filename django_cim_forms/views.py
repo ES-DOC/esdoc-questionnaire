@@ -7,12 +7,12 @@ from django.core.urlresolvers import reverse
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ObjectDoesNotExist
 
-from final.models import *
-from final.forms import *
+from django_cim_forms.models import *
+from django_cim_forms.forms import *
 
 
 def index(request):
-    return HttpResponse("this is the index page for the final application")
+    return HttpResponse("this is the index page for the django_cim_forms application")
 
 #############################################################################################
 # used by AJAX to generate a ModelChoiceField                                               #
@@ -98,7 +98,7 @@ def get_content(request):
 # create, display, or edit a MetadataModel #
 ############################################
 
-def detail(request, model_name, app_name="final", model_id=None):
+def detail(request, model_name, app_name="django_cim_forms", model_id=None):
     # get the model & form...
     try:
         ModelType  = ContentType.objects.get(app_label=app_name.lower(),model=model_name.lower())
@@ -135,7 +135,7 @@ def detail(request, model_name, app_name="final", model_id=None):
             model = form.save(commit=False)
             model.save()
             form.save_m2m()
-            return HttpResponseRedirect(reverse('final.views.detail', args=(app_name,model_name,model.id)))
+            return HttpResponseRedirect(reverse('django_cim_forms.views.detail', args=(app_name,model_name,model.id)))
 #        else:
 #            print "invalid!"
     else:
@@ -143,7 +143,7 @@ def detail(request, model_name, app_name="final", model_id=None):
         initializeForm = not(model.id)
         form = FormClass(instance=model,request=request,initialize=initializeForm)
     
-    return render_to_response('final/metadata_detail.html', {'form' : form}, context_instance=RequestContext(request))
+    return render_to_response('django_cim_forms/metadata_detail.html', {'form' : form}, context_instance=RequestContext(request))
 
 
 
@@ -156,4 +156,4 @@ def test(request):
     CascadeTestForm = modelform_factory(CascadeTest)
     model = CascadeTest()
     form = CascadeTestForm(instance=model)
-    return render_to_response('final/test.html', {"form":form}, context_instance=RequestContext(request))
+    return render_to_response('django_cim_forms/test.html', {"form":form}, context_instance=RequestContext(request))

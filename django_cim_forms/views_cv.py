@@ -9,7 +9,7 @@ rel = lambda *x: os.path.join(os.path.abspath(os.path.dirname(__file__)), *x)
 
 et_parser = et.XMLParser(remove_blank_text=True)
 
-from final.helpers import *
+from django_cim_forms.helpers import *
 
 def detail(request,cv_name):
     cv_filename = cv_name + ".xml"

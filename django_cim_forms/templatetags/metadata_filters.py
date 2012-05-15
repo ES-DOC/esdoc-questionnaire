@@ -1,7 +1,7 @@
 from django import template
 
-from final.models import *
-from final.forms import *
+from django_cim_forms.models import *
+from django_cim_forms.forms import *
 
 register = template.Library()
 
