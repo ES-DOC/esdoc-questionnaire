@@ -11,6 +11,8 @@
 
 #metadata div.title { font-size: large; color: #358C92; }
 
+#metadata .documentation { font-style: italic; }
+
 #metadata div.submit { margin-top: 8px; float: right; }
 
 #metadata fieldset { border: 2px solid #B9E0E3; padding: 0.5em; margin-right: 1.0em; margin-top: 1.0em; margin-bottom: 1.0em; margin-left: 0px; }
@@ -47,7 +49,10 @@
 #metadata button.change { float: right; }
 #metadata button.remove { float: right; }
 
+#metadata .delete-field { display: none; }
 #metadata .delete-row { display: none !important; } /* these are created by the formset() method */
 #metadata .add-row { display: none !important; } /* these are created by the formset() method */
 
 #metadata .scroll-pane { overflow: auto; }
+
+#metadata .metadata-properties .tab-content { margin-bottom: 6px; }
