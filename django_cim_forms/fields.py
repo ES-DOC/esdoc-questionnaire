@@ -1,3 +1,4 @@
+import xml.sax.saxutils
 from django.db import models
 from django import forms
 import django.forms.models
@@ -5,6 +6,7 @@ import django.forms.widgets
 import django.forms.fields
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes import generic
+import cgi
 
 from django_cim_forms.controlled_vocabulary import *
 from django_cim_forms.helpers import *
@@ -48,25 +50,24 @@ def customize_metadata_widgets(field):
     except AttributeError:
         pass
 
-    # only customize custom fields (ie: only apply this logic to subclasses of MetadataFields)...
+    # only customize custom fields (ie: only apply the following logic to subclasses of MetadataFields)...
     if isinstance(field,MetadataField):
 
         if field.isReadOnly():
             formfield.widget.attrs.update({"readonly":"readonly"})
 
         if field.isEnabler():
-            #java_string = ""
-            #for (key,value) in field._enables.iteritems():
-            #    java_string += "\"" + key + "\" : [" + ",".join([u'"%s"'%fieldName for fieldName in value]) + ","
-                
-            
-            #java_string = "toggleStuff(this,{%s})" % java_string[:-1]
 
-            java_string = [",".join([u'"%s"'%key for key in field._enables.keys()]) , ",".join([u'"%s"'%value for value in field._enables[key]])    ]
-            java_string = "toggleStuff(this,%s)"% java_string
+            # turn the content of field._enables into an associative array that can be passed to the
+            # javascript function that controls enabling/disabling of fields
+            java_string = ""
+            for (key,value) in field._enables.iteritems():
+                java_string += "\'" + key + "\':[" + ",".join(u'\'%s\''%fieldName for fieldName in value) + "],"
+            java_string = "toggleStuff(this,{%s})" % java_string[:-1]
             
-            print java_string
-#            formfield.widget.attrs.update({"class" : "enabler", "onclick" : java_string})
+            formfield.widget.attrs.update({"onchange":java_string})
+
+            
 
         if isinstance(field,MetadataEnumerationField):
             # BoundFields are a bit different, b/c their formfields are MultiValueFields,
@@ -80,14 +81,6 @@ def customize_metadata_widgets(field):
             
         if isinstance(field,models.DateField):
             formfield.widget.attrs.update({"class":"datepicker"})
-
-        if isinstance(field,models.BooleanField):
-            if field.isEnabler():
-                java_string = "toggleStuff(this,[%s])" % ",".join([u'"%s"'%f for f in field.enables])
-                formfield.widget.attrs.update({"class":"enabler","onclick":java_string})
-            else:
-                #print "NOT ENABLER"
-                pass
 
 ###    if isinstance(field,MetadataDocumentField):
 ###        formfield.widget.attrs.update({"class" : "adder"})

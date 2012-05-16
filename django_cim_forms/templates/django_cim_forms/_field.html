@@ -10,7 +10,9 @@
 
     {% else %}
 
-        <div class="field">
+
+
+        <div class="field" name="{{field.name}}">
             {% if field.help_text %}
                 <div class="help-button" title="click for more info" id="{{form.getName}}_{{field.auto_id}}">
                     <!-- JQuery ui-icons are handled via <spans>; weird, I know -->
@@ -32,7 +34,9 @@
                 </span>
             {% endif %}
 
+            
             {{ field }}
+            
 
             {% if field.errors %}
                 <script class="error-script">

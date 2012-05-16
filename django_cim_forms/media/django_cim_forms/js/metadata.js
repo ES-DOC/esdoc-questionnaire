@@ -16,22 +16,26 @@ var field_to_add_to = ""
 
 var id_to_add = ""
 
-
-// TODO:
-function toggleStuff(toggler,stuff) {
-    var checked = $(toggler).attr("checked");
-    
-    var len=stuff.length;
-    for(var i=0; i<len; i++) {
-        var thisStuff = stuff[i];
-        var selector = "*[name="+thisStuff+"]";
-        if (checked) {
-            $(selector).show();
+/* checks the value of a field (toggler) against an associative array
+ * which specifies other fields to toggle based on value */
+function toggleStuff(toggler,stuffToToggle) {
+    var thisField = $(toggler).parent("div.field");
+    for (var value in stuffToToggle) {
+        var stuff = stuffToToggle[value]
+        if (value==$(toggler).val()) {
+            for (var i=0; i<stuff.length; i++) {
+                var selector = "div.field[name='"+stuff[i]+"']";
+                $(thisField).find(selector).show();         // look in descendants
+                $(thisField).siblings(selector).show();     // and siblings
+            }
         }
         else {
-            $(selector).hide();
+            for (var i=0; i<stuff.length; i++) {
+                var selector = "div.field[name='"+stuff[i]+"']";
+                $(thisField).find(selector).hide();         // look in descendants
+                $(thisField).siblings(selector).hide();     // and siblings
+            }
         }
-        //$(selector).toggle();
     }
 };
 
