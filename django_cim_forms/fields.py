@@ -290,6 +290,7 @@ class MetadataManyToOneField(models.ForeignKey,MetadataRelationshipField):
         sourceModel = kwargs.pop("sourceModel",None)
         super(MetadataManyToOneField,self).__init__(targetModel,**kwargs)
         self.initRelationship(sourceModel=sourceModel,targetModel=targetModel,**kwargs)
+        self.help_text = kwargs.pop("help_text","")
 
 class MetadataManyToManyField(models.ManyToManyField,MetadataRelationshipField):
     pass
@@ -299,6 +300,8 @@ class MetadataManyToManyField(models.ManyToManyField,MetadataRelationshipField):
         sourceModel = kwargs.pop("sourceModel",None)
         super(MetadataManyToManyField,self).__init__(targetModel,**kwargs)
         self.initRelationship(sourceModel=sourceModel,targetModel=targetModel,**kwargs)
+        self.help_text = kwargs.pop("help_text","")
+        
 
 # TODO: "BoundField" has a particular meaning in Django
 # I ought to change this class name to something else
