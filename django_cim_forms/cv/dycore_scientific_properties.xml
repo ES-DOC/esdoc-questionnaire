@@ -153,7 +153,7 @@
         <item>
           <shortName>Specifics on spatial discretizations (keywords), select all that apply and or add items</shortName>
           <longName>Specifics on spatial discretizations (keywords), select all that apply and or add items</longName>
-          <values nullable="true">
+          <values nullable="false" open="true">
             <value>
               <shortName>horizontal: first-order</shortName>
               <longName>horizontal: first-order</longName>
@@ -192,7 +192,7 @@
         <item>
           <shortName>Specifics on temporal discretizations (keywords), select all that apply and or add items</shortName>
           <longName>Specifics on temporal discretizations (keywords), select all that apply and or add items</longName>
-          <values multi="true" open="true">
+          <values multi="true" open="true" nullable="false">
             <value>
               <shortName>2-time-level scheme</shortName>
               <longName>2-time-level scheme</longName>
@@ -267,7 +267,7 @@
         <item>
           <shortName>Prognostic variables (moist setup with water vapor)</shortName>
           <longName>Prognostic variables (moist setup with water vapor)</longName>
-          <values multi="true" open="true" nullable="true">
+          <values multi="true" open="true" nullable="false">
             <value>
               <shortName>3D vorticity</shortName>
               <longName>3D vorticity</longName>
@@ -580,7 +580,7 @@
         <item>
           <shortName>Specifics on spatial discretizations (keywords)</shortName>
           <longName>Specifics on spatial discretizations (keywords)</longName>
-          <values multi="true" open="true" nullable="true">
+          <values multi="true" open="true" nullable="false">
             <value>
               <shortName>horizontal: first-order</shortName>
               <longName>horizontal: first-order</longName>
@@ -618,7 +618,7 @@
         <item>
           <shortName>Specifics on temporal discretizations (keywords)</shortName>
           <longName>Specifics on temporal discretizations (keywords)</longName>
-          <values multi="true" open="true" nullable="true">
+          <values multi="true" open="true" nullable="false">
             <value>
               <shortName>2-time-level scheme</shortName>
               <longName>2-time-level scheme</longName>
@@ -970,8 +970,8 @@
     </item>
 
     <item>
-      <shortName>Dissapation Mechanisms</shortName>
-      <longName>Dissapation Mechanisms</longName>
+      <shortName>Dissipation Mechanisms</shortName>
+      <longName>Dissipation Mechanisms</longName>
       <items>
  
         <item>

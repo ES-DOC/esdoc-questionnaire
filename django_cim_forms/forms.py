@@ -224,6 +224,7 @@ class Property_form(MetadataForm):
         model = MetadataProperty
         fields = ("shortName","longName","value")
 
+
     _fieldTypes = {}            # a dictionary associating fieldTypes with lists of fields
     _fieldTypeOrder = None      # a list describing the order of fieldTypes (tabs); if a type is absent from this list it is not rendered
     
@@ -243,8 +244,10 @@ class Property_form(MetadataForm):
         super(Property_form,self).__init__(*args,**kwargs)
         modelInstance = self.instance
 
-        self.fields["shortName"].widget = django.forms.fields.TextInput(attrs={"readonly":"readonly"})
-        self.fields["longName"].widget = django.forms.fields.TextInput(attrs={"readonly":"readonly"})
+        # don't want to exclude these fields (b/c their used by javascript to locate things)
+        # so I'm just making them hidden
+        self.fields["shortName"].widget = django.forms.fields.TextInput(attrs={"readonly":"readonly","class":"hidden"})
+        self.fields["longName"].widget = django.forms.fields.TextInput(attrs={"readonly":"readonly","class":"hidden"})
 
         if modelInstance.hasValues():
             custom_choices = modelInstance.getValueChoices()
@@ -252,8 +255,11 @@ class Property_form(MetadataForm):
                 custom_choices += OTHER_CHOICE
             if modelInstance.nullable:
                 custom_choices += NONE_CHOICE
+                
+            custom_choices.insert(0,EMPTY_CHOICE[0])
             
-            self.fields["value"] = MetadataBoundFormField(choices=custom_choices,multi=modelInstance.multi)
+            self.fields["value"] = MetadataBoundFormField(choices=custom_choices,multi=modelInstance.multi,empty=True)
+            self.fields["value"].widget.attrs.update({"onchange":"setPropertyTitle(this)"})
         
 
 

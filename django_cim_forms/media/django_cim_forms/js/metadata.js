@@ -39,6 +39,14 @@ function toggleStuff(toggler,stuffToToggle) {
     }
 };
 
+function setPropertyTitle(propertyValue) {
+    var name = $(propertyValue).parents("div.accordion-content:first").find("div.field[name='longName']").find("input").val();
+    var value = $(propertyValue).val();
+    var accordionHeader = $(propertyValue).parents("div.accordion-content:first").prev(".accordion-header");
+    var title = name + ": " + value + " ";
+    $(accordionHeader).find("a").text(title);
+};
+
 function populate(data, form) {
     $.each(data, function(key, value){
         if (key=='fields') {

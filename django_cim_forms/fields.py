@@ -64,7 +64,8 @@ def customize_metadata_widgets(field):
                 java_string += "\'" + key + "\':[" + ",".join(u'\'%s\''%fieldName for fieldName in value) + "],"
             java_string = "toggleStuff(this,{%s})" % java_string[:-1]
 
-            # TODO: RE-USE THIS LOGIC IN OTHER IF BLOCKS OF THIS FN
+            # TODO: MOVE THIS LOGIC TO THE END OF THESE BLOCKS
+            # (JUST SET newAttrs HERE)
             if isinstance(formfield.widget,MetadataBoundWidget):
                 # unfortunately, this has to be called on the widget (or formfield) and not the field
                 # b/c this is the instance that gets rendered in the template
@@ -89,10 +90,23 @@ def customize_metadata_widgets(field):
                 formfield.widget.widgets[0].attrs.update({"disabled":"disabled",})
 
         if isinstance(field,MetadataAtomicField):
-            formfield.widget.attrs.update({"class":"atomic"})
-            
+
+            newAttrs = {"class":"atomic"}
+            for (key,value) in newAttrs.iteritems():
+                try:
+                    currentAttrs = formfield.widget.attrs[key]
+                    formfield.widget.attrs[key] = "%s %s" % (currentAttrs,value)
+                except KeyError:
+                    formfield.widget.attrs[key] = value
+
         if isinstance(field,models.DateField):
-            formfield.widget.attrs.update({"class":"datepicker"})
+            newAttrs = {"class":"datepicker"}
+            for (key,value) in newAttrs.iteritems():
+                try:
+                    currentAttrs = formfield.widget.attrs[key]
+                    formfield.widget.attrs[key] = "%s %s" % (currentAttrs,value)
+                except KeyError:
+                    formfield.widget.attrs[key] = value
 
 ###    if isinstance(field,MetadataDocumentField):
 ###        formfield.widget.attrs.update({"class" : "adder"})
@@ -293,7 +307,8 @@ class MetadataBoundField(MetadataField):
     _open     = False       # can a user override the bound values?
     _multi    = False       # can a user select more than one bound value?
     _nullable = False       # can a user select no bound values?
-
+    _empty    = False       # is there a default "empty" value (currently only used for properties)?
+    
     class Meta:
         abstract = True
 
@@ -303,12 +318,13 @@ class MetadataBoundField(MetadataField):
         open = kwargs.pop("open",False)
         multi = kwargs.pop("multi",False)
         nullable = kwargs.pop("nullable",False)
+        empty = kwargs.pop("empty",False)
         super(MetadataBoundField,self).__init__(**kwargs)
         self._open = open
         self._multi = multi
         self._nullable = nullable
-        self._index = 0
-
+        self._empty = empty
+        
 #    def initBound(self,*args,**kwargs):
 #        self._open = kwargs.pop("open",False)
 #        self._multi = kwargs.pop("multi",False)
@@ -322,6 +338,9 @@ class MetadataBoundField(MetadataField):
 
     def isNullable(self):
         return self._nullable
+
+    def isEmpty(self):
+        return self._empty
 
 
 class MetadataBoundWidget(django.forms.widgets.MultiWidget):
@@ -375,11 +394,13 @@ class MetadataBoundFormField(django.forms.fields.MultiValueField):
 
     custom_choices = []
     _multi = False
+    _empty = False
 
     def __init__(self,*args,**kwargs):
 
         custom_choices = kwargs.pop("choices",None)
         multi = kwargs.pop("multi",False)
+        empty = kwargs.pop("empty",False)
         fields = (
             django.forms.fields.CharField(max_length=HUGE_STRING,required=True),
             django.forms.fields.CharField(max_length=HUGE_STRING,required=False),
@@ -389,6 +410,7 @@ class MetadataBoundFormField(django.forms.fields.MultiValueField):
         self.widget = widget # why is this line still needed, even though widget is passed into *args above?
         self.custom_choices = custom_choices
         self._multi = multi
+        self._empty = empty
 
 
 
@@ -450,14 +472,18 @@ class MetadataEnumerationField(models.CharField,MetadataBoundField):
         if EnumerationClass:
             if not EnumerationClass.isLoaded():
                 EnumerationClass.loadEnumerations()
-            custom_choices = [(enumeration.name,pretty_string(enumeration.name)) for enumeration in EnumerationClass.objects.all()]
+            # don't override enums
+            #custom_choices = [(enumeration.name,pretty_string(enumeration.name)) for enumeration in EnumerationClass.objects.all()]
+            custom_choices = [(enumeration.name,enumeration.name) for enumeration in EnumerationClass.objects.all()]
 
         if self.isOpen():
             custom_choices += OTHER_CHOICE
         if self.isNullable():
             custom_choices += NONE_CHOICE
+        if self.isEmpty():
+            custom_choices += EMPTY_CHOICE
 
-        return MetadataBoundFormField(choices=custom_choices,multi=self.isMulti())
+        return MetadataBoundFormField(choices=custom_choices,multi=self.isMulti(),empty=self.isEmpty())
 
 
     def getEnumerationClass(self):
@@ -478,12 +504,12 @@ class MetadataEnumerationField(models.CharField,MetadataBoundField):
 # apparently, this is not needed (super() above calls BoundField.__init__()
 #        self.initBound(*args,**kwargs)
         
-# TODO: PROPERTY FIELD
 
 class MetadataPropertyField(models.CharField,MetadataBoundField):
     pass
 
     def formfield(self,**kwargs):
+        # for MetadataProperties, the choices are customized w/in the form not here
         return MetadataBoundFormField(choices=self._choices)
     
     def __init__(self,*args,**kwargs):

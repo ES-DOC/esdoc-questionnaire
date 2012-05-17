@@ -34,7 +34,7 @@ class LogicalRelationshipType_enumeration(MetadataEnumeration):
     _enum = ['AND','OR','XOR']
 
 class ActivityProject_enumeration(MetadataEnumeration):
-    _enum = ['CMIP5','AMIP','TAMIP', 'CASCADE', "DCMIP"]
+    _enum = ['CMIP5','AMIP','TAMIP', 'CASCADE', "DCMIP-2012"]
 
 class CalendarUnitType_enumeration(MetadataEnumeration):
     _enum = ['days','months','years']
@@ -991,7 +991,10 @@ class VerticalGrid(MetadataModel):
     longName = MetadataAtomicField.Factory("charfield",max_length=BIG_STRING,blank=False)
 
     domain = MetadataEnumerationField(enumeration="cim_1_5.VerticalGridDomain_enumeration",open=True,nullable=True)
-    domain._enables = {"atmospheric" : ["numberOAtmosphericfLevels","topAtmosphericModelLevel","NumberOfAtmosphericLevelsBelow850hPa","NumberOfAtmosphericLevelsAbove200hPa"]}
+    domain.enables({
+        "atmospheric" : ["numberOAtmosphericfLevels","topAtmosphericModelLevel","numberOfAtmosphericLevelsBelow850hPa","numberOfAtmosphericLevelsAbove200hPa",],
+        "oceanic" : ["numberOfOceanicLevels",],
+    })
     #domain._enables = [["atmospheric",["numberOAtmosphericfLevels","topAtmosphericModelLevel","NumberOfAtmosphericLevelsBelow850hPa","NumberOfAtmosphericLevelsAbove200hPa"]]]
 
     #TODO: domain should be an enabler: atmospheric=>the next 4 fields, oceanic=>the 4 fields after that
@@ -1000,14 +1003,17 @@ class VerticalGrid(MetadataModel):
     numberOfAtmosphericLevels.verbose_name = "Number of Levels"
     topAtmosphericModelLevel = MetadataAtomicField.Factory("charfield",max_length=HUGE_STRING,blank=True)
     topAtmosphericModelLevel.verbose_name = "Top Model Level"
-    NumberOfAtmosphericLevelsBelow850hPa = MetadataAtomicField.Factory("integerfield",blank=True)
-    NumberOfAtmosphericLevelsBelow850hPa.verboseName = "Number of Levels Below 850hPa"
-    NumberOfAtmosphericLevelsAbove200hPa = MetadataAtomicField.Factory("integerfield",blank=True)
-    NumberOfAtmosphericLevelsAbove200hPa.verboseName = "Number of Levels Above 200hPa"
+    numberOfAtmosphericLevelsBelow850hPa = MetadataAtomicField.Factory("integerfield",blank=True)
+    numberOfAtmosphericLevelsBelow850hPa.verboseName = "Number of Levels Below 850hPa"
+    numberOfAtmosphericLevelsAbove200hPa = MetadataAtomicField.Factory("integerfield",blank=True)
+    numberOfAtmosphericLevelsAbove200hPa.verboseName = "Number of Levels Above 200hPa"
+
+    numberOfOceanicLevels = MetadataAtomicField.Factory("integerfield",blank=True)
+    numberOfOceanicLevels.verbose_name = "Number of (Oceanic) Levels"
 
     def __init__(self,*args,**kwargs):
         super(VerticalGrid,self).__init__(*args,**kwargs)
-        self.registerFieldType(FieldType("EXTENT","Vertical Extent"),["domain","numberOfAtmosphericfLevels","topAtmosphericModelLevel","NumberOfAtmosphericLevelsBelow850hPa","NumberOfAtmosphericLevelsAbove200hPa"])
+        self.registerFieldType(FieldType("EXTENT","Vertical Extent"),["domain","numberOfAtmosphericLevels","topAtmosphericModelLevel","numberOfAtmosphericLevelsBelow850hPa","numberOfAtmosphericLevelsAbove200hPa","numberOfOceanicLevels",])
         self.registerFieldType(FieldType("BASIC","General Attributes"),["longName",])
         self.setFieldTypeOrder(["BASIC","EXTENT"])
 

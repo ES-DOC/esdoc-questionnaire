@@ -11,8 +11,14 @@
     {% else %}
 
 
-
-        <div class="field" name="{{field.name}}">
+        {% with hidden=field.field.widget.attrs.class %}
+            {% if hidden == "hidden" %}
+                <div class="field hidden" name="{{field.name}}">
+            {% else %}
+                <div class="field" name="{{field.name}}">
+            {% endif %}
+        {% endwith %}
+        
             {% if field.help_text %}
                 <div class="help-button" title="click for more info" id="{{form.getName}}_{{field.auto_id}}">
                     <!-- JQuery ui-icons are handled via <spans>; weird, I know -->

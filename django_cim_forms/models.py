@@ -179,8 +179,8 @@ class MetadataProperty(MetadataModel):
             name = u'%s' % self.longName
         elif self.shortName:
             name = u'%s' % self.shortName
-#        if self.value:
-#            name = u'%s: %s' % (name,self.value)
+        if self.value:
+            name = u'%s: %s' % (name,self.value)
         return name
 
     @classmethod
@@ -242,7 +242,4 @@ class MetadataProperty(MetadataModel):
                 self.parentShortName = cv.parent.shortName
                 self.parentLongName = cv.parent.longName
 
-
-  #          #self.getField("anotherValue")._choices = [("one","one")]
-  #          self._meta.get_field_by_name('anotherValue')[0]._choices = self.valueChoices
             

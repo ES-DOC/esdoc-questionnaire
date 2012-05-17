@@ -185,9 +185,12 @@ class MetadataControlledVocabulary(models.Model):
             xpath_values_expression="//item[shortName/text()='%s']/values" % shortName
             values = cv.xpath(xpath_values_expression)
             if values:
-                model.open = values[0].xpath("@open")
-                model.multi = values[0].xpath("@multi")
-                model.nullable = values[0].xpath("@nullable")
+                open = values[0].xpath("@open")
+                model.open = open and open[0].lower()=="true"
+                multi = values[0].xpath("@multi")
+                model.multi = multi and multi[0].lower()=="true"
+                nullable = values[0].xpath("@nullable")
+                model.nullable = nullable and nullable[0].lower()=="true"
 
             # figure out its specific value choices...
             xpath_value_expression="//item[shortName/text()='%s']/values/value" % shortName
@@ -222,3 +225,4 @@ class MetadataControlledVocabulary(models.Model):
             if created:
                 print "storing %s" % model
                 model.save()
+
