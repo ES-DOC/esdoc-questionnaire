@@ -6,7 +6,6 @@ import django.forms.widgets
 import django.forms.fields
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes import generic
-import cgi
 
 from django_cim_forms.controlled_vocabulary import *
 from django_cim_forms.helpers import *
@@ -52,7 +51,7 @@ def customize_metadata_widgets(field):
 
     # only customize custom fields (ie: only apply the following logic to subclasses of MetadataFields)...
     if isinstance(field,MetadataField):
-
+        
         if field.isReadOnly():
             formfield.widget.attrs.update({"readonly":"readonly"})
 
@@ -64,10 +63,23 @@ def customize_metadata_widgets(field):
             for (key,value) in field._enables.iteritems():
                 java_string += "\'" + key + "\':[" + ",".join(u'\'%s\''%fieldName for fieldName in value) + "],"
             java_string = "toggleStuff(this,{%s})" % java_string[:-1]
-            
-            formfield.widget.attrs.update({"onchange":java_string})
 
-            
+            # TODO: RE-USE THIS LOGIC IN OTHER IF BLOCKS OF THIS FN
+            if isinstance(formfield.widget,MetadataBoundWidget):
+                # unfortunately, this has to be called on the widget (or formfield) and not the field
+                # b/c this is the instance that gets rendered in the template
+                formfield.widget.updateBoundAttrs({"class":"enabler","onchange":java_string})
+            else:
+                newAttrs = {"class":"enabler","onchange":java_string}
+                for (key,value) in newAttrs.iteritems():
+                    try:
+                        currentAttrs = formfield.widget.attrs[key]
+                        formfield.widget.attrs[key] = "%s %s" % (currentAttrs,value)
+                    except KeyError:
+                        formfield.widget.attrs[key] = value
+                # this is commented out b/c it doesn't take into account potential pre-existing attributes
+                #formfield.widget.attrs.update({"class":"enabler","onchange":java_string})
+
 
         if isinstance(field,MetadataEnumerationField):
             # BoundFields are a bit different, b/c their formfields are MultiValueFields,
@@ -143,7 +155,6 @@ class MetadataField(models.Field):
         # enablingDictiony lists fields to enable based on value:
         # { val1 : ["f1","f2","f3"], val2 : ["f4","f5","f6" }
         self._enables = enablingDictionary
-
 
     def isEnabler(self):
         return bool(self._enables)
@@ -296,6 +307,7 @@ class MetadataBoundField(MetadataField):
         self._open = open
         self._multi = multi
         self._nullable = nullable
+        self._index = 0
 
 #    def initBound(self,*args,**kwargs):
 #        self._open = kwargs.pop("open",False)
@@ -311,11 +323,24 @@ class MetadataBoundField(MetadataField):
     def isNullable(self):
         return self._nullable
 
+
 class MetadataBoundWidget(django.forms.widgets.MultiWidget):
 
     custom_choices = []
     _multi = False
 
+    # this gets called by customize_metadata_widget;
+    # when updating the attributes of a widget,
+    # I have to treat MultiWidgets separately to ensure that both widgets comprising the MultiWidget are updated
+    def updateBoundAttrs(self,newAttrs):
+        for widget in self.widgets:
+            for (key,value) in newAttrs.iteritems():
+                try:
+                    currentAttrs = widget.attrs[key]
+                    widget.attrs[key] = "%s %s" % (currentAttrs,value)
+                except KeyError:
+                    widget.attrs[key] = value
+                    
     def __init__(self,*args,**kwargs):
 
         custom_choices = kwargs.pop("choices",None)

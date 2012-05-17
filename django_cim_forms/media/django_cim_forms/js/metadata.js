@@ -19,6 +19,8 @@ var id_to_add = ""
 /* checks the value of a field (toggler) against an associative array
  * which specifies other fields to toggle based on value */
 function toggleStuff(toggler,stuffToToggle) {
+    alert("toggle");
+    alert($(toggler).val())
     var thisField = $(toggler).parent("div.field");
     for (var value in stuffToToggle) {
         var stuff = stuffToToggle[value]
@@ -213,17 +215,10 @@ function enableJQueryWidgets() {
             }
         });
 
-        /* init an 'enabler' - a boolean that controls other elements */
-        $(".enabler").bind("click",toggleStuff);
-        $(".enabler").each(function() {
-            $(this).trigger("click");
-            /*
-            if ($(this).is(".start-enabled")) {
-                $(this).attr("checked","checked");
-            }
-            else {
-                $(this).removeAttr("checked");
-            }*/
+        /* init an 'enabler' - a field that controls other fields or forms */
+        $(".enabler:not(.enumeration-other)").each(function() {
+            // the onchange method is bound to the toggleStuff function
+            $(this).trigger("change");
         });
 
         /* enable calendar widgets */
