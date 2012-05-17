@@ -113,6 +113,18 @@ function enableJQueryWidgets() {
 
        /* enable tabs */
        $(".tabs").tabs();
+       $(".tabs ul li a").keydown(function(event) {
+           var keyCode = event.keyCode || event.which;
+           if (keyCode == 9) {
+               currentTab = $(event.target);
+               currentTabSet = $(currentTab).parents("div.tabs:first");
+               /* make the tab key shift focus the the next tab */
+               var nTabs = $(currentTabSet).tabs("length");
+               var selected = $(currentTabSet).tabs("option","selected");
+               /* the modulus operator ensures the tabs wrap around */
+               $(currentTabSet).tabs("option","selected",(selected+1)%nTabs);               
+           }
+       });
 
        /* enable collapsible fieldsets */
        $(".coolfieldset").coolfieldset({speed:"fast"});
