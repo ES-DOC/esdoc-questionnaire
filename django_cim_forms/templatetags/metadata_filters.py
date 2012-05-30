@@ -14,7 +14,8 @@ import re
 
 @register.filter
 def stripSpaces(string):
-    return re.sub(r'\s+',"",string).strip()
+    if string:
+        return re.sub(r'\s+',"",string).strip()
 
 #######################################################
 # returns the app name of the model bound to a form #
@@ -180,9 +181,24 @@ def getForms(formset,shortNames):
 
 @register.filter
 def get_item(dict, key):
+    print "DICT=",dict
+    print "KEY=",key
     # gets value from dict based on key
     # (just got too confusing to do this in the template)
     return dict.get(key)
+
+###################################################################
+# gets the value of a modelField (as opposed to a formField)      #
+# useful for Property_forms (which have formFields added on init) #
+###################################################################
+
+@register.filter
+def getModelFieldValue(form,fieldName):
+    modelInstance = form.getModelInstance()
+    #modelField = modelInstance.getField(fieldName)
+    # TODO: does this work w/ lists?
+    modelFieldValue = getattr(modelInstance,fieldName)
+    return modelFieldValue
 
 ####################################
 # gets the verbose name of a field #

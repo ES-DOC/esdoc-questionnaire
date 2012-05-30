@@ -224,7 +224,8 @@ class Property_form(MetadataForm):
         model = MetadataProperty
         fields = ("shortName","longName","value")
 
-
+    name = ""
+    
     _fieldTypes = {}            # a dictionary associating fieldTypes with lists of fields
     _fieldTypeOrder = None      # a list describing the order of fieldTypes (tabs); if a type is absent from this list it is not rendered
     
@@ -258,10 +259,10 @@ class Property_form(MetadataForm):
                 
             custom_choices.insert(0,EMPTY_CHOICE[0])
             
-            self.fields["value"] = MetadataBoundFormField(choices=custom_choices,multi=modelInstance.multi,empty=True)
+            self.fields["value"] = MetadataBoundFormField(choices=custom_choices,multi=modelInstance.multi,empty=True,blank=False)
             self.fields["value"].widget.attrs.update({"onchange":"setPropertyTitle(this)"})
         
-
+        self.name = self.instance.shortName
 
 #        if modelInstance.hasValues():
 #            self.fields["value"].widget = django.forms.fields.Select(choices=modelInstance.getValueChoices())

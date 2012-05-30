@@ -398,14 +398,17 @@ class MetadataBoundFormField(django.forms.fields.MultiValueField):
     custom_choices = []
     _multi = False
     _empty = False
+    _required = True
 
     def __init__(self,*args,**kwargs):
 
         custom_choices = kwargs.pop("choices",None)
         multi = kwargs.pop("multi",False)
         empty = kwargs.pop("empty",False)
+        required = not(kwargs.pop("blank",True))
+
         fields = (
-            django.forms.fields.CharField(max_length=HUGE_STRING,required=True),
+            django.forms.fields.CharField(max_length=HUGE_STRING,required=required),
             django.forms.fields.CharField(max_length=HUGE_STRING,required=False),
         )
         widget = MetadataBoundWidget(choices=custom_choices,multi=multi)
@@ -414,6 +417,7 @@ class MetadataBoundFormField(django.forms.fields.MultiValueField):
         self.custom_choices = custom_choices
         self._multi = multi
         self._empty = empty
+        self._required = required
 
 
 
@@ -426,6 +430,14 @@ class MetadataBoundFormField(django.forms.fields.MultiValueField):
                 return "|".join(data_list)
 
     def clean(self,value):
+        # an empty string "" is false
+        # an explicit none is false
+        #print self.custom_choices
+        if self._required and (not value[0] or value[0] == [u'']):
+            msg = "this field is required"
+            raise forms.ValidationError(msg)
+
+        print "VALUE[0]=",value[0]
 
         if value != [None,None]:
 #        if value[0]==None:

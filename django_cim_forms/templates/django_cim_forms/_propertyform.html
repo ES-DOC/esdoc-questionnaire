@@ -1,7 +1,7 @@
 {# this displays a set of metadata properties #}
 
     {% load metadata_filters %}
-    
+
         {% with forms=formset|getForms:keys %}
             {% with haveSubItems=forms|haveSubItems haveValues=forms|haveValues %}
                 {% if haveSubItems %}
@@ -9,38 +9,44 @@
                         <ul>
                             {% for form in forms %}
                                 {% if form|hasSubItems %}
-                                    <li><a href="#tab-{{form.shortName.value|stripSpaces}}-{{form|getModelGuid}}">{{form.shortName.value}}</a></li>
+                                    {% with propertyShortName=form|getModelFieldValue:"shortName" %}
+                                        <li><a href="#tab-{{propertyShortName|stripSpaces}}-{{form|getModelGuid}}">{{propertyShortName}}</a></li>
+                                    {% endwith %} {# propertyShortName #}
                                 {% endif %}
                             {% endfor %}
                         </ul>
                         {% for form in forms %}
                             {% if form|hasSubItems %}
-                                <div id="tab-{{form.shortName.value|stripSpaces}}-{{form|getModelGuid}}">
-                                    <div class="tab-content">
-                                        {% if form.longName.value != form.shortName.value %}
+                                {% with propertyShortName=form|getModelFieldValue:"shortName" propertyLongName=form|getModelFieldValue:"longName" %}
+                                
+                                    <div id="tab-{{propertyShortName|stripSpaces}}-{{form|getModelGuid}}">
+                                        <div class="tab-content">
+                                            
+                                            {% if propertyLongName != propertyShortName %}
                                             <p class="documentation">
-                                                <!-- tab (field category) documentation -->
-                                                {{form.longName.value}}
+                                                {{propertyLongName}}
                                             </p>
-                                        {% endif %} {# form.longName != form.shortName #}
+                                            {% endif %} {# longName != shortName #}
+                                            
 
-                                        {# required b/c the individual form ids are here #}
-                                        {% for hiddenField in form.hidden_fields %}
-                                            {{ hiddenField }}
-                                        {% endfor %} {# /hiddenField #}
+                                            {# required b/c the individual form ids are here #}
+                                            {% for hiddenField in form.hidden_fields %}
+                                                {{ hiddenField }}
+                                            {% endfor %} {# /hiddenField #}
 
-                                        {% with nested_properties=nested_properties|get_item:form.shortName.value %}
-                                            {% with "django_cim_forms/_propertyform.html" as template %}
-                                                {% with keys=nested_properties.keys values=nested_properties.values %}
-                                                    {% include template %}
-                                                {% endwith %} {# keys, values #}
-                                            {% endwith %} {# template #}
-                                        {% endwith %} {# nested_properties #}
-                                    </div> <!-- /.tab-content -->
-                                </div> <!-- /#tab -->
-                            {% endif %}
-                        {% endfor %}
-                    </div> <!-- /.tabs -->
+                                            {% with nested_properties=nested_properties|get_item:propertyShortName %}
+                                                {% with "django_cim_forms/_propertyform.html" as template %}
+                                                    {% with keys=nested_properties.keys values=nested_properties.values %}
+                                                        {% include template %}
+                                                    {% endwith %} {# keys, values #}
+                                                {% endwith %} {# template #}
+                                            {% endwith %} {# nested_properties #}
+                                        </div> <!-- /.tab-content -->
+                                    </div> <!-- /#tab -->
+                                    {% endwith %} {# propertyShortName, propertyLongName #}
+                                {% endif %}
+                            {% endfor %}
+                        </div> <!-- /.tabs -->
                 {% endif %}
                 {% if haveValues %}
                     <div class="accordion {{formset.getPrefix}}-formset">
