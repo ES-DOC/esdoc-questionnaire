@@ -181,8 +181,6 @@ def getForms(formset,shortNames):
 
 @register.filter
 def get_item(dict, key):
-    print "DICT=",dict
-    print "KEY=",key
     # gets value from dict based on key
     # (just got too confusing to do this in the template)
     return dict.get(key)
