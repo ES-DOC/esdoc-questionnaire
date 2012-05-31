@@ -85,6 +85,7 @@ class MetadataModel(models.Model):
 
             for (propertyName,propertyValue) in propertiesToCustomize.iteritems():
                 setattr(field,propertyName,propertyValue)
+
         
     def registerFieldType(self,fieldType,fieldNames):
         for ft in self._fieldTypes:
@@ -179,7 +180,7 @@ class MetadataProperty(MetadataModel):
             name = u'%s' % self.longName
         elif self.shortName:
             name = u'%s' % self.shortName
-        if self.value:
+        if self.value and not(self.value.strip() == "|" or self.value.strip() == "||"): # remember that value is a multifield, each subfield is separated by '|'
             name = u'%s: %s' % (name,self.value)
         return name
 

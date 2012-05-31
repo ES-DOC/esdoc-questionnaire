@@ -820,7 +820,7 @@ class ResponsibleParty(MetadataModel):
     def __unicode__(self):
         name = u'%s' % self.getName()
         if self.role:
-            name = u'%s: %s' % (name, self.role)
+            name = u'%s: %s' % (name, self.role.strip().rstrip("|").rstrip("|"))
         if self.individualName:
             name = u'%s: %s' % (name, self.individualName)
         return name
@@ -995,7 +995,6 @@ class VerticalGrid(MetadataModel):
         "atmospheric" : ["numberOAtmosphericfLevels","topAtmosphericModelLevel","numberOfAtmosphericLevelsBelow850hPa","numberOfAtmosphericLevelsAbove200hPa",],
         "oceanic" : ["numberOfOceanicLevels",],
     })
-    #domain._enables = [["atmospheric",["numberOAtmosphericfLevels","topAtmosphericModelLevel","NumberOfAtmosphericLevelsBelow850hPa","NumberOfAtmosphericLevelsAbove200hPa"]]]
 
     #TODO: domain should be an enabler: atmospheric=>the next 4 fields, oceanic=>the 4 fields after that
 
