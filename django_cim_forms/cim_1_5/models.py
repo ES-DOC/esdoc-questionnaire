@@ -781,7 +781,7 @@ class SoftwareComponent(DataSource):
     license.help_text = "the license held by this piece of software"
     # TODO: PROPERTIES (componentProperties, scientificProperties, numericalProperties)
     responsibleParties = MetadataManyToManyField(targetModel='cim_1_5.ResponsibleParty',sourceModel="cim_1_5.SoftwareComponent")
-    releaseDate = MetadataAtomicField.Factory("datefield")
+    releaseDate = MetadataAtomicField.Factory("datefield",null=True)
     releaseDate.help_text = "The date of publication of the software component code (as opposed to the date of publication of the metadata document, or the date of deployment of the model)"
     previousVersion = MetadataAtomicField.Factory("charfield",max_length=BIG_STRING,blank=True)
     fundingSource = MetadataAtomicField.Factory("charfield",max_length=BIG_STRING,blank=True)

@@ -500,7 +500,7 @@
     </item>
 
     <item>
-      <shortName>Tracer Advection Scheme</shortName>
+      <shortName>Tracer Advection</shortName>
       <longName>Tracer Advection Scheme</longName>
       <items>
         <item>
@@ -937,8 +937,8 @@
           </values>
         </item>
         <item>
-          <shortName>A-posteriori fixers (select all that apply):</shortName>
-          <longName>A-posteriori fixers (select all that apply):</longName>
+          <shortName>A-posteriori fixers</shortName>
+          <longName>A-posteriori fixers</longName>
           <values multi="true" open="true" nullable="true">
             <value>
               <shortName>mass fixer for dry air</shortName>
@@ -1092,8 +1092,8 @@
         </item>
 
         <item>
-          <shortName>Implicit (numerical) dissipation mechanisms (select all that are typically activated):</shortName>
-          <longName>Implicit (numerical) dissipation mechanisms (select all that are typically  activated):</longName>
+          <shortName>Implicit (numerical) dissipation mechanisms</shortName>
+          <longName>Implicit (numerical) dissipation mechanisms</longName>
           <values multi="true" nullable="true" open="true">
             <value>
               <shortName>damping via semi-Lagrangian interpolations</shortName>
@@ -1141,12 +1141,12 @@
     </item>
 
     <item>
-      <shortName>Coupling to Moist Physics</shortName>
-      <longName>Coupling to Moist Physics</longName>
+      <shortName>Dynamics-Physics Coupling</shortName>
+      <longName>Coupling the Dynamical Core to Moist Physics</longName>
       <items>
         <item>
-          <shortName>Physics-Dynamics coupling strategy:</shortName>
-          <longName>Physics-Dynamics coupling strategy:</longName>
+          <shortName>Physics-Dynamics coupling strategy</shortName>
+          <longName>Physics-Dynamics coupling strategy</longName>
           <values open="true">
             <value>
               <shortName>process-split (a.k.a. parallel-split), including tracers</shortName>
