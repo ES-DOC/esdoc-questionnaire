@@ -437,7 +437,6 @@ class MetadataBoundFormField(django.forms.fields.MultiValueField):
             msg = "this field is required"
             raise forms.ValidationError(msg)
 
-        print "VALUE[0]=",value[0]
 
         if value != [None,None]:
 #        if value[0]==None:
@@ -525,7 +524,7 @@ class MetadataPropertyField(models.CharField,MetadataBoundField):
 
     def formfield(self,**kwargs):
         # for MetadataProperties, the choices are customized w/in the form not here
-        return MetadataBoundFormField(choices=self._choices)
+        return MetadataBoundFormField(choices=self._choices,blank=self.blank)
     
     def __init__(self,*args,**kwargs):
         kwargs["max_length"] = HUGE_STRING

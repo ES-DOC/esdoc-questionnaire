@@ -136,8 +136,8 @@ def detail(request, model_name, app_name="django_cim_forms", model_id=None):
             model.save()
             form.save_m2m()
             return HttpResponseRedirect(reverse('django_cim_forms.views.detail', args=(app_name,model_name,model.id)))
-#        else:
-#            print "invalid!"
+        else:
+            print "invalid!"
     else:
         # check if this the the first time I'm loading this model...
         initializeForm = not(model.id)

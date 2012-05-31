@@ -164,7 +164,7 @@ class MetadataProperty(MetadataModel):
     longName  = MetadataAtomicField.Factory("charfield",max_length=HUGE_STRING,blank=False)
 
     #value = MetadataAtomicField.Factory("charfield",max_length=HUGE_STRING,blank=False)
-    value = MetadataPropertyField(blank=False,null=True)
+    value = MetadataPropertyField(blank=True,null=True)
     valueChoices = MetadataControlledVocabularyValueField(blank=True,null=True)
 
     parentShortName = MetadataAtomicField.Factory("charfield",max_length=HUGE_STRING,blank=True)
@@ -180,8 +180,8 @@ class MetadataProperty(MetadataModel):
             name = u'%s' % self.longName
         elif self.shortName:
             name = u'%s' % self.shortName
-        if self.value and not(self.value.strip() == "|" or self.value.strip() == "||"): # remember that value is a multifield, each subfield is separated by '|'
-            name = u'%s: %s' % (name,self.value)
+        if self.value:
+            name = u'%s: %s' % (name, self.value.strip().rstrip("|").rstrip("|"))
         return name
 
     @classmethod

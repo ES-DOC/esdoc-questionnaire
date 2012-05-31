@@ -210,6 +210,7 @@ class MetadataForm(ModelForm):
         return cleaned_data
 
     def is_valid(self):
+  
         validity = [subForm[2].is_valid() for subForm in self.getAllSubForms().itervalues() if subForm[2]]
         validity = all(validity) and super(MetadataForm,self).is_valid()
         return validity
@@ -222,7 +223,7 @@ class Property_form(MetadataForm):
 
     class Meta:
         model = MetadataProperty
-        fields = ("shortName","longName","value")
+        fields = ("shortName","longName","value")        
 
     name = ""
     
@@ -241,11 +242,18 @@ class Property_form(MetadataForm):
 #        self._fieldTypes[fieldType] = fieldNames
 
 
+    def clean(self):
+        modelInstance = self.instance
+        cleaned_data = self.cleaned_data
+        cleaned_data["shortName"] = modelInstance.shortName
+        cleaned_data["longName"] = modelInstance.longName
+        return cleaned_data
+    
     def __init__(self,*args,**kwargs):
         super(Property_form,self).__init__(*args,**kwargs)
         modelInstance = self.instance
 
-        # don't want to exclude these fields (b/c their used by javascript to locate things)
+        # don't want to exclude these fields (b/c they're used by javascript to locate things)
         # so I'm just making them hidden
         self.fields["shortName"].widget = django.forms.fields.TextInput(attrs={"readonly":"readonly","class":"hidden"})
         self.fields["longName"].widget = django.forms.fields.TextInput(attrs={"readonly":"readonly","class":"hidden"})
@@ -259,7 +267,7 @@ class Property_form(MetadataForm):
                 
             custom_choices.insert(0,EMPTY_CHOICE[0])
             
-            self.fields["value"] = MetadataBoundFormField(choices=custom_choices,multi=modelInstance.multi,empty=True,blank=False)
+            self.fields["value"] = MetadataBoundFormField(choices=custom_choices,multi=modelInstance.multi,empty=True,blank=True)
             self.fields["value"].widget.attrs.update({"onchange":"setPropertyTitle(this)"})
         
         self.name = self.instance.shortName
@@ -270,6 +278,18 @@ class Property_form(MetadataForm):
 #        if modelInstance.hasParent():
 #            self.registerFieldType(FieldType(modelInstance.parentShortName,modelInstance.parentLongName),[])
             
+    def is_valid(self):
+        validity = False
+        modelInstance = self.instance
+        if modelInstance.hasValues():
+            validity = super(Property_form,self).is_valid()    
+        else:
+            # if a property has no values (ie: if it is just a parent/category)
+            # then there is nothing to check for its validity
+            self.errors = None
+            validity = True
+
+        return validity
 
         
 ###########################################
@@ -305,6 +325,7 @@ class MetadataFormSet(BaseModelFormSet):
             self.initialize()
 
     def is_valid(self,*args,**kwargs):
+
         validity = super(MetadataFormSet,self).is_valid(*args,**kwargs)
         return validity
 
@@ -314,7 +335,6 @@ class MetadataFormSet(BaseModelFormSet):
         # (other forms can have sub-tabs, but properties can potentially have infinitely nested tabs)
         FormClass = self.form()
         return FormClass.isPropertyForm()
-
 
 
     def nestPropertyForms(self,nestedProperties,parent,properties):

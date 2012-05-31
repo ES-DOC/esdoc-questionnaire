@@ -27,7 +27,13 @@
                                                 {{propertyLongName}}
                                             </p>
                                             {% endif %} {# longName != shortName #}
-                                            
+
+                                            {# if this property is acting as a tab/category/parent (ie: if hasSubItems is true) #}
+                                            {# then I have to explicitly add shortName and longName (which are required fields) #}
+                                            {# since without them, validation will fail w/ "this field is required" errors #}
+                                            {# w/in Property_form, they are hidden fields so it won't mess up the display #}
+                                            {{form.shortName}}
+                                            {{form.longName}}
 
                                             {# required b/c the individual form ids are here #}
                                             {% for hiddenField in form.hidden_fields %}
