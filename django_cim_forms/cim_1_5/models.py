@@ -809,7 +809,7 @@ class ResponsibleParty(MetadataModel):
 
     individualName = MetadataAtomicField.Factory("charfield",max_length=LIL_STRING,blank=False)
     organizationName = MetadataAtomicField.Factory("charfield",max_length=LIL_STRING,blank=False)
-    role = MetadataEnumerationField(enumeration="cim_1_5.ResponsiblePartyRole_enumeration",open=True)
+    role = MetadataEnumerationField(enumeration="cim_1_5.ResponsiblePartyRole_enumeration",open=True,blank=True)
 
     positionName = MetadataAtomicField.Factory("charfield",max_length=LIL_STRING,blank=True)
     contactInfo = MetadataAtomicField.Factory("charfield",max_length=LIL_STRING,blank=True)
@@ -818,11 +818,13 @@ class ResponsibleParty(MetadataModel):
         super(ResponsibleParty,self).__init__(*args,**kwargs)
 
     def __unicode__(self):
-        name = u'%s' % self.getName()
+        name = pretty_string(u'%s' % self.getName())
         if self.role:
             name = u'%s: %s' % (name, self.role.strip().rstrip("|").rstrip("|"))
-        if self.individualName:
-            name = u'%s: %s' % (name, self.individualName)
+            if self.individualName:
+                name = u'%s: %s' % (name, self.individualName)
+        else:
+            name = u'New %s' % name
         return name
 
 class Citation(MetadataModel):
