@@ -18,7 +18,7 @@ setup(
     install_requires=[
         "Django == 1.4",
         "distribute",
-        "south",
+        "south == 0.7.3", # required to install on hydra
         "lxml",
     ],
 )
