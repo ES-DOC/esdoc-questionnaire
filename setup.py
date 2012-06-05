@@ -5,7 +5,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='django-cim-forms',
-    version='0.2',
+    version='0.6',
     author='Allyn Treshansky',
     author_email='allyn.treshansky@noaa.gov',
     packages=find_packages(),
@@ -16,7 +16,7 @@ setup(
     zip_safe=False,
     include_package_data=True,
     install_requires=[
-        "Django == 1.3.1",
+        "Django == 1.4",
         "distribute",
         "south",
         "lxml",
