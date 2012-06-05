@@ -1,20 +1,25 @@
 /* custom js for the django_cim application */
 
-function removeForm(data) {
-  alert(data);
-};
-
-
 ///////////////////////
 
 var form_to_add_to = ""
-
 var guid_to_add_to = ""
 var model_to_add_to = ""
 var app_to_add_to = ""
 var field_to_add_to = ""
 
 var id_to_add = ""
+var form_to_add = ""
+
+var form_to_remove_from = ""
+var guid_to_remove_from = ""
+var model_to_remove_from = ""
+var app_to_remove_from = ""
+var field_to_remove_from = ""
+
+var id_to_remove = ""
+var form_to_remove = ""
+var button_to_remove_form = ""
 
 /* checks the value of a field (toggler) against an associative array
  * which specifies other fields to toggle based on value */
@@ -48,11 +53,13 @@ function setPropertyTitle(propertyValue) {
 };
 
 function populate(data, form) {
+    
     $.each(data, function(key, value){
         if (key=='fields') {
             for (key in value) {
                 if (value.hasOwnProperty(key)) {
-                    var selector = "[name$='"+key+"']:first";
+                    // match all elements with the name of the key that are children of field
+                    var selector = ".field > [name$='"+key+"']:first";
                     $(form).find(selector).val(value[key]);
                 }
             }
@@ -60,7 +67,7 @@ function populate(data, form) {
     });
 };
 
-function add_step_one() {
+function add_step_one(row) {
     var url = window.document.location.protocol + "//" + window.document.location.host + "/metadata/add_form/";
     url += "?g=" + guid_to_add_to + "&a=" + app_to_add_to + "&m=" + model_to_add_to + "&f=" + field_to_add_to;
 
@@ -68,6 +75,7 @@ function add_step_one() {
         url : url,
         type : 'get',
         success : function(data) {
+            form_to_add = row;
             var content = "<div style='text-align: center; margin-left: auto; margin-right: auto;'>" + data + "</div>";
             $("#add-dialog").html(content);
         }
@@ -117,10 +125,49 @@ function enableJQueryWidgets() {
                 }
             }
         });
+        $("#remove-diaog").dialog({
+            autoOpen:false,hide:'explode',modal:true,
+            buttons : {
+                ok : function() {
+                    $(this).dialog("close");
+                },
+                cancel : function() {
+                    button_to_remove_form = "";
+                    $(this).dialog("close");
+                }
+            },
+            close : function() {
+                if (button_to_remove_form != "") {
+                    $(button_to_remove_form).click();
+                }
+            }
+        });
 
 
        /* enable tabs */
-       $(".tabs").tabs();
+       $(".tabs").tabs({
+           show : function(event,ui) {
+               if ($(ui.tab).attr("class")!="dynamic-formset-initialized") {
+                   $(ui.tab).addClass("dynamic-formset-initialized");
+                   var tab_selector = $(ui.tab).attr("href");
+                   $(tab_selector).find(".accordion").each(function() {
+                       var prefix = $(this).attr("class").split(' ')[1];
+                       /* the subform+prefix class is added after the multiopenaccordion method below */
+                       /* (it's not in the actual template) */
+                       var subform_selector = ".subform."+prefix;
+                       $(subform_selector).formset({
+                           prefix : prefix.split("-formset")[0],
+                           added : function(row) {
+                               // custom fn to call when user presses "add" for a particular row
+                               add_step_one(row);
+                           },
+                           // this _needs_ to be completely unique
+                           formCssClass : "dynamic-"+prefix
+                       });
+                   });
+               }
+           }
+       });
        $(".tabs ul li a").keydown(function(event) {
            var keyCode = event.keyCode || event.which;
            if (keyCode == 9) {
@@ -139,6 +186,17 @@ function enableJQueryWidgets() {
 
        /* enable multi-open accordions */
        $( ".accordion" ).multiOpenAccordion({active:"All"});
+       /* have to do this in two steps b/c the accordion JQuery method above cannot handle any content inbetween accordion panes */
+       /* but I need a container for dynamic formsets to be bound to */
+       /* so _after_ multiopenaccordion() is called, I stick a div into each pane and bind the formset() method to it */
+       $(".accordion").find(".accordion-header").each(function() {
+           var prefix = $(this).closest(".accordion").attr("class").split(' ')[1];
+           var div = "<div class='subform " + prefix + "'></div>";
+           $(this).next().andSelf().wrapAll(div);
+       });
+
+
+
 
        /* resize some textinputs */
        $('input[type=text]').each(function(){
@@ -150,8 +208,8 @@ function enableJQueryWidgets() {
 
        /* add functionality to help-buttons (icons masquerading as buttons) */
        $(".help-button").hover (
-            function() { $(this).children(".ui-icon-info").addClass('hover-help-icon'); },
-            function() { $(this).children(".ui-icon-info").removeClass('hover-help-icon'); }
+            function() {$(this).children(".ui-icon-info").addClass('hover-help-icon');},
+            function() {$(this).children(".ui-icon-info").removeClass('hover-help-icon');}
        );
        $(".help-button").mouseover(function() {
             $(this).css('cursor', 'pointer');
@@ -241,7 +299,7 @@ function enableJQueryWidgets() {
 
         /* enable calendar widgets */
         $(".datepicker").datepicker(
-            { changeYear : true, showButtonPanel : true, showOn : 'button', buttonImage : '/site_media/django_cim_forms/img/calendar.gif' }
+            {changeYear : true, showButtonPanel : true, showOn : 'button', buttonImage : '/site_media/django_cim_forms/img/calendar.gif'}
         );
         $(".ui-datepicker-trigger").mouseover(function() {
             $(this).css('cursor', 'pointer');
@@ -255,7 +313,7 @@ function enableJQueryWidgets() {
             $(this).css('cursor', 'pointer');
         });
         $(".subform-toolbar button.expand" ).button({
-             icons : { primary: "ui-icon-circle-triangle-s" },
+             icons : {primary: "ui-icon-circle-triangle-s"},
              text : false,
         }).click(function(event) {
         // TODO: THIS IS NO LONGER WORKING B/C THERE IS CONTENT BETWEEN ACCORDIONS
@@ -264,7 +322,7 @@ function enableJQueryWidgets() {
             $(accordion).multiOpenAccordion("option","active","All");
         });
         $(".subform-toolbar button.collapse" ).button({
-            icons : { primary: "ui-icon-circle-triangle-n" },
+            icons : {primary: "ui-icon-circle-triangle-n"},
             text: false,
         }).click(function(event) {
         // TODO: THIS IS NO LONGER WORKING B/C THERE IS CONTENT BETWEEN ACCORDIONS
@@ -273,15 +331,34 @@ function enableJQueryWidgets() {
             $(accordion).multiOpenAccordion("option","active","None");
         });
         $("button.remove").button({
-            icons: { primary: "ui-icon-circle-minus" },
+            icons: {primary: "ui-icon-circle-minus"},
             text: false,
         });
         $("button.remove").bind("click", function(e) {
             /* prevent the delete button from _actually_ opening the accordian tab */
             e.stopPropagation();
         });
+        $("button.remove").click(function(event) {
+
+            
+            var fieldset = $(event.target).closest(".fieldset");
+            var subform = $(event.target).closest(".subform");
+
+            model_to_remove_from = $(fieldset).find("span.current_model:first").text();
+            field_to_remove = $(fieldset).find("span.current_field:first").text();
+
+            button_to_remove_form = $(subform).find(".delete-row");
+
+            var content = "<div style='text-align: center; margin-left: auto; margin-right: auto;'>Do you really wish to remove this " + field_to_remove + "?<p><em>(It will not be deleted, only removed from this " + model_to_remove_from + ")</em></p></div>";
+            alert(content);
+            $("#remove-dialog").html(content);
+            $("#remove-dialog").dialog("open");
+
+//            $(button_to_remove_form).click();
+
+        });
         $(".subform-toolbar button.add").button({
-            icons: { primary: "ui-icon-circle-plus" },
+            icons: {primary: "ui-icon-circle-plus"},
             text: false,
         }).click(function(event) {
             
@@ -291,9 +368,10 @@ function enableJQueryWidgets() {
             // either a subForm or a subFormSet
             if ($(event.target).hasClass("FORM")) {
                 form_to_add = $(fieldset);
+
             }
             else {
-                alert("you clicked add on a FORMSET")
+                // form_to_add is set in add_step_one
             }
 
             guid_to_add_to = $(fieldset).find("span.current_guid:first").text();
@@ -301,7 +379,9 @@ function enableJQueryWidgets() {
             app_to_add_to = $(fieldset).find("span.current_app:first").text();
             field_to_add_to = $(fieldset).find("span.current_field:first").text();
 
-            add_step_one();
+            var add_button = $(fieldset).find(".add-row:first");
+            $(add_button).click();
+
         });
     });
 };
