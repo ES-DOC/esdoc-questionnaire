@@ -125,7 +125,7 @@ function enableJQueryWidgets() {
                 }
             }
         });
-        $("#remove-diaog").dialog({
+        $("#remove-dialog").dialog({
             autoOpen:false,hide:'explode',modal:true,
             buttons : {
                 ok : function() {
@@ -341,7 +341,7 @@ function enableJQueryWidgets() {
         $("button.remove").click(function(event) {
 
             
-            var fieldset = $(event.target).closest(".fieldset");
+            var fieldset = $(event.target).closest("fieldset");
             var subform = $(event.target).closest(".subform");
 
             model_to_remove_from = $(fieldset).find("span.current_model:first").text();
@@ -349,8 +349,7 @@ function enableJQueryWidgets() {
 
             button_to_remove_form = $(subform).find(".delete-row");
 
-            var content = "<div style='text-align: center; margin-left: auto; margin-right: auto;'>Do you really wish to remove this " + field_to_remove + "?<p><em>(It will not be deleted, only removed from this " + model_to_remove_from + ")</em></p></div>";
-            alert(content);
+            var content = "<div style='text-align: center; margin-left: auto; margin-right: auto;'>Do you really wish to remove this instance of " + field_to_remove + "?<p><em>(It will not be deleted, only removed from this " + model_to_remove_from + ")</em></p></div>";
             $("#remove-dialog").html(content);
             $("#remove-dialog").dialog("open");
 
