@@ -47,14 +47,14 @@
             {% if field.errors %}
                 <script class="error-script">
                     /* if there is any field error; display an error style in the enclosing tab */
+                    /* (and enclosing accordion, if applicable) */
                     /* TODO: check this in IE */
                     $("script.error-script:last").parents(".tab-content").each(function() {
                         var tabID = $(this).parent("div").attr("id");
                         $(".tabs a[href='#"+tabID+"']").closest("li").attr("class","ui-state-error");
                     });
-                    $("script.error-script:last").parents("accordion-content").each(function() {
-                        $(this).parent(".accordion-header").attr("class","ui-state-error");
-
+                    $("script.error-script:last").parents(".accordion-content").each(function() {
+                        $(this).prev(".accordion-header").attr("class","ui-state-error");
                     });
                 </script>
                 {{field.errors}}
