@@ -147,13 +147,3 @@ def detail(request, model_name, app_name="django_cim_forms", model_id=None):
 
 
 
-from cascade.models import *
-
-
-def test(request):
-
-
-    CascadeTestForm = modelform_factory(CascadeTest)
-    model = CascadeTest()
-    form = CascadeTestForm(instance=model)
-    return render_to_response('django_cim_forms/test.html', {"form":form}, context_instance=RequestContext(request))
