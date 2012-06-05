@@ -50,7 +50,7 @@
 #metadata button.remove { float: right; }
 
 #metadata .delete-field { display: none !important; }
-/*#metadata .delete-row { display: none !important; }*/ /* these are created by the formset() method */
+#metadata .delete-row { display: none !important; } /* these are created by the formset() method */
 #metadata .add-row { display: none !important; } /* these are created by the formset() method */
 
 #metadata .scroll-pane { overflow: auto; }
