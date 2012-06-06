@@ -33,13 +33,21 @@ class MetadataModel(models.Model):
     # every model has a guid
     # (but since 'editable=False', it won't show up in forms)
     guid = models.CharField(max_length=64,editable=False,blank=True,unique=True)
+    # what application (project) is this model associated w/;
+    # you can only have inter (not intra) application relationships
+    app = models.CharField(max_length=64,editable=False,blank=True)
+
+    CURRENT_APP = "django_cim_forms"    # default application
 
     def __init__(self,*args,**kwargs):
         super(MetadataModel,self).__init__(*args,**kwargs)
    
         if not self.guid:
             self.guid = str(uuid4())
-   
+
+        if not self.app:
+            self.app = self.CURRENT_APP
+            
         ModelClass = type(self)
         ParentClass = ModelClass.__bases__[0]
 

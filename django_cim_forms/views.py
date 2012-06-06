@@ -9,6 +9,7 @@ from django.core.exceptions import ObjectDoesNotExist
 
 from django_cim_forms.models import *
 from django_cim_forms.forms import *
+from django_cim_forms.helpers import *
 
 
 def index(request):
@@ -29,16 +30,21 @@ def add_form(request):
     if None in [guid,app,model,field]:
         msg = "invalid or incomplete guid/app/model/field combination"
         return HttpResponseBadRequest(msg)
-
     ModelType  = ContentType.objects.get(app_label=app.lower(),model=model.lower())
     ModelClass = ModelType.model_class()
+
     try:
         modelInstance = ModelClass.objects.get(guid=guid)
         modelField = modelInstance.getField(field)
         ModelClassToAdd = modelField.getTargetModelClass()
-        #TODO: DOUBLE-CHECK THAT THIS WORKS WITH MANYTOMANY
-        modelsToExclude = [model.guid for model in [getattr(modelInstance,field)]]        
-        queryset = ModelClassToAdd.objects.exclude(guid__in=modelsToExclude)
+
+        #TODO: DOUBLE-CHECK THAT THIS WORKS WITH FOREIGNKEY
+        #TODO: ADDING THE .all() FN MADE IT WORK FOR MANYTOMANY
+        modelsToExclude = [model.guid for model in getattr(modelInstance,field).all()]
+
+        #queryset = ModelClassToAdd.objects.exclude(guid__in=modelsToExclude)
+        queryset = ModelClassToAdd.objects.filter(app=app).exclude(guid__in=modelsToExclude)
+        
     except ModelClass.DoesNotExist:
         modelInstance = ModelClass()
         modelField = modelInstance.getField(field)
@@ -117,6 +123,11 @@ def detail(request, model_name, app_name="django_cim_forms", model_id=None):
         msg = "cannot determine MetadataForm bound to model type: '%s'" % model_name
         return HttpResponseBadRequest(msg)
 
+    # using a global variable goes out of scope
+    # so setting a class variable to track the current application of all models created
+    # relationships are restricted to inter (not intra) app models
+    MetadataModel.CURRENT_APP = app_name.lower()
+    
     if model_id:
         # try to load the specified model...
         #model = get_object_or_404(ModelClass, pk=model_id)
@@ -144,6 +155,4 @@ def detail(request, model_name, app_name="django_cim_forms", model_id=None):
         form = FormClass(instance=model,request=request,initialize=initializeForm)
     
     return render_to_response('django_cim_forms/metadata_detail.html', {'form' : form}, context_instance=RequestContext(request))
-
-
 
