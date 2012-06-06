@@ -265,7 +265,7 @@ class MetadataRelationshipField(MetadataField):
     def canAddRemote(self):
         # returns True if this field is one that can link to existing models
         # returns False if the linked model must be created in-line
-        return self.addMode != FieldAddModes.INLINE
+        return self._addMode != FieldAddModes.INLINE
 
     def getTargetModelClass(self):
         ModelType = ContentType.objects.get(app_label=self._targetAppName,model=self._targetModelName)
@@ -310,7 +310,7 @@ class MetadataBoundField(MetadataField):
     _open     = False       # can a user override the bound values?
     _multi    = False       # can a user select more than one bound value?
     _nullable = False       # can a user select no bound values?
-    _empty    = False       # is there a default "empty" value (currently only used for properties)?
+    _empty    = True        # is there a default "empty" value?
     
     class Meta:
         abstract = True
@@ -321,7 +321,7 @@ class MetadataBoundField(MetadataField):
         open = kwargs.pop("open",False)
         multi = kwargs.pop("multi",False)
         nullable = kwargs.pop("nullable",False)
-        empty = kwargs.pop("empty",False)
+        empty = kwargs.pop("empty",True)
         super(MetadataBoundField,self).__init__(**kwargs)
         self._open = open
         self._multi = multi
@@ -397,14 +397,15 @@ class MetadataBoundFormField(django.forms.fields.MultiValueField):
 
     custom_choices = []
     _multi = False
-    _empty = False
+    _empty = True
     _required = True
 
     def __init__(self,*args,**kwargs):
 
         custom_choices = kwargs.pop("choices",None)
         multi = kwargs.pop("multi",False)
-        empty = kwargs.pop("empty",False)
+        #empty = kwargs.pop("empty",False)
+        empty = kwargs.pop("empty",True)
         required = not(kwargs.pop("blank",True))
 
         fields = (
@@ -439,12 +440,11 @@ class MetadataBoundFormField(django.forms.fields.MultiValueField):
 
 
         if value != [None,None]:
-#        if value[0]==None:
-#            value[0] = u' '
-#        if value[1]==None:
-#            value[1]= u' '
-
-
+            
+            if value[0]==None:
+                value[0] = u' '
+            if value[1]==None:
+                value[1]= u' '
 
             if self._multi:
                 # if this is a multiple bound field
@@ -472,6 +472,7 @@ class MetadataBoundFormField(django.forms.fields.MultiValueField):
                     elif "|" in value[1]:
                         msg = "bad value ('|' character is not allowed)"
                         raise forms.ValidationError(msg)
+            
                 return "|".join(value)
 
 class MetadataEnumerationField(models.CharField,MetadataBoundField):
@@ -490,12 +491,13 @@ class MetadataEnumerationField(models.CharField,MetadataBoundField):
             #custom_choices = [(enumeration.name,pretty_string(enumeration.name)) for enumeration in EnumerationClass.objects.all()]
             custom_choices = [(enumeration.name,enumeration.name) for enumeration in EnumerationClass.objects.all()]
 
-        if self.isOpen():
+        if self.isOpen() and OTHER_CHOICE[0] not in custom_choices:
             custom_choices += OTHER_CHOICE
-        if self.isNullable():
+        if self.isNullable() and NONE_CHOICE[0] not in custom_choices:
             custom_choices += NONE_CHOICE
-        if self.isEmpty():
-            custom_choices += EMPTY_CHOICE
+        if self.isEmpty() and EMPTY_CHOICE[0] not in custom_choices:
+            #custom_choices += EMPTY_CHOICE
+            custom_choices.insert(0,EMPTY_CHOICE[0])
 
         return MetadataBoundFormField(choices=custom_choices,multi=self.isMulti(),empty=self.isEmpty())
 
