@@ -220,7 +220,9 @@ class CompositeNumericalRequirement(NumericalRequirement):
     _initialValues = {}
 
     isComposite = MetadataAtomicField.Factory("booleanfield",blank=True)
-    isComposite.enables = ["requirementOptions",]
+    isComposite.enables({
+        "true" : ["requirementOptions",]
+    })
     isComposite.help_text = "is this requirement composed of other child requirements?"
 
     requirementOptions = MetadataManyToManyField(sourceModel="cim_1_5.CompositeNumericalExperiment",targetModel="cim_1_5.RequirementOption")

@@ -25,11 +25,19 @@ var button_to_remove_form = ""
  * which specifies other fields to toggle based on value */
 function toggleStuff(toggler,stuffToToggle) {
     var thisField = $(toggler).parent("div.field");
+    var fieldType = $(toggler).attr("type");
+
+    /* TODO: ADD MORE CASES FOR CONDITIONAL ASSIGNMENT (RADIO BOXES, ETC.) */
+    var val = (fieldType=="checkbox") ? String($(toggler).is(":checked")) : $(toggler).val();
+    
     for (var value in stuffToToggle) {
         var stuff = stuffToToggle[value]
-        if (value==$(toggler).val()) {
+        if (value==val) {
             for (var i=0; i<stuff.length; i++) {
                 var selector = "div.field[name='"+stuff[i]+"']";
+                $(thisField).find(selector).show();         // look in descendants
+                $(thisField).siblings(selector).show();     // and siblings
+                selector = "fieldset[name='"+stuff[i]+"']";
                 $(thisField).find(selector).show();         // look in descendants
                 $(thisField).siblings(selector).show();     // and siblings
             }
@@ -39,6 +47,10 @@ function toggleStuff(toggler,stuffToToggle) {
                 var selector = "div.field[name='"+stuff[i]+"']";
                 $(thisField).find(selector).hide();         // look in descendants
                 $(thisField).siblings(selector).hide();     // and siblings
+                selector = "fieldset[name='"+stuff[i]+"']";
+                $(thisField).find(selector).hide();         // look in descendants
+                $(thisField).siblings(selector).hide();     // and siblings
+
             }
         }
     }
