@@ -37,11 +37,9 @@ def add_form(request):
         modelInstance = ModelClass.objects.get(guid=guid)
         modelField = modelInstance.getField(field)
         ModelClassToAdd = modelField.getTargetModelClass()
-
         #TODO: DOUBLE-CHECK THAT THIS WORKS WITH FOREIGNKEY
         #TODO: ADDING THE .all() FN MADE IT WORK FOR MANYTOMANY
         modelsToExclude = [model.guid for model in getattr(modelInstance,field).all()]
-
         #queryset = ModelClassToAdd.objects.exclude(guid__in=modelsToExclude)
         queryset = ModelClassToAdd.objects.filter(app=app).exclude(guid__in=modelsToExclude)
         
@@ -49,7 +47,8 @@ def add_form(request):
         modelInstance = ModelClass()
         modelField = modelInstance.getField(field)
         ModelClassToAdd = modelField.getTargetModelClass()
-        queryset = ModelClassToAdd.objects.all()
+        # again, filtering by app
+        queryset = ModelClassToAdd.objects.filter(app=app)
     
     class _AddForm(ModelForm):
         class Meta:
