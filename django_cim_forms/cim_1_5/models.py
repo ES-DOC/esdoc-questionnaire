@@ -123,15 +123,18 @@ class Calendar(MetadataModel):
     _initialValues = {}
 
     units = MetadataEnumerationField(enumeration="cim_1_5.CalendarUnitType_enumeration",open=False,blank=True)
-    length = MetadataAtomicField.Factory("integerfield",blank=True)
+    length = MetadataAtomicField.Factory("integerfield",blank=True,null=True)
     description = MetadataAtomicField.Factory("textfield",blank=True)
-    range = MetadataManyToOneField(sourceModel="cim_1_5.Calendar",targetModel="cim_1_5.DateRange",blank=True)
+    range = MetadataManyToOneField(sourceModel="cim_1_5.Calendar",targetModel="cim_1_5.DateRange",blank=True,addMode=FieldAddModes.INLINE)
 
 
     def __init__(self, *args, **kwargs):
         super(Calendar, self).__init__(*args, **kwargs)
-        self.registerFieldType(FieldType("BASIC","Basic Properties"), ["length","description"])
-        self.registerFieldType(FieldType("OTHER","Other Properties"),["units","range"])
+        # IF ANY MODELS ARE TO HAVE SUBTABS,
+        # I JUST HAVE TO REGISTER A NEW FIELDTYPE LIKE THIS:
+        self.registerFieldType(FieldType("BASIC","Basic Calendar Properties"), ["units","length","range","description"])
+        # I CAN ADD AS MANY AS I WANT
+        #self.registerFieldType(FieldType("OTHER","Other Properties"),["units","range"])
 
 
 class DateRange(MetadataModel):
@@ -265,7 +268,7 @@ class NumericalExperiment(Experiment):
     longName = MetadataAtomicField.Factory("charfield",max_length=BIG_STRING)
     description = MetadataAtomicField.Factory("textfield",blank=True)
     experimentID = MetadataAtomicField.Factory("charfield",blank=False)
-    calendar = MetadataManyToOneField(sourceModel="cim_1_5.NumericalExperiment",targetModel="cim_1_5.Calendar",blank=True)
+    calendar = MetadataManyToOneField(sourceModel="cim_1_5.NumericalExperiment",targetModel="cim_1_5.Calendar",blank=True,addMode=FieldAddModes.INLINE)
     calendar.help_text = "here is some help text"
     calendar.addMode = FieldAddModes.REMOTE
     numericalRequirements = MetadataManyToManyField(sourceModel="cim_1_5.NumericalExperiment",targetModel="cim_1_5.CompositeNumericalRequirement")
@@ -327,7 +330,7 @@ class Coupling(MetadataModel):
     description.help_text="A free-text description of the coupling"
     connectionType = MetadataEnumerationField(enumeration="cim_1_5.ConnectionType_enumeration",open=True)
     connectionType.help_text="Describes the method of coupling"
-    timeProfile = MetadataManyToOneField(targetModel="cim_1_5.Timing",sourceModel="cim_1_5.Coupling")
+    timeProfile = MetadataManyToOneField(targetModel="cim_1_5.Timing",sourceModel="cim_1_5.Coupling",addMode=FieldAddModes.INLINE)
     timeProfile.help_text="Describes how often the coupling takes place."
     timeLag = MetadataManyToOneField(targetModel="cim_1_5.TimeLag",sourceModel="cim_1_5.Coupling")
     timeLag.help_text="The coupling field used in the target at a given time corresponds to a field produced by the source at a previous time."
@@ -706,10 +709,12 @@ class Simulation(NumericalActivity):
 
     simulationID = MetadataAtomicField.Factory("charfield",max_length=BIG_STRING,blank=False)
     calendar = MetadataManyToOneField(targetModel="cim_1_5.Calendar",sourceModel="cim_1_5.Simulation")
+
     inputs = MetadataManyToManyField(targetModel="cim_1_5.Coupling",sourceModel="cim_1_5.Simulation")
     inputs.help_text="implemented as a mapping from a source to target; can be a forcing file, a boundary condition, etc."
 
     outputs = MetadataManyToManyField(targetModel="cim_1_5.DataObject",sourceModel="cim_1_5.Simulation",related_name="outputs")
+
     restarts = MetadataManyToManyField(targetModel="cim_1_5.DataObject",sourceModel="cim_1_5.Simulation",related_name="restarts")
 
     conformances = MetadataManyToManyField(targetModel="cim_1_5.Conformance",sourceModel="cim_1_5.Simulation")

@@ -40,3 +40,9 @@ VerticalGrid_formset = MetadataFormSetFactory(VerticalGrid,VerticalGrid_form,nam
 
 GridSpec_form = MetadataFormFactory(GridSpec,name="GridSpec_form",subForms={"horizontalGrid" : "HorizontalGrid_form", "verticalGrid" : "VerticalGrid_form"})
 GridSpec_formset = MetadataFormSetFactory(GridSpec,GridSpec_form,name="GridSpec_formset")
+
+Timing_form = MetadataFormFactory(Timing,name="Timing_form")
+Timing_formset = MetadataFormSetFactory(Timing,Timing_form,name="Timing_formset")
+
+Coupling_form = MetadataFormFactory(Coupling,name="Coupling_form",subForms={"timeProfile" : "Timing_form"})
+Coupling_formset = MetadataFormSetFactory(Coupling,Coupling_form,name="Coupling_formset")

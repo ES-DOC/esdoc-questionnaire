@@ -133,11 +133,11 @@ MODELFIELD_MAP = {
     "charfield"             : [models.CharField, { "max_length" : BIG_STRING}],
     "datefield"             : [models.DateField, {}],
     "datetimefield"         : [models.DateTimeField, {}],
-    "decimalfield"          : [models.DecimalField, {}],
+    "decimalfield"          : [models.DecimalField, { "null" : True}],
     "emailfield"            : [models.EmailField, {}],
-    "integerfield"          : [models.IntegerField, {}],
-    "datetimefield"         : [models.NullBooleanField, {}],
-    "nullbooleanfield"      : [models.PositiveIntegerField, {}],
+    "integerfield"          : [models.IntegerField, { "null" : True}],
+    "nullbooleanfield"      : [models.NullBooleanField, {}],
+    "positiveintegerfield"  : [models.PositiveIntegerField, {}],
     "textfield"             : [models.TextField, {}],
     "timefield"             : [models.TimeField, {}],
     "urlfield"              : [models.URLField, { "verify_exists" : False}],
@@ -288,8 +288,9 @@ class MetadataManyToOneField(models.ForeignKey,MetadataRelationshipField):
     def __init__(self,*args,**kwargs):
         targetModel = kwargs.pop("targetModel",None)
         sourceModel = kwargs.pop("sourceModel",None)
+        addMode = kwargs.pop("addMode",FieldAddModes.BOTH)
         super(MetadataManyToOneField,self).__init__(targetModel,**kwargs)
-        self.initRelationship(sourceModel=sourceModel,targetModel=targetModel,**kwargs)
+        self.initRelationship(sourceModel=sourceModel,targetModel=targetModel,addMode=addMode,**kwargs)
         self.help_text = kwargs.pop("help_text","")
 
 class MetadataManyToManyField(models.ManyToManyField,MetadataRelationshipField):
@@ -298,8 +299,9 @@ class MetadataManyToManyField(models.ManyToManyField,MetadataRelationshipField):
     def __init__(self,*args,**kwargs):
         targetModel = kwargs.pop("targetModel",None)
         sourceModel = kwargs.pop("sourceModel",None)
+        addMode = kwargs.pop("addMode",FieldAddModes.BOTH)
         super(MetadataManyToManyField,self).__init__(targetModel,**kwargs)
-        self.initRelationship(sourceModel=sourceModel,targetModel=targetModel,**kwargs)
+        self.initRelationship(sourceModel=sourceModel,targetModel=targetModel,addMode=addMode,**kwargs)
         self.help_text = kwargs.pop("help_text","")
         
 

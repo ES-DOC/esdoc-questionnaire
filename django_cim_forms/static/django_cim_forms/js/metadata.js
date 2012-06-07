@@ -58,7 +58,7 @@ function populate(data, form) {
         if (key=='fields') {
             for (key in value) {
                 if (value.hasOwnProperty(key)) {
-                    // match all elements with the name of the key that are children of field
+                    // match all elements with the name of the key (that are children of field)
                     var selector = ".field > [name$='"+key+"']:first";
                     $(form).find(selector).val(value[key]);
                 }
@@ -70,6 +70,7 @@ function populate(data, form) {
 function add_step_one(row) {
     var url = window.document.location.protocol + "//" + window.document.location.host + "/metadata/add_form/";
     url += "?g=" + guid_to_add_to + "&a=" + app_to_add_to + "&m=" + model_to_add_to + "&f=" + field_to_add_to;
+
 
     $.ajax({
         url : url,
@@ -90,6 +91,7 @@ function add_step_one(row) {
 function add_step_two() {
     var url = window.document.location.protocol + "//" + window.document.location.host + "/metadata/get_content/";
     url += "?g=" + guid_to_add_to + "&a=" + app_to_add_to + "&m=" + model_to_add_to + "&f=" + field_to_add_to + "&i=" + id_to_add
+
 
     $.ajax({
        url : url,
@@ -299,7 +301,7 @@ function enableJQueryWidgets() {
 
         /* enable calendar widgets */
         $(".datepicker").datepicker(
-            {changeYear : true, showButtonPanel : true, showOn : 'button', buttonImage : '/site_media/django_cim_forms/img/calendar.gif'}
+            {changeYear : true, showButtonPanel : true, showOn : 'button', buttonImage : '/static/django_cim_forms/img/calendar.gif'}
         );
         $(".ui-datepicker-trigger").mouseover(function() {
             $(this).css('cursor', 'pointer');

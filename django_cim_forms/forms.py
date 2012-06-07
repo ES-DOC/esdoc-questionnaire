@@ -260,12 +260,13 @@ class Property_form(MetadataForm):
 
         if modelInstance.hasValues():
             custom_choices = modelInstance.getValueChoices()
-            if modelInstance.open:
+            if modelInstance.open and OTHER_CHOICE[0] not in custom_choices:
                 custom_choices += OTHER_CHOICE
-            if modelInstance.nullable:
+            if modelInstance.nullable and NONE_CHOICE[0] not in custom_choices:
                 custom_choices += NONE_CHOICE
-                
-            custom_choices.insert(0,EMPTY_CHOICE[0])
+
+            if EMPTY_CHOICE[0] not in custom_choices:
+                custom_choices.insert(0,EMPTY_CHOICE[0])
             
             self.fields["value"] = MetadataBoundFormField(choices=custom_choices,multi=modelInstance.multi,empty=True,blank=True)
             self.fields["value"].widget.attrs.update({"onchange":"setPropertyTitle(this)"})
@@ -327,6 +328,8 @@ class MetadataFormSet(BaseModelFormSet):
     def is_valid(self,*args,**kwargs):
 
         validity = super(MetadataFormSet,self).is_valid(*args,**kwargs)
+        if validity == False:
+            print "ERROR IN %s: %s" % (self._name,self.errors)
         return validity
 
     @classmethod
