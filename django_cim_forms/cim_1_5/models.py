@@ -12,6 +12,21 @@ from django_cim_forms.models import *
 # enumerations #
 ################
 
+class HorizontalGridDiscretizationType_enumeration(MetadataEnumeration):
+   _enum = ["logically rectangular","structured triangular","unstructured triangular","unstructured polygonal","pixel-based catchment","composite","spherical harmonics"]
+
+class CompositeGridType_enumeration(MetadataEnumeration):
+   _enum = ["yin yang", "icosohedral"]
+
+class LogicallyRectangularGridType_enumeration(MetadataEnumeration):
+   _enum = ["latitude-longitude", "regular gaussian","displaced pole","tripolar","cubed sphere"]
+
+class StructuredTriangularGridType_enumeration(MetadataEnumeration):
+   _enum = ["icosohedral"]
+
+class UnstructuredPolygonalGridType_enumeration(MetadataEnumeration):
+   _enum = ["reduced gaussian"]
+
 class VerticalGridDomain_enumeration(MetadataEnumeration):
    _enum = ["atmospheric","oceanic"]
 
@@ -307,7 +322,8 @@ class CouplingEndPoint(MetadataModel):
     _initialValues = {}
 
 
-    dataSource = MetadataAtomicField.Factory("charfield",max_length=BIG_STRING,blank=False)
+    #dataSource = MetadataAtomicField.Factory("charfield",max_length=BIG_STRING,blank=False)
+    dataSource = MetadataManyToOneField(targetModel="cim_1_5.DataObject",sourceModel="cim_1_5.Coupling",addMode=FieldAddModes.REMOTE)
     # TODO: THIS SHOULD BE AN "IDENTIFIER" CLASS
     instanceID = MetadataAtomicField.Factory("charfield",max_length=LIL_STRING,blank=True)
     instanceID.help_text = "If the same datasource is used more than once in a coupled model then a method for identifying which particular instance is being referenced is needed (for BFG)."
@@ -332,11 +348,11 @@ class Coupling(MetadataModel):
     connectionType.help_text="Describes the method of coupling"
     timeProfile = MetadataManyToOneField(targetModel="cim_1_5.Timing",sourceModel="cim_1_5.Coupling",addMode=FieldAddModes.INLINE)
     timeProfile.help_text="Describes how often the coupling takes place."
-    timeLag = MetadataManyToOneField(targetModel="cim_1_5.TimeLag",sourceModel="cim_1_5.Coupling")
+    timeLag = MetadataManyToOneField(targetModel="cim_1_5.TimeLag",sourceModel="cim_1_5.Coupling",addMode=FieldAddModes.INLINE)
     timeLag.help_text="The coupling field used in the target at a given time corresponds to a field produced by the source at a previous time."
     spatialRegridding = MetadataManyToManyField(targetModel="cim_1_5.SpatialRegridding",sourceModel="cim_1_5.Coupling")
     spatialRegridding.help_text="Characteristics of the scheme used to interpolate a field from one grid (source grid) to another (target grid)"
-    timeTransformation = MetadataManyToOneField(targetModel="cim_1_5.TimeTransformation",sourceModel="cim_1_5.Coupling")
+    timeTransformation = MetadataManyToOneField(targetModel="cim_1_5.TimeTransformation",sourceModel="cim_1_5.Coupling",addMode=FieldAddModes.INLINE)
     timeTransformation.help_text="Temporal transformation performed on the coupling field before or after regridding onto the target grid. "
     couplingSource = MetadataManyToOneField(targetModel="cim_1_5.CouplingEndPoint",sourceModel="cim_1_5.CouplingSource",related_name="couplingSource")
     couplingTarget = MetadataManyToOneField(targetModel="cim_1_5.CouplingEndPoint",sourceModel="cim_1_5.CouplingSource",related_name="couplingTarget")
@@ -656,8 +672,8 @@ class Conformance(MetadataModel):
     description = MetadataAtomicField.Factory("textfield",blank=True)
     frequency = MetadataEnumerationField(enumeration="cim_1_5.FrequencyType_enumeration",open=True)
     # TODO: DOUBLE-CHECK THAT THIS WORKS W/ ABSTRACT CLASSES
-    #requirements = models.ManyToManyField("NumericalRequirement")
-    #requirements.help_text="Points to the NumericalRequirement that the simulation in question is conforming to."
+    requirements = MetadataManyToManyField(targetModel="cim_1_5.NumericalRequirement",sourceModel="cim_1_5.Conformance",addMode=FieldAddModes.REMOTE)
+    requirements.help_text="A NumericalRequirement that the simulation in question is conforming to."
     sources = MetadataManyToManyField(targetModel="cim_1_5.DataSource",sourceModel="cim_1_5.Conformance")
     sources.help_text = "Points to the DataSource used to conform to a particular Requirement.   This may be part of an activity::simulation or a software::component.  It can be either a DataObject or a SoftwareComponent or a ComponentProperty.  It could also be by using particular attributes of, say, a SoftwareComponent, but in that case the recommended practise is to reference the component and add appropriate text in the conformance description attribute."
 
@@ -666,6 +682,11 @@ class Conformance(MetadataModel):
         self.registerFieldType(FieldType("BASIC","Basic Properties"), ["conformant","type","description","frequency"])
         self.registerFieldType(FieldType("REQUIREMENTS","Experimental Requirements"), ["requirements"])
         self.registerFieldType(FieldType("SOURCES","Conformant Methods"), ["sources"])
+        # TECHNICALLY, THIS SHOULDN'T BE HERE
+        # BUT IT SEEMS LIKE SUCH AN OBVIOUS CUSTOMIZATION PROJECTS WOULD WANT
+        self.setFieldTypeOrder([
+            "BASIC","REQUIREMENTS","SOURCES"
+        ])
 
     def __unicode__(self):
         name = u'%s' % self.getName()
@@ -710,14 +731,14 @@ class Simulation(NumericalActivity):
     simulationID = MetadataAtomicField.Factory("charfield",max_length=BIG_STRING,blank=False)
     calendar = MetadataManyToOneField(targetModel="cim_1_5.Calendar",sourceModel="cim_1_5.Simulation")
 
-    inputs = MetadataManyToManyField(targetModel="cim_1_5.Coupling",sourceModel="cim_1_5.Simulation")
+    inputs = MetadataManyToManyField(targetModel="cim_1_5.Coupling",sourceModel="cim_1_5.Simulation",addMode=FieldAddModes.INLINE)
     inputs.help_text="implemented as a mapping from a source to target; can be a forcing file, a boundary condition, etc."
 
     outputs = MetadataManyToManyField(targetModel="cim_1_5.DataObject",sourceModel="cim_1_5.Simulation",related_name="outputs")
 
     restarts = MetadataManyToManyField(targetModel="cim_1_5.DataObject",sourceModel="cim_1_5.Simulation",related_name="restarts")
 
-    conformances = MetadataManyToManyField(targetModel="cim_1_5.Conformance",sourceModel="cim_1_5.Simulation")
+    conformances = MetadataManyToManyField(targetModel="cim_1_5.Conformance",sourceModel="cim_1_5.Simulation",addMode=FieldAddModes.INLINE)
 
     def __init__(self,*args,**kwargs):
         super(Simulation,self).__init__(*args,**kwargs)
@@ -913,7 +934,7 @@ class SpatialRegridding(MetadataModel):
 
     spatialRegriddingDimension = MetadataEnumerationField(enumeration="cim_1_5.SpatialRegriddingDimensionType_enumeration",open=False,blank=True)
     spatialRegriddingStandardMethod = MetadataEnumerationField(enumeration="cim_1_5.SpatialRegriddingStandardMethodType_enumeration",open=False)
-    spatialRegriddingUserMethod = MetadataManyToOneField(targetModel="cim_1_5.SpatialRegriddingUserMethod",sourceModel="cim_1_5.SpatialRegridding")
+    spatialRegriddingUserMethod = MetadataManyToOneField(targetModel="cim_1_5.SpatialRegriddingUserMethod",sourceModel="cim_1_5.SpatialRegridding",addMode=FieldAddModes.INLINE)
     spatialRegriddingUserMethod.help_text = "Allows users to bypass the SpatialRegriddingStandardMethod and instead provide a set of weights and addresses for regridding via a file."
 
     def __init__(self,*args,**kwargs):
@@ -975,13 +996,82 @@ class HorizontalGrid(MetadataModel):
     longName = MetadataAtomicField.Factory("charfield",max_length=BIG_STRING,blank=False)
 
     gridMnemonic = MetadataAtomicField.Factory("charfield",max_length=BIG_STRING,blank=False)
+    gridDiscretization = MetadataEnumerationField(enumeration="cim_1_5.HorizontalGridDiscretizationType_enumeration",open=True,nullable=True)
+    gridDiscretization.enables({
+        "spherical harmonics" : ["spectralTruncatureNumber",],
+        "composite" : ["compositeGridDiscretization","compositeGridType","compositeGrid"],
+        "logically rectangular" : ["logicallyRectangularGridType"],
+        "structured triangular" : ["structuredTriangularGridType"],
+        "unstructured polygonal" : ["unstructuredPolygonalGridType"],
+    })
+    gridResolution = MetadataAtomicField.Factory("charfield",blank=True)
+    gridRefinementScheme = MetadataAtomicField.Factory("charfield",blank=True)
+    spectralTruncatureNumber = MetadataAtomicField.Factory("charfield",blank=True)
+    compositeGridDiscretization = MetadataEnumerationField(enumeration="cim_1_5.HorizontalGridDiscretizationType_enumeration",open=True,nullable=False,multi=True)    
+    compositeGrid = MetadataAtomicField.Factory("charfield",blank=True)
+    compositeGridType = MetadataEnumerationField(enumeration="cim_1_5.CompositeGridType_enumeration",open=True,nullable=False,multi=False)
+    compositeGridType.verbose_name = "Grid Type"
+    compositeGridType.enables({
+        "icosohedral" : ["numberOfGridCellsInFirstDimensionOfDiamond","numberOfGridCellsInSecondDimensionOfDiamond","firstPoleLat","firstPoleLon","secondPoleLat","secondPoleLon",],
+        "yin yang" : ["numberOfCellsInFirstTileDimension","numberOfCellsInSecondTileDimension"]
+    })
+    logicallyRectangularGridType = MetadataEnumerationField(enumeration="cim_1_5.LogicallyRectangularGridType_enumeration",open=True,nullable=False,multi=False)
+    logicallyRectangularGridType.verbose_name = "Grid Type"
+    logicallyRectangularGridType.enables({
+        "latitude-longitude" : ["numberOfLongitudinalGridCells","numberOfLatitudinalGridCells"],
+        "regular gaussian" : ["numberOfLongitudinalGridPoints","numberOfLatitudePointsPoleToEquator"],
+        "cubed sphere" : ["numberOfCellsInFirstGridDimension","numberOfCellsInSecondGridDimension"],
+        "tripolar" : ["numberOfCellsInFirstGridDimension","numberOfCellsInSecondGridDimension","firstPoleLat","firstPoleLon","secondPoleLat","secondPoleLon","thirdPoleLat","thirdPoleLon",]
+    })
+    structuredTriangularGridType = MetadataEnumerationField(enumeration="cim_1_5.StructuredTriangularGridType",open=True,nullable=False,multi=False)
+    structuredTriangularGridType.verbose_name = "Grid Type"
+    compositeGridType.enables({
+        "icosohedral" : ["numberOfGridCellsInFirstDimensionOfDiamond","numberOfGridCellsInSecondDimensionOfDiamond","firstPoleLat","firstPoleLon","secondPoleLat","secondPoleLon",],
+    })
+    unstructuredPolygonalGridType = MetadataEnumerationField(enumeration="cim_1_5.UnstructuredPolygonalGridType_enumeration",open=True,nullable=False,multi=False)
+    unstructuredPolygonalGridType.verbose_name = "Grid Type"
+    unstructuredPolygonalGridType.enables({
+        "reduced gaussian" : ["numberOfTotalGridPoints","firstPoleLat","firstPoleLon","secondPoleLat","secondPoleLon","numberOfCellsInFirstGridDimension","numberOfCellsInSecondGridDimension"]
+    })
+    numberOfLongitudinalGridCells = MetadataAtomicField.Factory("charfield",blank=True)
+    numberOfLatitudinalGridCells = MetadataAtomicField.Factory("charfield",blank=True)
+    numberOfLongitudinalGridPoints= MetadataAtomicField.Factory("charfield",blank=True)
+    numberOfLatitudePointsPoleToEquator = MetadataAtomicField.Factory("charfield",blank=True)
+    numberOfTotalGridPoints = MetadataAtomicField.Factory("charfield",blank=True)
+    firstPoleLat = MetadataAtomicField.Factory("charfield",blank=True)
+    firstPoleLon = MetadataAtomicField.Factory("charfield",blank=True)
+    secondPoleLat = MetadataAtomicField.Factory("charfield",blank=True)
+    secondPoleLon = MetadataAtomicField.Factory("charfield",blank=True)
+    thirdPoleLat = MetadataAtomicField.Factory("charfield",blank=True)
+    thirdPoleLon = MetadataAtomicField.Factory("charfield",blank=True)
+    numberOfCellsInFirstGridDimension = MetadataAtomicField.Factory("charfield",blank=True)
+    numberOfCellsInSecondGridDimension = MetadataAtomicField.Factory("charfield",blank=True)
+    numberOfGridCellsInFirstDimensionOfDiamond = MetadataAtomicField.Factory("charfield",blank=True)
+    numberOfGridCellsInSecondDimensionOfDiamond = MetadataAtomicField.Factory("charfield",blank=True)
+    numberOfCellsInFirstTileDimension = MetadataAtomicField.Factory("charfield",blank=True)
+    numberOfCellsInSecondTileDimension = MetadataAtomicField.Factory("charfield",blank=True)
 
     latMin = MetadataAtomicField.Factory("charfield",max_length=BIG_STRING,blank=False)
+    latMax = MetadataAtomicField.Factory("charfield",max_length=BIG_STRING,blank=False)
+    lonMin = MetadataAtomicField.Factory("charfield",max_length=BIG_STRING,blank=False)
+    lonMax = MetadataAtomicField.Factory("charfield",max_length=BIG_STRING,blank=False)
 
     def __init__(self,*args,**kwargs):
         super(HorizontalGrid,self).__init__(*args,**kwargs)
-        self.registerFieldType(FieldType("EXTENT","Horizontal Extent"),["latMin"])
-        self.registerFieldType(FieldType("BASIC","General Attributes"),["gridMnemonic"])
+        self.registerFieldType(FieldType("EXTENT","Horizontal Extent"),["latMin","latMax","lonMin","lonMax"])
+        self.registerFieldType(FieldType("BASIC","General Attributes"),[
+            "longName","gridMnemonic","gridDiscretization","gridResolution","gridRefinementScheme","spectralTruncatureNumber",
+            "compositeGridDiscretization","compositeGrid","compositeGridType",
+            "logicallyRectangularGridType",
+            "structuredTriangularGridType",
+            "unstructuredPolygonalGridType",
+            "numberOfLongitudinalGridCells","numberOfLatitudinalGridCells",
+            "numberOfLongitudinalGridPoints","numberOfLatitudePointsPoleToEquator",
+            "numberOfTotalGridPoints","firstPoleLat","firstPoleLon","secondPoleLat","secondPoleLon","numberOfCellsInFirstGridDimension","numberOfCellsInSecondGridDimension",
+            "numberOfGridCellsInFirstDimensionOfDiamond","numberOfGridCellsInSecondDimensionOfDiamond",
+            "thirdPoleLat","thirdPoleLon",
+            "numberOfCellsInFirstTileDimension","numberOfCellsInSecondTileDimension"
+        ])
         self.setFieldTypeOrder(["BASIC","EXTENT"])
 
 

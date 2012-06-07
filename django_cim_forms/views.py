@@ -61,7 +61,7 @@ def add_form(request):
             self.fields[field].queryset = qs
 
     form = _AddForm(instance=None,qs=queryset)
-    formTemplate = Template("<p>Please select a {{name}}:</p>{%for field in form.visible_fields %} {{ field }} {% endfor %}")
+    formTemplate = Template("<p>Please select an instance of {{name}}:</p>{%for field in form.visible_fields %} {{ field }} {% endfor %}")
     formContext  = Context({"form" : form, "name" : modelField.getVerboseName()})
 
     return HttpResponse(formTemplate.render(formContext));

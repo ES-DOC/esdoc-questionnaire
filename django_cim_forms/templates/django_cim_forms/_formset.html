@@ -22,7 +22,11 @@
     {% else %}
 
     <span class="subform-toolbar ui-widget-header ui-corner-all">
-        <button type="button" class="add" title="add new {{ field|verbose_name:form }}">add</button>
+        {% if field|canAddRemote:form %}
+            <button type="button" class="add remote" title="add new {{ field|verbose_name:form }}">add</button>
+        {% else %}
+            <button type="button" class="add" title="add new {{ field|verbose_name:form }}">add</button>
+        {% endif %} {# canAddRemote #}
         <button type="button" class="expand" title="expand all {{ field|verbose_name:form }}">expand</button>
         <button type="button" class="collapse" title="collapse all {{ field|verbose_name:form }}">collapse</button>
     </span> <!-- /.subform-toolbar -->

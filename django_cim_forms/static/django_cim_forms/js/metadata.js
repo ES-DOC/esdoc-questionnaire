@@ -67,6 +67,21 @@ function populate(data, form) {
     });
 };
 
+/*
+ * function to determine whether an add dialog box should appear upon pressing the add button
+ * (if the addMode is INLINE only, then there is no point displaying the box)
+ */
+function add_step_zero(row) {
+    add_button_type = $(row).closest("fieldset").find(".subform-toolbar > button.add").attr("class");
+    if (add_button_type.indexOf("remote") != -1) {
+        /* if the set of classes for the add button contains 'remote'... */
+        add_step_one(row);
+    }
+    else {
+        return true;
+    }
+}
+
 function add_step_one(row) {
     var url = window.document.location.protocol + "//" + window.document.location.host + "/metadata/add_form/";
     url += "?g=" + guid_to_add_to + "&a=" + app_to_add_to + "&m=" + model_to_add_to + "&f=" + field_to_add_to;
@@ -161,7 +176,8 @@ function enableJQueryWidgets() {
                            prefix : prefix.split("-formset")[0],
                            added : function(row) {
                                // custom fn to call when user presses "add" for a particular row
-                               add_step_one(row);
+                               add_step_zero(row);
+                               //add_step_one(row);
                            },
                            // this _needs_ to be completely unique
                            formCssClass : "dynamic-"+prefix
