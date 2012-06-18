@@ -4,6 +4,17 @@
 /* COLOR_LIGHT_YELLOW = "#FCE79F"; */
 /* COLOR_DARK_GRAY    = "#666666"; */
 
+
+body {
+    /* taken from COG for now */
+    margin: 0;
+    padding: 0;
+    font-size: 9pt;
+    font-family: "Lucida Grande","DejaVu Sans","Bitstream Vera Sans",Verdana,Arial,sans-serif;
+    color: #333;
+    background: #FFFFFF;
+}
+
 #metadata { border: 1px solid #B9E0E3; padding: 4px; margin: 4px; }
 
 #metadata .errorlist { display: inline; list-style-type: none; text-align: center; }
