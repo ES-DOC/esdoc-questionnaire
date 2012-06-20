@@ -731,7 +731,9 @@ class Simulation(NumericalActivity):
     _initialValues = {}
 
     simulationID = MetadataAtomicField.Factory("charfield",max_length=BIG_STRING,blank=False)
+
     calendar = MetadataManyToOneField(targetModel="cim_1_5.Calendar",sourceModel="cim_1_5.Simulation")
+
     responsibleParties = MetadataManyToManyField(targetModel='cim_1_5.ResponsibleParty',sourceModel="cim_1_5.Simulation")
 
     inputs = MetadataManyToManyField(targetModel="cim_1_5.Coupling",sourceModel="cim_1_5.Simulation",addMode=FieldAddModes.INLINE)
@@ -830,7 +832,7 @@ class SoftwareComponent(DataSource):
 
 class ResponsibleParty(MetadataModel):
     _name = "ResponsibleParty"
-    _title = "Responsible Party"
+    _title = "Contact"
     _fieldTypes = {}
     _fieldTypeOrder = None
     _fieldOrder = None
@@ -847,7 +849,7 @@ class ResponsibleParty(MetadataModel):
         super(ResponsibleParty,self).__init__(*args,**kwargs)
 
     def __unicode__(self):
-        name = pretty_string(u'%s' % self.getName())
+        name = pretty_string(u'%s' % self.getTitle())
         if self.role:
             name = u'%s: %s' % (name, self.role.strip().rstrip("|").rstrip("|"))
             if self.individualName:

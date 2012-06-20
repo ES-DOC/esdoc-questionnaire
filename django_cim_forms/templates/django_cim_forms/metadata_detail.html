@@ -48,7 +48,7 @@
                                                         <div class="help-button" title="click for more info" id="{{form.getName}}_{{field.auto_id}}">
                                                             <!-- JQuery ui-icons are handled via <spans>; weird, I know -->
                                                             <span class="default-help-icon ui-icon-info" style="display: inline-block;">&nbsp;</span>
-                                                            <div class="help-description" title="{{ field.name|escape }}">
+                                                            <div class="help-description" title="{{field|verbose_name:form}}">
                                                                 {{ field.help_text|safe }} {# the safe filter prevents inline HTML from being escaped  #}
                                                             </div> <!-- /.help-description -->
                                                         </div> <!-- /.help-button -->

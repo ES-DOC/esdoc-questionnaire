@@ -29,7 +29,11 @@
             </value>
             <value>
               <shortName>shallow-atmosphere, hydrostatic, spherical geopotential approximation (primitive equations)</shortName>
-              <longName>shallow-atmosphere, hydrostatic, spherical geopotential approximation primitive equations)</longName>
+              <longName>shallow-atmosphere, hydrostatic, spherical geopotential approximation (primitive equations)</longName>
+            </value>
+            <value>
+              <shortName>shallow-atmosphere but cos-Coriolis terms retained, non-hydrostatic, spherical geopotential approximation</shortName>
+              <longName>shallow-atmosphere but cos-Coriolis terms retained, non-hydrostatic, spherical geopotential approximation</longName>
             </value>
             <value>
               <shortName>sound-proof: anelastic, non-hydrostatic, spherical geopotential approximation </shortName>
@@ -44,7 +48,7 @@
         <item>
           <shortName>Dycore Generic class</shortName>
           <longName>Generic class</longName>
-          <values>
+          <values open="true">
             <value>
               <shortName>Eulerian</shortName>
               <longName>Eulerian</longName>
@@ -66,7 +70,7 @@
         <item>
           <shortName>Type of horizontal discretization</shortName>
           <longName>Type of horizontal discretization</longName>
-          <values>
+          <values open="true">
             <value>
               <shortName>discontinuous Galerkin</shortName>
               <longName>discontinuous Galerkin</longName>
@@ -104,7 +108,7 @@
         <item>
           <shortName>Type of vertical discretization</shortName>
           <longName>Type of vertical discretization</longName>
-          <values>
+          <values open="true">
             <value>
               <shortName>finite difference</shortName>
               <longName>finite difference</longName>
@@ -151,9 +155,9 @@
         </item>
 
         <item>
-          <shortName>Specifics on spatial discretizations (keywords), select all that apply and or add items</shortName>
+          <shortName>Specifics on spatial discretizations (keywords)</shortName>
           <longName>Specifics on spatial discretizations (keywords), select all that apply and or add items</longName>
-          <values nullable="false" open="true">
+          <values nullable="false" open="true" multi="true">
             <value>
               <shortName>horizontal: first-order</shortName>
               <longName>horizontal: first-order</longName>
@@ -190,7 +194,7 @@
         </item>
 
         <item>
-          <shortName>Specifics on temporal discretizations (keywords), select all that apply and or add items</shortName>
+          <shortName>Specifics on temporal discretizations (keywords)</shortName>
           <longName>Specifics on temporal discretizations (keywords), select all that apply and or add items</longName>
           <values multi="true" open="true" nullable="false">
             <value>
@@ -268,6 +272,10 @@
           <shortName>Prognostic variables (moist setup with water vapor)</shortName>
           <longName>Prognostic variables (moist setup with water vapor)</longName>
           <values multi="true" open="true" nullable="false">
+            <value>
+              <shortName>test greek value(delta)</shortName>
+              <longName>the greek letter delta: &#916;</longName>
+            </value>
             <value>
               <shortName>3D vorticity</shortName>
               <longName>3D vorticity</longName>
@@ -522,9 +530,9 @@
           </values>
         </item>
         <item>
-          <shortName>Type of horizontal discretization</shortName>
+          <shortName>Tracer Advection: Type of horizontal discretization</shortName>
           <longName>Type of horizontal discretization</longName>
-          <values>
+          <values open="true">
             <value>
               <shortName>discontinuous Galerkin</shortName>
               <longName>discontinuous Galerkin</longName>
@@ -556,9 +564,9 @@
           </values>
         </item>
         <item>
-          <shortName>Type of vertical discretization</shortName>
+          <shortName>Tracer Advection: Type of vertical discretization</shortName>
           <longName>Type of vertical discretization</longName>
-          <values>
+          <values open="true">
             <value>
               <shortName>finite difference</shortName>
               <longName>finite difference</longName>
@@ -578,7 +586,7 @@
           </values>
         </item>
         <item>
-          <shortName>Specifics on spatial discretizations (keywords)</shortName>
+          <shortName>tracer advection: Specifics on spatial discretizations (keywords)</shortName>
           <longName>Specifics on spatial discretizations (keywords)</longName>
           <values multi="true" open="true" nullable="false">
             <value>
@@ -616,7 +624,7 @@
           </values>
         </item>
         <item>
-          <shortName>Specifics on temporal discretizations (keywords)</shortName>
+          <shortName>tracer advection: Specifics on temporal discretizations (keywords)</shortName>
           <longName>Specifics on temporal discretizations (keywords)</longName>
           <values multi="true" open="true" nullable="false">
             <value>
@@ -733,8 +741,8 @@
               <longName>reduced latitude-longitude</longName>
             </value>
             <value>
-              <shortName>spherical centroidal Voronoi tesselation</shortName>
-              <longName>spherical centroidal Voronoi tesselation</longName>
+              <shortName>spherical centroidal Voronoi tessellation</shortName>
+              <longName>spherical centroidal Voronoi tessellation</longName>
             </value>
             <value>
               <shortName>triangular-icosahedral</shortName>
@@ -790,6 +798,10 @@
             <value>
               <shortName>stretched grid</shortName>
               <longName>stretched grid</longName>
+            </value>
+            <value>
+              <shortName>combination of statistically nested and stretched grid</shortName>
+              <longName>combination of statistically nested and stretched grid</longName>
             </value>
           </values>
         </item>
@@ -1136,6 +1148,12 @@
               <longName>upwind-biased advection</longName>
             </value>
           </values>
+        </item>
+        
+        <item>
+          <shortName>List of all dissipation coefficients (include resolution dependencies and physical units)</shortName>
+          <longName>List of all dissipation coefficients (include resolution dependencies and physical units)</longName>
+          <values open="true" multi="true"></values>
         </item>
       </items>
     </item>

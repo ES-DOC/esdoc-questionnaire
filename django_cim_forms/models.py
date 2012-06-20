@@ -4,6 +4,9 @@ import django.forms.models
 import django.forms.widgets
 import django.forms.fields
 
+from django.core import serializers
+from django.template.loader import render_to_string
+
 from django_cim_forms.helpers import *
 from django_cim_forms.fields import *
 from django_cim_forms.controlled_vocabulary import *
@@ -137,16 +140,20 @@ class MetadataModel(models.Model):
             self._initialValues[key] = value
 
 
-    def serialize(self,format="JSON"):
+    def serialize(self,format="json"):
         # sticking self in a list simulates a queryset
         qs = [self]
-        if format.upper() == "JSON":
+        if format.lower() == "json":
             data = JSON_SERIALIZER.serialize(qs)
             return data[1:len(data)-1]
+        elif format.lower() == "xml":
+            # I AM HERE
+            #xml = render_to_string('model_template.xml', {'query_set': qs})
+            data = serializers.serialize("xml",qs)
+            return data
         else:
             msg = "Unknown serialization format: %s" % format
             raise MetadataError(msg)
-
 
 ##########################################
 # properties are a special type of model #
