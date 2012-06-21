@@ -152,6 +152,7 @@ class MetadataControlledVocabulary(models.Model):
     open = models.NullBooleanField()        # can a user override the bound values?
     multi = models.NullBooleanField()       # can a user select more than one bound value?
     nullable = models.NullBooleanField()    # can a user select no bound values?
+    custom = models.NullBooleanField()      # must a user provide a custom value?
 
     def getName(self):
         return self._name
@@ -192,9 +193,16 @@ class MetadataControlledVocabulary(models.Model):
                 nullable = values[0].xpath("@nullable")
                 model.nullable = nullable and nullable[0].lower()=="true"
 
-            # figure out its specific value choices...
-            xpath_value_expression="//item[shortName/text()='%s']/values/value" % shortName
-            values = cv.xpath(xpath_value_expression)
+                # figure out its specific value choices...
+                xpath_value_expression="//item[shortName/text()='%s']/values/value" % shortName
+                values = cv.xpath(xpath_value_expression)
+                if not(len(values)):
+                    print "%s IS SPECIAL!" % shortName
+                    model.custom = True
+                else:
+                    model.custom = False
+
+            
             valueChoices = ""
             for value in values:
                 valueShortName = value.xpath("shortName/text()")

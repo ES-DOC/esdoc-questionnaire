@@ -139,6 +139,20 @@ def detail(request, model_name, app_name="django_cim_forms", model_id=None):
         # or just create a new one...
         model = ModelClass()
 
+
+    # check if the model should be rendered in a raw format,
+    # instead of via a webform...
+    format = request.GET.get('format',None)
+    if format:
+        if format.lower() == 'xml':
+            return serialize(request,model,format="xml")
+        elif format.lower() == 'json':
+            return serialize(request,model,format="json")
+        else:
+            msg = "invalid metadata format: %s" % (format)
+            return HttpResponseBadRequest(msg)
+
+    
     if request.method == 'POST':
         form = FormClass(request.POST,instance=model,request=request)
         if form.is_valid():
@@ -155,3 +169,8 @@ def detail(request, model_name, app_name="django_cim_forms", model_id=None):
     
     return render_to_response('django_cim_forms/metadata_detail.html', {'form' : form}, context_instance=RequestContext(request))
 
+def serialize(request, model, format=None):
+    serializedModel = model.serialize(format)
+
+    
+    return HttpResponse(serializedModel,mimetype="text/xml")

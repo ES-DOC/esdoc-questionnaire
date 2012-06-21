@@ -188,6 +188,7 @@ class MetadataProperty(MetadataModel):
     open = models.NullBooleanField()        # can a user override the bound values?
     multi = models.NullBooleanField()       # can a user select more than one bound value?
     nullable = models.NullBooleanField()    # can a user select no bound values?
+    custom = models.NullBooleanField()      # must a user provide a custom value?
 
     def __unicode__(self):
         name = u'%s' % self.getTitle()
@@ -232,13 +233,16 @@ class MetadataProperty(MetadataModel):
         return self.valueChoices
 
     def hasParent(self):
-        return self.parentShortName != ""
+        return (self.parentShortName != "" and self.parentShortName != None)
+
+    def isCustom(self):
+        return self.custom 
 
     def hasValues(self):
         return self.valueChoices != None
         
     def hasSubItems(self):
-        return not self.hasValues()
+        return not self.hasValues() and not self.isCustom()
 
     def __init__(self,*args,**kwargs):
         cv = kwargs.pop("cv",None)
@@ -253,6 +257,7 @@ class MetadataProperty(MetadataModel):
             self.open = cv.open
             self.multi = cv.multi
             self.nullable = cv.nullable
+            self.custom = cv.custom
             self.valueChoices = cv.values
             if cv.parent:
                 self.parentShortName = cv.parent.shortName

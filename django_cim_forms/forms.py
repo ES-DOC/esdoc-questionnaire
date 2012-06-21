@@ -271,6 +271,9 @@ class Property_form(MetadataForm):
             self.fields["value"] = MetadataBoundFormField(choices=custom_choices,multi=modelInstance.multi,empty=True,blank=True)
             self.fields["value"].widget.attrs.update({"onchange":"setPropertyTitle(this)"})
         
+        elif not modelInstance.hasParent():
+            print "%s IS SPECIAL" % modelInstance
+
         self.name = self.instance.shortName
 
 #        if modelInstance.hasValues():
