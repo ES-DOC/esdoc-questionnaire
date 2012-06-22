@@ -1190,7 +1190,7 @@
         <item>
           <shortName>Model nomenclature for approximate 1x1 degree grid spacing (110 km x 110 km)</shortName>
           <longName>Model nomenclature for approximate 1x1 degree grid spacing (110 km x 110 km)</longName>
-          <values/>
+          <values custom="true"/>
 
           
         </item>

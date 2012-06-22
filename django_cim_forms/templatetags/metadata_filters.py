@@ -152,6 +152,14 @@ def haveValues(forms):
     return False
 
 @register.filter
+def isCustom(forms):
+    for form in forms:
+        modelInstance = form.getModelInstance()
+        if modelInstance.isCustom():
+            return True
+    return False
+
+@register.filter
 def isChildOf(childForm,parentForm):
     parentInstance = parentForm.getModelInstance()
     childInstance = childForm.getModelInstance()

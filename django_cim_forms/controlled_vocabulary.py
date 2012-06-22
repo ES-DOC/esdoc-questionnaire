@@ -192,17 +192,15 @@ class MetadataControlledVocabulary(models.Model):
                 model.multi = multi and multi[0].lower()=="true"
                 nullable = values[0].xpath("@nullable")
                 model.nullable = nullable and nullable[0].lower()=="true"
+                custom = values[0].xpath("@custom")
+                model.custom = custom and custom[0].lower()=="true"
 
-                # figure out its specific value choices...
-                xpath_value_expression="//item[shortName/text()='%s']/values/value" % shortName
-                values = cv.xpath(xpath_value_expression)
-                if not(len(values)):
-                    print "%s IS SPECIAL!" % shortName
-                    model.custom = True
-                else:
-                    model.custom = False
+            if model.custom:
+                print "%s IS SPECIAL!" % shortName
 
-            
+            # figure out its specific value choices...
+            xpath_value_expression="//item[shortName/text()='%s']/values/value" % shortName
+            values = cv.xpath(xpath_value_expression)
             valueChoices = ""
             for value in values:
                 valueShortName = value.xpath("shortName/text()")

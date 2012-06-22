@@ -3,7 +3,7 @@
     {% load metadata_filters %}
 
         {% with forms=formset|getForms:keys %}
-            {% with haveSubItems=forms|haveSubItems haveValues=forms|haveValues %}
+            {% with haveSubItems=forms|haveSubItems haveValues=forms|haveValues isCustom=forms|isCustom %}
                 {% if haveSubItems %}
                     <div class="tabs">
                         <ul>
@@ -54,7 +54,7 @@
                             {% endfor %}
                         </div> <!-- /.tabs -->
                 {% endif %}
-                {% if haveValues %}
+                {% if haveValues or isCustom %}
                     <div class="accordion {{formset.getPrefix}}-formset">
                         {% for form in forms %}
                             {% if form|hasValues %}

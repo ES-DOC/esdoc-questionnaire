@@ -5,7 +5,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='django-cim-forms',
-    version='0.8',
+    version='0.9',
     author='Allyn Treshansky',
     author_email='allyn.treshansky@noaa.gov',
     packages=find_packages(),
