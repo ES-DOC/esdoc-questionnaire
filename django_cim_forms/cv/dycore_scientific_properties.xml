@@ -1153,7 +1153,7 @@
         <item>
           <shortName>List of all dissipation coefficients (include resolution dependencies and physical units)</shortName>
           <longName>List of all dissipation coefficients (include resolution dependencies and physical units)</longName>
-          <values open="true" multi="true"></values>
+          <values open="true" multi="true" custom="true"/>
         </item>
       </items>
     </item>
@@ -1190,10 +1190,26 @@
         <item>
           <shortName>Model nomenclature for approximate 1x1 degree grid spacing (110 km x 110 km)</shortName>
           <longName>Model nomenclature for approximate 1x1 degree grid spacing (110 km x 110 km)</longName>
-          <values custom="true"/>
-
-          
+          <values custom="true"/>          
         </item>
+        <item>
+          <shortName>Typical dynamics time step (in s) for approximate 1x1 degree spacing (110 km x 110 km)</shortName>
+          <longName>Typical dynamics time step (in s) for approximate 1x1 degree spacing (110 km x 110 km)</longName>
+          <values custom="true"/>
+        </item>
+        <item>
+          <shortName>Typical tracer advection time step (in s) for approximate 1x1 degree grid spacing (110 km x 110 km)</shortName>
+          <longName>Typical tracer advection time step (in s) for approximate 1x1 degree grid spacing (110 km x 110 km)</longName>
+          <values custom="true"/>          
+        </item>
+        <item>
+          <shortName>Typical physics time step (in s) for approximate 1x1 degree grid spacing (110 km x 110 km)</shortName>
+          <longName>Typical physics time step (in s) for approximate 1x1 degree grid spacing (110 km x 110 km)</longName>
+          <values custom="true"/>
+        </item>
+        
+        
+        
       </items>
     </item>
   </items>
