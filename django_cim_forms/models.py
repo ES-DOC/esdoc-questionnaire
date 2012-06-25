@@ -262,7 +262,5 @@ class MetadataProperty(MetadataModel):
             if cv.parent:
                 self.parentShortName = cv.parent.shortName
                 self.parentLongName = cv.parent.longName
-            if self.custom:
-                print "%s IS STILL SPECIAL" % self.shortName
 
             

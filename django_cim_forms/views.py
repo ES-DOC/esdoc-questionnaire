@@ -126,18 +126,31 @@ def detail(request, model_name, app_name="django_cim_forms", model_id=None):
     # so setting a class variable to track the current application of all models created
     # relationships are restricted to inter (not intra) app models
     MetadataModel.CURRENT_APP = app_name.lower()
-    
-    if model_id:
-        # try to load the specified model...
-        #model = get_object_or_404(ModelClass, pk=model_id)
-        try:
-            model = ModelClass.objects.get(pk=model_id)
-        except ModelClass.DoesNotExist:
-            msg = "unable to find '%s' with id of '%s'" % (model_name, model_id)
+
+    if request.GET:
+        filter_args = {}
+        for (key,value) in request.GET.iteritems():
+            # TODO: should I strip value of quotes?
+            filter_args[key] = value
+        models = ModelClass.objects.filter(**filter_args)
+        if len(models) != 1:
+            msg = "specified either an invalid or non-unique %s" % model_name
             return HttpResponseBadRequest(msg)
+        else:
+            model = models[0]
+    
     else:
-        # or just create a new one...
-        model = ModelClass()
+        if model_id:
+            # try to load the specified model...
+            #model = get_object_or_404(ModelClass, pk=model_id)
+            try:
+                model = ModelClass.objects.get(pk=model_id)
+            except ModelClass.DoesNotExist:
+                msg = "unable to find '%s' with id of '%s'" % (model_name, model_id)
+                return HttpResponseBadRequest(msg)
+        else:
+            # or just create a new one...
+            model = ModelClass()
 
 
     # check if the model should be rendered in a raw format,

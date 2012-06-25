@@ -138,10 +138,6 @@ def hasValues(form):
 @register.filter
 def isCustom(form):
     modelInstance = form.getModelInstance()
-    if modelInstance.shortName == "foobar":
-        print "FOOBAR"
-        print modelInstance.valueChoices
-        print form.isPropertyForm()
     return modelInstance.isCustom()
 
 @register.filter
