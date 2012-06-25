@@ -272,7 +272,6 @@ class Property_form(MetadataForm):
             self.fields["value"].widget.attrs.update({"onchange":"setPropertyTitle(this)"})
 
         if modelInstance.isCustom():
-            print "%s IS CUSTOM!!" % self.fields["shortName"]
             self.fields["value"] = MetadataBoundFormField(choices=OTHER_CHOICE,multi=False,empty=True,blank=True,custom=True)
             self.fields["value"].widget.attrs.update({"onchange":"setPropertyTitle(this)"})
                 
