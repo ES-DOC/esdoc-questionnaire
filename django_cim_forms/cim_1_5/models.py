@@ -882,7 +882,12 @@ class Citation(MetadataModel):
         super(Citation,self).__init__(*args,**kwargs)
 
     def __unicode__(self):
-        return u'%s: %s' % (self.getTitle(), self.title)
+        name = pretty_string(u'%s' % self.getTitle())
+        if self.title:
+            name = u'%s: %s' % (name, self.title)
+        else:
+            name = u'New %s' % name
+        return name
 
 class Timing(MetadataModel):
     _name = "Timing"
