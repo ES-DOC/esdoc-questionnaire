@@ -242,7 +242,7 @@ class MetadataProperty(MetadataModel):
         return self.valueChoices != None
         
     def hasSubItems(self):
-        return not self.hasValues() #and not self.isCustom()
+        return not self.hasValues() and not self.isCustom()
 
     def __init__(self,*args,**kwargs):
         cv = kwargs.pop("cv",None)

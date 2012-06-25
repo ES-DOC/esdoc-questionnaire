@@ -136,6 +136,15 @@ def hasValues(form):
     return modelInstance.hasValues()
 
 @register.filter
+def isCustom(form):
+    modelInstance = form.getModelInstance()
+    if modelInstance.shortName == "foobar":
+        print "FOOBAR"
+        print modelInstance.valueChoices
+        print form.isPropertyForm()
+    return modelInstance.isCustom()
+
+@register.filter
 def haveSubItems(forms):
     for form in forms:
         modelInstance = form.getModelInstance()
@@ -152,7 +161,7 @@ def haveValues(forms):
     return False
 
 @register.filter
-def isCustom(forms):
+def areCustom(forms):
     for form in forms:
         modelInstance = form.getModelInstance()
         if modelInstance.isCustom():

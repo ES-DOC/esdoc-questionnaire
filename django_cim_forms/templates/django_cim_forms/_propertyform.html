@@ -3,7 +3,7 @@
     {% load metadata_filters %}
 
         {% with forms=formset|getForms:keys %}
-            {% with haveSubItems=forms|haveSubItems haveValues=forms|haveValues isCustom=forms|isCustom %}
+            {% with haveSubItems=forms|haveSubItems haveValues=forms|haveValues areCustom=forms|areCustom %}
                 {% if haveSubItems %}
                     <div class="tabs">
                         <ul>
@@ -54,7 +54,8 @@
                             {% endfor %}
                         </div> <!-- /.tabs -->
                 {% endif %}
-                {% if haveValues or isCustom %}
+                
+                {% if haveValues or areCustom %}
                     <div class="accordion {{formset.getPrefix}}-formset">
                         {% for form in forms %}
                             {% if form|hasValues %}
@@ -67,7 +68,17 @@
                                         {% include template %}
                                     {% endwith %}
                                 </div>
-                            {% endif %}
+                            {% else %} {% if form|isCustom %}
+                                <h3 class="accordion-header">
+                                    <a>{{form.getModelName}}&nbsp;</a>
+                                    <div style="clear: both;"/>
+                                </h3> <!-- /.accordion-header -->
+                                <div class="accordion-content custom-property">
+                                    {% with "django_cim_forms/_form.html" as template %}
+                                        {% include template %}
+                                    {% endwith %}
+                                </div>
+                            {% endif %} {% endif %} {# form|hasValues #} {# form|isCustom #}
                         {% endfor %}
                     </div>
                 {% endif %}

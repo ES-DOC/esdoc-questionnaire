@@ -401,6 +401,7 @@ class MetadataBoundFormField(django.forms.fields.MultiValueField):
     _multi = False
     _empty = True
     _required = True
+    _custom = False
 
     def __init__(self,*args,**kwargs):
 
@@ -409,6 +410,7 @@ class MetadataBoundFormField(django.forms.fields.MultiValueField):
         #empty = kwargs.pop("empty",False)
         empty = kwargs.pop("empty",True)
         required = not(kwargs.pop("blank",True))
+        custom = kwargs.pop("custom",False)
 
         fields = (
             django.forms.fields.CharField(max_length=HUGE_STRING,required=required),
@@ -421,6 +423,7 @@ class MetadataBoundFormField(django.forms.fields.MultiValueField):
         self._multi = multi
         self._empty = empty
         self._required = required
+        self._custom = custom
 
 
 
@@ -440,7 +443,6 @@ class MetadataBoundFormField(django.forms.fields.MultiValueField):
             msg = "this field is required"
             raise forms.ValidationError(msg)
 
-
         if value != [None,None]:
             
             if value[0]==None:
@@ -454,7 +456,8 @@ class MetadataBoundFormField(django.forms.fields.MultiValueField):
                 if not OTHER_CHOICE[0][0] in value[0]:
                     value[1] = u' '
                 else:
-                    if value[1].strip() == u'':
+                    #if value[1].strip() == u'':
+                    if value[1].strip() == u'' and not self._custom:
                         msg = "unspecified OTHER value"
                         raise forms.ValidationError(msg)
                     elif "|" in value[1]:
@@ -468,7 +471,8 @@ class MetadataBoundFormField(django.forms.fields.MultiValueField):
                 if value[0] != OTHER_CHOICE[0][0]:
                     value[1] = u' '
                 else:
-                    if value[1].strip() == u'':
+                    #if value[1].strip() == u'':
+                    if value[1].strip() == u'' and not self._custom:
                         msg = "unspecified OTHER value"
                         raise forms.ValidationError(msg)
                     elif "|" in value[1]:

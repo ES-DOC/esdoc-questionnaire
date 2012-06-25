@@ -196,7 +196,10 @@ class MetadataControlledVocabulary(models.Model):
                 model.custom = custom and custom[0].lower()=="true"
 
             if model.custom:
-                print "%s IS SPECIAL!" % shortName
+                # all custom models must be open
+                # this is to ensure that the "OTHER" option is used in the combobox field
+                # this causes the textbox field to appear
+                model.open = True
 
             # figure out its specific value choices...
             xpath_value_expression="//item[shortName/text()='%s']/values/value" % shortName

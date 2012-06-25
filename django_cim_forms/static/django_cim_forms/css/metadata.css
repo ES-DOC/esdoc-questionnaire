@@ -38,6 +38,11 @@ body {
 
 #metadata .enumeration-value { margin-right: 4px; }
 #metadata .enumeration-other { margin-left: 4px; }
+/* I'm using the same enumeration construct for "unbound properties" (properties that require a custom input) */
+/* in that case I want to ensure that the combobox is never displayed while the textbox is always displayed */
+#metadata .custom-property .enumeration-value { display: none !important; }
+#metadata .custom-property .enumeration-other { display: inline !important; }
+
 
 #metadata .help-button { display: inline; }
 #metadata .help-button .help-description { display: none !important; }
