@@ -42,6 +42,10 @@ class MetadataModel(models.Model):
 
     CURRENT_APP = "django_cim_forms"    # default application
 
+    # these fields work behind the scenes to track when models are created and updated
+    created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
+
     def __init__(self,*args,**kwargs):
         super(MetadataModel,self).__init__(*args,**kwargs)
    
