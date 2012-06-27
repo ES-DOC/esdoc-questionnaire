@@ -9,6 +9,8 @@ from django.core.urlresolvers import reverse
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ObjectDoesNotExist
 
+from uuid import uuid4
+
 from django_cim_forms.models import *
 from django_cim_forms.forms import *
 from django_cim_forms.helpers import *
@@ -36,14 +38,14 @@ def add_form(request):
     ModelClass = ModelType.model_class()
 
     try:
-        modelInstance = ModelClass.objects.get(guid=guid)
+        modelInstance = ModelClass.objects.get(_guid=guid)
         modelField = modelInstance.getField(field)
         ModelClassToAdd = modelField.getTargetModelClass()
         #TODO: DOUBLE-CHECK THAT THIS WORKS WITH FOREIGNKEY
         #TODO: ADDING THE .all() FN MADE IT WORK FOR MANYTOMANY
-        modelsToExclude = [model.guid for model in getattr(modelInstance,field).all()]
+        modelsToExclude = [model.getGuid() for model in getattr(modelInstance,field).all()]
         #queryset = ModelClassToAdd.objects.exclude(guid__in=modelsToExclude)
-        queryset = ModelClassToAdd.objects.filter(app=app).exclude(guid__in=modelsToExclude)
+        queryset = ModelClassToAdd.objects.filter(app=app).exclude(_guid__in=modelsToExclude)
         
     except ModelClass.DoesNotExist:
         modelInstance = ModelClass()
@@ -167,20 +169,26 @@ def detail(request, model_name, app_name="django_cim_forms", model_id=None):
 ##            msg = "invalid metadata format: %s" % (format)
 ##            return HttpResponseBadRequest(msg)
 
-    
-    if request.method == 'POST':
+    # is this this an update of an existing model or a new submission?
+    initialize = not(model.id)
+
+    if request.method == 'POST':        
         form = FormClass(request.POST,instance=model,request=request)
         if form.is_valid():
             model = form.save(commit=False)
-            model.save()
-            form.save_m2m()
+            if not(initialize):
+                # create new (rather than update existing) model
+                model.save(force_insert=True)
+                form.save_m2m()
+            else:            
+                model.save()
+                form.save_m2m()
+
             return HttpResponseRedirect(reverse('django_cim_forms.views.detail', args=(app_name,model_name,model.id)))
         else:
             print "invalid!"
     else:
-        # check if this the the first time I'm loading this model...
-        initializeForm = not(model.id)
-        form = FormClass(instance=model,request=request,initialize=initializeForm)
+        form = FormClass(instance=model,request=request,initialize=initialize)
     
     return render_to_response('django_cim_forms/metadata_detail.html', {'form' : form}, context_instance=RequestContext(request))
 

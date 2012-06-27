@@ -1,7 +1,7 @@
 {% load metadata_filters %}
 
 <responsibleParty>
-    <!--responsibleParty uri :: {{model.guid}} -->
+    <!--responsibleParty uri :: {{model.getGuid}} -->
     <gmd:individualName>
         <gco:CharacterString>{{model.individualName}}</gco:CharacterString>
     </gmd:individualName>

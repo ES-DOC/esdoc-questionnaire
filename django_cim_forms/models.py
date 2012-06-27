@@ -6,6 +6,7 @@ import django.forms.fields
 
 from django.core import serializers
 from django.template.loader import render_to_string
+from django.db.models import F
 
 from django_cim_forms.helpers import *
 from django_cim_forms.fields import *
@@ -33,9 +34,11 @@ class MetadataModel(models.Model):
     _fieldOrder = None          # a list describing the order of fields; if a field is absent from this list it is not rendered
     _initialValues = {}         # a dictionary of initial values for the first time a model is created
 
-    # every model has a guid
-    # (but since 'editable=False', it won't show up in forms)
-    guid = models.CharField(max_length=64,editable=False,blank=True,unique=True)
+    # every model has a (gu)id & version
+    # (but since 'editable=False', they won't show up in forms)
+    _guid = models.CharField(max_length=64,editable=False,blank=True,unique=True)
+    _version = models.IntegerField(max_length=64,editable=False,blank=True,default=1)
+
     # what application (project) is this model associated w/;
     # you can only have inter (not intra) application relationships
     app = models.CharField(max_length=64,editable=False,blank=True)
@@ -49,8 +52,8 @@ class MetadataModel(models.Model):
     def __init__(self,*args,**kwargs):
         super(MetadataModel,self).__init__(*args,**kwargs)
    
-        if not self.guid:
-            self.guid = str(uuid4())
+        if not self._guid:
+            self._guid = str(uuid4())
 
         if not self.app:
             self.app = self.CURRENT_APP
@@ -71,6 +74,18 @@ class MetadataModel(models.Model):
             msg = "invalid MetadataModel: no title supplied for %s" % ModelClass
             raise MetadataError(msg)
 
+    # overriding save to work out when/how to update vs insert
+    def save(self, *args, **kwargs):
+        force_insert = kwargs.pop("force_insert",False)
+        if force_insert:
+##            # TODO: GET THIS WORKING!!!!!!!!!
+##            kwargs['force_insert'] = True
+##            kwargs['force_update'] = False
+##            self.pk = None
+            self._version = F('_version')+1
+
+        return super(MetadataModel,self).save(*args,**kwargs)
+
     @classmethod
     def getName(cls):
         name = cls._name
@@ -84,6 +99,17 @@ class MetadataModel(models.Model):
         if title:
             return title.strip()
         return title
+
+    def getGuid(self):
+        return self._guid
+
+    def getVersion(self):
+        return self._version
+
+    def updateVersion(self):
+        #self._guid = str(uuid4) # guid stays the same for all time
+        self._version = (self.getVersion()+1)
+
 
     def getField(self,fieldName):
         # return the actual field (not the db representation of the field)

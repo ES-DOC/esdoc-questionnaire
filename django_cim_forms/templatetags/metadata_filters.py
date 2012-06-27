@@ -54,7 +54,7 @@ def getModelTitle(form):
 @register.filter
 def getModelGuid(form):
     modelInstance = form.getModelInstance()
-    return modelInstance.guid
+    return modelInstance.getGuid()
 
 ###########################################################
 # returns the field types being used by a particular form #
@@ -343,8 +343,8 @@ def nestPropertiesFromModel(properties):
     nestedProperties = {}
     children = [p for p in properties if (not p.parentShortName)]
     for child in children:
-        nestedProperties[child.guid] = {}
-        nestPropertyModels(nestedProperties[child.guid],child,properties)
+        nestedProperties[child.getGuid()] = {}
+        nestPropertyModels(nestedProperties[child.getGuid()],child,properties)
         #nestedProperties[child.shortName] = {}
         #nestPropertyModels(nestedProperties[child.shortName],child,properties)
 
@@ -355,15 +355,15 @@ def nestPropertyModels(nestedProperties,parent,properties):
     parentShortName = parent.shortName
     children = [p for p in properties if (p.parentShortName==parentShortName)]
     for child in children:
-        nestedProperties[child.guid] = {}
-        nestPropertyModels(nestedProperties[child.guid],child,properties)
+        nestedProperties[child.getGuid()] = {}
+        nestPropertyModels(nestedProperties[child.getGuid()],child,properties)
         #nestedProperties[child.shortName] = {}
         #nestPropertyModels(nestedProperties[child.shortName],child,properties)
     return nestedProperties
 
 @register.filter
 def getPropertyByGuid(model,guid):
-    return model.properties.get(guid=guid)
+    return model.properties.get(_guid=guid)
 
 @register.filter
 def split(string,delimiter):

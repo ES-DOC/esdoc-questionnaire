@@ -8,7 +8,7 @@
             <longName>{{property.longName}}</longName>
             {% if property.hasSubItems %}
 
-                {% with nested_properties=nested_properties|get_item:property.guid %}
+                {% with nested_properties=nested_properties|get_item:property.getGuid %}
                     {% with "cim_1_5/property.xml" as template %}
                         {% with keys=nested_properties.keys values=nested_properties.values %}
                             {% include template %}

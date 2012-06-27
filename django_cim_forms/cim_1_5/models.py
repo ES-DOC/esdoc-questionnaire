@@ -736,6 +736,8 @@ class Simulation(NumericalActivity):
 
     responsibleParties = MetadataManyToManyField(targetModel='cim_1_5.ResponsibleParty',sourceModel="cim_1_5.Simulation")
 
+    citations = MetadataManyToManyField(targetModel='cim_1_5.Citation',sourceModel="cim_1_5.Simulation")
+
     inputs = MetadataManyToManyField(targetModel="cim_1_5.Coupling",sourceModel="cim_1_5.Simulation",addMode=FieldAddModes.INLINE)
     inputs.help_text="implemented as a mapping from a source to target; can be a forcing file, a boundary condition, etc."
 
@@ -748,7 +750,7 @@ class Simulation(NumericalActivity):
     def __init__(self,*args,**kwargs):
         super(Simulation,self).__init__(*args,**kwargs)
         self.registerFieldType(FieldType("SIMULATION_DESCRIPTION","Simulation Description"), ["simulationID","project","rationale"])
-        self.registerFieldType(FieldType("BASIC","Basic Properties"), ["calendar","responsibleParties"])
+        self.registerFieldType(FieldType("BASIC","Basic Properties"), ["calendar","responsibleParties","citations"])
         self.registerFieldType(FieldType("COUPLINGS","Inputs & Outputs"),["inputs","outputs","restarts"])
         self.registerFieldType(FieldType("CONFORMANCES","Conformances"), ["conformances"])
 
