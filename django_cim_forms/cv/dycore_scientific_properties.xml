@@ -273,16 +273,12 @@
           <longName>Prognostic variables (moist setup with water vapor)</longName>
           <values multi="true" open="true" nullable="false">
             <value>
-              <shortName>test greek value(delta)</shortName>
-              <longName>the greek letter delta: &#916;</longName>
-            </value>
-            <value>
               <shortName>3D vorticity</shortName>
-              <longName>3D vorticity</longName>
+              <longName>&#950;&#8407; = &#8711; &#215; v&#8407;: 3D vorticity</longName>              
             </value>
             <value>
               <shortName>absolute vorticity</shortName>
-              <longName>absolute vorticity</longName>
+              <longName>k&#8407; &#8901; ( &#8711; &#215; v&#8407; + &#937;&#8407;): absolute vorticity</longName>
             </value>
             <value>
               <shortName>air density (dry)</shortName>

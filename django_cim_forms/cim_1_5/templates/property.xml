@@ -1,0 +1,37 @@
+{% load metadata_filters %}
+
+{% for key in keys %}
+
+    {% with property=model|getPropertyByGuid:key %}
+        <componentProperty represented="true">        
+            <shortName>{{property.shortName}}</shortName>
+            <longName>{{property.longName}}</longName>
+            {% if property.hasSubItems %}
+
+                {% with nested_properties=nested_properties|get_item:property.guid %}
+                    {% with "cim_1_5/property.xml" as template %}
+                        {% with keys=nested_properties.keys values=nested_properties.values %}
+                            {% include template %}
+                        {% endwith %} {# keys, values #}
+                    {% endwith %} {# template #}
+                {% endwith %} {# nested_properties #}
+
+            {% endif %}
+            {% if property.hasValues or property.isCustom %}
+
+                {# TODO: DOUBLE-CHECK THIS ONCE FIELDS ARE FIXED #}
+                {% if property.isMulti %}
+                    {% for value in property.value|split:"||" %}
+                        <value>{{value}}</value>
+                    {% endfor %}
+                {% else %}
+
+                    <value>{{property.value}}</value>
+                {% endif %} 
+                
+            {% endif %}
+        </componentProperty>
+    
+    {% endwith %}{{key.shortName}}
+
+{% endfor %}

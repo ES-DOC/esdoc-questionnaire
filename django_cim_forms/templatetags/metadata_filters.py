@@ -285,3 +285,87 @@ def canAddRemote(field,form):
 @register.filter
 def isPropertyForm(form):
     return form.isPropertyForm()
+
+######################################################
+# these subsequent filters are used w/ XML templates #
+# (they tend to be a bit different since I'm working #
+# directly w/ the model instead of via a form)       #
+######################################################
+
+import re
+from urlparse import urlparse # the regex for a URL is ridiculously complex; using this package instead
+
+@register.filter
+def isPhoneNumber(field):
+    # phone number can include digits, dashes, pluses, parentheses, spaces, and nothing else
+    if re.match(r'[\d\-\+\(\)\s]+$', field):
+        return True
+    return False
+
+@register.filter
+def isEmailAddress(field):
+    # email address must include alphanum@alphanum.alphanum
+    if re.match(r'\w+@\w+\.\w+',field):
+        return True
+    return False
+
+@register.filter
+def isURL(field):
+    # the regex for a url is really complex
+    # so I'm using the urlparse package instead
+    url = urlparse(field)
+    if (" " in url.scheme or " " in url.path):
+        return False
+    return True
+
+@register.filter
+def isPhysicalAddress(field):
+    return not (isPhoneNumber(field) or isEmailAddress(field) or isURL(field))
+
+@register.filter
+def isOpenEnumeration(model,fieldName):
+    enumerationField = model.getField(fieldName)
+    return enumerationField.isOpen()
+
+@register.filter
+def getFieldVerboseName(model,fieldName):
+    field = model.getField(fieldName)
+    try:
+        return field.getVerboseName()
+    except AttributeError:
+        return pretty_string(fieldName)
+
+@register.filter
+def nestPropertiesFromModel(properties):
+
+    # recurse through the properties...
+    # but do the first level (where parent=None) here...
+    nestedProperties = {}
+    children = [p for p in properties if (not p.parentShortName)]
+    for child in children:
+        nestedProperties[child.guid] = {}
+        nestPropertyModels(nestedProperties[child.guid],child,properties)
+        #nestedProperties[child.shortName] = {}
+        #nestPropertyModels(nestedProperties[child.shortName],child,properties)
+
+    return nestedProperties
+
+# not a filter; but used recursively in the fn above
+def nestPropertyModels(nestedProperties,parent,properties):
+    parentShortName = parent.shortName
+    children = [p for p in properties if (p.parentShortName==parentShortName)]
+    for child in children:
+        nestedProperties[child.guid] = {}
+        nestPropertyModels(nestedProperties[child.guid],child,properties)
+        #nestedProperties[child.shortName] = {}
+        #nestPropertyModels(nestedProperties[child.shortName],child,properties)
+    return nestedProperties
+
+@register.filter
+def getPropertyByGuid(model,guid):
+    return model.properties.get(guid=guid)
+
+@register.filter
+def split(string,delimiter):
+    # splits a string along delimiters
+    return string.split(delimiter)

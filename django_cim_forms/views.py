@@ -3,6 +3,8 @@ from django.template import *
 from django.shortcuts import *
 from django.http import *
 
+from django.template.loader import render_to_string
+
 from django.core.urlresolvers import reverse
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ObjectDoesNotExist
@@ -153,17 +155,17 @@ def detail(request, model_name, app_name="django_cim_forms", model_id=None):
             model = ModelClass()
 
 
-    # check if the model should be rendered in a raw format,
-    # instead of via a webform...
-    format = request.GET.get('format',None)
-    if format:
-        if format.lower() == 'xml':
-            return serialize(request,model,format="xml")
-        elif format.lower() == 'json':
-            return serialize(request,model,format="json")
-        else:
-            msg = "invalid metadata format: %s" % (format)
-            return HttpResponseBadRequest(msg)
+##    # check if the model should be rendered in a raw format,
+##    # instead of via a webform...
+##    format = request.GET.get('format',None)
+##    if format:
+##        if format.lower() == 'xml':
+##            return serialize(request,model,format="xml")
+##        elif format.lower() == 'json':
+##            return serialize(request,model,format="json")
+##        else:
+##            msg = "invalid metadata format: %s" % (format)
+##            return HttpResponseBadRequest(msg)
 
     
     if request.method == 'POST':
@@ -182,8 +184,50 @@ def detail(request, model_name, app_name="django_cim_forms", model_id=None):
     
     return render_to_response('django_cim_forms/metadata_detail.html', {'form' : form}, context_instance=RequestContext(request))
 
-def serialize(request, model, format=None):
-    serializedModel = model.serialize(format)
 
-    
+def serialize(request, model_name, app_name="django_cim_forms", model_id=None, format=None):
+    # same as above, get the requested model
+    # but then render it as CIM XML
+
+    try:
+        ModelType  = ContentType.objects.get(app_label=app_name.lower(),model=model_name.lower())
+    except ObjectDoesNotExist:
+        msg = "invalid model type '%s' in application '%s'" % (model_name, app_name)
+        return HttpResponseBadRequest(msg)
+
+    ModelClass = ModelType.model_class()
+
+    if not(ModelClass and issubclass(ModelClass,MetadataModel)):
+        msg = "invalid model type: '%s'" % model_name
+        return HttpResponseBadRequest(msg)
+
+    MetadataModel.CURRENT_APP = app_name.lower()
+    if model_id:
+        # try to load the specified model...
+        #model = get_object_or_404(ModelClass, pk=model_id)
+        try:
+            model = ModelClass.objects.get(pk=model_id)
+        except ModelClass.DoesNotExist:
+            msg = "unable to find '%s' with id of '%s'" % (model_name, model_id)
+            return HttpResponseBadRequest(msg)
+    else:
+        # or just create a new one...
+        model = ModelClass()
+
+    if format:
+        if format.lower() == 'xml':
+            serializedModel = model.serialize(format='xml')
+        elif format.lower() == 'json':
+            serializedModel = model.serialize(format="json")
+        else:
+            msg = "invalid metadata format: %s" % (format)
+            return HttpResponseBadRequest(msg)
+
+    xml_template_path = "%s/%s.xml" % (app_name.lower(), model_name.lower())
+    renderedModel = render_to_string(xml_template_path, {"model" : model, "type" : "modelComponent"})
+    return HttpResponse(renderedModel,mimetype="text/xml")
+
+
+def serialize_bak(request, model, format=None):
+    serializedModel = model.serialize(format)
     return HttpResponse(serializedModel,mimetype="text/xml")

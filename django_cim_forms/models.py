@@ -239,6 +239,9 @@ class MetadataProperty(MetadataModel):
     def hasParent(self):
         return (self.parentShortName != "" and self.parentShortName != None)
 
+    def isMulti(self):
+        return self.multi
+    
     def isCustom(self):
         return self.custom 
 

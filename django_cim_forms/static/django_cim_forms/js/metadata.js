@@ -333,6 +333,19 @@ function enableJQueryWidgets() {
                 }
             }
         });
+        
+/* I AM HERE */
+        $(".enumeration-other").each(function() {
+            /* align "OTHER" fields w/ "VALUE" fields */
+            enumerationValue = $(this).prev(".enumeration-value");
+            enumerationValueOffset = enumerationValue.offset();
+            enumerationValueHeight = enumerationValue.height();
+
+            $(this).offset({
+                top : (enumerationValueOffset.top + enumerationValueHeight + 10),
+                left : enumerationValueOffset.left
+            });
+        });
 
         /* init an 'enabler' - a field that controls other fields or forms */
         $(".enabler:not(.enumeration-other)").each(function() {
