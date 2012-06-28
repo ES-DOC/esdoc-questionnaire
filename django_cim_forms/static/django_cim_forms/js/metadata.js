@@ -276,7 +276,14 @@ function enableJQueryWidgets() {
         /* (the latter is only shown when the former is set to "OTHER") */
         $(".enumeration-value").each(function() {
             enumerationValue = $(this);
-            enumerationOther = enumerationValue.next(".enumeration-other");
+            //enumerationOther = enumerationValue.next(".enumeration-other");
+            enumerationOther = enumerationValue.siblings(".enumeration-other:first");
+            // I AM HERE
+            enumerationOther.before("<br/>");
+            enumerationOther.show(); // show temporarily so that there is a position for offset to work off of
+            enumerationOther.offset({
+                left : enumerationValue.offset().left
+            });
             if (enumerationValue.attr("multiple")=="multiple") {
                 multipleValues = enumerationValue.val();
                 // TODO: CHECK THE INDEXOF FN IN IE                
@@ -301,10 +308,11 @@ function enableJQueryWidgets() {
                     enumerationOther.hide();
                 }
             }
-        });
+        });        
         $(".enumeration-value").change(function(event) {
             enumerationValue = $(event.target);
-            enumerationOther = enumerationValue.next(".enumeration-other");
+            //enumerationOther = enumerationValue.next(".enumeration-other");
+            enumerationOther = enumerationValue.siblings(".enumeration-other:first");
             if (enumerationValue.attr("multiple")=="multiple") {
                 multipleValues = enumerationValue.val();
                 // TODO: CHECK THE INDEXOF FN IN IE
@@ -334,18 +342,6 @@ function enableJQueryWidgets() {
             }
         });
         
-/* I AM HERE */
-        $(".enumeration-other").each(function() {
-            /* align "OTHER" fields w/ "VALUE" fields */
-            enumerationValue = $(this).prev(".enumeration-value");
-            enumerationValueOffset = enumerationValue.offset();
-            enumerationValueHeight = enumerationValue.height();
-
-            $(this).offset({
-                top : (enumerationValueOffset.top + enumerationValueHeight + 10),
-                left : enumerationValueOffset.left
-            });
-        });
 
         /* init an 'enabler' - a field that controls other fields or forms */
         $(".enabler:not(.enumeration-other)").each(function() {

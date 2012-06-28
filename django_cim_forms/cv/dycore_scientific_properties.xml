@@ -274,11 +274,11 @@
           <values multi="true" open="true" nullable="false">
             <value>
               <shortName>3D vorticity</shortName>
-              <longName>&#950;&#8407; = &#8711; &#215; v&#8407;: 3D vorticity</longName>              
+              <longName>3D vorticity</longName>
             </value>
             <value>
               <shortName>absolute vorticity</shortName>
-              <longName>k&#8407; &#8901; ( &#8711; &#215; v&#8407; + &#937;&#8407;): absolute vorticity</longName>
+              <longName>absolute vorticity</longName>
             </value>
             <value>
               <shortName>air density (dry)</shortName>
@@ -289,16 +289,32 @@
               <longName>air density (moist)</longName>
             </value>
             <value>
-              <shortName>air density perturbation (relative to hydrostatic reference profile,                dry)</shortName>
-              <longName>air density perturbation (relative to hydrostatic reference profile,                dry)</longName>
+              <shortName>air density perturbation (relative to hydrostatic reference profile, dry)</shortName>
+              <longName>air density perturbation (relative to hydrostatic reference profile, dry)</longName>
             </value>
             <value>
-              <shortName>air density perturbation (relative to reference profile, moist)</shortName>
-              <longName>air density perturbation (relative to reference profile, moist)</longName>
+              <shortName>air density perturbation (relative to hydrostatic reference profile, moist)</shortName>
+              <longName>air density perturbation (relative to hydrostatic reference profile, moist)</longName>
             </value>
             <value>
               <shortName>density of water vapor</shortName>
               <longName>density of water vapor</longName>
+            </value>
+            <value>
+              <shortName>density of cloud liquid water</shortName>
+              <longName>density of cloud liquid water</longName>
+            </value>
+            <value>
+              <shortName>density of rain water</shortName>
+              <longName>density of rain water</longName>
+            </value>
+            <value>
+              <shortName>density of liquid water (cloud and rain)</shortName>
+              <longName>density of liquid water (cloud and rain)</longName>
+            </value>
+            <value>
+              <shortName>density of cloud ice</shortName>
+              <longName>density of cloud ice</longName>
             </value>
             <value>
               <shortName>divergence</shortName>
@@ -325,16 +341,16 @@
               <longName>internal energy</longName>
             </value>
             <value>
-              <shortName>meridional momentum (weighted by dry density mass pressure                thickness)</shortName>
-              <longName>meridional momentum (weighted by dry density mass pressure                thickness)</longName>
+              <shortName>meridional momentum (dry)</shortName>
+              <longName>meridional momentum (dry)</longName>
             </value>
             <value>
-              <shortName>meridional momentum (weighted by moist density mass pressure                thickness)</shortName>
-              <longName>meridional momentum (weighted by moist density mass pressure                thickness)</longName>
+              <shortName>meridional momentum (moist)</shortName>
+              <longName>meridional momentum (moist)</longName>
             </value>
             <value>
-              <shortName>meridional velocity v</shortName>
-              <longName>meridional velocity v</longName>
+              <shortName>meridional velocity</shortName>
+              <longName>meridional velocity</longName>
             </value>
             <value>
               <shortName>natural logarithm of surface pressure (dry)</shortName>
@@ -349,24 +365,24 @@
               <longName>potential temperature</longName>
             </value>
             <value>
-              <shortName>potential temperature perturbation (relative to hydrostatic reference                profile)</shortName>
-              <longName>potential temperature perturbation (relative to hydrostatic reference                profile)</longName>
+              <shortName>potential temperature perturbation (relative to hydrostatic reference profile)</shortName>
+              <longName>potential temperature perturbation (relative to hydrostatic reference profile)</longName>
             </value>
             <value>
-              <shortName>potential temperature density (weighted by dry density mass pressure                thickness)</shortName>
-              <longName>potential temperature density (weighted by dry density mass pressure                thickness)</longName>
+              <shortName>potential temperature density (dry)</shortName>
+              <longName>potential temperature density (dry)</longName>
             </value>
             <value>
-              <shortName>potential temperature density (weighted by moist density mass pressure                thickness)</shortName>
-              <longName>potential temperature density (weighted by moist density mass pressure                thickness)</longName>
+              <shortName>potential temperature density (moist)</shortName>
+              <longName>potential temperature density (moist)</longName>
             </value>
             <value>
-              <shortName>potential temperature density (weighted by dry density mass pressure                thickness) perturbation (relative to hydrostatic reference profile)</shortName>
-              <longName>potential temperature density (weighted by dry density mass pressure                thickness) perturbation (relative to hydrostatic reference profile)</longName>
+              <shortName>potential temperature density perturbation (dry, relative to hydrostatic reference profile)</shortName>
+              <longName>potential temperature density perturbation (dry, relative to hydrostatic reference profile)</longName>
             </value>
             <value>
-              <shortName>potential temperature density (weighted by moist density mass pressure                thickness) perturbation (relative to hydrostatic reference profile)</shortName>
-              <longName>potential temperature density (weighted by moist density mass pressure                thickness) perturbation (relative to hydrostatic reference profile)</longName>
+              <shortName>potential temperature density perturbation (moist, relative to hydrostatic reference profile)</shortName>
+              <longName>potential temperature density perturbation (moist, relative to hydrostatic reference profile)</longName>
             </value>
             <value>
               <shortName>pressure (dry)</shortName>
@@ -375,6 +391,10 @@
             <value>
               <shortName>pressure (moist)</shortName>
               <longName>pressure (moist)</longName>
+            </value>
+            <value>
+              <shortName>pressure thickness (dry)</shortName>
+              <longName>pressure thickness (dry)</longName>
             </value>
             <value>
               <shortName>pressure thickness (moist)</shortName>
@@ -389,8 +409,24 @@
               <longName>specific humidity</longName>
             </value>
             <value>
-              <shortName>specific humidity weighted by dry density mass pressure thickness</shortName>
-              <longName>specific humidity weighted by dry density mass pressure thickness</longName>
+              <shortName>(moist) mixing ratio of cloud liquid water</shortName>
+              <longName>(moist) mixing ratio of cloud liquid water</longName>
+            </value>
+            <value>
+              <shortName>(moist) mixing ratio of rain water</shortName>
+              <longName>(moist) mixing ratio of rain water</longName>
+            </value>
+            <value>
+              <shortName>(moist) mixing ratio of liquid water (cloud and rain)</shortName>
+              <longName>(moist) mixing ratio of liquid water (cloud and rain)</longName>
+            </value>
+            <value>
+              <shortName>(moist) mixing ratio of cloud ice</shortName>
+              <longName>(moist) mixing ratio of cloud ice</longName>
+            </value>
+            <value>
+              <shortName>specific humidity weighted by the moist pressure thickness</shortName>
+              <longName>specific humidity weighted by the moist pressure thickness</longName>
             </value>
             <value>
               <shortName>surface pressure (dry)</shortName>
@@ -409,56 +445,72 @@
               <longName>total energy</longName>
             </value>
             <value>
-              <shortName>vertical momentum (weighted by dry density mass pressure                thickness)</shortName>
-              <longName>vertical momentum (weighted by dry density mass pressure                thickness)</longName>
+              <shortName>vertical momentum (dry)</shortName>
+              <longName>vertical momentum (dry)</longName>
             </value>
             <value>
-              <shortName>vertical momentum (weighted by moist density mass pressure                thickness)</shortName>
-              <longName>vertical momentum (weighted by moist density mass pressure                thickness)</longName>
+              <shortName>vertical momentum (moist)</shortName>
+              <longName>vertical momentum (moist)</longName>
             </value>
             <value>
-              <shortName>vertical velocity w</shortName>
-              <longName>vertical velocity w</longName>
+              <shortName>vertical velocity</shortName>
+              <longName>vertical velocity</longName>
             </value>
             <value>
-              <shortName>virtual potential temperature</shortName>
-              <longName>virtual potential temperature</longName>
+              <shortName>potential virtual temperature</shortName>
+              <longName>potential virtual temperature</longName>
             </value>
             <value>
-              <shortName>virtual potential temperature perturbation (relative to hydrostatic                reference profile)</shortName>
-              <longName>virtual potential temperature perturbation (relative to hydrostatic                reference profile)</longName>
+              <shortName>potential virtual temperature perturbation (relative to hydrostatic reference profile)</shortName>
+              <longName>potential virtual temperature perturbation (relative to hydrostatic reference profile)</longName>
             </value>
             <value>
-              <shortName>virtual potential temperature density (weighted by dry density mass                pressure thickness)</shortName>
-              <longName>virtual potential temperature density (weighted by dry density mass pressure                thickness)</longName>
+              <shortName>potential virtual temperature density (dry)</shortName>
+              <longName>potential virtual temperature density (dry)</longName>
             </value>
             <value>
-              <shortName>virtual potential temperature density (weighted by moist density mass                pressure thickness)</shortName>
-              <longName>virtual potential temperature density (weighted by moist density mass                pressure thickness)</longName>
+              <shortName>potential virtual temperature density (moist)</shortName>
+              <longName>potential virtual temperature density (moist)</longName>
             </value>
             <value>
-              <shortName>virtual potential temperature density (weighted by dry density mass                pressure thickness) perturbation (relative to hydrostatic reference                profile)</shortName>
-              <longName>virtual potential temperature density (weighted by dry density mass pressure                thickness) perturbation (relative to hydrostatic reference profile)</longName>
+              <shortName>potential virtual temperature density perturbation (dry, relative to hydrostatic reference profile)</shortName>
+              <longName>potential virtual temperature density perturbation (dry, relative to hydrostatic reference profile)</longName>
             </value>
             <value>
-              <shortName>virtual potential temperature density (weighted by moist density mass                pressure thickness) perturbation (relative to hydrostatic reference                profile)</shortName>
-              <longName>virtual potential temperature density (weighted by moist density mass                pressure thickness) perturbation (relative to hydrostatic reference                profile)</longName>
+              <shortName>potential virtual temperature density perturbation (moist, relative to hydrostatic reference profile)</shortName>
+              <longName>potential virtual temperature density perturbation (moist, relative to hydrostatic reference profile)</longName>
             </value>
             <value>
               <shortName>water vapor mixing ratio</shortName>
               <longName>water vapor mixing ratio</longName>
             </value>
             <value>
-              <shortName>zonal momentum (weighted by dry density mass pressure                thickness)</shortName>
-              <longName>zonal momentum (weighted by dry density mass pressure thickness)</longName>
+              <shortName>mixing ratio of cloud liquid water</shortName>
+              <longName>mixing ratio of cloud liquid water</longName>
             </value>
             <value>
-              <shortName>zonal momentum (weighted by moist density mass pressure                thickness)</shortName>
-              <longName>zonal momentum (weighted by moist density mass pressure                thickness)</longName>
+              <shortName>mixing ratio of rain water</shortName>
+              <longName>mixing ratio of rain water</longName>
             </value>
             <value>
-              <shortName>zonal velocity u</shortName>
-              <longName>zonal velocity u</longName>
+              <shortName>mixing ratio of liquid water (cloud and rain)</shortName>
+              <longName>mixing ratio of liquid water (cloud and rain)</longName>
+            </value>
+            <value>
+              <shortName>mixing ratio of cloud ice</shortName>
+              <longName>mixing ratio of cloud ice</longName>
+            </value>
+            <value>
+              <shortName>zonal momentum (dry)</shortName>
+              <longName>zonal momentum (dry)</longName>
+            </value>
+            <value>
+              <shortName>zonal momentum (moist)</shortName>
+              <longName>zonal momentum (moist)</longName>
+            </value>
+            <value>
+              <shortName>zonal velocity</shortName>
+              <longName>zonal velocity</longName>
             </value>
           </values>
         </item>

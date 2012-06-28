@@ -207,11 +207,20 @@ class MetadataControlledVocabulary(models.Model):
             valueChoices = ""
             for value in values:
                 valueShortName = value.xpath("shortName/text()")
+                valueShortName = strip_completely(valueShortName[0])                
                 valueLongName = value.xpath("longName/text()")
-                valueShortName = strip_completely(valueShortName[0])
-                if not valueLongName:
+                #longName can have embedded markup in it, so I'm doing things a bit differently...
+                #valueLongName = v for v in value.xpath("longName/child::node()")
+                #valueLongName = value.find("longName")
+
+                #if not valueLongName:
+                if valueLongName is None:
                     valueChoices += "%s|%s||" % (valueShortName,valueShortName)
                 else:
+                    #valueLongName = et.tostring(valueLongName)
+                    #valueLongName.replace("&lt;","<")
+                    #valueLongName.replace("&gt;",">")
+                    #valueLongName = strip_completely(valueLongName)
                     valueLongName = strip_completely(valueLongName[0])
                     valueChoices += "%s|%s||" % (valueShortName,valueLongName)
             model.values = valueChoices
