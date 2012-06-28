@@ -231,7 +231,9 @@ def serialize(request, model_name, app_name="django_cim_forms", model_id=None, f
             msg = "invalid metadata format: %s" % (format)
             return HttpResponseBadRequest(msg)
 
-    xml_template_path = "%s/%s.xml" % (app_name.lower(), model_name.lower())
+    # xml templates are stored as static files...
+    # (the static location must be added to TEMPLATE_DIRS in settings.py)
+    xml_template_path = "%s/xml/%s.xml" % (app_name.lower(), model_name.lower())
     renderedModel = render_to_string(xml_template_path, {"model" : model, "type" : "modelComponent"})
     return HttpResponse(renderedModel,mimetype="text/xml")
 
