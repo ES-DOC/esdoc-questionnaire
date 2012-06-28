@@ -268,14 +268,21 @@ class MetadataRelationshipField(MetadataField):
         return self._addMode != FieldAddModes.INLINE
 
     def getTargetModelClass(self):
-        ModelType = ContentType.objects.get(app_label=self._targetAppName,model=self._targetModelName)
-        ModelClass = ModelType.model_class()
-        return ModelClass
+        try:
+            ModelType = ContentType.objects.get(app_label=self._targetAppName,model=self._targetModelName)
+            ModelClass = ModelType.model_class()
+            return ModelClass
+        except django.contrib.contenttypes.models.ContentType.DoesNotExist:
+            return None
 
     def getSourceModelClass(self):
-        ModelType = ContentType.objects.get(app_label=self._sourceAppName,model=self._sourceModelName)
-        ModelClass = ModelType.model_class()
-        return ModelClass
+        try:
+            ModelType = ContentType.objects.get(app_label=self._sourceAppName,model=self._sourceModelName)
+            ModelClass = ModelType.model_class()
+            return ModelClass
+        except django.contrib.contenttypes.models.ContentType.DoesNotExist:
+            return None
+
 
 
 class MetadataAbstractField():
