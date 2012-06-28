@@ -11,26 +11,9 @@ Django-CIM-Forms is a Django Application that generates webforms based on CIM-co
 1. download django-cim-forms<version>.tar.gz
 2. run pip install django-cim-forms<version>.tar.gz
 3. in your main settings.py file, add "django_cim_forms" to the list of INSTALLED_APPS
-4. create appropriate symlinks from your main "site_media" directory to "django_cim/media/django_cim"
-5. write your code like this:
-
-MyApp/models.py:
-
-from django_cim.models import *
-
-class MyModel(<CIM-Model-Class-To-Inherit-From>):
-  _name = "MyModel"
-  _title = "My Model"
-
-  pass
-
-MyApp/forms.py:
-
-from django_cim.forms import *
-
-MyModel_form = MetadataFormFactory(MyModel)
-MyModel_formset = MetadataFormsetFactory(MyModel)
-
-6. run python manage.py syncdb
-
-7. navigate to "http://<MyServer>/<MyProject>/metadata/MyApp" 
+4. in your main settings.py file, add "rel('static')" to the list of TEMPLATE_DIRS
+5. in your main ursl.py file, add "(r'^metadata/', include('django_cim_forms.urls'))," to the list of patterns
+6. run python manage.py collectstatic
+7. run python manage.py syncdb
+#8. run python manage.py migrate django_cim_forms
+9. navigate to "http://<MyServer>/<MyProject>/metadata/MyApp/MyModel" 
