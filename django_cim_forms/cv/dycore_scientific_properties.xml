@@ -10,41 +10,40 @@
           <longName>Equation Set</longName>
           <values open="true">
             <value>
-              <shortName>deep-atmosphere non-hydrostatic (unapproximated Euler equations)</shortName>
+              <shortName>deep-atmosphere non-hydrostatic (unapproximated Euler                equations)</shortName>
               <longName>deep-atmosphere non-hydrostatic (unapproximated Euler equations)</longName>
             </value>
             <value>
-              <shortName>deep-atmosphere, non-hydrostatic, spherical geopotential
-                approximation</shortName>
-              <longName>deep-atmosphere, non-hydrostatic, spherical geopotential
-                approximation</longName>
+              <shortName>deep-atmosphere, non-hydrostatic, spherical geopotential                approximation</shortName>
+              <longName>deep-atmosphere, non-hydrostatic, spherical geopotential                approximation</longName>
             </value>
             <value>
-              <shortName>deep-atmosphere, hydrostatic, spherical geopotential approximation (quasi-hydrostatic)</shortName>
-              <longName>deep-atmosphere, hydrostatic, spherical geopotential approximation (quasi-hydrostatic)</longName>
+              <shortName>deep-atmosphere, hydrostatic, spherical geopotential approximation                (quasi-hydrostatic)</shortName>
+              <longName>deep-atmosphere, hydrostatic, spherical geopotential approximation                (quasi-hydrostatic)</longName>
             </value>
             <value>
-              <shortName>shallow-atmosphere, non-hydrostatic, spherical geopotential approximation</shortName>
-              <longName>shallow-atmosphere, non-hydrostatic, spherical geopotential approximation</longName>
+              <shortName>shallow-atmosphere, non-hydrostatic, spherical geopotential                approximation</shortName>
+              <longName>shallow-atmosphere, non-hydrostatic, spherical geopotential                approximation</longName>
             </value>
             <value>
-              <shortName>shallow-atmosphere, hydrostatic, spherical geopotential approximation (primitive equations)</shortName>
-              <longName>shallow-atmosphere, hydrostatic, spherical geopotential approximation (primitive equations)</longName>
+              <shortName>shallow-atmosphere, hydrostatic, spherical geopotential approximation                (primitive equations)</shortName>
+              <longName>shallow-atmosphere, hydrostatic, spherical geopotential approximation                (primitive equations)</longName>
             </value>
             <value>
-              <shortName>shallow-atmosphere but cos-Coriolis terms retained, non-hydrostatic, spherical geopotential approximation</shortName>
-              <longName>shallow-atmosphere but cos-Coriolis terms retained, non-hydrostatic, spherical geopotential approximation</longName>
+              <shortName>shallow-atmosphere but cos-Coriolis terms retained, non-hydrostatic,                spherical geopotential approximation</shortName>
+              <longName>shallow-atmosphere but cos-Coriolis terms retained, non-hydrostatic,                spherical geopotential approximation</longName>
             </value>
             <value>
-              <shortName>sound-proof: anelastic, non-hydrostatic, spherical geopotential approximation </shortName>
-              <longName>sound-proof: anelastic, non-hydrostatic, spherical geopotential approximation </longName>
+              <shortName>sound-proof: anelastic, non-hydrostatic, spherical geopotential                approximation </shortName>
+              <longName>sound-proof: anelastic, non-hydrostatic, spherical geopotential                approximation </longName>
             </value>
             <value>
-              <shortName>sound-proof: unified, non-hydrostatic, spherical geopotential approximation</shortName>
-              <longName>sound-proof: unified, non-hydrostatic, spherical geopotential approximation</longName>
+              <shortName>sound-proof: unified, non-hydrostatic, spherical geopotential                approximation</shortName>
+              <longName>sound-proof: unified, non-hydrostatic, spherical geopotential                approximation</longName>
             </value>
           </values>
         </item>
+        
         <item>
           <shortName>Dycore Generic class</shortName>
           <longName>Generic class</longName>
@@ -54,8 +53,8 @@
               <longName>Eulerian</longName>
             </value>
             <value>
-              <shortName>Eulerian with semi-Lagrangian extension in the longitudinal direction</shortName>
-              <longName>Eulerian with semi-Lagrangian extension in the longitudinal direction</longName>
+              <shortName>Eulerian with semi-Lagrangian extension in the longitudinal                direction</shortName>
+              <longName>Eulerian with semi-Lagrangian extension in the longitudinal                direction</longName>
             </value>
             <value>
               <shortName>semi-Lagrangian</shortName>
@@ -156,7 +155,8 @@
 
         <item>
           <shortName>Specifics on spatial discretizations (keywords)</shortName>
-          <longName>Specifics on spatial discretizations (keywords), select all that apply and or add items</longName>
+          <longName>Specifics on spatial discretizations (keywords), select all that apply and or
+            add items</longName>
           <values nullable="false" open="true" multi="true">
             <value>
               <shortName>horizontal: first-order</shortName>
@@ -195,7 +195,8 @@
 
         <item>
           <shortName>Specifics on temporal discretizations (keywords)</shortName>
-          <longName>Specifics on temporal discretizations (keywords), select all that apply and or add items</longName>
+          <longName>Specifics on temporal discretizations (keywords), select all that apply and or
+            add items</longName>
           <values multi="true" open="true" nullable="false">
             <value>
               <shortName>2-time-level scheme</shortName>
@@ -289,12 +290,12 @@
               <longName>air density (moist)</longName>
             </value>
             <value>
-              <shortName>air density perturbation (relative to hydrostatic reference profile, dry)</shortName>
-              <longName>air density perturbation (relative to hydrostatic reference profile, dry)</longName>
+              <shortName>air density perturbation (relative to hydrostatic reference profile,                dry)</shortName>
+              <longName>air density perturbation (relative to hydrostatic reference profile,                dry)</longName>
             </value>
             <value>
-              <shortName>air density perturbation (relative to hydrostatic reference profile, moist)</shortName>
-              <longName>air density perturbation (relative to hydrostatic reference profile, moist)</longName>
+              <shortName>air density perturbation (relative to hydrostatic reference profile,                moist)</shortName>
+              <longName>air density perturbation (relative to hydrostatic reference profile,                moist)</longName>
             </value>
             <value>
               <shortName>density of water vapor</shortName>
@@ -365,8 +366,10 @@
               <longName>potential temperature</longName>
             </value>
             <value>
-              <shortName>potential temperature perturbation (relative to hydrostatic reference profile)</shortName>
-              <longName>potential temperature perturbation (relative to hydrostatic reference profile)</longName>
+              <shortName>potential temperature perturbation (relative to hydrostatic reference
+                profile)</shortName>
+              <longName>potential temperature perturbation (relative to hydrostatic reference
+                profile)</longName>
             </value>
             <value>
               <shortName>potential temperature density (dry)</shortName>
@@ -377,12 +380,12 @@
               <longName>potential temperature density (moist)</longName>
             </value>
             <value>
-              <shortName>potential temperature density perturbation (dry, relative to hydrostatic reference profile)</shortName>
-              <longName>potential temperature density perturbation (dry, relative to hydrostatic reference profile)</longName>
+              <shortName>potential temperature density perturbation (dry, relative to hydrostatic                reference profile)</shortName>
+              <longName>potential temperature density perturbation (dry, relative to hydrostatic                reference profile)</longName>
             </value>
             <value>
-              <shortName>potential temperature density perturbation (moist, relative to hydrostatic reference profile)</shortName>
-              <longName>potential temperature density perturbation (moist, relative to hydrostatic reference profile)</longName>
+              <shortName>potential temperature density perturbation (moist, relative to hydrostatic                reference profile)</shortName>
+              <longName>potential temperature density perturbation (moist, relative to hydrostatic                reference profile)</longName>
             </value>
             <value>
               <shortName>pressure (dry)</shortName>
@@ -461,8 +464,8 @@
               <longName>potential virtual temperature</longName>
             </value>
             <value>
-              <shortName>potential virtual temperature perturbation (relative to hydrostatic reference profile)</shortName>
-              <longName>potential virtual temperature perturbation (relative to hydrostatic reference profile)</longName>
+              <shortName>potential virtual temperature perturbation (relative to hydrostatic                reference profile)</shortName>
+              <longName>potential virtual temperature perturbation (relative to hydrostatic                reference profile)</longName>
             </value>
             <value>
               <shortName>potential virtual temperature density (dry)</shortName>
@@ -473,12 +476,12 @@
               <longName>potential virtual temperature density (moist)</longName>
             </value>
             <value>
-              <shortName>potential virtual temperature density perturbation (dry, relative to hydrostatic reference profile)</shortName>
-              <longName>potential virtual temperature density perturbation (dry, relative to hydrostatic reference profile)</longName>
+              <shortName>potential virtual temperature density perturbation (dry, relative to                hydrostatic reference profile)</shortName>
+              <longName>potential virtual temperature density perturbation (dry, relative to                hydrostatic reference profile)</longName>
             </value>
             <value>
-              <shortName>potential virtual temperature density perturbation (moist, relative to hydrostatic reference profile)</shortName>
-              <longName>potential virtual temperature density perturbation (moist, relative to hydrostatic reference profile)</longName>
+              <shortName>potential virtual temperature density perturbation (moist, relative to                hydrostatic reference profile)</shortName>
+              <longName>potential virtual temperature density perturbation (moist, relative to                hydrostatic reference profile)</longName>
             </value>
             <value>
               <shortName>water vapor mixing ratio</shortName>
@@ -1033,123 +1036,6 @@
       <shortName>Dissipation Mechanisms</shortName>
       <longName>Dissipation Mechanisms</longName>
       <items>
- 
-        <item>
-          <shortName>Explicitly added dissipation mechanisms (select all that are typically activated)</shortName>
-          <longName>Explicitly added dissipation mechanisms (select all that are typically activated)</longName>
-          <values multi="true" open="true" nullable="true">
-            <value>
-              <shortName>2D divergence damping (second-order)</shortName>
-              <longName>2D divergence damping (second-order)</longName>
-            </value>
-            
-            <value>
-              <shortName>2D divergence damping (fourth-order)</shortName>
-              <longName>2D divergence damping (fourth-order)</longName>
-            </value>
-            <value>
-              <shortName>2D divergence damping (higher than fourth-order)</shortName>
-              <longName>2D divergence damping (higher than fourth-order)</longName>
-            </value>
-            <value>
-              <shortName>3D divergence damping (second-order)</shortName>
-              <longName>3D divergence damping (second-order)</longName>
-            </value>
-            <value>
-              <shortName>Courant limiter</shortName>
-              <longName>Courant limiter</longName>
-            </value>
-            <value>
-              <shortName>digital filter (other than Shapiro filter)</shortName>
-              <longName>digital filter (other than Shapiro filter)</longName>
-            </value>
-            <value>
-              <shortName>external-mode damping</shortName>
-              <longName>external-mode damping</longName>
-            </value>
-            <value>
-              <shortName>horizontal diffusion, linear (second-order)</shortName>
-              <longName>horizontal diffusion, linear (second-order)</longName>
-            </value>
-            <value>
-              <shortName>horizontal diffusion, nonlinear (second-order)</shortName>
-              <longName>horizontal diffusion, nonlinear (second-order)</longName>
-            </value>
-            <value>
-              <shortName>horizontal hyper-diffusion, linear (fourth-order)</shortName>
-              <longName>horizontal hyper-diffusion, linear (fourth-order)</longName>
-            </value>
-            <value>
-              <shortName>horizontal hyper-diffusion, nonlinear (fourth-order)</shortName>
-              <longName>horizontal hyper-diffusion, nonlinear (fourth-order)</longName>
-            </value>
-            <value>
-              <shortName>horizontal hyper-diffusion, linear (higher than fourth-order)</shortName>
-              <longName>horizontal hyper-diffusion, linear (higher than fourth-order)</longName>
-            </value>
-            <value>
-              <shortName>local spectral filter (e.g. Boyd-Vandeven filter)</shortName>
-              <longName>local spectral filter (e.g. Boyd-Vandeven filter)</longName>
-            </value>
-            <value>
-              <shortName>polar Fast Fourier Transform (FFT) filter</shortName>
-              <longName>polar Fast Fourier Transform (FFT) filter</longName>
-            </value>
-            <value>
-              <shortName>sponge-layer horizontal diffusion (second-order, near model  top)</shortName>
-              <longName>sponge-layer horizontal diffusion (second-order, near model top)</longName>
-            </value>
-            <value>
-              <shortName>sponge-layer Rayleigh friction, applied to u-wind (near model top)</shortName>
-              <longName>sponge-layer Rayleigh friction, applied to u-wind (near model top)</longName>
-            </value>
-            <value>
-              <shortName>sponge-layer Rayleigh friction, applied to u,v-winds (near model top)</shortName>
-              <longName>sponge-layer Rayleigh friction, applied to u,v-winds (near model top)</longName>
-            </value>
-            <value>
-              <shortName>sponge-layer Rayleigh friction, applied to u,v,w-winds (near model top)</shortName>
-              <longName>sponge-layer Rayleigh friction, applied to u,v,w-winds (near model top)</longName>
-            </value>
-            <value>
-              <shortName>Robert-Asselin temporal filter</shortName>
-              <longName>Robert-Asselin temporal filter</longName>
-            </value>
-            <value>
-              <shortName>Shapiro filter (second-order)</shortName>
-              <longName>Shapiro filter (second-order)</longName>
-            </value>
-            <value>
-              <shortName>Shapiro filter (fourth-order)</shortName>
-              <longName>Shapiro filter (fourth-order)</longName>
-            </value>
-            <value>
-              <shortName>Shapiro filter (eighth-order)</shortName>
-              <longName>Shapiro filter (eighth-order)</longName>
-            </value>
-            <value>
-              <shortName>Shapiro filter (higher than eighth-order)</shortName>
-              <longName>Shapiro filter (higher than eighth-order)</longName>
-            </value>
-            <value>
-              <shortName>vertical diffusion (second-order)</shortName>
-              <longName>vertical diffusion (second-order)</longName>
-            </value>
-            <value>
-              <shortName>vertical hyper-diffusion (fourth-order or higher)</shortName>
-              <longName>vertical hyper-diffusion (fourth-order or higher)</longName>
-            </value>
-            <value>
-              <shortName>vertical velocity damping</shortName>
-              <longName>vertical velocity damping</longName>
-            </value>
-            <value>
-              <shortName>vorticity damping</shortName>
-              <longName>vorticity damping</longName>
-            </value>
-            
-          </values>
-        </item>
 
         <item>
           <shortName>Implicit (numerical) dissipation mechanisms</shortName>
@@ -1168,8 +1054,10 @@
               <longName>monotonicity constraint: flux limiter</longName>
             </value>
             <value>
-              <shortName>monotonicity constraint: slope curvature limiter for subgrid distribution</shortName>
-              <longName>monotonicity constraint: slope curvature limiter for subgrid distribution</longName>
+              <shortName>monotonicity constraint: slope curvature limiter for subgrid
+                distribution</shortName>
+              <longName>monotonicity constraint: slope curvature limiter for subgrid
+                distribution</longName>
             </value>
             <value>
               <shortName>monotonicity constraint for tracer advection scheme</shortName>
@@ -1197,12 +1085,13 @@
             </value>
           </values>
         </item>
-        
+
         <item>
           <shortName>List of all dissipation coefficients (include resolution dependencies and physical units)</shortName>
           <longName>List of all dissipation coefficients (include resolution dependencies and physical units)</longName>
           <values open="true" multi="true" custom="true"/>
         </item>
+        
       </items>
     </item>
 
@@ -1238,17 +1127,18 @@
         <item>
           <shortName>Model nomenclature for approximate 1x1 degree grid spacing (110 km x 110 km)</shortName>
           <longName>Model nomenclature for approximate 1x1 degree grid spacing (110 km x 110 km)</longName>
-          <values custom="true"/>          
+          <values custom="true"/>
         </item>
         <item>
           <shortName>Typical dynamics time step (in s) for approximate 1x1 degree spacing (110 km x 110 km)</shortName>
           <longName>Typical dynamics time step (in s) for approximate 1x1 degree spacing (110 km x 110 km)</longName>
           <values custom="true"/>
         </item>
+        
         <item>
           <shortName>Typical tracer advection time step (in s) for approximate 1x1 degree grid spacing (110 km x 110 km)</shortName>
           <longName>Typical tracer advection time step (in s) for approximate 1x1 degree grid spacing (110 km x 110 km)</longName>
-          <values custom="true"/>          
+          <values custom="true"/>
         </item>
         <item>
           <shortName>Typical physics time step (in s) for approximate 1x1 degree grid spacing (110 km x 110 km)</shortName>
@@ -1256,9 +1146,8 @@
           <values custom="true"/>
         </item>
         
-        
-        
       </items>
     </item>
-  </items>
+    
+ </items>
 </cv>

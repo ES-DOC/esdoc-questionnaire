@@ -3,7 +3,7 @@
 {% for key in keys %}
 
     {% with property=model|getPropertyByGuid:key %}
-        <componentProperty represented="true">        
+        <componentProperty represented="true">
             <shortName>{{property.shortName}}</shortName>
             <longName>{{property.longName}}</longName>
             {% if property.hasSubItems %}

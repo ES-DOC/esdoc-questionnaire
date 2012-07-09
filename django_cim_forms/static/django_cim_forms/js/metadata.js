@@ -278,11 +278,16 @@ function enableJQueryWidgets() {
             enumerationValue = $(this);
             //enumerationOther = enumerationValue.next(".enumeration-other");
             enumerationOther = enumerationValue.siblings(".enumeration-other:first");
-            // I AM HERE
+            /// I AM HERE
             enumerationOther.before("<br/>");
-            enumerationOther.show(); // show temporarily so that there is a position for offset to work off of
+            //enumerationOther.position({
+             //   "my" : "left",
+             //   "at" : "right",
+             //   "of" : enumerationValue
+            //});
+            //enumerationOther.show(); // show temporarily so that there is a position for offset to work off of
             enumerationOther.offset({
-                left : enumerationValue.offset().left
+                left : $(enumerationValue).offset().left
             });
             if (enumerationValue.attr("multiple")=="multiple") {
                 multipleValues = enumerationValue.val();

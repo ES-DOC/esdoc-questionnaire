@@ -35,8 +35,10 @@ body {
 
 #metadata .field * { vertical-align: top; }
 
+/* these attributes are irrelevant now that enumeration-other appears _below_ enumeration-value
 #metadata .enumeration-value { margin-right: 4px; }
-#metadata .enumeration-other { margin-left: 4px; width: 25em; }
+#metadata .enumeration-other { margin-left: 4px; width: 25em; } */
+#metadata .enumeration-other { margin-top: 4px; width: 25em; }
 /* I'm using the same enumeration construct for "unbound properties" (properties that require a custom input) */
 /* in that case I want to ensure that the combobox is never displayed while the textbox is always displayed */
 #metadata .custom-property .enumeration-value { display: none !important; }

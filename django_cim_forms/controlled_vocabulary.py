@@ -44,6 +44,7 @@ def get_cv_local(cv_name):
         cv_text = cv_file.read()
         cv_file.close()
         return cv_text
+
     except IOError, e:
         msg = e.strerror
         raise MetadataError(msg)
@@ -138,6 +139,13 @@ class MetadataControlledVocabularyValueField(models.TextField):
         value = self._get_val_from_obj(obj)
         return self.get_db_prep_value(value)
 
+###    def south_field_triple(self):
+###        # just a one-off custom field that needs migration in South
+###        from south.modelsinspector import introspector
+###        field_class = "django_cim_forms.controlled_vocabulary." + self.__class__.__name__
+###        args, kwargs = introspector(self)
+###        return (field_class, args, kwargs)
+
 class MetadataControlledVocabulary(models.Model):
     class Meta:
         abstract = True
@@ -172,15 +180,14 @@ class MetadataControlledVocabulary(models.Model):
         cv = et.fromstring(get_cv(cv_name),parser)
         xpath_item_expression = "//item"
         items = cv.xpath(xpath_item_expression)
+        
         for item in items:
             # create the property if it doesn't already exist...
             shortName = item.xpath("shortName/text()") or None
             longName = item.xpath("longName/text()") or None
             if shortName: shortName = strip_completely(shortName[0])
             if longName: longName = strip_completely(longName[0])
-
             (model,created) = cls.objects.get_or_create(shortName=shortName,longName=longName)
-
             # figure out if it has values
             # and, if so, work out if they are "open," "multi," or "nullable"...
             xpath_values_expression="//item[shortName/text()='%s']/values" % shortName
@@ -205,6 +212,8 @@ class MetadataControlledVocabulary(models.Model):
             xpath_value_expression="//item[shortName/text()='%s']/values/value" % shortName
             values = cv.xpath(xpath_value_expression)
             valueChoices = ""
+#            if model.custom:
+#                print "%s IS CUSTOM AND VALUES=%s" % (model, values)
             for value in values:
                 valueShortName = value.xpath("shortName/text()")
                 valueShortName = strip_completely(valueShortName[0])                
