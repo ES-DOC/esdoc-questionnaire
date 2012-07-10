@@ -278,17 +278,7 @@ function enableJQueryWidgets() {
             enumerationValue = $(this);
             //enumerationOther = enumerationValue.next(".enumeration-other");
             enumerationOther = enumerationValue.siblings(".enumeration-other:first");
-            /// I AM HERE
-            enumerationOther.before("<br/>");
-            //enumerationOther.position({
-             //   "my" : "left",
-             //   "at" : "right",
-             //   "of" : enumerationValue
-            //});
-            //enumerationOther.show(); // show temporarily so that there is a position for offset to work off of
-            enumerationOther.offset({
-                left : $(enumerationValue).offset().left
-            });
+      
             if (enumerationValue.attr("multiple")=="multiple") {
                 multipleValues = enumerationValue.val();
                 // TODO: CHECK THE INDEXOF FN IN IE                
@@ -313,6 +303,13 @@ function enableJQueryWidgets() {
                     enumerationOther.hide();
                 }
             }
+            
+            // position the "other" textbox relative to the "value" select
+            enumerationOther.before("<br/>");
+            $(enumerationOther).offset({
+                "left" : $(enumerationValue).offset().left
+            });
+
         });        
         $(".enumeration-value").change(function(event) {
             enumerationValue = $(event.target);
@@ -345,6 +342,11 @@ function enableJQueryWidgets() {
                     enumerationOther.hide();
                 }
             }
+            
+            // position the "other" textbox relative to the "value" select            
+            $(enumerationOther).offset({
+                "left" : $(enumerationValue).offset().left
+            });
         });
         
 
