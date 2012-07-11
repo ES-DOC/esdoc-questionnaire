@@ -11,6 +11,8 @@ from django.core.exceptions import ObjectDoesNotExist
 
 from uuid import uuid4
 
+from django.conf import settings
+
 from django_cim_forms.models import *
 from django_cim_forms.forms import *
 from django_cim_forms.helpers import *
@@ -136,6 +138,7 @@ def detail(request, model_name, app_name="django_cim_forms", model_id=None):
         for (key,value) in request.GET.iteritems():
             # TODO: should I strip value of quotes?
             filter_args[key] = value
+        
         models = ModelClass.objects.filter(**filter_args)
         if len(models) != 1:
             msg = "specified either an invalid or non-unique %s" % model_name
@@ -183,6 +186,21 @@ def detail(request, model_name, app_name="django_cim_forms", model_id=None):
             else:            
                 model.save()
                 form.save_m2m()
+
+            if model.isCIMDocument():
+                # SERIALIZE TO CIM
+                xml_template_path = "%s/xml/%s.xml" % (app_name.lower(), model_name.lower())
+                serializedModel = render_to_string(xml_template_path, {"model" : model, "type" : model.getCIMDocumentType()})
+                # AND PUBLISH TO ATOM_FEED
+                try:
+                    documentFeedDirectory = settings.ATOM_FEED_DIR + "/" + app_name.lower() + "/" + model_name.lower()
+                    documentFeedFile = model.getCIMDocumentName() + ".xml"
+                    with open(documentFeedDirectory + "/" + documentFeedFile, 'w') as file:
+                        file.write(serializedModel)
+                    file.closed
+                except IOError:
+                    msg = "unable to serialize model ('%s') to '%s'" % (documentFeedFile,documentFeedDirectory)
+                    return HttpResponseBadRequest(msg)
 
             return HttpResponseRedirect(reverse('django_cim_forms.views.detail', args=(app_name,model_name,model.id)))
         else:

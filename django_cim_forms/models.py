@@ -12,6 +12,20 @@ from django_cim_forms.helpers import *
 from django_cim_forms.fields import *
 from django_cim_forms.controlled_vocabulary import *
 
+
+#######################################################
+# decorator that identifies a class as a CIM document #
+#######################################################
+
+def CIMDocument(documentType,documentName):
+   def decorator(obj):
+       obj._isCIMDocument = True
+       obj._cimDocumentType = documentType
+       obj._cimDocumentName = documentName
+
+       return obj
+   return decorator
+
 ############################################
 # the base classes for all metadata models #
 ############################################
@@ -33,6 +47,12 @@ class MetadataModel(models.Model):
     _fieldTypeOrder = None      # a list describing the order of fieldTypes (tabs); if a type is absent from this list it is not rendered
     _fieldOrder = None          # a list describing the order of fields; if a field is absent from this list it is not rendered
     _initialValues = {}         # a dictionary of initial values for the first time a model is created
+
+    # if a model is a CIM Document, then these attributes get set using the @CIMDocument decorator
+    _isCIMDocument = False
+    _cimDocumentType = ""
+    _cimDocumentName = ""
+    
 
     # every model has a (gu)id & version
     # (but since 'editable=False', they won't show up in forms)
@@ -100,6 +120,16 @@ class MetadataModel(models.Model):
             return title.strip()
         return title
 
+    def isCIMDocument(self):
+        return self._isCIMDocument
+    
+    def getCIMDocumentType(self):
+        return self._cimDocumentType
+
+    def getCIMDocumentName(self):
+        fieldValue = getattr(self, self._cimDocumentName)
+        return fieldValue
+    
     def getGuid(self):
         return self._guid
 
