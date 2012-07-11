@@ -278,7 +278,7 @@ function enableJQueryWidgets() {
             enumerationValue = $(this);
             //enumerationOther = enumerationValue.next(".enumeration-other");
             enumerationOther = enumerationValue.siblings(".enumeration-other:first");
-      
+
             if (enumerationValue.attr("multiple")=="multiple") {
                 multipleValues = enumerationValue.val();
                 // TODO: CHECK THE INDEXOF FN IN IE                
@@ -349,6 +349,16 @@ function enableJQueryWidgets() {
             });
         });
         
+
+        /* custom code to disable a widget (used when field is customized to 'readonly') */
+        /* turns out that disabling it directly in Django causes the value to be set to None,
+         * which means, the incorrect value is saved */
+        $(".disabled").each(function() {
+  
+            // this is handled in Django code
+            // wind up replacing the multifield select & textbox w/ a textbox & hidden input
+
+        });
 
         /* init an 'enabler' - a field that controls other fields or forms */
         $(".enabler:not(.enumeration-other)").each(function() {

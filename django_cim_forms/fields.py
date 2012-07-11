@@ -86,7 +86,16 @@ def customize_metadata_widgets(field):
             # so I have to specify which corresponding widget I wish to modify...
             if field.isReadOnly():
                 # Select widgets use the keyword "disabled" instead of "readonly"... go figure
-                formfield.widget.widgets[0].attrs.update({"disabled":"disabled",})
+#                formfield.widget.widgets[0].attrs.update({"disabled":"disabled",})
+#                currentClasses = formfield.widget.widgets[0].attrs["class"] + " "
+#                formfield.widget.widgets[0].attrs.update({"class": currentClasses + "disabled"})
+# THIS IS A HACK, I DON'T _REALLY_ WANT TO REPLACE THE WIDGETS
+# I'D RATHER BE ABLE TO USE THE DISABLED WIDGETS, BUT STILL SAVE A VALUE
+# (SEE http://groups.google.com/group/django-users/browse_thread/thread/8710ceea619b0e9d FOR A DESCRIPTION OF THE PROBLEM)
+                formfield.widget.widgets[0] = django.forms.fields.TextInput()
+                formfield.widget.widgets[1] = django.forms.fields.HiddenInput()
+
+
 
         if isinstance(field,MetadataAtomicField):
 
@@ -279,6 +288,7 @@ class MetadataRelationshipField(MetadataField):
             ModelClass = ModelType.model_class()
             return ModelClass
         except django.contrib.contenttypes.models.ContentType.DoesNotExist:
+            # handles the case where model is accessed before target is loaded (during syncdb, for instance)
             return None
 
     def getSourceModelClass(self):
@@ -287,6 +297,7 @@ class MetadataRelationshipField(MetadataField):
             ModelClass = ModelType.model_class()
             return ModelClass
         except django.contrib.contenttypes.models.ContentType.DoesNotExist:
+            # handles the case where model is accessed before target is loaded (during syncdb, for instance)
             return None
 
 
@@ -404,6 +415,7 @@ class MetadataBoundWidget(django.forms.widgets.MultiWidget):
         self._multi = multi
 
     def decompress(self, value):
+        
         if self._multi:
             if value:
                 val = [val.split("|") for val in value.split("||")]
@@ -457,7 +469,6 @@ class MetadataBoundFormField(django.forms.fields.MultiValueField):
     def clean(self,value):
         # an empty string "" is false
         # an explicit none is false
-        #print self.custom_choices
         if self._required and (not value[0] or value[0] == [u'']):
             msg = "this field is required"
             raise forms.ValidationError(msg)
@@ -497,7 +508,7 @@ class MetadataBoundFormField(django.forms.fields.MultiValueField):
                     elif "|" in value[1]:
                         msg = "bad value ('|' character is not allowed)"
                         raise forms.ValidationError(msg)
-            
+
                 return "|".join(value)
 
 class MetadataEnumerationField(models.CharField,MetadataBoundField):
