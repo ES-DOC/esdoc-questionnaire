@@ -164,6 +164,8 @@ class MetadataModel(models.Model):
             if isinstance(field,MetadataEnumerationField):
                 # if I'm initializing an enumeration, I have to deal w/ the peculiarities of MultiValueFields
                 value = [value,""]#"%s|%s" & (value,"")
+                field.setInitialValue(value)  # this lets me access the initial value later on (in case the field is marked as disabled)
+
 
             # TODO: DO ANY OTHER FIELD TYPES NEED SPECIAL INITIALIZATION LOGIC?
 
@@ -204,6 +206,7 @@ class MetadataProperty(MetadataModel):
 
     cvClass = None
     cvInstance = None
+    loadedCV = False
 
     shortName = MetadataAtomicField.Factory("charfield",max_length=HUGE_STRING,blank=False)
     longName  = MetadataAtomicField.Factory("charfield",max_length=HUGE_STRING,blank=False)
@@ -281,8 +284,12 @@ class MetadataProperty(MetadataModel):
         cv = kwargs.pop("cv",None)
         
         super(MetadataProperty,self).__init__(*args,**kwargs)
+
         
- #       self.getField("value").widget = django.forms.Select()
+#        if self.cvClass and not self.loadedCV:
+#            self.cvClass.loadCV()
+#            self.loadedCV = True
+#        
         if cv:
             self.cvInstance = cv
             self.shortName = cv.shortName

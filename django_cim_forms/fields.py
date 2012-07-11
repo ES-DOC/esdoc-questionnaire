@@ -87,13 +87,13 @@ def customize_metadata_widgets(field):
             if field.isReadOnly():
                 # Select widgets use the keyword "disabled" instead of "readonly"... go figure
 #                formfield.widget.widgets[0].attrs.update({"disabled":"disabled",})
-#                currentClasses = formfield.widget.widgets[0].attrs["class"] + " "
-#                formfield.widget.widgets[0].attrs.update({"class": currentClasses + "disabled"})
+                currentClasses = formfield.widget.widgets[0].attrs["class"] + " "
+                formfield.widget.widgets[0].attrs.update({"class": currentClasses + "disabled"})
 # THIS IS A HACK, I DON'T _REALLY_ WANT TO REPLACE THE WIDGETS
 # I'D RATHER BE ABLE TO USE THE DISABLED WIDGETS, BUT STILL SAVE A VALUE
 # (SEE http://groups.google.com/group/django-users/browse_thread/thread/8710ceea619b0e9d FOR A DESCRIPTION OF THE PROBLEM)
-                formfield.widget.widgets[0] = django.forms.fields.TextInput()
-                formfield.widget.widgets[1] = django.forms.fields.HiddenInput()
+#                formfield.widget.widgets[0] = django.forms.fields.TextInput()
+#                formfield.widget.widgets[1] = django.forms.fields.HiddenInput()
 
 
 
@@ -433,6 +433,7 @@ class MetadataBoundFormField(django.forms.fields.MultiValueField):
     _empty = True
     _required = True
     _custom = False
+    _initialValue = None
 
     def __init__(self,*args,**kwargs):
 
@@ -442,6 +443,7 @@ class MetadataBoundFormField(django.forms.fields.MultiValueField):
         empty = kwargs.pop("empty",True)
         required = not(kwargs.pop("blank",True))
         custom = kwargs.pop("custom",False)
+        initial = kwargs.pop("initial",None)
 
         fields = (
             django.forms.fields.CharField(max_length=HUGE_STRING,required=required),
@@ -455,8 +457,18 @@ class MetadataBoundFormField(django.forms.fields.MultiValueField):
         self._empty = empty
         self._required = required
         self._custom = custom
+        self._initialValue = initial
 
+#    def setInitialValue(self,value):
+#        self._initialValue = value
+#
+#    def getInitialValue(self):
+#        return self._initialValue
 
+    def isReadOnly(self):
+        isFirstWidgetReadOnly = self.widget.widgets[0].attrs["class"].find("disabled") != -1
+        isSecondWidgetReadOnly = self.widget.widgets[1].attrs["class"].find("disabled") != -1
+        return isFirstWidgetReadOnly or isSecondWidgetReadOnly
 
     def compress(self, data_list):
         if self._multi:
@@ -472,6 +484,19 @@ class MetadataBoundFormField(django.forms.fields.MultiValueField):
         if self._required and (not value[0] or value[0] == [u'']):
             msg = "this field is required"
             raise forms.ValidationError(msg)
+
+        # ordinarily, a disabled select widget will not post a value
+        # so I _cheat_ here by setting it manually before clean finishes
+        if self.isReadOnly():
+            #print self.getInitialValue()
+            # TODO: DO STUFF HERE
+            #print self.fields[0].get_prep_value(value)
+            #print self._initialValue
+            #print self.fields[0]
+            #print self.fields[1]
+            #print value
+            pass
+            
 
         if value != [None,None]:
             
@@ -515,6 +540,7 @@ class MetadataEnumerationField(models.CharField,MetadataBoundField):
 
     _enumerationModelName   = None
     _enumerationAppName     = None
+    _initialValue = None
 
 
     def formfield(self,*args,**kwargs):
@@ -534,8 +560,9 @@ class MetadataEnumerationField(models.CharField,MetadataBoundField):
         if self.isEmpty() and EMPTY_CHOICE[0] not in custom_choices:
             #custom_choices += EMPTY_CHOICE
             custom_choices.insert(0,EMPTY_CHOICE[0])
-
+            
         return MetadataBoundFormField(choices=custom_choices,multi=self.isMulti(),empty=self.isEmpty())
+
 
 
     def getEnumerationClass(self):
@@ -555,7 +582,12 @@ class MetadataEnumerationField(models.CharField,MetadataBoundField):
             self._enumerationAppName = enumerationAppAndModel[0].lower()
 # apparently, this is not needed (super() above calls BoundField.__init__()
 #        self.initBound(*args,**kwargs)
-        
+
+    def setInitialValue(self,value):        
+        self._initialValue = value
+
+    def getInitialValue(self):
+        return self._initialValue
 
 class MetadataPropertyField(models.CharField,MetadataBoundField):
     pass

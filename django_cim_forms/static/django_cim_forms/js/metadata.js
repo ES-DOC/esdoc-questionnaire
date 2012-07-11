@@ -355,8 +355,8 @@ function enableJQueryWidgets() {
          * which means, the incorrect value is saved */
         $(".disabled").each(function() {
   
-            // this is handled in Django code
-            // wind up replacing the multifield select & textbox w/ a textbox & hidden input
+            // I AM HERE
+            $(this).attr('disabled','true');
 
         });
 
