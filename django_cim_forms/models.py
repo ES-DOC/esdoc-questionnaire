@@ -193,7 +193,19 @@ class MetadataModel(models.Model):
                 raise MetadataError(msg)
             if isinstance(field,MetadataEnumerationField):
                 # if I'm initializing an enumeration, I have to deal w/ the peculiarities of MultiValueFields
-                value = [value,""]#"%s|%s" & (value,"")
+                possibleChoices = field.getCustomChoices()
+                if [choice for choice in possibleChoices if choice[0]==value]:
+                    # value is a valid choice
+                    value=[value,""]
+                elif field.isOpen():# [choice for choice in possibleChoices if choice[0]=="OTHER"]:
+                    # value is not a valid choice, but enumeration is open
+                    value=["OTHER",value]
+                else:
+                    # value is not a valid choice, and enumeration is not open
+                    msg = "%s is not a valid initialValue"
+                    raise MetadataError(msg)
+                
+
                 field.setInitialValue(value)  # this lets me access the initial value later on (in case the field is marked as disabled)
 
 

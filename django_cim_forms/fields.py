@@ -459,11 +459,11 @@ class MetadataBoundFormField(django.forms.fields.MultiValueField):
         self._custom = custom
         self._initialValue = initial
 
-#    def setInitialValue(self,value):
-#        self._initialValue = value
-#
-#    def getInitialValue(self):
-#        return self._initialValue
+    def setInitialValue(self,value):
+        self._initialValue = value
+
+    def getInitialValue(self):
+        return self._initialValue
 
     def isReadOnly(self):
         isFirstWidgetReadOnly = self.widget.widgets[0].attrs["class"].find("disabled") != -1
@@ -479,6 +479,8 @@ class MetadataBoundFormField(django.forms.fields.MultiValueField):
                 return "|".join(data_list)
 
     def clean(self,value):
+        print "IN CLEAN: %s" % self.getInitialValue()
+        
         # an empty string "" is false
         # an explicit none is false
         if self._required and (not value[0] or value[0] == [u'']):
@@ -544,22 +546,24 @@ class MetadataEnumerationField(models.CharField,MetadataBoundField):
 
 
     def formfield(self,*args,**kwargs):
-        custom_choices = []
-        EnumerationClass = self.getEnumerationClass()
-        if EnumerationClass:
-            if not EnumerationClass.isLoaded():
-                EnumerationClass.loadEnumerations()
-            # don't override enums
-            #custom_choices = [(enumeration.name,pretty_string(enumeration.name)) for enumeration in EnumerationClass.objects.all()]
-            custom_choices = [(enumeration.name,enumeration.name) for enumeration in EnumerationClass.objects.all()]
+        custom_choices = self.getCustomChoices()
 
-        if self.isOpen() and OTHER_CHOICE[0] not in custom_choices:
-            custom_choices += OTHER_CHOICE
-        if self.isNullable() and NONE_CHOICE[0] not in custom_choices:
-            custom_choices += NONE_CHOICE
-        if self.isEmpty() and EMPTY_CHOICE[0] not in custom_choices:
-            #custom_choices += EMPTY_CHOICE
-            custom_choices.insert(0,EMPTY_CHOICE[0])
+#        custom_choices = []
+#        EnumerationClass = self.getEnumerationClass()
+#        if EnumerationClass:
+#            if not EnumerationClass.isLoaded():
+#                EnumerationClass.loadEnumerations()
+#            # don't override enums
+#            #custom_choices = [(enumeration.name,pretty_string(enumeration.name)) for enumeration in EnumerationClass.objects.all()]
+#            custom_choices = [(enumeration.name,enumeration.name) for enumeration in EnumerationClass.objects.all()]
+#
+#        if self.isOpen() and OTHER_CHOICE[0] not in custom_choices:
+#            custom_choices += OTHER_CHOICE
+#        if self.isNullable() and NONE_CHOICE[0] not in custom_choices:
+#            custom_choices += NONE_CHOICE
+#        if self.isEmpty() and EMPTY_CHOICE[0] not in custom_choices:
+#            #custom_choices += EMPTY_CHOICE
+#            custom_choices.insert(0,EMPTY_CHOICE[0])
             
         return MetadataBoundFormField(choices=custom_choices,multi=self.isMulti(),empty=self.isEmpty())
 
@@ -571,6 +575,25 @@ class MetadataEnumerationField(models.CharField,MetadataBoundField):
             return ModelType.model_class()
         except:
             return None
+
+    def getCustomChoices(self):
+        EnumerationClass = self.getEnumerationClass()
+        if EnumerationClass:
+            if not EnumerationClass.isLoaded():
+                EnumerationClass.loadEnumerations()
+
+            custom_choices = [(enumeration.name,enumeration.name) for enumeration in EnumerationClass.objects.all()]
+            if self.isOpen() and OTHER_CHOICE[0] not in custom_choices:
+                custom_choices += OTHER_CHOICE
+            if self.isNullable() and NONE_CHOICE[0] not in custom_choices:
+                custom_choices += NONE_CHOICE
+            if self.isEmpty() and EMPTY_CHOICE[0] not in custom_choices:
+                #custom_choices += EMPTY_CHOICE
+                custom_choices.insert(0,EMPTY_CHOICE[0])
+
+            return custom_choices
+
+        return []
 
     def __init__(self,*args,**kwargs):
         enumeration = kwargs.pop('enumeration',None)
