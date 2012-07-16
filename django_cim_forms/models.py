@@ -204,9 +204,8 @@ class MetadataModel(models.Model):
                     # value is not a valid choice, and enumeration is not open
                     msg = "%s is not a valid initialValue"
                     raise MetadataError(msg)
-                
 
-                field.setInitialValue(value)  # this lets me access the initial value later on (in case the field is marked as disabled)
+                field.setInitialEnumeratedValue(value)  # this lets me access the initial value later on (in case the field is marked as disabled)
 
 
             # TODO: DO ANY OTHER FIELD TYPES NEED SPECIAL INITIALIZATION LOGIC?

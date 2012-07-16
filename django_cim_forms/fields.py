@@ -86,14 +86,16 @@ def customize_metadata_widgets(field):
             # so I have to specify which corresponding widget I wish to modify...
             if field.isReadOnly():
                 # Select widgets use the keyword "disabled" instead of "readonly"... go figure
-#                formfield.widget.widgets[0].attrs.update({"disabled":"disabled",})
-                currentClasses = formfield.widget.widgets[0].attrs["class"] + " "
-                formfield.widget.widgets[0].attrs.update({"class": currentClasses + "disabled"})
+##                formfield.widget.widgets[0].attrs.update({"disabled":"disabled",})
+##
+##                currentClasses = formfield.widget.widgets[0].attrs["class"]
+##                formfield.widget.widgets[0].attrs.update({"class": currentClasses + " disabled"})
+
 # THIS IS A HACK, I DON'T _REALLY_ WANT TO REPLACE THE WIDGETS
 # I'D RATHER BE ABLE TO USE THE DISABLED WIDGETS, BUT STILL SAVE A VALUE
-# (SEE http://groups.google.com/group/django-users/browse_thread/thread/8710ceea619b0e9d FOR A DESCRIPTION OF THE PROBLEM)
-#                formfield.widget.widgets[0] = django.forms.fields.TextInput()
-#                formfield.widget.widgets[1] = django.forms.fields.HiddenInput()
+# (SEE http://groups.google.com/group/django-users/browse_thread/thread/8710ceea619b0e9d or http://stackoverflow.com/questions/7743208/making-a-text-input-field-look-disabled-but-act-readonly FOR A DESCRIPTION OF THE PROBLEM)
+                formfield.widget.widgets[0] = django.forms.fields.TextInput()
+                formfield.widget.widgets[1] = django.forms.fields.HiddenInput()
 
 
 
@@ -359,6 +361,7 @@ class MetadataBoundField(MetadataField):
         self._multi = multi
         self._nullable = nullable
         self._empty = empty
+        self.blah = "blahblahblah"
         
 #    def initBound(self,*args,**kwargs):
 #        self._open = kwargs.pop("open",False)
@@ -377,6 +380,8 @@ class MetadataBoundField(MetadataField):
     def isEmpty(self):
         return self._empty
 
+    def setInitialValue(self,value):
+        self._initialValue = value
 
 class MetadataBoundWidget(django.forms.widgets.MultiWidget):
 
@@ -462,12 +467,19 @@ class MetadataBoundFormField(django.forms.fields.MultiValueField):
     def setInitialValue(self,value):
         self._initialValue = value
 
-    def getInitialValue(self):
-        return self._initialValue
+#    def getInitialValue(self):
+#        return self._initialValue
 
     def isReadOnly(self):
-        isFirstWidgetReadOnly = self.widget.widgets[0].attrs["class"].find("disabled") != -1
-        isSecondWidgetReadOnly = self.widget.widgets[1].attrs["class"].find("disabled") != -1
+        isFirstWidgetReadOnly = False
+        isSecondWidgetReadOnly = False
+        # THIS TRY/CATCH IS ONLY HERE TO DEAL W/ THE FACT THAT A READONLY ENUMERATION'S WIDGETS ARE
+        # REMAPPED AS TEXTBOXES ABOVE; HOPEFULLY AT SOME POINT I CAN GET RID OF THIS
+        try:
+            isSecondWidgetReadOnly = self.widget.widgets[1].attrs["class"].find("disabled") != -1
+            isFirstWidgetReadonly = self.widget.widgets[0].attrs["class"].find("disabled") != -1
+        except KeyError:
+            pass
         return isFirstWidgetReadOnly or isSecondWidgetReadOnly
 
     def compress(self, data_list):
@@ -479,7 +491,6 @@ class MetadataBoundFormField(django.forms.fields.MultiValueField):
                 return "|".join(data_list)
 
     def clean(self,value):
-        print "IN CLEAN: %s" % self.getInitialValue()
         
         # an empty string "" is false
         # an explicit none is false
@@ -488,15 +499,23 @@ class MetadataBoundFormField(django.forms.fields.MultiValueField):
             raise forms.ValidationError(msg)
 
         # ordinarily, a disabled select widget will not post a value
-        # so I _cheat_ here by setting it manually before clean finishes
+        # so I _cheat_ here by setting it manually before the cleaning starts
         if self.isReadOnly():
-            #print self.getInitialValue()
-            # TODO: DO STUFF HERE
+            # TODO: STILL NEED TO FIGURE OUT HOW TO DO THIS
+            # IN THE MEANTIME, I CHANGE THE WIDGETS TO TEXTBOXES IN CUSTOMIZE_METADATA_WIDGETS
+
             #print self.fields[0].get_prep_value(value)
             #print self._initialValue
             #print self.fields[0]
             #print self.fields[1]
             #print value
+            #print self.fields[0]
+            #print self.widget.custom_choices
+            #print self._initialValue
+            #print self.widget.widgets[0]
+            #print self.widget.widgets[1]
+            #print self._initialValue
+            #value = ["OTHER","foobar"]
             pass
             
 
@@ -547,27 +566,12 @@ class MetadataEnumerationField(models.CharField,MetadataBoundField):
 
     def formfield(self,*args,**kwargs):
         custom_choices = self.getCustomChoices()
-
-#        custom_choices = []
-#        EnumerationClass = self.getEnumerationClass()
-#        if EnumerationClass:
-#            if not EnumerationClass.isLoaded():
-#                EnumerationClass.loadEnumerations()
-#            # don't override enums
-#            #custom_choices = [(enumeration.name,pretty_string(enumeration.name)) for enumeration in EnumerationClass.objects.all()]
-#            custom_choices = [(enumeration.name,enumeration.name) for enumeration in EnumerationClass.objects.all()]
-#
-#        if self.isOpen() and OTHER_CHOICE[0] not in custom_choices:
-#            custom_choices += OTHER_CHOICE
-#        if self.isNullable() and NONE_CHOICE[0] not in custom_choices:
-#            custom_choices += NONE_CHOICE
-#        if self.isEmpty() and EMPTY_CHOICE[0] not in custom_choices:
-#            #custom_choices += EMPTY_CHOICE
-#            custom_choices.insert(0,EMPTY_CHOICE[0])
-            
         return MetadataBoundFormField(choices=custom_choices,multi=self.isMulti(),empty=self.isEmpty())
 
 
+#    def clean(self,value):
+#        print "IN CLEAN (enumeration): %s" % self.getInitialValue()
+#        return super(MetadataEnumerationField,self).clean(value)
 
     def getEnumerationClass(self):
         try:
@@ -606,11 +610,12 @@ class MetadataEnumerationField(models.CharField,MetadataBoundField):
 # apparently, this is not needed (super() above calls BoundField.__init__()
 #        self.initBound(*args,**kwargs)
 
-    def setInitialValue(self,value):        
+    def setInitialEnumeratedValue(self,value):
         self._initialValue = value
+        #super(MetadataEnumerationField,self).setInitialValue(value)
 
-    def getInitialValue(self):
-        return self._initialValue
+#    def getInitialValue(self):
+#        return self._initialValue
 
 class MetadataPropertyField(models.CharField,MetadataBoundField):
     pass

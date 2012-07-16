@@ -200,7 +200,9 @@ def detail(request, model_name, app_name="django_cim_forms", model_id=None):
                     file.closed
                 except IOError:
                     msg = "unable to serialize model ('%s') to '%s'" % (documentFeedFile,documentFeedDirectory)
-                    return HttpResponseBadRequest(msg)
+                    # just raise an error, rather than interfere w/ the HTTP request
+                    #return HttpResponseBadRequest(msg)
+                    print msg
 
             return HttpResponseRedirect(reverse('django_cim_forms.views.detail', args=(app_name,model_name,model.id)))
         else:
