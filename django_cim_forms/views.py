@@ -198,6 +198,9 @@ def detail(request, model_name, app_name="django_cim_forms", model_id=None):
                     with open(documentFeedDirectory + "/" + documentFeedFile, 'w') as file:
                         file.write(serializedModel)
                     file.closed
+                except AttributeError:
+                    msg = "unable to locate ATOM_FEED_DIR"
+                    print msg
                 except IOError:
                     msg = "unable to serialize model ('%s') to '%s'" % (documentFeedFile,documentFeedDirectory)
                     # just raise an error, rather than interfere w/ the HTTP request
