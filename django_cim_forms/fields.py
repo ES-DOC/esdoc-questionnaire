@@ -164,6 +164,7 @@ class MetadataField(models.Field):
 
     _required   = False     # by default, fields are not required
     _readonly   = False     # a field can be readonly
+    _unique     = False     # a field can be unique (but I have to deal w/ this manually; I can't change the db tables)
     _enables    = {}        # a field can toggle (enable) other fields
     
     @classmethod
@@ -175,6 +176,9 @@ class MetadataField(models.Field):
     def isRequired(self):
         return self._required
 
+    def isUnique(self):
+        return self._unique
+    
     def enables(self,enablingDictionary):
         # enablingDictiony lists fields to enable based on value:
         # { val1 : ["f1","f2","f3"], val2 : ["f4","f5","f6" }
@@ -206,6 +210,7 @@ class MetadataField(models.Field):
 ###        args, kwargs = introspector(self)
 ###        return (field_class, args, kwargs)
 
+ 
 class MetadataAtomicField(MetadataField):
 
     def __init__(self,*args,**kwargs):

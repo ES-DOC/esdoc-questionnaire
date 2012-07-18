@@ -153,7 +153,6 @@ class MetadataModel(models.Model):
         for (fieldToCustomize,propertiesToCustomize) in customizeDictionary.iteritems():
 
             field = cls._meta.get_field(fieldToCustomize)
-
             for (propertyName,propertyValue) in propertiesToCustomize.iteritems():
                 setattr(field,propertyName,propertyValue)
 

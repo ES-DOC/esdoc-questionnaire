@@ -177,8 +177,21 @@ class MetadataForm(ModelForm):
             self.initial[key] = value
        
     def clean(self):
+        modelInstance = self.getModelInstance()
+        modelClass = self.getModelClass()
+
+        # have to check "_unique" fields explicitly
+        # b/c that customization ocurrs after the db is setup;
+        # therefore, I can't rely on the validation happening automatically by Django
         cleaned_data = self.cleaned_data
-        
+        for cleaned_field_name in cleaned_data:
+            model_field = modelInstance.getField(cleaned_field_name)
+            if model_field.isUnique():
+                filter_args = {cleaned_field_name:cleaned_data[cleaned_field_name]}
+                if modelClass.objects.filter(**filter_args):
+                    msg = "this value must be unique"
+                    self._errors[cleaned_field_name] = self.error_class([msg])
+
         for key,value in self.getAllSubForms().iteritems():
             subFormType = value[0]
             subFormClass = value[1]
@@ -210,7 +223,7 @@ class MetadataForm(ModelForm):
         return cleaned_data
 
     def is_valid(self):
-  
+        
         validity = [subForm[2].is_valid() for subForm in self.getAllSubForms().itervalues() if subForm[2]]
         validity = all(validity) and super(MetadataForm,self).is_valid()
         return validity
