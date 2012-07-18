@@ -96,8 +96,6 @@ def customize_metadata_widgets(field):
 # (SEE http://groups.google.com/group/django-users/browse_thread/thread/8710ceea619b0e9d or http://stackoverflow.com/questions/7743208/making-a-text-input-field-look-disabled-but-act-readonly FOR A DESCRIPTION OF THE PROBLEM)
                 formfield.widget.widgets[0] = django.forms.fields.TextInput()
                 formfield.widget.widgets[1] = django.forms.fields.HiddenInput()                
-#                formfield.widget.widgets[0].attrs.update({"class" : "disabled"})
- #               formfield.widget.widgets[1].attrs.update({"class" : "disabled"})
                 
         if isinstance(field,MetadataAtomicField):
 
@@ -367,7 +365,8 @@ class MetadataBoundField(MetadataField):
         self._nullable = nullable
         self._empty = empty
         self.blah = "blahblahblah"
-        
+
+# no longer needed b/c __init__ is called for subclasses
 #    def initBound(self,*args,**kwargs):
 #        self._open = kwargs.pop("open",False)
 #        self._multi = kwargs.pop("multi",False)
@@ -512,18 +511,12 @@ class MetadataBoundFormField(django.forms.fields.MultiValueField):
             # TODO: STILL NEED TO FIGURE OUT HOW TO DO THIS
             # IN THE MEANTIME, I CHANGE THE WIDGETS TO TEXTBOXES IN CUSTOMIZE_METADATA_WIDGETS
 
-            #print self.fields[0].get_prep_value(value)
             #print self._initialValue
             #print self.fields[0]
             #print self.fields[1]
             #print value
-            #print self.fields[0]
-            #print self.widget.custom_choices
-            #print self._initialValue
             #print self.widget.widgets[0]
             #print self.widget.widgets[1]
-            #print self._initialValue
-            #value = ["OTHER","foobar"]
             pass
             
 
@@ -575,11 +568,6 @@ class MetadataEnumerationField(models.CharField,MetadataBoundField):
     def formfield(self,*args,**kwargs):
         custom_choices = self.getCustomChoices()
         return MetadataBoundFormField(choices=custom_choices,multi=self.isMulti(),empty=self.isEmpty())
-
-
-#    def clean(self,value):
-#        print "IN CLEAN (enumeration): %s" % self.getInitialValue()
-#        return super(MetadataEnumerationField,self).clean(value)
 
     def getEnumerationClass(self):
         try:

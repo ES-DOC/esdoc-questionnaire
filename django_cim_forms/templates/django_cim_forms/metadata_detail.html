@@ -60,8 +60,11 @@
                                                     <div class="hidden">
                                                         <span class="current_guid">{{form|getModelGuid}}</span>
                                                         <span class="current_app">{{form|getAppName}}</span>
-                                                        <span class="current_model">{{form|getModelTitle}}</span>
-                                                        <span class="current_field">{{field|verbose_name:form}}</span>
+                                                        <span class="current_model">{{form|getModelName}}</span>
+                                                        <span class="current_field">{{field.name}}</span>
+                                                        <!-- have to have 2 versions of these values; one for the AJAX call to add an existing field instance, and one for the text that appears on dialog boxes -->
+                                                        <span class="current_model_name">{{form|getModelTitle}}</span>
+                                                        <span class="current_field_name">{{field|verbose_name:form}}</span>
 
                                                     </div> <!-- /.hidden -->
                                                     {% with subForm=form|getSubForm:field %}

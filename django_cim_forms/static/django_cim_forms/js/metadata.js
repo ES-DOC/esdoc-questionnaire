@@ -9,6 +9,7 @@ var app_to_add_to = ""
 var field_to_add_to = ""
 
 var id_to_add = ""
+var model_to_add = ""
 var form_to_add = ""
 var button_to_add_form = ""
 
@@ -171,11 +172,52 @@ function add_step_two() {
        url : url,
        type : 'get',
        success : function(data) {
-            populate($.parseJSON(data),form_to_add);
+           // populate the form w/ the newly-added data...
+           populate($.parseJSON(data),form_to_add);
+           // work out what the title of the form ought to be...
+           var title = model_to_add + "&nbsp;<button type='button' class='remove' title='remove');'>remove</button>"
+           $(form_to_add).find(".accordion-header a").html(title);
+           // initialize the buttons in the titles for these forms...
+           // (b/c they are being added after enableJQueryWidgets below)
+           $(form_to_add).parents(".accordion:first").find(".accordion-header").each(function() {
+              initializeRemoveButton($(this).find("a button.remove"));
+           });            
        }
     });
     return true;
 }
+
+/* fn to setup properties of remove button */
+/* this is handled outside of enableJQueryWidgets b/c it has to be run as new fields get added to the form */
+function initializeRemoveButton(button) {
+
+        $(button).button({
+            icons: {primary: "ui-icon-circle-minus"},
+            text: false,
+        });
+        $(button).bind("click", function(e) {
+            /* prevent the delete button from _actually_ opening the accordian tab */
+            e.stopPropagation();
+        });
+        $(button).click(function(event) {
+
+
+            var fieldset = $(event.target).closest("fieldset");
+            var subform = $(event.target).closest(".subform");
+
+            model_to_remove_from = $(fieldset).find("span.current_model_name:first").text();
+            field_to_remove = $(fieldset).find("span.current_field_name:first").text();
+
+            button_to_remove_form = $(subform).find(".delete-row");
+
+            var content = "<div style='text-align: center; margin-left: auto; margin-right: auto;'>Do you really wish to remove this instance of " + field_to_remove + "?<p><em>(It will not be deleted, only removed from this " + model_to_remove_from + ")</em></p></div>";
+            $("#remove-dialog").html(content);
+            $("#remove-dialog").dialog("open");
+
+            //$(button_to_remove_form).click();
+
+        });
+};
 
 /* enable jquery widgets */
 function enableJQueryWidgets() {
@@ -188,10 +230,12 @@ function enableJQueryWidgets() {
             buttons : {
                 ok : function() {
                     id_to_add = $(this).find("select").val();
+                    model_to_add = $(this).find("select option:selected").text();
                     $(this).dialog("close");
                 },
                 cancel : function() {
                     id_to_add = ""
+                    model_to_add = ""
                     $(this).dialog("close");
                 }
             },
@@ -471,32 +515,13 @@ function enableJQueryWidgets() {
             // b/c the content between accordions messes things up
             $(accordion).find(".accordion-content").hide();
         });
-        $("button.remove").button({
-            icons: {primary: "ui-icon-circle-minus"},
-            text: false,
+
+        $("button.remove").each(function(){
+            // doing this in a separate fn b/c these buttons are created and destroyed dynamically
+            // so I need to re-initialize new ones as they appear
+            initializeRemoveButton($(this));
         });
-        $("button.remove").bind("click", function(e) {
-            /* prevent the delete button from _actually_ opening the accordian tab */
-            e.stopPropagation();
-        });
-        $("button.remove").click(function(event) {
-
-            
-            var fieldset = $(event.target).closest("fieldset");
-            var subform = $(event.target).closest(".subform");
-
-            model_to_remove_from = $(fieldset).find("span.current_model:first").text();
-            field_to_remove = $(fieldset).find("span.current_field:first").text();
-
-            button_to_remove_form = $(subform).find(".delete-row");
-
-            var content = "<div style='text-align: center; margin-left: auto; margin-right: auto;'>Do you really wish to remove this instance of " + field_to_remove + "?<p><em>(It will not be deleted, only removed from this " + model_to_remove_from + ")</em></p></div>";
-            $("#remove-dialog").html(content);
-            $("#remove-dialog").dialog("open");
-
-            //$(button_to_remove_form).click();
-
-        });
+        
         $(".subform-toolbar button.add").button({
             icons: {primary: "ui-icon-circle-plus"},
             text: false,
