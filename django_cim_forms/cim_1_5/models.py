@@ -869,14 +869,15 @@ class Citation(MetadataModel):
     _initialValues = {}
 
 
-    title = MetadataAtomicField.Factory("charfield",max_length=BIG_STRING,blank=False)
+    title = MetadataAtomicField.Factory("charfield",max_length=HUGE_STRING,blank=False)
     alternateTitle = MetadataAtomicField.Factory("charfield",max_length=BIG_STRING,blank=True)
     edition = MetadataAtomicField.Factory("charfield",max_length=BIG_STRING,blank=True)
     editionDate = MetadataAtomicField.Factory("datefield",blank=True,null=True)
     identifier = MetadataAtomicField.Factory("charfield",max_length=BIG_STRING,blank=True)
   #  citedResponsibleParty = MetadataManyToManyField('ResponsibleParty',related_name="citedResponsibleParty")
     otherCitationDetails = MetadataAtomicField.Factory("textfield",blank=True)
-    collectiveTitle = MetadataAtomicField.Factory("charfield",max_length=BIG_STRING,blank=True)
+    #collectiveTitle = MetadataAtomicField.Factory("charfield",max_length=BIG_STRING,blank=True)
+    collectiveTitle = MetadataAtomicField.Factory("textfield",blank=True)
     isbn = MetadataAtomicField.Factory("charfield",max_length=LIL_STRING,blank=True)
     issn = MetadataAtomicField.Factory("charfield",max_length=LIL_STRING,blank=True)
 

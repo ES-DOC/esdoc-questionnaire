@@ -11,9 +11,9 @@ from django.core import serializers
 # some constants #
 ##################
 
-HUGE_STRING = 200
-BIG_STRING  = 100
-LIL_STRING  = 25
+HUGE_STRING = 800
+BIG_STRING  = 400
+LIL_STRING  = 100
 
 OTHER_CHOICE = [(u'OTHER',u'--OTHER--')]
 NONE_CHOICE  = [(u'NONE',u'--NONE--')]
