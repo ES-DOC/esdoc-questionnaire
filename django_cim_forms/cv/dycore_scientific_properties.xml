@@ -155,8 +155,7 @@
 
         <item>
           <shortName>Specifics on spatial discretizations (keywords)</shortName>
-          <longName>Specifics on spatial discretizations (keywords), select all that apply and or
-            add items</longName>
+          <longName>Specifics on spatial discretizations (keywords), select all that apply and or add items</longName>
           <values nullable="false" open="true" multi="true">
             <value>
               <shortName>horizontal: first-order</shortName>
@@ -271,7 +270,7 @@
 
         <item>
           <shortName>Prognostic variables (moist setup with water vapor)</shortName>
-          <longName>Prognostic variables (moist setup with water vapor)</longName>
+          <longName>Prognostic variables (moist setup with water vapor), select all that apply and or add items</longName>
           <values multi="true" open="true" nullable="false">
             <value>
               <shortName>3D vorticity</shortName>
@@ -638,7 +637,7 @@
         </item>
         <item>
           <shortName>tracer advection: Specifics on spatial discretizations (keywords)</shortName>
-          <longName>Specifics on spatial discretizations (keywords)</longName>
+          <longName>Specifics on spatial discretizations (keywords), select all that apply and or add items</longName>
           <values multi="true" open="true" nullable="false">
             <value>
               <shortName>horizontal: first-order</shortName>
@@ -676,7 +675,7 @@
         </item>
         <item>
           <shortName>tracer advection: Specifics on temporal discretizations (keywords)</shortName>
-          <longName>Specifics on temporal discretizations (keywords)</longName>
+          <longName>Specifics on temporal discretizations (keywords), select all that apply and or add items</longName>
           <values multi="true" open="true" nullable="false">
             <value>
               <shortName>2-time-level scheme</shortName>
@@ -975,7 +974,7 @@
       <items>
         <item>
           <shortName>Built-in conservation property</shortName>
-          <longName>Built-in conservation property</longName>
+          <longName>Built-in conservation property, select all that apply and or add items</longName>
           <values multi="true" open="true" nullable="true">
             <value>
               <shortName>mass of dry air</shortName>
@@ -1001,7 +1000,7 @@
         </item>
         <item>
           <shortName>A-posteriori fixers</shortName>
-          <longName>A-posteriori fixers</longName>
+          <longName>A-posteriori fixers, select all that apply and or add items</longName>
           <values multi="true" open="true" nullable="true">
             <value>
               <shortName>mass fixer for dry air</shortName>
@@ -1039,7 +1038,7 @@
 
         <item>
           <shortName>Implicit (numerical) dissipation mechanisms</shortName>
-          <longName>Implicit (numerical) dissipation mechanisms</longName>
+          <longName>Implicit (numerical) dissipation mechanisms, select all that apply and or add items</longName>
           <values multi="true" nullable="true" open="true">
             <value>
               <shortName>damping via semi-Lagrangian interpolations</shortName>
@@ -1086,6 +1085,121 @@
           </values>
         </item>
 
+<item>
+  <shortName>Explicitly added dissipation mechanisms (select all that are typically activated)</shortName>
+  <longName>Explicitly added dissipation mechanisms (select all that are typically activated)</longName>
+  <values multi="true" open="true" nullable="true">
+    <value>
+      <shortName>2D divergence damping (second-order)</shortName>
+      <longName>2D divergence damping (second-order)</longName>
+    </value>
+    <value>
+      <shortName>2D divergence damping (fourth-order)</shortName>
+      <longName>2D divergence damping (fourth-order)</longName>
+    </value>
+    <value>
+      <shortName>2D divergence damping (higher than fourth-order)</shortName>
+      <longName>2D divergence damping (higher than fourth-order)</longName>
+    </value>
+    <value>
+      <shortName>3D divergence damping (second-order)</shortName>
+      <longName>3D divergence damping (second-order)</longName>
+    </value>
+    <value>
+      <shortName>Courant limiter</shortName>
+      <longName>Courant limiter</longName>
+    </value>
+    <value>
+      <shortName>digital filter (other than Shapiro filter)</shortName>
+      <longName>digital filter (other than Shapiro filter)</longName>
+    </value>
+    <value>
+      <shortName>external-mode damping</shortName>
+      <longName>external-mode damping</longName>
+    </value>
+    <value>
+      <shortName>horizontal diffusion, linear (second-order)</shortName>
+      <longName>horizontal diffusion, linear (second-order)</longName>
+    </value>
+    <value>
+      <shortName>horizontal diffusion, nonlinear (second-order)</shortName>
+      <longName>horizontal diffusion, nonlinear (second-order)</longName>
+    </value>
+    <value>
+      <shortName>horizontal hyper-diffusion, linear (fourth-order)</shortName>
+      <longName>horizontal hyper-diffusion, linear (fourth-order)</longName>
+    </value>
+    <value>
+      <shortName>horizontal hyper-diffusion, nonlinear (fourth-order)</shortName>
+      <longName>horizontal hyper-diffusion, nonlinear (fourth-order)</longName>
+    </value>
+    <value>
+      <shortName>horizontal hyper-diffusion, linear (higher than fourth-order)</shortName>
+      <longName>horizontal hyper-diffusion, linear (higher than fourth-order)</longName>
+    </value>
+    <value>
+      <shortName>local spectral filter (e.g. Boyd-Vandeven filter)</shortName>
+      <longName>local spectral filter (e.g. Boyd-Vandeven filter)</longName>
+    </value>
+    <value>
+      <shortName>polar Fast Fourier Transform (FFT) filter</shortName>
+      <longName>polar Fast Fourier Transform (FFT) filter</longName>
+    </value>
+    <value>
+      <shortName>sponge-layer horizontal diffusion (second-order, near model top)</shortName>
+      <longName>sponge-layer horizontal diffusion (second-order, near model top)</longName>
+    </value>
+    <value>
+      <shortName>sponge-layer Rayleigh friction, applied to u-wind (near model top)</shortName>
+      <longName>sponge-layer Rayleigh friction, applied to u-wind (near model top)</longName>
+    </value>
+    <value>
+      <shortName>sponge-layer Rayleigh friction, applied to u,v-winds (near model top)</shortName>
+      <longName>sponge-layer Rayleigh friction, applied to u,v-winds (near model top)</longName>
+    </value>
+    <value>
+      <shortName>sponge-layer Rayleigh friction, applied to u,v,w-winds (near model top)</shortName>
+      <longName>sponge-layer Rayleigh friction, applied to u,v,w-winds (near model top)</longName>
+    </value>
+    <value>
+      <shortName>Robert-Asselin temporal filter</shortName>
+      <longName>Robert-Asselin temporal filter</longName>
+    </value>
+    <value>
+      <shortName>Shapiro filter (second-order)</shortName>
+      <longName>Shapiro filter (second-order)</longName>
+    </value>
+    <value>
+      <shortName>Shapiro filter (fourth-order)</shortName>
+      <longName>Shapiro filter (fourth-order)</longName>
+    </value>
+    <value>
+      <shortName>Shapiro filter (eighth-order)</shortName>
+      <longName>Shapiro filter (eighth-order)</longName>
+    </value>
+    <value>
+      <shortName>Shapiro filter (higher than eighth-order)</shortName>
+      <longName>Shapiro filter (higher than eighth-order)</longName>
+    </value>
+    <value>
+      <shortName>vertical diffusion (second-order)</shortName>
+      <longName>vertical diffusion (second-order)</longName>
+    </value>
+    <value>
+      <shortName>vertical hyper-diffusion (fourth-order or higher)</shortName>
+      <longName>vertical hyper-diffusion (fourth-order or higher)</longName>
+    </value>
+    <value>
+      <shortName>vertical velocity damping</shortName>
+      <longName>vertical velocity damping</longName>
+    </value>
+    <value>
+      <shortName>vorticity damping</shortName>
+      <longName>vorticity damping</longName>
+    </value>
+  </values>
+</item>
+        
         <item>
           <shortName>List of all dissipation coefficients (include resolution dependencies and physical units)</shortName>
           <longName>List of all dissipation coefficients (include resolution dependencies and physical units)</longName>
