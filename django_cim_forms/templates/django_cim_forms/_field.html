@@ -15,7 +15,7 @@
             {% if hidden == "hidden" %}
                 <div class="field hidden" name="{{field.name}}">
             {% else %}
-                <div class="field" name="{{field.name}}">
+                <div class="field" name="{{field.name}}" width="100%">
             {% endif %}
         {% endwith %}
         
@@ -31,19 +31,23 @@
 
 
             {% if field|required:form %}
-                <span class="required">
+                <span class="field-label required">
                     {{ field|verbose_name:form }}:&nbsp;
                 </span>
             {% else %}
-                <span class="optional">
+                <span class="field-label optional">
                     {{ field|verbose_name:form }}:&nbsp;
                 </span>
             {% endif %}
             
+            
             {{ field }}
+            
             
 
             {% if field.errors %}
+            <div class="error-wrapper">
+                {{field.errors}}
                 <script class="error-script">
                     /* if there is any field error; display an error style in the enclosing tab */
                     /* (and enclosing accordion, if applicable) */
@@ -55,8 +59,16 @@
                     $("script.error-script:last").parents(".accordion-content").each(function() {
                         $(this).prev(".accordion-header").attr("class","ui-state-error");
                     });
+                    // next position the actual error next to the field
+                    // (just in case the field was repositioned previously)
+                    var currentError = $("script.error-script:last").parent("div.error-wrapper");
+                    // (this funny bit of code checks to see if the previous field is actually an enumeration-other textbox; if so I have to position the error based on the enumeration-value select)
+                    var prevField = ($(currentError).prev("input").attr("class").indexOf("enumeration-other") != -1) ? $(currentError).prevAll("select:first") : $(currentError).prev("input");
+                    $(currentError).offset({
+                        "left" : $(prevField).offset().left
+                    });
                 </script>
-                {{field.errors}}
+            </div>
             {% endif %} {# /field.errors #}
 
         </div> <!-- /.field -->

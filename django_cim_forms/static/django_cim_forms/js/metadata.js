@@ -1,4 +1,4 @@
-/* custom js for the django_cim application */
+/* custom js for the django_cim_forms application */
 
 ///////////////////////
 
@@ -10,6 +10,7 @@ var field_to_add_to = ""
 
 var id_to_add = ""
 var form_to_add = ""
+var button_to_add_form = ""
 
 var form_to_remove_from = ""
 var guid_to_remove_from = ""
@@ -21,7 +22,8 @@ var id_to_remove = ""
 var form_to_remove = ""
 var button_to_remove_form = ""
 
-/* checks the value of a field (toggler) against an associative array
+
+/* checks the value of a field (toggler) against an associative array (stuffToToggle)
  * which specifies other fields to toggle based on value */
 function toggleStuff(toggler,stuffToToggle) {
     var thisField = $(toggler).parent("div.field");
@@ -34,23 +36,22 @@ function toggleStuff(toggler,stuffToToggle) {
         var stuff = stuffToToggle[value]
         if (value==val) {
             for (var i=0; i<stuff.length; i++) {
-                var selector = "div.field[name='"+stuff[i]+"']";
-                $(thisField).find(selector).show();         // look in descendants
-                $(thisField).siblings(selector).show();     // and siblings
-                selector = "fieldset[name='"+stuff[i]+"']";
-                $(thisField).find(selector).show();         // look in descendants
-                $(thisField).siblings(selector).show();     // and siblings
+                var selector = "div.field[name='"+stuff[i]+"']";    // look in fields
+                $(thisField).find(selector).show();                 // look in descendants
+                $(thisField).siblings(selector).show();             // and siblings
+                selector = "fieldset[name='"+stuff[i]+"']";         // look in subforms
+                $(thisField).find(selector).show();                 // look in descendants
+                $(thisField).siblings(selector).show();             // and siblings
             }
         }
         else {
             for (var i=0; i<stuff.length; i++) {
-                var selector = "div.field[name='"+stuff[i]+"']";
-                $(thisField).find(selector).hide();         // look in descendants
-                $(thisField).siblings(selector).hide();     // and siblings
-                selector = "fieldset[name='"+stuff[i]+"']";
-                $(thisField).find(selector).hide();         // look in descendants
-                $(thisField).siblings(selector).hide();     // and siblings
-
+                var selector = "div.field[name='"+stuff[i]+"']";    // look in fields
+                $(thisField).find(selector).hide();                 // look in descendants
+                $(thisField).siblings(selector).hide();             // and siblings
+                selector = "fieldset[name='"+stuff[i]+"']";         // look in subforms
+                $(thisField).find(selector).hide();                 // look in descendants
+                $(thisField).siblings(selector).hide();             // and siblings
             }
         }
     }
@@ -59,24 +60,25 @@ function toggleStuff(toggler,stuffToToggle) {
 function setPropertyTitle(propertyValue) {
     var name = $(propertyValue).parents("div.accordion-content:first").find("div.field[name='longName']").find("input").val();
 
-    // .val()returns the value (shortName), while .text() returns what is actually displayed (longName)
+    // .val() returns the value (shortName), while .text() returns what is actually displayed (longName)
     //var value = $(propertyValue).val();
     // however, I still have to use the .map() fn in order to separate different options with a comma
     var value = $(propertyValue).children("option").filter(":selected").map(function () {
         return $(this).text();
     }).get().join(', ');
 
-
-    $('select option').map(function () {
-  return $(this).text() + ',' + $(this).val();
-}).get().join('\n');
-
+// CAN I DELETE THIS?!?
+//    $('select option').map(function () {
+//  return $(this).text() + ',' + $(this).val();
+//}).get().join('\n');
 
     var accordionHeader = $(propertyValue).parents("div.accordion-content:first").prev(".accordion-header");
     var title = name + ": " + value + " ";
     $(accordionHeader).find("a").text(title);
 };
 
+/* populate a specific form
+ * w/ specific (JSON) data */
 function populate(data, form) {
     
     $.each(data, function(key, value){
@@ -90,6 +92,37 @@ function populate(data, form) {
             }
         }
     });
+};
+
+
+function resizeFields(parent) {
+    // resizes atomic fields to use all available space
+    // have to do this dynamically b/c these fields are
+    // potentially hidden by tabs and/or accordions
+    // this function gets called the 1st time a tab or accordion header is shown
+    var margin = 4;
+    var padding = 4;
+    $(parent).find(".atomic:not(.datepicker, .disabled, .readonly)").each(function(index,value){
+       var parentDiv = $(this).closest("div.field");
+       var labelSpan = $(this).prev("span.field-label:first");
+       $(this).width($(parentDiv).width() - $(labelSpan).width() - (8.0 * (margin + padding)));       
+    });
+};
+
+function repositionFields(parent) {
+    // repositions "enumeration-other" fields to be aligned w/ "enumeration-value" fields
+    // have to do this dynamically b/c these fields are
+    // potentially hidden by tabs and/or accordions
+    // this function gets called the 1st time a tab or accordion header is shown
+    // (and only do this when both enumeration-value and enumeration-other are visible)
+    // (they will be repositioned on the change event otherwise)
+    $(parent).find(".enumeration-value").filter(":visible").each(function(index,value){
+        var enumerationValue = $(this);        
+        var enumerationOther = enumerationValue.siblings(".enumeration-other:first");
+        $(enumerationOther).filter(":visible").offset({
+            "left" : $(enumerationValue).offset().left
+        });
+    });    
 };
 
 /*
@@ -107,6 +140,9 @@ function add_step_zero(row) {
     }
 }
 
+/*
+ * begin the adding process
+ */
 function add_step_one(row) {
     var url = window.document.location.protocol + "//" + window.document.location.host + "/metadata/add_form/";
     url += "?g=" + guid_to_add_to + "&a=" + app_to_add_to + "&m=" + model_to_add_to + "&f=" + field_to_add_to;
@@ -124,10 +160,13 @@ function add_step_one(row) {
     $("#add-dialog").dialog("open");
       // ideally, this fn would continue adding content.
       // but the dialog fn doesn't block,
-      // so I'm doing this in two steps w/ a callback on the "close" event of the dialog
+      // so I'm doing this in two steps w/ a callback (add_step_two) on the "close" event of the dialog
       return true;
 };
 
+/*
+ * finish the adding process
+ */
 function add_step_two() {
     var url = window.document.location.protocol + "//" + window.document.location.host + "/metadata/get_content/";
     url += "?g=" + guid_to_add_to + "&a=" + app_to_add_to + "&m=" + model_to_add_to + "&f=" + field_to_add_to + "&i=" + id_to_add
@@ -175,7 +214,7 @@ function enableJQueryWidgets() {
                 },
                 cancel : function() {
                     button_to_remove_form = "";
-                    $(this).dialog("close");
+                     $(this).dialog("close");
                 }
             },
             close : function() {
@@ -188,7 +227,7 @@ function enableJQueryWidgets() {
 
        /* enable tabs */
        $(".tabs").tabs({
-           show : function(event,ui) {
+           show : function(event,ui) {               
                if ($(ui.tab).attr("class")!="dynamic-formset-initialized") {
                    $(ui.tab).addClass("dynamic-formset-initialized");
                    var tab_selector = $(ui.tab).attr("href");
@@ -219,16 +258,51 @@ function enableJQueryWidgets() {
                /* make the tab key shift focus the the next tab */
                var nTabs = $(currentTabSet).tabs("length");
                var selected = $(currentTabSet).tabs("option","selected");
-               /* the modulus operator ensures the tabs wrap around */
+               /* (the modulus operator ensures the tabs wrap around) */
                $(currentTabSet).tabs("option","selected",(selected+1)%nTabs);               
            }
        });
+
+       $('.tabs').bind('tabsshow', function(event, ui) {
+           var tabPane = ui.panel;
+           if ($(tabPane).attr("class").indexOf("resized-and-repositioned")==-1) {
+               resizeFields(tabPane);
+               repositionFields(tabPane);
+               $(tabPane).addClass("resized-and-repositioned");
+           }
+       });
+
+       /* explicitly resize & reposition the first tab
+        * (since it won't fire the show event above
+        */
+       var currentTabPane = $(".tabs:first").find('.ui-tabs-panel:not(.ui-tabs-hide)');
+       if ($(currentTabPane).attr("class").indexOf("resized-and-repositioned")==-1) {
+           resizeFields(currentTabPane);
+           repositionFields(currentTabPane);
+           $(currentTabPane).addClass("resized-and-repositioned");
+       }
 
        /* enable collapsible fieldsets */
        $(".coolfieldset").coolfieldset({speed:"fast"});
 
        /* enable multi-open accordions */
-       $( ".accordion" ).multiOpenAccordion({active:"All"});
+       $( ".accordion" ).multiOpenAccordion({
+           active : "All",
+           tabShown : function(event,ui) {
+               var accordionHeader = ui['tab'];
+               var accordionPane = ui['content'];              
+
+               if ($(accordionHeader).attr("class").indexOf("resized-and-repositioned")==-1) {
+                   resizeFields(accordionPane);
+                   repositionFields(accordionPane);
+                   $(accordionHeader).addClass("resized-and-repositioned");
+               }             
+           }
+
+       });
+       
+
+
        /* have to do this in two steps b/c the accordion JQuery method above cannot handle any content inbetween accordion panes */
        /* but I need a container for dynamic formsets to be bound to */
        /* so _after_ multiopenaccordion() is called, I stick a div into each pane and bind the formset() method to it */
@@ -238,15 +312,13 @@ function enableJQueryWidgets() {
            $(this).next().andSelf().wrapAll(div);
        });
 
-
-
-
        /* resize some textinputs */
-       $('input[type=text]').each(function(){
+       // TODO: DOUBLE-CHECK THIS SELECTOR WORKS IN ALL CASES
+       $('input[type=text].readonly').each(function(){
            // I could make this dynamic by using the keyup() function instead of each()
            // but, really, I only care about this for property names which are readOnly anyway
            var chars = $(this).val().length;
-           $(this).attr("size",chars);               
+           $(this).attr("size",chars);
        });
 
        /* add functionality to help-buttons (icons masquerading as buttons) */
@@ -306,9 +378,12 @@ function enableJQueryWidgets() {
             
             // position the "other" textbox relative to the "value" select
             enumerationOther.before("<br/>");
-            $(enumerationOther).offset({
-                "left" : $(enumerationValue).offset().left
-            });
+            // THIS HAS BEEN MOVED TO THE REPOSITIONFIELDS FN
+            // WHICH GETS CALLED WHEN TABS & ACCORDIONS ARE FIRST SHOWN
+            // THERE'S NO NEED TO CALL IT HERE'
+//            $(enumerationOther).offset({
+//                "left" : $(enumerationValue).offset().left
+//            });
 
         });        
         $(".enumeration-value").change(function(event) {
@@ -343,8 +418,10 @@ function enableJQueryWidgets() {
                 }
             }
             
-            // position the "other" textbox relative to the "value" select            
-            $(enumerationOther).offset({
+            // HOWEVER, I USE THE SAME LOGIC HERE
+            // B/C THE ENUMERATIONS IN QUESTION MAY NOT HAVE BEEN VISIBLE
+            // WHEN REPOSITION FIELDS WAS ORIGINALLY CALLED
+            $(enumerationOther).filter(":visible").offset({
                 "left" : $(enumerationValue).offset().left
             });
         });
@@ -353,9 +430,7 @@ function enableJQueryWidgets() {
         /* custom code to disable a widget (used when field is customized to 'readonly') */
         /* turns out that disabling it directly in Django causes the value to be set to None,
          * which means, the incorrect value is saved */
-        $(".disabled").each(function() {
-  
-            // I AM HERE
+        $(".disabled").each(function() {            
             $(this).attr('disabled','true');
 
         });
@@ -422,7 +497,7 @@ function enableJQueryWidgets() {
             $("#remove-dialog").html(content);
             $("#remove-dialog").dialog("open");
 
-//            $(button_to_remove_form).click();
+            //$(button_to_remove_form).click();
 
         });
         $(".subform-toolbar button.add").button({
@@ -452,4 +527,5 @@ function enableJQueryWidgets() {
 
         });
     });
+
 };

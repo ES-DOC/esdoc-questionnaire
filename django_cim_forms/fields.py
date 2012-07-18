@@ -95,13 +95,13 @@ def customize_metadata_widgets(field):
 # I'D RATHER BE ABLE TO USE THE DISABLED WIDGETS, BUT STILL SAVE A VALUE
 # (SEE http://groups.google.com/group/django-users/browse_thread/thread/8710ceea619b0e9d or http://stackoverflow.com/questions/7743208/making-a-text-input-field-look-disabled-but-act-readonly FOR A DESCRIPTION OF THE PROBLEM)
                 formfield.widget.widgets[0] = django.forms.fields.TextInput()
-                formfield.widget.widgets[1] = django.forms.fields.HiddenInput()
-
-
-
+                formfield.widget.widgets[1] = django.forms.fields.HiddenInput()                
+#                formfield.widget.widgets[0].attrs.update({"class" : "disabled"})
+ #               formfield.widget.widgets[1].attrs.update({"class" : "disabled"})
+                
         if isinstance(field,MetadataAtomicField):
 
-            newAttrs = {"class":"atomic"}
+            newAttrs = {"class" : "atomic"}
             for (key,value) in newAttrs.iteritems():
                 try:
                     currentAttrs = formfield.widget.attrs[key]
