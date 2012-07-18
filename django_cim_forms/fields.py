@@ -405,9 +405,12 @@ class MetadataBoundWidget(django.forms.widgets.MultiWidget):
         custom_choices = kwargs.pop("choices",None)
         multi = kwargs.pop("multi",False)
 
+        length = 4
+        if custom_choices:
+            length = max([length,(len(custom_choices)/2)])
         if multi:
             widgets = (
-                django.forms.fields.SelectMultiple(choices=custom_choices,attrs={"class":"enumeration-value"}),
+                django.forms.fields.SelectMultiple(choices=custom_choices,attrs={"class":"enumeration-value","size":length}),
                 django.forms.fields.TextInput(attrs={"class":"enumeration-other"}),
             )
         else:

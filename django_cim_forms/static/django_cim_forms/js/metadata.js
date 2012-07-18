@@ -67,11 +67,6 @@ function setPropertyTitle(propertyValue) {
         return $(this).text();
     }).get().join(', ');
 
-// CAN I DELETE THIS?!?
-//    $('select option').map(function () {
-//  return $(this).text() + ',' + $(this).val();
-//}).get().join('\n');
-
     var accordionHeader = $(propertyValue).parents("div.accordion-content:first").prev(".accordion-header");
     var title = name + ": " + value + " ";
     $(accordionHeader).find("a").text(title);
@@ -460,19 +455,21 @@ function enableJQueryWidgets() {
              icons : {primary: "ui-icon-circle-triangle-s"},
              text : false,
         }).click(function(event) {
-        // TODO: THIS IS NO LONGER WORKING B/C THERE IS CONTENT BETWEEN ACCORDIONS
             var formset = $(event.target).closest("fieldset");
             var accordion = $(formset).find(".accordion:first");
-            $(accordion).multiOpenAccordion("option","active","All");
+            // I have to do this manually (rather than w/ the active:all option)
+            // b/c the content between accordions messes things up
+            $(accordion).find(".accordion-content").show();
         });
         $(".subform-toolbar button.collapse" ).button({
             icons : {primary: "ui-icon-circle-triangle-n"},
             text: false,
         }).click(function(event) {
-        // TODO: THIS IS NO LONGER WORKING B/C THERE IS CONTENT BETWEEN ACCORDIONS
             var formset = $(event.target).closest("fieldset");
             var accordion = $(formset).find(".accordion:first");
-            $(accordion).multiOpenAccordion("option","active","None");
+            // I have to do this manually (rather than w/ the active:none option)
+            // b/c the content between accordions messes things up
+            $(accordion).find(".accordion-content").hide();
         });
         $("button.remove").button({
             icons: {primary: "ui-icon-circle-minus"},
