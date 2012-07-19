@@ -1,3 +1,4 @@
+import django_cim_forms.feeds
 from django.conf.urls.defaults import patterns, include, url
 
 from models import *
@@ -27,8 +28,9 @@ urlpatterns = patterns('',
     url(r'^xml/(?P<app_name>[^/]+)/(?P<model_name>[^/]+)/$', 'django_cim_forms.views.serialize', {"format" : "xml"}),
     url(r'^xml/(?P<app_name>[^/]+)/(?P<model_name>[^/]+)/(?P<model_id>\d+)/$', 'django_cim_forms.views.serialize', {"format" : "xml"}),
 
-    # ATOM feed...
-    url(r'^(?P<app_name>[^/]+)/(?P<model_name>[^/]+)/feed/$', 'django_cim_forms.feeds.MetadataFeed'),
+# TODO
+#    # ATOM feed...
+#    url(r'^(?P<app_name>[^/]+)/(?P<model_name>[^/]+)/feed/$', MetadataFeed()),
 
 )
 
