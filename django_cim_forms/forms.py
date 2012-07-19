@@ -187,8 +187,11 @@ class MetadataForm(ModelForm):
         for cleaned_field_name in cleaned_data:
             model_field = modelInstance.getField(cleaned_field_name)
             if isinstance(model_field,MetadataField) and model_field.isUnique():
-                filter_args = {cleaned_field_name:cleaned_data[cleaned_field_name]}
-                if modelClass.objects.filter(**filter_args):
+                filter_args = { 
+                    cleaned_field_name : cleaned_data[cleaned_field_name]
+                }
+
+                if modelClass.objects.filter(**filter_args).exclude(_guid=modelInstance._guid):
                     msg = "this value must be unique"
                     self._errors[cleaned_field_name] = self.error_class([msg])
 
