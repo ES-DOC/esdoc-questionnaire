@@ -190,7 +190,9 @@ class MetadataForm(ModelForm):
                 filter_args = { 
                     cleaned_field_name : cleaned_data[cleaned_field_name]
                 }
-
+                # returns a list of all models whose field values match the field values in this model for fields marked as "_unique"
+                # (the exclude function prevents this model from matching)
+                # if this list is not empty, add an error to the list of errors for that field
                 if modelClass.objects.filter(**filter_args).exclude(_guid=modelInstance._guid):
                     msg = "this value must be unique"
                     self._errors[cleaned_field_name] = self.error_class([msg])
