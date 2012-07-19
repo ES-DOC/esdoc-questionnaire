@@ -136,7 +136,8 @@ def detail(request, model_name, app_name="django_cim_forms", model_id=None):
     if request.GET:
         filter_args = {}
         for (key,value) in request.GET.iteritems():
-            # TODO: should I strip value of quotes?
+            
+            key = key + "__iexact"  # this ensures that the filter is case-insenstive
             filter_args[key] = value
         
         models = ModelClass.objects.filter(**filter_args)
