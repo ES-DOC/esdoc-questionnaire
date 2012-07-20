@@ -211,7 +211,6 @@ class MetadataModel(models.Model):
 
             self._initialValues[key] = value
 
-            #<django.db.models.query.QuerySet'>
             try:
                 # since this is the model doing the initialization of these properties
                 # I should add it to the set of models that can reference them
@@ -339,8 +338,7 @@ class MetadataProperty(MetadataModel):
     def addReferencingModel(self,model):
         modelString = "%s.%s" % (model.app,model.getName())
         self.referencingModels.add(modelString)
-        print self.referencingModels
-
+        
     def __init__(self,*args,**kwargs):
         cv = kwargs.pop("cv",None)
         
