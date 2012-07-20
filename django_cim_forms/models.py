@@ -211,6 +211,17 @@ class MetadataModel(models.Model):
 
             self._initialValues[key] = value
 
+            #<django.db.models.query.QuerySet'>
+            try:
+                # since this is the model doing the initialization of these properties
+                # I should add it to the set of models that can reference them
+                [v.addReferencingModel(self) for v in value if isinstance(v,MetadataProperty)]
+
+            except TypeError:
+                # this is not iterable
+                # therefore it can't be a queryset
+                # therefore it won't include properties
+                pass
 
     def serialize(self,format="json"):
         # sticking self in a list simulates a queryset
@@ -247,6 +258,8 @@ class MetadataProperty(MetadataModel):
     cvClass = None
     cvInstance = None
     loadedCV = False
+
+    referencingModels = set() # set of models that can reference this property (set ensures no duplicates)
 
     shortName = MetadataAtomicField.Factory("charfield",max_length=HUGE_STRING,blank=False)
     longName  = MetadataAtomicField.Factory("charfield",max_length=HUGE_STRING,blank=False)
@@ -319,6 +332,14 @@ class MetadataProperty(MetadataModel):
         
     def hasSubItems(self):
         return not self.hasValues() and not self.isCustom()
+
+    def getReferencingModels(self):
+        return self.referencingModels
+
+    def addReferencingModel(self,model):
+        modelString = "%s.%s" % (model.app,model.getName())
+        self.referencingModels.add(modelString)
+        print self.referencingModels
 
     def __init__(self,*args,**kwargs):
         cv = kwargs.pop("cv",None)
