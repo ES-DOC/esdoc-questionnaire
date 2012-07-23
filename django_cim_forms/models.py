@@ -57,7 +57,7 @@ class MetadataModel(models.Model):
     # every model has a (gu)id & version
     # (but since 'editable=False', they won't show up in forms)
     _guid = models.CharField(max_length=64,editable=False,blank=True,unique=True)
-    _version = models.IntegerField(max_length=64,editable=False,blank=True,default=1)
+    _version = models.IntegerField(max_length=64,editable=False,blank=True)
 
     # what application (project) is this model associated w/;
     # you can only have inter (not intra) application relationships
@@ -75,6 +75,9 @@ class MetadataModel(models.Model):
         if not self._guid:
             self._guid = str(uuid4())
 
+        if not self._version:
+            self._version = 1
+            
         if not self.app:
             self.app = self.CURRENT_APP
             
@@ -211,16 +214,18 @@ class MetadataModel(models.Model):
 
             self._initialValues[key] = value
 
-            try:
-                # since this is the model doing the initialization of these properties
-                # I should add it to the set of models that can reference them
-                [v.addReferencingModel(self) for v in value if isinstance(v,MetadataProperty)]
-
-            except TypeError:
-                # this is not iterable
-                # therefore it can't be a queryset
-                # therefore it won't include properties
-                pass
+# MOVED TO MetadataForm.initialize() B/C THE INITIAL PROPERTIES QUERYSET IS NOW A CURRIED FUNCTION
+# AND WILL ONLY EXIST IF initial=true IN THE FORM CONSTRUCTOR (THAT TRIGGERS THE initialize() FN)
+#            try:
+#                # since this is the model doing the initialization of these properties
+#                # I should add it to the set of models that can reference them
+#                [v.addReferencingModel(self) for v in value if isinstance(v,MetadataProperty)]
+#
+#            except TypeError:
+#                # this is not iterable
+#                # therefore it can't be a queryset
+#                # therefore it won't include properties
+#                pass
 
     def serialize(self,format="json"):
         # sticking self in a list simulates a queryset
@@ -309,7 +314,7 @@ class MetadataProperty(MetadataModel):
         if (filter.upper()!="ALL"):
             msg = "Error: custom filters are not yet supported for retrieving initial properties"
             raise MetadataError(msg)
-        
+
         # finally, return a queryset assuming I want ALL of the newly created properties...
         return cls.objects.filter(pk__in=newProperties)
 

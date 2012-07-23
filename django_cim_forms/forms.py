@@ -158,7 +158,12 @@ class MetadataForm(ModelForm):
                         # and relationship fields can't be set until both models have a pk
                         # I have to copy the initial values for this field here in the form constructor
                         try:
+                            # ODDS ARE, THIS WILL BE A CURRIED FN                            
                             qs = modelInstance.getInitialValues()[key]
+                            if hasattr(qs,'__call__'): # if the initial value is actually the result of a (curried) fn
+                                qs = qs.__call__()    # then go ahead and call the fn now
+                                modelInstance._initialValues[key] = qs  # and reset the _initialValues array here, so I don't have to do it later
+
                         except KeyError:
                             # if we get here, it means this formset must not have had initialValues specified
                             pass
@@ -174,8 +179,24 @@ class MetadataForm(ModelForm):
         modelInstance = self.getModelInstance()
         initial_values = modelInstance.getInitialValues()
         for (key,value) in initial_values.iteritems():
+
+            if hasattr(value,'__call__'): # if the initial value is actually the result of a (curried) fn
+                value = value.__call__()    # then go ahead and call the fn now
+                
+            # MOVED FROM MetadataModel.setInitialValues()
+            try:
+                # since this is the model doing the initialization of these properties
+                # I should add it to the set of models that can reference them
+                [v.addReferencingModel(modelInstance) for v in value if isinstance(v,MetadataProperty)]
+
+            except TypeError:
+                # this is not iterable
+                # therefore it can't be a queryset
+                # therefore it won't include properties
+                pass
+
             self.initial[key] = value
-       
+            
     def clean(self):
         modelInstance = self.getModelInstance()
         modelClass = self.getModelClass()
@@ -337,6 +358,7 @@ class MetadataFormSet(BaseModelFormSet):
         # this adds an extra kwarg, 'request,' to the subforms of this formset
         self._request = kwargs.pop('request', None)
         self._initalize = kwargs.pop("initialize",False)
+
         self.form = curry(self.form,request=self._request,initialize=self._initalize)
 
         super(MetadataFormSet,self).__init__(*args,**kwargs)
