@@ -10,6 +10,7 @@ from models import *
 # selected property is referenced by it.  if no named models reference the property, it can be #
 # safely deleted from the db.                                                                  #
 ################################################################################################
+
 def delete_danglers(modeladmin, request, queryset):
     for property in queryset:
         property_dangles = True
@@ -36,5 +37,5 @@ delete_danglers.short_description = "Delete any of the selected properties that 
 class PropertyAdmin(admin.ModelAdmin):
     actions = [delete_danglers]
 
-# registration must be done w/ concrete classes in their own applications
+# registration must be done w/ _concrete_ classes in their own applications
 #admin.site.register(MetadataProperty, PropertyAdmin)

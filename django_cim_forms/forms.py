@@ -158,11 +158,13 @@ class MetadataForm(ModelForm):
                         # and relationship fields can't be set until both models have a pk
                         # I have to copy the initial values for this field here in the form constructor
                         try:
-                            # ODDS ARE, THIS WILL BE A CURRIED FN                            
+                            # ODDS ARE, THIS WILL BE A CURRIED FN...
                             qs = modelInstance.getInitialValues()[key]
-                            if hasattr(qs,'__call__'): # if the initial value is actually the result of a (curried) fn
-                                qs = qs.__call__()    # then go ahead and call the fn now
+                
+                            if hasattr(qs,'__call__'):  # if the initial value is actually the result of a (curried) fn
+                                qs = qs.__call__()      # then go ahead and call the fn now
                                 modelInstance._initialValues[key] = qs  # and reset the _initialValues array here, so I don't have to do it later
+                                                                        # (this array is accessed here and in __init__ above)
 
                         except KeyError:
                             # if we get here, it means this formset must not have had initialValues specified
@@ -181,8 +183,11 @@ class MetadataForm(ModelForm):
         for (key,value) in initial_values.iteritems():
 
             if hasattr(value,'__call__'): # if the initial value is actually the result of a (curried) fn
-                value = value.__call__()    # then go ahead and call the fn now
                 
+                value = value.__call__()    # then go ahead and call the fn now
+                modelInstance._initialValues[key] = value  # and reset the _initialValues array here, so I don't have to do it later
+                                                            # (this array is accessed here and in __init__ above)
+
             # MOVED FROM MetadataModel.setInitialValues()
             try:
                 # since this is the model doing the initialization of these properties
