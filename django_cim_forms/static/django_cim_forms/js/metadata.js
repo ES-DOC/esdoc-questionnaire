@@ -73,12 +73,6 @@ function setPropertyTitle(propertyValue) {
     $(accordionHeader).find("a").text(title);
 };
 
-function blah(thing) {
-    //var parentDiv = $(thing).prev("div.accordion-content:first");
-    var id = $(thing).next("input[name$='-id']:first");
-    alert($(id).val());
-}
-
 /* populate a specific form
  * w/ specific (JSON) data */
 function populate(data, form) {
