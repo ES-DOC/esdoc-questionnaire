@@ -73,11 +73,23 @@ function setPropertyTitle(propertyValue) {
     $(accordionHeader).find("a").text(title);
 };
 
+function blah(thing) {
+    //var parentDiv = $(thing).prev("div.accordion-content:first");
+    var id = $(thing).next("input[name$='-id']:first");
+    alert($(id).val());
+}
+
 /* populate a specific form
  * w/ specific (JSON) data */
 function populate(data, form) {
     
     $.each(data, function(key, value){
+        if (key=='pk') {
+           
+            //$(form).find(".field > [name$='id']:first").val(value[key]);
+            $(form).find("input[name$='-id']:first").val(value);
+            
+        }
         if (key=='fields') {
             for (key in value) {
                 if (value.hasOwnProperty(key)) {                   
@@ -96,7 +108,7 @@ function populate(data, form) {
                         var selector1 = ".field > [name$='"+key+"_1']:first";
                         $(form).find(selector1).val(enumerationValue[1]);
                     }
-                    // TODO: DO THE SAME FORE ENUMERATIONS WHERE MULTI=TRUE
+                    // TODO: DO THE SAME FOR ENUMERATIONS WHERE MULTI=TRUE
 
             
                     
@@ -188,6 +200,7 @@ function add_step_two() {
        url : url,
        type : 'get',
        success : function(data) {
+
            // populate the form w/ the newly-added data...
            populate($.parseJSON(data),form_to_add);
            // work out what the title of the form ought to be...

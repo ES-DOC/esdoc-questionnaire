@@ -240,6 +240,7 @@ class MetadataForm(ModelForm):
                         model.delete()
                     except ModelClass.DoesNotExist:
                         pass
+                    # TODO: USE THE SAME LOGIC AS BELOW TO CHECK IF THIS FORM IS THE RESULT OF COPYING OVER A MODEL FROM THE DB USING THE JAVASCRIPT "ADD" BUTTON
                     cleaned_data[key] = subFormInstance.save()
 
             elif subFormType == SubFormTypes.FORMSET:
@@ -248,7 +249,43 @@ class MetadataForm(ModelForm):
 
                     # set the field to the set of subForms that are not marked for deletion and are not empty
                     # (is_valid() will have been called by this point so empty forms that _shouldn't_ be empty won't exist)
-                    activeSubForms = [subForm.save() for subForm in subFormInstance if subForm.cleaned_data and subForm not in subFormInstance.deleted_forms]
+                
+                    if subFormInstance.isPropertyForm():
+                        # THIS IS THE OLD WAY I WAS DOING THINGS
+                        # (IT IS NICE AND ELEGANT)
+                        # AND IT IS STILL VALID FOR PROPERTIES
+                        activeSubForms = [subForm.save() for subForm in subFormInstance if subForm.cleaned_data and subForm not in subFormInstance.deleted_forms]
+                    else:
+                        # THIS IS THE NEW WAY I'M DOING THINGS
+                        # (IT'S A BIT UGLY)
+                        # I HAVE TO CHECK IF ANY OF THE SUBFORMS ARE THE RESULT OF COPYING A MODEL FROM THE DB USING THE JAVASCRIPT "ADD" BUTTON
+                        # THIS WOULD HAVE COPIED OVER THAT MODEL'S "id" INTO A HIDDEN INPUT
+                        # (ORDINARILY, "id" IS NOT RENDERED)
+                        activeSubForms = []
+                        for subForm in subFormInstance:
+                            if subForm.cleaned_data and (subForm not in subFormInstance.deleted_forms):
+                                existingModel = subForm.cleaned_data["id"]
+                                # SO IF "id" HAD A VALUE...
+                                if existingModel:
+
+                                    existingModelID = existingModel.pk
+                                    existingModelDict = subForm.save(commit=False).__dict__
+                                    try:
+                                        existingModelDict.pop("id")         # I'm going to replace "id"
+                                        existingModelDict.pop("created")    # I'm going to keep the original value for "created"
+                                        existingModelDict.pop("updated")    # I'm going to keep the original value for "updated" ## SHOULD I SET THIS TO NOW?
+                                        #existingModelDict.pop("_guid")      # I'm going to keep the original value for "_guid"
+                                        existingModelDict.pop("_state")     # I'm goint to ignore "_state"
+                                    except KeyError:
+                                        # just in-case...
+                                        pass
+                                    # THEN GET THE CORRESPONDING MODEL AND UPDATE ITS FIELDS TO (A CLEANED UP VERSION) OF THE VALUES FROM TEH SUBFORM
+                                    subForm.getModelClass().objects.filter(id=existingModelID).update(**existingModelDict)
+                                    activeSubForms.append(subForm.getModelClass().objects.get(id=existingModelID))
+                                else:
+                                    activeSubForms.append(subForm.save())
+
+    #                activeSubForms = [subForm.save() for subForm in subFormInstance if subForm.cleaned_data and subForm not in subFormInstance.deleted_forms]
                     cleaned_data[key] = activeSubForms
 
         return cleaned_data
