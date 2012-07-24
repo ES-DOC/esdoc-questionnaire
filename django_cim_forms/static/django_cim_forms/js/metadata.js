@@ -80,10 +80,26 @@ function populate(data, form) {
     $.each(data, function(key, value){
         if (key=='fields') {
             for (key in value) {
-                if (value.hasOwnProperty(key)) {
+                if (value.hasOwnProperty(key)) {                   
                     // match all elements with the name of the key (that are children of field)
                     var selector = ".field > [name$='"+key+"']:first";
                     $(form).find(selector).val(value[key]);
+
+                    // of course, this could be an enumeration...
+                    // (I can tell by the presence of "|" and/or "||" in the string)
+                    // in that case, the above selector would not have matched
+                    // and I have to parse out the value and assign it to "<key>_0" & "<key>_1" as appropriate
+                    if (String(value[key]).indexOf("|")!=-1) {
+                        var enumerationValue = String(value[key]).split("|");
+                        var selector0 = ".field > [name$='"+key+"_0']:first";
+                        $(form).find(selector0).val(enumerationValue[0]);
+                        var selector1 = ".field > [name$='"+key+"_1']:first";
+                        $(form).find(selector1).val(enumerationValue[1]);
+                    }
+                    // TODO: DO THE SAME FORE ENUMERATIONS WHERE MULTI=TRUE
+
+            
+                    
                 }
             }
         }
@@ -143,7 +159,7 @@ function add_step_one(row) {
     var url = window.document.location.protocol + "//" + window.document.location.host + "/metadata/add_form/";
     url += "?g=" + guid_to_add_to + "&a=" + app_to_add_to + "&m=" + model_to_add_to + "&f=" + field_to_add_to;
 
-
+    
     $.ajax({
         url : url,
         type : 'get',
