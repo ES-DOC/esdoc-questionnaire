@@ -28,9 +28,8 @@ urlpatterns = patterns('',
     url(r'^xml/(?P<app_name>[^/]+)/(?P<model_name>[^/]+)/$', 'django_cim_forms.views.serialize', {"format" : "xml"}),
     url(r'^xml/(?P<app_name>[^/]+)/(?P<model_name>[^/]+)/(?P<model_id>\d+)/$', 'django_cim_forms.views.serialize', {"format" : "xml"}),
 
-# TODO
 #    # ATOM feed...
-#    url(r'^(?P<app_name>[^/]+)/(?P<model_name>[^/]+)/feed/$', MetadataFeed()),
+    url(r'^feed/(?P<app_name>[^/]+)/(?P<model_name>[^/]+)/$', MetadataFeed()),
 
 )
 
