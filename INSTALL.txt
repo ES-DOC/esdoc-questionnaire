@@ -1,19 +1,75 @@
-================
-Django-CIM-Forms
-================
+####################
+# Django-CIM-Forms #
+####################
 
-Django-CIM-Forms is a Django Application that generates webforms based on CIM-compatible metadata models and controlled vocabularies for use in a Django Framework.
+Django-CIM-Forms (DCF) is a set of Django Applications that generate webforms based on CIM-compatible metadata models and controlled vocabularies for use in a Django Framework.
+
+DCF is separated into a top-level application ("django_cim_forms") which contains all of the base classes and generic code used to work with models and forms, and sub-applications for particular versions of the CIM (currently, only "cim_1_5" exists) which contain all of the models and base forms for the classes defined in that version of the CIM.  
+
+Additionally, to fully use DCF, one or more custom applications are required.  These define a subset of CIM models and forms that should be rendered for a particular user community.  DCF provides a set of functions (which in the long-term will be made accessible via an Admin GUI) to customize how those models and forms are rendered.  Without these customizations, the base models and forms may be unsuitable for users.  Advice on how to customize models and forms is given at the bottom of this document.
+
+################
+# Requirements #
+################
+
+1.  As a Django Application, DCF must be integrated into an existing Django Project.
+2.  That project must be deployed in an environment with the following packages:
+2a. Python 2.6+
+2b. Django 1.4+
+2c. lxml 2.3.3+ (used for parsing and manipulating XML files)
+2d. distribute  (used as part of the installation process)
+2e. pip (used as part of the installation process)
+3.  DCF makes heavy use of JQuery, but all of the required libraries are included as part of the distribution
+4.  Using a virtual Python environment is recommended, but not required.
 
 #############################
-# installation instructions #
+# Installation Instructions #
 #############################
 
-1. download django-cim-forms<version>.tar.gz
-2. run pip install django-cim-forms<version>.tar.gz
-3. in your main settings.py file, add "django_cim_forms" to the list of INSTALLED_APPS
-4. in your main settings.py file, add "rel('static')" to the list of TEMPLATE_DIRS
-5. in your main ursl.py file, add "(r'^metadata/', include('django_cim_forms.urls'))," to the list of patterns
-6. run python manage.py collectstatic
-7. run python manage.py syncdb
-#8. run python manage.py migrate django_cim_forms
-9. navigate to "http://<MyServer>/<MyProject>/metadata/MyApp/MyModel" 
+1. use pip to install the desired version of DCF:
+
+   pip install -I https://github.com/ES-DOC/django-cim-forms/raw/master/dist/django-cim-forms-<version>.tar.gz
+
+   (You can use the "--no-deps" flag if you do not wish to reinstall any of the above dependencies that may already exist on your system.)
+
+2. In the Django project hosting DCF, modify "settings.py" as follows:
+
+    add 'django_cim_forms', 'django_cim_forms.cim_1_5' to INSTALLED_APPS
+    add the location of static files (for example, rel('static/')) to TEMPLATE_DIRS
+
+3. In the Django project hosting DCF, modify "urls.py" as follows:
+
+    add "(r'^metadata/', include('django_cim_forms.urls')), to the list of pattersn
+
+4. In the Django project hosting DCF, run python manage.py collectstatic
+
+5. In the Django project hosting DCF, run python manage.py syncdb
+
+6. Each time you start the Django server, DCF will check for any new additions to the set of Controlled Vocabularies (CVs).  It will print an informative message each time a CV property is added to the database.
+
+7. Using Django's built-in admin interface, navigate to http://<domain>/admin/sites/site/ and ensure that your domain is listed.  (This is required for the built-in ATOM Feed to work.)
+
+#####################################################
+# Installation Instructions for Custom Applications #
+#####################################################
+
+Using DCF by itself does not make much sense.  It is expected that users will have custom applications that inherit from DCF.  Currently, these are governed by ES-DOC and so the same installation instructions apply:
+
+1. install the desired version from github via pip
+2. add the application to "settings.py" (note that no changes to "urls.py" are needed)
+
+######################
+# Usage Instructions #
+######################
+
+1. To test that the applications have installed properly navigate to:
+
+    http://<domain>/metadata
+
+   You should see a simple test message printed to the screen.
+
+   Next navigate to:
+
+    http://<domain>/metadata/<custom application name>/<customized model name>
+
+   You should see a form for creating a CIM Metadata representation of <customized model> for <custom application>.
