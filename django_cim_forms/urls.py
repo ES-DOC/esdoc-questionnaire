@@ -1,3 +1,12 @@
+#    Django-CIM-Forms
+#    Copyright (c) 2012 CoG. All rights reserved.
+#
+#    Developed by: Earth System CoG
+#    University of Colorado, Boulder
+#    http://cires.colorado.edu/
+#
+#    This project is distributed according to the terms of the MIT license [http://www.opensource.org/licenses/MIT].
+
 import django_cim_forms.feeds
 from django.conf.urls.defaults import patterns, include, url
 
@@ -28,7 +37,7 @@ urlpatterns = patterns('',
     url(r'^xml/(?P<app_name>[^/]+)/(?P<model_name>[^/]+)/$', 'django_cim_forms.views.serialize', {"format" : "xml"}),
     url(r'^xml/(?P<app_name>[^/]+)/(?P<model_name>[^/]+)/(?P<model_id>\d+)/$', 'django_cim_forms.views.serialize', {"format" : "xml"}),
 
-#    # ATOM feed...
+    # ATOM feed...
     url(r'^feed/(?P<app_name>[^/]+)/(?P<model_name>[^/]+)/$', MetadataFeed()),
 
 )

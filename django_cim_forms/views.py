@@ -1,3 +1,12 @@
+#    Django-CIM-Forms
+#    Copyright (c) 2012 CoG. All rights reserved.
+#
+#    Developed by: Earth System CoG
+#    University of Colorado, Boulder
+#    http://cires.colorado.edu/
+#
+#    This project is distributed according to the terms of the MIT license [http://www.opensource.org/licenses/MIT].
+
 # module imports
 from django.template import *
 from django.shortcuts import *
