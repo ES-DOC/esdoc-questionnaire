@@ -21,49 +21,92 @@ from django.http import *
 
 from models import *
 
+def compare_entries(item1, item2):
+    print item1,item2
+    return (item1.shortName < item2.shortName)
+
 class MetadataFeed(Feed):
     feed_type = Atom1Feed
     title = "CIM Metadata Documents" # default title; ought to be replaced below
     link = "/feed/" # not certain how this is used; doesn't seem relevant
 
-    ModelClass = None
+#    ModelClass = None
+#    app_name = ""
+#    model_name = ""
+#    entries = []
+
     app_name = ""
-    model_name = ""
+    model_type = ""
+    ModelClasses = []
+
 
     def getTitle(self):
-        title = "CIM Metadata Feed for %ss" % self.ModelClass.getTitle()
-        return title
+        return "CIM Metadata Documents for %s" % self.app_name.capitalize()
     
     def __init__(self):
         super(MetadataFeed,self).__init__()
 
     def items(self):
-        return self.ModelClass.objects.order_by("-created")
+        items = []
+        for ModelClass in self.ModelClasses:
+            items += ModelClass.objects.all()#.order_by("-created")
+        for item in items:
+            print item.created
+        # TODO: why doesn't this comparator seem to work?
+        return sorted(items,cmp=lambda item1,item2: (item1.created < item2.created))    
 
     def item_link(self, item):
-        url = "/metadata/xml/%s/%s/%s" % (self.app_name,self.model_name,item.id)
+        url = "/metadata/xml/%s/%s/%s" % (self.app_name,item.getName(),item.id)
         return url
 
     def item_description(self, item):
+        # TODO: should I return the document type in the description?
         description = item.description
         if len(description):
-            return "<p><b>Description:</b> %s</p><p><b>Creation Date:</b> %s</p>" % (description,item.created)
-        return "<p>%s</p><p><b>Creation Date:</b> %s</p>" % (item,item.created)
+            return "<p><b>Creation Date:&nbsp;</b>%s</p><p><b>Description:&nbsp;</b>%s</p>" % (item.created,description)
+        return "<p><b>Creation Date:&nbsp;</b>%s</p>" % (item.created)
 
-    def get_object(self, request, app_name, model_name):
+    def get_object(self, request, app_name, model_type="all"):
         self.app_name = app_name.lower()
-        self.model_name = model_name.lower()
-        
+        self.model_type = model_type.lower()
+
         try:
-            ModelType  = ContentType.objects.get(app_label=app_name.lower(),model=model_name.lower())
+            PossibleClasses = [
+                possibleClass for possibleClass in
+                [contentType.model_class() for contentType in ContentType.objects.filter(app_label=self.app_name)]
+                if issubclass(possibleClass,MetadataModel)# and not issubclass(possibleClass,MetadataProperty)
+            ]
         except ObjectDoesNotExist:
-            msg = "invalid model type '%s' in application '%s'" % (model_name, app_name)
+            msg = "invalid model type '%s' in application '%s'" % (model_type, app_name)
             return HttpResponseBadRequest(msg)
-        
-        self.ModelClass = ModelType.model_class()
+
+        # TODO: this makes no distinction between different CIM versions
+        if model_type != "all":
+            try:
+                ModelTypeClass = ContentType.objects.get(app_label="cim_1_5",model=self.model_type).model_class()
+            except ObjectDoesNotExist:
+                msg = "invalid model type '%s' in application '%s'" % (model_type, "cim_1_5")
+                return HttpResponseBadRequest(msg)
+            self.ModelClasses = [possibleClass for possibleClass in PossibleClasses if issubclass(possibleClass,ModelTypeClass) and possibleClass._isCIMDocument]
+        else:
+            self.ModelClasses = [possibleClass for possibleClass in PossibleClasses if possibleClass._isCIMDocument]
+
         self.title = self.getTitle()
-        
-        return self.ModelClass.objects.order_by("-created")
+
+
+##
+##
+##
+##        try:
+##            ModelType  = ContentType.objects.get(app_label=app_name.lower(),model=model_name.lower())
+##        except ObjectDoesNotExist:
+##            msg = "invalid model type '%s' in application '%s'" % (model_name, app_name)
+##            return HttpResponseBadRequest(msg)
+##
+##        self.ModelClass = ModelType.model_class()
+##        self.title = self.getTitle()
+##
+##        return self.ModelClass.objects.order_by("-created")
 
 
 # don't need to wrap feed in a view; I can pass parameters to the get_object() fn

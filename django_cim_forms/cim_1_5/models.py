@@ -971,7 +971,6 @@ class ModelComponent(SoftwareComponent):
     _fieldOrder = None
     _initialValues = {}
 
-
     type = MetadataEnumerationField(enumeration="cim_1_5.ModelComponentType_enumeration",open=True,readonly=False)
     timing = MetadataManyToOneField(targetModel="cim_1_5.Timing",sourceModel="cim_1_5.ModelComponent",blank=False)
     timing.help_text = "Describes information about how this component simulates time."

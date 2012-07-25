@@ -29,6 +29,11 @@ urlpatterns = patterns('',
     # cvs...
     url(r'^cv/(?P<cv_name>\w+)/$', 'django_cim_forms.views_cv.detail'),
 
+    # ATOM feed...
+    #url(r'^feed/(?P<app_name>[^/]+)/(?P<model_name>[^/]+)/$', MetadataFeed()),
+    url(r'^feed/(?P<app_name>[^/]+)/(?P<model_type>[^/]+)/$', MetadataFeed()),
+    url(r'^feed/(?P<app_name>[^/]+)/$', MetadataFeed()),
+
     # these forms can be generated for _any_ model in _any_ application...
     url(r'^(?P<app_name>[^/]+)/(?P<model_name>[^/]+)/$', 'django_cim_forms.views.detail'),
     url(r'^(?P<app_name>[^/]+)/(?P<model_name>[^/]+)/(?P<model_id>\d+)/$', 'django_cim_forms.views.detail'),
@@ -36,9 +41,6 @@ urlpatterns = patterns('',
     # TEMPORARY URL FOR GENERATING CIM XML
     url(r'^xml/(?P<app_name>[^/]+)/(?P<model_name>[^/]+)/$', 'django_cim_forms.views.serialize', {"format" : "xml"}),
     url(r'^xml/(?P<app_name>[^/]+)/(?P<model_name>[^/]+)/(?P<model_id>\d+)/$', 'django_cim_forms.views.serialize', {"format" : "xml"}),
-
-    # ATOM feed...
-    url(r'^feed/(?P<app_name>[^/]+)/(?P<model_name>[^/]+)/$', MetadataFeed()),
 
 )
 
