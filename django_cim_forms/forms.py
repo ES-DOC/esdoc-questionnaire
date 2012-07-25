@@ -414,8 +414,6 @@ class MetadataFormSet(BaseModelFormSet):
     def is_valid(self,*args,**kwargs):
 
         validity = super(MetadataFormSet,self).is_valid(*args,**kwargs)
-        if validity == False:
-            print "ERROR IN %s: %s" % (self._name,self.errors)
         return validity
 
     @classmethod
