@@ -377,4 +377,15 @@ def getPropertyByGuid(model,guid):
 @register.filter
 def split(string,delimiter):
     # splits a string along delimiters
-    return string.split(delimiter)
+    # and ensures the substrings have no leading/trailing whitespace
+    return [substring.strip() for substring in string.split(delimiter)]
+
+@register.filter
+def enumeratedValue(enumerationFieldValue):
+    # TODO: work through all the possible variants of enumerations
+    # (open, multi, custom, etc.)
+    values = [value.strip() for value in enumerationFieldValue.split("|")]
+    if values[0] == "OTHER":
+        return "other: " + values[1]
+    else:
+        return values[0]

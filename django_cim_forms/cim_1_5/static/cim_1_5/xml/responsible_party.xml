@@ -60,7 +60,7 @@
 
     {% if model.role %}
         <gmd:role>
-            <gmd:CI_RoleCode codeList="" codeListValue="{{model.role}}"/>
+            <gmd:CI_RoleCode codeList="" codeListValue="{{model.role|enumeratedValue}}"/>
         </gmd:role>
     {% endif %} {# / role #}
 

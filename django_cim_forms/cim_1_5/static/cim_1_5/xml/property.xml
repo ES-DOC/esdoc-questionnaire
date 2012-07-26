@@ -17,21 +17,42 @@
                 {% endwith %} {# nested_properties #}
 
             {% endif %}
-            {% if property.hasValues or property.isCustom %}
-
-                {# TODO: DOUBLE-CHECK THIS ONCE FIELDS ARE FIXED #}
+            {% if property.isCustom %}
+                {% with values=property.value|split:"|" %}
+                    <!-- this property has a custom value -->
+                    <!-- it has to have a custom value; no enumerations were provided -->
+                    <value>{{values.1}}</value>
+                {% endwith %} {# /values #}
+            {% else %} {% if property.hasValues %}
                 {% if property.isMulti %}
-                    {% for value in property.value|split:"||" %}
-                        <value>{{value}}</value>
-                    {% endfor %}
+                    {% with values=property.value|split:"||" %}
+                        {% with multiValues=values.0|split:"|" %}
+                            {% for multiValue in multiValues %}
+                                {% if multiValue == "OTHER" %}
+                                    <!-- this property has a custom value -->
+                                    <value>other</value>
+                                    <value>{{values.1}}</value>
+                                {% else %}
+                                    <value>{{multiValue}}</value>
+                                {% endif %}
+                            {% endfor %}
+                        {% endwith %}
+                    {% endwith %}
                 {% else %}
+                    {% with values=property.value|split:"|" %}
+                        {% if values.0 == "OTHER" %}
+                            <!-- this property has a custom value -->
+                            <value>other</value>
+                            <value>{{values.1}}</value>
+                        {% else %}
+                            <value>{{values.0}}</value>
+                        {% endif %} {# /values.0 == "OTHER" #}
+                    {% endwith %}
+                {% endif %}
 
-                    <value>{{property.value}}</value>
-                {% endif %} 
-                
-            {% endif %}
+            {% endif %} {% endif %}
         </componentProperty>
-    
-    {% endwith %}{{key.shortName}}
+
+    {% endwith %}
 
 {% endfor %}

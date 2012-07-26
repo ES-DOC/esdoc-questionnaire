@@ -438,7 +438,8 @@ class MetadataBoundWidget(django.forms.widgets.MultiWidget):
         self._multi = multi
 
     def decompress(self, value):
-        
+
+        ##print "IN DECOMPRESS: ",value
         if self._multi:
             if value:
                 val = [val.split("|") for val in value.split("||")]
@@ -501,6 +502,7 @@ class MetadataBoundFormField(django.forms.fields.MultiValueField):
         return isFirstWidgetReadOnly or isSecondWidgetReadOnly
 
     def compress(self, data_list):
+        print "IN COMPRESS: ",data_list
         if self._multi:
             if data_list:
                 return "||".join(["|".join(data_list[0]),data_list[1]])
@@ -509,7 +511,7 @@ class MetadataBoundFormField(django.forms.fields.MultiValueField):
                 return "|".join(data_list)
 
     def clean(self,value):
-        
+        ##print "IN CLEAN: ",value
         # an empty string "" is false
         # an explicit none is false
         if self._required and (not value[0] or value[0] == [u'']):
