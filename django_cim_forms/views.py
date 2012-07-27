@@ -197,29 +197,28 @@ def detail(request, model_name, app_name="django_cim_forms", model_id=None):
                 model.save()
                 form.save_m2m()
 
-## NO LONGER SAVING SERIALIZED MODELS TO EXTERNAL ATOM FEED
-## INSTEAD USING INTERNAL ATOM FEED, AND SERIALIZING ON-DEMAND
-##            if model.isCIMDocument():
-##                # serialize to CIM
-##                xml_template_path = "%s/xml/%s.xml" % (app_name.lower(), model_name.lower())
-##                serializedModel = render_to_string(xml_template_path, {"model" : model, "type" : model.getCIMDocumentType()})
-##                # and publish to ATOM feed
-##                try:
-##                    ## TODO: THE FEED SETUP BY NCAR CANNOT HAVE SUBDIRECTORIES
-##                    ##documentFeedDirectory = settings.ATOM_FEED_DIR + "/" + app_name.lower() + "/" + model_name.lower()
-##                    documentFeedDirectory = settings.ATOM_FEED_DIR + "/"
-##                    documentFeedFile = model.getCIMDocumentName() + ".xml"
-##                    with open(documentFeedDirectory + "/" + documentFeedFile, 'w') as file:
-##                        file.write(serializedModel)
-##                    file.closed
-##                except AttributeError:
-##                    msg = "unable to locate ATOM_FEED_DIR"
-##                    print msg
-##                except IOError:
-##                    msg = "unable to serialize model ('%s') to '%s'" % (documentFeedFile,documentFeedDirectory)
-##                    # just raise an error, rather than interfere w/ the HTTP request
-##                    #return HttpResponseBadRequest(msg)
-##                    print msg
+            if model.isCIMDocument():
+                # serialize to CIM
+                xml_template_path = "%s/xml/%s.xml" % (app_name.lower(), model_name.lower())
+                serializedModel = render_to_string(xml_template_path, {"model" : model, "type" : model.getCIMDocumentType()})
+                # and publish to ATOM feed
+                try:
+                    ## TODO: THE FEED SETUP BY NCAR CANNOT HAVE SUBDIRECTORIES
+                    ##documentFeedDirectory = settings.ATOM_FEED_DIR + "/" + app_name.lower() + "/" + model_name.lower()
+                    documentFeedDirectory = settings.ATOM_FEED_DIR
+                    documentFeedFile = model.getCIMDocumentName() + ".xml"
+                    print documentFeedDirectory + "/" + documentFeedFile
+                    with open(documentFeedDirectory + "/" + documentFeedFile, 'w') as file:
+                        file.write(serializedModel)
+                    file.closed
+                except AttributeError:
+                    msg = "unable to locate ATOM_FEED_DIR"
+                    print msg
+                except IOError:
+                    msg = "unable to serialize model ('%s') to '%s'" % (documentFeedFile,documentFeedDirectory)
+                    # just raise an error, rather than interfere w/ the HTTP request
+                    #return HttpResponseBadRequest(msg)
+                    print msg
 
             return HttpResponseRedirect(reverse('django_cim_forms.views.detail', args=(app_name,model_name,model.id)))
         else:
