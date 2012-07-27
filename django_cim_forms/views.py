@@ -207,7 +207,7 @@ def detail(request, model_name, app_name="django_cim_forms", model_id=None):
                     ##documentFeedDirectory = settings.ATOM_FEED_DIR + "/" + app_name.lower() + "/" + model_name.lower()
                     documentFeedDirectory = settings.ATOM_FEED_DIR
                     documentFeedFile = model.getCIMDocumentName() + ".xml"
-                    print documentFeedDirectory + "/" + documentFeedFile
+                    
                     with open(documentFeedDirectory + "/" + documentFeedFile, 'w') as file:
                         file.write(serializedModel)
                     file.closed
