@@ -20,6 +20,8 @@ from django.core.exceptions import ObjectDoesNotExist
 
 from uuid import uuid4
 
+from django.utils.encoding import smart_str
+
 from django.conf import settings
 
 from django_cim_forms.models import *
@@ -201,15 +203,17 @@ def detail(request, model_name, app_name="django_cim_forms", model_id=None):
                 # serialize to CIM
                 xml_template_path = "%s/xml/%s.xml" % (app_name.lower(), model_name.lower())
                 serializedModel = render_to_string(xml_template_path, {"model" : model, "type" : model.getCIMDocumentType()})
+
                 # and publish to ATOM feed
                 try:
                     ## TODO: THE FEED SETUP BY NCAR CANNOT HAVE SUBDIRECTORIES
                     ##documentFeedDirectory = settings.ATOM_FEED_DIR + "/" + app_name.lower() + "/" + model_name.lower()
                     documentFeedDirectory = settings.ATOM_FEED_DIR
                     documentFeedFile = model.getCIMDocumentName() + ".xml"
-                    
                     with open(documentFeedDirectory + "/" + documentFeedFile, 'w') as file:
-                        file.write(serializedModel)
+                        # the smart_str ensures it is encoded as ASCII
+                        # unicode and ATOM don't always play together well
+                        file.write(smart_str(serializedModel))
                     file.closed
                 except AttributeError:
                     msg = "unable to locate ATOM_FEED_DIR"
