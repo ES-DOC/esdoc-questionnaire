@@ -69,19 +69,42 @@ function toggleStuff(toggler,stuffToToggle) {
     }
 };
 
-function setPropertyTitle(propertyValue) {
-    var name = $(propertyValue).parents("div.accordion-content:first").find("div.field[name='longName']").find("input").val();
+/* Fn called whenever a properties details changes
+ * it updates the (accordion) title of that property to reflect those changes
+ * a similar Django version of this function is called upon initial loading
+ */
+function setPropertyTitle(propertyFieldWidget) {
 
-    // .val() returns the value (shortName), while .text() returns what is actually displayed (longName)
-    //var value = $(propertyValue).val();
-    // however, I still have to use the .map() fn in order to separate different options with a comma
+    var name = $(propertyFieldWidget).parents("div.accordion-content:first").find("div.field[name='longName']").find("input").val();
+    var valueField = $(propertyFieldWidget).parents("div.field[name='value']:first");
+    var isCustom = $(propertyFieldWidget).parents("div.accordion-content:first").hasClass("custom-property");
+
+    /* slightly more complex version replaces this version which didn't take into account "other" fields */
+    /*
     var value = $(propertyValue).children("option").filter(":selected").map(function () {
         return $(this).text();
-    }).get().join(', ');
+    }).get().join('|');
+    */
 
-    var accordionHeader = $(propertyValue).parents("div.accordion-content:first").prev(".accordion-header");
+    var value = ""
+    if (isCustom) {
+        value = $(valueField).find("input").val();
+    }
+    else {
+        value = $(valueField).find("option").filter(":selected").map(function() {
+            if ($(this).val() == "OTHER") {
+                return "OTHER: " + $(valueField).find("input").val();
+            }
+            else {
+                return $(this).text();
+            }
+        }).get().join(" | ");
+    }
+
+    var accordionHeader = $(propertyFieldWidget).parents("div.accordion-content:first").prev(".accordion-header");
     var title = name + ": " + value + " ";
     $(accordionHeader).find("a").text(title);
+    
 };
 
 /* populate a specific form

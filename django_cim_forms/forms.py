@@ -357,9 +357,13 @@ class Property_form(MetadataForm):
 
             if EMPTY_CHOICE[0] not in custom_choices:
                 custom_choices.insert(0,EMPTY_CHOICE[0])
-            
+
             self.fields["value"] = MetadataBoundFormField(choices=custom_choices,multi=modelInstance.multi,empty=True,blank=True)
-            self.fields["value"].widget.attrs.update({"onchange":"setPropertyTitle(this)"})
+            self.fields["value"].widget.updateBoundAttrs({"onchange":"setPropertyTitle(this)"})
+
+# I AM HERE
+# MOVE THIS TO CUSTOMIZE WIDGETS?!?
+#            self.fields["value"].widget.attrs.update({"onchange":"setPropertyTitle(this)"})
 
         if modelInstance.isCustom():
             self.fields["value"] = MetadataBoundFormField(choices=OTHER_CHOICE,multi=False,empty=True,blank=True,custom=True)

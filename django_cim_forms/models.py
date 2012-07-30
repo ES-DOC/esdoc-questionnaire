@@ -296,8 +296,34 @@ class MetadataProperty(MetadataModel):
         elif self.shortName:
             name = u'%s' % self.shortName
         if self.value:
-            name = u'%s: %s' % (name, self.value.strip().rstrip("|").rstrip("|"))
+            #name = u'%s: %s' % (name, self.value.strip().rstrip("|").rstrip("|"))
+            # this is similar logic as that used by serializing to CIM XML
+            # except that rather than separating sub-values via <value> tags,
+            # I am separating them with "|" characters
+            if self.isCustom():
+                values = self.value.split("|")
+                name = u'%s: %s' % (name, values[1])
+            else:
+                if self.isMulti():
+                    allValues = ""
+                    values = self.value.split("||")
+                    multiValues = values[0].split("|")
+                    for multiValue in multiValues:
+                        if multiValue == "OTHER":
+                            allValues += "OTHER: %s | " % values[1]
+                        else:
+                            allValues += "%s | " % multiValue
+                    name = u'%s: %s' % (name, allValues.rstrip("| "))
+                else:
+                    allValues = ""
+                    values = self.value.split("|")
+                    if values[0] == "OTHER":
+                        allValues += "OTHER: %s" % values[1]
+                    else:
+                        allValues += "%s" % values[0]
+                    name = u'%s: %s' % (name, allValues)
         return name
+        
 
     @classmethod
     def getProperties(cls,*args,**kwargs):
