@@ -207,7 +207,6 @@ def detail(request, model_name, app_name="django_cim_forms", model_id=None):
         #    return HttpResponseForbidden(PERMISSION_DENIED_MESSAGE)
         pass
 
-
     if request.method == 'POST':
 
 ## I AM NOW AUTHENTICATING ON GET & POST; SO THIS CODE IS NOT NEEDED (IT IS REPLACED BY THE BLOCK ABOVE)
