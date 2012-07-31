@@ -13,6 +13,7 @@ from django.shortcuts import *
 from django.http import *
 
 from django.template.loader import render_to_string
+from django.contrib.auth.decorators import login_required
 
 from django.core.urlresolvers import reverse
 from django.contrib.contenttypes.models import ContentType
@@ -120,12 +121,16 @@ def get_content(request):
 # create, display, or edit a MetadataModel #
 ############################################
 
+#@login_required
 def detail(request, model_name, app_name="django_cim_forms", model_id=None):
+
+    print "user authenticated? %s" % request.user.is_authenticated()
+
     # get the model & form...
     try:
         ModelType  = ContentType.objects.get(app_label=app_name.lower(),model=model_name.lower())
     except ObjectDoesNotExist:
-        msg = "invalid model type '%s' in application '%s'" % (model_name, app_name)
+        msg = "The model type '%s' does not exist in the application/project '%s'." % (model_name, app_name)
         return HttpResponseBadRequest(msg)
 
     ModelClass = ModelType.model_class()
@@ -133,10 +138,10 @@ def detail(request, model_name, app_name="django_cim_forms", model_id=None):
 
     # sanity checks on the model & form...
     if not(ModelClass and issubclass(ModelClass,MetadataModel)):
-        msg = "invalid model type: '%s'" % model_name
+        msg = "The model type '%s' is not an editable CIM Document." % model_name
         return HttpResponseBadRequest(msg)
     if not(FormClass and issubclass(FormClass,MetadataForm)):
-        msg = "cannot determine MetadataForm bound to model type: '%s'" % model_name
+        msg = "The system is unable to locate a metadata form bound to the model type '%s'." % model_name
         return HttpResponseBadRequest(msg)
 
     # using a global variable goes out of scope
@@ -146,14 +151,15 @@ def detail(request, model_name, app_name="django_cim_forms", model_id=None):
 
     if request.GET:
         filter_args = {}
+        error_msg = ""
         for (key,value) in request.GET.iteritems():
-            
+            error_msg += "%s='%s'," % (key,value)
             key = key + "__iexact"  # this ensures that the filter is case-insenstive
             filter_args[key] = value
         
         models = ModelClass.objects.filter(**filter_args)
         if len(models) != 1:
-            msg = "specified either an invalid or non-unique %s" % model_name
+            msg = "The system cannot find a '%s' with the following properties: %s." % (model_name, error_msg.rstrip(","))
             return HttpResponseBadRequest(msg)
         else:
             model = models[0]
@@ -165,7 +171,7 @@ def detail(request, model_name, app_name="django_cim_forms", model_id=None):
             try:
                 model = ModelClass.objects.get(pk=model_id)
             except ModelClass.DoesNotExist:
-                msg = "unable to find '%s' with id of '%s'" % (model_name, model_id)
+                msg = "The system is unable to find a '%s' with an id of '%s'." % (model_name, model_id)
                 return HttpResponseBadRequest(msg)
         else:
             # or just create a new one...
@@ -187,7 +193,25 @@ def detail(request, model_name, app_name="django_cim_forms", model_id=None):
     # is this this an update of an existing model or a new submission?
     initialize = not(model.id)
 
-    if request.method == 'POST':        
+    if request.method == 'POST':
+
+        # only logged in users can submit a form
+        if not request.user.is_authenticated():            
+            request.session['_old_post'] = request.POST
+            request.session.modified = True
+            return HttpResponseRedirect('%s/?next=%s' % (settings.LOGIN_URL,request.path))
+        try:
+            # the user wasn't logged in when submitting the post
+            # so copy over the saved data
+            print "REQUEST.POST=%s" % request.session['_old_post']
+            request.POST = request.session['_old_post']
+            del(request.session['_old_post'])
+        except KeyError:
+            print "KEYERROR"
+            # the user must have already been logged in when submitting the post
+            request.session.modified = False
+            pass
+        
         form = FormClass(request.POST,instance=model,request=request)
         if form.is_valid():
             model = form.save(commit=False)
@@ -240,13 +264,13 @@ def serialize(request, model_name, app_name="django_cim_forms", model_id=None, f
     try:
         ModelType  = ContentType.objects.get(app_label=app_name.lower(),model=model_name.lower())
     except ObjectDoesNotExist:
-        msg = "invalid model type '%s' in application '%s'" % (model_name, app_name)
+        msg = "The model type '%s' does not exist in the application/project '%s'." % (model_name, app_name)
         return HttpResponseBadRequest(msg)
 
     ModelClass = ModelType.model_class()
 
     if not(ModelClass and issubclass(ModelClass,MetadataModel)):
-        msg = "invalid model type: '%s'" % model_name
+        msg = "The model type '%s' is not an editable CIM Document." % model_name
         return HttpResponseBadRequest(msg)
 
     MetadataModel.CURRENT_APP = app_name.lower()
@@ -256,7 +280,7 @@ def serialize(request, model_name, app_name="django_cim_forms", model_id=None, f
         try:
             model = ModelClass.objects.get(pk=model_id)
         except ModelClass.DoesNotExist:
-            msg = "unable to find '%s' with id of '%s'" % (model_name, model_id)
+            msg = "The system is unable to find a '%s' with an id of '%s'." % (model_name, model_id)
             return HttpResponseBadRequest(msg)
     else:
         # or just create a new one...
@@ -268,7 +292,7 @@ def serialize(request, model_name, app_name="django_cim_forms", model_id=None, f
         elif format.lower() == 'json':
             serializedModel = model.serialize(format="json")
         else:
-            msg = "invalid metadata format: %s" % (format)
+            msg = "The system cannot serialize to the metadata format: %s" % (format)
             return HttpResponseBadRequest(msg)
 
     # xml templates are stored as static files...
