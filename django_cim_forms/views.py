@@ -124,8 +124,6 @@ def get_content(request):
 #@login_required
 def detail(request, model_name, app_name="django_cim_forms", model_id=None):
 
-    print "user authenticated? %s" % request.user.is_authenticated()
-
     # get the model & form...
     try:
         ModelType  = ContentType.objects.get(app_label=app_name.lower(),model=model_name.lower())
@@ -193,24 +191,40 @@ def detail(request, model_name, app_name="django_cim_forms", model_id=None):
     # is this this an update of an existing model or a new submission?
     initialize = not(model.id)
 
+
+    # BEFORE PROCEEDING WITH THIS VIEW,
+    # LET'S MAKE SURE THAT THE USER IS AUTHORIZED TO VIEW/EDIT THE MODEL...
+    if not request.user.is_authenticated():
+        # if the user is not logged in, then redirect the user to the login screen and then come back
+        return HttpResponseRedirect('%s/?next=%s' % (settings.LOGIN_URL,request.path))
+    # TODO: SEPARATE THIS OUT INTO USER/ADMIN PERMISSION FOR GET/POST VIEW
+    else:
+        # I AM HERE
+        # I DO NOT WANT TO USE THIS PARTICULAR CODE
+        # B/C IT INTRODUCES A DEPENDENCY FROM django-cim-forms to COG
+        #project = get_object_or_404(Project, short_name__iexact="dcmip-2012")
+        #if not userHasUserPermission(request.user, project):
+        #    return HttpResponseForbidden(PERMISSION_DENIED_MESSAGE)
+        pass
+
+
     if request.method == 'POST':
 
-        # only logged in users can submit a form
-        if not request.user.is_authenticated():            
-            request.session['_old_post'] = request.POST
-            request.session.modified = True
-            return HttpResponseRedirect('%s/?next=%s' % (settings.LOGIN_URL,request.path))
-        try:
-            # the user wasn't logged in when submitting the post
-            # so copy over the saved data
-            print "REQUEST.POST=%s" % request.session['_old_post']
-            request.POST = request.session['_old_post']
-            del(request.session['_old_post'])
-        except KeyError:
-            print "KEYERROR"
-            # the user must have already been logged in when submitting the post
-            request.session.modified = False
-            pass
+## I AM NOW AUTHENTICATING ON GET & POST; SO THIS CODE IS NOT NEEDED (IT IS REPLACED BY THE BLOCK ABOVE)
+##        # only logged in users can submit a form
+##        if not request.user.is_authenticated():
+##            request.session['_old_post'] = request.POST
+##            request.session.modified = True
+##            return HttpResponseRedirect('%s/?next=%s' % (settings.LOGIN_URL,request.path))
+##        try:
+##            # the user wasn't logged in when submitting the post
+##            # so copy over the saved data
+##            request.POST = request.session['_old_post']
+##            del(request.session['_old_post'])
+##        except KeyError:
+##            # the user must have already been logged in when submitting the post
+##            request.session.modified = False
+##            pass
         
         form = FormClass(request.POST,instance=model,request=request)
         if form.is_valid():
