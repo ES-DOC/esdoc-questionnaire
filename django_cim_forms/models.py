@@ -349,8 +349,6 @@ class MetadataProperty(MetadataModel):
         if (filter.upper()!="ALL"):
             msg = "Error: custom filters are not yet supported for retrieving initial properties"
             raise MetadataError(msg)
-
-        print "calling getProperties"
         
         # finally, return a queryset assuming I want ALL of the newly created properties...
         return cls.objects.filter(pk__in=newProperties)
