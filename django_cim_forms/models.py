@@ -141,7 +141,8 @@ class MetadataModel(models.Model):
                 app_label = self._cimDocumentProjectRestriction._meta.app_label
                 code_name = self._cimDocumentProjectRestriction.short_name.lower()
                 permission_string = "%s.%s_user_permission" % (app_label,code_name)
-                return user.has_perm(permission_string)
+                permission = user.has_perm(permission_string)
+                return permission
             except:
                 pass
         # if no restriction (or an invalid restriction) was specified, just grant access by default

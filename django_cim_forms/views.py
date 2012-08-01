@@ -194,7 +194,6 @@ def detail(request, model_name, app_name="django_cim_forms", model_id=None):
 
     # BEFORE PROCEEDING WITH THIS VIEW,
     # LET'S MAKE SURE THAT THE USER IS AUTHORIZED TO VIEW/EDIT THE MODEL...
-    print "one"
     if not request.user.is_authenticated():
         # if the user is not logged in, then redirect the user to the login screen and then come back
         return HttpResponseRedirect('%s/?next=%s' % (settings.LOGIN_URL,request.path))
