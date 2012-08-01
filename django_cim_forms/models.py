@@ -36,28 +36,27 @@ def CIMDocument(documentType,documentName,documentProjectRestriction=None):
         obj._cimDocumentName = documentName  # identify how this model should be named in the CIM
         # optionally, identify for this Document a project whose users only should be able to access it
         if documentProjectRestriction:
-            try:
-                # documentProjectRestriction will be of the format <module>.<project_class>(<filter_string>)
-                # <filter_string> will be of the format <field>='<val1>',<field2>='<val2>'...
-                pattern = re.compile("^(.*[\.])(.+)\((.+)\)$")
-                match = pattern.match(documentProjectRestriction)
-                documentProjectRestrictionModule = match.group(1).rstrip(".")
-                documentProjectRestrictionClass = match.group(2)
+##        try:
+            # documentProjectRestriction will be of the format <module>.<project_class>(<filter_string>)
+            # <filter_string> will be of the format <field>='<val1>',<field2>='<val2>'...
+            pattern = re.compile("^(.*[\.])(.+)\((.+)\)$")
+            match = pattern.match(documentProjectRestriction)
+            documentProjectRestrictionModule = match.group(1).rstrip(".")
+            documentProjectRestrictionClass = match.group(2)
 
-                documentProjectRestrictionFilter = {}
-                for filter_item in match.group(3).split(","):
-                    key,val = filter_item.split("=")
-                    if key.find("__") < 0:
-                        key = key + "__iexact"
-                    documentProjectRestrictionFilter[key] = val
+            documentProjectRestrictionFilter = {}
+            for filter_item in match.group(3).split(","):
+                key,val = filter_item.split("=")
+                if key.find("__") < 0:
+                    key = key + "__iexact"
+                documentProjectRestrictionFilter[key] = val
 
-                module = import_module(documentProjectRestrictionModule)
-                cls = module.__dict__[documentProjectRestrictionClass]
+            module = import_module(documentProjectRestrictionModule)
+            cls = module.__dict__[documentProjectRestrictionClass]
 
-                obj._cimDocumentProjectRestriction = cls.objects.get(**documentProjectRestrictionFilter)
-            except:
-                print "error setting thing"
-                pass
+            obj._cimDocumentProjectRestriction = cls.objects.get(**documentProjectRestrictionFilter)
+##        except:
+##            pass
 
         return obj
     return decorator
