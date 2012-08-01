@@ -197,10 +197,11 @@ def detail(request, model_name, app_name="django_cim_forms", model_id=None):
     if not request.user.is_authenticated():
         # if the user is not logged in, then redirect the user to the login screen and then come back
         return HttpResponseRedirect('%s/?next=%s' % (settings.LOGIN_URL,request.path))
-    # TODO: SEPARATE THIS OUT INTO USER/ADMIN PERMISSION FOR GET/POST VIEW
     else:
+        # TODO: SEPARATE THIS OUT INTO USER/ADMIN PERMISSION FOR GET/POST VIEW
         # if the user is logged in, then check that he has the right permissions
-        if not request.user.has_perm("cog.dcmip-2012_user_permission"):
+        permission_string = u"%s.%s_user_permission" % (model._cimDocumentProjectRestriction._meta.app_label,model._cimDocumentProjectRestriction.short_name.lower())
+        if not request.user.has_perm("permission_string"):
             msg = "Permission Denied"
             return HttpResponseForbidden(msg)
         pass
