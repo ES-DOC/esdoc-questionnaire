@@ -17,6 +17,9 @@ from django.core import serializers
 from django.template.loader import render_to_string
 from django.db.models import F
 
+from importlib import import_module
+import re
+
 from django_cim_forms.helpers import *
 from django_cim_forms.fields import *
 from django_cim_forms.controlled_vocabulary import *
@@ -26,14 +29,38 @@ from django_cim_forms.controlled_vocabulary import *
 # decorator that identifies a class as a CIM document #
 #######################################################
 
-def CIMDocument(documentType,documentName):
-   def decorator(obj):
-       obj._isCIMDocument = True
-       obj._cimDocumentType = documentType
-       obj._cimDocumentName = documentName
+def CIMDocument(documentType,documentName,documentProjectRestriction=None):
+    def decorator(obj):
+        obj._isCIMDocument = True            # specify this model as a CIM Document
+        obj._cimDocumentType = documentType  # identify the type of that Document
+        obj._cimDocumentName = documentName  # identify how this model should be named in the CIM
+        # optionally, identify for this Document a project whose users only should be able to access it
+        if documentProjectRestriction:
+            try:
+                # documentProjectRestriction will be of the format <module>.<project_class>(<filter_string>)
+                # <filter_string> will be of the format <field>='<val1>',<field2>='<val2>'...
+                pattern = re.compile("^(.*[\.])(.+)\((.+)\)$")
+                match = pattern.match(documentProjectRestriction)
+                documentProjectRestrictionModule = match.group(1).rstrip(".")
+                documentProjectRestrictionClass = match.group(2)
 
-       return obj
-   return decorator
+                documentProjectRestrictionFilter = {}
+                for filter_item in match.group(3).split(","):
+                    key,val = filter_item.split("=")
+                    if key.find("__") < 0:
+                        key = key + "__iexact"
+                    documentProjectRestrictionFilter[key] = val
+
+                module = import_module(documentProjectRestrictionModule)
+                cls = module.__dict__[documentProjectRestrictionClass]
+
+                obj._cimDocumentProjectRestriction = cls.objects.get(**documentProjectRestrictionFilter)
+            except:
+                print "error setting thing"
+                pass
+
+        return obj
+    return decorator
 
 ############################################
 # the base classes for all metadata models #
@@ -61,6 +88,7 @@ class MetadataModel(models.Model):
     _isCIMDocument = False
     _cimDocumentType = ""
     _cimDocumentName = ""
+    _cimDocumentProjectRestriction = None
     
 
     # every model has a (gu)id & version

@@ -122,7 +122,7 @@ def get_content(request):
 ############################################
 
 #@login_required
-def detail(request, model_name, app_name="django_cim_forms", model_id=None):
+def detail(request, model_name, app_name="django_cim_forms", model_id=None):    
 
     # get the model & form...
     try:
@@ -199,12 +199,10 @@ def detail(request, model_name, app_name="django_cim_forms", model_id=None):
         return HttpResponseRedirect('%s/?next=%s' % (settings.LOGIN_URL,request.path))
     # TODO: SEPARATE THIS OUT INTO USER/ADMIN PERMISSION FOR GET/POST VIEW
     else:
-        # I AM HERE
-        # I DO NOT WANT TO USE THIS PARTICULAR CODE
-        # B/C IT INTRODUCES A DEPENDENCY FROM django-cim-forms to COG
-        #project = get_object_or_404(Project, short_name__iexact="dcmip-2012")
-        #if not userHasUserPermission(request.user, project):
-        #    return HttpResponseForbidden(PERMISSION_DENIED_MESSAGE)
+        # if the user is logged in, then check that he has the right permissions
+        if not request.user.has_perm("cog.dcmip-2012_user_permission"):
+            msg = "Permission Denied"
+            return HttpResponseForbidden(msg)
         pass
 
     if request.method == 'POST':
@@ -266,7 +264,7 @@ def detail(request, model_name, app_name="django_cim_forms", model_id=None):
             print "invalid!"
     else:
         form = FormClass(instance=model,request=request,initialize=initialize)
-    
+
     return render_to_response('django_cim_forms/metadata_detail.html', {'form' : form}, context_instance=RequestContext(request))
 
 
