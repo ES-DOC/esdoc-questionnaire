@@ -21,6 +21,26 @@ body {
 
 #metadata { border: 1px solid #B9E0E3; padding: 4px; margin: 4px; }
 
+#metadata #submitted {
+    /* a bunch of CSS to make this div centered horizontally in front of the rest of the form */
+    /* javascript will take care of hiding/showing it as needed */
+    padding: 4px;
+    border: 1px solid #FAC24A;
+    background: #FCE79F;
+    position: absolute;
+    width: 250px;
+    margin-left: -125px;
+    left: 50%;
+    top: 25%;
+    text-align: center;
+    z-index: 10;
+    /* display: none; */
+    -moz-border-radius: 5px;       /* firefox */
+    -webkit-border-radius: 5px;    /* safari, chrome */
+    -khtml-border-radius: 5px;     /* konqueror */
+    border-radius: 5px;            /* nothing... sorry, IE */
+}
+
 #metadata .error-wrapper { display: block; margin-top: 4px; }
 #metadata .errorlist { display: inline; list-style-type: none; text-align: center; padding: 0px; margin: 0px; }
 #metadata .errorlist li { display: inline; background-color: #ff6666; padding-right: 4px; }

@@ -30,7 +30,6 @@ urlpatterns = patterns('',
     url(r'^cv/(?P<cv_name>\w+)/$', 'django_cim_forms.views_cv.detail'),
 
     # ATOM feed...
-    #url(r'^feed/(?P<app_name>[^/]+)/(?P<model_name>[^/]+)/$', MetadataFeed()),
     url(r'^feed/(?P<app_name>[^/]+)/(?P<model_type>[^/]+)/$', MetadataFeed()),
     url(r'^feed/(?P<app_name>[^/]+)/$', MetadataFeed()),
 

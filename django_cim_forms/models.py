@@ -137,14 +137,12 @@ class MetadataModel(models.Model):
 
     def userCanAccess(self,user):
         if self._cimDocumentProjectRestriction:
-            try:
-                app_label = self._cimDocumentProjectRestriction._meta.app_label
-                code_name = self._cimDocumentProjectRestriction.short_name.lower()
-                permission_string = "%s.%s_user_permission" % (app_label,code_name)
-                permission = user.has_perm(permission_string)
-                return permission
-            except:
-                pass
+            app_label = self._cimDocumentProjectRestriction._meta.app_label
+            code_name = self._cimDocumentProjectRestriction.short_name.lower()
+            permission_string = "%s.%s_user_permission" % (app_label,code_name)
+            permission = user.has_perm(permission_string)
+# I AM HERE            print permission
+            return permission
         # if no restriction (or an invalid restriction) was specified, just grant access by default
         return True
 

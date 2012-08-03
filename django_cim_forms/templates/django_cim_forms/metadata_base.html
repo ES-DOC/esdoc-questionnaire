@@ -46,6 +46,10 @@
             <div id="add-dialog" title="add/replace"> &nbsp;</div>
             <div id="remove-dialog" title="remove">&nbsp;</div>
 
+            <div id="submitted">
+                <em>successfully submitted form</em>
+            </div>
+            
             {% block content %}
                 you forgot to provide content!
             {% endblock %} {# /content #}
@@ -53,5 +57,13 @@
 
         </div>
 
+        <script>
+            {% if submitted %}
+                var msgTime = 2.5 * 1000; // easier to think in terms of secs than msecs
+                $("#submitted").show().delay(msgTime).fadeOut(msgTime);
+            {% else %}
+                $("#submitted").hide();
+            {% endif %}
+        </script>
 
 {% endblock %} {# / main #}

@@ -122,8 +122,8 @@ def get_content(request):
 ############################################
 
 #@login_required
-def detail(request, model_name, app_name="django_cim_forms", model_id=None):    
-
+def detail(request, model_name, app_name="django_cim_forms", model_id=None):
+    
     # get the model & form...
     try:
         ModelType  = ContentType.objects.get(app_label=app_name.lower(),model=model_name.lower())
@@ -175,22 +175,8 @@ def detail(request, model_name, app_name="django_cim_forms", model_id=None):
             # or just create a new one...
             model = ModelClass()
 
-
-##    # check if the model should be rendered in a raw format,
-##    # instead of via a webform...
-##    format = request.GET.get('format',None)
-##    if format:
-##        if format.lower() == 'xml':
-##            return serialize(request,model,format="xml")
-##        elif format.lower() == 'json':
-##            return serialize(request,model,format="json")
-##        else:
-##            msg = "invalid metadata format: %s" % (format)
-##            return HttpResponseBadRequest(msg)
-
     # is this this an update of an existing model or a new submission?
     initialize = not(model.id)
-
 
     # BEFORE PROCEEDING WITH THIS VIEW,
     # LET'S MAKE SURE THAT THE USER IS AUTHORIZED TO VIEW/EDIT THE MODEL...
@@ -204,23 +190,17 @@ def detail(request, model_name, app_name="django_cim_forms", model_id=None):
             msg = "Permission Denied"
             return HttpResponseForbidden(msg)
 
-    if request.method == 'POST':
 
-## I AM NOW AUTHENTICATING ON GET & POST; SO THIS CODE IS NOT NEEDED (IT IS REPLACED BY THE BLOCK ABOVE)
-##        # only logged in users can submit a form
-##        if not request.user.is_authenticated():
-##            request.session['_old_post'] = request.POST
-##            request.session.modified = True
-##            return HttpResponseRedirect('%s/?next=%s' % (settings.LOGIN_URL,request.path))
-##        try:
-##            # the user wasn't logged in when submitting the post
-##            # so copy over the saved data
-##            request.POST = request.session['_old_post']
-##            del(request.session['_old_post'])
-##        except KeyError:
-##            # the user must have already been logged in when submitting the post
-##            request.session.modified = False
-##            pass
+    # LET'S CHECK WHETHER THIS MODEL HAS JUST BEEN (SUCCESSFULLY) SUBMITTED
+    # IF SO, THE TEMPLATE WILL DISPLAY A POPUP BOX...
+    success = request.session.get('submission_success', False)
+    try:
+        # clear the session
+        del(request.session["submission_success"])
+    except KeyError:
+        pass
+
+    if request.method == 'POST':
         
         form = FormClass(request.POST,instance=model,request=request)
         if form.is_valid():
@@ -258,13 +238,15 @@ def detail(request, model_name, app_name="django_cim_forms", model_id=None):
                     #return HttpResponseBadRequest(msg)
                     print msg
 
+            request.session["submission_success"] = True
             return HttpResponseRedirect(reverse('django_cim_forms.views.detail', args=(app_name,model_name,model.id)))
         else:
+            request.session["submission_success"] = False
             print "invalid!"
     else:
         form = FormClass(instance=model,request=request,initialize=initialize)
 
-    return render_to_response('django_cim_forms/metadata_detail.html', {'form' : form}, context_instance=RequestContext(request))
+    return render_to_response('django_cim_forms/metadata_detail.html', {'form' : form, "submitted" : success}, context_instance=RequestContext(request))
 
 
 def serialize(request, model_name, app_name="django_cim_forms", model_id=None, format=None):
