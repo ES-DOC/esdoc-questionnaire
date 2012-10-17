@@ -49,6 +49,9 @@ body {
 
 #metadata .documentation { font-style: italic; }
 
+#metadata div.footer { text-align: center; }
+#metadata div.footer img { width: 160px; }
+
 #metadata div.submit { margin-top: 8px; float: right; }
 
 #metadata fieldset { border: 2px solid #B9E0E3; padding: 0.5em; margin-right: 1.0em; margin-top: 1.0em; margin-bottom: 1.0em; margin-left: 0px; }
@@ -83,7 +86,10 @@ body {
 
 #metadata .subform-toolbar { padding: 4px; float: right;  }
 
-#metadata button { width: 24px; height: 24px; } /* ensures buttons err towards squareness instead of rectangularness */
+/* MODIFIED BY AT */
+/* I DON'T LIKE THIS, BUT I'LL DEMO IT FOR NOW */
+/*#metadata button { width: 24px; height: 24px; } *//* ensures buttons err towards squareness instead of rectangularness */
+/* END MODIFIED BY AT */
 
 #metadata .ui-tabs .ui-tabs-hide { /* hides inactive tab panels w/out making them display: none - so I can still dynamically size stuff */
     position: absolute !important; left: -10000px !important; display: block;
@@ -94,6 +100,7 @@ body {
 
 #metadata button.change { float: right; }
 #metadata button.remove { float: right; }
+#metadata button.add { float: right; margin-top: 4px; }
 
 #metadata .delete-field { display: none !important; }
 #metadata .delete-row { display: none !important; } /* these are created by the formset() method */
@@ -101,4 +108,27 @@ body {
 
 #metadata .scroll-pane { overflow: auto; }
 
+
+
 #metadata .metadata-properties .tab-content { margin-bottom: 6px; }
+
+
+/* the dropdownchecklist jquery widget causes it to use the underlying jquery ui theme */
+/* this is visually confusing with all of the other jquery stuff (accordions, etc.) going on */
+/* so I overwrite the dropdownchecklist css here */
+
+#metadata .ui-dropdownchecklist-selector { background: url(../img/default_widget_background.gif) repeat-x; border-radius: 4px;}
+#metadata .ui-dropdownchecklist-selector .ui-dropdownchecklist-text { padding-left: 4px; padding-top: 1px; padding-bottom: 1px; }
+#metadata .ui-dropdownchecklist-dropcontainer * { background: #f2f1f0 !important; }
+#metadata .ui-dropdownchecklist-item { border: 1px solid #cccccc !important; }
+
+/* similarly accordion-headers should always be highlighted regardless of whether they're active or not */
+/* this uses the img for default accordions */
+#metadata .accordion h3.ui-state-active * { background: #b9e0e3 url(../img/default_ui_background.png) repeat-x 50% 50%; border: 1px #aaaaaa; }
+/* this uses the img for active (hovered) accordions */
+#metadata .accordion h3.ui-state-hover *  { background: #358c92 url(../img/active_ui_background.png) repeat-x 50% 50%; border: 1px #666666; }
+
+
+/* override the hover font for dropdownchecklists */
+#metadata .ui-dropdownchecklist *.ui-state-hover { color: #000000; }
+#metadata .ui-dropdownchecklist-dropcontainer-wrapper { z-index: 100 !important; }

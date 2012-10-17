@@ -26,7 +26,7 @@ LIL_STRING  = 100
 
 OTHER_CHOICE = [(u'OTHER',u'--OTHER--')]
 NONE_CHOICE  = [(u'NONE',u'--NONE--')]
-EMPTY_CHOICE = [(u'',u'-------')]
+EMPTY_CHOICE = [(u'',u'please make selection')]
 
 JSON_SERIALIZER = serializers.get_serializer("json")()
 

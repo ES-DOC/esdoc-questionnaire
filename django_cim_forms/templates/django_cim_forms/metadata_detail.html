@@ -8,6 +8,7 @@
 
 {% block content %}
 
+
     <div class="title">
         {{ form|getModelTitle }} Entry Form
     </div> <!-- /.title -->
@@ -26,13 +27,19 @@
 
             <ul> <!-- tab menu -->
                 {% for fieldType in form|getActiveFieldTypes %}
-                    <li><a href="#tab-{{fieldType.getType}}-{{form|getModelGuid}}">{{ fieldType.getName }}</a></li>
+                    <li><a href="#tab-{{fieldType.getType}}-{{form|getModelGuid}}">
+                            {{ fieldType.getName }}
+                            <div class="progressbar"></div>
+                        </a>
+                    </li>
                 {% endfor %} {# /fieldType #}
             </ul> <!-- /tab menu -->
 
             {% for fieldType in form|getActiveFieldTypes %}
                 <div id="tab-{{fieldType.getType}}-{{form|getModelGuid}}">
                     <div class="tab-content">
+                        
+
                         {% with fieldsOfType=form|getFieldsOfType:fieldType %}
                             {% for field in form.visible_fields %}
                                 {% if field.name in fieldsOfType %}
@@ -112,7 +119,8 @@
         </div> <!-- /.tabs -->
 
         <div class="submit">
-            <input class="button" type="submit" value="Submit"/>
+            <input class="button" name="save" type="submit" value="Save"/>
+            <input class="button" name="submit" type="submit" value="Submit"/>
         </div> <!-- /.submit -->
 
         <div style="clear: both;">&nbsp;</div>

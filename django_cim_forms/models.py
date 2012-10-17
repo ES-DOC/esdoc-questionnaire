@@ -110,6 +110,7 @@ class MetadataModel(models.Model):
     # these fields work behind the scenes to track when models are created and updated
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
+    submitted = models.BooleanField(default=False)
 
     def __init__(self,*args,**kwargs):
         super(MetadataModel,self).__init__(*args,**kwargs)
@@ -383,7 +384,6 @@ class MetadataProperty(MetadataModel):
         # returns the queryset sepecified by "filter"
         # this is generally used to work out which properties to assign to a model as its initial values
         filter = kwargs.pop("filter","ALL")
-
         # first, check if the cv has been loaded...
         cvObjects = cls.cvClass.objects.all()
         if not cvObjects:

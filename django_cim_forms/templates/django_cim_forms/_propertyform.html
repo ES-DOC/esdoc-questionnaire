@@ -2,6 +2,7 @@
 
     {% load metadata_filters %}
 
+    
         {% with forms=formset|getForms:keys %}
             {% with haveSubItems=forms|haveSubItems haveValues=forms|haveValues areCustom=forms|areCustom %}
                 {% if haveSubItems %}
@@ -10,11 +11,17 @@
                             {% for form in forms %}
                                 {% if form|hasSubItems %}
                                     {% with propertyShortName=form|getModelFieldValue:"shortName" %}
-                                        <li><a href="#tab-{{propertyShortName|stripSpaces}}-{{form|getModelGuid}}">{{propertyShortName}}</a></li>
+                                        <li>
+                                            <a href="#tab-{{propertyShortName|stripSpaces}}-{{form|getModelGuid}}">
+                                                {{propertyShortName}}
+                                                <div class="progressbar"></div>
+                                            </a>
+                                        </li>
                                     {% endwith %} {# propertyShortName #}
                                 {% endif %}
                             {% endfor %}
                         </ul>
+                        
                         {% for form in forms %}
                             {% if form|hasSubItems %}
                                 {% with propertyShortName=form|getModelFieldValue:"shortName" propertyLongName=form|getModelFieldValue:"longName" %}
@@ -24,7 +31,7 @@
                                             
                                             {% if propertyLongName != propertyShortName %}
                                             <p class="documentation">
-                                                {{propertyLongName}}
+                                                <i><u>Documentation:</u>&nbsp;</i>{{propertyLongName}}
                                             </p>
                                             {% endif %} {# longName != shortName #}
 
@@ -56,6 +63,13 @@
                 {% endif %}
                 
                 {% if haveValues or areCustom %}
+
+                    <span class="subform-toolbar ui-widget-header ui-corner-all">
+                        <button type="button" class="expand" title="expand all properties">expand all</button>
+                        <button type="button" class="collapse" title="collapse all properties">collapse all</button>
+                    </span> <!-- /.subform-toolbar -->
+                    <div style="clear: both;">&nbsp;</div>
+                
                     <div class="accordion {{formset.getPrefix}}-formset">
                         {% for form in forms %}
                             {% if form|hasValues %}

@@ -22,13 +22,8 @@
     {% else %}
 
     <span class="subform-toolbar ui-widget-header ui-corner-all">
-        {% if field|canAddRemote:form %}
-            <button type="button" class="add remote" title="add new {{ field|verbose_name:form }}">add</button>
-        {% else %}
-            <button type="button" class="add" title="add new {{ field|verbose_name:form }}">add</button>
-        {% endif %} {# canAddRemote #}
-        <button type="button" class="expand" title="expand all {{ field|verbose_name:form }}">expand</button>
-        <button type="button" class="collapse" title="collapse all {{ field|verbose_name:form }}">collapse</button>
+        <button type="button" class="expand" title="expand all {{ field|verbose_name:form }}">expand all</button>
+        <button type="button" class="collapse" title="collapse all {{ field|verbose_name:form }}">collapse all</button>
     </span> <!-- /.subform-toolbar -->
     <div style="clear: both;">&nbsp;</div>
 
@@ -47,6 +42,15 @@
 
             </div> <!-- /.accordion-content -->
         {% endfor %} {# form in formset.forms #}
+
+        {# should I wrap this in a div? #}
+        {% if field|canAddRemote:form %}
+            <button type="button" class="add remote" title="add new {{ field|verbose_name:form }}">add new</button>
+        {% else %}
+            <button type="button" class="add" title="add new {{ field|verbose_name:form }}">add new</button>
+        {% endif %} {# canAddRemote #}
+
+
     </div> <!-- /.accordion -->
 
     {% endif %} {# form|isPropertyForm #}

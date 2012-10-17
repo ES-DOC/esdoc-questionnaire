@@ -12,6 +12,8 @@
         <script language="javascript" type="text/javascript" src="{{ STATIC_URL }}django_cim_forms/js/jquery.multi-open-accordion-1.5.3.js"></script>
         <!-- dynamic formsets -->
         <script language="javascript" type="text/javascript" src="{{ STATIC_URL }}django_cim_forms/js/jquery.formset.js"></script>
+        <!-- checkboxes/radiobuttons in selects -->
+        <script language="javascript" type="text/javascript" src="{{ STATIC_URL }}django_cim_forms/js/ui.dropdownchecklist-1.4.min.js"></script>
         <!-- custom javascript -->
         <script language="javascript" type="text/javascript" src="{{ STATIC_URL }}django_cim_forms/js/metadata.js"></script>
 
@@ -37,6 +39,7 @@
 
 {% block main %}
 
+
     <div id="metadata">
 
             <!-- some pre-ready divs to use for popups -->
@@ -49,13 +52,17 @@
             <div id="submitted">
                 <em>successfully submitted form</em>
             </div>
-            
+
             {% block content %}
                 you forgot to provide content!
             {% endblock %} {# /content #}
 
 
-        </div>
+            <div class="footer">
+                <a href="http://www.earthsystemcurator.org/esdoc/index.shtml"><img src="{{ STATIC_URL }}django_cim_forms/img/esdoc_logo.png"/></a>
+            </div>
+
+        </div>  <!-- /#metadata -->
 
         <script>
             {% if submitted %}
