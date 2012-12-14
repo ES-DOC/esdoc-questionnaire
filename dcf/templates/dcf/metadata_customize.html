@@ -1,0 +1,206 @@
+{# this is the instructions template for all django-cim-forms pages #}
+
+{% extends "dcf/metadata_base.html" %}
+
+{% load metadata_filters %}
+
+{% block scripts %}
+    $(document).ready(enableJQueryWidgets());
+{% endblock %} {# /scripts #}
+
+{% block content %}
+
+    <div class="title">
+        Customize the the <u>{{form|getModelTitle}}</u> for <u>{{app_name|title|escape}}</u>.
+    </div> <!-- /.title -->
+
+    <p>
+        <i>
+            Use this form to customize how a particular metadata document in a particular application is presented for editing.&nbsp;&nbsp;
+            Drag-and-drop fields and field categories to specify an order.&nbsp;&nbsp;
+            Specify customizable features for each field.&nbsp;&nbsp;
+            When you have finished, click the "save" button at the bottom of the page.&nbsp;&nbsp;
+            Invalid entries are indicated using a <span style="color: #ff0000; font-weight: bold;">red</span> font.&nbsp;&nbsp;
+            <a href="/metadata/customize/instructions">More detailed instructions</a> are available.&nbsp;&nbsp;
+        </i>
+    </p>
+
+    <div id="customize">
+
+    <form method="POST" action="">
+
+        {% csrf_token %}
+
+        <br/>
+
+        <div class="form"> {# wrapping everything in a div.form so I can group together fields belonging to the same model #}
+
+        <div class="vars" style="display: none;">
+            <span name="modelName">{{model_name}}</span>
+            <span name="appName">{{app_name}}</span>
+        </div>        
+              
+        <div class="error">
+            {{form.errors}}
+        </div>
+
+        {% for field in form.visible_fields %}
+
+            {% if field|isInSubForms:form %}
+                
+                <fieldset class="coolfieldset" name="{{field.name}}">
+
+                    <legend title="click to show/hide content">
+
+                        {% if field.help_text %}
+                            <div class="help-button" title="click for more info" id="{{form.getName}}_{{field.auto_id}}">
+                                <span class="default-help-icon ui-icon-info" style="display: inline-block;">&nbsp;</span>
+                                <div class="help-description" title="{{field|verbose_name:form}}">
+                                    {{ field.help_text|safe }} {# the safe filter prevents inline HTML from being escaped  #}
+                                </div> <!-- /.help-description -->
+                            </div> <!-- /.help-button -->
+                        {% endif %} {# /field.help_text #}
+
+                        {{ field|verbose_name:form}}
+                    </legend>
+
+
+                    <div class="coolfieldset-content">
+
+                        {% with subForm=form|getSubForm:field %}
+                            {% with subFormType="FORMSET" %} {# TODO: DO I REALLY NEED TO WRITE A TEMPLATETAG TO GET THE TYPE OF A CUSTOMIZER SUBFORM? #}
+
+                                {% if subFormType == "FORM" %}
+                                    <div class="form">
+                                        form
+                                    </div>
+                                {% else %} {% if subFormType == "FORMSET" %}
+
+                                    {% with formset=subForm %}
+   
+                                        {{ formset.non_form_errors }}
+                                        {{ formset.management_form }}
+
+
+  
+                                        <span class="subform-toolbar ui-widget-header ui-corner-all">
+                                            <button type="button" class="expand" title="expand all {{ field.name }}">expand all</button>
+                                            <button type="button" class="collapse" title="collapse all {{ field.name }}">collapse all</button>                                            
+                                        </span> <!-- /.subform-toolbar -->
+                                        <div style="clear: both;">&nbsp;</div>
+
+                                        <div class="accordion">
+
+                                            {% for form in formset.forms|sort_forms_by_field:"order" %}
+
+                                                <h3 class="accordion-header">
+                                                    <a>
+                                                        <table border="0">
+                                                            <tr valign="center">
+                                                                <td width="20%" align="left">
+                                                                    <b>name:&nbsp;</b>
+                                                                    <span>{{form.getFieldInstance.getName}}</span>
+                                                                </td>
+                                                                <td width="20%" align="left">
+                                                                    <b>data type:&nbsp;</b>
+                                                                    <span>{{form.getFieldInstance.getType}}</span>
+                                                                </td>
+                                                                <td width="20%" align="left">
+                                                                    <b>category:&nbsp;</b>
+                                                                    <span class="label">{{form.getFieldInstance.getCategory}}</span>
+                                                                </td>
+                                                                <td width="20%"></td>
+                                                                <td width="20%"></td>
+                                                            </tr>
+                                                        </table>
+                                                    </a>
+                                                    <div style="clear: both;"/>
+                                                </h3> <!-- /.accordion-header -->
+                                                <div class="accordion-content">
+
+                                                    <div class="form">
+
+                                                    {# required b/c the individual form ids are here #}
+                                                    {% for hiddenField in form.hidden_fields %}
+                                                        {# TODO: CAN I GET ORDER TO SHOW UP HERE? #}
+                                                        {{ hiddenField }}
+                                                    {% endfor %} {# /hiddenField #}
+
+                                                    <table>
+                                                        {% for field in form.visible_fields %}
+                                                                        
+
+                                                            {% if field.name == "order" %}
+                                                                <div class="field hidden" name="{{field.name}}">
+                                                                    {{ field }}
+                                                                </div>
+                                                            {% else %}
+                                                                <tr class="{% cycle 'odd' 'even'%}">
+                                                                    <td class="field-label">{{field|verbose_name:form}}:&nbsp;</td>
+                                                                    <td class="field-value">
+                                                                        <div class="field" name="{{field.name}}">
+                                                                            {{field}}
+                                                                        </div>
+                                                                        <div class="error">
+                                                                            {{field.errors}}
+                                                                        </div>
+                                                                    </td>
+                                                                </tr>
+                                                            {% endif %} {# /field.name=='order' #}
+                                                        {% endfor %}
+                                                    </table>
+                                                    </div> <!-- /.form -->
+                                                </div> <!-- /.accordion-content -->
+                                            {% endfor %} {# /form in formset.forms #}
+
+                                        </div>
+
+                                    {% endwith %} {# /formset #}
+
+                                {% endif %} {% endif %} {# /subFormType==FORM|FORMSET #}
+
+                            {% endwith %} {# /subFormType #}
+                            
+                        {% endwith %} {# /subForm #}
+
+                    </div> <!-- /.coolfieldset-content -->
+
+                </fieldset>
+
+            {% else %} {# it's just a normal field, not a subform #}
+
+                         <div class="field" name="{{field.name}}" width="100%">
+
+                {% if field.help_text %}
+                    <div class="help-button" title="click for more info" id="{{form.getName}}_{{field.auto_id}}">
+                        <span class="default-help-icon ui-icon-info" style="display: inline-block;">&nbsp;</span>
+                        <div class="help-description" title="{{ field|verbose_name:form }}">
+                            {{ field.help_text|safe }} {# the safe filter prevents inline HTML from being escaped  #}
+                        </div> <!-- /.help-description -->
+                    </div> <!-- /.help-button -->
+                {% endif %} {# /field.help_text #}
+
+                <span class="field-label">{{field|verbose_name:form}}:&nbsp;</span>
+                {{ field }}
+                <div class="error-wrapper">
+                    {{ field.errors}}
+                </div>
+                
+                         </div>
+
+            {% endif %} {# /field|isInSubForms #}
+
+        {% endfor %} {# /field #}
+
+</div> <!-- /.form -->
+
+        <div class="submit">
+            <input class="button asdf" name="save" type="submit" value="Save"/>
+        </div> <!-- /.submit -->
+        <div style="clear: both;">&nbsp;</div>
+
+    </form>
+    
+    </div> <!-- /#customize -->
+    
+{% endblock %} {# /content #}

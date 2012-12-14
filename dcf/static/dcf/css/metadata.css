@@ -1,0 +1,111 @@
+body {
+    /* taken from COG for now */
+    margin: 0;
+    padding: 0;
+    font-size: 9pt;
+    font-family: "Lucida Grande","DejaVu Sans","Bitstream Vera Sans",Verdana,Arial,sans-serif;
+    color: #333;
+    background: #FFFFFF;
+}
+
+* {
+    /* rounded just looks better */
+    -moz-border-radius: 4px;
+    border-radius: 4px;
+}
+
+#metadata {
+    /* give the page a border */
+    border: 1px solid #B9E0E3;
+    padding: 4px;
+    margin: 4px;
+}
+
+#metadata div.header { text-align: left; }
+#metadata div.header img { width: 140px; }
+
+#metadata div.footer { text-align: center; font-style: italic; }
+
+#metadata div.title { font-size: x-large; color: #358C92; text-align: center; }
+
+#metadata .hidden { display: none; }
+
+#metadata .help-button { display: inline; }
+#metadata .help-button .help-description { display: none !important; }
+/* BE SURE TO RENAME UI-ICON IMAGES TO "_default" AND "_hover" AS NEEDED */
+#metadata .default-help-icon    { width: 16px; height: 16px; background-image: url(./custom/images/ui-icons_default.png); }
+#metadata .hover-help-icon      { width: 16px; height: 16px; background-image: url(./custom/images/ui-icons_hover.png); }
+
+#metadata #navTree { margin: 4px; padding: 2px; }
+#metadata div.submit { margin-top: 8px; float: right; }
+#metadata div.submit input.button { width: 120px; padding-top: 12px; padding-bottom: 12px; font-weight: bold; border-width: 2px; }
+
+
+#metadata #splitter {
+    width: 100%;
+    padding: 4px;
+    height: 400px; /* TODO: SORT OUT THIS HEIGHT ATTRIBUTE */
+    border: 0px;
+}
+
+#metadata #splitter div {
+    /* hide splitter content when it's docked */
+    overflow: auto;
+}
+
+#metadata .splitter-bar-vertical {
+    /* style for splitter bar when it is not docked */
+    /* (ie: componentTree is showing */
+    width: 16px;
+    cursor: pointer;
+}
+#metadata .splitter-bar-vertical-docked {
+    /* style for splitter bar when it is docked to the left */
+    /* (ie: componentTree is not showing) */
+}
+
+/*
+USING CONTEXT MENU INSTEAD OF BUTTONS TO INSERT/DELETE COMPONENTS
+#metadata .navtree-toolbar { padding: 4px; }
+#metadata .navtree-toolbar button {height: 16px; width: 16px; }
+*/
+
+
+#metadata fieldset { border: 2px solid #B9E0E3; padding: 0.5em; margin-right: 1.0em; margin-top: 1.0em; margin-bottom: 1.0em; margin-left: 0px; }
+#metadata fieldset legend { color: #358C92; font-size: 90%; padding-left: 13px; padding-right: 0.5em; }
+
+#metadata .subform-toolbar { padding: 4px; float: right;  }
+
+/* explicitly reset the img/color for open accordion headers */
+/* (by default, JQuery applies no style to them once opened) */
+#metadata .accordion h3.open-accordion { background: #b9e0e3 url(../img/default_ui_background.png) repeat-x 50% 50%; border: 1px solid #666666;}
+#metadata .accordion h3.ui-state-hover.open-accordion { background: #358c92 url(../img/active_ui_background.png) repeat-x 50% 50%; border: 1px solid #666666;}
+
+#metadata .accordion-header table tr td { font-size: 9pt !important; }
+
+/***** custom css for instructions *****/
+
+#metadata #instructions li span.title { font-weight: bold; }
+
+/***** custom css for customizer *****/
+
+#metadata #customize form { border: 1px solid #B9E0E3; padding: 4px; }
+
+#metadata .sortable-accordion-placeholder { border: 1px solid #358c92; height: 2.0em; margin-top: 2px; margin-bottom: 2px; }
+#metadata .sortable-tag-placeholder { border: 1px solid #358c92;  }
+
+#metadata #customize table { width: 100%; }
+#metadata #customize table tr { text-align: left; vertical-align: top; }
+#metadata #customize table tr.odd { background-color: #ffffff; }
+#metadata #customize table tr.even { background-color: #eeeeee; }
+#metadata #customize table tr td.field-label { text-align: right; width: 25%; }
+#metadata #customize table tr td.field-value { text-align: left; }
+
+#metadata #customize .tagit-label { cursor: default; }
+#metadata #customize ul.tagit li.tagit-choice .tagit-edit { cursor: pointer; float: left; margin-right: 2px; margin-left: -4px; }
+#metadata #customize ul.tagit li.tagit-choice .tagit-show { cursor: pointer; float: left; margin-right: 2px; margin-left: -4px;  }
+#metadata #customize ul.tagit li.tagit-choice .tagit-show-label { width: 16px; height: 16px;  }
+#metadata #customize ul.tagit  { border: 2px solid #358c92; background: #ffffff; }
+
+#metadata .field * { vertical-align: top; }
+#metadata .readonly { color: #cccccc; }

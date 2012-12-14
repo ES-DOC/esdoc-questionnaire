@@ -1,0 +1,86 @@
+{# this is the middle template for all django-cim-forms pages #}
+{# it includes the navigation tree where appropriate #}
+
+{% extends "dcf/metadata_base.html" %}
+
+{% load metadata_filters %}
+
+{% block scripts %}
+    var GLOBAL_DOCUMENT_GUID = 12345;
+    $(document).ready(enableJQueryWidgets());
+{% endblock %} {# /scripts #}
+
+{% block content %}
+
+    <div class="title">
+        title
+    </div> <!-- /.title -->
+
+    <p>
+        <i>
+            Use this form to create or modify an instance of MODEL metadata.
+            Fill out the fields on each tab from left to right, and on each subform from top to bottom.
+            Where applicable, work through each form presented in the navigation menu to the left.
+            Fields or subforms with <span style="font-weight: bold;">bold</span> labels are required.
+            When you have finished, click the "submit" button at the bottom of the page.
+            Invalid entries are indicated using a <span style="color: #ff0000; font-weight: bold;">red</span> font.
+            <a href="instructions">More detailed instructions</a> are available.
+        </i>
+    </p>
+
+    <form method="POST" action="">
+
+        {% csrf_token %}
+
+        {% if form|isNested %}
+
+            <div id="splitter">
+
+                <div id="leftPane"><br/>
+
+                    <span class="ui-widget-header" style="cursor: default;" title="Right click components to add/remove.">&nbsp;navigation menu&nbsp;</span>&nbsp;
+                    <!--
+                    USING CONTEXT MENU INSTEAD OF BUTTONS TO INSERT/DELETE COMPONENTS
+                    <span class="navtree-toolbar ui-widget-header ui-corner-all">
+                        <button type="button" class="insert" title="Insert a child to the currently selected component.">insert</button>
+                        <button type="button" class="delete" title="Delete the currently selected component(s).">delete</button>
+                        <span>&nbsp;</span>
+                        <button type="button" class="expand" title="expand all components">expand all</button>
+                        <button type="button" class="collapse" title="collapse all components">collapse all</button>
+                    </span> 
+                    <div style="clear: both;">&nbsp;</div>
+                    -->
+
+                    <div id="navTree">
+                        <!-- content to be loaded via AJAX call -->
+                    </div>
+
+                </div> <!-- /#leftPane -->
+
+
+                <div id="rightPane"><br/>
+                
+        {% endif %} {# / form|isNested #}
+
+                    {% block form %}
+                        <!-- form content goes here -->
+                    {% endblock %} {# /form #}
+
+        {% if form|isNested %}
+
+                </div> <!-- /#rightPane -->
+
+            </div> <!-- /#splitter -->
+
+        {% endif %} {# / form|isNested #}
+        
+        <div class="submit">
+            <input class="button" name="save" type="submit" value="Save" title="Save this document in its current state."/>
+            <input class="button" name="submit" type="submit" value="Publish" title="Save this document and publish it to the CIM Repository."/>
+        </div> <!-- /.submit -->
+
+        <div style="clear: both;">&nbsp;</div>
+
+    </form>
+
+{% endblock %} {# /content #}
