@@ -1,0 +1,105 @@
+{# this displays a metadata form #}
+
+    {% load metadata_filters %}
+
+    {# required b/c the individual form ids are here #}
+    {% for hiddenField in form.hidden_fields %}
+        {{ hiddenField }}
+    {% endfor %} {# /hiddenField #}
+
+    {#{{form.errors}}#} <!-- not sure if this should go here -->
+
+    {% with active_field_categories=form|get_active_field_categories %}
+        {% if active_field_categories %}
+
+            {# if any of this form's fields have been assigned a category, render them in tabs #}
+
+            <div class="tabs">
+
+                <ul> <!-- the tab menu -->
+                    {% for field_category in form|get_active_field_categories %}
+                        <li>
+                            <a href="#tab-{{field_category.getGUID}}" title="{{field_category.description}}">
+                                {{field_category.name}}
+                            </a>
+                        </li>
+                    {% endfor %}
+                </ul>
+
+                {% for field_category in form|get_active_field_categories %}
+                    <div id="tab-{{field_category.getGUID}}">
+                        <div class="tab-content">
+
+                            {# this is a bit convoluted b/c #}
+                            {# I only have access to the field variable of the form #}
+                            {# and not of the model in a template #}
+                            {% with fields_of_category=form|get_fields_of_category:field_category %}
+                                {% for field in form|custom_visible_fields %}
+                                    {% if field.name in fields_of_category %}
+
+                                        {% if field|custom_subform:form %}
+
+                                            {% include "dcf/_subform.html" %}
+
+                                        {% else %}
+
+                                            {% include "dcf/_field.html" %}
+
+                                        {% endif %} {# /field|custom_subform:form #}
+
+                                     {% endif %} {# / field.name in fields_of_category #}
+                                {% endfor %} {# /field in form|custom_visible_fields #}
+                            {% endwith %} {# /fields_of_type #}
+
+                        </div>
+                    </div>
+                {% endfor %}
+
+            </div> <!-- /.tabs -->
+
+            {# don't forget any fields that may not have been assigned a category #}
+
+            {% with uncategorized_fields=form|get_uncategorized_fields %}
+                {% for field in form|custom_visible_fields %}
+                    {% if field.name in uncategorized_fields %}
+
+                        {% if field|custom_subform:form %}
+
+                            {% include "dcf/_subform.html" %}
+
+                        {% else %}
+
+                            {% include "dcf/_field.html" %}
+
+                        {% endif %} {# /field|custom_subform:form #}
+
+                     {% endif %} {# /field|custom_subform #}
+                 {% endfor %} {# /field in form|custom_visible_fields #}
+            {% endwith %} {# uncategorized_fields #}
+
+            
+        {% else %}
+
+            {# if there are no categories, then just loop through the fields #}
+
+            {% for field in form|custom_visible_fields %}
+
+                {% if field|custom_subform:form %}
+
+                    {% include "dcf/_subform.html" %}
+
+                {% else %}
+
+                    {% include "dcf/_field.html" %}
+
+                {% endif %} {# /field|custom_subform:form #}
+
+
+            {% endfor %} {# /field in form|custom_visible_fields #}
+
+        {% endif %} {# /active_field_categories #}
+
+    {% endwith %} {# /active_field_categories #}
+    
+ 
+{# end of displaying a metadata form #}

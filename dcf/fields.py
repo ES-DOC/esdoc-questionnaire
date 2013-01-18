@@ -5,10 +5,12 @@ import django.forms.models
 import django.forms.widgets
 import django.forms.fields
 
+from django.contrib.contenttypes.models import ContentType
+
 from dcf.helpers import *
 
-def updateFieldAttributes(field,fieldAttributes):
-    for (key,value) in fieldAttributes.iteritems():
+def updateFieldWidgetAttributes(field,widgetAttributes):
+    for (key,value) in widgetAttributes.iteritems():
         try:
             currentAttrs = field.widget.attrs[key]
             field.widget.attrs[key] = "%s %s" % (currentAttrs,value)
@@ -49,7 +51,50 @@ class MetadataField(models.Field):
 
         self._name = self.name
 
+    def customize(self,customField):
+        # record all of the values so I can access them later from templatetags if needed...
+        self.custom_order = customField.order
+        self.custom_category = customField.category
+        self.custom_displayed = customField.displayed
+        self.custom_required = customField.required
+        self.custom_editable = customField.editable
+        self.custom_unique = customField.unique
+        self.custom_verbose_name = customField.verbose_name
+        self.custom_default_value = customField.default_value
+        self.custom_documentation = customField.documentation
+        self.custom_replace = customField.replace
 
+
+    def get_custom_help_text(self):
+        if self.custom_documentation != self.help_text:
+            return self.custom_documentation
+        else:
+            return self.help_text
+
+    def get_custom_verbose_name(self):
+        try:
+            current_verbose_name = self.verbose_name
+        except AttributeError:
+            current_verbose_name = pretty_string(field.label)
+        if self.custom_verbose_name != current_verbose_name:
+            return self.custom_verbose_name
+        else:
+            return current_verbose_name
+
+    def get_custom_category(self):
+        return self.custom_category
+
+    def get_custom_required(self):
+        return self.custom_required
+
+    def get_custom_default_value(self):
+        return self.custom_default_value
+    
+    def is_custom_visible(self):
+        return self.custom_displayed
+    
+    def is_custom_subform(self):
+        return self.custom_replace
 
 #############################################################
 # the set of customizable atomic fields for metadata models #
@@ -101,3 +146,61 @@ class MetadataAtomicField(MetadataField):
 
 
         return _MetadataAtomicField(**kwargs)
+
+class MetadataRelationshipField(MetadataField):
+    class Meta:
+        abstract = True
+
+    _sourceModelName    = None
+    _sourceAppName      = None
+    _targetModelName    = None
+    _targetAppName      = None
+
+    # do some post-initialization
+    def initRelationship(self,*args,**kwargs):
+        self.related_name = self.name   # related_name has to be unique to distinguish between different relationshipFields from the same model to the same model
+        self.null = True                # null values have to be allowed in order to initialize subForms w/ potentially brand-new (empty) models
+
+        self.help_text = kwargs.pop("help_text","") # if I don't explicitly set the help_text, then prevent Django from adding the standard m2m documentation
+        targetModel = kwargs.pop("targetModel",None)
+        sourceModel = kwargs.pop("sourceModel",None)
+
+        if sourceModel:
+            sourceAppAndModel = sourceModel.split(".")
+            self._sourceModelName = sourceAppAndModel[1].lower()
+            self._sourceAppName = sourceAppAndModel[0].lower()
+        if targetModel:
+            targetAppAndModel = targetModel.split(".")
+            self._targetModelName = targetAppAndModel[1].lower()
+            self._targetAppName = targetAppAndModel[0].lower()
+
+    def getTargetModelClass(self):
+        try:
+            ModelType = ContentType.objects.get(app_label=self._targetAppName,model=self._targetModelName)
+            ModelClass = ModelType.model_class()
+            return ModelClass
+        except django.contrib.contenttypes.models.ContentType.DoesNotExist:
+            # handles the case where model is accessed before target is loaded (during syncdb, for instance)
+            return None
+
+    def getSourceModelClass(self):
+        try:
+            ModelType = ContentType.objects.get(app_label=self._sourceAppName,model=self._sourceModelName)
+            ModelClass = ModelType.model_class()
+            return ModelClass
+        except django.contrib.contenttypes.models.ContentType.DoesNotExist:
+            # handles the case where model is accessed before target is loaded (during syncdb, for instance)
+            return None
+
+class MetadataManyToManyField(models.ManyToManyField,MetadataRelationshipField):
+    _type = "ManyToManyField"
+    pass
+
+
+    def __init__(self,*args,**kwargs):
+        targetModel = kwargs.pop("targetModel",None)
+        sourceModel = kwargs.pop("sourceModel",None)
+        super(MetadataManyToManyField,self).__init__(targetModel,**kwargs)
+        self.initRelationship(sourceModel=sourceModel,targetModel=targetModel,**kwargs)
+        self._type = self._type.lower() # makes comparisons easier later
+

@@ -1,17 +1,26 @@
-{# this is the instructions template for all django-cim-forms pages #}
+{# this is the customization template for django-cim-forms #}
 
 {% extends "dcf/metadata_base.html" %}
 
 {% load metadata_filters %}
 
 {% block scripts %}
-    $(document).ready(enableJQueryWidgets());
+    $(document).ready(
+        enableJQueryWidgets()
+    );
 {% endblock %} {# /scripts #}
+
+{% block title %}
+    Customizing {{app_name|title|stripSpaces|escape}}::{{form|getModelTitle|stripSpaces|escape}}
+    {% if not form|isSaved %}
+        *
+    {% endif %} {# /form|isSaved #}
+{% endblock %} {# /title #}
 
 {% block content %}
 
     <div class="title">
-        Customize the the <u>{{form|getModelTitle}}</u> for <u>{{app_name|title|escape}}</u>.
+        Customize the the <u>{{form|getModelTitle|escape}}</u> Form for <u>{{app_name|title|escape}}</u>.
     </div> <!-- /.title -->
 
     <p>
@@ -40,10 +49,6 @@
             <span name="appName">{{app_name}}</span>
         </div>        
               
-        <div class="error">
-            {{form.errors}}
-        </div>
-
         {% for field in form.visible_fields %}
 
             {% if field|isInSubForms:form %}
@@ -140,10 +145,23 @@
                                                                     <td class="field-value">
                                                                         <div class="field" name="{{field.name}}">
                                                                             {{field}}
+                                                                            {% if field.name == "replace" %}
+                                                                                <button type="button" class="customize-subform" name="customize-subform" title="customize the subform">customize</button>
+                                                                            {% endif %} {# /field.name == "replace" #}
                                                                         </div>
-                                                                        <div class="error">
-                                                                            {{field.errors}}
-                                                                        </div>
+                                                                        
+                                                                        {% if field.errors %}
+                                                                            <div class="error-wrapper">
+                                                                                {{field.errors}}
+                                                                                <script class="error-script">
+                                                                                    /* if there is any field error;
+                                                                                    * display an error in the enclosing tab and accordion (if applicable) */
+                                                                                    var error = $("script:.error-script:last");
+                                                                                    renderError(error);
+                                                                                </script>
+                                                                            </div>
+                                                                        {% endif %} {# /field.errors #}
+                                                                        
                                                                     </td>
                                                                 </tr>
                                                             {% endif %} {# /field.name=='order' #}
@@ -169,24 +187,38 @@
 
             {% else %} {# it's just a normal field, not a subform #}
 
-                         <div class="field" name="{{field.name}}" width="100%">
+                <div class="field" name="{{field.name}}" width="100%">
+                    
+                    {% if not field|hasClass:"hidden" %}
 
-                {% if field.help_text %}
-                    <div class="help-button" title="click for more info" id="{{form.getName}}_{{field.auto_id}}">
-                        <span class="default-help-icon ui-icon-info" style="display: inline-block;">&nbsp;</span>
-                        <div class="help-description" title="{{ field|verbose_name:form }}">
-                            {{ field.help_text|safe }} {# the safe filter prevents inline HTML from being escaped  #}
-                        </div> <!-- /.help-description -->
-                    </div> <!-- /.help-button -->
-                {% endif %} {# /field.help_text #}
+                        {% if field.help_text %}
+                            <div class="help-button" title="click for more info" id="{{form.getName}}_{{field.auto_id}}">
+                                <span class="default-help-icon ui-icon-info" style="display: inline-block;">&nbsp;</span>
+                                <div class="help-description" title="{{ field|verbose_name:form }}">
+                                    {{ field.help_text|safe }} {# the safe filter prevents inline HTML from being escaped  #}
+                                </div> <!-- /.help-description -->
+                            </div> <!-- /.help-button -->
+                        {% endif %} {# /field.help_text #}
 
-                <span class="field-label">{{field|verbose_name:form}}:&nbsp;</span>
-                {{ field }}
-                <div class="error-wrapper">
-                    {{ field.errors}}
-                </div>
+                        <span class="field-label">{{field|verbose_name:form}}:&nbsp;</span>
+
+                    {% endif %} {# /field|hasClass:hidden #}
+
+                    {{ field }}                  
+
+                    {% if field.errors %}
+                        <div class="error-wrapper">
+                            {{field.errors}}
+                            <script class="error-script">
+                                /* if there is any field error;
+                                * display an error in the enclosing tab and accordion (if applicable) */
+                                var error = $("script:.error-script:last");
+                                renderError(error);
+                            </script>
+                        </div>
+                    {% endif %} {# /field.errors #}
                 
-                         </div>
+                </div> <!-- /.field -->
 
             {% endif %} {# /field|isInSubForms #}
 
@@ -195,12 +227,19 @@
 </div> <!-- /.form -->
 
         <div class="submit">
-            <input class="button asdf" name="save" type="submit" value="Save"/>
+            <!-- prior to submitting the form (in the onclick event below), copy the global categories dictionary to the form 'tag' field -->
+            <input class="button" name="save" type="submit" onclick="copy_data_to_field('categories','expandedTags');" value="Save"/>
         </div> <!-- /.submit -->
         <div style="clear: both;">&nbsp;</div>
 
     </form>
-    
+
     </div> <!-- /#customize -->
     
 {% endblock %} {# /content #}
+
+{% block footer %}
+    <div class="footer">
+        This page is part of <a href="https://github.com/ES-DOC/django-cim-forms">Django-CIM-Forms</a>.  It is based on CIM v1.8.1.
+    </div> <!-- /.footer -->
+{% endblock %} {# / footer #}

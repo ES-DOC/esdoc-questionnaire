@@ -8,48 +8,47 @@ from django.contrib.auth.decorators import login_required
 
 from django.core.urlresolvers import reverse
 from django.contrib.contenttypes.models import ContentType
-from django.core.exceptions import ObjectDoesNotExist
 
-from django.utils import simplejson
+from django.core.exceptions import ObjectDoesNotExist, FieldError, MultipleObjectsReturned
+from django.db import IntegrityError
+
+from django.utils import simplejson as json
 
 from django.conf import settings
 
 from dcf.models import *
 from dcf.forms import *
-#from dcf.helpers import *
-
-def get_subclasses(parent,_subclasses=None):
-    if _subclasses is None:
-        _subclasses = set()
-    subclasses = parent.__subclasses__()
-    for subclass in subclasses:
-        if subclass not in _subclasses:
-            _subclasses.add(subclass)
-            get_subclasses(subclass,_subclasses)
-    return _subclasses
+from dcf.helpers import *
 
 def index(request):
     return HttpResponse("this is the index page for the django_cim_forms application")
 
+##########################################
+# display instructions for the edit form #
+##########################################
 
-def test(request):
+def edit_instructions(request):
 
-    return render_to_response('dcf/metadata_detail.html', {}, context_instance=RequestContext(request))
+    return render_to_response('dcf/metadata_edit_instructions.html', {}, context_instance=RequestContext(request))
 
-
-def instructions(request):
-
-    return render_to_response('dcf/metadata_instructions.html', {}, context_instance=RequestContext(request))
+###############################################
+# display instructions for the customize form #
+###############################################
 
 def customize_instructions(request):
 
     return render_to_response('dcf/metadata_customize_instructions.html', {}, context_instance=RequestContext(request))
 
+##############################
+# display the customize form #
+##############################
+
 def customize(request, model_name, app_name):
 
     model_name = model_name.lower()
     app_name = app_name.lower()
-
+    msg = ""
+  
     # get the requested model...
     try:
         ModelType  = ContentType.objects.get(app_label=app_name,model=model_name)
@@ -61,32 +60,182 @@ def customize(request, model_name, app_name):
     
     # sanity checks on the model...
     if not(ModelClass and issubclass(ModelClass,MetadataModel)):
-        msg = "The model type '%s' is not an editable CIM Document." % model_name
+        msg = "The model type '%s' is not an editable CIM class." % model_name
         return HttpResponseBadRequest(msg)
 
     # get the customizer for this model/app combination
-    (customizer, created) = ModelCustomizer.objects.get_or_create(_app=app_name,_model=model_name)
+    # (other filters may have been passed in as HTTP parameters)
+    filterParameters = {}
+    if request.GET:
+        for (key,value) in request.GET.iteritems():
+            #key = key + "__iexact"  # this ensures that the filter is case-insenstive
+            # unfortunately, the filter has to be case-sensitive b/c get_or_create() below _is_ case-sensitive
+            # see https://code.djangoproject.com/ticket/7789 for more info
+            if value.lower()=="true":
+                filterParameters[key] = 1
+            elif value.lower()=="false":
+                filterParameters[key] = 0
+            else:
+                filterParameters[key] = re.sub('[\"\']','',value) # strip out any quotes
+    filterParameters["appName"] = app_name
+    filterParameters["modelName"] = model_name
 
+    if len(filterParameters) > 2:
+        # if there were (extra) filter parameters passed
+        # then try to get the model w/ those parameters
+        try:
+            customizer = ModelCustomizer.objects.get(**filterParameters)
+        except FieldError:
+            # raise an error if some of the filter parameters were invalid
+            msg = "Unable to create a ModelCustomizer with the following parameters: %s" % (", ").join([u'%s=%s'%(key,value) for (key,value) in filterParameters.iteritems()])
+            return HttpResponseBadRequest(msg)
+        except MultipleObjectsReturned:
+            # raise an error if those filter params weren't enough to uniquely identify a model
+            msg = "Unable to find a <i>single</i> ModelCustomizer with the following parameters: %s" % (", ").join([u'%s=%s'%(key,value) for (key,value) in filterParameters.iteritems()])
+            return HttpResponseBadRequest(msg)
+            # customizer = ModelCustomizer(**filterParameters)
+        except IntegrityError:
+            # raise an error
+            msg = "Unable to find a <i>single</i> ModelCustomizer with the following parameters: %s" % (", ").join([u'%s=%s'%(key,value) for (key,value) in filterParameters.iteritems()])
+            return HttpResponseBadRequest(msg)
+            # customizer = ModelCustomizer(**filterParameters)
+        except ModelCustomizer.DoesNotExist:
+            # if there is nothing w/ those filter params, then create a new model/form
+            customizer = ModelCustomizer(**filterParameters)
+
+
+    else:
+        # otherwise, return a new model/form
+        customizer = ModelCustomizer(**filterParameters)
+        
     if request.method == 'POST':
 
         # it's a bit unusual to pass request as a kwarg
         # but my forms have to initialize any subforms that they are comprised of
         # so I potentially need the HTTP POST data
         form = ModelCustomizerForm(request.POST,instance=customizer,request=request)
+
         if form.is_valid():
-            print "valid"
             model = form.save(commit=False)
             model.save()
             form.save_m2m()
+            # after saving the form (ModelCustomizer & FieldCustomizers),
+            # go ahead and save any changes made to FieldCategories by the form...
+            expandedTags = json.loads(form.data["expandedTags"])
+            for tagContents in expandedTags.itervalues():
+                tagID = tagContents.pop("pk",None)
+                if tagID:
+                    try:
+                        category = FieldCategory.objects.get(pk=tagID)
+                        for (fieldName,fieldValue) in tagContents.iteritems():
+                            setattr(category,fieldName,fieldValue)
+                            category.save()
+                    except: # catches both the category doesn't exist & the field doesn't exist error
+                        pass
+
+            msg = "Successfully saved the customization: '%s'." % model.name
+
         else:
-            print "invalid"
+            msg = "Unable to save the customization.  Please review the form and try again."
 
     else:
 
         form = ModelCustomizerForm(instance=customizer,request=request)
 
     return render_to_response('dcf/metadata_customize.html', 
-        { "app_name" : app_name, "model_name" : model_name, "form" : form },
+        { "app_name" : app_name, "model_name" : model_name, "form" : form, "msg" : msg},
+        context_instance=RequestContext(request))
+
+
+#########################################
+# display the edit form                 #
+# (to create, edit, or display a model) #
+#########################################
+
+def edit(request, model_name, app_name):
+
+    model_name = model_name.lower()
+    app_name = app_name.lower()
+    msg = ""
+
+    # get the requested model...
+    try:
+        ModelType  = ContentType.objects.get(app_label=app_name,model=model_name)
+    except ObjectDoesNotExist:
+        msg = "The model type '%s' does not exist in the application/project '%s'." % (model_name, app_name)
+        return HttpResponseBadRequest(msg)
+
+    ModelClass = ModelType.model_class()
+
+    # sanity checks on the model...
+    if not(ModelClass and issubclass(ModelClass,MetadataModel)):
+        msg = "The model type '%s' is not an editable CIM class." % model_name
+        return HttpResponseBadRequest(msg)
+
+    # filters may have been passed in as HTTP parameters
+    filterParameters = {}
+    if request.GET:
+        for (key,value) in request.GET.iteritems():
+            #key = key + "__iexact"  # this ensures that the filter is case-insenstive
+            # unfortunately, the filter has to be case-sensitive b/c get_or_create() below _is_ case-sensitive
+            # see https://code.djangoproject.com/ticket/7789 for more info
+            if value.lower()=="true":
+                filterParameters[key] = 1
+            elif value.lower()=="false":
+                filterParameters[key] = 0
+            else:
+                filterParameters[key] = re.sub('[\"\']','',value) # strip out any quotes
+
+    if len(filterParameters) > 0:
+        # if there were extra filter parameters passed
+        # then try to get the model w/ those parameters
+        try:
+            model = ModelClass.objects.get(**filterParameters)
+        except FieldError:
+            # raise an error if some of the filter parameters were invalid
+            msg = "Unable to find a '%s' with the following parameters: %s" % (ModelClass.getName(), (", ").join([u'%s=%s'%(key,value) for (key,value) in filterParameters.iteritems()]))
+            return HttpResponseBadRequest(msg)
+        except MultipleObjectsReturned:
+            # raise an error if those filter params weren't enough to uniquely identify a model
+            msg = "Unable to find a <i>single</i> '%s' with the following parameters: %s" % (ModelClass.getName(), (", ").join([u'%s=%s'%(key,value) for (key,value) in filterParameters.iteritems()]))
+            return HttpResponseBadRequest(msg)
+            # customizer = ModelCustomizer(**filterParameters)
+        except IntegrityError:
+            # raise an error
+            msg = "Unable to find a <i>single</i> '%s' with the following parameters: %s" % (ModelClass.getName(), (", ").join([u'%s=%s'%(key,value) for (key,value) in filterParameters.iteritems()]))
+            return HttpResponseBadRequest(msg)
+        except ModelCustomizer.DoesNotExist:
+            # if there is nothing w/ those filter params, then create a new model/form
+            model = ModelClass(**filterParameters)
+    else:
+        # otherwise, just return a new model/form
+        model = ModelClass()
+
+    # get the customizer...
+    customizers = ModelCustomizer.objects.filter(appName=app_name,modelName=model_name)
+    if customizers:
+        try:
+            # TODO: WHERE IN THE HTTP REQUEST SHOULD I SPECIFY THE NAME OF THE CUSTOMIZER?
+            customizer_name = "foobar"
+            customizer = customizers.get(name=customizer_name)
+        except MultipleObjectsReturned:
+            # I don't expect to wind up here, but just in-case something weird happens go ahead and use the default customizer
+            customizer = customizers.get(default=1)
+        except ModelCustomizer.DoesNotExist:
+            customizer = customizers.get(default=1)
+    else:
+        msg = "This form has not been customized.  Please contact the project administrator."
+#        customizer = ModelCustomizer(appName=app_name,modelName=model_name)
+        return HttpResponseBadRequest(msg)
+
+
+    # use the customizer to create the form...
+    FormClass = MetadataFormFactory(ModelClass,customizer)
+    form = FormClass(instance=model,request=request)
+
+
+    return render_to_response('dcf/metadata_edit.html',
+        { "app_name" : app_name, "model_name" : model_name, "form" : form, "msg" : msg},
         context_instance=RequestContext(request))
 
 ############################################
@@ -159,10 +308,10 @@ def get_field_category(request):
         return HttpResponseBadRequest(msg)
 
     try:
-        category = FieldCategory.objects.get(_model=modelName,_app=appName,key=fieldCategoryKey)
+        category = FieldCategory.objects.get(modelName=modelName,appName=appName,key=fieldCategoryKey)
     except FieldCategory.DoesNotExist:
         if createIfNone:
-            category = FieldCategory.objects.create(_model=modelName,_app=appName,name=fieldCategoryName,key=fieldCategoryKey)
+            category = FieldCategory.objects.create(modelName=modelName,appName=appName,name=fieldCategoryName,key=fieldCategoryKey)
         else:
             msg = "invalid HTPP parameters to get_field_category"
             return HttpResponseBadRequest(msg)

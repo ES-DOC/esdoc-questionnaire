@@ -96,3 +96,17 @@ class EnumeratedTypeList(list):
             return etOrderList.index(etType)
         # otherwise return a value greater than the last position of the orderList
         return len(etOrderList)+1
+
+#######################################
+# returns all subclasses of an object #
+#######################################
+
+def get_subclasses(parent,_subclasses=None):
+    if _subclasses is None:
+        _subclasses = set()
+    subclasses = parent.__subclasses__()
+    for subclass in subclasses:
+        if subclass not in _subclasses:
+            _subclasses.add(subclass)
+            get_subclasses(subclass,_subclasses)
+    return _subclasses

@@ -1,0 +1,35 @@
+{# this is the instructions template for all django-cim-forms pages #}
+
+{% extends "dcf/metadata_base.html" %}
+
+{% load metadata_filters %}
+
+{% block scripts %}
+    $(document).ready(enableJQueryWidgets());
+{% endblock %} {# /scripts #}
+
+{% block content %}
+
+    <div class="title">
+        title
+    </div> <!-- /.title -->
+
+    <div id="instructions">
+
+    <ol>
+        <li><span class="title">The purpose of the form</span>
+            <p>
+                blah
+            </p>
+        </li>
+
+        <li><span class="title">The layout of the form</span>
+            <p>
+                blah
+            </p>
+        </li>
+    </ol>
+
+    </div> <!-- /#instructions -->
+    
+{% endblock %} {# /content #}
