@@ -182,10 +182,6 @@ function repositionFields(parent) {
         //var dropdownchecklist = $(enumerationValue).nextAll("span");
         var dropdownchecklist = $("#ddcl-id_parallelization_0");
         
-alert("enumerationValue: " + $(enumerationValue).attr("class"));
-alert("enumerationOther: " + $(enumerationOther).attr("class"));
-alert("dropdownchecklist: " + $(dropdownchecklist).attr("class"));
-
 /*
         //alert($(enumerationValue).offset().left);
         //$(enumerationOther).filter(":visible").offset({
@@ -219,9 +215,36 @@ function configureSelects(parent) {
     
 };
 
+function tallyFields(parent) {
+    $(parent).find("div.progressbar").filter(":visible").each(function(index,value) {
+        var progressBar = $(this);
+        $(progressBar).progressbar().height(10);
+          var tab_id = $(progressbar).closest("a").attr("href");
+          var tab = $(document).find(tab_id);
+          var fields_in_tab = $(tab).find("div.field:not(.hidden)");
+          var completed_fields_in_tab = $(fields_in_tab).map(function() {
+              var field_value = $(this).find("input,textarea,select").val();
+              if (field_value) {
+                  return field_value;
+              }
+          }).get().join('\\').split('\\'); // using backslash so it doesn't interfere w/ other characters that might be in .val()'
+          var nFields = $(fields_in_tab).length;
+          var nCompletedFields = $(completed_fields_in_tab).length
+
+          var progressbarText = $(progressbar).next("span.progressbar");
+          $(progressbarText).text(nCompletedFields + "/" + nFields);
+
+          var current_progress = (nCompletedFields / nFields) * 100
+          $(progressbar).progressbar("option","value",current_progress);
+
+    })
+};
+
 function update_progress_bar(tab) {
     alert("foo");
 };
+
+
 
 /*
  * function to determine whether an add dialog box should appear upon pressing the add button
@@ -367,6 +390,9 @@ function enableJQueryWidgets() {
         });
 
 
+        /* enable componentTree */
+        $("#componentTreeAccordion").liteAccordion();
+        
        /* enable tabs */
        $(".tabs").tabs({
            show : function(event,ui) {               
@@ -417,24 +443,44 @@ function enableJQueryWidgets() {
                repositionFields(tabPane);
                $(tabPane).addClass("resized-and-repositioned");
            }
+           if ($(tabPane).attr("class").indexOf("talliedField")==-1){
+               tallyFields(tabPane);
+               $(tabPane).addClass("talliedFields");
+           }
        });
 
        /* enable progressbar w/in tabs */
-       $(".progressbar").progressbar({value:50}).height(10);
-       $(".progressbar").each(function() {
+       $("div.progressbar").progressbar().height(10);
+       $("div.progressbar").each(function() {
           var progressbar = $(this);
           var tab_id = $(progressbar).closest("a").attr("href");
           var tab = $(document).find(tab_id);
           var fields_in_tab = $(tab).find("div.field:not(.hidden)");
+          // display progress of _required_ fields only
+          //var fields_in_tab = $(tab).find("span.field-label.required").parent("div.field:not(.hidden)");
+          
           var completed_fields_in_tab = $(fields_in_tab).map(function() {
               var field_value = $(this).find("input,textarea,select").val();
               if (field_value) {
                   return field_value;
               }
           }).get().join('\\').split('\\'); // using backslash so it doesn't interfere w/ other characters that might be in .val()'
-          var current_progress = ($(completed_fields_in_tab).length / $(fields_in_tab).length) * 100
-          $(progressbar).progressbar("option","value",current_progress)
+          var nFields = $(fields_in_tab).length;
+          var nCompletedFields = $(completed_fields_in_tab).length
+
+          // don't clutter up tabs; add this info as a tooltip'
+          //var progressbarText = $(progressbar).next("span.progressbar");
+          //$(progressbarText).text(nCompletedFields + "/" + nFields);
+
+          var tooltip = nCompletedFields + " of " + nFields + " fields completed.";
+          $(progressbar).attr("title",tooltip);
+          
+
+          var current_progress = (nCompletedFields / nFields) * 100
+          $(progressbar).progressbar("option","value",current_progress);
+
        });
+
 
        /* explicitly resize & reposition the first tab
         * (since it won't fire the show event above

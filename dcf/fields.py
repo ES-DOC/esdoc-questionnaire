@@ -1,5 +1,24 @@
-from django.db import models
-from django import forms
+
+####################
+#   Django-CIM-Forms
+#   Copyright (c) 2012 CoG. All rights reserved.
+#
+#   Developed by: Earth System CoG
+#   University of Colorado, Boulder
+#   http://cires.colorado.edu/
+#
+#   This project is distributed according to the terms of the MIT license [http://www.opensource.org/licenses/MIT].
+####################
+
+__author__="allyn.treshansky"
+__date__ ="Feb 1, 2013 4:13:49 PM"
+
+"""
+.. module:: fields
+
+Summary of module goes here
+
+"""
 
 import django.forms.models
 import django.forms.widgets
@@ -7,94 +26,40 @@ import django.forms.fields
 
 from django.contrib.contenttypes.models import ContentType
 
-from dcf.helpers import *
+from dcf.utils import *
 
-def updateFieldWidgetAttributes(field,widgetAttributes):
-    for (key,value) in widgetAttributes.iteritems():
+def update_field_widget_attributes(field,widget_attributes):
+    """
+    rather than overriding an attribute, this fn appends it to any existing ones
+    as with class='old_class new_class'
+    """
+    for (key,value) in widget_attributes.iteritems():
         try:
-            currentAttrs = field.widget.attrs[key]
-            field.widget.attrs[key] = "%s %s" % (currentAttrs,value)
+            current_attributes = field.widget.attrs[key]
+            field.widget.attrs[key] = "%s %s" % (current_attributes,value)
         except KeyError:
             field.widget.attrs[key] = value
 
-####################################################
-# the types of fields that a model can have.       #
-# these are rendered as tabs in the template,      #
-# with each tab displaying all fields of that type #
-# they function a bit like tags,                   #
-# but each field can only have one type            #
-####################################################
-
-#class FieldType(EnumeratedType):
-#    pass
-
-
-
-################################
-# the base class of all fields #
-################################
 
 class MetadataField(models.Field):
+    """
+    the base class for all metadata fields (attributes)
+    """
     class Meta:
         abstract = True
 
+    _name = ""
     _type = ""
 
     def getName(self):
-        return self.name
+        return self._name
 
     def getType(self):
-        return self._type.strip()
+        return self._type
 
-    def init(self,*args,**kwargs):
-        super(MetadataField,self).__init__(*args,**kwargs)
-
-        self._name = self.name
-
-    def customize(self,customField):
-        # record all of the values so I can access them later from templatetags if needed...
-        self.custom_order = customField.order
-        self.custom_category = customField.category
-        self.custom_displayed = customField.displayed
-        self.custom_required = customField.required
-        self.custom_editable = customField.editable
-        self.custom_unique = customField.unique
-        self.custom_verbose_name = customField.verbose_name
-        self.custom_default_value = customField.default_value
-        self.custom_documentation = customField.documentation
-        self.custom_replace = customField.replace
-
-
-    def get_custom_help_text(self):
-        if self.custom_documentation != self.help_text:
-            return self.custom_documentation
-        else:
-            return self.help_text
-
-    def get_custom_verbose_name(self):
-        try:
-            current_verbose_name = self.verbose_name
-        except AttributeError:
-            current_verbose_name = pretty_string(field.label)
-        if self.custom_verbose_name != current_verbose_name:
-            return self.custom_verbose_name
-        else:
-            return current_verbose_name
-
-    def get_custom_category(self):
-        return self.custom_category
-
-    def get_custom_required(self):
-        return self.custom_required
-
-    def get_custom_default_value(self):
-        return self.custom_default_value
-    
-    def is_custom_visible(self):
-        return self.custom_displayed
-    
-    def is_custom_subform(self):
-        return self.custom_replace
+    def contribute_to_class(self,cls,name):
+        self._name = name
+        super(MetadataField,self).contribute_to_class(cls,name)
 
 #############################################################
 # the set of customizable atomic fields for metadata models #
@@ -116,7 +81,6 @@ MODELFIELD_MAP = {
     "timefield"             : [models.TimeField, {}],
     "urlfield"              : [models.URLField, { "verify_exists" : False}],
 }
-
 class MetadataAtomicField(MetadataField):
 
     def __init__(self,*args,**kwargs):
@@ -124,27 +88,26 @@ class MetadataAtomicField(MetadataField):
 
 
     @classmethod
-    def Factory(cls,modelFieldClassName,**kwargs):
-        modelFieldClassInfo = MODELFIELD_MAP[modelFieldClassName.lower()]
-        modelFieldClass = modelFieldClassInfo[0]
-        modelFieldKwargs = modelFieldClassInfo[1]
+    def Factory(cls,model_field_class_name,**kwargs):
+        model_field_class_info = MODELFIELD_MAP[model_field_class_name.lower()]
+        model_field_class = model_field_class_info[0]
+        model_field_class_kwargs = model_field_class_info[1]
 
 # in theory, I could also have created a new metaclass to achieve multiple inheritance
 # but in practise, these two field types are just too dissimilar for that
 #       class _MetadataAtomicFieldMetaClass(MetadataField.Meta,modelFieldClass.Meta):
 #           pass
 
-        class _MetadataAtomicField(cls,modelFieldClass):
+        class _MetadataAtomicField(cls,model_field_class):
             def __init__(self,*args,**kwargs):
                 # set of kwargs passed to constructor
                 # should be default set plus any overrides
-                for (key,value) in modelFieldKwargs.iteritems():
+                for (key,value) in model_field_class_kwargs.iteritems():
                     if not key in kwargs:
                         kwargs[key] = value
                 super(_MetadataAtomicField,self).__init__(**kwargs)
-                self._type = modelFieldClassName
-
-
+                self._type = model_field_class_name
+                
         return _MetadataAtomicField(**kwargs)
 
 class MetadataRelationshipField(MetadataField):
@@ -156,12 +119,16 @@ class MetadataRelationshipField(MetadataField):
     _targetModelName    = None
     _targetAppName      = None
 
+    def __init__(self,*args,**kwargs):
+        # explicitly call super on this base class
+        # so that the next item in inheritance calls its initializer
+        super(MetadataRelationshipField,super).__init__(*args,**kwargs)
+
     # do some post-initialization
     def initRelationship(self,*args,**kwargs):
-        self.related_name = self.name   # related_name has to be unique to distinguish between different relationshipFields from the same model to the same model
-        self.null = True                # null values have to be allowed in order to initialize subForms w/ potentially brand-new (empty) models
-
+        self.null = True                            # null values have to be allowed in order to initialize subForms w/ potentially brand-new (empty) models
         self.help_text = kwargs.pop("help_text","") # if I don't explicitly set the help_text, then prevent Django from adding the standard m2m documentation
+
         targetModel = kwargs.pop("targetModel",None)
         sourceModel = kwargs.pop("sourceModel",None)
 
@@ -194,13 +161,56 @@ class MetadataRelationshipField(MetadataField):
 
 class MetadataManyToManyField(models.ManyToManyField,MetadataRelationshipField):
     _type = "ManyToManyField"
-    pass
 
+    def contribute_to_class(self,cls, name):
+        preferred_related_name = self._sourceAppName + "." + self._sourceModelName + "." + name.lower()
+        if self.related_query_name() != preferred_related_name:
+            self.rel.related_name = preferred_related_name
+        super(MetadataManyToManyField, self).contribute_to_class(cls, name)
 
     def __init__(self,*args,**kwargs):
         targetModel = kwargs.pop("targetModel",None)
         sourceModel = kwargs.pop("sourceModel",None)
+        if not (targetModel and sourceModel):
+            if not (("." in targetModel) and ("." in sourceModel)):
+                # have to fully specify (ie: include application) source & target
+                msg = "invalid arguments to MetadataRelationshipField"
+                raise MetadataError(msg)
+
+        # I need to set the related_name to something unique
+        # (since multiple CIM versions may have models w/ the same names and structures)
+        # the related_name I'm using is "sourceApp.sourceModel.fieldName"
+        # but at this point, I don't know the fieldName
+        # so I set a temporary related_name, and then finish the job in contribute_to_class above
+        kwargs["related_name"] = sourceModel
         super(MetadataManyToManyField,self).__init__(targetModel,**kwargs)
         self.initRelationship(sourceModel=sourceModel,targetModel=targetModel,**kwargs)
         self._type = self._type.lower() # makes comparisons easier later
 
+class MetadataManyToOneField(models.ForeignKey,MetadataRelationshipField):
+    _type = "ManyToOneField"
+
+    def contribute_to_class(self,cls, name):
+        preferred_related_name = self._sourceAppName + "." + self._sourceModelName + "." + name.lower()
+        if self.related_query_name() != preferred_related_name:
+            self.rel.related_name = preferred_related_name
+        super(MetadataManyToOneField, self).contribute_to_class(cls, name)
+
+    def __init__(self,*args,**kwargs):
+        targetModel = kwargs.pop("targetModel",None)
+        sourceModel = kwargs.pop("sourceModel",None)
+        if not (targetModel and sourceModel):
+            if not (("." in targetModel) and ("." in sourceModel)):
+                # have to fully specify (ie: include application) source & target
+                msg = "invalid arguments to MetadataRelationshipField"
+                raise MetadataError(msg)
+
+        # I need to set the related_name to something unique
+        # (since multiple CIM versions may have models w/ the same names and structures)
+        # the related_name I'm using is "sourceApp.sourceModel.fieldName"
+        # but at this point, I don't know the fieldName
+        # so I set a temporary related_name, and then finish the job in contribute_to_class above
+        kwargs["related_name"] = sourceModel
+        super(MetadataManyToOneField,self).__init__(targetModel,**kwargs)
+        self.initRelationship(sourceModel=sourceModel,targetModel=targetModel,**kwargs)
+        self._type = self._type.lower() # makes comparisons easier later

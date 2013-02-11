@@ -53,6 +53,7 @@ body {
 #metadata div.footer img { width: 160px; }
 
 #metadata div.submit { margin-top: 8px; float: right; }
+#metadata div.submit input.button { width: 120px; padding-top: 12px; padding-bottom: 12px; font-weight: bold; border-width: 2px; }
 
 #metadata fieldset { border: 2px solid #B9E0E3; padding: 0.5em; margin-right: 1.0em; margin-top: 1.0em; margin-bottom: 1.0em; margin-left: 0px; }
 #metadata fieldset legend { color: #358C92; font-size: 90%; padding-left: 13px; padding-right: 0.5em; }
@@ -100,7 +101,7 @@ body {
 
 #metadata button.change { float: right; }
 #metadata button.remove { float: right; }
-#metadata button.add { float: right; margin-top: 4px; }
+#metadata button.add { float: left; margin-top: 4px; }
 
 #metadata .delete-field { display: none !important; }
 #metadata .delete-row { display: none !important; } /* these are created by the formset() method */
@@ -108,10 +109,9 @@ body {
 
 #metadata .scroll-pane { overflow: auto; }
 
-
-
 #metadata .metadata-properties .tab-content { margin-bottom: 6px; }
 
+#metadata span.progressbar { font-size: 10px;  display: block; text-align: center; }
 
 /* the dropdownchecklist jquery widget causes it to use the underlying jquery ui theme */
 /* this is visually confusing with all of the other jquery stuff (accordions, etc.) going on */
@@ -128,6 +128,8 @@ body {
 /* this uses the img for active (hovered) accordions */
 #metadata .accordion h3.ui-state-hover *  { background: #358c92 url(../img/active_ui_background.png) repeat-x 50% 50%; border: 1px #666666; }
 
+/* fixes a current rendering bug where the remove button alters the size of the accordion, so the borders look weird */
+#metadata .accordion-content { border: 0px; }
 
 /* override the hover font for dropdownchecklists */
 #metadata .ui-dropdownchecklist *.ui-state-hover { color: #000000; }

@@ -184,7 +184,6 @@ def detail(request, model_name, app_name="django_cim_forms", model_id=None):
         # if the user is not logged in, then redirect the user to the login screen and then come back
         return HttpResponseRedirect('%s/?next=%s' % (settings.LOGIN_URL,request.path))
     else:
-        # TODO: SEPARATE THIS OUT INTO USER/ADMIN PERMISSION FOR GET/POST VIEW
         # if the user is logged in, then check that he has the right permissions
         if not model.userCanAccess(request.user):
             msg = "Permission Denied"

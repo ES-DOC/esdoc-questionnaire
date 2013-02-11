@@ -172,6 +172,7 @@ MODELFIELD_MAP = {
 # the base class of all fields #
 ################################
 
+
 class MetadataField(models.Field):
     class Meta:
         abstract = True
@@ -180,7 +181,7 @@ class MetadataField(models.Field):
     _readonly   = False     # a field can be readonly
     _unique     = False     # a field can be unique (but I have to deal w/ this manually; I can't change the db tables)
     _enables    = {}        # a field can toggle (enable) other fields
-    
+
     @classmethod
     def comparator(cls,fieldName,fieldOrderList):
         if fieldName in fieldOrderList:
@@ -218,11 +219,13 @@ class MetadataField(models.Field):
         self._required = required
         self._readonly = readonly
 
-###    def south_field_triple(self):
-###        from south.modelsinspector import introspector
-###        field_class = "django_cim_forms.fields." + self.__class__.__name__
-###        args, kwargs = introspector(self)
-###        return (field_class, args, kwargs)
+    def south_field_triple(self):
+        # this is a custom field that Django doesn't know about
+        # so I have to explicitly provide this method for South to do introspection
+        from south.modelsinspector import introspector
+        field_class = "django_cim_forms.fields." + self.__class__.__name__
+        args, kwargs = introspector(self)
+        return (field_class, args, kwargs)
 
  
 class MetadataAtomicField(MetadataField):
@@ -249,6 +252,15 @@ class MetadataAtomicField(MetadataField):
                     if not key in kwargs:
                         kwargs[key] = value
                 super(_MetadataAtomicField,self).__init__(**kwargs)
+
+            def south_field_triple(self):
+                # this is a custom field that Django doesn't know about
+                # so I have to explicitly provide this method for South to do introspection
+                from south.modelsinspector import introspector
+                field_class = "django_cim_forms.fields." + self.__class__.__name__
+                args, kwargs = introspector(self)
+                return (field_class, args, kwargs)
+
             
         return _MetadataAtomicField(**kwargs)
 
@@ -335,6 +347,9 @@ class MetadataManyToOneField(models.ForeignKey,MetadataRelationshipField):
         sourceModel = kwargs.pop("sourceModel",None)
         addMode = kwargs.pop("addMode",FieldAddModes.BOTH)
         on_delete = kwargs.pop("on_delete",models.CASCADE)
+        kwargs.pop("to",None)
+        #kwargs.setdefault('to', 'self')
+        #super(MetadataManyToOneField,self).__init__(**kwargs)
         super(MetadataManyToOneField,self).__init__(targetModel,**kwargs)
         self.initRelationship(sourceModel=sourceModel,targetModel=targetModel,addMode=addMode,**kwargs)
         self.help_text = kwargs.pop("help_text","")
@@ -347,15 +362,18 @@ class MetadataManyToManyField(models.ManyToManyField,MetadataRelationshipField):
         sourceModel = kwargs.pop("sourceModel",None)
         addMode = kwargs.pop("addMode",FieldAddModes.BOTH)
         on_delete = kwargs.pop("on_delete",models.CASCADE)
+        kwargs.pop("to",None)
+        #kwargs.setdefault('to', 'self')
+        #super(MetadataManyToManyField,self).__init__(**kwargs)
         super(MetadataManyToManyField,self).__init__(targetModel,**kwargs)
         self.initRelationship(sourceModel=sourceModel,targetModel=targetModel,addMode=addMode,**kwargs)
         self.help_text = kwargs.pop("help_text","")
 
-###    def south_field_triple(self):
-###        from south.modelsinspector import introspector
-###        field_class = "django_cim_forms.fields." + self.__class__.__name__
-###        args, kwargs = introspector(self)
-###        return (field_class, args, kwargs)
+    def south_field_triple(self):
+        from south.modelsinspector import introspector
+        field_class = "django_cim_forms.fields." + self.__class__.__name__
+        args, kwargs = introspector(self)
+        return (field_class, args, kwargs)
 
 
 # TODO: "BoundField" has a particular meaning in Django
@@ -645,12 +663,11 @@ class MetadataPropertyField(models.CharField,MetadataBoundField):
         
 # TODO: MUTLIPLE FIELD
 
-##
-### migration information for custom fields...
-##from south.modelsinspector import add_introspection_rules
-##add_introspection_rules([], ["^django_cim_forms\.extra\.fields\.MetadataField"])
-##add_introspection_rules([], ["^django_cim_forms\.extra\.fields\.MetadataManyToOneField"])
-##add_introspection_rules([], ["^django_cim_forms\.extra\.fields\.MetadataManyToManyField"])
-##add_introspection_rules([], ["^django_cim_forms\.extra\.fields\._MetadataAtomicField"])
-##add_introspection_rules([], ["^django_cim_forms\.extra\.fields\.MetadataEnumerationField"])
-##add_introspection_rules([], ["^django_cim_forms\.extra\.fields\.MetadataControlledVocabularyValueField"])
+from south.modelsinspector import add_introspection_rules
+###add_introspection_rules([], ["^django_cim_forms\.fields\.MetadataField"])
+###add_introspection_rules([], ["^django_cim_forms\.fields\.MetadataField"])
+###add_introspection_rules([], ["^django_cim_forms\.fields\.MetadataManyToOneField"])
+###add_introspection_rules([], ["^django_cim_forms\.fields\.MetadataManyToManyField"])
+add_introspection_rules([], ["^django_cim_forms\.fields\._MetadataAtomicField"])
+###add_introspection_rules([], ["^django_cim_forms\.fields\.MetadataEnumerationField"])
+###add_introspection_rules([], ["^django_cim_forms\.fields\.MetadataPropertyField"])

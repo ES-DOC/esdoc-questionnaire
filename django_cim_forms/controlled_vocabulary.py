@@ -148,12 +148,13 @@ class MetadataControlledVocabularyValueField(models.TextField):
         value = self._get_val_from_obj(obj)
         return self.get_db_prep_value(value)
 
-###    def south_field_triple(self):
-###        # just a one-off custom field that needs migration in South
-###        from south.modelsinspector import introspector
-###        field_class = "django_cim_forms.controlled_vocabulary." + self.__class__.__name__
-###        args, kwargs = introspector(self)
-###        return (field_class, args, kwargs)
+    def south_field_triple(self):
+        # this is a custom field that Django doesn't know about
+        # so I have to explicitly provide this method for South to do introspection
+        from south.modelsinspector import introspector
+        field_class = "django_cim_forms.controlled_vocabulary." + self.__class__.__name__
+        args, kwargs = introspector(self)
+        return (field_class, args, kwargs)
 
 class MetadataControlledVocabulary(models.Model):
     class Meta:
@@ -262,3 +263,6 @@ class MetadataControlledVocabulary(models.Model):
                 print "storing %s" % model
                 model.save()
 
+
+###from south.modelsinspector import add_introspection_rules
+###add_introspection_rules([], ["^django_cim_forms\.controlled_vocabulary\.MetadataControlledVocabularyValueField"])

@@ -20,7 +20,9 @@ from models import *
 # safely deleted from the db.                                                                  #
 ################################################################################################
 
+
 def delete_danglers(modeladmin, request, queryset):
+
     for property in queryset:
         property_dangles = True
         for referencingModel in property.getReferencingModels():

@@ -24,7 +24,6 @@ from django_cim_forms.helpers import *
 from django_cim_forms.fields import *
 from django_cim_forms.controlled_vocabulary import *
 
-
 #######################################################
 # decorator that identifies a class as a CIM document #
 #######################################################
@@ -92,9 +91,7 @@ class MetadataModel(models.Model):
     _isCIMDocument = False
     _cimDocumentType = ""
     _cimDocumentName = ""
-    _cimDocumentRestriction = ""
-##    _cimDocumentProjectRestriction = None
-    
+    _cimDocumentRestriction = ""    
 
     # every model has a (gu)id & version
     # (but since 'editable=False', they won't show up in forms)
