@@ -1,0 +1,93 @@
+{# this is the customization instructions template for django-cim-forms #}
+
+{% extends "dcf/dcf_base.html" %}
+
+{% block title %}
+    Instructions for the Metadata Customization Form
+{% endblock %} {# /title #}
+
+{% block style %}
+    #dcf #instructions img   { border: 1px solid #000000; padding: 2px; margin: 2px; display: block; }
+    #dcf #instructions p     { text-align: justify; }
+{% endblock %} {# /style #}
+
+
+
+{% block content %}
+
+    <div class="title">
+        Instructions for the Metadata Customization Form
+    </div> <!-- /.title -->
+
+    <div id="instructions">
+
+        <ol>
+        <li><span class="title">The purpose of the form</span>
+            <p>
+                This customization form is provided for project administrators to customize the look-and-feel of the metadata entry forms used by their project members.
+                The CIM is a highly complex model with a vast hierarchy of potential descriptive metadata for any given artifact.
+                To require all users to input all CIM metadata is impractical.
+                Similarly, the CIM is a very generic metadata standard and the metadata element names and other related information may not be suitable for all users.
+                This form, therefore, provides a means to tailor metadata presentation to a given audience.
+            </p>
+        </li>
+
+        <li><span class="title">The layout of the form</span>
+            <p>
+                The form contains three sections:
+                <ol>
+                    <li>a collection of fields that describe the current customization:
+                        <a href="{{STATIC_URL}}dcf/img/screenshots/customization_form.png"><img width="80%" src="{{STATIC_URL}}dcf/img/screenshots/customization_form.png"/></a>
+                    <li>a widget containing all potential field categories in the model:
+                        <a href="{{STATIC_URL}}dcf/img/screenshots/category_widget.png"><img width="80%" src="{{STATIC_URL}}dcf/img/screenshots/category_widget.png"/></a>
+                    <li>a fieldset containing all potential fields in the model:
+                        <a href="{{STATIC_URL}}dcf/img/screenshots/fields_widget.png"><img width="80%" src="{{STATIC_URL}}dcf/img/screenshots/fields_widget.png"/></a>
+                </ol>
+            </p>
+            <p>
+                The <b>Categories Widget</b> is used to categorize each field.  These categories correspond to the tabs that appear across the top of the actual metadata entry form.
+                This widget functions very similarly to a standard "tagging" widget.  To add a new category simply type in the new category name into the widget.
+                To delete a category click on that categories "x" icon.  To edit a category (ie: to add a text description of the category), click on the "pencil" icon.
+                Note that deleting a category is permanent.  This means that any fields which have been associated with that category will no longer be associated with any category.
+            </p>
+            <p>
+                To reorder the categories, which corresponds to reordering the tabs of the metadata entry form, simply drag and drop the categories within the widget to the desired order.
+                This customization form defines two orders:
+                <ol>
+                    <li>the order of field categories
+                    <li>the order of the fields themselves <i>(editing this is described below)</i>
+                </ol><br/>
+                Because this can be confusing, administrators can restrict the fields that are displayed to a specific set of field categories.
+                To toggle field displaying on and off, click on the "lightbult" icon in the field categories.  When this is active, all fields of that category will be displayed.  When it is inactive, no fields of that category will be displayed.
+            </p>
+            <p>
+                The <b>Fields Widget</b> is used to customize each field.  All fields in the CIM Model are displayed in an accordion.  The accordion header gives basic field information:
+                <ol>
+                    <li>the field name (as defined by the CIM)
+                    <li>the field type (as defined by the DCF database)
+                    <li>the field category (as defined by the administrator, using this form)
+                </ol><br/>
+                Clicking on the header opens or closes the advanced field view for that particular field.  Additionally, there are global "expand all / collapse all" buttons which can be used to open or close all displayed fields.
+            </p>
+            <p>
+                The advanced field view is where administrators can customize the look-and-feel of a field for their particular project.
+                <a href="{{STATIC_URL}}dcf/img/screenshots/advanced_field_widget.png"><img width="80%" src="{{STATIC_URL}}dcf/img/screenshots/advanced_field_widget.png"/></a>
+                The following properties can be customized:
+                <ol>
+                    <li>one
+                    <li>two
+                    <li>three
+                </ol>
+            </p>
+
+        </li>
+
+        <li><span class="title">After saving the customization, be sure to review how the customized form renders.</span>
+
+    </ol>
+
+    </div> <!-- /#instructions -->
+
+{% endblock %} {# /content #}
+
+{# just use the standard headers and footers #}

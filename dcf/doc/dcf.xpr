@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="13.2">
+    <meta>
+        <filters directoryPatterns="" filePatterns="" positiveFilePatterns="" showHiddenFiles="false"/>
+        <options/>
+    </meta>
+    <projectTree name="dcf.xpr">
+        <file name="../sample_media/categorization.xsd"/>
+        <file name="../sample_media/cim_1_5_categorization.xml"/>
+        <file name="../sample_media/dycore_vocabulary.xml"/>
+        <file name="../sample_media/vocabulary.xsd"/>
+    </projectTree>
+</project>

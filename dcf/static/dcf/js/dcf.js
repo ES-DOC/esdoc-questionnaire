@@ -208,11 +208,16 @@ function enableDCF() {
             /* TODO: JQUERY DOCUMENTATION IMPLIES SOME MORE CODE HERE TO HANDLE IE BUG */
         });
 
-        
+        /* combo-boxes w/ checkboxes/radioboxes */
+        $.ech.multiselect.prototype.options.selectedText = "# of # selected";
         $(".dropdownchecklist").multiselect({
             autoOpen : false,
             header : false,
-            minWidth : 500
+            minWidth : 500,
+            position: {
+                my: 'left bottom',
+                at: 'left top'
+            }
         });
 
         /********************************************/
@@ -232,7 +237,11 @@ function initialize_section(parent) {
     $(parent).find(".dropdownchecklist").multiselect({
         autoOpen : false,
         header : false,
-        minWidth : 500
+        minWidth : 500,
+        position: {
+            my: 'left bottom',
+            at: 'left top'
+        }
     });
 };
 
@@ -331,15 +340,40 @@ function set_label(item,label_name) {
     var label = $(item).closest(".accordion-content").prev(".accordion-header").find(selector);
     var input_type = $(item).prop("tagName").toLowerCase();
     if (input_type=="select") {
-        var input_val = $(item).find("option:selected");
-        var new_text = (input_val=="") ? "None" : input_val
+        var new_text = ($(item).val()) ? $(item).find("option:selected").text() : "None";
+        if (new_text=="") {
+            new_text = "None";
+        }
+        $(label).text( new_text );
     }
     else if (input_type=="input") {
-        var input_val = $(item).val();
-        var new_text = (input_val=="") ? "None" : input_val
+        var new_text = ($(item).val()) ? $(item).val() : "None";
+        $(label).text( new_text );
     }
-
     
-    //var newText = ($(item).val()) ? $(item).find("option:selected").text() : "None";
-    $(label).text( new_text );
+    //var new_text = ($(item).val()) ? $(item).find("option:selected").text() : "None";
+    //$(label).text( new_text );
+};
+
+
+
+/* display an error in the correct location
+ * also, color any containing tabs or accordions */
+function render_error(error) {
+    // render accordions
+    $(error).parents(".accordion-content").each(function() {
+        $(this).prev(".accordion-header").addClass("ui-state-error");
+    });
+    // render tabs
+    $(error).parents(".tab_content").each(function() {
+        var tab_id = $(this).closest(".ui-tabs-panel").attr("id");
+        $("a[href='#"+tab_id+"']").closest("li").addClass("ui-state-error");
+    });
+    var prevField = $(error).prev("input,select");
+    /* TODO: FIX THIS CODE */
+    /*
+    $(error).offset({
+        "left" : $(prevField).offset().left
+    });
+    */
 };

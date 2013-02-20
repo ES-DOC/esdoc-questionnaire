@@ -1,0 +1,414 @@
+{# this is the index template for django-cim-forms #}
+
+{% extends "dcf/dcf_base.html" %}
+
+{% load dcf_filters %}
+
+{% block scripts %}
+
+    $(document).ready(
+        enableDCF()
+    )
+
+{% endblock %} {# /scripts #}
+
+{% block style %}
+
+{% endblock %} {# /style #}
+
+
+{% block title %}
+    Customizing {{project_name|stripSpaces|escape}}::{{model_name|stripSpaces|escape}}
+{% endblock %} {# /title #}
+
+{% block content %}
+
+    <div class="title">
+        Customizing the <u>{{model_name|escape}}</u> form for <u>{{project_name|escape}}</u>
+    </div> <!-- /.title -->
+
+    <div id="customize">
+
+    <p>
+        <i>
+            Use this form to customize how a particular metadata document in a particular application is presented for editing.&nbsp;&nbsp;
+            Drag-and-drop attributes, properties, and categories to specify an order.&nbsp;&nbsp;
+            Specify customizable features for each attribute or property.&nbsp;&nbsp;
+            When you have finished, click the "save" button at the bottom of the page.&nbsp;&nbsp;
+            Invalid entries are indicated using a <span style="color: #ff0000; font-weight: bold;">red</span> font.&nbsp;&nbsp;
+            <a href="/dcf/customize/instructions">More detailed instructions</a> are available.&nbsp;&nbsp;
+        </i>
+    </p>
+
+    <form method="POST" action="">
+
+        {% csrf_token %}
+
+        <br/>
+
+        <div class="form"> {# wrapping everything in a div.form so I can group together fields belonging to the same model #}
+
+
+            <fieldset class="coolfieldset" name="customization_details_fieldset">
+                <legend title="click to show/hide content">
+                    <div class="help-button" title="click for more info" id="customization_details_formset">
+                        <span class="default-help-icon ui-icon-info" style="display: inline-block">&nbsp;</span>
+                        <div class="help-description" title="Customization Details">
+                            This section contains information relating to the <i>customization</i> itself, as opposed to the form being customized.
+                        </div> <!-- /.help-description -->
+                    </div> <!-- /.help-button -->
+                    <span class="title">&nbsp;Customization Details&nbsp;</span>
+                </legend>
+                <div class="coolfieldset-content">
+                    <span class="documentation">This section contains information relating to the customization itself, as opposed to the document form being customized.</span><br/><br/>
+                    <table width="100%" border="0">
+                        {% for field in form.getCustomizerFields %}
+                            {% with field_label=field.label field_id="customization_details_"|add:field.name %}
+                                <tr valign="top" class="{% cycle 'odd' 'even' %} field">
+                                    <td>
+                                        {% if field.help_text %}
+                                            {% include "dcf/_help.html" %}
+                                        {% endif %} {# /field.help_text #}
+                                       <span class="field_label">
+                                            {{field.label}}:&nbsp;
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="field_value">
+                                            {{field}}
+                                        </span>
+                                        {% if field.errors %}
+                                            {% include "dcf/_error.html" %}
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endwith %} {# /field_label, field_id #}
+                        {% endfor %} {# /field in form.getCustomizerFields #}
+                    </table>
+                </div>
+            </fieldset> <!-- /.coolfieldset[name='customization_details_fieldset' -->
+
+
+            <fieldset class="coolfieldset" name="document_details_fieldset">
+                <legend title="click to show/hide content">
+                    <div class="help-button" title="click for more info" id="document_details_fieldset">
+                        <span class="default-help-icon ui-icon-info" style="display: inline-block">&nbsp;</span>
+                        <div class="help-description" title="Customization Details">
+                            This section contains information relating to the <i>document</i> itself.  This will appear in the title of the document form.
+                        </div> <!-- /.help-description -->
+                    </div> <!-- /.help-button -->
+                    <span class="title">&nbsp;Document Details&nbsp;</span>
+                </legend>
+                <div class="coolfieldset-content">
+                    <table width="100%" border="0">
+                        <span class="documentation">This section contains information relating to the document itself.  This will appear in the title of the document form.</span><br/><br/>
+                        {% for field in form.getModelFields %}
+                            {% with field_label=field.label field_id="document_details_"|add:field.name %}
+                                <tr valign="top" class="{% cycle 'odd' 'even' %} field">
+                                    <td>
+                                        {% if field.help_text %}
+                                            {% include "dcf/_help.html" %}
+                                        {% endif %} {# /field.help_text #}
+                                       <span class="field_label">
+                                            {{field.label}}:&nbsp;
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="field_value">
+                                            {{field}}
+                                        </span>
+                                        {% if field.errors %}
+                                            {% include "dcf/_error.html" %}
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endwith %} {# /field_label, field_id #}
+                        {% endfor %} {# /field in form.getModelFields #}
+                    </table>
+                </div>
+            </fieldset> <!-- /.coolfieldset[name='document_details_fieldset' -->
+
+
+            <fieldset class="coolfieldset" name="attribute_details_fieldset">
+                <legend title="click to show/hide content">
+                    <div class="help-button" title="click for more info" id="attribute_details_fieldset">
+                        <span class="default-help-icon ui-icon-info" style="display: inline-block">&nbsp;</span>
+                        <div class="help-description" title="Attribute Details">
+                            This section contains information relating to the attributes of the document.  This includes both those defined by the metadata version (ie: the standard CIM content) as well as those defiend by the controlled vocabularies (ie: the scientific properties).
+                        </div> <!-- /.help-description -->
+                    </div> <!-- /.help-button -->
+                    <span class="title">&nbsp;Attribute Details&nbsp;</span>
+                </legend>
+                <div class="coolfieldset-content">
+
+                        <span class="documentation">This section contains information relating to the attributes of the document.  This includes both those defined by the metadata version (ie: the standard CIM content) as well as those defiend by the controlled vocabularies (ie: the scientific properties).</span><br/><br/>
+
+                            <div class="tabs">
+                                <ul> <!-- the tab menu -->
+                                    <li>
+                                        <a href="#tab_attributes">
+                                            <!-- TODO: DOES THIS TITLE MAKE SENSE? -->
+                                            CIM Attributes
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="#tab_properties">
+                                            <!-- TODO: DOES THIS TITLE MAKE SENSE? -->
+                                            CV Attributes
+                                        </a>
+                                    </li>
+                                </ul>
+                                <div id="tab_attributes">
+                                    <div class="tab_content">
+                                        <span class="documentation">These attributes are defined by the metadata version.  They have pre-defined categories.  (Categories appear as tabs on the Metadata Editing Form.)</span>
+
+                                        <fieldset>
+                                            {% with field=form.attribute_categories_tags %}
+                                                {% with field_label=field.label field_id="attribute_details_"|add:field.name %}
+                                                    <table border="0" width="100%">
+                                                        <tr><td>
+                                                            {% if field.help_text %}
+                                                                {% include "dcf/_help.html" %}
+                                                            {% endif %}
+                                                            {{ field_label }}:&nbsp;
+                                                            <br/>
+                                                            {{ field }}
+                                                            {% if field.errors %}
+                                                                {% include "dcf/_error.html" %}
+                                                            {% endif %}
+                                                        </td></tr>
+                                                    </table>
+                                                {% endwith %} {# /field_label, field_id #}
+                                            {% endwith %} {# /field #}
+                                        </fieldset>
+
+                                        {% with formset=form|getSubForm:form.attributes %}
+
+                                            {{ formset.non_form_errors }}
+                                            {{ formset.management_form }}
+
+                                            <span class="subform-toolbar ui-widget-header ui-corner-all">
+                                                <button type="button" class="sort">sort</button>
+                                                <ul class="sort_by">
+                                                    <li><a href="#" name="sort_by_name">by name</a></li>
+                                                    <li><a href="#" name="sort_by_category">by category</a></li>
+                                                    <li><a href="#" name="sort_by_order">by order</a></li>
+                                                </ul>
+                                                <button type="button" class="expand" title="expand all attributes">expand all</button>
+                                                <button type="button" class="collapse" title="collapse all attributes">collapse all</button>
+                                            </span> <!-- /.subform-toolbar -->
+                                            <div style="clear: both;">&nbsp;</div>
+
+                                            <div class="accordion">
+                                                {% for form in formset.forms|sortFormsByField:"order" %}
+
+                                                    <h3 class="accordion-header">
+                                                        <a>
+                                                            <table width="100%" border="0">
+                                                                <tr valign="middle">
+                                                                    <td width="30%" align="left">
+                                                                        <b>name:&nbsp;</b>
+                                                                        <span name="field-name">{{form.getAttributeName}}</span>
+                                                                    </td>
+                                                                    <td width="30%" align="left">
+                                                                        <b>category:&nbsp;</b>
+                                                                        <span class="label" name="field-category">{{form.getCategoryName}}</span>
+                                                                    </td>
+                                                                    <td width="40%" align="left">
+                                                                        <b>order:&nbsp;</b>
+                                                                        <span class="label" name="field-order">{{form.getAttributeOrder}}</span>
+                                                                    </td>
+                                                                </tr>
+                                                            </table>
+                                                        </a>
+                                                    </h3> <!-- /.accordion-header -->
+
+                                                    <div class="accordion-content">
+                                                        <div class="form"> {# wrapping everything in a div.form so I can group together fields belonging to the same model #}
+                                                                                                                {# required b/c the individual form ids are here #}
+                                                            {% for hiddenField in form.hidden_fields %}
+                                                                {{ hiddenField }}
+                                                            {% endfor %} {# /hiddenField #}
+
+                                                            <table width="100%" border="0">
+                                                                {% for field in form.visible_fields %}
+                                                                    {% with field_label=field.label field_id="customization_details_"|add:field.name %}
+                                                                        <tr valign="top" class="{% cycle 'odd' 'even' %} field">
+                                                                            <td>
+                                                                                {% if field.help_text %}
+                                                                                    {% include "dcf/_help.html" %}
+                                                                                {% endif %} {# /field.help_text #}
+                                                                               <span class="field_label">
+                                                                                    {{field.label}}:&nbsp;
+                                                                                </span>
+                                                                            </td>
+                                                                            <td>
+                                                                                <span class="field_value" name="{{field.name}}">
+                                                                                    {{field}}
+                                                                                </span>
+                                                                                {% if field.errors %}
+                                                                                    {% include "dcf/_error.html" %}
+                                                                                {% endif %}
+                                                                                {# a one-off hard-coded bit #}
+                                                                                {% if field.name == "replace" %}
+                                                                                    <button type="button" class="customize-subform" name="customize-subform" title="customize the subform">customize</button>
+                                                                                {% endif %}
+                                                                            </td>
+                                                                        </tr>
+                                                                    {% endwith %} {# /field_label, field_id #}
+                                                                {% endfor %} {# /field in form.visible_fields #}
+                                                            </table>
+
+
+                                                        </div> <!-- /.form -->
+                                                    </div> <!-- /.accordion-content -->
+
+                                                {% endfor %} {# /form in formset.forms|sortFormsByFIeld:"order" #}
+                                            </div> <!-- /.accordion -->
+                                            
+                                        {% endwith %} {# /formset #}
+
+                                    </div> <!-- /.tab_content -->
+                                </div> <!-- /#tab_attributes -->
+
+                                <div id="tab_properties">
+                                    <div class="tab_content">
+                                        <span class="documentation">Thsese attributes are defined by the metadata vocabulary.  Users are free to categorize them as they see fit.  (Categories appear as sub-tabs on the Metadata Editing Form.)</span>
+
+                                        <fieldset>
+                                            {% with field=form.property_categories_tags %}
+                                                {% with field_label=field.label field_id="attribute_details_"|add:field.name %}
+                                                    <table border="0" width="100%">
+                                                        <tr><td>
+                                                            {% if field.help_text %}
+                                                                {% include "dcf/_help.html" %}
+                                                            {% endif %}
+                                                            {{ field_label }}:&nbsp;
+                                                            <br/>
+                                                            {{ field }}
+                                                            {% if field.errors %}
+                                                                {% include "dcf/_error.html" %}
+                                                            {% endif %}
+                                                        </td></tr>
+                                                        <tr><td>
+                                                            add a new category:&nbsp;<input type="text" id="property_categories_tags_add" title="enter the category name here"/>
+                                                        </td></tr>
+                                                    </table>
+                                                {% endwith %} {# /field_label, field_id #}
+                                            {% endwith %} {# /field #}
+                                        </fieldset>
+
+                                        {% with formset=form|getSubForm:form.properties %}
+
+                                            {{ formset.non_form_errors }}
+                                            {{ formset.management_form }}
+
+                                            <span class="subform-toolbar ui-widget-header ui-corner-all">
+                                                <button type="button" class="sort">sort</button>
+                                                <ul class="sort_by">
+                                                    <li><a href="#" name="sort_by_name">by name</a></li>
+                                                    <li><a href="#" name="sort_by_category">by category</a></li>
+                                                    <li><a href="#" name="sort_by_order">by order</a></li>
+                                                </ul>
+                                                <button type="button" class="expand" title="expand all attributes">expand all</button>
+                                                <button type="button" class="collapse" title="collapse all attributes">collapse all</button>
+                                            </span> <!-- /.subform-toolbar -->
+                                            <div style="clear: both;">&nbsp;</div>
+
+                                            <div class="accordion">
+                                                {% for form in formset.forms|sortFormsByField:"order" %}
+
+                                                    <h3 class="accordion-header">
+                                                        <a>
+                                                            <table width="100%" border="0">
+                                                                <tr valign="middle">
+                                                                    <td width="30%" align="left">
+                                                                        <b>name:&nbsp;</b>
+                                                                        <span name="field-name">{{form.getPropertyName}}</span>
+                                                                    </td>
+                                                                    <td width="30%" align="left">
+                                                                        <b>category:&nbsp;</b>
+                                                                        <span class="label" name="field-category">{{form.getCategoryName}}</span>
+                                                                    </td>
+                                                                    <td width="40%" align="left">
+                                                                        <b>order:&nbsp;</b>
+                                                                        <span class="label" name="field-order">{{form.getPropertyOrder}}</span>
+                                                                    </td>                                                                </tr>
+                                                            </table>
+                                                        </a>
+                                                    </h3> <!-- /.accordion-header -->
+
+                                                    <div class="accordion-content">
+                                                        <div class="form"> {# wrapping everything in a div.form so I can group together fields belonging to the same model #}
+                                                                                                                {# required b/c the individual form ids are here #}
+                                                            {% for hiddenField in form.hidden_fields %}
+                                                                {{ hiddenField }}
+                                                            {% endfor %} {# /hiddenField #}
+
+                                                            <table width="100%" border="0">
+                                                                {% for field in form.visible_fields %}
+                                                                    {% with field_label=field.label field_id="customization_details_"|add:field.name %}
+                                                                        <tr valign="top" class="{% cycle 'odd' 'even' %} field">
+                                                                            <td>
+                                                                                {% if field.help_text %}
+                                                                                    {% include "dcf/_help.html" %}
+                                                                                {% endif %} {# /field.help_text #}
+                                                                               <span class="field_label">
+                                                                                    {{field.label}}:&nbsp;
+                                                                                </span>
+                                                                            </td>
+                                                                            <td>
+                                                                                <span class="field_value" name="{{field.name}}">
+                                                                                    {{field}}
+                                                                                </span>
+                                                                                {% if field.errors %}
+                                                                                    {% include "dcf/_error.html" %}
+                                                                                {% endif %}
+
+                                                                            </td>
+                                                                        </tr>
+                                                                    {% endwith %} {# /field_label, field_id #}
+                                                                {% endfor %} {# /field in form.visible_fields #}
+                                                            </table>
+
+
+                                                        </div> <!-- /.form -->
+                                                    </div> <!-- /.accordion-content -->
+
+                                                {% endfor %} {# /form in formset.forms|sortFormsByFIeld:"order" #}
+                                            </div> <!-- /.accordion -->
+
+                                        {% endwith %} {# /formset #}
+
+                                    </div> <!-- /.tab_content -->
+                                </div> <!-- /#tab_properties -->
+
+                            </div> <!-- /.tabs -->
+
+                    </table>
+                </div>
+            </fieldset> <!-- /.coolfieldset[name='attribute_details_fieldset' -->
+
+
+        </div> <!-- /.form -->
+
+        <div class="submit">
+            <input class="button" name="save" type="submit" value="save"/>
+            <input class="button" name="submit" type="submit" value="submit"/>
+        </div> <!-- /.submit -->
+        <div style="clear: both;">&nbsp;</div>
+
+    </form>
+        
+    </div> <!-- /#customize -->
+
+{% endblock %} {# /content #}
+
+
+{% block footer %}
+    <div class="footer">
+        This form is generated by <a target="_blank" href="https://github.com/ES-DOC/django-cim-forms">Django-CIM-Forms</a>.
+        It is based on <a target="_blank" href="http://blahblah/cim/{{version_number}}">{{version_name}} {{version_number}}</a>.
+        And it uses the Controlled Vocabulary <a target="_blank" href="{{vocabulary_path}}">{{vocabulary_path|getFilename}}</a>.
+    </div> <!-- /.footer -->
+{% endblock %} {# / footer #}

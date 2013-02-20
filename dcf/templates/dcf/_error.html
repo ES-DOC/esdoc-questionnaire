@@ -1,0 +1,15 @@
+{# this displays an error for a metadata field #}
+
+{% load dcf_filters %}
+
+&nbsp;<br/>&nbsp;<br/>
+<div class="error-wrapper">
+    {{field.errors}}
+    <script class="error-script">
+        /* if there is any field error;
+        * display an error in the enclosing tab and accordion (if applicable) */
+        var error = $("script:.error-script:last");
+        render_error(error);
+    </script> <!-- /.error-script -->
+</div> <!-- /.error-wrapper -->
+&nbsp;<br/>&nbsp;<br/>

@@ -44,7 +44,7 @@ body {
 #dcf div.submit { margin-top: 8px; float: right; }
 #dcf div.submit input.button { width: 120px; padding-top: 12px; padding-bottom: 12px; font-weight: bold; border-width: 2px; }
 
-#dcf .error-wrapper { display: inline; margin-left: 4px; background-color: #ff6666; padding-left: 2px; padding-right: 2px; }
+#dcf .error-wrapper { display: inline; background-color: #ff6666; padding: 4px; }
 #dcf .errorlist { display: inline; list-style-type: none; text-align: center; padding: 0px; margin: 0px; }
 #dcf .errorlist li { display: inline; background-color: #ff6666; }
 

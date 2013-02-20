@@ -1,0 +1,275 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>dcf.utils &mdash; Django-CIM-Forms 0.9.9 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.9.9',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="Django-CIM-Forms 0.9.9 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">Django-CIM-Forms 0.9.9 documentation</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for dcf.utils</h1><div class="highlight"><pre>
+<span class="c">####################</span>
+<span class="c">#   Django-CIM-Forms</span>
+<span class="c">#   Copyright (c) 2012 CoG. All rights reserved.</span>
+<span class="c">#</span>
+<span class="c">#   Developed by: Earth System CoG</span>
+<span class="c">#   University of Colorado, Boulder</span>
+<span class="c">#   http://cires.colorado.edu/</span>
+<span class="c">#</span>
+<span class="c">#   This project is distributed according to the terms of the MIT license [http://www.opensource.org/licenses/MIT].</span>
+<span class="c">####################</span>
+
+<span class="n">__author__</span><span class="o">=</span><span class="s">&quot;allyn.treshansky&quot;</span>
+<span class="n">__date__</span> <span class="o">=</span><span class="s">&quot;Jan 31, 2013 11:42:56 AM&quot;</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">.. module:: utils</span>
+
+<span class="sd">Analyze and reanimate dead parrots.</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">django.core.exceptions</span> <span class="kn">import</span> <span class="n">ObjectDoesNotExist</span><span class="p">,</span> <span class="n">ImproperlyConfigured</span><span class="p">,</span> <span class="n">ValidationError</span>
+<span class="kn">from</span> <span class="nn">django.conf</span> <span class="kn">import</span> <span class="n">settings</span>
+<span class="kn">from</span> <span class="nn">django.core</span> <span class="kn">import</span> <span class="n">serializers</span>
+<span class="kn">from</span> <span class="nn">lxml</span> <span class="kn">import</span> <span class="n">etree</span> <span class="k">as</span> <span class="n">et</span>
+
+<span class="kn">import</span> <span class="nn">re</span>
+
+<span class="c">#############</span>
+<span class="c"># constants #</span>
+<span class="c">#############</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">.. data:: VERSION</span>
+<span class="sd">.. data:: RELEASE</span>
+<span class="sd">.. data:: APP_LABEL</span>
+<span class="sd">.. data:: HUGE_STRING</span>
+<span class="sd">.. data:: BIG_STRING</span>
+<span class="sd">.. data:: LIL_STRING</span>
+<span class="sd">.. data:: JSON_SERIALIZER</span>
+<span class="sd">.. data:: XML_PARSER</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="n">APP_LABEL</span>  <span class="o">=</span> <span class="s">&quot;dcf&quot;</span>
+
+<span class="n">HUGE_STRING</span> <span class="o">=</span> <span class="mi">800</span>
+<span class="n">BIG_STRING</span>  <span class="o">=</span> <span class="mi">400</span>
+<span class="n">LIL_STRING</span>  <span class="o">=</span> <span class="mi">100</span>
+
+<span class="n">JSON_SERIALIZER</span> <span class="o">=</span> <span class="n">serializers</span><span class="o">.</span><span class="n">get_serializer</span><span class="p">(</span><span class="s">&quot;json&quot;</span><span class="p">)()</span>
+<span class="n">XML_PARSER</span>      <span class="o">=</span> <span class="n">et</span><span class="o">.</span><span class="n">XMLParser</span><span class="p">(</span><span class="n">remove_blank_text</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+
+<span class="c">##################</span>
+<span class="c"># error handling #</span>
+<span class="c">##################</span>
+
+<span class="k">class</span> <span class="nc">MetadataError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+<div class="viewcode-block" id="MetadataError"><a class="viewcode-back" href="../../code.html#dcf.utils.MetadataError">[docs]</a>    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Custom exception class for DCF</span>
+
+<span class="sd">    .. note:: As DCF is a web-application, it often makes more sense to use the :func`dcf.error` view with an appropriate message instead of raising an explicit MetadataError</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">msg</span><span class="o">=</span><span class="s">&#39;unspecified metadata error&#39;</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">msg</span> <span class="o">=</span> <span class="n">msg</span>
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s">&quot;MetadataError: &quot;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">msg</span>
+
+<span class="c">################################</span>
+<span class="c"># some custom field validators #</span>
+<span class="c">################################</span>
+
+<span class="k">def</span> <span class="nf">validate_file_extension</span><span class="p">(</span><span class="n">value</span><span class="p">,</span><span class="n">valid_extensions</span><span class="p">):</span></div>
+<div class="viewcode-block" id="validate_file_extension"><a class="viewcode-back" href="../../code.html#dcf.utils.validate_file_extension">[docs]</a>    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Validator function to use with fileFields.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">value</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&quot;.&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="ow">in</span> <span class="n">valid_extensions</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">ValidationError</span><span class="p">(</span><span class="s">u&#39;Invalid File Extension&#39;</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">validate_file_schema</span><span class="p">(</span><span class="n">value</span><span class="p">,</span><span class="n">schema_path</span><span class="p">):</span></div>
+<div class="viewcode-block" id="validate_file_schema"><a class="viewcode-back" href="../../code.html#dcf.utils.validate_file_schema">[docs]</a>    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    validator function to use with fileFields;</span>
+<span class="sd">    validates a file against an XML Schema.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">contents</span> <span class="o">=</span> <span class="n">et</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">schema</span> <span class="o">=</span> <span class="n">et</span><span class="o">.</span><span class="n">XMLSchema</span><span class="p">(</span><span class="n">et</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">schema_path</span><span class="p">))</span>
+    <span class="k">except</span> <span class="ne">IOError</span><span class="p">:</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="s">&quot;Unable to find suitable schema to validate file against&quot;</span>
+        <span class="k">raise</span> <span class="n">ValidationError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">schema</span><span class="o">.</span><span class="n">assertValid</span><span class="p">(</span><span class="n">contents</span><span class="p">)</span>
+    <span class="k">except</span> <span class="n">et</span><span class="o">.</span><span class="n">DocumentInvalid</span><span class="p">,</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="s">&quot;Invalid File Contents: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="n">ValidationError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">get_custom_upload_path</span><span class="p">(</span><span class="n">instance</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span></div>
+<div class="viewcode-block" id="get_custom_upload_path"><a class="viewcode-back" href="../../code.html#dcf.utils.get_custom_upload_path">[docs]</a>    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Determines where to upload FileFields to</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">custom_upload_path</span> <span class="o">=</span> <span class="n">APP_LABEL</span> <span class="o">+</span> <span class="s">&quot;/&quot;</span> <span class="o">+</span> <span class="n">instance</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="c"># hopefully filename is a string</span>
+        <span class="n">custom_upload_path</span> <span class="o">+=</span> <span class="s">&quot;/&quot;</span> <span class="o">+</span> <span class="n">filename</span>
+    <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+        <span class="c"># but it might be an actual FileField</span>
+        <span class="n">custom_upload_path</span> <span class="o">+=</span> <span class="s">&quot;/&quot;</span> <span class="o">+</span> <span class="n">filename</span><span class="o">.</span><span class="n">name</span>
+    <span class="k">return</span> <span class="n">custom_upload_path</span>
+
+<span class="c">###########################</span>
+<span class="c"># a useful decorator      #</span>
+<span class="c"># (adds a guid to models) #</span>
+<span class="c">###########################</span>
+
+<span class="kn">from</span> <span class="nn">django.db</span> <span class="kn">import</span> <span class="n">models</span></div>
+<span class="kn">from</span> <span class="nn">uuid</span> <span class="kn">import</span> <span class="n">uuid4</span>
+<span class="kn">import</span> <span class="nn">types</span>
+
+
+<span class="k">class</span> <span class="nc">GUIDField</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">):</span>
+<div class="viewcode-block" id="GUIDField"><a class="viewcode-back" href="../../code.html#dcf.utils.GUIDField">[docs]</a>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        initialize a GUIDField;</span>
+<span class="sd">        it must be 64 chars, unique (for this class) in the db, not editable by any form, required, and already have a default guid value</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;max_length&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;max_length&#39;</span><span class="p">,</span> <span class="mi">64</span> <span class="p">)</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;unique&#39;</span><span class="p">]</span>     <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;unique&#39;</span><span class="p">,</span> <span class="bp">True</span> <span class="p">)</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;editable&#39;</span><span class="p">]</span>   <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;editable&#39;</span><span class="p">,</span> <span class="bp">False</span> <span class="p">)</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;blank&#39;</span><span class="p">]</span>      <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;blank&#39;</span><span class="p">,</span> <span class="bp">False</span> <span class="p">)</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;default&#39;</span><span class="p">]</span>    <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;default&#39;</span><span class="p">,</span><span class="nb">str</span><span class="p">(</span><span class="n">uuid4</span><span class="p">()))</span>
+
+        <span class="nb">super</span><span class="p">(</span><span class="n">GUIDField</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        
+    <span class="k">def</span> <span class="nf">contribute_to_class</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">cls</span><span class="p">,</span><span class="n">name</span><span class="p">):</span>
+<div class="viewcode-block" id="GUIDField.contribute_to_class"><a class="viewcode-back" href="../../code.html#dcf.utils.GUIDField.contribute_to_class">[docs]</a>        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        called when a GUIDField is (dynamically) added to a class</span>
+<span class="sd">        this inserts the &quot;getGUID&quot; fn to that class</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">def</span> <span class="nf">_getGUID</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_guid</span>
+
+        <span class="n">cls</span><span class="o">.</span><span class="n">getGUID</span> <span class="o">=</span> <span class="n">types</span><span class="o">.</span><span class="n">MethodType</span><span class="p">(</span><span class="n">_getGUID</span><span class="p">,</span><span class="bp">None</span><span class="p">,</span><span class="n">cls</span><span class="p">)</span>
+
+        <span class="nb">super</span><span class="p">(</span><span class="n">GUIDField</span><span class="p">,</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">contribute_to_class</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span><span class="n">name</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">pre_save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model_instance</span><span class="p">,</span> <span class="n">add</span><span class="p">):</span></div>
+<div class="viewcode-block" id="GUIDField.pre_save"><a class="viewcode-back" href="../../code.html#dcf.utils.GUIDField.pre_save">[docs]</a>        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        just in case the value wasn&#39;t already set</span>
+<span class="sd">        (by the &quot;default&quot; kwarg in __init__),</span>
+<span class="sd">        go ahead and set it before storing in the db</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">model_instance</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">attname</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">value</span><span class="p">:</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">uuid4</span><span class="p">())</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="n">model_instance</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">attname</span><span class="p">,</span><span class="n">value</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">value</span>
+
+<span class="k">def</span> <span class="nf">guid</span><span class="p">():</span></div></div>
+<div class="viewcode-block" id="guid"><a class="viewcode-back" href="../../code.html#dcf.utils.guid">[docs]</a>    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    decorator that specifies that a model has a _guid element,</span>
+<span class="sd">    which can be accessed using the getGUID() method.</span>
+<span class="sd">    this is a unique way of identifying models, fields, customizers, whatever</span>
+<span class="sd">    (which is important when having to distinguish them in a Django Templage)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">decorator</span><span class="p">(</span><span class="n">obj</span><span class="p">):</span>
+        
+        <span class="c"># create the field</span>
+        <span class="n">guid_field</span> <span class="o">=</span> <span class="n">GUIDField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">uuid4</span><span class="p">()))</span>
+        <span class="c"># add it to the object</span>
+        <span class="n">guid_field</span><span class="o">.</span><span class="n">contribute_to_class</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s">&quot;_guid&quot;</span><span class="p">)</span>
+        <span class="c"># return the modified object</span>
+        <span class="k">return</span> <span class="n">obj</span>
+
+    <span class="k">return</span> <span class="n">decorator</span>
+</pre></div></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">Django-CIM-Forms 0.9.9 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Allyn Treshansky.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,177 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Overview of DCF &mdash; Django-CIM-Forms 0.9.9 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.9.9',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="Django-CIM-Forms 0.9.9 documentation" href="index.html" />
+    <link rel="next" title="Code Documentation" href="code.html" />
+    <link rel="prev" title="Django-CIM-Forms" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="code.html" title="Code Documentation"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Django-CIM-Forms"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">Django-CIM-Forms 0.9.9 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="overview-of-dcf">
+<h1>Overview of DCF<a class="headerlink" href="#overview-of-dcf" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="top-level-classes">
+<h2>Top-Level classes<a class="headerlink" href="#top-level-classes" title="Permalink to this headline">¶</a></h2>
+<p>There are four high-level classes that must be properly loaded into Django-CIM-Forms (DCF) to be able to edit CIM Docuemnts and/or customize CIM Document Forms.</p>
+<div class="section" id="metadataversion">
+<h3>MetadataVersion<a class="headerlink" href="#metadataversion" title="Permalink to this headline">¶</a></h3>
+<p>asdf</p>
+</div>
+<div class="section" id="metadatacategorization">
+<h3>MetadataCategorization<a class="headerlink" href="#metadatacategorization" title="Permalink to this headline">¶</a></h3>
+<p>asdf</p>
+</div>
+<div class="section" id="metadatavocabulary">
+<h3>MetadataVocabulary<a class="headerlink" href="#metadatavocabulary" title="Permalink to this headline">¶</a></h3>
+<p>asdf</p>
+</div>
+<div class="section" id="metadataproject">
+<h3>MetadataProject<a class="headerlink" href="#metadataproject" title="Permalink to this headline">¶</a></h3>
+<p>asdf</p>
+<p>Obviously this is the group that oversees the content of the CIM Metadata Standard.  DCF requires a CIM version to be &#8220;registered&#8221; with the application in order to work.  The CIM is defined at the conceptual level as a UML Model (the &#8220;CONCIM&#8221;).  The CONCIM can be translated into different application schemas.  Currently, translating from UML to XSD is an automated process while translating from UML to Django Classes is a manual process.  In the long-term this will be automated.</p>
+</div>
+</div>
+<div class="section" id="controlled-vocabulary-cv-governance-community">
+<h2>Controlled Vocabulary (CV) Governance Community<a class="headerlink" href="#controlled-vocabulary-cv-governance-community" title="Permalink to this headline">¶</a></h2>
+<p>The CIM schemas only define the structure of metadata documents.  Controlled Vocabularies (CVs) define the terms, and relationships among terms, that can be used within that structure.  There will exist different CVs for different user communities.  A CV is stored as an XML file.  Within DCF, that file must be registered to be used.</p>
+</div>
+<div class="section" id="es-doc-community">
+<h2>ES-DOC Community<a class="headerlink" href="#es-doc-community" title="Permalink to this headline">¶</a></h2>
+<p>ES-DOC developers are in charge of the main look-and-feel of the metadata entry forms.  This includes the set of standard tabs (or &#8220;attribute categories&#8221;) that are rendered across the tops of the forms.  That information is not part of the CIM Schemas, nor is it part of any CV.</p>
+</div>
+<div class="section" id="dcf-es-doc-dcf-project-administrators">
+<h2>DCF / ES-DOC / DCF Project Administrators<a class="headerlink" href="#dcf-es-doc-dcf-project-administrators" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="dcf-project-administrators">
+<h2>DCF Project Administrators<a class="headerlink" href="#dcf-project-administrators" title="Permalink to this headline">¶</a></h2>
+<p>This group is responsible for the customization of metadata entry forms.  They use the provided DCF customization GUI to define how each CIM Document for their project ought to be rendered in the editing form (ie: which CIM attributes should appear and where, what documentation to include, etc.).</p>
+</div>
+<div class="section" id="dcf-end-users">
+<h2>DCF End Users<a class="headerlink" href="#dcf-end-users" title="Permalink to this headline">¶</a></h2>
+<p>This group is self-explanatory.  They will be using the customized forms to create and modify CIM documents.  When those documents are complete, they can be published to DCF&#8217;s ATOM feed.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Overview of DCF</a><ul>
+<li><a class="reference internal" href="#top-level-classes">Top-Level classes</a><ul>
+<li><a class="reference internal" href="#metadataversion">MetadataVersion</a></li>
+<li><a class="reference internal" href="#metadatacategorization">MetadataCategorization</a></li>
+<li><a class="reference internal" href="#metadatavocabulary">MetadataVocabulary</a></li>
+<li><a class="reference internal" href="#metadataproject">MetadataProject</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#controlled-vocabulary-cv-governance-community">Controlled Vocabulary (CV) Governance Community</a></li>
+<li><a class="reference internal" href="#es-doc-community">ES-DOC Community</a></li>
+<li><a class="reference internal" href="#dcf-es-doc-dcf-project-administrators">DCF / ES-DOC / DCF Project Administrators</a></li>
+<li><a class="reference internal" href="#dcf-project-administrators">DCF Project Administrators</a></li>
+<li><a class="reference internal" href="#dcf-end-users">DCF End Users</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="index.html"
+                        title="previous chapter">Django-CIM-Forms</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="code.html"
+                        title="next chapter">Code Documentation</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/overview.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="code.html" title="Code Documentation"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Django-CIM-Forms"
+             >previous</a> |</li>
+        <li><a href="index.html">Django-CIM-Forms 0.9.9 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Allyn Treshansky.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

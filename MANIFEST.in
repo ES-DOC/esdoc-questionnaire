@@ -1,2 +1,2 @@
 include *.txt distribute_setup.py
-recursive-include django_cim_forms *.py *.html *.js *.xml *.css *.csv *.gif *.jpg *.png *.wsgi *.sch *.xsl
+recursive-include dcf *.py *.html *.js *.xml *.css *.csv *.gif *.jpg *.png *.wsgi *.sch *.xsl

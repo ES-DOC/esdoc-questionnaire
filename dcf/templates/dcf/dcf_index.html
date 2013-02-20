@@ -1,0 +1,139 @@
+{# this is the index template for django-cim-forms #}
+
+{% extends "dcf/dcf_base.html" %}
+
+{% load dcf_filters %}
+
+{% block title %}
+    Welcome
+{% endblock %} {# /title #}
+
+{% block scripts %}
+
+    $(document).ready(
+        enableDCF()
+    )
+
+    /* fill the 'action' field w/ the appropriate value */
+    /* based on which submit button was clicked */
+    function set_action(actionName) {
+        $("input[name='action']").val(actionName);
+    };
+
+    /* this dictionary represents the current state of the database */
+    var raw_data = '{{data|safe}}';
+    var data = $.parseJSON(raw_data);
+
+    /* gets an element from data w/ the specified properties */
+    /* note: data properties can be accessed like "thisData.name" */
+    function get_data(type,pk) {
+        var thisData = {}
+        $.each(data[type], function(i,dataElement) {
+            if (dataElement.pk == pk) {
+                thisData = dataElement.fields;
+            }
+        });
+        return thisData
+    }
+
+    function reset_options(source) {
+        sourceName = $(source).attr("name");
+        sourceVal  = $(source).val();
+        sourceData = get_data(sourceName,sourceVal);
+
+        /* TODO: RESTRICT OPTIONS OF OTHER INPUTS BASED ON INPUT OF "SOURCE" */
+
+        if (sourceName == "versions") {
+            // modelnames is restricted to names belonging to version
+            modelNames=sourceData.model_names.split("|");
+            $("select[name='models'] > option").each(function() {
+                if ($.inArray($(this).val(),modelNames) == -1) {
+                    $(this).attr("disabled","disabled");
+                }
+            });
+        }
+
+        else if (sourceName == "projects") {
+            //
+        }
+        
+        else if (sourceName == "customizations") {
+            //
+        }
+        else {
+            //alert("unknown sourceName: " + sourceName);
+        }
+
+        
+    };
+
+{% endblock %} {# /scripts #}
+
+{% block style %}
+
+{% endblock %} {# /style #}
+
+{% block content %}
+
+    <div class="title">
+        Welcome to the Django CIM Forms application
+    </div> <!-- /.title -->
+
+    <div id="index">
+
+        <br/><br/>
+        <p>
+            <i>
+                This is just a temporary page showing how to get to other pages.  A real portal would probably want to hard-code these links.&nbsp;&nbsp;
+                Note that while <b>"customize"</b> allows you to look at an arbitrary customization, <b>"edit"</b> can only use a project's default customization.&nbsp;&nbsp;
+                <a href="{{ STATIC_URL }}dcf/doc/index.html"><b>Here</b></a> is some documentation about the code.&nbsp;&nbsp;
+            </i>
+        </p>
+
+    <form method="POST" action="">
+
+        {% csrf_token %}
+
+        <br/><br/>
+
+        <fieldset>
+
+            <table width="80%" border="0" style="margin-left: auto; margin-right: auto;">
+                <tr valign="top">
+                    {% for field in form %}
+                        <td align="center">
+                            {% if field.name == "action" %}
+                                <div style="display: none;">
+                                    {{field}}
+                                </div>
+                            {% else %}
+                                {{field.label}}:&nbsp;
+                                {{field}}
+                                {% if field.errors %}
+                                    <br/>
+                                    <div class="error-wrapper">
+                                        {{field.errors}}
+                                    </div>
+                                {% endif %} {# /field.errors #}
+                            {% endif %} {# /field.name == "action" #}
+                        </td>
+                    {% endfor %} {# /field in form #}
+                </tr>
+            </table>
+
+        </fieldset>
+
+        <div class="submit">
+            <input class="button" name="test" type="submit" value="test" onclick="set_action('test');"/>
+            <input class="button" name="customize" type="submit" value="customize" onclick="set_action('customize');"/>
+            <input class="button" name="edit" type="submit" value="edit" onclick="set_action('edit');"/>
+        </div> <!-- /.submit -->
+        <div style="clear: both;">&nbsp;</div>
+
+    </form>
+        
+    </div> <!-- /#index -->
+
+{% endblock %} {# /content #}
+
+{# just use the standard headers and footers #}
