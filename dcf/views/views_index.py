@@ -143,8 +143,10 @@ def index(request):
             if customization and action == "customize":
                 parameters = "?name=%s" % customization.name
 
-            # url should be "action/version/project/name[?name=customization.name]
-            url = "%s/%s/%s/%s/%s" % (action,version_number,project.name,model,parameters)
+            # url should be "action/project/model/version/[?name=customization.name]
+
+            #url = "%s/%s/%s/%s/%s" % (action,version_number,project.name,model,parameters)
+            url = "%s/%s/%s/%s/%s" % (action,project.name,model,version_number,parameters)
             return HttpResponseRedirect(url)
 
             pass
