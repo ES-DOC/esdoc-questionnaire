@@ -17,6 +17,3 @@ __date__ ="Jan 31, 2013 11:27:48 AM"
 Summary of module goes here
 
 """
-
-_VERSION    = '0.9.9'
-_RELEASE    = _VERSION

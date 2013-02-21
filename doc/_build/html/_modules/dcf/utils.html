@@ -1,0 +1,395 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>dcf.utils &mdash; Django-CIM-Forms 0.9.9.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.9.9.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="Django-CIM-Forms 0.9.9.1 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">Django-CIM-Forms 0.9.9.1 documentation</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for dcf.utils</h1><div class="highlight"><pre>
+<span class="c">####################</span>
+<span class="c">#   Django-CIM-Forms</span>
+<span class="c">#   Copyright (c) 2012 CoG. All rights reserved.</span>
+<span class="c">#</span>
+<span class="c">#   Developed by: Earth System CoG</span>
+<span class="c">#   University of Colorado, Boulder</span>
+<span class="c">#   http://cires.colorado.edu/</span>
+<span class="c">#</span>
+<span class="c">#   This project is distributed according to the terms of the MIT license [http://www.opensource.org/licenses/MIT].</span>
+<span class="c">####################</span>
+
+<span class="n">__author__</span><span class="o">=</span><span class="s">&quot;allyn.treshansky&quot;</span>
+<span class="n">__date__</span> <span class="o">=</span><span class="s">&quot;Jan 31, 2013 11:42:56 AM&quot;</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">.. module:: utils</span>
+
+<span class="sd">This module contains utility code (constants, error-handling, etc.).</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">django.core.exceptions</span> <span class="kn">import</span> <span class="n">ObjectDoesNotExist</span><span class="p">,</span> <span class="n">ImproperlyConfigured</span><span class="p">,</span> <span class="n">ValidationError</span>
+<span class="kn">from</span> <span class="nn">django.conf</span> <span class="kn">import</span> <span class="n">settings</span>
+<span class="kn">from</span> <span class="nn">django.core</span> <span class="kn">import</span> <span class="n">serializers</span>
+<span class="kn">from</span> <span class="nn">lxml</span> <span class="kn">import</span> <span class="n">etree</span> <span class="k">as</span> <span class="n">et</span>
+
+
+
+<span class="kn">import</span> <span class="nn">re</span>
+
+<span class="c">#############</span>
+<span class="c"># constants #</span>
+<span class="c">#############</span>
+
+<span class="c">#: the name of the DCF django application</span>
+<span class="n">APP_LABEL</span>  <span class="o">=</span> <span class="s">&quot;dcf&quot;</span>
+
+<span class="c">#: the default names that metadata versions have (change this at your peril)</span>
+<span class="n">METADATA_NAME</span> <span class="o">=</span> <span class="s">&quot;CIM&quot;</span>
+
+<span class="c">#: a constant max_value for really big strings</span>
+<span class="n">HUGE_STRING</span> <span class="o">=</span> <span class="mi">800</span>
+<span class="c">#: a constant max_value for big strings</span>
+<span class="n">BIG_STRING</span>  <span class="o">=</span> <span class="mi">400</span>
+<span class="c">#: a constant max_value for normal strings</span>
+<span class="n">LIL_STRING</span>  <span class="o">=</span> <span class="mi">100</span>
+
+<span class="c">#: a serializer to use throughout the app; defined once to avoid too many fn calls</span>
+<span class="n">JSON_SERIALIZER</span> <span class="o">=</span> <span class="n">serializers</span><span class="o">.</span><span class="n">get_serializer</span><span class="p">(</span><span class="s">&quot;json&quot;</span><span class="p">)()</span>
+<span class="c">#: a parser to use throughout the app; defined once to avoid too many fn calls</span>
+<span class="n">XML_PARSER</span>      <span class="o">=</span> <span class="n">et</span><span class="o">.</span><span class="n">XMLParser</span><span class="p">(</span><span class="n">remove_blank_text</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+
+<span class="c">##################</span>
+<span class="c"># error handling #</span>
+<span class="c">##################</span>
+
+<span class="k">class</span> <span class="nc">MetadataError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+<div class="viewcode-block" id="MetadataError"><a class="viewcode-back" href="../../code.html#dcf.utils.MetadataError">[docs]</a>    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Custom exception class for DCF</span>
+
+<span class="sd">    .. note:: As DCF is a web-application, it often makes more sense to use the :func`dcf.error` view with an appropriate message instead of raising an explicit MetadataError</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">msg</span><span class="o">=</span><span class="s">&#39;unspecified metadata error&#39;</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">msg</span> <span class="o">=</span> <span class="n">msg</span>
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s">&quot;MetadataError: &quot;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">msg</span>
+
+<span class="c">################################</span>
+<span class="c"># some custom field validators #</span>
+<span class="c">################################</span>
+
+<span class="k">def</span> <span class="nf">validate_file_extension</span><span class="p">(</span><span class="n">value</span><span class="p">,</span><span class="n">valid_extensions</span><span class="p">):</span></div>
+<div class="viewcode-block" id="validate_file_extension"><a class="viewcode-back" href="../../code.html#dcf.utils.validate_file_extension">[docs]</a>    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Validator function to use with fileFields.</span>
+<span class="sd">    Ensures the file attemping to be uploaded matches a set of extensions.</span>
+<span class="sd">    :param value: file being validated</span>
+<span class="sd">    :param valid_extensions: list of valid extensions</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">value</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&quot;.&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="ow">in</span> <span class="n">valid_extensions</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">ValidationError</span><span class="p">(</span><span class="s">u&#39;Invalid File Extension&#39;</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">validate_file_schema</span><span class="p">(</span><span class="n">value</span><span class="p">,</span><span class="n">schema_path</span><span class="p">):</span></div>
+<div class="viewcode-block" id="validate_file_schema"><a class="viewcode-back" href="../../code.html#dcf.utils.validate_file_schema">[docs]</a>    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    validator function to use with fileFields;</span>
+<span class="sd">    validates a file against an XML Schema.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">contents</span> <span class="o">=</span> <span class="n">et</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">schema</span> <span class="o">=</span> <span class="n">et</span><span class="o">.</span><span class="n">XMLSchema</span><span class="p">(</span><span class="n">et</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">schema_path</span><span class="p">))</span>
+    <span class="k">except</span> <span class="ne">IOError</span><span class="p">:</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="s">&quot;Unable to find suitable schema to validate file against&quot;</span>
+        <span class="k">raise</span> <span class="n">ValidationError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">schema</span><span class="o">.</span><span class="n">assertValid</span><span class="p">(</span><span class="n">contents</span><span class="p">)</span>
+    <span class="k">except</span> <span class="n">et</span><span class="o">.</span><span class="n">DocumentInvalid</span><span class="p">,</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="s">&quot;Invalid File Contents: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="n">ValidationError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">validate_no_spaces</span><span class="p">(</span><span class="n">value</span><span class="p">):</span></div>
+<div class="viewcode-block" id="validate_no_spaces"><a class="viewcode-back" href="../../code.html#dcf.utils.validate_no_spaces">[docs]</a>    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    validator function to use with charFields;</span>
+<span class="sd">    ensures there is no whitespace in the field</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c"># TODO: WHY DOESN&#39;T THIS WORK?</span>
+    <span class="c">#if re.match(&#39;\s&#39;,value):</span>
+    <span class="k">if</span> <span class="s">&#39; &#39;</span> <span class="ow">in</span> <span class="n">value</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">ValidationError</span><span class="p">(</span><span class="s">u&#39;</span><span class="si">%s</span><span class="s"> may not contain spaces&#39;</span> <span class="o">%</span> <span class="n">value</span><span class="p">)</span>
+
+<span class="c">##############################</span>
+<span class="c"># enumerated types in Python #</span>
+<span class="c">##############################</span>
+
+<span class="k">class</span> <span class="nc">EnumeratedType</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span></div>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">cls</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_type</span>  <span class="o">=</span> <span class="nb">type</span>  <span class="c"># the key of this type</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_name</span>  <span class="o">=</span> <span class="n">name</span>  <span class="c"># the pretty name of this type</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_class</span> <span class="o">=</span> <span class="n">cls</span>   <span class="c"># the Python class used by this type (not always relevant)</span>
+
+    <span class="k">def</span> <span class="nf">getType</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_type</span>
+
+    <span class="k">def</span> <span class="nf">getName</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_name</span>
+
+    <span class="k">def</span> <span class="nf">getClass</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_class</span>
+
+    <span class="k">def</span> <span class="nf">__unicode__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="s">u&#39;</span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">_type</span>
+        <span class="k">return</span> <span class="n">name</span>
+
+    <span class="c"># comparisons are made via the _type attribute...</span>
+    <span class="k">def</span> <span class="nf">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">other</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">getType</span><span class="p">()</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">getType</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">False</span>
+    <span class="k">def</span> <span class="nf">__ne__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">__eq__</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
+
+<span class="k">class</span> <span class="nc">EnumeratedTypeError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">msg</span><span class="o">=</span><span class="s">&#39;invalid enumerated type&#39;</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">msg</span> <span class="o">=</span> <span class="n">msg</span>
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s">&quot;EnumeratedTypeError: &quot;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">msg</span>
+
+<span class="c"># this used to be based on deque to preserve FIFO order...</span>
+<span class="c"># but since I changed to adding fields to this list as needed in class&#39;s __init__() fn,</span>
+<span class="c"># that doesn&#39;t make much sense; so I&#39;m basing it on a simple list</span>
+<span class="c"># and adding an ordering fn</span>
+<span class="k">class</span> <span class="nc">EnumeratedTypeList</span><span class="p">(</span><span class="nb">list</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="nb">type</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">et</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">et</span><span class="o">.</span><span class="n">getType</span><span class="p">()</span> <span class="o">==</span> <span class="nb">type</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">et</span>
+        <span class="k">raise</span> <span class="n">EnumeratedTypeError</span><span class="p">(</span><span class="s">&quot;unable to find </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="nb">str</span><span class="p">(</span><span class="nb">type</span><span class="p">))</span>
+
+    <span class="c"># a method for sorting these lists</span>
+    <span class="c"># order is a list of EnumeratatedType._types</span>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">comparator</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span><span class="n">et</span><span class="p">,</span><span class="n">etOrderList</span><span class="p">):</span>
+        <span class="n">etType</span> <span class="o">=</span> <span class="n">et</span><span class="o">.</span><span class="n">getType</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">etType</span> <span class="ow">in</span> <span class="n">etOrderList</span><span class="p">:</span>
+            <span class="c"># if the type being compared is in the orderList, return it&#39;s position</span>
+            <span class="k">return</span> <span class="n">etOrderList</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">etType</span><span class="p">)</span>
+        <span class="c"># otherwise return a value greater than the last position of the orderList</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="n">etOrderList</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span>
+
+<span class="c">##################################################</span>
+<span class="c"># and here are some enumerated types used by DCF #</span>
+<span class="c">##################################################</span>
+
+<span class="kn">from</span> <span class="nn">django.forms.models</span> <span class="kn">import</span> <span class="n">BaseForm</span><span class="p">,</span> <span class="n">BaseFormSet</span><span class="p">,</span> <span class="n">BaseInlineFormSet</span><span class="p">,</span> <span class="n">BaseModelFormSet</span>
+
+<span class="k">class</span> <span class="nc">SubFormType</span><span class="p">(</span><span class="n">EnumeratedType</span><span class="p">):</span>
+<div class="viewcode-block" id="SubFormType"><a class="viewcode-back" href="../../code.html#dcf.utils.SubFormType">[docs]</a>    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    An enumeration of the different types of subForms that can be used by a parent form.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">pass</span>
+
+<span class="n">SubFormTypes</span> <span class="o">=</span> <span class="n">EnumeratedTypeList</span><span class="p">([</span></div>
+    <span class="n">SubFormType</span><span class="p">(</span><span class="s">&quot;FORM&quot;</span><span class="p">,</span><span class="s">&quot;Form&quot;</span><span class="p">,</span><span class="n">BaseForm</span><span class="p">),</span>
+    <span class="n">SubFormType</span><span class="p">(</span><span class="s">&quot;FORMSET&quot;</span><span class="p">,</span><span class="s">&quot;FormSet&quot;</span><span class="p">,</span><span class="n">BaseFormSet</span><span class="p">),</span>
+<span class="p">])</span>
+
+<span class="k">class</span> <span class="nc">CategoryType</span><span class="p">(</span><span class="n">EnumeratedType</span><span class="p">):</span>
+<div class="viewcode-block" id="CategoryType"><a class="viewcode-back" href="../../code.html#dcf.utils.CategoryType">[docs]</a>    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    An enumeration of the different types of categories that can be specified in a customization</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">pass</span>
+
+<span class="n">CategoryTypes</span> <span class="o">=</span> <span class="n">EnumeratedTypeList</span><span class="p">([</span></div>
+    <span class="n">CategoryType</span><span class="p">(</span><span class="s">&quot;ATTRIBUTE&quot;</span><span class="p">,</span><span class="s">&quot;Attribute&quot;</span><span class="p">),</span>
+    <span class="n">CategoryType</span><span class="p">(</span><span class="s">&quot;PROPERTY&quot;</span><span class="p">,</span><span class="s">&quot;Property&quot;</span><span class="p">),</span>
+<span class="p">])</span>
+
+<span class="c">###########################</span>
+<span class="c"># a useful decorator      #</span>
+<span class="c"># (adds a guid to models) #</span>
+<span class="c">###########################</span>
+
+<span class="kn">from</span> <span class="nn">django.db.models.signals</span> <span class="kn">import</span> <span class="n">post_init</span>
+<span class="kn">from</span> <span class="nn">django.db</span> <span class="kn">import</span> <span class="n">models</span>
+<span class="kn">from</span> <span class="nn">uuid</span> <span class="kn">import</span> <span class="n">uuid4</span>
+<span class="kn">import</span> <span class="nn">types</span>
+
+<span class="k">class</span> <span class="nc">GUIDField</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">):</span>
+<div class="viewcode-block" id="GUIDField"><a class="viewcode-back" href="../../code.html#dcf.utils.GUIDField">[docs]</a>    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A modelField to store a GUID</span>
+<span class="sd">    .. note:: this field shouldn&#39;t be used directly, the @guid decorator handles adding it to classes</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        initialize a GUIDField;</span>
+<span class="sd">        it must be 64 chars, unique (for this class) in the db, not editable by any form, required, and already have a default guid value</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;max_length&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;max_length&#39;</span><span class="p">,</span> <span class="mi">64</span> <span class="p">)</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;unique&#39;</span><span class="p">]</span>     <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;unique&#39;</span><span class="p">,</span> <span class="bp">True</span> <span class="p">)</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;editable&#39;</span><span class="p">]</span>   <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;editable&#39;</span><span class="p">,</span> <span class="bp">False</span> <span class="p">)</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;blank&#39;</span><span class="p">]</span>      <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;blank&#39;</span><span class="p">,</span> <span class="bp">False</span> <span class="p">)</span>
+        <span class="c">#kwargs[&#39;default&#39;]    = kwargs.get(&#39;default&#39;,str(uuid4()))</span>
+
+        <span class="nb">super</span><span class="p">(</span><span class="n">GUIDField</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        
+    <span class="k">def</span> <span class="nf">contribute_to_class</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">cls</span><span class="p">,</span><span class="n">name</span><span class="p">):</span>
+<div class="viewcode-block" id="GUIDField.contribute_to_class"><a class="viewcode-back" href="../../code.html#dcf.utils.GUIDField.contribute_to_class">[docs]</a>        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        called when a GUIDField is (dynamically) added to a class</span>
+<span class="sd">        this inserts the &quot;getGUID&quot; fn to that class</span>
+<span class="sd">        it also registers a callback w/ the cls post_init signal</span>
+<span class="sd">        (so that I can give it a unique value then)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">def</span> <span class="nf">_getGUID</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_guid</span>
+
+        <span class="n">cls</span><span class="o">.</span><span class="n">getGUID</span> <span class="o">=</span> <span class="n">types</span><span class="o">.</span><span class="n">MethodType</span><span class="p">(</span><span class="n">_getGUID</span><span class="p">,</span><span class="bp">None</span><span class="p">,</span><span class="n">cls</span><span class="p">)</span>
+
+        <span class="c"># connect cls &#39;post_init&#39; signal to something</span>
+        <span class="n">post_init</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">setValue</span><span class="p">,</span><span class="n">cls</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">GUIDField</span><span class="p">,</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">contribute_to_class</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span><span class="n">name</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">setValue</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="o">*</span><span class="n">args</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span></div>
+
+        <span class="n">instance</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;instance&quot;</span><span class="p">,</span><span class="bp">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">instance</span><span class="p">:</span>
+            <span class="n">instance</span><span class="o">.</span><span class="n">_guid</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">uuid4</span><span class="p">())</span>
+        
+
+<span class="c">#    def pre_save(self, model_instance, add):</span>
+<span class="c">#        &quot;&quot;&quot;</span>
+<span class="c">#        just in case the value wasn&#39;t already set</span>
+<span class="c">#        (by the &quot;default&quot; kwarg in __init__),</span>
+<span class="c">#        go ahead and set it before storing in the db</span>
+<span class="c">#        &quot;&quot;&quot;</span>
+<span class="c">#        value = getattr(model_instance, self.attname, None)</span>
+<span class="c">#        if not value:</span>
+<span class="c">#            value = str(uuid4())</span>
+<span class="c">#            setattr(model_instance,self.attname,value)</span>
+<span class="c">#        return value</span>
+
+<span class="k">def</span> <span class="nf">guid</span><span class="p">():</span></div>
+<div class="viewcode-block" id="guid"><a class="viewcode-back" href="../../code.html#dcf.utils.guid">[docs]</a>    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    decorator that specifies that a model has a _guid element,</span>
+<span class="sd">    which can be accessed using the getGUID() method.</span>
+<span class="sd">    this is a unique way of identifying models, fields, customizers, whatever</span>
+<span class="sd">    (which is important when having to distinguish them in a Django Templage)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">decorator</span><span class="p">(</span><span class="n">obj</span><span class="p">):</span>
+        
+        <span class="c"># create the field</span>
+        <span class="n">guid_field</span> <span class="o">=</span> <span class="n">GUIDField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">uuid4</span><span class="p">()))</span>
+        <span class="c"># add it to the object</span>
+        <span class="n">guid_field</span><span class="o">.</span><span class="n">contribute_to_class</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s">&quot;_guid&quot;</span><span class="p">)</span>
+        <span class="c"># return the modified object</span>
+        <span class="k">return</span> <span class="n">obj</span>
+
+    <span class="k">return</span> <span class="n">decorator</span>
+
+<span class="c">##################</span>
+<span class="c"># some other fns #</span>
+<span class="c">##################</span>
+
+<span class="k">def</span> <span class="nf">get_subclasses</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span><span class="n">_subclasses</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span></div>
+<div class="viewcode-block" id="get_subclasses"><a class="viewcode-back" href="../../code.html#dcf.utils.get_subclasses">[docs]</a>    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Given a Django Class, recursively gets all subclasses.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">_subclasses</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">_subclasses</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+    <span class="n">subclasses</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">__subclasses__</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">subclass</span> <span class="ow">in</span> <span class="n">subclasses</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">subclass</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">_subclasses</span><span class="p">:</span>
+            <span class="n">_subclasses</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">subclass</span><span class="p">)</span>
+            <span class="n">get_subclasses</span><span class="p">(</span><span class="n">subclass</span><span class="p">,</span><span class="n">_subclasses</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">_subclasses</span>
+</pre></div></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">Django-CIM-Forms 0.9.9.1 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Allyn Treshansky.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>
