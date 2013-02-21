@@ -5,9 +5,7 @@
         <options/>
     </meta>
     <projectTree name="dcf.xpr">
-        <file name="../../../../../COELACANTH/CIM_editor/dcf.bak/sample_media/categorization.xsd"/>
-        <file name="../../../../../COELACANTH/CIM_editor/dcf.bak/sample_media/cim_1_5_categorization.xml"/>
-        <file name="../../../../../COELACANTH/CIM_editor/dcf.bak/sample_media/dycore_vocabulary.xml"/>
-        <file name="../../../../../COELACANTH/CIM_editor/dcf.bak/sample_media/vocabulary.xsd"/>
+        <file name="categorization.xsd"/>
+        <file name="vocabulary.xsd"/>
     </projectTree>
 </project>
