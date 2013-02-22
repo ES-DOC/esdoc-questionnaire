@@ -30,7 +30,7 @@ from dcf.utils import *
 
 _UPLOAD_DIR  = "categorizations"
 _UPLOAD_PATH = os.path.join(APP_LABEL,_UPLOAD_DIR)    # this is a relative path (will be concatenated w/ MEDIA_ROOT by FileFIeld)
-_SCHEMA_PATH = os.path.join(settings.MEDIA_ROOT,APP_LABEL,_UPLOAD_DIR,"categorization.xsd") # this is an absolute path
+_SCHEMA_PATH = os.path.join(settings.STATIC_ROOT,APP_LABEL,"xml/categorization.xsd") # this is an absolute path
 
 def validate_categorization_file_extension(value):
     valid_extensions = ["xml"]
