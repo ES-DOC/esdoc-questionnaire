@@ -115,7 +115,7 @@ class MetadataProperty(models.Model):
     nullable    = models.BooleanField(default=False)
     model_name  = models.CharField(max_length=LIL_STRING,blank=False)
     
-    values      = models.CharField(max_length=HUGE_STRING,blank=True)
+    values      = models.TextField(blank=True)
     children    = models.ManyToManyField("self",symmetrical=False,related_name="parent",blank=True)
 
 

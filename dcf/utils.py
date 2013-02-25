@@ -39,8 +39,12 @@ APP_LABEL  = "dcf"
 #: the default names that metadata versions have (change this at your peril)
 METADATA_NAME = "CIM"
 
+# no need for this; just use TextField instead of CharField
+##: a constant max_value for really really big strings
+#ENORMOUS_STRING = 4800
+
 #: a constant max_value for really big strings
-HUGE_STRING = 800
+HUGE_STRING = 1200
 #: a constant max_value for big strings
 BIG_STRING  = 400
 #: a constant max_value for normal strings
