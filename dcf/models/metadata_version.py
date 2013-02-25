@@ -107,20 +107,26 @@ class MetadataVersion(models.Model):
         Builds an instance of a MetadataVersion
         """
 
+        print "in MetadataVersion.factory"
+
         try:
             # by convention, versions should be in their own Django Applications
             # which are named <name>_<version> where any "." in <version> are replaced w/ "_"
             # as in "cim_1_5"
             app_name = kwargs["name"].lower() + "_" + re.sub(r'\.',"_",kwargs["version"])
+            print "about to call get_app(%s)" % app_name
             app = get_app(app_name)
         except KeyError:
             msg = "name and version must be specified when creating a MetadataVersion"
+            print "error: %s" % msg
             raise MetadataError(msg)
         except ImproperlyConfigured:
             msg = "unable to find a MetadataVersion called '%s'" % app_name
+            print "error: %s" % msg
             raise MetadataError(msg)
 
         try:
+            print "about to create metadataversion"
             (metadata_version,created) = MetadataVersion.objects.get_or_create(**kwargs)
             if created:
                 print "registering MetadataVersion: '%s'" % metadata_version
@@ -129,6 +135,7 @@ class MetadataVersion(models.Model):
             # depending on the order that django processes models during "syncdb,"
             # MetadataVersion may not exist yet in the db.
             # that's okay - this only has to work during "runserver"
+            print "database error"
             pass
 
  
