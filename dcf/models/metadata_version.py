@@ -108,7 +108,7 @@ class MetadataVersion(models.Model):
         Builds an instance of a MetadataVersion
         """
 
-        print "in MetadataVersion.factory"
+        print "in MetadataVersion.factory(%s)" % kwargs
 
         try:
             # by convention, versions should be in their own Django Applications
@@ -127,7 +127,7 @@ class MetadataVersion(models.Model):
             raise MetadataError(msg)
 
         try:
-            print "about to create metadataversion"
+            print "about to create metadataversion(%s)" % kwargs
             (metadata_version,created) = MetadataVersion.objects.get_or_create(**kwargs)
             if created:
                 print "registering MetadataVersion: '%s'" % metadata_version
