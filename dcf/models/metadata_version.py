@@ -22,6 +22,7 @@ Summary of module goes here
 
 from django.db import models, DatabaseError
 from django.db.models import get_app, get_model, get_models
+from django.db.utils import DatabaseError as UtilsDatabaseError
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ObjectDoesNotExist, ImproperlyConfigured, ValidationError
 
@@ -136,6 +137,9 @@ class MetadataVersion(models.Model):
             # MetadataVersion may not exist yet in the db.
             # that's okay - this only has to work during "runserver"
             print "database error"
+            pass
+        except UtilsDatabaseError:
+            print "the other kind of database error"
             pass
 
  
