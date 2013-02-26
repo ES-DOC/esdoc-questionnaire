@@ -36,7 +36,6 @@ var button_to_remove_form = ""
 
 /* re-define indexOf incase it's not supported */
 /* (as with IE 8.0) */
-
 if (!Array.prototype.indexOf) {
     Array.prototype.indexOf = function(obj, start) {
          for (var i = (start || 0), j = this.length; i < j; i++) {
