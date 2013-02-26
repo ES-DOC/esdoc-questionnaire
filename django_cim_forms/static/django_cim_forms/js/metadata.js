@@ -34,6 +34,17 @@ var id_to_remove = ""
 var form_to_remove = ""
 var button_to_remove_form = ""
 
+/* re-define indexOf incase it's not supported */
+/* (as with IE 8.0) */
+
+if (!Array.prototype.indexOf) {
+    Array.prototype.indexOf = function(obj, start) {
+         for (var i = (start || 0), j = this.length; i < j; i++) {
+             if (this[i] === obj) { return i; }
+         }
+         return -1;
+    }
+}
 
 /* checks the value of a field (toggler) against an associative array (stuffToToggle)
  * which specifies other fields to toggle based on value */
