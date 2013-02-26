@@ -296,7 +296,7 @@ function initializeRemoveButton(button) {
 
         $(button).button({
             icons: {primary: "ui-icon-circle-minus"},
-            text: true,
+            text: true
         });
         $(button).bind("click", function(e) {
             /* prevent the delete button from _actually_ opening the accordian tab */
@@ -653,7 +653,7 @@ function enableJQueryWidgets() {
         $(".subform-toolbar button.expand" ).button({
              icons : {primary: "ui-icon-circle-triangle-s"},
              //icons : {primary: "ui-icon-circle-plus"},
-             text : true,
+             text : true
         }).click(function(event) {
             var accordion = $(event.target).closest(".subform-toolbar").nextAll(".accordion:first");
             // I have to do this manually (rather than w/ the active:all option)
@@ -663,7 +663,7 @@ function enableJQueryWidgets() {
         $(".subform-toolbar button.collapse" ).button({
             icons : {primary: "ui-icon-circle-triangle-n"},
             //icons : {primary: "ui-icon-circle-minus"},
-            text: true,
+            text: true
         }).click(function(event) {
             var accordion = $(event.target).closest(".subform-toolbar").nextAll(".accordion:first");
             // I have to do this manually (rather than w/ the active:none option)
@@ -680,7 +680,7 @@ function enableJQueryWidgets() {
         //$(".subform-toolbar button.add").button({
         $("button.add").button({
             icons: {primary: "ui-icon-circle-plus"},
-            text: true,
+            text: true
         }).click(function(event) {
             
             fieldset = $(event.target).closest("fieldset");
