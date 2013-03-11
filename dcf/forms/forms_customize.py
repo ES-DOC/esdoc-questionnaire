@@ -47,7 +47,7 @@ class MetadataModelCustomizerForm(ModelForm):
     attribute_categories_tags.help_text = "This widget contains the standard set of attribute categories associated with the metdata version.  If this set is unsuitable, or empty, then the categorization should be updated.  Please contact your administrator."
 
     property_categories = ModelMultipleChoiceField(queryset=MetadataPropertyCategory.objects.none())
-    property_categories_tags = CharField(label="Avaialble Categories",required=False)
+    property_categories_tags = CharField(label="Available Categories",required=False)
     property_categories_tags.help_text  = "This widget is used to customize the categories used to display scientific properties."
 
 

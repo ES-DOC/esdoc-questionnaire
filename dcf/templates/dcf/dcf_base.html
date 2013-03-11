@@ -20,6 +20,19 @@
              String.prototype.trim = function() {
                  return $.trim(this)
              };
+
+            /* redefining javascript indexOf() fn,
+             * which doesn't exist in IE 8.0
+             */
+             if (!Array.prototype.indexOf) {
+                 Array.prototype.indexOf = function(obj, start) {
+                     for (var i = (start || 0), j = this.length; i < j; i++) {
+                         if (this[i] === obj) { return i; }
+                     }
+                     return -1;
+                 }
+             }
+
              /* used by loadJS (in "dcf.js" below)
               * to know where to load scripts from
               */

@@ -254,7 +254,8 @@ todo_include_todos = True
 import os
 import sys
 
-sys.path.insert(0, os.path.abspath('../../django-cim-forms'))
+# ensure syspath includes parent directory of dcf 
+sys.path.insert(0, os.path.abspath('..'))
 
 from django.core.management import setup_environ
 from dcf import settings as dcf_settings
