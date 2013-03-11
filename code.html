@@ -1,0 +1,425 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Code Documentation &mdash; Django-CIM-Forms 0.9.9.1 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.9.9.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="Django-CIM-Forms 0.9.9.1 documentation" href="index.html" />
+    <link rel="next" title="Installation" href="install.html" />
+    <link rel="prev" title="Overview of DCF" href="overview.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="install.html" title="Installation"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="overview.html" title="Overview of DCF"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">Django-CIM-Forms 0.9.9.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="module-dcf">
+<span id="code-documentation"></span><h1>Code Documentation<a class="headerlink" href="#module-dcf" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="utilities">
+<h2>Utilities<a class="headerlink" href="#utilities" title="Permalink to this headline">¶</a></h2>
+<p>This section includes code used behind the scenes by other modules in DCF.</p>
+<div class="section" id="module-dcf.utils">
+<span id="utils"></span><h3>Utils<a class="headerlink" href="#module-dcf.utils" title="Permalink to this headline">¶</a></h3>
+<dl class="data">
+<dt id="dcf.utils.APP_LABEL">
+<tt class="descclassname">dcf.utils.</tt><tt class="descname">APP_LABEL</tt><em class="property"> = 'dcf'</em><a class="headerlink" href="#dcf.utils.APP_LABEL" title="Permalink to this definition">¶</a></dt>
+<dd><p>the name of the DCF django application</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="dcf.utils.BIG_STRING">
+<tt class="descclassname">dcf.utils.</tt><tt class="descname">BIG_STRING</tt><em class="property"> = 400</em><a class="headerlink" href="#dcf.utils.BIG_STRING" title="Permalink to this definition">¶</a></dt>
+<dd><p>a constant max_value for big strings</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="dcf.utils.CategoryType">
+<em class="property">class </em><tt class="descclassname">dcf.utils.</tt><tt class="descname">CategoryType</tt><big>(</big><em>type=None</em>, <em>name=None</em>, <em>cls=None</em><big>)</big><a class="reference internal" href="_modules/dcf/utils.html#CategoryType"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dcf.utils.CategoryType" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">dcf.utils.EnumeratedType</span></tt></p>
+<p>An enumeration of the different types of categories that can be specified in a customization</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="dcf.utils.GUIDField">
+<em class="property">class </em><tt class="descclassname">dcf.utils.</tt><tt class="descname">GUIDField</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/dcf/utils.html#GUIDField"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dcf.utils.GUIDField" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">django.db.models.fields.CharField</span></tt></p>
+<p>A modelField to store a GUID
+.. note:: this field shouldn&#8217;t be used directly, the &#64;guid decorator handles adding it to classes</p>
+<dl class="method">
+<dt id="dcf.utils.GUIDField.contribute_to_class">
+<tt class="descname">contribute_to_class</tt><big>(</big><em>cls</em>, <em>name</em><big>)</big><a class="reference internal" href="_modules/dcf/utils.html#GUIDField.contribute_to_class"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dcf.utils.GUIDField.contribute_to_class" title="Permalink to this definition">¶</a></dt>
+<dd><p>called when a GUIDField is (dynamically) added to a class
+this inserts the &#8220;getGUID&#8221; fn to that class
+it also registers a callback w/ the cls post_init signal
+(so that I can give it a unique value then)</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="data">
+<dt id="dcf.utils.HUGE_STRING">
+<tt class="descclassname">dcf.utils.</tt><tt class="descname">HUGE_STRING</tt><em class="property"> = 1200</em><a class="headerlink" href="#dcf.utils.HUGE_STRING" title="Permalink to this definition">¶</a></dt>
+<dd><p>a constant max_value for really big strings</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="dcf.utils.JSON_SERIALIZER">
+<tt class="descclassname">dcf.utils.</tt><tt class="descname">JSON_SERIALIZER</tt><em class="property"> = &lt;django.core.serializers.json.Serializer object at 0x2a53ed0&gt;</em><a class="headerlink" href="#dcf.utils.JSON_SERIALIZER" title="Permalink to this definition">¶</a></dt>
+<dd><p>a serializer to use throughout the app; defined once to avoid too many fn calls</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="dcf.utils.LIL_STRING">
+<tt class="descclassname">dcf.utils.</tt><tt class="descname">LIL_STRING</tt><em class="property"> = 100</em><a class="headerlink" href="#dcf.utils.LIL_STRING" title="Permalink to this definition">¶</a></dt>
+<dd><p>a constant max_value for normal strings</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="dcf.utils.METADATA_NAME">
+<tt class="descclassname">dcf.utils.</tt><tt class="descname">METADATA_NAME</tt><em class="property"> = 'CIM'</em><a class="headerlink" href="#dcf.utils.METADATA_NAME" title="Permalink to this definition">¶</a></dt>
+<dd><p>the default names that metadata versions have (change this at your peril)</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="dcf.utils.MetadataError">
+<em class="property">exception </em><tt class="descclassname">dcf.utils.</tt><tt class="descname">MetadataError</tt><big>(</big><em>msg='unspecified metadata error'</em><big>)</big><a class="reference internal" href="_modules/dcf/utils.html#MetadataError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dcf.utils.MetadataError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">exceptions.Exception</span></tt></p>
+<p>Custom exception class for DCF</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">As DCF is a web-application, it often makes more sense to use the :func`dcf.error` view with an appropriate message instead of raising an explicit MetadataError</p>
+</div>
+</dd></dl>
+
+<dl class="class">
+<dt id="dcf.utils.SubFormType">
+<em class="property">class </em><tt class="descclassname">dcf.utils.</tt><tt class="descname">SubFormType</tt><big>(</big><em>type=None</em>, <em>name=None</em>, <em>cls=None</em><big>)</big><a class="reference internal" href="_modules/dcf/utils.html#SubFormType"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dcf.utils.SubFormType" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">dcf.utils.EnumeratedType</span></tt></p>
+<p>An enumeration of the different types of subForms that can be used by a parent form.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="dcf.utils.XML_PARSER">
+<tt class="descclassname">dcf.utils.</tt><tt class="descname">XML_PARSER</tt><em class="property"> = &lt;lxml.etree.XMLParser object at 0x29a4d60&gt;</em><a class="headerlink" href="#dcf.utils.XML_PARSER" title="Permalink to this definition">¶</a></dt>
+<dd><p>a parser to use throughout the app; defined once to avoid too many fn calls</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="dcf.utils.get_subclasses">
+<tt class="descclassname">dcf.utils.</tt><tt class="descname">get_subclasses</tt><big>(</big><em>parent</em>, <em>_subclasses=None</em><big>)</big><a class="reference internal" href="_modules/dcf/utils.html#get_subclasses"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dcf.utils.get_subclasses" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given a Django Class, recursively gets all subclasses.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="dcf.utils.guid">
+<tt class="descclassname">dcf.utils.</tt><tt class="descname">guid</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/dcf/utils.html#guid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dcf.utils.guid" title="Permalink to this definition">¶</a></dt>
+<dd><p>decorator that specifies that a model has a _guid element,
+which can be accessed using the getGUID() method.
+this is a unique way of identifying models, fields, customizers, whatever
+(which is important when having to distinguish them in a Django Templage)</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="dcf.utils.validate_file_extension">
+<tt class="descclassname">dcf.utils.</tt><tt class="descname">validate_file_extension</tt><big>(</big><em>value</em>, <em>valid_extensions</em><big>)</big><a class="reference internal" href="_modules/dcf/utils.html#validate_file_extension"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dcf.utils.validate_file_extension" title="Permalink to this definition">¶</a></dt>
+<dd><p>Validator function to use with fileFields.
+Ensures the file attemping to be uploaded matches a set of extensions.
+:param value: file being validated
+:param valid_extensions: list of valid extensions</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="dcf.utils.validate_file_schema">
+<tt class="descclassname">dcf.utils.</tt><tt class="descname">validate_file_schema</tt><big>(</big><em>value</em>, <em>schema_path</em><big>)</big><a class="reference internal" href="_modules/dcf/utils.html#validate_file_schema"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dcf.utils.validate_file_schema" title="Permalink to this definition">¶</a></dt>
+<dd><p>validator function to use with fileFields;
+validates a file against an XML Schema.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="dcf.utils.validate_no_spaces">
+<tt class="descclassname">dcf.utils.</tt><tt class="descname">validate_no_spaces</tt><big>(</big><em>value</em><big>)</big><a class="reference internal" href="_modules/dcf/utils.html#validate_no_spaces"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dcf.utils.validate_no_spaces" title="Permalink to this definition">¶</a></dt>
+<dd><p>validator function to use with charFields;
+ensures there is no whitespace in the field</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-dcf.admin">
+<span id="admin"></span><h3>Admin<a class="headerlink" href="#module-dcf.admin" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="dcf.admin.MetadataCategorizationAdmin">
+<em class="property">class </em><tt class="descclassname">dcf.admin.</tt><tt class="descname">MetadataCategorizationAdmin</tt><big>(</big><em>model</em>, <em>admin_site</em><big>)</big><a class="reference internal" href="_modules/dcf/admin.html#MetadataCategorizationAdmin"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dcf.admin.MetadataCategorizationAdmin" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">django.contrib.admin.options.ModelAdmin</span></tt></p>
+<p>Custom Django Admin class for MetadataCategorizations.</p>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">This class should never be accessed directly; it is used only by the Django Admin.</p>
+</div>
+</dd></dl>
+
+<dl class="class">
+<dt id="dcf.admin.MetadataVersionAdmin">
+<em class="property">class </em><tt class="descclassname">dcf.admin.</tt><tt class="descname">MetadataVersionAdmin</tt><big>(</big><em>model</em>, <em>admin_site</em><big>)</big><a class="reference internal" href="_modules/dcf/admin.html#MetadataVersionAdmin"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dcf.admin.MetadataVersionAdmin" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">django.contrib.admin.options.ModelAdmin</span></tt></p>
+<p>Custom Django Admin class for MetadataVersions.</p>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">This class should never be accessed directly; it is used only by the Django Admin.</p>
+</div>
+</dd></dl>
+
+<dl class="class">
+<dt id="dcf.admin.MetadataVocabularyAdmin">
+<em class="property">class </em><tt class="descclassname">dcf.admin.</tt><tt class="descname">MetadataVocabularyAdmin</tt><big>(</big><em>model</em>, <em>admin_site</em><big>)</big><a class="reference internal" href="_modules/dcf/admin.html#MetadataVocabularyAdmin"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dcf.admin.MetadataVocabularyAdmin" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">django.contrib.admin.options.ModelAdmin</span></tt></p>
+<p>Custom Django Admin class for MetadataVocabularies.</p>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">This class should never be accessed directly; it is used only by the Django Admin.</p>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="dcf.admin.load_metadata_versions">
+<tt class="descclassname">dcf.admin.</tt><tt class="descname">load_metadata_versions</tt><big>(</big><em>modeladmin</em>, <em>request</em>, <em>queryset</em><big>)</big><a class="reference internal" href="_modules/dcf/admin.html#load_metadata_versions"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dcf.admin.load_metadata_versions" title="Permalink to this definition">¶</a></dt>
+<dd><p>This admin function (re)loads all of the <tt class="xref py py-class docutils literal"><span class="pre">dcf.models.MetadataModel`s</span> <span class="pre">into</span> <span class="pre">a</span> <span class="pre">:class:`dcf.models.MetadataVersion</span></tt>.
+For each version in the queryset, it checks all models in the same application.
+If a model is a subclass of <tt class="xref py py-class docutils literal"><span class="pre">dcf.models.MetadataModel</span></tt>, it adds that model&#8217;s name to the list of model_names stored by the <a class="reference internal" href="#dcf.models.MetadataVersion" title="dcf.models.MetadataVersion"><tt class="xref py py-class docutils literal"><span class="pre">dcf.models.MetadataVersion</span></tt></a>.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">During a MetadataVersion&#8217;s <a class="reference internal" href="#dcf.models.MetadataVersion.__init__" title="dcf.models.MetadataVersion.__init__"><tt class="xref py py-func docutils literal"><span class="pre">dcf.models.MetadataVersion.__init__()</span></tt></a> function, that list of names is used to create a dictionary of the actual model classes themselves.</p>
+</div>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">This function should never be called directly; it is accessible only via the Django Admin.</p>
+</div>
+</dd></dl>
+
+</div>
+<div class="section" id="feeds">
+<h3>Feeds<a class="headerlink" href="#feeds" title="Permalink to this headline">¶</a></h3>
+</div>
+</div>
+<div class="section" id="module-dcf.models">
+<span id="models"></span><h2>Models<a class="headerlink" href="#module-dcf.models" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="metadataversions">
+<h3>MetadataVersions<a class="headerlink" href="#metadataversions" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="dcf.models.MetadataVersion">
+<em class="property">class </em><tt class="descclassname">dcf.models.</tt><tt class="descname">MetadataVersion</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#dcf.models.MetadataVersion" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">django.db.models.base.Model</span></tt></p>
+<p>MetadataVersion(id, name, version, model_names, default_categorization_id)</p>
+<dl class="classmethod">
+<dt id="dcf.models.MetadataVersion.factory">
+<em class="property">classmethod </em><tt class="descname">factory</tt><big>(</big><em>kwargs</em><big>)</big><a class="headerlink" href="#dcf.models.MetadataVersion.factory" title="Permalink to this definition">¶</a></dt>
+<dd><p>Builds an instance of a MetadataVersion</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="dcf.models.MetadataVersion.getDefaultProjects">
+<tt class="descname">getDefaultProjects</tt><big>(</big><big>)</big><a class="headerlink" href="#dcf.models.MetadataVersion.getDefaultProjects" title="Permalink to this definition">¶</a></dt>
+<dd><p>uses reverse relationship to list all MetadataProjects that have this version as a default version</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="dcf.models.MetadataVersion.getProjects">
+<tt class="descname">getProjects</tt><big>(</big><big>)</big><a class="headerlink" href="#dcf.models.MetadataVersion.getProjects" title="Permalink to this definition">¶</a></dt>
+<dd><p>uses reverse relationship to list all MetadataProjects that have this version as a possible version</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="method">
+<dt id="dcf.models.MetadataVersion.__init__">
+<tt class="descclassname">MetadataVersion.</tt><tt class="descname">__init__</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#dcf.models.MetadataVersion.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize a MetadataVersion.
+For each model_name in model_names, get the corresponding MetadataModel class and add it to an internal dictionary.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="metadataprojects">
+<h3>MetadataProjects<a class="headerlink" href="#metadataprojects" title="Permalink to this headline">¶</a></h3>
+</div>
+<div class="section" id="metadatacustomizers">
+<h3>MetadataCustomizers<a class="headerlink" href="#metadatacustomizers" title="Permalink to this headline">¶</a></h3>
+</div>
+<div class="section" id="metadatavocabularies">
+<h3>MetadataVocabularies<a class="headerlink" href="#metadatavocabularies" title="Permalink to this headline">¶</a></h3>
+</div>
+<div class="section" id="metadatamodels">
+<h3>MetadataModels<a class="headerlink" href="#metadatamodels" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="fields">
+<h4>Fields<a class="headerlink" href="#fields" title="Permalink to this headline">¶</a></h4>
+</div>
+</div>
+</div>
+<div class="section" id="forms">
+<h2>Forms<a class="headerlink" href="#forms" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="customization-forms">
+<h3>Customization Forms<a class="headerlink" href="#customization-forms" title="Permalink to this headline">¶</a></h3>
+</div>
+<div class="section" id="editing-forms">
+<h3>Editing Forms<a class="headerlink" href="#editing-forms" title="Permalink to this headline">¶</a></h3>
+</div>
+</div>
+<div class="section" id="views">
+<h2>Views<a class="headerlink" href="#views" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="template-files">
+<h2>Template Files<a class="headerlink" href="#template-files" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="templatetags">
+<h3>TemplateTags<a class="headerlink" href="#templatetags" title="Permalink to this headline">¶</a></h3>
+</div>
+<div class="section" id="templates">
+<h3>Templates<a class="headerlink" href="#templates" title="Permalink to this headline">¶</a></h3>
+</div>
+</div>
+<div class="section" id="static-files">
+<h2>Static Files<a class="headerlink" href="#static-files" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="javascript">
+<h3>JavaScript<a class="headerlink" href="#javascript" title="Permalink to this headline">¶</a></h3>
+</div>
+<div class="section" id="css">
+<h3>CSS<a class="headerlink" href="#css" title="Permalink to this headline">¶</a></h3>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Code Documentation</a><ul>
+<li><a class="reference internal" href="#utilities">Utilities</a><ul>
+<li><a class="reference internal" href="#module-dcf.utils">Utils</a></li>
+<li><a class="reference internal" href="#module-dcf.admin">Admin</a></li>
+<li><a class="reference internal" href="#feeds">Feeds</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-dcf.models">Models</a><ul>
+<li><a class="reference internal" href="#metadataversions">MetadataVersions</a></li>
+<li><a class="reference internal" href="#metadataprojects">MetadataProjects</a></li>
+<li><a class="reference internal" href="#metadatacustomizers">MetadataCustomizers</a></li>
+<li><a class="reference internal" href="#metadatavocabularies">MetadataVocabularies</a></li>
+<li><a class="reference internal" href="#metadatamodels">MetadataModels</a><ul>
+<li><a class="reference internal" href="#fields">Fields</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#forms">Forms</a><ul>
+<li><a class="reference internal" href="#customization-forms">Customization Forms</a></li>
+<li><a class="reference internal" href="#editing-forms">Editing Forms</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#views">Views</a></li>
+<li><a class="reference internal" href="#template-files">Template Files</a><ul>
+<li><a class="reference internal" href="#templatetags">TemplateTags</a></li>
+<li><a class="reference internal" href="#templates">Templates</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#static-files">Static Files</a><ul>
+<li><a class="reference internal" href="#javascript">JavaScript</a></li>
+<li><a class="reference internal" href="#css">CSS</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="overview.html"
+                        title="previous chapter">Overview of DCF</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="install.html"
+                        title="next chapter">Installation</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/code.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="install.html" title="Installation"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="overview.html" title="Overview of DCF"
+             >previous</a> |</li>
+        <li><a href="index.html">Django-CIM-Forms 0.9.9.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Allyn Treshansky.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>
