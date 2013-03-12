@@ -8,6 +8,12 @@ DCF is separated into a top-level application ("django_cim_forms") which contain
 
 Additionally, to fully use DCF, one or more custom applications are required.  These define a subset of CIM models and forms that should be rendered for a particular user community.  DCF provides a set of functions (which in the long-term will be made accessible via an Admin GUI) to customize how those models and forms are rendered.  Without these customizations, the base models and forms may be unsuitable for users.  Advice on how to customize models and forms is given at the bottom of this document.
 
+#################
+# Documentation #
+#################
+
+http://es-doc.github.com/django-cim-forms
+
 ################
 # Requirements #
 ################
