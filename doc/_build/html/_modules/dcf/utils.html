@@ -89,8 +89,12 @@
 <span class="c">#: the default names that metadata versions have (change this at your peril)</span>
 <span class="n">METADATA_NAME</span> <span class="o">=</span> <span class="s">&quot;CIM&quot;</span>
 
+<span class="c"># no need for this; just use TextField instead of CharField</span>
+<span class="c">##: a constant max_value for really really big strings</span>
+<span class="c">#ENORMOUS_STRING = 4800</span>
+
 <span class="c">#: a constant max_value for really big strings</span>
-<span class="n">HUGE_STRING</span> <span class="o">=</span> <span class="mi">800</span>
+<span class="n">HUGE_STRING</span> <span class="o">=</span> <span class="mi">1200</span>
 <span class="c">#: a constant max_value for big strings</span>
 <span class="n">BIG_STRING</span>  <span class="o">=</span> <span class="mi">400</span>
 <span class="c">#: a constant max_value for normal strings</span>
