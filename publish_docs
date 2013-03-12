@@ -1,5 +1,9 @@
 #!/bin/sh
 
+##########################################################
+# script to publish Sphinx documentation to github pages #
+##########################################################
+
 #########
 # usage #
 #########
@@ -10,12 +14,12 @@ USAGE="Usage: `basename $0` [-b (rebuild documentation)]"
 # global variables #
 ####################
 
-CODEDIR="`pwd`"
-DOCDIR="$CODEDIR/doc"
-TMPDIR="$HOME/$$"
+CODEDIR="`pwd`"			# dir where git repository is
+DOCDIR="$CODEDIR/doc"		# dir where sphinx documentation is
+TMPDIR="$HOME/$$"		# tmp dir for copying files
 
-VERBOSE=0
-REBUILD=0
+VERBOSE=0			# print out messages [OBSOLETE]
+REBUILD=0			# build spinx documentation prior to publication
 
 ###############
 # get options #
@@ -25,7 +29,7 @@ while getopts b OPT
 do
   case $OPT in
     b) REBUILD=1;;
-#    v) VERBOSE=1;;
+#    v) VERBOSE=1;;		# [OBSOLETE]
     *) echo $USAGE >&2; exit;;
   esac
 done;
@@ -35,28 +39,40 @@ done;
 ############
 
 if [ $REBUILD -eq 1 ]; then
+  # build spinx documentation
   cd $DOCDIR
   make clean
   make html
   cd $CODEDIR
 fi
 
+# copy the documentation to a temporary location
 mkdir $TMPDIR
 cp -r $DOCDIR/* $TMPDIR
 
+# stash any local changes in the repository
 git stash
+# change to the "github pages" branch
 git checkout gh-pages
-
+# copy the documentation back from the temporary location
 cp -r $TMPDIR/* .
 
+# publish the documentation
 git commit -a -m "doc changes"
 git push
 
+# revert to the previous branch
 git checkout -
+# and recover any local changes
 git stash pop
 
+# remove all of the files that were copied
 for f in `ls $TMPDIR`
 do
   rm -rf $CODEDIR/$f
 done
 rm -rf $TMPDIR
+
+###########
+# the end #
+###########
