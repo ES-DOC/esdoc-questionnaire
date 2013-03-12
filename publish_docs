@@ -60,6 +60,3 @@ do
   rm -rf $CODEDIR/$f
 done
 rm -rf $TMPDIR
-
-git commit -a -m "doc changes"
-git push
