@@ -1,0 +1,78 @@
+#!/bin/sh
+
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
+#########
+# usage #
+#########
+
+USAGE="Usage: `basename $0` [-b (rebuild documentation)]"
+
+####################
+# global variables #
+####################
+
+CODEDIR="`pwd`"
+DOCDIR="$CODEDIR/doc"
+TMPDIR="$HOME/$$"
+
+VERBOSE=0
+REBUILD=0
+
+###############
+# get options #
+###############
+
+while getopts b OPT
+do
+  case $OPT in
+    b) REBUILD=1;;
+#    v) VERBOSE=1;;
+    *) echo $USAGE >&2; exit;;
+  esac
+done;
+
+############
+# do stuff #
+############
+
+if [ $REBUILD -eq 1 ]; then
+  cd $DOCDIR
+  make clean
+  make html
+  cd $CODEDIR
+fi
+
+mkdir $TMPDIR
+cp -r $DOCDIR/* $TMPDIR
+
+git stash
+git checkout gh-pages
+
+cp -r $TMPDIR/* .
+<<<<<<< Updated upstream
+
+git commit -a -m "doc changes"
+git push
+
+git checkout -
+git stash pop
+
+for f in `ls $TMPDIR`
+do
+  rm -rf $CODEDIR/$f
+done
+rm -rf $TMPDIR
+=======
+exit
+git commit -a -m "doc changes"
+git push
+
+rm -rf $TMPDIR
+
+git checkout -
+git stash pop
+
+>>>>>>> Stashed changes
