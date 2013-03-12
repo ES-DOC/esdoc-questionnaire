@@ -1,9 +1,5 @@
 #!/bin/sh
 
-<<<<<<< Updated upstream
-=======
-
->>>>>>> Stashed changes
 #########
 # usage #
 #########
@@ -52,7 +48,6 @@ git stash
 git checkout gh-pages
 
 cp -r $TMPDIR/* .
-<<<<<<< Updated upstream
 
 git commit -a -m "doc changes"
 git push
@@ -65,14 +60,6 @@ do
   rm -rf $CODEDIR/$f
 done
 rm -rf $TMPDIR
-=======
-exit
+
 git commit -a -m "doc changes"
 git push
-
-rm -rf $TMPDIR
-
-git checkout -
-git stash pop
-
->>>>>>> Stashed changes
