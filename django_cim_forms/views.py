@@ -190,28 +190,11 @@ def detail(request, model_name, app_name="django_cim_forms", model_id=None):
             msg = "Permission Denied"
             return HttpResponseForbidden(msg)
 
-
-    # LET'S CHECK WHETHER THIS MODEL HAS JUST BEEN (SUCCESSFULLY) SUBMITTED
-    # IF SO, THE TEMPLATE WILL DISPLAY A POPUP BOX...
-    success = request.session.get('submission_success', False)
-    try:
-        # clear the session
-        del(request.session["submission_success"])
-    except KeyError:
-        pass
-
     if request.method == 'POST':
         
         form = FormClass(request.POST,instance=model,request=request)
         if form.is_valid():
             model = form.save(commit=False)
-            if 'save' in request.POST:
-                model.submitted = False
-            elif 'submit' in request.POST:
-                model.submitted = True
-            else:
-                msg = "Invalid submission"
-                return HttpResponseBadRequest(msg)
             if not(initialize):
                 # create new (rather than update existing) model
                 model.save(force_insert=True)
@@ -249,16 +232,13 @@ def detail(request, model_name, app_name="django_cim_forms", model_id=None):
 ##                    #return HttpResponseBadRequest(msg)
 ##                    print msg
 
-
-            request.session["submission_success"] = model.submitted
             return HttpResponseRedirect(reverse('django_cim_forms.views.detail', args=(app_name,model_name,model.id)))
         else:
-            request.session["submission_success"] = False
             print "invalid!"
     else:
         form = FormClass(instance=model,request=request,initialize=initialize)
 
-    return render_to_response('django_cim_forms/metadata_detail.html', {'form' : form, "submitted" : success}, context_instance=RequestContext(request))
+    return render_to_response('django_cim_forms/metadata_detail.html', {'form' : form}, context_instance=RequestContext(request))
 
 
 def serialize(request, model_name, app_name="django_cim_forms", model_id=None, format=None):

@@ -38,13 +38,11 @@ class MetadataFeed(Feed):
         super(MetadataFeed,self).__init__()
 
     def items(self):
-        # only add submitted items to the feed
         items = []
         for ModelClass in self.ModelClasses:
-            #items += ModelClass.objects.all()#order_by("-created")
-            items += ModelClass.objects.filter(submitted=True)#order_by("-created")
+            items += ModelClass.objects.all()#order_by("-created")
         for item in items:
-            print item.submitted
+            print item.created
         # TODO: why doesn't this comparator seem to work?
         return sorted(items,cmp=lambda item1,item2: (item1.created > item2.created))
 

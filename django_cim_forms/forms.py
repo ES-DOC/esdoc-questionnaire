@@ -47,9 +47,8 @@ def getFormClassFromModelClass(ModelClass):
     form_name = ModelClass.getName() + "_form"
     app_name = ModelClass._meta.app_label
     # I assume that the form class is defined in 'app_name.forms.form_name' but I can't be certain
-    # so I loop through all valid variants of app_name using this list comprehension            
+    # so I loop through all valid variants of app_name using this list comprehension
     for (full_app_name,app_module) in [(key,value) for (key,value) in sys.modules.iteritems() if app_name in key and value]:
-
         try:
             FormClass = getattr(app_module,form_name)
             return FormClass
@@ -355,9 +354,9 @@ class Property_form(MetadataForm):
                 custom_choices += OTHER_CHOICE
             if modelInstance.nullable and NONE_CHOICE[0] not in custom_choices:
                 custom_choices += NONE_CHOICE
-## the use of JQuery dropdownchecklist negates the need of this code...
-##            if EMPTY_CHOICE[0] not in custom_choices:
-##                custom_choices.insert(0,EMPTY_CHOICE[0])
+
+            if EMPTY_CHOICE[0] not in custom_choices:
+                custom_choices.insert(0,EMPTY_CHOICE[0])
 
             self.fields["value"] = MetadataBoundFormField(choices=custom_choices,multi=modelInstance.multi,empty=True,blank=True)
             self.fields["value"].widget.updateBoundAttrs({"onchange":"setPropertyTitle(this)"})

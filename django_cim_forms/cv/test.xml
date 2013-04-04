@@ -1,0 +1,90 @@
+<cv>
+  <items>
+    <item>
+      <shortName>Dynamical Core</shortName>
+      <longName>Dynamical Core</longName>
+      <items>
+        <item>
+          <shortName>equation_set</shortName>
+          <longName>Equation Set</longName>
+          <values open="true" multi="true" nullable="true">
+            <value>
+              <shortName>deep-atmosphere non-hydrostatic (unapproximated Euler
+                equations)</shortName>
+              <longName>deep-atmosphere non-hydrostatic (unapproximated Euler equations)</longName>
+            </value>
+            <value>
+              <shortName>deep-atmosphere, non-hydrostatic, spherical geopotential approximation </shortName>
+              <longName>deep-atmosphere, non-hydrostatic, spherical geopotential approximation
+              </longName>
+            </value>
+            <value>
+              <shortName>other</shortName>
+              <longName>other</longName>
+            </value>
+          </values>
+        </item>
+        <item>
+          <shortName>Generic class</shortName>
+          <longName>Generic class</longName>
+          <values>
+            <value>
+              <shortName>Eulerian</shortName>
+              <longName>Eulerian</longName>
+            </value>
+            <value>
+              <shortName>Eulerian with semi-Lagrangian extension in the longitudinal
+                direction</shortName>
+              <longName>Eulerian with semi-Lagrangian extension in the longitudinal
+                direction</longName>
+            </value>
+          </values>
+        </item>
+      </items>
+    </item>
+    <item>
+      <shortName>Tracer Advection</shortName>
+      <longName>Tracer Advection</longName>
+      <items>
+        <item>
+          <shortName>Tracer advection: Generic class</shortName>
+          <longName>Tracer advection: Generic class</longName>
+          <items>
+            <item>
+              <shortName>test</shortName>
+              <longName>test</longName>
+              <values>
+                <value>
+                  <shortName>Eulerian</shortName>
+                  <longName>Eulerian</longName>
+                </value>
+                <value>
+                  <shortName>Eulerian with semi-Lagrangian extension in the longitudinal
+                    direction</shortName>
+                  <longName>Eulerian with semi-Lagrangian extension in the longitudinal
+                    direction</longName>
+                </value>
+              </values>
+            </item>
+          </items>
+        </item>
+        <item>
+          <shortName>something else</shortName>
+          <longName>Tracer advection: Generic class</longName>
+              <values>
+                <value>
+                  <shortName>Eulerian</shortName>
+                  <longName>Eulerian</longName>
+                </value>
+                <value>
+                  <shortName>Eulerian with semi-Lagrangian extension in the longitudinal
+                    direction</shortName>
+                  <longName>Eulerian with semi-Lagrangian extension in the longitudinal
+                    direction</longName>
+                </value>
+              </values>
+        </item>
+      </items>
+    </item>
+  </items>
+</cv>

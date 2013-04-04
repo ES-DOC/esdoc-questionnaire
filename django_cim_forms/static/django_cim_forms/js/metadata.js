@@ -34,6 +34,16 @@ var id_to_remove = ""
 var form_to_remove = ""
 var button_to_remove_form = ""
 
+/* re-define indexOf incase it's not supported */
+/* (as with IE 8.0) */
+if (!Array.prototype.indexOf) {
+    Array.prototype.indexOf = function(obj, start) {
+         for (var i = (start || 0), j = this.length; i < j; i++) {
+             if (this[i] === obj) { return i; }
+         }
+         return -1;
+    }
+}
 
 /* checks the value of a field (toggler) against an associative array (stuffToToggle)
  * which specifies other fields to toggle based on value */
@@ -138,7 +148,8 @@ function populate(data, form) {
                     }
                     // TODO: DO THE SAME FOR ENUMERATIONS WHERE MULTI=TRUE
 
-                                
+            
+                    
                 }
             }
         }
@@ -161,66 +172,19 @@ function resizeFields(parent) {
 };
 
 function repositionFields(parent) {
-
-    // repositions "enumeration-other" fields to be aligned w/ "enumeration-value" [actually, dropdownchecklist replacements of enumeration-value] fields
+    // repositions "enumeration-other" fields to be aligned w/ "enumeration-value" fields
     // have to do this dynamically b/c these fields are
     // potentially hidden by tabs and/or accordions
     // this function gets called the 1st time a tab or accordion header is shown
     // (and only do this when both enumeration-value and enumeration-other are visible)
     // (they will be repositioned on the change event otherwise)
-    $(parent).find(".ui-dropdownchecklist-selector").filter(":visible").each(function(index,value) {
-        var enumerationValue = $(this);
-        var enumerationOther = $(enumerationValue).closest("div.field").find(".enumeration-other");
-        $(enumerationOther).filter(":visible").offset({
-           "left" : $(enumerationValue).offset().left
-        });
-    });
-
     $(parent).find(".enumeration-value").filter(":visible").each(function(index,value){
         var enumerationValue = $(this);        
-        var enumerationOther = $(enumerationValue).siblings(".enumeration-other:first");
-        //var dropdownchecklist = $(enumerationValue).nextAll("span");
-        var dropdownchecklist = $("#ddcl-id_parallelization_0");
-        
-alert("enumerationValue: " + $(enumerationValue).attr("class"));
-alert("enumerationOther: " + $(enumerationOther).attr("class"));
-alert("dropdownchecklist: " + $(dropdownchecklist).attr("class"));
-
-/*
-        //alert($(enumerationValue).offset().left);
-        //$(enumerationOther).filter(":visible").offset({
-          $(enumerationOther).offset({
-            
-            //"left" : $(enumerationValue).offset().left
-            "left" : $(dropdownchecklist).offset().left
+        var enumerationOther = enumerationValue.siblings(".enumeration-other:first");
+        $(enumerationOther).filter(":visible").offset({
+            "left" : $(enumerationValue).offset().left
         });
-        */
-    });
-
-};
-
-function configureSelects(parent) {
-    // configures selects to use dropdown checklists
-    $(parent).find("select").filter(":visible").each(function(index,value) {
-      var select = $(this);      
-      if ($(select).find("option[selected]").length == 0) {
-        // if nothing has been selected (ie: if this is a new form)
-        // then force the widget to clear its "selectedIndex"
-        // that has the effect of displaying the emptyText specified in .dropdownchecklist() below
-        $(select).prop("selectedIndex",-1); // .prop() replaces .attr() in >1.2
-      }
-      
-      $(select).dropdownchecklist({
-         emptyText : "please make a selection" ,
-         positionHow : "absolute",
-         icon : { placement: "right", toOpen: "ui-icon-triangle-2-n-s", toClose: "ui-icon-triangle-2-n-s"}
-      });
-    });
-    
-};
-
-function update_progress_bar(tab) {
-    alert("foo");
+    });    
 };
 
 /*
@@ -228,7 +192,7 @@ function update_progress_bar(tab) {
  * (if the addMode is INLINE only, then there is no point displaying the box)
  */
 function add_step_zero(row) {
-    add_button_type = $(row).closest("fieldset").find("button.add").attr("class");
+    add_button_type = $(row).closest("fieldset").find(".subform-toolbar > button.add").attr("class");
     if (add_button_type.indexOf("remote") != -1) {
         /* if the set of classes for the add button contains 'remote'... */
         add_step_one(row);
@@ -296,7 +260,7 @@ function initializeRemoveButton(button) {
 
         $(button).button({
             icons: {primary: "ui-icon-circle-minus"},
-            text: true
+            text: false,
         });
         $(button).bind("click", function(e) {
             /* prevent the delete button from _actually_ opening the accordian tab */
@@ -406,12 +370,7 @@ function enableJQueryWidgets() {
        });
 
        $('.tabs').bind('tabsshow', function(event, ui) {
-           var tabPane = ui.panel;           
-           if ($(tabPane).attr("class").indexOf("configured-dropdownchecklist")==-1) {
-               // note - I have to do this before the two fns below b/c they take into account the position of the dropdownchecklist
-               configureSelects(tabPane)               
-               $(tabPane).addClass("configured-dropdownchecklist");
-           }
+           var tabPane = ui.panel;
            if ($(tabPane).attr("class").indexOf("resized-and-repositioned")==-1) {
                resizeFields(tabPane);
                repositionFields(tabPane);
@@ -419,38 +378,15 @@ function enableJQueryWidgets() {
            }
        });
 
-       /* enable progressbar w/in tabs */
-       $(".progressbar").progressbar({value:50}).height(10);
-       $(".progressbar").each(function() {
-          var progressbar = $(this);
-          var tab_id = $(progressbar).closest("a").attr("href");
-          var tab = $(document).find(tab_id);
-          var fields_in_tab = $(tab).find("div.field:not(.hidden)");
-          var completed_fields_in_tab = $(fields_in_tab).map(function() {
-              var field_value = $(this).find("input,textarea,select").val();
-              if (field_value) {
-                  return field_value;
-              }
-          }).get().join('\\').split('\\'); // using backslash so it doesn't interfere w/ other characters that might be in .val()'
-          var current_progress = ($(completed_fields_in_tab).length / $(fields_in_tab).length) * 100
-          $(progressbar).progressbar("option","value",current_progress)
-       });
-
        /* explicitly resize & reposition the first tab
         * (since it won't fire the show event above
         */
        var currentTabPane = $(".tabs:first").find('.ui-tabs-panel:not(.ui-tabs-hide)');
-       if ($(currentTabPane).attr("class").indexOf("configured-dropdownchecklist")==-1) {
-           // note - I have to do this before the two fns below b/c they take into account the position of the dropdownchecklist
-           configureSelects(currentTabPane);
-           $(currentTabPane).addClass("configured-dropdownchecklist");
-       }
        if ($(currentTabPane).attr("class").indexOf("resized-and-repositioned")==-1) {
            resizeFields(currentTabPane);
            repositionFields(currentTabPane);
            $(currentTabPane).addClass("resized-and-repositioned");
        }
-      
 
        /* enable collapsible fieldsets */
        $(".coolfieldset").coolfieldset({speed:"fast"});
@@ -463,26 +399,11 @@ function enableJQueryWidgets() {
                var accordionPane = ui['content'];              
 
                /* also need to customize fields in case they were hidden in a closed accordion up until now */
-               if ($(accordionHeader).attr("class").indexOf("configured-dropdownchecklist")==-1) {
-                   // note - I have to do this before the two fns below b/c they take into account the position of the dropdownchecklist
-                   configureSelects(accordionPane);
-                   $(accordionHeader).addClass("configured-dropdownchecklist");
-               }
                if ($(accordionHeader).attr("class").indexOf("resized-and-repositioned")==-1) {
                    resizeFields(accordionPane);
                    repositionFields(accordionPane);
                    $(accordionHeader).addClass("resized-and-repositioned");
-               }
-               
-           },
-           click : function(event, ui) {
-             var activeTab = $(event.target);
-             var flarb = ui['tab'];
-             //alert($(activeTab).attr("class"));
-             //alert($(flarb).attr("class"));
-             var currentClasses = $(flarb).attr("class");
-             $(flarb).attr("class",currentClasses + " flarb");
-
+               }             
            }
 
        });
@@ -529,7 +450,6 @@ function enableJQueryWidgets() {
            return false;
        });
 
-          
         /* enable enumeration widgets */
         /* (these are multiwidgets: a choice and a textfield) */
         /* (the latter is only shown when the former is set to "OTHER") */
@@ -561,8 +481,6 @@ function enableJQueryWidgets() {
                     $(enumerationOther).offset({
                         "left" : $(enumerationValue).offset().left
                     });
-                    
-
 
                 }
                 else {
@@ -578,6 +496,7 @@ function enableJQueryWidgets() {
 //            $(enumerationOther).offset({
 //                "left" : $(enumerationValue).offset().left
 //            });
+
         });        
         $(".enumeration-value").change(function(event) {
             enumerationValue = $(event.target);
@@ -604,7 +523,7 @@ function enableJQueryWidgets() {
             }
             else {
                 if (enumerationValue.val()=="OTHER") {
-                    enumerationOther.show();                    
+                    enumerationOther.show();
                 }
                 else {
                     enumerationOther.hide();
@@ -614,9 +533,8 @@ function enableJQueryWidgets() {
             // HOWEVER, I USE THE SAME LOGIC HERE
             // B/C THE ENUMERATIONS IN QUESTION MAY NOT HAVE BEEN VISIBLE
             // WHEN REPOSITION FIELDS WAS ORIGINALLY CALLED
-            var dropdownchecklist = $(enumerationValue).siblings(".ui-dropdownchecklist").filter(":visible");            
             $(enumerationOther).filter(":visible").offset({
-                "left" : $(dropdownchecklist).offset().left
+                "left" : $(enumerationValue).offset().left
             });
         });
         
@@ -652,20 +570,20 @@ function enableJQueryWidgets() {
         });
         $(".subform-toolbar button.expand" ).button({
              icons : {primary: "ui-icon-circle-triangle-s"},
-             //icons : {primary: "ui-icon-circle-plus"},
-             text : true
+             text : false
         }).click(function(event) {
-            var accordion = $(event.target).closest(".subform-toolbar").nextAll(".accordion:first");
+            var formset = $(event.target).closest("fieldset");
+            var accordion = $(formset).find(".accordion:first");
             // I have to do this manually (rather than w/ the active:all option)
             // b/c the content between accordions messes things up
             $(accordion).find(".accordion-content").show();
         });
         $(".subform-toolbar button.collapse" ).button({
             icons : {primary: "ui-icon-circle-triangle-n"},
-            //icons : {primary: "ui-icon-circle-minus"},
-            text: true
+            text: false
         }).click(function(event) {
-            var accordion = $(event.target).closest(".subform-toolbar").nextAll(".accordion:first");
+            var formset = $(event.target).closest("fieldset");
+            var accordion = $(formset).find(".accordion:first");
             // I have to do this manually (rather than w/ the active:none option)
             // b/c the content between accordions messes things up
             $(accordion).find(".accordion-content").hide();
@@ -677,10 +595,9 @@ function enableJQueryWidgets() {
             initializeRemoveButton($(this));
         });
         
-        //$(".subform-toolbar button.add").button({
-        $("button.add").button({
+        $(".subform-toolbar button.add").button({
             icons: {primary: "ui-icon-circle-plus"},
-            text: true
+            text: false
         }).click(function(event) {
             
             fieldset = $(event.target).closest("fieldset");

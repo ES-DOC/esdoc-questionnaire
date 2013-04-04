@@ -29,39 +29,36 @@ from django_cim_forms.controlled_vocabulary import *
 # decorator that identifies a class as a CIM document #
 #######################################################
 
-#def CIMDocument(documentType,documentName,documentProjectRestriction=None):
-def CIMDocument(documentType,documentName,documentRestriction=""):
+def CIMDocument(documentType,documentName,documentProjectRestriction=None):
     def decorator(obj):
         obj._isCIMDocument = True            # specify this model as a CIM Document
         obj._cimDocumentType = documentType  # identify the type of that Document
         obj._cimDocumentName = documentName  # identify how this model should be named in the CIM
-        obj._cimDocumentRestriction = documentRestriction
-## NO LONGER SPECIFYING RESTRICTION BY PROJECT CLASS INSTANCE (WHICH WAS COG-SPECIFIC)
-## NOW SPECIFYING THE ACTUAL PERMISSION STRING (SEE ABOVE)
-##        if documentProjectRestriction:
-##            try:
-##                # documentProjectRestriction will be of the format <module>.<project_class>(<filter_string>)
-##                # <filter_string> will be of the format <field>=<val1>,<field2>=<val2>...
-##                pattern = re.compile("^(.*[\.])(.+)\((.+)\)$")
-##                match = pattern.match(documentProjectRestriction)
-##                documentProjectRestrictionModule = match.group(1).rstrip(".")
-##                documentProjectRestrictionClass = match.group(2)
-##
-##                documentProjectRestrictionFilter = {}
-##                for filter_item in match.group(3).split(","):
-##                    key,val = filter_item.split("=")
-##                    if key.find("__") < 0:
-##                        key = key + "__iexact"
-##                    documentProjectRestrictionFilter[key] = val
-##
-##                module = import_module(documentProjectRestrictionModule)
-##                cls = module.__dict__[documentProjectRestrictionClass]
-##                instance = cls.objects.get(**documentProjectRestrictionFilter)
-##
-##                obj._cimDocumentProjectRestriction = instance
-##            except:
-##                print "error setting project restriction on %s" % obj
-##                pass
+        # optionally, identify for this Document a project whose users only should be able to access it
+        if documentProjectRestriction:
+            try:
+                # documentProjectRestriction will be of the format <module>.<project_class>(<filter_string>)
+                # <filter_string> will be of the format <field>=<val1>,<field2>=<val2>...
+                pattern = re.compile("^(.*[\.])(.+)\((.+)\)$")
+                match = pattern.match(documentProjectRestriction)
+                documentProjectRestrictionModule = match.group(1).rstrip(".")
+                documentProjectRestrictionClass = match.group(2)
+
+                documentProjectRestrictionFilter = {}
+                for filter_item in match.group(3).split(","):
+                    key,val = filter_item.split("=")
+                    if key.find("__") < 0:
+                        key = key + "__iexact"
+                    documentProjectRestrictionFilter[key] = val
+
+                module = import_module(documentProjectRestrictionModule)
+                cls = module.__dict__[documentProjectRestrictionClass]
+                instance = cls.objects.get(**documentProjectRestrictionFilter)
+            
+                obj._cimDocumentProjectRestriction = instance
+            except:
+                print "error setting project restriction on %s" % obj
+                pass
 
         return obj
     return decorator
@@ -92,8 +89,8 @@ class MetadataModel(models.Model):
     _isCIMDocument = False
     _cimDocumentType = ""
     _cimDocumentName = ""
-    _cimDocumentRestriction = ""
-##    _cimDocumentProjectRestriction = None
+##    _cimDocumentRestriction = "" # future version uses string instead of CoG-specific project names
+    _cimDocumentProjectRestriction = None
     
 
     # every model has a (gu)id & version
@@ -110,7 +107,6 @@ class MetadataModel(models.Model):
     # these fields work behind the scenes to track when models are created and updated
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
-    submitted = models.BooleanField(default=False)
 
     def __init__(self,*args,**kwargs):
         super(MetadataModel,self).__init__(*args,**kwargs)
@@ -140,26 +136,19 @@ class MetadataModel(models.Model):
             msg = "invalid MetadataModel: no title supplied for %s" % ModelClass
             raise MetadataError(msg)
 
-## NO LONGER SPECIFYING RESTRICTION BY PROJECT CLASS INSTANCE (WHICH WAS COG-SPECIFIC)
-## NOW SPECIFYING THE ACTUAL PERMISSION STRING
-##    def userCanAccess(self,user):
-##        if self._cimDocumentProjectRestriction:
-##            app_label = self._cimDocumentProjectRestriction._meta.app_label
-##            code_name = self._cimDocumentProjectRestriction.short_name.lower()
-##            permission_string = "%s.%s_user_permission" % (app_label,code_name)
-##            print "PERMISSION_STRING=%s" % permission_string
-##            permission = user.has_perm(permission_string)
-##            return permission
-##        # if no restriction was specified, just grant access by default
-##        return True
-
     def userCanAccess(self,user):
-        if self._cimDocumentRestriction:
-            permission = user.has_perm(self._cimDocumentRestriction)
-            return permission
-        # if no restriction was specified, just grant access by default
+        if self._cimDocumentProjectRestriction:
+            try:
+                app_label = self._cimDocumentProjectRestriction._meta.app_label
+                code_name = self._cimDocumentProjectRestriction.short_name.lower()
+                permission_string = "%s.%s_user_permission" % (app_label,code_name)
+                permission = user.has_perm(permission_string)
+                return permission
+            except:
+                pass
+        # if no restriction (or an invalid restriction) was specified, just grant access by default
         return True
-    
+
     # overriding save to work out when/how to update vs insert
     def save(self, *args, **kwargs):
         force_insert = kwargs.pop("force_insert",False)
@@ -384,6 +373,7 @@ class MetadataProperty(MetadataModel):
         # returns the queryset sepecified by "filter"
         # this is generally used to work out which properties to assign to a model as its initial values
         filter = kwargs.pop("filter","ALL")
+
         # first, check if the cv has been loaded...
         cvObjects = cls.cvClass.objects.all()
         if not cvObjects:

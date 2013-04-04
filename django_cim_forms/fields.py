@@ -104,8 +104,8 @@ def customize_metadata_widgets(field):
 # I'D RATHER BE ABLE TO USE THE DISABLED WIDGETS, BUT STILL SAVE A VALUE
 # (SEE http://groups.google.com/group/django-users/browse_thread/thread/8710ceea619b0e9d or http://stackoverflow.com/questions/7743208/making-a-text-input-field-look-disabled-but-act-readonly FOR A DESCRIPTION OF THE PROBLEM)
                 formfield.widget.widgets[0] = django.forms.fields.TextInput()
-                formfield.widget.widgets[1] = django.forms.fields.HiddenInput()
-
+                formfield.widget.widgets[1] = django.forms.fields.HiddenInput()                
+##
 ##            if field.isEmpty():
 ##                try:
 ##                    currentClasses = formfield.widget.widgets[0].attrs["class"]
@@ -606,9 +606,8 @@ class MetadataEnumerationField(models.CharField,MetadataBoundField):
                 custom_choices += OTHER_CHOICE
             if self.isNullable() and NONE_CHOICE[0] not in custom_choices:
                 custom_choices += NONE_CHOICE
-## the use of JQuery dropdownchecklist negates the need of this code...
-##            if self.isEmpty() and EMPTY_CHOICE[0] not in custom_choices:
-##                custom_choices.insert(0,EMPTY_CHOICE[0])
+            if self.isEmpty() and EMPTY_CHOICE[0] not in custom_choices:
+                custom_choices.insert(0,EMPTY_CHOICE[0])
 
             return custom_choices
 
