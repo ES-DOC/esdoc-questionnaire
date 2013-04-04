@@ -260,7 +260,7 @@ function initializeRemoveButton(button) {
 
         $(button).button({
             icons: {primary: "ui-icon-circle-minus"},
-            text: false,
+            text: false
         });
         $(button).bind("click", function(e) {
             /* prevent the delete button from _actually_ opening the accordian tab */
