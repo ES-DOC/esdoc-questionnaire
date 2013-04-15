@@ -213,6 +213,8 @@ CategoryTypes = EnumeratedTypeList([
 
 from django.db.models.signals import post_init
 from django.db import models
+from django.forms.fields import CharField
+from django.forms.widgets import HiddenInput
 from uuid import uuid4
 import types
 
@@ -229,12 +231,16 @@ class GUIDField(models.CharField):
         """
         kwargs['max_length'] = kwargs.get('max_length', 64 )
         kwargs['unique']     = kwargs.get('unique', True )
-        kwargs['editable']   = kwargs.get('editable', False )
+        kwargs['editable']   = kwargs.get('editable', True )
         kwargs['blank']      = kwargs.get('blank', False )
-        #kwargs['default']    = kwargs.get('default',str(uuid4()))
-
+        kwargs['default']    = kwargs.get('default',lambda:str(uuid4()))
+ 
         super(GUIDField, self).__init__(*args, **kwargs)
-        
+
+    def formfield(self,**kwwargs):
+
+        return CharField(initial=self.default,widget=HiddenInput)
+    
     def contribute_to_class(self,cls,name):
         """
         called when a GUIDField is (dynamically) added to a class
@@ -246,17 +252,18 @@ class GUIDField(models.CharField):
             return self._guid
 
         cls.getGUID = types.MethodType(_getGUID,None,cls)
+#        post_init.connect(self.setValue,cls)
 
-        # connect cls 'post_init' signal to something
-        post_init.connect(self.setValue,cls)
         super(GUIDField,self).contribute_to_class(cls,name)
-
+            
     def setValue(self,*args,**kwargs):
 
         instance = kwargs.get("instance",None)
         if instance:
-            instance._guid = str(uuid4())
-        
+            # don't overwrite an existing guid
+            if not instance._guid:
+                instance._guid = str(uuid4())
+
 
 #    def pre_save(self, model_instance, add):
 #        """
@@ -280,7 +287,7 @@ def guid():
     def decorator(obj):
         
         # create the field
-        guid_field = GUIDField(default=str(uuid4()))
+        guid_field = GUIDField()#default=lambda:str(uuid4()))
         # add it to the object
         guid_field.contribute_to_class(obj, "_guid")
         # return the modified object

@@ -1,0 +1,39 @@
+{# template for a (nested; ie: not the top-level one) form #}
+{# (also nested forms don't use tabs like top-level ones) #}
+
+{# forms is the form #}
+{# customizer is the customizer from the actual field #}
+
+{% load dcf_filters %}
+
+<div class="form"> {# wrapping everything in a div.form so I can group together fields belonging to the same model #}
+
+    {% for hiddenField in form.hidden_fields %}
+        {{ hiddenField }}
+    {% endfor %} {# /hiddenField #}
+
+
+    <table width="100%">
+    {% for customizer in form|getAllActiveAttributes %}
+        {% with field=form|getFieldFromName:customizer.attribute_name %}
+            {% with attribute=form|getAttributeFromCustomizer:customizer %}
+                <!-- customizer is the MetadataAttributeCustomizer associated w/ this field -->
+                <!-- field is the MetadataField instance corresponding to this attribute -->
+                <!-- attribute is the attribute (formfield) itself -->
+                <tr valign="top" class="{% cycle 'odd' 'even' %} field">
+                    {% if customizer.customize_subform %}
+                        {# include "dcf/_subform.html" #}
+                    {% else %}
+                        {% include "dcf/_field.html" %}
+                    {% endif %}
+
+                </tr>
+            {% endwith %} {# /attribute #}
+        {% endwith %} {# /field #}
+    {% endfor %} {# /customizer #}
+    </table>
+
+
+</div>
+
+{# end template for a form #}

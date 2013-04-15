@@ -119,7 +119,7 @@ def customize(request,version_name="",project_name="",model_name=""):
             customizer = MetadataModelCustomizer(**filterParameters)
     else:
         # otherwise, just return a new customizer
-        customizer = MetadataModelCustomizer(**filterParameters)
+        customizer = MetadataModelCustomizer(**filterParameters)    
 
     if request.method == "POST":
 
@@ -127,17 +127,17 @@ def customize(request,version_name="",project_name="",model_name=""):
         # but my forms have to initialize any subforms that they are comprised of
         # so I potentially need the HTTP POST data
         form = MetadataModelCustomizerForm(request.POST,instance=customizer,request=request)
-
         if form.is_valid():
             customizer_instance = form.save(commit=False)
             customizer_instance.save()
             form.save_m2m()
-
+ 
             # TODO: DEAL W/ TAGS/CATEGORIES
 
             msg = "Successfully saved the customization: '%s'." % customizer_instance.name
 
         else:
+            print form.errors
             msg = "Unable to save the customization.  Please review the form and try again."
 
     else:
@@ -148,7 +148,12 @@ def customize(request,version_name="",project_name="",model_name=""):
     dict["msg"]             = msg   # any msg to popup to the user
     dict["form"]            = form  # the form itself, obviously
 
-    dict["global_vars"]     = {"version":version.version.lower(),"project":project.name.lower(),"model":model.getName().lower()}
+    dict["global_vars"]     = {
+                                "version"   :   version.version.lower(),
+                                "project"   :   project.name.lower(),
+                                "model"     :   model.getName().lower(),
+                                "id"        :   model.pk or ""
+                              }
 
     dict["project_name"]    = project.long_name
     dict["model_name"]      = model.getTitle()

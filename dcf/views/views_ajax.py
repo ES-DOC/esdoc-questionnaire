@@ -24,6 +24,7 @@ from django.template import *
 from django.shortcuts import *
 from django.http import *
 
+from django.core.exceptions import ObjectDoesNotExist, FieldError, MultipleObjectsReturned
 from django.utils import simplejson as json
 
 import re
@@ -201,3 +202,107 @@ def delete_category(request, category_type=""):
         msg = "uwilling to deleted %s category: %s" % (type,id)
 
     return HttpResponse(msg);
+
+def customize_subform(request):
+
+    attribute_name  = request.GET.get('a',None)
+    model_name      = request.GET.get('m',None)
+    project_name    = request.GET.get('p',None)
+    version_name    = request.GET.get('v',None)
+
+    # TODO: for now just get the default model customizer...
+    # TODO: need to work out how to get the model customizer if it hasn't yet been saved
+
+    msg = ""
+
+    # try to get the requested project...
+    try:
+        project = MetadataProject.objects.get(name__iexact=project_name)
+    except ObjectDoesNotExist:
+        msg = "Cannot find the project '%s'.  Has it been registered?" % project_name
+        return HttpResponseBadRequest(msg)
+
+    # try to get the requested version...
+    if version_name:
+        try:
+            version = MetadataVersion.objects.get(name__iexact=METADATA_NAME,version=version_name)
+        except ObjectDoesNotExist:
+            msg = "Cannot find version '%s'.  Has it been registered?" % (version_name)
+            return HttpResponseBadRequest(msg)
+    else:
+        version = project.getDefaultVersion()
+        if not version:
+            msg = "please specify a %s version; the %s project has no default one." % (METADATA_NAME,project)
+            return HttpResponseBadRequest(msg)
+
+    # try to get the requested model (class)...
+    model_class = version.getModel(model_name)
+    if not model_class:
+        msg = "Cannot find the model type '%s' in version '%s'.  Have all model types been loaded?" % (model_name, version)
+        return HttpResponseBadRequest(msg)
+
+    try:
+        model_customizer = MetadataModelCustomizer.objects.get(project=project,version=version,model=model_name,default=1)
+    except MetadataModelCustomizer.DoesNotExist:
+        msg = "There is no default customization associated with '%s'" % (model_name)
+        return HttpResponseBadRequest(msg)
+
+    attribute = model_customizer.attributes.get(attribute_name__iexact=attribute_name)
+    related_model_class = model_class._meta.get_field_by_name(attribute.attribute_name)[0].getTargetModelClass()
+
+    # at this point:
+    # project = the project being customized
+    # version = the version being customized
+    # attribute = the attribute being customized (this is a relationshipfield)
+    # model_class = the model being customized
+    # related_model_class = the target model of the relationship
+    # model_customizer = the existing customizer for the model being customized
+
+    # need to set related_model_customizer
+
+    filterParameters = {}
+    filterParameters["project"] = project
+    filterParameters["version"] = version
+    filterParameters["name"]    = model_customizer.name # this customizer should have the same name as the 'parent' customizer
+    filterParameters["model"]   = related_model_class.getName()
+
+    if attribute.subform_customizer:
+        related_model_customizer = attribute.subform_customizer
+    else:
+        try:
+            related_model_customizer = MetadataModelCustomizer.objects.get(**filterParameters)
+        except MetadataModelCustomizer.DoesNotExist:
+            related_model_customizer = MetadataModelCustomizer(**filterParameters)
+    # the above code replaces the following line (it handles the case where there was a customizer created previously by the subform but never attached to a parent customizer)
+    #related_model_customizer = attribute.subform_customizer or MetadataModelCustomizer(**filterParameters)
+
+    if request.method == "POST":
+        print request.POST
+        form = MetadataModelCustomizerForm(request.POST,instance=related_model_customizer,request=request)
+        if form.is_valid():
+            related_model_customizer = form.save(commit=False)
+            related_model_customizer.save()
+            form.save_m2m()
+
+            # outputting JSON w/ pk & name to add as option to formfield
+            json_related_model_customizer = json.dumps({"pk":related_model_customizer.pk,"unicode":u'%s'%related_model_customizer})
+            print "JSON:"
+            print json_related_model_customizer
+            return HttpResponse(json_related_model_customizer,mimetype='application/json')
+        
+        else:
+            msg = "Unable to save.  Please review the form and try again."
+            print form.errors
+            
+            
+    else:
+        form = MetadataModelCustomizerForm(instance=related_model_customizer,request=request)
+        
+    # gather all the extra information required by the template
+    dict = {}
+    dict["STATIC_URL"]      = "/static/"
+    dict["msg"]             = msg   
+    dict["form"]            = form  
+
+    rendered_form = django.template.loader.render_to_string("dcf/dcf_customize_subform.html", dictionary=dict, context_instance=RequestContext(request))
+    return HttpResponse(rendered_form,mimetype='text/html')

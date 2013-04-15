@@ -7,6 +7,48 @@ var PROPERTY_CATEGORIES = {}
 var CUSTOMIZE = {
     enableDCF : function() {
 
+        /* enable sortable multi-open accordions */
+        $("#customize .accordion").find(".accordion-header").each(function() {
+            /* first wrap each accordion header & content pair in a div */
+            /* b/c the sortable items need to be a single unit */
+            var div = "<div class='sortable-item'></div>";
+            $(this).next().andSelf().wrapAll(div);
+        });
+        $("#customize .accordion").sortable({
+            axis : "y",
+            handle : "h3",
+            placeholder : "sortable-accordion-placeholder",
+            stop : function( event, ui ) {
+                /* after sorting tag the sorted item so that I can cancel the open accordion event */
+                var sortedItem = ui["item"];
+                var sortedTab = $(sortedItem).find(".accordion-header");
+                $(sortedTab).addClass("sorted")
+                /* and re-calculate each field's order */
+                $(sortedTab).closest(".accordion").find(".accordion-content").each(function(i) {
+                    var order_input = $(this).find("input[name$='-order']")
+                    $(order_input).val(i+1);
+                    $(order_input).trigger("change");
+                    //$(this).find("input[name$='-order']").val(i+1);
+
+                });
+            }
+            /* TODO: JQUERY DOCUMENTATION IMPLIES SOME MORE CODE HERE TO HANDLE IE BUG */
+        });
+
+        /* enable the customize-subform button */
+        $("button.customize-subform").button({
+            icons : { primary : "ui-icon-extlink"}
+        });
+        /*.click(function(event) {
+            var attribute_name = $(event.target).closest(".accordion-content").prev(".accordion-header");
+            alert($(attribute_name).attr("class"));
+            customize_subform();
+        });
+        */
+        // force the change event to hide/show the customize-subform button as appropriate
+        $(".field_value[name='customize_subform']").find("input").trigger("change");
+
+
         /* enable the sort button */
         $(".subform-toolbar button.sort").button({
             icons : { primary : "ui-icon-arrowthick-2-n-s"},
@@ -170,6 +212,12 @@ var CUSTOMIZE = {
         $(".tagit-label").each(function() {
             $(this).attr("title","click to toggle attributes of this category");
         });
+/*
+ * commented out: this just confuses things by remaining toggled 
+        $(".tagit-choice").hover(function() {
+            $(this).toggleClass("ui-state-hover");
+        });
+*/
         /* I'm using separate widget to add tags, so disable the .tagit-new box */
         $(".tagit-new").attr("style","display:none!important;");
         /* and enable this widget */
@@ -355,5 +403,92 @@ function order_categories(category_type,ordered_tag_list) {
       }
   }
 
+
+};
+
+function copy_tags_to_categories(tagsName,categoriesName) {
+    
+    var tags = window[tagsName];
+    var categories = $("select[name='"+categoriesName+"']");
+    var active_categories = Array();
+    for (tag_key in tags) {
+        var tag = tags[tag_key];
+        active_categories.push(tag.pk);
+    }
+    $(categories).val(active_categories);
+
+};
+
+function copy_all_tags_to_all_categories() {
+    copy_tags_to_categories("ATTRIBUTE_CATEGORIES","attribute_categories");
+    copy_tags_to_categories("PROPERTY_CATEGORIES","property_categories");
+};
+
+function customize_subform(attribute_name,button) {
+    
+    var url = window.document.location.protocol + "//" + window.document.location.host + "/dcf/ajax/customize_subform/";
+    url += "?a=" + attribute_name + "&m=" + MODEL + "&p=" + PROJECT + "&v=" + VERSION;
+
+    var customize_subform_dialog = $("<div></div>");
+    $.ajax({
+         url        : url,
+         type       : "GET",
+         cache      : false,
+         success    : function(data) {
+            var title = "Customizing " + PROJECT + "::" + MODEL + "::" + attribute_name
+            
+            customize_subform_dialog.html(data);
+            customize_subform_dialog.dialog({
+                title : title,
+                modal : true,
+                dialogClass: "no-close",
+                height : 400,
+                width : 800,
+                open : function() {
+                    // apply all of the JQuery code to _this_ dialog
+                    enableDCF();
+                    render_msg(customize_subform_dialog);
+                },
+                buttons : {
+                    ok : function() {
+                       var attribute    = $(button).nextAll(".subform_customizer").find("select");
+                       var subform_data = $(this).find("#customize_subform").serialize();
+                       $.ajax({
+                           url      : url,
+                           type     : "POST",   // (POST mimics submit)
+                           cache    : false,
+                           data     : subform_data,
+                           success  : function(data) {
+                               // if the AJAX call returned JSON, then the form was valid
+                               if (typeof data != 'string') { // == 'object') {
+                                   // set the submodel attribute to the newly saved model
+                                   var selector = "option[value='" + data.pk + "']";
+                                   if ($(attribute).find(selector).length == 0) {
+                                       $(attribute).append(new Option(data.unicode,data.pk));
+                                   }
+                                   $(attribute).val(data.pk);
+                                   $(customize_subform_dialog).dialog("close");
+                               }
+                               // if the AJAX call returned a string, then the form was invalid
+                               else {
+                                   customize_subform_dialog.html(data);
+                                   render_msg(customize_subform_dialog); // unlike the main forms, subforms have to explicitly call render_msg b/c they don't get re-opened on submit, the content just gets refreshed
+                               }
+                           },
+                           error    : function(xhr,status,error) {                               
+                               console.log(xhr.responseText + status + error);
+                           }
+                       })
+                    },
+                    cancel : function() {
+                        $(customize_subform_dialog).dialog("close");
+                    }
+                },
+                close   : function() {
+                    $(this).dialog("destroy");
+                }
+            }).dialog('open');
+         }
+     })
 
 };

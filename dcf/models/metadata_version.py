@@ -29,7 +29,7 @@ from django.core.exceptions import ObjectDoesNotExist, ImproperlyConfigured, Val
 from dcf.utils import *
 from dcf.models import MetadataModel
 
-@guid()
+#@guid()
 class MetadataVersion(models.Model):
     class Meta:
         app_label = APP_LABEL
@@ -48,6 +48,10 @@ class MetadataVersion(models.Model):
     default_categorization = models.ForeignKey("MetadataCategorization",blank=True,null=True,related_name="version")
 
     models = {}
+
+    #_guid = models.CharField(max_length=64,unique=True,editable=False,blank=False,default=lambda:str(uuid4()))
+    #def getGUID(self):
+    #    return self._guid
 
     def __unicode__(self):
         _name = u'%s %s' % (self.name,self.version)

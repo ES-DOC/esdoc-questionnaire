@@ -24,7 +24,7 @@ from django.core.exceptions import ValidationError
 
 from dcf.utils import *
 
-@guid()
+#@guid()
 class MetadataProject(models.Model):
 
     class Meta:
@@ -41,6 +41,9 @@ class MetadataProject(models.Model):
     versions            = models.ManyToManyField("MetadataVersion",blank=True,null=True,verbose_name="Associated Versions")
     vocabularies        = models.ManyToManyField("MetadataVocabulary",blank=True,null=True,verbose_name="Associated Vocabularies")
 
+    _guid = models.CharField(max_length=64,unique=True,editable=False,blank=False,default=lambda:str(uuid4()))
+    def getGUID(self):
+        return self._guid
 
     def __unicode__(self):
         if self.long_name:

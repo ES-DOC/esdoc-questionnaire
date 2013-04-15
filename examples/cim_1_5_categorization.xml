@@ -20,14 +20,6 @@
             <name>modelcomponent</name>
             <fields>
                 <field>
-                    <name>componentdescription</name>
-                    <category_key>basicproperties</category_key>
-                </field>
-                <field>
-                    <name>license</name>
-                    <category_key>basicproperties</category_key>
-                </field>                
-                <field>
                     <name>shortName</name>
                     <category_key>basicproperties</category_key>
                 </field>
@@ -40,6 +32,30 @@
                     <category_key>basicproperties</category_key>
                 </field>
                 
+                <field>
+                    <name>license</name>
+                    <category_key>componentdescription</category_key>
+                </field>
+                <field>
+                    <name>releaseDate</name>
+                    <category_key>componentdescription</category_key>
+                </field>                
+                <field>
+                    <name>previousVersion</name>
+                    <category_key>componentdescription</category_key>
+                </field>                
+                <field>
+                    <name>fundingSource</name>
+                    <category_key>componentdescription</category_key>
+                </field>                
+                <field>
+                    <name>onlineResource</name>
+                    <category_key>componentdescription</category_key>
+                </field>                
+                <field>
+                    <name>responsibleParties</name>
+                    <category_key>componentdescription</category_key>
+                </field>
                 
             </fields>
         </model>

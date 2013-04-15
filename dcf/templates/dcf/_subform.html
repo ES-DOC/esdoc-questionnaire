@@ -1,0 +1,46 @@
+{% load dcf_filters %}
+
+<!-- customizer is the MetadataAttributeCustomizer associated w/ this field -->
+<!-- field is the MetadataField instance corresponding to this attribute -->
+<!-- attribute is the attribute (formfield) itself -->
+
+{% if customizer.required %}
+    <fieldset class="coolfieldset required">
+{% else %}
+    <fieldset class="coolfieldset">
+{% endif %}
+
+    <legend title="click to show/hide content">
+           {% if customizer.documentation %}
+                <div class="help-button" title="click for more info" id="{{form.getName}}_{{attribute.auto_id}}">
+                    <span class="default-help-icon ui-icon-info" style="display: inline-block;">&nbsp;</span>
+                    <div class="help-description" title="{{ customizer.verbose_name }}">
+                        {{ customizer.documentation|safe }} {# the safe filter prevents inline HTML from being escaped  #}
+                    </div> <!-- /.help-description -->
+                </div> <!-- /.help-button -->
+            {% endif %} {# /customizer.documentation #}
+            {{ customizer.verbose_name}}
+    </legend>
+
+    <div class="coolfieldset-content">
+
+       {% with subForm=form|getSubForm:field %}
+            {% with subFormType=subForm.getType|stringformat:"s" %}
+                {% if subFormType == "FORM" %}
+                    {% with form=subForm %}
+                        {% include "dcf/_form.html" %}
+                    {% endwith %}
+                {% else %} {% if subFormType == "FORMSET" %}
+                    {% with formset=subForm %}
+                        {% include "dcf/_formset.html" %}
+                    {% endwith %}
+                {% endif %} {% endif %}
+            {% endwith %} {# /subFormType #}
+       {% endwith %} {# /subForm #}
+
+
+        
+    </div>
+
+</fieldset>
+

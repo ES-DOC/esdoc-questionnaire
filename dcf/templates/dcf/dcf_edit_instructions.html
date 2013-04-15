@@ -1,0 +1,62 @@
+{# this is the edit instructions template for django-cim-forms #}
+
+{% extends "dcf/dcf_base.html" %}
+
+{% block title %}
+    Instructions for the Metadata Editing Form
+{% endblock %} {# /title #}
+
+{% block style %}
+    #dcf #instructions img   { border: 1px solid #000000; padding: 2px; margin: 2px; display: block; }
+    #dcf #instructions p     { text-align: justify; }
+{% endblock %} {# /style #}
+
+
+
+{% block content %}
+
+    <div class="title">
+        Instructions for the Metadata Editing Form
+    </div> <!-- /.title -->
+
+    <div id="instructions">
+
+        <ol>
+        <li><span class="title">The purpose of the form</span>
+            <p>
+                This editing form is provided for users to create and modify instances of CIM Metadata Documents.     
+            </p>
+        </li>
+
+        <li><span class="title">The layout of the form:</span>
+            <p>
+                The form contains a set of tabs across the top.  Each tab corresponds to a particular category of properties.  The numbers on the tab correspond to the total number of properties left to update within that category.
+                <a href="{{STATIC_URL}}dcf/img/screenshots/editing_tabs.png"><img width="80%" src="{{STATIC_URL}}dcf/img/screenshots/editing_tabs.png"/></a>
+            </p>
+                Each property may contain an optional help icon <a href="{{STATIC_URL}}dcf/img/screenshots/help_icon.png"><img style="display:inline; border:0px;" align="middle" src="{{STATIC_URL}}dcf/img/screenshots/help_icon.png"/></a> with useful information.
+                
+                Properties that are required are indicated by a bold font.  There are several different types of properties:
+                <ul>
+                    <li>"atomic" properties: simple things like strings, integers, dates, etc.</li>
+                    <li>enumerations: properties whose values are restricted to a list of options.  Enumerations may be "closed" (ie: completely restricted to the set of options presented) or "open" (ie: the user can select the option "OTHER" and then type in their own value).  They can be restricted to a single value or multiple values.  And they can include an explicit "NONE" value.</li>
+                    <li>relationships: properties that define a mapping from the current CIM type to another CIM type.</li>
+                    <li>scientific properties</li>
+                </ul>
+            </p>
+
+            <p>
+                Relationship fields may be rendered as subforms.  In this case...
+                <a href="{{STATIC_URL}}dcf/img/screenshots/editing_subform.png"><img width="80%" src="{{STATIC_URL}}dcf/img/screenshots/editing_subform.png"/></a>
+            </p>
+
+        </li>
+
+        <li><span class="title">A form can be saved and published.  Saving simply stores the current state of the form to the local database.  Publishing serializes the form to a CIM Document and exposes it in the built-in ATOM feed.  Other tools and services can then ingest the document (the CIM Viewer, for instance).</span>
+
+    </ol>
+
+    </div> <!-- /#instructions -->
+
+{% endblock %} {# /content #}
+
+{# just use the standard headers and footers #}

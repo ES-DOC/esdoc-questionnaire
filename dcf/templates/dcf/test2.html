@@ -1,0 +1,37 @@
+
+    <!-- placeholder for messages to display to user -->
+    <div id="msg">
+        {{msg}}
+    </div>
+
+    <div>
+        <u>Here is a SubForm</u>
+    </div>
+
+    <form method="POST" action="" id="subform">
+        {% csrf_token %}
+        <br/>
+
+        <div class="form">
+
+            <table border="0" width="50%">
+                {% for field in form.visible_fields %}
+                    <tr>
+                        <td>
+                            {{ field.label }}:&nbsp;
+                        </td>
+                        <td>
+                            {{field}}
+                            {% if field.errors %}
+                                {% include "dcf/_error.html" %}
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+                <tr><td>customize submodel&nbsp;</td><td><button type='button' class='test_button' onclick="open_a_subform({{parent_id}});">do stuff</button></td></tr>
+            </table>
+
+        </div>
+
+    </form>
+

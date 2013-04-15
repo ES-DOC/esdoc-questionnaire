@@ -9,7 +9,7 @@ function loadJS(js_path) {
     // this fn loads another script
     // I am not useing the getScript() fn, b/c that does not cache results
     // instead I just make a standard AJAX call, but set "cache" to "true"
-    options = { dataType : "script", cache : true, url : js_path}
+    options = {dataType : "script", cache : true, url : js_path}
     return $.ajax(options).done(function(script,status) {
         console.log(status);
     });
@@ -28,6 +28,9 @@ loadJS(JS_PATH+"/dcf_initialize.js");
 var VERSION
 var PROJECT
 var MODEL
+
+function foobar()
+{ alert("FOOBAR2")}
 
 /* main fn in each dcf js file */
 /* it sets up all of the static JQuery widgets */
@@ -180,33 +183,6 @@ function enableDCF() {
                $(activeTab).removeClass("open-accordion");
            }
         });
-        /* enable sortable multi-open accordions */
-        $(".accordion").find(".accordion-header").each(function() {
-            /* first wrap each accordion header & content pair in a div */
-            /* b/c the sortable items need to be a single unit */
-            var div = "<div class='sortable-item'></div>";
-            $(this).next().andSelf().wrapAll(div);
-        });
-        $(".accordion").sortable({
-            axis : "y",
-            handle : "h3",
-            placeholder : "sortable-accordion-placeholder",
-            stop : function( event, ui ) {
-                /* after sorting tag the sorted item so that I can cancel the open accordion event */
-                var sortedItem = ui["item"];
-                var sortedTab = $(sortedItem).find(".accordion-header");
-                $(sortedTab).addClass("sorted")
-                /* and re-calculate each field's order */
-                $(sortedTab).closest(".accordion").find(".accordion-content").each(function(i) {
-                    var order_input = $(this).find("input[name$='-order']")
-                    $(order_input).val(i+1);
-                    $(order_input).trigger("change");
-                    //$(this).find("input[name$='-order']").val(i+1);
-
-                });
-            }
-            /* TODO: JQUERY DOCUMENTATION IMPLIES SOME MORE CODE HERE TO HANDLE IE BUG */
-        });
 
         /* combo-boxes w/ checkboxes/radioboxes */
         $.ech.multiselect.prototype.options.selectedText = "# of # selected";
@@ -224,6 +200,7 @@ function enableDCF() {
         /* now call the enablers for other js files */
         /********************************************/
         CUSTOMIZE.enableDCF();
+        EDIT.enableDCF();
                 
     });
 };
@@ -287,14 +264,27 @@ function link(source,linkingValue,targets) {
            // the target can either be an <input> or a <select>
            // TODO: CAN IT BE ANYTHING ELSE?
            var target = $(source).closest(".form").find(selector).find("input,select");
-           var targetType = $(target).attr("type");
-           if (targetType=="checkbox") {
-               if (targetValue.toLowerCase()=="true") $(target).attr('checked', true);
-               if (targetValue.toLowerCase()=="false") $(target).attr('checked', false);
+           if ($(target).length>1) {
+               // yep, it's a multiwidget...
+               for (var i=0; i<targetValue.length; i++) {
+                   // so it must have been passed an array of values,
+                   // map each value to the corresponding multiwidget widget (unless the value is an explicit 'none')
+                   if (targetValue[i]!="None") {
+                       $(target[i]).val(targetValue[i]);
+                   }
+               }
+
            }
-           // TODO: ADD MORE CASES FOR OTHER TYPES OF TARGET FIELDS
            else {
-               alert("I don't know what to in the function 'link()' with a target of type '" + targetType + "'.");
+               var targetType = $(target).attr("type");
+               if (targetType=="checkbox") {
+                   if (targetValue.toLowerCase()=="true") $(target).attr('checked', true);
+                   if (targetValue.toLowerCase()=="false") $(target).attr('checked', false);
+               }
+               // TODO: ADD MORE CASES FOR OTHER TYPES OF TARGET FIELDS
+               else {
+                   alert("I don't know what to in the function 'link()' with a target of type '" + targetType + "'.");
+               }
            }
        }
    }
@@ -377,3 +367,23 @@ function render_error(error) {
     });
     */
 };
+
+function render_msg(parent) {
+   /* if a msg exists, then display it */
+    var msg = $(parent).find("#msg").text().trim();
+    if (msg && msg.length) {
+        $(parent).find("#msg").dialog({
+            modal : true,
+            hide : "explode",
+            height : 150,
+            width : 350,
+            title: "<span class='ui-icon ui-icon-notice'></span>",
+            buttons: {
+                OK: function() {
+                    $(this).dialog("close");
+                }
+            }
+        });
+    }
+};
+     

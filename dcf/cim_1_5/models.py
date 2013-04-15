@@ -20,7 +20,7 @@ class ResponsibleParty(MetadataModel):
 
     _name           = "ResponsibleParty"
     _title          = "Contact"
-    _description    = ""
+    _description    = "here is a description"
 
 
     individualName      = MetadataAtomicField.Factory("charfield",max_length=LIL_STRING,blank=False)

@@ -38,7 +38,7 @@ def CIMDocument(documentRestriction=""):
         return obj
     return decorator
 
-@guid()
+#@guid()
 class MetadataModel(models.Model):
     # ideally, MetadataModel should be an ABC
     # but Django Models already have a metaclass: django.db.models.base.ModelBase
@@ -58,6 +58,10 @@ class MetadataModel(models.Model):
     # if a model is a CIM Document, then these attributes get set using the @CIMDocument decorator
     _isCIMDocument          = False
     _cimDocumentRestriction = ""
+
+    _guid = models.CharField(max_length=64,unique=True,editable=False,blank=False,default=lambda:str(uuid4()))
+    def getGUID(self):
+        return self._guid
 
     def __unicode__(self):
         if self._title != MetadataModel.getTitle():
@@ -98,15 +102,31 @@ class MetadataModel(models.Model):
         m2m_fields = [field for field in cls._meta.many_to_many if issubclass(type(field),MetadataField)]
         return fields + m2m_fields
 
-@guid()
+    def getField(self,fieldName):
+        # return the actual field (not the db representation of the field)
+        try:
+            return self._meta.get_field_by_name(fieldName)[0]
+        except models.fields.FieldDoesNotExist:
+            return None
+
+
+#@guid()
 class MetadataAttribute(models.Model):
     class Meta:
         app_label = APP_LABEL
 
-@guid()
+    _guid = models.CharField(max_length=64,unique=True,editable=False,blank=False,default=lambda:str(uuid4()))
+    def getGUID(self):
+        return self._guid
+
+#@guid()
 class MetadataProperty(models.Model):
     class Meta:
         app_label = APP_LABEL
+
+    _guid = models.CharField(max_length=64,unique=True,editable=False,blank=False,default=lambda:str(uuid4()))
+    def getGUID(self):
+        return self._guid
 
     short_name  = models.CharField(max_length=BIG_STRING,blank=False)
     long_name   = models.CharField(max_length=BIG_STRING,blank=False)
@@ -139,3 +159,105 @@ class MetadataProperty(models.Model):
             raise MetadataError(msg)
 
         super(MetadataProperty,self).save(*args,**kwargs)
+
+
+@guid()
+class TestModel(models.Model):
+    class Meta:
+        app_label = APP_LABEL
+
+    name = models.CharField(max_length=LIL_STRING)
+    loaded = models.BooleanField(default=False)    
+    #subModels = models.ManyToManyField("TestSubModel")
+
+    tmpSubModels = []
+
+    def __init__(self,*args,**kwargs):
+        
+        super(TestModel,self).__init__(*args,**kwargs)
+
+        if not self.loaded:
+            self.tmpSubModels = []
+            for name in ["a","b","c"]:
+                self.tmpSubModels.append(TestSubModel(name=name))
+            self.loaded = True
+   
+#    def getSubModels(self):
+#        if self.pk:
+#
+#            return TestSubModel.objects.filter(parentGUID=self.getGUID())
+#        else:
+#            return self.tmpSubModels
+
+###        if len(self.tmpSubModels):
+###            return self.tmpSubModels
+###        else:
+###            return self.subModels.all()
+###
+####        if not self.guid:
+### #           self.guid = str(uuid4())
+###
+###        print "INIT MODEL: %s" % self.getGUID()
+###        print "loaded? %s" % self.loaded
+###
+###        if not self.loaded:
+###            for name in ["a","b","c"]:
+###                (subModel,created) = TestSubModel.objects.get_or_create(name=name,parentGUID=self.getGUID())
+###                self.tmpSubModels.append(subModel)
+###            self.loaded = True
+###
+###        print "loaded? %s" % self.loaded
+###
+    def save(self,*args,**kwargs):
+        super(TestModel,self).save(*args,**kwargs)
+
+        if len(self.tmpSubModels):
+
+#            for subModel in self.tmpSubModels:
+#                subModel.parent = self
+#                subModel.save()
+            self.tmpSubModels = []
+
+###            #self.subModels = [subModel.update(guid=self.getGUID()) for subModel in self.tmpSubModels]
+###            self.subModels = [subModel.update(parentGUID=self.getGUID()) for subModel in self.tmpSubModels]
+###            self.tmpSubModels = []
+###
+###
+    def __unicode__(self):
+        return u"Model: '%s'"  % (self.name)
+
+@guid()
+class TestSubModel(models.Model):
+    class Meta:
+        app_label = APP_LABEL
+
+    name = models.CharField(max_length=LIL_STRING)
+    #parentGUID = models.CharField(max_length=64)
+    parent = models.ForeignKey("TestModel",blank=True,null=True,related_name="subModels")
+    
+###
+###    guid = models.CharField(max_length=64,unique=True,editable=False,blank=False,default=lambda:str(uuid4()))
+###    def getGUID(self):
+###        return self.guid
+###
+###    def __init__(self,*args,**kwargs):
+###        super(TestSubModel,self).__init__(*args,**kwargs)
+###        print "INIT SUBMODEL: %s" % self
+###
+###    def save(self,*args,**kwargs):
+###        new_guid = kwargs.pop("new_guid",None)
+###        if new_guid:
+###            self.parentGUID = new_guid
+###        super(TestSubModel,self).save(*args,**kwargs)
+###
+###    def update(self,*args,**kwargs):
+###        for (key,value) in kwargs.iteritems():
+###            setattr(self, key, value)
+###        self.save()
+###        return self.pk
+###
+    def __unicode__(self):
+        if self.parent:
+            return u"SubModel: '%s', parent=%s"  % (self.name, self.parent)
+        else:
+            return u"SubModel: '%s', no parent" % (self.name)

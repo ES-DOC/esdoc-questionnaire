@@ -20,6 +20,8 @@ Summary of module goes here
 
 """
 
+from django.forms import ValidationError
+
 import django.forms.models
 import django.forms.widgets
 import django.forms.fields
@@ -40,6 +42,56 @@ def update_field_widget_attributes(field,widget_attributes):
         except KeyError:
             field.widget.attrs[key] = value
 
+class CardinalityFormFieldWidget(django.forms.widgets.MultiWidget):
+    def __init__(self,*args,**kwargs):
+        widgets = (
+            django.forms.fields.Select(choices=[(str(i),str(i)) for i in range(0,11)]),
+            django.forms.fields.Select(choices=[('*','*')]+[(str(i),str(i)) for i in range(0,11)][1:]),
+        )
+        super(CardinalityFormFieldWidget,self).__init__(widgets,*args,**kwargs)
+
+    def decompress(self,value):
+        if value:
+            return value.split("|")
+        else:
+            return [u'',u'']
+        
+class CardinalityFormField(django.forms.fields.MultiValueField):
+
+  def __init__(self,*args,**kwargs):
+      #verbose_name = kwargs.pop("verbose_name")
+      #blank = kwargs.pop("blank")
+      fields = (
+          django.forms.fields.CharField(max_length=2),
+          django.forms.fields.CharField(max_length=2)
+      )
+      widget = CardinalityFormFieldWidget()
+      super(CardinalityFormField,self).__init__(fields,widget,*args,**kwargs)
+      self.widget = widget
+
+  def compress(self, data_list):
+      return "|".join(data_list)
+
+  def clean(self,value):
+      min = value[0]
+      max = value[1]
+
+      if (min > max) and (max != "*"):
+          msg = "min must be less than or equal to max"
+          raise ValidationError(msg)
+
+      return "|".join(value)
+
+
+class CardinalityField(models.CharField):
+
+    def formfield(self,**kwargs):
+        return CardinalityFormField(label=self.verbose_name.capitalize())
+
+    def __init__(self,*args,**kwargs):
+        kwargs["max_length"] = 8
+        
+        super(CardinalityField,self).__init__(*args,**kwargs)
 
 class MetadataField(models.Field):
     """

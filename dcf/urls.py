@@ -33,7 +33,10 @@ urlpatterns = patterns('',
 
     # testing (just for development, obviously)...
     url(r'^test/(?P<project_name>[^/]+)/(?P<model_name>[^/]+)/(?P<version_name>[^/]+)/$', 'dcf.views.test'),
-    url(r'^test$', 'dcf.views.test'),
+    url(r'^test/$', 'dcf.views.test'),
+    url(r'^test/(?P<model_id>[^/]+)/$', 'dcf.views.test'),
+    url(r'^test2/(?P<model_id>[^/]+)/$', 'dcf.views.test2'),
+    url(r'^test2/$', 'dcf.views.test2'),
 
     # TODO: custom error handling (400,403,404)?
 
@@ -41,12 +44,12 @@ urlpatterns = patterns('',
     url(r'^customize/(?P<project_name>[^/]+)/(?P<model_name>[^/]+)/(?P<version_name>[^/]+)/$', 'dcf.views.customize'),
     url(r'^customize/(?P<project_name>[^/]+)/(?P<model_name>[^/]+)/$', 'dcf.views.customize'),
     url(r'^customize/instructions$', 'dcf.views.customize_instructions'),
-#
-#    # edit a CIM form...
-#    url(r'^edit/(?P<version_name>[^/]+)/(?P<project_name>[^/]+)/(?P<model_name>[^/]+)/$', 'dcf.views_edit.edit'),
-#    url(r'^edit/(?P<project_name>[^/]+)/(?P<model_name>[^/]+)/$', 'dcf.views_edit.edit'),
-#    url(r'^edit/instructions$', 'dcf.views_edit.instructions'),
-#
+
+    # edit a CIM form...
+    url(r'^edit/(?P<project_name>[^/]+)/(?P<model_name>[^/]+)/(?P<version_name>[^/]+)/$', 'dcf.views.edit'),
+    url(r'^edit/(?P<project_name>[^/]+)/(?P<model_name>[^/]+)/$', 'dcf.views.edit'),
+    url(r'^edit/instructions$', 'dcf.views.edit_instructions'),
+
 ###    # view a CIM form...
 ###    url(r'^view/(?P<version_name>[^/]+)/(?P<project_name>[^/]+)/(?P<model_name>[^/]+)/$', 'dcf.views.detail'),
 ###    url(r'^view/(?P<project_name>[^/]+)/(?P<model_name>[^/]+)/$', 'dcf.views.detail'),
@@ -56,6 +59,7 @@ urlpatterns = patterns('',
     url(r'^ajax/get_category/(?P<category_type>[^/]+)/$', 'dcf.views.get_category'),
     url(r'^ajax/edit_category/(?P<category_type>[^/]+)/$', 'dcf.views.edit_category'),
     url(r'^ajax/delete_category/(?P<category_type>[^/]+)/$', 'dcf.views.delete_category'),
+    url(r'^ajax/customize_subform/$', 'dcf.views.customize_subform'),
 ###    url(r'^ajax/get_model_hierarchy', 'dcf.views.get_model_hierarchy'),
 #
 ####    # ATOM feed...

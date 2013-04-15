@@ -38,7 +38,7 @@ def validate_vocabulary_file_extension(value):
 def validate_vocabulary_file_schema(value):
     return validate_file_schema(value,_SCHEMA_PATH)
 
-@guid()
+#@guid()
 class MetadataVocabulary(models.Model):
     class Meta:
         app_label = APP_LABEL
@@ -52,6 +52,10 @@ class MetadataVocabulary(models.Model):
     # (the get/set category fns below are therefore much simpler)
     categories = models.ManyToManyField("MetadataPropertyCategory",blank=True,null=True)
     properties = models.ManyToManyField("MetadataProperty",blank=True,null=True)
+
+    _guid = models.CharField(max_length=64,unique=True,editable=False,blank=False,default=lambda:str(uuid4()))
+    def getGUID(self):
+        return self._guid
 
     def __unicode__(self):
         if self.file:

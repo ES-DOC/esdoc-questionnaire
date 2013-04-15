@@ -1,0 +1,41 @@
+{# template for a formset #}
+{# formset is the formset #}
+{# customizer is the customizer from the actual field #}
+
+{% load dcf_filters %}
+
+<span class="subform-toolbar ui-widget-header ui-corner-all">
+    <button type="button" class="expand" title="expand all {{customizer.verbose_name}}">expand all</button>
+    <button type="button" class="collapse" title="collapse all {{customizer.verbose_name}}">collapse all</button>
+</span> <!-- /.subform-toolbar -->
+<div style="clear: both;">&nbsp;</div>
+
+{{ formset.non_form_errors }}
+{{ formset.management_form }}
+
+{% with customizer=formset.getModelCustomizer %} {# customizer is the _model_ customizer (as opposed to the attribute customizers used elsewhere #}
+<div class="accordion">
+    
+    {% for form in formset.forms %}
+        <h3 class="accordion-header">
+            <a>
+                {{customizer.model_title}}:&nbsp;<span name="name"></span>
+            </a>
+        </h3> <!-- /.accordion-header -->
+
+        <div class="accordion-content">
+            <div class="form"> {# wrapping everything in a div.form so I can group together fields belonging to the same model #}
+                <button class="remove" type="button" title="remove this TODO from TODO">remove</button>
+                <div style="clear:both;"></div>
+                
+                {% include "dcf/_form.html" %}
+                
+            </div> <!-- /.form -->
+        </div> <!-- /.accordion-content -->
+
+    {% endfor %}
+
+</div> <!-- /.accordion -->
+{% endwith %} {# /customizer #}
+
+<button class="add" type="button" title="TODO">add new</button>

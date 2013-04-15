@@ -166,12 +166,16 @@ class MetadataCategory(models.Model):
         super(MetadataCategory,self).save(*args,**kwargs)
 
 
-@guid()
+#@guid()
 class MetadataAttributeCategory(MetadataCategory):
 
     mapping = models.CharField(max_length=HUGE_STRING,blank=True)
 
     _type = CategoryTypes.ATTRIBUTE
+
+    _guid = models.CharField(max_length=64,unique=True,editable=False,blank=False,default=lambda:str(uuid4()))
+    def getGUID(self):
+        return self._guid
 
     def getMapping(self):
         try:
@@ -190,12 +194,16 @@ class MetadataAttributeCategory(MetadataCategory):
     def __unicode__(self):
         return u'%s' % self.name
 
-@guid()
+#@guid()
 class MetadataPropertyCategory(MetadataCategory):
 
     mapping = models.CharField(max_length=HUGE_STRING,blank=True)
 
     _type = CategoryTypes.PROPERTY
+
+    _guid = models.CharField(max_length=64,unique=True,editable=False,blank=False,default=lambda:str(uuid4()))
+    def getGUID(self):
+        return self._guid
 
     def getMapping(self):
         try:

@@ -23,6 +23,8 @@
 
 {% block content %}
 
+
+
     <div class="title">
         Editing {{model_name|aOrAn}} <u>{{model_name|escape}}</u> form for <u>{{project_name|escape}}</u>
     </div> <!-- /.title -->
@@ -36,14 +38,14 @@
             Fields or subforms with <span style="font-weight: bold;">bold</span> labels are required.&nbsp;&nbsp;
             When you have finished, click the "save" button at the bottom of the page to store a local copy or the "publish" button to send a copy to a public metadata archive.&nbsp;&nbsp;
             Invalid entries are indicated using a <span style="color: #ff0000; font-weight: bold;">red</span> font.&nbsp;&nbsp;
-            <a href="/dcf/edit/instructions">More detailed instructions</a> are available.&nbsp;&nbsp;
+            <a href="/dcf/edit/instructions" target="blank">More detailed instructions</a> are available.&nbsp;&nbsp;
         </i>
     </p>
 
+            
     <form method="POST" action="">
 
         {% csrf_token %}
-
         <br/>
 
         <div class="form"> {# wrapping everything in a div.form so I can group together fields belonging to the same model #}
@@ -54,34 +56,51 @@
                     {{form.customizer.model_description}}
                 </div>
 
+
                 <div class="tabs">
+
                     <ul>
                         {% for attribute_category in form|getActiveAttributeCategories %}
-                            <li>
-                                <a href="#tab-{{attribute_category.getGUID}}" title="{{attribute_category.description}}">
-                                    {{attribute_category.name}}
-                                </a>
-                            </li>
+                            {% with active_attributes=form|getActiveAttributesOfCategory:attribute_category %}
+                                <li>
+                                    <a href="#tab-{{attribute_category.getGUID}}" title="{{attribute_category.description}}">
+                                        {{attribute_category.name}} <span style="font-size: small;">(0/{{active_attributes|length}})</span>
+                                    </a>
+                                </li>
+                            {% endwith %} {# /active_attributes #}
                         {% endfor %} {# /attribute_category #}
                         <li>
                             <a href="#tab-properties">
                                 <!-- TODO: THIS VALUE SHOULD COME FROM THE CATEGORIZATION FILE -->
-                                Scientific Properties
+                                Scientific Properties (0)
                             </a>
                         </li>
                     </ul>
                     {% for attribute_category in form|getActiveAttributeCategories %}
+
                         <div id="tab-{{attribute_category.getGUID}}">
                             <div class="tab-content">
-                                {% for attribute in form|getActiveAttributesOfCategory:attribute_category %}
-                                    {% with field=form|getFieldFromAttribute:attribute %}
-                                        {% if attribute.replace %}
-                                            {{field.name}} is a subform
-                                        {% else %}
-                                            {{ field.name}} is a regular field
-                                        {% endif %}
-                                    {% endwith %} {# /field #}
-                                {% endfor %} {# /attribute #}
+            
+                                    <table width="100%" border="0">
+                                    {% for customizer in form|getActiveAttributesOfCategory:attribute_category %}
+                                        {% with field=form|getFieldFromName:customizer.attribute_name %}
+                                            {% with attribute=form|getAttributeFromCustomizer:customizer %}
+                                                <!-- customizer is the MetadataAttributeCustomizer associated w/ this field -->
+                                                <!-- field is the MetadataField instance corresponding to this attribute -->
+                                                <!-- attribute is the attribute (formfield) itself -->
+                                                <tr valign="top" class="{% cycle 'odd' 'even' %} field">
+                                                    {% if customizer.customize_subform %}
+                                                        <td colspan="100"> <!-- this just makes sure that the nested table spans the entire parent table -->
+                                                            {% include "dcf/_subform.html" %}
+                                                        </td>
+                                                    {% else %}
+                                                        {% include "dcf/_field.html" %}
+                                                    {% endif %} {# /customizer.customizer_subform #}
+                                                </tr>
+                                            {% endwith %} {# /attribute #}
+                                        {% endwith %} {# /field #}
+                                    {% endfor %} {# /customizer #}
+                                    </table>
                             </div>
                         </div>
                     {% endfor %} {# /attribute_category #}
@@ -93,10 +112,44 @@
 
                 </div>
 
-            </fieldset>
+                {% if form.customizer.model_show_all_attributes %}
+                    {% with uncategorized_attributes=form|getActiveAttributesOfNoCategory %}
+                    <fieldset class="coolfieldset" name="uncategorized_attributes_fieldset">
+                        <legend title="click to show/hide content">
+                            <div class="help-button" title="click for more info" id="customization_details_formset">
+                                <span class="default-help-icon ui-icon-info" style="display: inline-block">&nbsp;</span>
+                                <div class="help-description" title="Uncategorized Attribute Details">
+                                    This section contains those CIM attributes that have not been categorized for this project.
+                                </div> <!-- /.help-description -->
+                            </div> <!-- /.help-button -->
+                            <span class="title">&nbsp;Other Attributes ({{uncategorized_attributes|length}})&nbsp;</span>
+                        </legend>
+                        <div class="coolfieldset-content">
+                            <table border="0" width="100%">
+                            {% for customizer in uncategorized_attributes %}
+                                {% with field=form|getFieldFromName:customizer.attribute_name %}
+                                    {% with attribute=form|getAttributeFromCustomizer:customizer %}
+                                        <tr valign="top" class="{% cycle 'odd' 'even' %} field">
+                                            {% if customizer.customize_subform %}
+                                                <td colspan="100"> <!-- this just makes sure that the nested table spans the entire parent table -->
+                                                    {% include "dcf/_subform.html" %}
+                                                </td>
+                                            {% else %}
+                                                {% include "dcf/_field.html" %}
+                                            {% endif %} {# /customizer.customizer_subform #}
+                                        </tr>
+                                    {% endwith %} {# /attribute #}
+                                {% endwith %} {# /field #}
+                            {% endfor %} {# /customizer #}
+                            </table>
+                        </div>
+
+                    </fieldset>
+                    {% endwith %} {# /uncategorized_attributes #}
+                {% endif %} {# / form.customizer.model_show_all_attributes #}
 
         </div> <!-- /.form -->
-
+        
         <div class="submit">
             <input class="button" name="save" type="submit" value="save"/>
             <input class="button" name="submit" type="submit" value="publish"/>
