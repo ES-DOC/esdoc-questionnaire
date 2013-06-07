@@ -25,14 +25,24 @@
     <div class="coolfieldset-content">
 
        {% with subForm=form|getSubForm:field %}
-            {% with subFormType=subForm.getType|stringformat:"s" %}
-                {% if subFormType == "FORM" %}
+            {% with subFormType=subForm.getType|stringformat:"s" %}            
+                {% if subFormType == "FORM" %}                
                     {% with form=subForm %}
-                        {% include "dcf/_form.html" %}
+                        {# alright, this looks weird I know #}
+                        {# but passing the template as a variable gets around Django's maximum recursion issue #}
+                        {% with "dcf/_form.html" as template %}
+                            {% include template %}
+                        {% endwith %}
+                        {# include "dcf/_form.html" #}
                     {% endwith %}
                 {% else %} {% if subFormType == "FORMSET" %}
                     {% with formset=subForm %}
-                        {% include "dcf/_formset.html" %}
+                        {# alright, this looks weird I know #}
+                        {# but passing the template as a variable gets around Django's maximum recursion issue #}
+                        {% with "dcf/_formset.html" as template %}
+                            {% include template %}
+                        {% endwith %}
+                        {# include "dcf/_formset.html" #}
                     {% endwith %}
                 {% endif %} {% endif %}
             {% endwith %} {# /subFormType #}

@@ -22,12 +22,17 @@ Summary of module goes here
 
 from django.db import models
 from django.db.models.fields import NOT_PROVIDED
+from django.utils.functional import lazy
+
+from django.contrib.contenttypes.models import *
+from django.contrib.contenttypes import generic
+
+
 
 from dcf.utils import *
 from dcf.fields import *
-from dcf.models import MetadataCategorization, MetadataAttributeCategory, MetadataPropertyCategory
+from dcf.models import MetadataCategorization#, MetadataAttributeCategory, MetadataPropertyCategory
 
-#@guid()
 class MetadataCustomizer(models.Model):
     class Meta:
         app_label = APP_LABEL
@@ -48,6 +53,7 @@ class MetadataCustomizer(models.Model):
     loaded = models.BooleanField(blank=False,editable=False,default=False)
 
     _guid = models.CharField(max_length=64,unique=True,editable=False,blank=False,default=lambda:str(uuid4()))
+
     def getGUID(self):
         return self._guid
 
@@ -62,12 +68,6 @@ class MetadataCustomizer(models.Model):
         except models.fields.FieldDoesNotExist:
             return None
 
-    def getModel(self):
-        """
-        .. note: this returns a class not an instance
-        """
-        return self.version.getModel(self.model)
-
     def getCommonCustomizers(self):
         """
         returns a list of customizers (either ModelCustomizers or AtrributeCustomzizers, or PropertyCustomizers)
@@ -79,8 +79,9 @@ class MetadataCustomizer(models.Model):
 class MetadataModelCustomizer(MetadataCustomizer):
     class Meta:
         app_label = APP_LABEL
+        # TODO: REDO THIS W/ MYSQL (SEE http://stackoverflow.com/questions/6153552/mysql-error-1062-duplicate-entry-for-key-2)
         unique_together = ('project', 'version', 'model', 'name')
-
+        
     name                = models.CharField(max_length=LIL_STRING,verbose_name="Customization Name",blank=False,validators=[validate_no_spaces])
     name.help_text      = "A unique name for this customization (ie: \"basic\" or \"advanced\")"
     description         = models.TextField(verbose_name="Customization Description",blank=True)
@@ -94,6 +95,9 @@ class MetadataModelCustomizer(MetadataCustomizer):
     model_show_all_categories.help_text = "Include categories in the editing form for which there are no attributes associated with"
     model_show_all_attributes = models.BooleanField(verbose_name="Display uncategorized fields",default=True)
     model_show_all_attributes.help_text = "Include attributes in the editing form that have no associated category.  These will show up below any category tabs."
+    model_nested        = models.BooleanField(verbose_name="Include the full component hierarchy",default=True)
+    model_nested.help_text ="Some CIM SoftwareComponents are comprised of a hierarchy of nested child components.  Checking this option allows that full hiearchy to be edited at once in the CIM Editor."
+
 
 # BIG CHANGE
 # CANNOT DEAL W/ M2M BEFORE SAVING
@@ -103,19 +107,23 @@ class MetadataModelCustomizer(MetadataCustomizer):
     temporary_attributes = []
     temporary_properties = []
 
-    
+   
     def __unicode__(self):
         return u'%s' % self.name
-    
-    # TODO: CURRENTLY CUSTOMIZERS HAVE:
-    # 1. A SINGLE VERSION (BASED ON THE REQUEST)
-    # 2. A SINGLE CATEGORIZATION (BASED ON THE VERSION)
-    # 3. A SINGLE VOCABULARY (BASED ON THE DEFAULT_VOCABULARY OF THE PROJECT)
-    # IN THE FUTURE, USERS SHOULD BE ABLE TO SPECIFY MULTIPLE VOCABULARIES OR A DIFFERENT CATEGORIZATION
-    
+
+    def getProject(self):
+        return self.project
+
     def getVersion(self):
         return self.version
 
+    def getModel(self):
+        """
+        .. note: this returns a class not an instance
+        """
+        version = self.getVersion()
+        return version.getModel(self.model)
+        
     def getCategorization(self):
         return self.version.default_categorization
 
@@ -147,6 +155,7 @@ class MetadataModelCustomizer(MetadataCustomizer):
             self.loadCustomizer()
             self.loaded = True
 
+
     def reset(self,*args):
         _model = args[0]
         self.model_title = _model.getTitle()
@@ -170,20 +179,6 @@ class MetadataModelCustomizer(MetadataCustomizer):
             temporary_attribute.reset(attribute)
             self.temporary_attributes.append(temporary_attribute)
             
-###        new_attributes = _model.getAttributes()
-###        for i,attribute in enumerate(new_attributes):
-###            (new_attribute, created) = MetadataAttributeCustomizer.objects.get_or_create(
-###                                        attribute_name  = attribute.getName(),
-###                                        attribute_type  = attribute.getType(),
-###                                        project         = self.project,
-###                                        version         = self.version,
-###                                        model           = self.model,
-###                                        parentGUID      = self.getGUID())
-###            if created:
-###                new_attribute.order=(i+1)
-###                new_attribute.reset(attribute)
-###
-###            self.temporary_attributes.append(new_attribute)
 
       
         new_properties = self.getVocabulary().getProperties()
@@ -222,13 +217,26 @@ class MetadataModelCustomizer(MetadataCustomizer):
             # if this is the only customizer, it must be the default one...
             self.default = True
 
-        # now save the attributes/properties setup in init
-        if len(self.temporary_attributes):
-            for temporary_attribute in self.temporary_attributes:
-                temporary_attribute.parent = self
-                temporary_attribute.save()
-            self.temporary_attributes = []
+###        # now save the attributes/properties setup in init
+###        if len(self.temporary_attributes):
+###            for temporary_attribute in self.temporary_attributes:
+###                temporary_attribute.parent = self
+###                temporary_attribute.save()
+###            self.temporary_attributes = []
 
+    def recursivelyUpdateFields(self,new_fields):
+        """
+        changes the value of new_fields[name] with the specified value
+        then checks all the subform_customizers of child attributes and does the same
+        """
+        for (field_name,field_value) in new_fields.iteritems():
+            setattr(self,field_name,field_value)
+
+
+        for attribute_customizer in self.attributes.all():
+            if attribute_customizer.subform_customizer:
+                attribute_customizer.subform_customizer.recursivelyUpateFields(new_fields)
+        self.save(force_update=True)
 
 class MetadataAttributeCustomizer(MetadataCustomizer):
     class Meta:
@@ -241,30 +249,37 @@ class MetadataAttributeCustomizer(MetadataCustomizer):
     category           = models.ForeignKey("MetadataAttributeCategory",blank=True,null=True)
     order              = models.PositiveIntegerField(blank=True,null=True)
 
-    # TODO: ADD MORE WAYS OF CUSTOMIZING ATTRIBUTES
-    displayed           = models.BooleanField(default=True,blank=True,verbose_name="should attribute be displayed")
-    required            = models.BooleanField(default=False,blank=True,verbose_name="is attribute required")
-    editable            = models.BooleanField(default=False,blank=True,verbose_name="can the value of this attribute be edited")
-    unique              = models.BooleanField(default=False,blank=True,verbose_name="must the value of this attribute be unique")
-    verbose_name        = models.CharField(max_length=64,blank=False,verbose_name="how should this attribute be labeled (overrides default name)")
-    default_value       = models.CharField(max_length=128,blank=True,null=True,verbose_name="what is the default value of this attribute")
-    documentation       = models.TextField(blank=True,verbose_name="help text to associate with attribute")
-    cardinality         = CardinalityField(blank=False,verbose_name="how many instances (min/max) of this attribute are desired")
-    customize_subform   = models.BooleanField(default=False,blank=True,verbose_name="should this attribute be rendered in its own subform")
-    customize_subform.help_text = "Checking this radio button will cause the attribute to be rendered as a nested subform within the <i>parent</i> form; All attributes of this model will be available to view and edit.\
-                                   Unchecking it will cause the attribute to be rendered as a simple select widget."
+    # ways to customize _any_ field...
+    displayed           = models.BooleanField(default=True,blank=True,verbose_name="should this property be displayed?")
+    required            = models.BooleanField(default=False,blank=True,verbose_name="is this property required?")
+    editable            = models.BooleanField(default=False,blank=True,verbose_name="can the value of this property be edited?")
+    unique              = models.BooleanField(default=False,blank=True,verbose_name="must the value of this property be unique?")
+    verbose_name        = models.CharField(max_length=64,blank=False,verbose_name="how should this property be labeled (overrides default name)?")
+    default_value       = models.CharField(max_length=128,blank=True,null=True,verbose_name="what is the default value of this property?")
+    documentation       = models.TextField(blank=True,verbose_name="what is the help text to associate with property?")
 
-    # I AM HERE
-    subform_customizer = models.ForeignKey("MetadataModelCustomizer",blank=True,null=True,related_name="subform_customizer")
+    # ways to customize enumeration fields...
+    enumerations         = EnumerationField(blank=False,verbose_name="choose the property values that should be presented to the user:")
+    default_enumerations = EnumerationField(blank=True,verbose_name="choose the default value(s), if any, for this property:")
+    enumeration_choices  = models.TextField(blank=True,max_length=HUGE_STRING) # (made a textfield b/c kept running into max_length limit for big enumerations)
+    open                 = models.BooleanField(default=False,blank=True,verbose_name="check if a user can specify a custom property value.")
+    multi                = models.BooleanField(default=False,blank=True,verbose_name="check if a user can specify multiple property values.")
+    nullable             = models.BooleanField(default=False,blank=True,verbose_name="check if a user can specify an explicit \"NONE\" value.")
+
+    # ways to customize relationship fields...
+    cardinality                 = CardinalityField(blank=False,verbose_name="how many instances (min/max) of this property are desired?")
+    customize_subform           = models.BooleanField(default=False,blank=True,verbose_name="should this property be rendered in its own subform?")
+    customize_subform.help_text = "Checking this radio button will cause the property to be rendered as a nested subform within the <i>parent</i> form; All properties of this model will be available to view and edit in that subform.\
+                                   Unchecking it will cause the attribute to be rendered as a simple select widget."
+    subform_customizer  = models.ForeignKey("MetadataModelCustomizer",blank=True,null=True,related_name="subform_customizer")
 
     def __unicode__(self):
-        return u'%s::%s' % (self.parent.name, self.attribute_name)
+        return u'%s::%s' % (self.parent.name if self.parent else "unspecified", self.attribute_name)
     
     def reset(self,*args,**kwargs):
-
         attribute = args[0]
-        force_save = kwargs.pop("force_save",False)
-        
+        force_save = kwargs.pop("force_save",False)        
+
         model_name = self.model.lower()
         categorization = self.version.default_categorization
         for category in categorization.getCategories():
@@ -282,23 +297,51 @@ class MetadataAttributeCustomizer(MetadataCustomizer):
         self.documentation = attribute.help_text
         self.default_value = attribute.default if (attribute.default != NOT_PROVIDED) else None
 
-        if self.attribute_type in [field._type.lower() for field in MetadataRelationshipField.__subclasses__()]:
+        self.attribute_type = attribute.getType()
+
+        if self.isAtomicField():
+            pass
+
+        if self.isRelationshipField():
             self.customize_subform = False
-##            related_model_class = attribute.getTargetModelClass()
-##            if self.subform_customizer:
-##                self.subform_customizer.delete()
-##            filterParameters = {}
-##            filterParameters["project"] = self.project
-##            filterParameters["version"] = self.version
-##            filterParameters["model"]   = related_model_class.getName()
-##            new_customizer = MetadataModelCustomizer(**filterParameters)
-##            # this will generate an erorr b/c there is no name
-##            # better to init the subform_customizer in the ajax view that sets up the subform_customization_form
-##            new_customizer.save()
-##            self.subform_customizer = new_customizer
+
+        if self.isEnumerationField():
+            enum          = attribute.getEnumerationClass()            
+            self.open     = enum.isOpen
+            self.multi    = enum.isMulti
+            self.nullable = enum.isNullable
+            self.enumeration_choices = "|".join(enum.getChoices())
+
+            if self.attribute_name == "role":
+                print "FLARB"
+                print "enum=%s"%enum
+                print "choices=%s"%self.enumeration_choices
 
         if force_save:
             self.save()
+
+    def save(self,*args,**kwargs):
+        # just make sure that the parent exists before saving
+        # (parent ought to be set by virtue of this model being exposed in an inlineformset)
+        # (but the associated project & version may not have been set yet)
+        if self.parent and (not (hasattr(self,"project") or hasattr(self,"version"))):
+            print "need to fix things"
+            self.setParent(self.parent)
+        return super(MetadataAttributeCustomizer,self).save(*args,**kwargs)
+
+    def setParent(self,model_customizer):
+        self.parent = model_customizer
+        self.project = model_customizer.project
+        self.version = model_customizer.version
+
+    def isAtomicField(self):
+        return self.attribute_type.lower() in MODELFIELD_MAP.iterkeys()
+
+    def isRelationshipField(self):
+        return self.attribute_type.lower() in [field._type.lower() for field in MetadataRelationshipField.__subclasses__()]
+
+    def isEnumerationField(self):
+        return self.attribute_type.lower() in [field._type.lower() for field in MetadataEnumerationField.__subclasses__()] + [MetadataEnumerationField._type.lower()]
 
     def getName(self):
         return self.attribute_name
@@ -308,11 +351,6 @@ class MetadataAttributeCustomizer(MetadataCustomizer):
 
     def getCategory(self):
         return self.category
-
-    def setParent(self,model_customizer):
-        self.parent = model_customizer
-        self.project = model_customizer.project
-        self.version = model_customizer.version
 
 class MetadataPropertyCustomizer(MetadataCustomizer):
     class Meta:

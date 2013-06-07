@@ -33,6 +33,7 @@
 
                 <td>
                     {{ attribute }}
+
                     {% if attribute.errors %}
                         <div class="error-wrapper">
                             {{attribute.errors}}
@@ -44,6 +45,11 @@
                             </script>
                         </div>
                     {% endif %} {# /attribute.errors #}
+
+                    {% if customizer.attribute_type == "manytomanyfield" %}
+                        <br/><button class="add" type="button" title="TODO">add new</button>
+                    {% endif %}
+
                 </td>
             
         </div> <!-- /.field -->

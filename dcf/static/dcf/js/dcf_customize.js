@@ -422,6 +422,8 @@ function copy_tags_to_categories(tagsName,categoriesName) {
 function copy_all_tags_to_all_categories() {
     copy_tags_to_categories("ATTRIBUTE_CATEGORIES","attribute_categories");
     copy_tags_to_categories("PROPERTY_CATEGORIES","property_categories");
+    copy_data_to_field("ATTRIBUTE_CATEGORIES","attribute_categories_content");
+    copy_data_to_field("PROPERTY_CATEGORIES","property_categories_content");
 };
 
 function customize_subform(attribute_name,button) {

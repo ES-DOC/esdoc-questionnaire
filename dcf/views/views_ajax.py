@@ -49,6 +49,7 @@ def get_category(request, category_type=""):
     try:
         version = MetadataVersion.objects.get(name__iexact=METADATA_NAME,version=version_name)
         project = MetadataProject.objects.get(name__iexact=project_name)
+        categorization = version.getDefaultCategorization()
     except ObjectDoesNotExist:
         msg = "invalid HTTP parameters to get_category"
         return HttpResponseBadRequest(msg)
@@ -57,16 +58,20 @@ def get_category(request, category_type=""):
         msg = "invalid HTTP parameters to get_category"
         return HttpResponseBadRequest(msg)
 
+    category_filters = {
+        "key"   : category_key
+    }
     if category_type=="attribute":
         category_class = MetadataAttributeCategory
+        category_filters["categorization"] = categorization
     elif category_type=="property":
         category_class = MetadataPropertyCategory
     else:
         msg = "invalid category_type: %s" % category_type
         return HttpResponseBadRequest(msg)
-
+        
     try:
-        category = category_class.objects.get(key=category_key)
+        category = category_class.objects.get(**category_filters)
     except ObjectDoesNotExist:
         if create_if_none:
             category = category_class.objects.create(key=category_key,name=category_name)
@@ -247,6 +252,10 @@ def customize_subform(request):
         msg = "There is no default customization associated with '%s'" % (model_name)
         return HttpResponseBadRequest(msg)
 
+    print " I AM HERE "
+    print model_customizer
+    print model_customizer.attributes.all()
+
     attribute = model_customizer.attributes.get(attribute_name__iexact=attribute_name)
     related_model_class = model_class._meta.get_field_by_name(attribute.attribute_name)[0].getTargetModelClass()
 
@@ -277,17 +286,16 @@ def customize_subform(request):
     #related_model_customizer = attribute.subform_customizer or MetadataModelCustomizer(**filterParameters)
 
     if request.method == "POST":
-        print request.POST
         form = MetadataModelCustomizerForm(request.POST,instance=related_model_customizer,request=request)
         if form.is_valid():
             related_model_customizer = form.save(commit=False)
             related_model_customizer.save()
+            form.save_subforms(commit=True)
             form.save_m2m()
 
+            # ACTUALLY, DON'T THINK I NEED TO DO THIS ANYMORE B/C OF HOW I USE REVERSE RELATIONSHIPS FOR ATTRIBUTES
             # outputting JSON w/ pk & name to add as option to formfield
             json_related_model_customizer = json.dumps({"pk":related_model_customizer.pk,"unicode":u'%s'%related_model_customizer})
-            print "JSON:"
-            print json_related_model_customizer
             return HttpResponse(json_related_model_customizer,mimetype='application/json')
         
         else:
@@ -300,9 +308,14 @@ def customize_subform(request):
         
     # gather all the extra information required by the template
     dict = {}
-    dict["STATIC_URL"]      = "/static/"
-    dict["msg"]             = msg   
-    dict["form"]            = form  
+    dict["STATIC_URL"]          = "/static/"
+    dict["msg"]                 = msg
+    dict["form"]                = form
+    dict["project_name"]        = project.long_name
+    dict["parent_model_name"]   = model_class.getTitle()
+    dict["model_name"]          = related_model_class.getTitle()
+    dict["attribute_name"]      = attribute_name
+
 
     rendered_form = django.template.loader.render_to_string("dcf/dcf_customize_subform.html", dictionary=dict, context_instance=RequestContext(request))
     return HttpResponse(rendered_form,mimetype='text/html')

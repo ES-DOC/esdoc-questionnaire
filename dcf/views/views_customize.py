@@ -30,6 +30,21 @@ from dcf.models import *
 from dcf.forms.forms_customize import *
 from dcf.views.views_error import error as dcf_error
 
+
+def save_categories(categories_content,category_class):
+    for category_content in categories_content.itervalues():
+        category_id = category_content.pop("pk",None)
+        if category_id:
+            category_categorization = category_content.pop("categorization",None) # (don't worry about setting this; it's never going to change)
+            try:
+                category = category_class.objects.get(pk=category_id)
+                for (field_name,field_value) in category_content.iteritems():
+                    setattr(category,field_name,field_value)
+                category.save()
+            except:
+                return False
+    return True
+
 def customize_instructions(request):
     return render_to_response('dcf/dcf_customize_instructions.html', {}, context_instance=RequestContext(request))
  
@@ -43,8 +58,6 @@ def customize(request,version_name="",project_name="",model_name=""):
         project = MetadataProject.objects.get(name__iexact=project_name)
     except ObjectDoesNotExist:
         msg = "Cannot find the project '%s'.  Has it been registered?" % project_name
-        #raise MetadataError(msg)
-        #return HttpResponseBadRequest(msg)
         return dcf_error(request,msg)
 
     # try to get the requested version...
@@ -53,23 +66,17 @@ def customize(request,version_name="",project_name="",model_name=""):
             version = MetadataVersion.objects.get(name__iexact=METADATA_NAME,version=version_name)
         except ObjectDoesNotExist:
             msg = "Cannot find version '%s'.  Has it been registered?" % (version_name)
-            #raise MetadataError(msg)
-            #return HttpResponseBadRequest(msg)
             return dcf_error(request,msg)
     else:
         version = project.getDefaultVersion()
         if not version:
             msg = "please specify a %s version; the %s project has no default one." % (METADATA_NAME,project)
-            #raise MetadataError(msg)
-            #return HttpResponseBadRequest(msg)
             return dcf_error(request,msg)
 
     # try to get the requested model (class)...
     model = version.getModel(model_name)
     if not model:
         msg = "Cannot find the model type '%s' in version '%s'.  Have all model types been loaded?" % (model_name, version)
-        #raise MetadataError(msg)
-        #return HttpResponseBadRequest(msg)
         return dcf_error(request,msg)
 
     # get the default categorization and vocabulary
@@ -121,33 +128,41 @@ def customize(request,version_name="",project_name="",model_name=""):
         # otherwise, just return a new customizer
         customizer = MetadataModelCustomizer(**filterParameters)    
 
+
     if request.method == "POST":
 
-        # it's a bit unusual to pass request as a kwarg
-        # but my forms have to initialize any subforms that they are comprised of
-        # so I potentially need the HTTP POST data
         form = MetadataModelCustomizerForm(request.POST,instance=customizer,request=request)
         if form.is_valid():
             customizer_instance = form.save(commit=False)
+            print "ONE %s" % len(customizer_instance.attributes.all())
             customizer_instance.save()
+            print "TWO %s" % len(customizer_instance.attributes.all())
+            form.save_subforms(commit=True)
+            print "THREE %s" % len(customizer_instance.attributes.all())
             form.save_m2m()
- 
-            # TODO: DEAL W/ TAGS/CATEGORIES
+            print "FOUR %s" % len(customizer_instance.attributes.all())
+
+            # attributes & properties are saved automatically along w/ the model_form
+            # but categories have to be explicitly saved separately
+            # b/c they are manipulated via a JQuery tagging widget and therefore aren't bound to a form
+            save_categories(json.loads(form.data["attribute_categories_content"]),MetadataAttributeCategory)
+            save_categories(json.loads(form.data["property_categories_content"]),MetadataPropertyCategory)
 
             msg = "Successfully saved the customization: '%s'." % customizer_instance.name
 
         else:
             print form.errors
+            print form.non_field_errors()
             msg = "Unable to save the customization.  Please review the form and try again."
 
     else:
+
         form = MetadataModelCustomizerForm(instance=customizer,request=request)
     
     # gather all the extra information required by the template
     dict = {}
     dict["msg"]             = msg   # any msg to popup to the user
-    dict["form"]            = form  # the form itself, obviously
-
+    dict["form"]            = form  # the form, obviously
     dict["global_vars"]     = {
                                 "version"   :   version.version.lower(),
                                 "project"   :   project.name.lower(),

@@ -9,7 +9,7 @@
     </div>
 
     <div class="title">
-        TODO: TITLE GOES HERE
+        Customizing {{project_name|stripSpaces|escape}}::{{parent_model_name|stripSpaces|escape}}::{{attribute_name}} ({{model_name|stripSpaces|escape}})
     </div> <!-- /.title -->
 
     <div id='customize'>
@@ -223,120 +223,6 @@
                                     </div> <!-- /.tab_content -->
                                 </div> <!-- /#tab_attributes -->
 
-                                <div id="tab_properties">
-                                    <div class="tab_content">
-                                        <span class="documentation">
-                                                These attributes are defined by the Controlled Vocabulary (CV).  Users are free to categorize them as they see fit.  <span class="documentation">These attributes are defined by the metadata version.  They have pre-defined categories.  Click a category widget to toggle the display of attributes belonging to that category.  (Categories appear as subtabs on the Metadata Editing Form.)
-                                            </span>
-
-                                        <fieldset>
-                                            {{form.property_categories}}
-                                            {% with field=form.property_categories_tags %}
-                                                {% with field_label=field.label field_id="attribute_details_"|add:field.name %}
-                                                    <table border="0" width="100%">
-                                                        <tr><td>
-                                                            {% if field.help_text %}
-                                                                {% include "dcf/_help.html" %}
-                                                            {% endif %}
-                                                            {{ field_label }}:&nbsp;
-                                                            <br/>
-                                                            {{ field }}
-                                                            {% if field.errors %}
-                                                                {% include "dcf/_error.html" %}
-                                                            {% endif %}
-                                                        </td></tr>
-                                                        <tr><td>
-                                                            add a new category:&nbsp;<input type="text" id="property_categories_tags_add" title="enter the category name here"/>
-                                                        </td></tr>
-                                                    </table>
-                                                {% endwith %} {# /field_label, field_id #}
-                                            {% endwith %} {# /field #}
-                                        </fieldset>
-
-                                        {% with formset=form|getSubForm:form.properties %}
-
-                                            {{ formset.non_form_errors }}
-                                            {{ formset.management_form }}
-
-                                            <span class="subform-toolbar ui-widget-header ui-corner-all">
-                                                <button type="button" class="sort">sort</button>
-                                                <ul class="sort_by">
-                                                    <li><a href="#" name="sort_by_name">by name</a></li>
-                                                    <li><a href="#" name="sort_by_category">by category</a></li>
-                                                    <li><a href="#" name="sort_by_order">by order</a></li>
-                                                </ul>
-                                                <button type="button" class="expand" title="expand all attributes">expand all</button>
-                                                <button type="button" class="collapse" title="collapse all attributes">collapse all</button>
-                                            </span> <!-- /.subform-toolbar -->
-                                            <div style="clear: both;">&nbsp;</div>
-
-                                            <div class="accordion">
-                                                {% for form in formset.forms|sortFormsByField:"order" %}
-
-                                                    <h3 class="accordion-header">
-                                                        <a>
-                                                            <table width="100%" border="0">
-                                                                <tr valign="middle">
-                                                                    <td width="30%" align="left">
-                                                                        <b>name:&nbsp;</b>
-                                                                        <span name="field-name">{{form.getPropertyName}}</span>
-                                                                    </td>
-                                                                    <td width="30%" align="left">
-                                                                        <b>category:&nbsp;</b>
-                                                                        <span class="label" name="field-category">{{form.getCategoryName}}</span>
-                                                                    </td>
-                                                                    <td width="40%" align="left">
-                                                                        <b>order:&nbsp;</b>
-                                                                        <span class="label" name="field-order">{{form.getPropertyOrder}}</span>
-                                                                    </td>                                                                </tr>
-                                                            </table>
-                                                        </a>
-                                                    </h3> <!-- /.accordion-header -->
-
-                                                    <div class="accordion-content">
-                                                        <div class="form"> {# wrapping everything in a div.form so I can group together fields belonging to the same model #}
-                                                                                                                {# required b/c the individual form ids are here #}
-                                                            {% for hiddenField in form.hidden_fields %}
-                                                                {{ hiddenField }}
-                                                            {% endfor %} {# /hiddenField #}
-
-                                                            <table width="100%" border="0">
-                                                                {% for field in form.visible_fields %}
-                                                                    {% with field_label=field.label field_id="customization_details_"|add:field.name %}
-                                                                        <tr valign="top" class="{% cycle 'odd' 'even' %} field">
-                                                                            <td>
-                                                                                {% if field.help_text %}
-                                                                                    {% include "dcf/_help.html" %}
-                                                                                {% endif %} {# /field.help_text #}
-                                                                               <span class="field_label">
-                                                                                    {{field.label}}:&nbsp;
-                                                                                </span>
-                                                                            </td>
-                                                                            <td>
-                                                                                <span class="field_value" name="{{field.name}}">
-                                                                                    {{field}}
-                                                                                </span>
-                                                                                {% if field.errors %}
-                                                                                    {% include "dcf/_error.html" %}
-                                                                                {% endif %}
-
-                                                                            </td>
-                                                                        </tr>
-                                                                    {% endwith %} {# /field_label, field_id #}
-                                                                {% endfor %} {# /field in form.visible_fields #}
-                                                            </table>
-
-
-                                                        </div> <!-- /.form -->
-                                                    </div> <!-- /.accordion-content -->
-
-                                                {% endfor %} {# /form in formset.forms|sortFormsByFIeld:"order" #}
-                                            </div> <!-- /.accordion -->
-
-                                        {% endwith %} {# /formset #}
-
-                                    </div> <!-- /.tab_content -->
-                                </div> <!-- /#tab_properties -->
 
                             </div> <!-- /.tabs -->
 

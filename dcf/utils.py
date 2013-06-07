@@ -20,8 +20,17 @@ This module contains utility code (constants, error-handling, etc.).
 
 """
 
-from django.core.exceptions import ObjectDoesNotExist, ImproperlyConfigured, ValidationError
+
 from django.conf import settings
+
+from django.core.exceptions import ObjectDoesNotExist, ImproperlyConfigured, ValidationError
+
+from django.contrib.contenttypes.models import ContentType
+from django.contrib.contenttypes import generic
+import inspect
+
+from django.utils import simplejson as json
+
 from django.core import serializers
 from lxml import etree as et
 
@@ -48,7 +57,12 @@ HUGE_STRING = 1200
 #: a constant max_value for big strings
 BIG_STRING  = 400
 #: a constant max_value for normal strings
-LIL_STRING  = 100
+LIL_STRING  = 255
+
+#: a constant tuple to add to "open" enumerations
+OPEN_CHOICE = [(u'OTHER',u'--OTHER--')]
+#: a constant tuple to add to "nullable" enumerations
+NULL_CHOICE  = [(u'NONE',u'--NONE--')]
 
 #: a serializer to use throughout the app; defined once to avoid too many fn calls
 JSON_SERIALIZER = serializers.get_serializer("json")()
@@ -305,9 +319,14 @@ def get_subclasses(parent,_subclasses=None):
     """
     if _subclasses is None:
         _subclasses = set()
+
     subclasses = parent.__subclasses__()
     for subclass in subclasses:
         if subclass not in _subclasses:
             _subclasses.add(subclass)
             get_subclasses(subclass,_subclasses)
     return _subclasses
+
+def has_superclass(child,superclass_name):
+    superclass_names = [parent._meta.app_label+"."+parent._meta.object_name for parent in list(reversed(inspect.getmro(child)))[2:]]
+    return superclass_name in superclass_names

@@ -39,14 +39,11 @@ class MetadataVersion(models.Model):
 
     name    = models.CharField(max_length=LIL_STRING,blank=False)
     version = models.CharField(max_length=LIL_STRING,blank=False)
+    default_categorization = models.ForeignKey("MetadataCategorization",blank=True,null=True,related_name="version")
     # you cannot have a generic m2m field (at least not easily) to the abstract class MetadataModels
     # so I'm just using a CharField to store a '|' separated list of their names in the db
     # (later on at runtime in __init__, I use these to populate a dictionary of classes)
-    model_names  = models.CharField(max_length=HUGE_STRING,blank=True)
-    # TODO: IN FUTURE I MAY ALLOW USERS TO CHOOSE AMONG A SET OF CATEGORIZATIONS;
-    # FOR NOW, THERE IS ONLY ONE
-    default_categorization = models.ForeignKey("MetadataCategorization",blank=True,null=True,related_name="version")
-
+    model_names  = models.TextField(blank=True)
     models = {}
 
     #_guid = models.CharField(max_length=64,unique=True,editable=False,blank=False,default=lambda:str(uuid4()))
@@ -106,20 +103,23 @@ class MetadataVersion(models.Model):
         """
         return self.project.all()
 
+    def getDefaultCategorization(self):
+        """
+        returns the default categorization associated with this version
+        """
+        return self.default_categorization
+    
     @classmethod
     def factory(cls,kwargs):
         """
         Builds an instance of a MetadataVersion
         """
 
-        print "in MetadataVersion.factory(%s)" % kwargs
-
         try:
             # by convention, versions should be in their own Django Applications
             # which are named <name>_<version> where any "." in <version> are replaced w/ "_"
             # as in "cim_1_5"
             app_name = kwargs["name"].lower() + "_" + re.sub(r'\.',"_",kwargs["version"])
-            print "about to call get_app(%s)" % app_name
             app = get_app(app_name)
         except KeyError:
             msg = "name and version must be specified when creating a MetadataVersion"
@@ -131,16 +131,17 @@ class MetadataVersion(models.Model):
             raise MetadataError(msg)
 
         try:
-            print "about to create metadataversion(%s)" % kwargs
             (metadata_version,created) = MetadataVersion.objects.get_or_create(**kwargs)
             if created:
                 print "registering MetadataVersion: '%s'" % metadata_version
+            else:
+                print "MetadataVersion '%s' already exists; skipping registration" % metadata_version
             return metadata_version
         except DatabaseError:
             # depending on the order that django processes models during "syncdb,"
             # MetadataVersion may not exist yet in the db.
             # that's okay - this only has to work during "runserver"
-            print "database error"
+            print "database error (try restarting server)"
             pass
         except UtilsDatabaseError:
             print "the other kind of database error"

@@ -107,9 +107,16 @@ class MetadataProjectAdminForm(ModelForm):
 
         return cleaned_data
 
+
+def serialize_project(modeladmin, request, queryset):
+    for project in queryset:
+        print serializers.serialize("json",[project])
+
+serialize_project.short_description = "serialize to JSON (just for testing)"
+
 class MetadataProjectAdmin(admin.ModelAdmin):
     form = MetadataProjectAdminForm
-    actions = []
+    actions = [serialize_project]
 
 
 ###############################################################

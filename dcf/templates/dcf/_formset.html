@@ -27,8 +27,13 @@
             <div class="form"> {# wrapping everything in a div.form so I can group together fields belonging to the same model #}
                 <button class="remove" type="button" title="remove this TODO from TODO">remove</button>
                 <div style="clear:both;"></div>
-                
-                {% include "dcf/_form.html" %}
+
+                {# alright, this looks weird I know #}
+                {# but passing the template as a variable gets around Django's maximum recursion issue #}
+                {% with "dcf/_form.html" as template %}
+                    {% include template %}
+                {% endwith %}
+                {# include "dcf/_form.html" #}
                 
             </div> <!-- /.form -->
         </div> <!-- /.accordion-content -->

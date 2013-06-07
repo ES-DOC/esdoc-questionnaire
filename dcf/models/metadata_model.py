@@ -35,6 +35,33 @@ def CIMDocument(documentRestriction=""):
     def decorator(obj):
         obj._isCIMDocument = True                           # specify this model as a CIM Document
         obj._cimDocumentRestriction = documentRestriction   # specify what permission (if any) is needed to edit this document
+
+        # add some fields to obj...
+        documentID = MetadataAtomicField.Factory("charfield",blank=False,)
+        documentID.help_text = "a unique indentifier for this document"
+        documentID.contribute_to_class(obj,"documentID")
+
+        documentVersion = MetadataAtomicField.Factory("charfield",blank=False,)
+        documentVersion.contribute_to_class(obj,"documentVersion")
+
+        metadataID = MetadataAtomicField.Factory("charfield",blank=True,)
+        metadataID.contribute_to_class(obj,"metadataID")
+
+        metadataVersion = MetadataAtomicField.Factory("charfield",blank=True,)
+        metadataVersion.contribute_to_class(obj,"metadataVersion")
+
+        externalID = MetadataAtomicField.Factory("charfield",blank=True,)
+        externalID.help_text = "The id of this document as referenced by an external body (ie: DOI, or even IPSL)"
+        externalID.contribute_to_class(obj,"externalID")
+
+        documentAuthor = MetadataAtomicField.Factory("charfield",blank=True,)
+        documentAuthor.help_text = "A contact for the author of this document (as opposed to the author of the artifact being described by this document; ie: the simulation or component or whatever).This includes information about the authoring institution."
+        documentAuthor.contribute_to_class(obj,"documentAuthor")
+
+        documentCreationDate = MetadataAtomicField.Factory("datefield",blank=False,)
+        documentCreationDate.help_text = "The date the document was created."
+        documentCreationDate.contribute_to_class(obj,"documentCreationDate")
+
         return obj
     return decorator
 
@@ -110,6 +137,53 @@ class MetadataModel(models.Model):
             return None
 
 
+
+#@guid()
+class MetadataEnumeration(MetadataModel):
+    class Meta:
+        app_label = APP_LABEL
+
+    # every subclass needs to have its own instances of this next set of attributes:
+    _name        = "MetadataEnumeration"                      # the name of the model; required
+    _title       = "Metadata Enumeration"                     # a pretty title for the model for display purposes; optional
+    _description = "The base class for a MetadataEnumeration" # some descriptive text about the model; optional
+
+    # if a model is a CIM Document, then these attributes get set using the @CIMDocument decorator
+    _isCIMDocument          = False
+    _cimDocumentRestriction = ""
+
+    CHOICES     = []
+    open        = False
+    nullable    = False
+    multi       = False
+
+    def getChoices(self):
+        return self.CHOICES
+
+    @classmethod
+    def getChoices(cls):
+        return cls.CHOICES
+
+    def isOpen(self):
+        return self.open
+
+    @classmethod
+    def isOpen(cls):
+        return cls.open
+
+    def isNullable(self):
+        return self.nullable
+
+    @classmethod
+    def isNullable(cls):
+        return cls.nullable
+
+    def isMulti(self):
+        return self.multi
+
+    @classmethod
+    def isMulti(cls):
+        return cls.multi
 #@guid()
 class MetadataAttribute(models.Model):
     class Meta:

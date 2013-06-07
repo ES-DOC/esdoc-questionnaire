@@ -20,8 +20,7 @@ Summary of module goes here
 
 """
 
-from django.db import models, DatabaseError
-from django.db.models import get_app, get_models
+from django.db import models
 import os
 
 from dcf.utils import *
@@ -46,14 +45,17 @@ class MetadataVocabulary(models.Model):
         verbose_name_plural = 'Metadata Vocabularies'
 
     file    = models.FileField(verbose_name="Vocabulary File",upload_to=_UPLOAD_PATH,validators=[validate_vocabulary_file_extension,validate_vocabulary_file_schema])
+    name    = models.CharField(max_length=LIL_STRING,blank=True,null=True,unique=True)
 
-    # unlike w/ a categorization, this can only have propertycategories (not attributecategories)
-    # so a relationship table for a generic m2m field is not required here
-    # (the get/set category fns below are therefore much simpler)
-    categories = models.ManyToManyField("MetadataPropertyCategory",blank=True,null=True)
+###    # unlike w/ a categorization, this can only have propertycategories (not propertycategories _and_ attributecategories)
+###    # so a relationship table for a generic m2m field is not required here
+###    # (the get/set category fns below are therefore much simpler)
+###    categories = models.ManyToManyField("MetadataPropertyCategory",blank=True,null=True)
+## TODO: REWRITE PROPERTIES TO BE THE SAME AT CATEGORIES (ForeignKey to Vocabulary w/ related_name="properties")
     properties = models.ManyToManyField("MetadataProperty",blank=True,null=True)
 
     _guid = models.CharField(max_length=64,unique=True,editable=False,blank=False,default=lambda:str(uuid4()))
+    
     def getGUID(self):
         return self._guid
 
@@ -67,7 +69,12 @@ class MetadataVocabulary(models.Model):
         before saving a vocabulary, check if a file of the same name already exists.
         if so, overwrite it.
         """
-        vocabulary_file_path = os.path.join(settings.MEDIA_ROOT,APP_LABEL,_UPLOAD_DIR,self.file.name)
+        vocabulary_file_name = os.path.basename(self.file.name)
+        vocabulary_file_path = os.path.join(settings.MEDIA_ROOT,APP_LABEL,_UPLOAD_DIR,vocabulary_file_name)
+
+        if not self.name:
+            self.name = vocabulary_file_name
+
         if os.path.exists(vocabulary_file_path):
             print "WARNING: THE FILE '%s' ALREADY EXISTS; IT IS BEING OVERWRITTEN." % vocabulary_file_path
             os.remove(vocabulary_file_path)
@@ -143,7 +150,14 @@ class MetadataVocabulary(models.Model):
                     # if this bit of the vocab has sub-properties,
                     # then it is actually a category, not a property
 
-                    (newCategory, created) = MetadataPropertyCategory.objects.get_or_create(name=propertyShortName,description=propertyLongName,key=re.sub(r'\s','',propertyShortName).lower())
+                    filter_parameters = {
+                        "vocabulary"    : self,
+                        "name"          : propertyShortName,
+                        "description"   : propertyLongName,
+                        "key"           : re.sub(r'\s','',propertyShortName).lower()
+                    }
+
+                    (newCategory, created) = MetadataPropertyCategory.objects.get_or_create(**filter_parameters)
 
                     newCategoryMapping = {}
                     for i, subProperty in enumerate(hasProperties[0].xpath(".//property")):
@@ -166,9 +180,6 @@ class MetadataVocabulary(models.Model):
                     newProperty = self.loadProperty(property,modelName)
                     newProperties.append(newProperty)
                 
-
-
-
             self.addProperties(newProperties)
 
     def getProperties(self):
@@ -184,15 +195,15 @@ class MetadataVocabulary(models.Model):
     def getCategories(self):
         return self.categories.all()
 
-    def getAttributeCategories(self):
-        return MetadataAttributeCategory.objects.none()
-
-    def getPropertyCategories(self):
-        return self.categories.all()
-
-    def addCategory(self,category):
-        self.categories.add(category)
-
-    def addCategories(self,categories):
-        self.categories.add(*categories) # the "*" expands the list into separate items
+#    def getAttributeCategories(self):
+#        return MetadataAttributeCategory.objects.none()
+#
+#    def getPropertyCategories(self):
+#        return self.categories.all()
+#
+#    def addCategory(self,category):
+#        self.categories.add(category)
+#
+#    def addCategories(self,categories):
+#        self.categories.add(*categories) # the "*" expands the list into separate items
 

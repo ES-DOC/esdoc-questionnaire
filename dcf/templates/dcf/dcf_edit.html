@@ -58,13 +58,14 @@
 
 
                 <div class="tabs">
-
+                    {% with categories=form|getAttributeCategories %}
                     <ul>
-                        {% for attribute_category in form|getActiveAttributeCategories %}
+
+                        {% for attribute_category in categories %}
                             {% with active_attributes=form|getActiveAttributesOfCategory:attribute_category %}
                                 <li>
                                     <a href="#tab-{{attribute_category.getGUID}}" title="{{attribute_category.description}}">
-                                        {{attribute_category.name}} <span style="font-size: small;">(0/{{active_attributes|length}})</span>
+                                        {{attribute_category.name}} <span style="font-size: small;">({{active_attributes|length}})</span>
                                     </a>
                                 </li>
                             {% endwith %} {# /active_attributes #}
@@ -76,7 +77,7 @@
                             </a>
                         </li>
                     </ul>
-                    {% for attribute_category in form|getActiveAttributeCategories %}
+                    {% for attribute_category in categories %}
 
                         <div id="tab-{{attribute_category.getGUID}}">
                             <div class="tab-content">
@@ -104,6 +105,7 @@
                             </div>
                         </div>
                     {% endfor %} {# /attribute_category #}
+                    {% endwith %}
                     <div id="tab-properties">
                         <div class="tab-content">
                             properties go here.  go go go.
