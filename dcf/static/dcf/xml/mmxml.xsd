@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+
+    <xs:element name="vocab" type="VocabType"/>
+
+    <xs:attributeGroup name="VocabAttributes">
+        <xs:attribute name="mmrevision" type="xs:string" use="optional"/>
+        <xs:attribute name="mmurl" type="xs:anyURI" use="optional"/>
+        <xs:attribute name="mmlcrevision" type="xs:string" use="optional"/>
+        <xs:attribute name="transrevision" type="xs:string" use="optional"/>
+        <xs:attribute name="transURL" type="xs:anyURI" use="optional"/>
+    </xs:attributeGroup>
+
+    <xs:attributeGroup name="ComponentAttributes">
+        <xs:attribute name="name" type="xs:string" use="required"/>
+        <xs:attribute name="rawName" type="xs:string" use="required"/>
+        <xs:attribute name="esgName" type="xs:string" use="optional"/>
+    </xs:attributeGroup>
+
+    <xs:attributeGroup name="ParameterAttributes">
+        <xs:attribute name="name" use="required"/>
+        <xs:attribute name="rawName" use="required"/>
+        <xs:attribute name="esgName" use="optional"/>
+        <xs:attribute name="choice" use="optional"/>
+    </xs:attributeGroup>
+
+    <xs:complexType name="DefinitionType">
+        <xs:simpleContent>
+            <xs:extension base="xs:string">
+                <xs:attribute name="status" use="optional"/>
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+
+    <xs:complexType name="ParameterType">
+        <xs:sequence>
+            <xs:element name="definition" type="DefinitionType"/>
+            <xs:element name="value" maxOccurs="unbounded">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="definition" type="DefinitionType" minOccurs="0" maxOccurs="1"/>
+                    </xs:sequence>
+                    <xs:attribute name="name" use="optional"/>
+                    <xs:attribute name="units" use="optional"/>
+                    <xs:attribute name="format" use="optional"/>
+                </xs:complexType>
+            </xs:element>            
+        </xs:sequence>
+        <xs:attributeGroup ref="ParameterAttributes"/>
+    </xs:complexType>
+
+    <xs:complexType name="ConstraintType">
+        <xs:sequence>
+            <xs:element name="parameter" type="ParameterType" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+        <xs:attribute name="name" use="required"/>
+    </xs:complexType>
+    
+    <xs:complexType name="ParameterGroupType">
+        <xs:sequence>
+            <xs:choice minOccurs="0" maxOccurs="unbounded">
+                <xs:element name="parameter" type="ParameterType"/>
+                <xs:element name="constraint" type="ConstraintType"/>
+            </xs:choice>
+        </xs:sequence>
+        <xs:attributeGroup ref="ParameterAttributes"/>
+    </xs:complexType>
+
+    <xs:complexType name="ComponentType">
+        <xs:sequence>
+            <xs:element name="definition" type="DefinitionType" minOccurs="0" maxOccurs="1"/>
+            <xs:sequence>
+                <xs:choice minOccurs="0" maxOccurs="unbounded">
+                    <xs:element name="parametergroup" type="ParameterGroupType"/>
+                    <xs:element name="component" type="ComponentType"/>
+                </xs:choice>
+            </xs:sequence>
+        </xs:sequence>
+        <xs:attributeGroup ref="ComponentAttributes"/>
+    </xs:complexType>
+
+    <xs:complexType name="VocabType">
+        <xs:sequence>
+            <xs:element name="component" type="ComponentType" minOccurs="1" maxOccurs="1"/>
+        </xs:sequence>
+        <xs:attributeGroup ref="VocabAttributes"/>
+    </xs:complexType>
+
+</xs:schema>
