@@ -427,9 +427,16 @@ function copy_all_tags_to_all_categories() {
 };
 
 function customize_subform(attribute_name,button) {
-    
+
+    // if I am calling this from within another custom subform, then I need to get _that_ model's name
+    // TODO: MAY WANT TO FACTOR THIS OUT INTO SOME INIT FN
+    _MODEL = MODEL
+    if ($("#subform").length>0) {
+        _MODEL = $("div.local_vars span[name='model']").text();
+    }
+
     var url = window.document.location.protocol + "//" + window.document.location.host + "/dcf/ajax/customize_subform/";
-    url += "?a=" + attribute_name + "&m=" + MODEL + "&p=" + PROJECT + "&v=" + VERSION;
+    url += "?a=" + attribute_name + "&m=" + _MODEL + "&p=" + PROJECT + "&v=" + VERSION;
 
     var customize_subform_dialog = $("<div></div>");
     $.ajax({
@@ -437,7 +444,7 @@ function customize_subform(attribute_name,button) {
          type       : "GET",
          cache      : false,
          success    : function(data) {
-            var title = "Customizing " + PROJECT + "::" + MODEL + "::" + attribute_name
+            var title = "Customizing " + PROJECT + "::" + _MODEL + "::" + attribute_name
             
             customize_subform_dialog.html(data);
             customize_subform_dialog.dialog({

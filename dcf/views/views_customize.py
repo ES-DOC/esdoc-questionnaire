@@ -167,6 +167,7 @@ def customize(request,version_name="",project_name="",model_name=""):
                                 "version"   :   version.version.lower(),
                                 "project"   :   project.name.lower(),
                                 "model"     :   model.getName().lower(),
+                                # TODO: HANG ON HERE, model IS A CLASS; WON'T THIS ALWAYS RETURN ""?
                                 "id"        :   model.pk or ""
                               }
 

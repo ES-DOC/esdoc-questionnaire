@@ -13,6 +13,13 @@
     </div> <!-- /.title -->
 
     <div id='customize'>
+        <div id='subform'>
+            <div class="local_vars" style="display: none;">
+                <!-- ways to identify the current version/project/model -->
+                <span name="version">{{local_vars.version}}</span>
+                <span name="project">{{local_vars.project}}</span>
+                <span name="model">{{local_vars.model}}</span>
+            </div>
         <form method="POST" action="" id="customize_subform">
             {% csrf_token %}
             <br/>
@@ -232,5 +239,6 @@
 
         </div> <!-- /.form -->
     </form>
+    </div>
 </div>
 </div>

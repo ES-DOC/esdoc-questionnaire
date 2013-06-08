@@ -252,10 +252,6 @@ def customize_subform(request):
         msg = "There is no default customization associated with '%s'" % (model_name)
         return HttpResponseBadRequest(msg)
 
-    print " I AM HERE "
-    print model_customizer
-    print model_customizer.attributes.all()
-
     attribute = model_customizer.attributes.get(attribute_name__iexact=attribute_name)
     related_model_class = model_class._meta.get_field_by_name(attribute.attribute_name)[0].getTargetModelClass()
 
@@ -311,11 +307,16 @@ def customize_subform(request):
     dict["STATIC_URL"]          = "/static/"
     dict["msg"]                 = msg
     dict["form"]                = form
+    # (notice how global_vars is different from the other views; I want to reference the _related_ model)
+    dict["local_vars"]         = {
+                                    "version"   : version.version.lower(),
+                                    "project"   : project.name.lower(),
+                                    "model"     : related_model_class.getName().lower(),
+                                }
     dict["project_name"]        = project.long_name
     dict["parent_model_name"]   = model_class.getTitle()
     dict["model_name"]          = related_model_class.getTitle()
     dict["attribute_name"]      = attribute_name
-
 
     rendered_form = django.template.loader.render_to_string("dcf/dcf_customize_subform.html", dictionary=dict, context_instance=RequestContext(request))
     return HttpResponse(rendered_form,mimetype='text/html')
