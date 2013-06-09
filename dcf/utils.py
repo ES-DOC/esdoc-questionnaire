@@ -330,3 +330,12 @@ def get_subclasses(parent,_subclasses=None):
 def has_superclass(child,superclass_name):
     superclass_names = [parent._meta.app_label+"."+parent._meta.object_name for parent in list(reversed(inspect.getmro(child)))[2:]]
     return superclass_name in superclass_names
+
+
+def list_from_tree(tree):
+    yield tree.keys()
+    for (key,value) in tree.iteritems():
+        if isinstance(value,list):
+            for list_item in value:
+                for key in list_from_tree(list_item):
+                    yield key

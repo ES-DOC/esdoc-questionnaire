@@ -16,7 +16,8 @@ __date__ ="$Jan 31, 2013 11:24:31 AM$"
 from dcf.fields import *
 
 from metadata_category          import MetadataCategory, MetadataAttributeCategory, MetadataPropertyCategory
-from metadata_model             import MetadataModel, MetadataAttribute, MetadataProperty, MetadataEnumeration, CIMDocument, TestModel, TestSubModel
+from metadata_model             import MetadataModel, MetadataEnumeration, MetadataAttribute, CIMDocument
+from metadata_property          import MetadataProperty
 from metadata_categorization    import MetadataCategorization
 from metadata_vocabulary        import MetadataVocabulary
 from metadata_version           import MetadataVersion

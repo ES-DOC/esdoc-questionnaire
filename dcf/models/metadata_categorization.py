@@ -81,7 +81,6 @@ class MetadataCategorization(models.Model):
 
     def loadCategorization(self):
 
-        print "I AM LOADING A THE CATEGORIZATION %s" % self.name
         self.file.open()
         categorization_content = et.parse(self.file)
         self.file.close()
@@ -117,7 +116,6 @@ class MetadataCategorization(models.Model):
                 modelName = field.xpath("./ancestor::model/name/text()")[0]
                 # at this point I know that "attributeName" of "modelName" has "newCategory"
                 # I am storing this as a dictionary and using JSON to encode/decode it
-                print "attribute %s of model %s has category %s" % (attributeName,modelName,newCategory)
                 try:
                     existing_attributes = newCategoryMapping[modelName]
                     newCategoryMapping[modelName].append(attributeName)

@@ -86,19 +86,24 @@ var CUSTOMIZE = {
                var newTag       = ui.tag
                var newTagName   = $(newTag).find(".tagit-label").text();
                var newTagKey    = newTagName.toLowerCase().replace(/ /g,'')
+
                var newTagType   = $(newTag).closest(".tagit").prev("input.tags").attr("name");
 
                if (newTagType.indexOf("attribute")>=0) {
-                   newTagType = "attribute";
-                   categories = ATTRIBUTE_CATEGORIES;
+                    newTagType = "attribute";
+                    categories = ATTRIBUTE_CATEGORIES;
                }
                else if (newTagType.indexOf("property")>=0) {
+                   component_name = newTagType.substr(0,newTagType.indexOf("_property_categories_tags"));
                    newTagType = "property";
                    categories = PROPERTY_CATEGORIES;
                }
 
                var url = window.document.location.protocol + "//" + window.document.location.host + "/dcf/ajax/get_category/" + newTagType;
                url += "?k=" + newTagKey + "&n=" + newTagName + "&v=" + VERSION + "&p=" + PROJECT + "&m=" + MODEL
+               if (newTagType == "property") {
+                    url += "&c=" + component_name;
+               }
 
                // TODO: when() is a new JQuery fn;
                // in theory it waits until the call to ajax() returns
@@ -131,8 +136,7 @@ var CUSTOMIZE = {
                         // setup the look-and-feel and behavior of the new tag
                         initialize_tag(newTag,categories[newTagKey])
                         // add that tag to the set of available categories to assign attributes/properties to
-                        
-                        
+                                               
                         $(newTag).closest(".tab_content").find(".field_value[name='category'] select").each(function() {
                             var newTagValue = categories[newTagKey].pk
                             var selector = "option[value='"+newTagValue+"']";
@@ -221,7 +225,7 @@ var CUSTOMIZE = {
         /* I'm using separate widget to add tags, so disable the .tagit-new box */
         $(".tagit-new").attr("style","display:none!important;");
         /* and enable this widget */
-        $("#property_categories_tags_add").keypress(function(e) {
+        $("[id$='_property_categories_tags_add']").keypress(function(e) {
             if(e.which == 13) {
                 var input = $(e.target)
                 var tag_name = $(input).val();
@@ -340,7 +344,8 @@ function edit_tag(edit_tag_icon) {
         category_type = "attribute";
         categories = ATTRIBUTE_CATEGORIES;
     }
-    else if (category_type.indexOf("property")>=0) {
+    else if (category_type.indexOf("property")>=0) {       
+       var component_name = category_type.substr(0,category_type.indexOf("_property_categories_tags"));
        category_type = "property";
        categories = PROPERTY_CATEGORIES;
     }
@@ -349,6 +354,9 @@ function edit_tag(edit_tag_icon) {
 
     var url = window.document.location.protocol + "//" + window.document.location.host + "/dcf/ajax/edit_category/" + category_type;
     url += "?k=" + tagKey + "&n=" + tagName + "&v=" + VERSION + "&p=" + PROJECT + "&m=" + MODEL
+    if (category_type == "property") {
+        url += "&c=" + component_name;
+    }
 
     // copy over the values from category (they'll be more up-to-date than the db'
     for (var key in category) {

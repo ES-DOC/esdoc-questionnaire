@@ -103,7 +103,7 @@ class MetadataModelCustomizer(MetadataCustomizer):
 # CANNOT DEAL W/ M2M BEFORE SAVING
 # SO REVERSING THIS; NOW ATTRIBUTES/PROPERTIES HAVE FOREIGN KEYS TO MODELS
 #    attributes          = models.ManyToManyField("MetadataAttributeCustomizer",blank=True,null=True)
-    properties          = models.ManyToManyField("MetadataPropertyCustomizer",blank=True,null=True)
+#    properties          = models.ManyToManyField("MetadataPropertyCustomizer",blank=True,null=True)
     temporary_attributes = []
     temporary_properties = []
 
@@ -166,6 +166,8 @@ class MetadataModelCustomizer(MetadataCustomizer):
 
         self.reset(_model)
 
+        # sort out the attributes
+        # this is a bit funny, b/c they are actually fields on the model class
         self.temporary_attributes = []
         new_attributes = _model.getAttributes()
         for i,attribute in enumerate(new_attributes):
@@ -178,22 +180,32 @@ class MetadataModelCustomizer(MetadataCustomizer):
                 order           = (i+1))
             temporary_attribute.reset(attribute)
             self.temporary_attributes.append(temporary_attribute)
-            
 
-      
+        # sort out the properties
+        # this isn't quite as funny
+        self.temporary_properties = []
         new_properties = self.getVocabulary().getProperties()
-        # limit the properties to those associated with _this_ model
-        for i,property in enumerate(new_properties.filter(model_name__iexact=_model.getName())):
-            (new_property, created) = MetadataPropertyCustomizer.objects.get_or_create(
-                                        property    = property,
-                                        project     = self.project,
-                                        version     = self.version,
-                                        model       = self.model,
-                                        parentGUID  = self.getGUID())
-            if created:
-                new_property.order=(i+1)
-                new_property.reset(property)
+        print "NEW_PROPERTIES="
+        print new_properties
 
+##        for i,property in enumerate(new_properties):
+##            temporary_property = MetadataPropertyCustomizer(
+##
+##            )
+##
+##        new_properties = self.getVocabulary().getProperties()
+##        # limit the properties to those associated with _this_ model
+##        for i,property in enumerate(new_properties.filter(model_name__iexact=_model.getName())):
+##            (new_property, created) = MetadataPropertyCustomizer.objects.get_or_create(
+##                                        property    = property,
+##                                        project     = self.project,
+##                                        version     = self.version,
+##                                        model       = self.model,
+##                                        parentGUID  = self.getGUID())
+##            if created:
+##                new_property.order=(i+1)
+##                new_property.reset(property)
+##
 
         # I CANNOT ADD TO A M2M FIELD BEFORE ITS'S BEEN SAVED
         # AND SAVING IS EXPENSIVE, SO I DON'T DO ANYTHING HERE
@@ -324,8 +336,10 @@ class MetadataAttributeCustomizer(MetadataCustomizer):
         # just make sure that the parent exists before saving
         # (parent ought to be set by virtue of this model being exposed in an inlineformset)
         # (but the associated project & version may not have been set yet)
+        print "BEGIN PARENT"
+        print self.parent
+        print "END PARENT"
         if self.parent and (not (hasattr(self,"project") or hasattr(self,"version"))):
-            print "need to fix things"
             self.setParent(self.parent)
         return super(MetadataAttributeCustomizer,self).save(*args,**kwargs)
 
@@ -356,13 +370,12 @@ class MetadataPropertyCustomizer(MetadataCustomizer):
     class Meta:
         app_label = APP_LABEL
 
-
-    parentGUID  = models.CharField(max_length=64,blank=False,editable=False)
+    parent      = models.ForeignKey("MetadataModelCustomizer",blank=True,null=True,related_name="properties")
     property    = models.ForeignKey("MetadataProperty",blank=False)
     category    = models.ForeignKey("MetadataPropertyCategory",blank=True,null=True)
     order       = models.PositiveIntegerField(blank=True,null=True)
 
-    # TODO: ADD MORE WAYS OF CUSTOMIZING ATTRIBUTES
+    # TODO: ADD MORE WAYS OF CUSTOMIZING PROPERTIES
     displayed       = models.BooleanField(default=True,blank=True,verbose_name="should property be displayed")
     required        = models.BooleanField(default=False,blank=True,verbose_name="is property required")
     editable        = models.BooleanField(default=False,blank=True,verbose_name="can property be edited")
@@ -380,21 +393,11 @@ class MetadataPropertyCustomizer(MetadataCustomizer):
         self.displayed = True
         self.required = True
         self.editable = True
-        self.verbose_name = property.long_name
-        self.default_value = None
-        self.documentation = ""
-        self.open = property.open
-        self.multi = property.multi
-        self.nullable = property.nullable
+
+        #TODO
 
         # reset forces a save
         self.save()
 
-    def getName(self):
-        return self.property.short_name
-
     def getCategory(self):
         return self.category
-
-    def getValues(self):
-        return self.property.getValues()

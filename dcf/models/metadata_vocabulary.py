@@ -21,6 +21,7 @@ Summary of module goes here
 """
 
 from django.db import models
+import json
 import os
 
 from dcf.utils import *
@@ -28,7 +29,7 @@ from dcf.models import *
 
 _UPLOAD_DIR  = "vocabularies"
 _UPLOAD_PATH = os.path.join(APP_LABEL,_UPLOAD_DIR)    # this is a relative path (will be concatenated w/ MEDIA_ROOT by FileFIeld)
-_SCHEMA_PATH = os.path.join(settings.STATIC_ROOT,APP_LABEL,"xml/vocabulary.xsd") # this is an absolute path
+_SCHEMA_PATH = os.path.join(settings.STATIC_ROOT,APP_LABEL,"xml/mmxml.xsd") # this is an absolute path
 
 def validate_vocabulary_file_extension(value):
     valid_extensions = ["xml"]
@@ -47,18 +48,8 @@ class MetadataVocabulary(models.Model):
     file    = models.FileField(verbose_name="Vocabulary File",upload_to=_UPLOAD_PATH,validators=[validate_vocabulary_file_extension,validate_vocabulary_file_schema])
     name    = models.CharField(max_length=LIL_STRING,blank=True,null=True,unique=True)
 
-###    # unlike w/ a categorization, this can only have propertycategories (not propertycategories _and_ attributecategories)
-###    # so a relationship table for a generic m2m field is not required here
-###    # (the get/set category fns below are therefore much simpler)
-###    categories = models.ManyToManyField("MetadataPropertyCategory",blank=True,null=True)
-## TODO: REWRITE PROPERTIES TO BE THE SAME AT CATEGORIES (ForeignKey to Vocabulary w/ related_name="properties")
-    properties = models.ManyToManyField("MetadataProperty",blank=True,null=True)
-
-    _guid = models.CharField(max_length=64,unique=True,editable=False,blank=False,default=lambda:str(uuid4()))
-    
-    def getGUID(self):
-        return self._guid
-
+    component_hierarchy = models.TextField(blank=True,null=True) # using TextField b/c the hierarchy could be arbitrariliy big
+   
     def __unicode__(self):
         if self.file:
             return u'%s' % os.path.basename(self.file.name)
@@ -80,6 +71,121 @@ class MetadataVocabulary(models.Model):
             os.remove(vocabulary_file_path)
 
         super(MetadataVocabulary, self).save(*args, **kwargs)
+
+    def loadVocabulary(self):
+        self.file.open()
+        vocabulary_content = et.parse(self.file)
+        self.file.close()
+
+        _component_hierarchy = {}
+
+        category_filter_parameters = {
+            "vocabulary"    : self
+        }
+        property_filter_parameters = {
+            "vocabulary"    : self
+        }
+
+        for i, component in enumerate(vocabulary_content.xpath("//component")):
+            component_name = component.xpath("@name")[0]
+            component_ancestors = component.xpath("./ancestor-or-self::component/@name")
+            current_component_hierarchy = _component_hierarchy
+            for ancestor in component_ancestors:
+                if type(current_component_hierarchy) is dict:
+                    current_component_hierarchy = current_component_hierarchy.setdefault(ancestor,[])
+                elif type(current_component_hierarchy) is list:
+                    found = False
+                    for _dict in current_component_hierarchy:
+                        if ancestor in _dict:
+                            current_component_hierarchy = _dict.setdefault(ancestor,[])
+                    # these weird next 4 lines break out of the for loop enclosing the if statement
+                            found = True
+                            break
+                    if found:
+                        continue
+                    current_component_hierarchy.append({ancestor : []})
+                    current_component_hierarchy = current_component_hierarchy[-1][ancestor]
+
+
+            category_filter_parameters["component_name"] = component_name.lower()
+            
+            for i, parameter_group in enumerate(component.xpath("./parametergroup")):
+
+                parameter_group_name = parameter_group.xpath("@name")[0]
+
+                category_filter_parameters["name"]  = parameter_group_name
+                category_filter_parameters["key"]   = re.sub(r'\s','',parameter_group_name).lower()
+
+                (new_category, created) = MetadataPropertyCategory.objects.get_or_create(**category_filter_parameters)
+
+                new_category_mapping = {}
+                for i, property in enumerate(parameter_group.xpath("./parameter")):
+
+                    property_name = property.xpath("@name")[0]
+                    property_choice = property.xpath("@choice")[0]
+
+                    property_filter_parameters["name"] = property_name
+                    property_filter_parameters["choice"] = property_choice
+                    property_filter_parameters["default_category"] = new_category
+
+                    (new_property, created) = MetadataProperty.objects.get_or_create(**property_filter_parameters)
+
+        # using json dumps/loads because I save the heierarchy as a string but serialize it as JSON (to pass to JQuery/HTML)
+        self.component_hierarchy = json.dumps(_component_hierarchy,separators=(',',':'))
+        self.save() # have to ensure component_hierarchy gets saved in the db
+
+
+        
+###
+###        newProperties = []
+###        for i, model in enumerate(vocabulary_content.xpath("//model")):
+###            modelName = model.xpath("name/text()")[0].lower()
+###            for i, property in enumerate(model.xpath(".//property")):
+###                propertyShortName = property.xpath("shortName/text()")[0]
+###                propertyLongName = property.xpath("longName/text()") or None
+###                if propertyLongName:
+###                    propertyLongName = propertyLongName[0]
+###                else:
+###                    propertyLongName = propertyShortName
+###
+###                hasProperties = property.xpath("./properties")
+###                hasValues = property.xpath("./values")
+###
+###                if hasProperties:
+###                    # if this bit of the vocab has sub-properties,
+###                    # then it is actually a category, not a property
+###
+###                    filter_parameters = {
+###                        "vocabulary"    : self,
+###                        "name"          : propertyShortName,
+###                        "description"   : propertyLongName,
+###                        "key"           : re.sub(r'\s','',propertyShortName).lower()
+###                    }
+###
+###                    (newCategory, created) = MetadataPropertyCategory.objects.get_or_create(**filter_parameters)
+###
+###                    newCategoryMapping = {}
+###                    for i, subProperty in enumerate(hasProperties[0].xpath(".//property")):
+###                        newSubProperty = self.loadProperty(subProperty,modelName)
+###                        newProperties.append(newSubProperty)
+###                        # TODO: SORT OUT MAPPING
+###                        try:
+###                            existing_properties = newCategoryMapping[propertyShortName]
+###                            newCategoryMapping[modelName].append(newSubProperty.short_name)
+###                        except KeyError:
+###                            newCategoryMapping[modelName] = [newSubProperty.short_name]
+###                    if newCategoryMapping:
+###                        newCategory.setMapping(newCategoryMapping)
+###                        newCategory.save()
+###
+###                elif hasValues:
+###                    # if this bit of the vocab has sub-values
+###                    # then it is actually a property, not a category
+###
+###                    newProperty = self.loadProperty(property,modelName)
+###                    newProperties.append(newProperty)
+###
+###            self.addProperties(newProperties)
 
     def loadProperty(self,property_element,modelName):
         propertyShortName = property_element.xpath("shortName/text()")[0]
@@ -126,84 +232,19 @@ class MetadataVocabulary(models.Model):
 
         return newProperty
 
-    def loadVocabulary(self):
-        self.file.open()
-        vocabulary_content = et.parse(self.file)
-        self.file.close()
-
-
-        newProperties = []
-        for i, model in enumerate(vocabulary_content.xpath("//model")):
-            modelName = model.xpath("name/text()")[0].lower()
-            for i, property in enumerate(model.xpath(".//property")):
-                propertyShortName = property.xpath("shortName/text()")[0]
-                propertyLongName = property.xpath("longName/text()") or None
-                if propertyLongName:
-                    propertyLongName = propertyLongName[0]
-                else:
-                    propertyLongName = propertyShortName
-
-                hasProperties = property.xpath("./properties")
-                hasValues = property.xpath("./values")
-
-                if hasProperties:
-                    # if this bit of the vocab has sub-properties,
-                    # then it is actually a category, not a property
-
-                    filter_parameters = {
-                        "vocabulary"    : self,
-                        "name"          : propertyShortName,
-                        "description"   : propertyLongName,
-                        "key"           : re.sub(r'\s','',propertyShortName).lower()
-                    }
-
-                    (newCategory, created) = MetadataPropertyCategory.objects.get_or_create(**filter_parameters)
-
-                    newCategoryMapping = {}
-                    for i, subProperty in enumerate(hasProperties[0].xpath(".//property")):
-                        newSubProperty = self.loadProperty(subProperty,modelName)
-                        newProperties.append(newSubProperty)
-                        # TODO: SORT OUT MAPPING
-                        try:
-                            existing_properties = newCategoryMapping[propertyShortName]
-                            newCategoryMapping[modelName].append(newSubProperty.short_name)
-                        except KeyError:
-                            newCategoryMapping[modelName] = [newSubProperty.short_name]
-                    if newCategoryMapping:
-                        newCategory.setMapping(newCategoryMapping)
-                        newCategory.save()
-                    
-                elif hasValues:
-                    # if this bit of the vocab has sub-values
-                    # then it is actually a property, not a category
-
-                    newProperty = self.loadProperty(property,modelName)
-                    newProperties.append(newProperty)
-                
-            self.addProperties(newProperties)
-
-    def getProperties(self):
-        return self.properties.all()
-
-    def addProperty(self,property):
-        self.properties.add(property)
-
-    def addProperties(self,properties):
-        # TODO: ENSURE THAT PROPERTIES ARGUMENT IS OF TYPE LIST
-        self.properties.add(*properties)
-
     def getCategories(self):
         return self.categories.all()
 
-#    def getAttributeCategories(self):
-#        return MetadataAttributeCategory.objects.none()
-#
-#    def getPropertyCategories(self):
-#        return self.categories.all()
-#
-#    def addCategory(self,category):
-#        self.categories.add(category)
-#
-#    def addCategories(self,categories):
-#        self.categories.add(*categories) # the "*" expands the list into separate items
+    def getProperties(self):
+        return self.default_properties.all()
+
+    def addProperty(self,property):
+        self.default_properties.add(property)
+
+    def addProperties(self,properties):
+        # TODO: ENSURE THAT PROPERTIES ARGUMENT IS OF TYPE LIST
+        self.default_properties.add(*properties)
+
+    def getComponents(self):
+        return json.loads(self.component_hierarchy)
 

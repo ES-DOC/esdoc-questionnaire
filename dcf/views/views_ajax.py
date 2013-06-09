@@ -38,8 +38,9 @@ def get_category(request, category_type=""):
     version_name    = request.GET.get('v',None)
     project_name    = request.GET.get('p',None)
     model_name      = request.GET.get('m',None)
+    component_name  = request.GET.get('c',None)
 
-    create_if_none  = request.GET.get('c',True) # unless otherwise specified, create the category if it's not in the db already
+    create_if_none  = request.GET.get('create_if_none',True) # unless otherwise specified, create the category if it's not in the db already
 
     if not (category_type and category_key and category_name and version_name and project_name and model_name):
         msg = "invalid HTPP parameters to get_category"
@@ -50,6 +51,7 @@ def get_category(request, category_type=""):
         version = MetadataVersion.objects.get(name__iexact=METADATA_NAME,version=version_name)
         project = MetadataProject.objects.get(name__iexact=project_name)
         categorization = version.getDefaultCategorization()
+        vocabulary = project.getDefaultVocabulary()
     except ObjectDoesNotExist:
         msg = "invalid HTTP parameters to get_category"
         return HttpResponseBadRequest(msg)
@@ -65,7 +67,12 @@ def get_category(request, category_type=""):
         category_class = MetadataAttributeCategory
         category_filters["categorization"] = categorization
     elif category_type=="property":
+        if not component_name:
+            msg = "invalid HTTP parameters to get_category"
+            return HttpResponseBadRequest(msg)
         category_class = MetadataPropertyCategory
+        category_filters["vocabulary"] = vocabulary
+        category_filters["component_name"] = component_name
     else:
         msg = "invalid category_type: %s" % category_type
         return HttpResponseBadRequest(msg)
@@ -74,7 +81,8 @@ def get_category(request, category_type=""):
         category = category_class.objects.get(**category_filters)
     except ObjectDoesNotExist:
         if create_if_none:
-            category = category_class.objects.create(key=category_key,name=category_name)
+            category_filters["name"] = category_name
+            category = category_class.objects.create(**category_filters)
         else:
             msg = "invalid HTTP parameters to get_category"
             return HttpResponseBadRequest(msg)
@@ -89,6 +97,7 @@ def edit_category(request, category_type=""):
     version_name    = request.GET.get('v',None)
     project_name    = request.GET.get('p',None)
     model_name      = request.GET.get('m',None)
+    component_name  = request.GET.get('c',None)
 
     if not (category_type and category_key and category_name and version_name and project_name and model_name):
         msg = "invalid HTPP parameters to delete_category"

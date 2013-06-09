@@ -50,7 +50,6 @@ class MetadataCategory(models.Model):
         super(MetadataCategory,self).save(*args,**kwargs)
 
 
-#@guid()
 class MetadataAttributeCategory(MetadataCategory):
     class Meta:
         app_label = APP_LABEL
@@ -88,16 +87,26 @@ class MetadataAttributeCategory(MetadataCategory):
 class MetadataPropertyCategory(MetadataCategory):
     class Meta:
         app_label = APP_LABEL
-        unique_together = (("key", "vocabulary"))
+        unique_together = (("key", "vocabulary", "component_name"))
         ordering = [ "order" ]
-        
-    mapping = models.CharField(max_length=HUGE_STRING,blank=True)
-    vocabulary = models.ForeignKey("MetadataVocabulary",blank=False,null=False,editable=False,related_name="categories")
 
+    mapping         = models.CharField(max_length=HUGE_STRING,blank=True)
+    vocabulary      = models.ForeignKey("MetadataVocabulary",blank=False,null=False,editable=False,related_name="categories")
+    component_name  = models.CharField(max_length=BIG_STRING,blank=False)
+    
     _type = CategoryTypes.PROPERTY
 
     _guid = models.CharField(max_length=64,unique=True,editable=False,blank=False,default=lambda:str(uuid4()))
 
+    def isCustom(self):
+        if self.vocabulary:
+            return True
+        else:
+            return False
+
+    def isDefault(self):
+        return not self.isCustom()
+    
     def getGUID(self):
         return self._guid
 
@@ -116,8 +125,7 @@ class MetadataPropertyCategory(MetadataCategory):
             raise MetadataError(msg)
 
     def __unicode__(self):
-        return u'%s' % self.name
-
+        return u'%s::%s' % (self.vocabulary,self.name)
 
 #_METADATA_CATEGORY_LIMITS = {'model_in':('metadataattributecategory','metadatapropertycategory')}
 #

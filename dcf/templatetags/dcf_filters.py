@@ -26,6 +26,8 @@ import os
 import re
 
 from dcf.fields import *
+from dcf.models import *
+from dcf.forms  import *
 
 register = template.Library()
 
@@ -145,9 +147,35 @@ def getFieldFromName(form,fieldName):
     return form.instance.getField(fieldName)
 
 @register.filter
+def getFormFieldFromName(form,fieldName):
+    """
+    okay, this one returns the form representation
+    """
+    return form[fieldName]
+
+@register.filter
 def getAttributeFromCustomizer(form,customizer):
     """
     returns the form field (the one that can be rendered by the form)
     """
     return form.__getitem__(customizer.attribute_name)
 
+
+@register.filter
+def getComponentList(form):
+    component_tree = getComponentTree(form)
+    component_list = []
+    component_list_generator = list_from_tree(component_tree)
+    for component in component_list_generator:
+        component_list += component
+    return component_list
+
+
+@register.filter
+def getComponentTree(form):
+    if type(form) == MetadataModelCustomizerForm:
+        customizer = form.instance
+    else:
+        customizer = form.getCustomizer()
+    component_hierarchy = customizer.getVocabulary().component_hierarchy
+    return json.loads(component_hierarchy)

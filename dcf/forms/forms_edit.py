@@ -122,10 +122,6 @@ class MetadataForm(ModelForm):
 
 
     def customize_attribute(self,attribute_customizer):
-        if self.instance.getName()=="ResponsibleParty":
-            flarb = True
-        else:
-            flarb = False
         # each type of attribute (field) has a different set of customization options...
         if attribute_customizer.isEnumerationField():
             
@@ -160,10 +156,6 @@ class MetadataForm(ModelForm):
             update_widget_attributes(multiwidget[0],{"class":"enumeration-value dropdownchecklist"})
             update_widget_attributes(multiwidget[1],{"class":"enumeration-other"})
 
-            if flarb:
-                print "LALALA"
-                print "current_choices=%s" % current_choices
-                print "choices=%s" % attribute_customizer.enumeration_choices
         elif attribute_customizer.isRelationshipField():
             pass
 
@@ -179,9 +171,11 @@ class MetadataForm(ModelForm):
         modelInstance = self.instance
         customizer = self.customizer # this was set by the factory
 
+        print "IN INIT"
+        print "ONE: %s"%len(customizer.attributes.all())
         for attribute_customizer in customizer.attributes.all():
             self.customize_attribute(attribute_customizer)
-
+        print "TWO: %s"%len(customizer.attributes.all())
 
 
 
@@ -208,6 +202,7 @@ class MetadataForm(ModelForm):
                     filterParameters["name"]    = attribute_customizer.parent.name
                     (submodel_customizer,created) = MetadataModelCustomizer.objects.get_or_create(**filterParameters)
                     if created:
+                        print "CREATED NEW CUSTOMIZER FOR SUBFORMSET"
                         # so, ordinarily, a customizer would have its attributes saved by virtue of saving the form
                         # but this one is created internally, so I have to do this manually
                         # users really ought to customize every form they are going to use
@@ -247,6 +242,7 @@ class MetadataForm(ModelForm):
                     filterParameters["name"]    = attribute_customizer.parent.name
                     (submodel_customizer,created) = MetadataModelCustomizer.objects.get_or_create(**filterParameters)
                     if created:
+                        print "CREATED NEW CUSTOMIZER FOR SUBFORM"
                         # so, ordinarily, a customizer would have its attributes saved by virtue of saving the form
                         # but this one is created internally, so I have to do this manually
                         # users really ought to customize every form they are going to use
@@ -265,6 +261,7 @@ class MetadataForm(ModelForm):
                 raise MetadataError(msg)
 
             self._subForms[attribute.getName()] = (subForm_type,subForm_class,subForm_instance)
+        print "THREE: %s"%len(customizer.attributes.all())
 
     def getCustomizer(self):
         return self.customizer

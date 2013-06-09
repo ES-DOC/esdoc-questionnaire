@@ -36,7 +36,7 @@ from dcf.utils import *
 class MetadataModelCustomizerForm(ModelForm):
     class Meta:
         model   = MetadataModelCustomizer
-        fields  = ("name","description","default","version","categorization","vocabularies","model_title","model_description","model_show_all_categories","model_show_all_attributes","model_nested","properties")#,"model_vocabulary","standard_categories","special_categories","fields","properties")
+        fields  = ("name","description","default","version","categorization","vocabularies","model_title","model_description","model_show_all_categories","model_show_all_attributes","model_nested")
 
     _subForms = {}
     
@@ -56,12 +56,13 @@ class MetadataModelCustomizerForm(ModelForm):
     property_categories = ModelMultipleChoiceField(queryset=MetadataPropertyCategory.objects.none(),required=False)
     property_categories_tags = CharField(label="Available Categories",required=False)
     property_categories_tags.help_text  = "This widget is used to customize the categories used to display scientific properties."
-    property_categories_content = CharField(required=False)
+    property_categories_content = CharField(required=False)  # a hidden field used to store the current content of the categories during javascript manipulation
     
     def __init__(self,*args,**kwargs):
         _request = kwargs.pop("request",None)
         super(MetadataModelCustomizerForm,self).__init__(*args,**kwargs)
         customizer_instance = self.instance
+
 
         # initialize the subforms...
         if customizer_instance.pk:
@@ -70,13 +71,13 @@ class MetadataModelCustomizerForm(ModelForm):
         else:
             initial_attributes_data = [model_to_dict(temporary_attribute_customizer) for temporary_attribute_customizer in customizer_instance.temporary_attributes]
             extra_attributes = len(initial_attributes_data)
+
         AttributesFormSet = MetadataAttributeCustomizerInlineFormSetFactory(extra=extra_attributes,method=_request.method)
         self._subForms["attributes"] = [
             SubFormTypes.FORMSET,
             AttributesFormSet,
             AttributesFormSet(_request.POST,instance=customizer_instance) if (_request.method == "POST") else AttributesFormSet(initial=initial_attributes_data,instance=customizer_instance)
-        ]
-
+        ]        
 
         try:
             current_attribute_categories = customizer_instance.getCategorization().getCategories()
@@ -89,12 +90,36 @@ class MetadataModelCustomizerForm(ModelForm):
             # that's unfortunate, but it's not an error
             pass
 
-        # get all categories with a mapping to this model
-        model_key = u'"%s":' % customizer_instance.model
-        current_property_categories = MetadataPropertyCategory.objects.filter(mapping__contains=model_key)
 
-        self.fields["property_categories"].queryset = current_property_categories
-        self.fields["property_categories_tags"].initial="|".join([category.name for category in current_property_categories])
+        try:
+            current_property_categories = customizer_instance.getVocabulary().getCategories()
+
+            # TODO: ALSO ADD CUSTOM PROPERTIES!!!
+            self.fields["property_categories"].queryset = MetadataPropertyCategory.objects.filter(id__in=[category.id for category in current_property_categories])
+            self.fields["property_categories_tags"].initial="|".join([category.name for category in current_property_categories])
+
+            component_tree = customizer_instance.getVocabulary().getComponents()
+            component_list_generator = list_from_tree(component_tree)
+            for component_name in component_list_generator:
+                field_name = component_name[0].lower()+"_property_categories_tags"
+                self.fields[field_name] = CharField(label="Available Categories",required=False)
+                self.fields[field_name].initial="|".join([category.name for category in current_property_categories if category.component_name==component_name[0]])
+
+                update_field_widget_attributes(self.fields[field_name],{"class":"tags"})
+
+        except AttributeError:
+            # if there were categories
+            # then that's unfortunate, but it's not an error
+            pass
+        
+
+### OLD WAY OF DOING THINGS. YUCK.
+###        # get all categories with a mapping to this model
+###        model_key = u'"%s":' % customizer_instance.model
+###        current_property_categories = MetadataPropertyCategory.objects.filter(mapping__contains=model_key)
+###
+###        self.fields["property_categories"].queryset = current_property_categories
+###        self.fields["property_categories_tags"].initial="|".join([category.name for category in current_property_categories])
 
         # add specific attributes to the remaining fields...
         self.fields["description"].widget.attrs["rows"] = 2
@@ -183,15 +208,25 @@ class MetadataModelCustomizerForm(ModelForm):
         return cleaned_data
 
     def save_subforms(self,*args,**kwargs):
-
-        I AM HERE; NUMBER OF ATTRIBUTES INCREASES AFTER THIS CALL?!?
+        print "TWO.ONE %s"%len(self.instance.attributes.all())
         _commit = kwargs.pop("commit",True)
         for key,value in self._subForms.iteritems():
             subFormType     = value[0]
             subFormClass    = value[1]
             subFormInstance = value[2]
-            subFormInstance.save(commit=_commit)
-
+            if subFormType == SubFormTypes.FORM:
+                blah = subFormInstance.save(commit=False)
+                blah.save()
+                subFormInstance.save_m2m()
+            elif subFormType == SubFormTypes.FORMSET:
+                for blah in subFormInstance.forms:
+                    foo = blah.save(commit=False)
+                    print "before saving, pk=%s"%foo.pk
+                    foo.save()
+                    blah.save_m2m()
+                    print "after saving, pk=%s"%foo.pk
+#            subFormInstance.save(commit=_commit)
+        print "TWO.TWO %s"%len(self.instance.attributes.all())
 
 
 class MetadataAttributeCustomizerForm(ModelForm):
@@ -263,7 +298,6 @@ class MetadataAttributeCustomizerForm(ModelForm):
         else:
             del self.fields["default_value"]
 
-#            current_choices = [(choice.replace(' ',''),choice) for choice in attribute_data["enumeration_choices"].split("|")]
             current_choices = [(choice,choice) for choice in attribute_data["enumeration_choices"].split("|")]
             self.fields["default_enumerations"].widget = SelectMultiple(choices=current_choices)
             self.fields["enumerations"].widget = SelectMultiple(choices=current_choices)
@@ -285,9 +319,8 @@ class MetadataAttributeCustomizerForm(ModelForm):
 ###        super(MetadataAttributeCustomizerForm,self).clean()
 ###        return self.cleaned_data
 ###
-###    def save(self,*args,**kwargs):
-###        print "SAVING SUBFORM"
-###        return super(MetadataAttributeCustomizerForm,self).save(*args,**kwargs)
+    def save(self,*args,**kwargs):
+        return super(MetadataAttributeCustomizerForm,self).save(*args,**kwargs)
 ###
 ###    def is_valid(self):
 ###        print "IS_VALID SUBFORM"

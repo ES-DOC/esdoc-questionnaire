@@ -282,14 +282,62 @@
 
                                     </div> <!-- /.tab_content -->
                                 </div> <!-- /#tab_attributes -->
+
+                                <div id="tab_properties">
                                 
-                                <!-- TODO: PROPERTIES -->
+                                    <div class="tab_content">
+                                        <span class="documentation">
+                                            These properties are defined by the CV.  Their categories can be edited.  Categories and properties are divided into separate components using the tabs below.
+                                            <br/>
+                                        </span>
+
+                                        {{form.property_categories}}
+                                        {# attribute_categories_content stores the content from the JSON dictionary ATTRIBUTE_CATEGORIES above #}
+                                        {# so that I can access that content from the view #}
+                                        {{ form.property_categories_content }}
+
+                                        <div class="tabs">
+                                            <ul>
+                                                {% for component_name in form|getComponentList %}
+                                                <li>
+                                                    <a href="#tab_{{component_name}}">
+                                                        {{component_name}}
+                                                    </a>
+                                                </li>
+                                                {% endfor %}
+                                            </ul>
+                                            {% for component_name in form|getComponentList %}
+
+                                                <div id="tab_{{component_name}}">
+                                                    <div class="tab_content">
+
+                                                        <span>Available categories for {{component_name}}:<br/></span>
+
+                                                        <fieldset>
+                                                            {% with field_name=component_name|lower|add:"_property_categories_tags" %}                                                            
+                                                                <table border="0" width="100%">
+                                                                    <tr><td>
+                                                                        {{ form|getFormFieldFromName:field_name }}
+                                                                    </td></tr>
+                                                                    <tr><td>
+                                                                        add a new category:&nbsp;<input type="text" id="{{field_name}}_property_categories_tags_add" title="enter the category name here"/>
+                                                                    </td></tr>
+                                                                </table>
+                                                            {% endwith %}
+                                                        </fieldset>
+
+                                                    </div>
+                                                </div>
+                                            {% endfor %}
+                                        </div>
 
 
-                                {# this field is hidden #}
-                                {# but it stores the content from the JSON dictionary PROPERTY_CATEGORIES above #}
-                                {# so that I can access that content from the view #}
-                                {{ form.property_categories_content }}
+
+
+                                        properties go here
+        
+
+                                </div>
                                 
                             </div> <!-- /.tabs -->
                             

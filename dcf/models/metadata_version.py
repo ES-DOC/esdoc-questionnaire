@@ -141,7 +141,7 @@ class MetadataVersion(models.Model):
             # depending on the order that django processes models during "syncdb,"
             # MetadataVersion may not exist yet in the db.
             # that's okay - this only has to work during "runserver"
-            print "database error (try restarting server)"
+            print "database error while attempting to register MetadataVersion (try restarting server)"
             pass
         except UtilsDatabaseError:
             print "the other kind of database error"
