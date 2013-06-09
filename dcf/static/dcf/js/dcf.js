@@ -626,7 +626,6 @@ function set_label(item,label_name) {
 };
 
 
-
 /* copies (JSON) data - in most cases the global categories dictionaries - to a field
  * - in most cases the otherwise unused "attribute_categories_content" or "property_categories-content"
  * this makes sure that any edits to the tags gets saved in the view

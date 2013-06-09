@@ -403,6 +403,8 @@ class MetadataPropertyCustomizerForm(ModelForm):
         self.fields["order"].widget = HiddenInput()
         
         self.fields["category"].queryset = MetadataPropertyCategory.objects.none() # JQuery will take care of limiting this to the correct categories in the form
+        update_field_widget_attributes(self.fields["category"],{"class":"set-label","onchange":"set_label(this,'field-category');"})
+
 
     def getPropertyName(self):
         try:
