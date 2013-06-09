@@ -296,9 +296,10 @@
                                         {# so that I can access that content from the view #}
                                         {{ form.property_categories_content }}
 
+                                        {% with component_names=form|getComponentList %}
                                         <div class="tabs">
                                             <ul>
-                                                {% for component_name in form|getComponentList %}
+                                                {% for component_name in component_names %}
                                                 <li>
                                                     <a href="#tab_{{component_name}}">
                                                         {{component_name}}
@@ -306,12 +307,12 @@
                                                 </li>
                                                 {% endfor %}
                                             </ul>
-                                            {% for component_name in form|getComponentList %}
+                                            {% for component_name in component_names %}
 
                                                 <div id="tab_{{component_name}}">
                                                     <div class="tab_content">
 
-                                                        <span>Available categories for {{component_name}}:<br/></span>
+                                                        <span>Available categories for <b>{{component_name}}</b>:<br/></span>
 
                                                         <fieldset>
                                                             {% with field_name=component_name|lower|add:"_property_categories_tags" %}                                                            
@@ -326,15 +327,99 @@
                                                             {% endwith %}
                                                         </fieldset>
 
+
+                                                        {% with formset_name=component_name|lower|add:"_properties" %}
+                                                            {% with formset=form|getNamedSubForm:formset_name %}
+                                                                <span>Available properties for <b>{{component_name}}</b>:<br/></span>
+                                                                {{ formset.non_form_errors }}
+                                                                {{ formset.management_form }}
+                                                                <span class="subform-toolbar ui-widget-header ui-corner-all">
+                                                                    <button type="button" class="sort">sort</button>
+                                                                    <ul class="sort_by">
+                                                                        <li><a href="#" name="sort_by_name">by name</a></li>
+                                                                        <li><a href="#" name="sort_by_category">by category</a></li>
+                                                                        <li><a href="#" name="sort_by_order">by order</a></li>
+                                                                    </ul>
+                                                                    <button type="button" class="expand" title="expand all properties">expand all</button>
+                                                                    <button type="button" class="collapse" title="collapse all properties">collapse all</button>
+                                                                </span> <!-- /.subform-toolbar -->
+                                                                <div style="clear: both;">&nbsp;</div>
+
+                                                                <div class="accordion">
+                                                                    {% for form in formset.forms|sortFormsByField:"order" %}
+
+                                                                        <h3 class="accordion-header">
+                                                                            <a>
+                                                                                <table width="100%" border="0">
+                                                                                    <tr valign="middle">
+                                                                                        <td width="30%" align="left">
+                                                                                            <b>name:&nbsp;</b>
+                                                                                            <span name="field-name">{{form.getPropertyName|default:"None"}}</span>
+                                                                                        </td>
+                                                                                        <td width="30%" align="left">
+                                                                                            <b>category:&nbsp;</b>
+                                                                                            <span class="label" name="field-category">{{form.getCategoryName|default:"None"}}</span>
+                                                                                        </td>
+                                                                                        <td width="40%" align="left">
+                                                                                            <b>order:&nbsp;</b>
+                                                                                            <span class="label" name="field-order">{{form.getPropertyOrder|default:"None"}}</span>
+                                                                                        </td>
+                                                                                    </tr>
+                                                                                </table>
+                                                                            </a>
+                                                                        </h3> <!-- /.accordion-header -->
+
+                                                                        <div class="accordion-content">
+                                                                            <div class="form"> {# wrapping everything in a div.form so I can group together fields belonging to the same model #}
+                                                                                                                                    {# required b/c the individual form ids are here #}
+                                                                                {% for hiddenField in form.hidden_fields %}
+                                                                                    {{ hiddenField }}
+                                                                                {% endfor %} {# /hiddenField #}
+
+                                                                                <table width="100%" border="0">
+                                                                                    {% for field in form.visible_fields %}
+
+                                                                                        {% with field_label=field.label field_id="customization_details_"|add:field.name %}
+                                                                                            <tr valign="top" class="{% cycle 'odd' 'even' %} field">
+                                                                                                <td>
+                                                                                                    {% if field.help_text %}
+                                                                                                        {% include "dcf/_help.html" %}
+                                                                                                    {% endif %} {# /field.help_text #}
+                                                                                                   <span class="field_label">
+                                                                                                        {{field.label}}&nbsp;
+                                                                                                    </span>
+                                                                                                </td>
+                                                                                                <td>
+                                                                                                    <span class="field_value" name="{{field.name}}">
+                                                                                                        {{field}}
+                                                                                                    </span>
+                                                                                                    {% if field.errors %}
+                                                                                                        {% include "dcf/_error.html" %}
+                                                                                                    {% endif %}
+                                                                                                </td>
+                                                                                            </tr>
+                                                                                        {% endwith %} {# /field_label, field_id #}
+
+                                                                                    {% endfor %} {# /field in form.visible_fields #}
+
+                                                                                </table>
+                                                                            </div> <!-- /.form -->
+                                                                        </div> <!-- /.accordion-content -->
+
+                                                                    {% endfor %} {# /form #}
+                                                                </div> <!-- /.accordion -->
+
+                                                            {% endwith %} {# /formset #}
+                                                        {% endwith %} {# /formset_name #}
+
                                                     </div>
+
                                                 </div>
-                                            {% endfor %}
-                                        </div>
+                                            {% endfor %} {# /component_name #}
 
+                                        </div> <!-- /.tabs -->
+                                        {% endwith %} {# /component_names #}
 
-
-
-                                        properties go here
         
 
                                 </div>

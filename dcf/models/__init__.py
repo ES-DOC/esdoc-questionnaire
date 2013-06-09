@@ -17,7 +17,7 @@ from dcf.fields import *
 
 from metadata_category          import MetadataCategory, MetadataAttributeCategory, MetadataPropertyCategory
 from metadata_model             import MetadataModel, MetadataEnumeration, MetadataAttribute, CIMDocument
-from metadata_property          import MetadataProperty
+from metadata_property          import MetadataProperty, MetadataPropertyValue
 from metadata_categorization    import MetadataCategorization
 from metadata_vocabulary        import MetadataVocabulary
 from metadata_version           import MetadataVersion

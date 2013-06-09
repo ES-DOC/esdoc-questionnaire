@@ -32,24 +32,32 @@ PROPERTY_CHOICES = [
     ("keyboard","keyboard"),
 ]
 
+PROPERTY_FORMAT = [
+    ("string","string"),
+    ("numerical","numerical")
+]
+
+
 class MetadataProperty(models.Model):
     class Meta:
         app_label = APP_LABEL
+        unique_together = (("vocabulary", "name", "component_name", "default_category"))
 
     _guid = models.CharField(max_length=64,unique=True,editable=False,blank=False,default=lambda:str(uuid4()))
     
     vocabulary          = models.ForeignKey("MetadataVocabulary",blank=False,null=False,editable=False,related_name="default_properties")
     default_category    = models.ForeignKey("MetadataPropertyCategory",blank=True,null=True)
 
-    name        = models.CharField(max_length=BIG_STRING,blank=False)
-    choice      = models.CharField(max_length=LIL_STRING,blank=True,choices=PROPERTY_CHOICES)
-    description = models.TextField(blank=True)
+    component_name  = models.CharField(max_length=BIG_STRING,blank=False)
 
-    values      = models.CharField(max_length=BIG_STRING,blank=True)
+    name        = models.CharField(max_length=BIG_STRING,blank=False)
+    choice      = models.CharField(max_length=LIL_STRING,blank=True,null=True,choices=PROPERTY_CHOICES)
+    description = models.TextField(blank=True)
 
     open        = models.BooleanField(default=False)
     multi       = models.BooleanField(default=False)
     nullable    = models.BooleanField(default=False)
+
     
     def getGUID(self):
         return self._guid
@@ -57,21 +65,20 @@ class MetadataProperty(models.Model):
     def __unicode__(self):
         return u'MetadataProperty: %s' % self.name
 
+class MetadataPropertyValue(models.Model):
+    class Meta:
+        app_label = APP_LABEL
 
-###    def setValues(self,values):
-###        self.values = json.dumps(values,separators=(',',':'))
-###
-###    def getValues(self):
-###        try:
-###            return json.loads(self.values)
-###        except ValueError:
-###            # values is empty
-###            return []
-###
-###    def save(self, *args, **kwargs):
-###        # TODO: TEST THIS LOGIC
-###        if self.pk and (self in self.children.all()):
-###            msg = "a property cannot be its own child."
-###            raise MetadataError(msg)
-###
-###        super(MetadataProperty,self).save(*args,**kwargs)
+    _guid = models.CharField(max_length=64,unique=True,editable=False,blank=False,default=lambda:str(uuid4()))
+
+    property = models.ForeignKey("MetadataProperty",blank=False,editable=False,related_name="values")
+
+    format = models.CharField(max_length=LIL_STRING,blank=True,null=True,choices=PROPERTY_FORMAT)
+    units  = models.CharField(max_length=LIL_STRING,blank=True,null=True)
+    name   = models.CharField(max_length=BIG_STRING,blank=True,null=True)
+
+    def getGUID(self):
+        return self._guid
+
+    def __unicode__(self):
+        return u'MetadataPropertyValue: %s' % self.name

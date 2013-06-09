@@ -85,6 +85,9 @@ class MetadataVocabulary(models.Model):
         property_filter_parameters = {
             "vocabulary"    : self
         }
+        value_filter_parameters = {
+
+        }
 
         for i, component in enumerate(vocabulary_content.xpath("//component")):
             component_name = component.xpath("@name")[0]
@@ -108,6 +111,7 @@ class MetadataVocabulary(models.Model):
 
 
             category_filter_parameters["component_name"] = component_name.lower()
+            property_filter_parameters["component_name"] = component_name.lower()
             
             for i, parameter_group in enumerate(component.xpath("./parametergroup")):
 
@@ -123,17 +127,33 @@ class MetadataVocabulary(models.Model):
 
                     property_name = property.xpath("@name")[0]
                     property_choice = property.xpath("@choice")[0]
+                    property_definition = property.xpath("./definition/text()")
 
                     property_filter_parameters["name"] = property_name
                     property_filter_parameters["choice"] = property_choice
                     property_filter_parameters["default_category"] = new_category
+                    property_filter_parameters["description"] = property_definition[0] if property_definition else ""
 
                     (new_property, created) = MetadataProperty.objects.get_or_create(**property_filter_parameters)
 
+                    value_filter_parameters["property"] = new_property
+                    for i, value in enumerate(property.xpath("./value")):
+                        value_name   = value.xpath("@name")
+                        value_units  = value.xpath("@units")
+                        value_format = value.xpath("@format")
+
+                        if value_name:
+                            value_filter_parameters["name"] = value_name[0]
+                        if value_units:
+                            value_filter_parameters["units"] = value_units[0]
+                        if value_format:
+                            value_filter_parameters["format"] = value_format[0]
+
+                        (new_value, created) = MetadataPropertyValue.objects.get_or_create(**value_filter_parameters)
+
         # using json dumps/loads because I save the heierarchy as a string but serialize it as JSON (to pass to JQuery/HTML)
         self.component_hierarchy = json.dumps(_component_hierarchy,separators=(',',':'))
-        self.save() # have to ensure component_hierarchy gets saved in the db
-
+        self.save() # have to ensure component_hierarchy gets saved in the db-
 
         
 ###

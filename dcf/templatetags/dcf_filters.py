@@ -93,7 +93,7 @@ def sortFormsByField(forms,fieldName):
     except ValueError:
         forms.sort(key = lambda x: x.cleaned_data[fieldName] if hasattr(x,"cleaned_data") else x.data[x.prefix+"-"+fieldName])
     except (AttributeError, KeyError):
-        # if the form's data hasn't been set yet, then use the value of the field from the model (initial)
+        # if the form's data hasn't been set yet, then use the value of the field from the model (initial)        
         forms.sort(key = lambda x: x.initial[fieldName])
 
     return forms

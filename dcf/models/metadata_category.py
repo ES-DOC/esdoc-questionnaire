@@ -125,7 +125,8 @@ class MetadataPropertyCategory(MetadataCategory):
             raise MetadataError(msg)
 
     def __unicode__(self):
-        return u'%s::%s' % (self.vocabulary,self.name)
+        return u'%s'%self.name
+        #return u'%s::%s' % (self.vocabulary,self.name)
 
 #_METADATA_CATEGORY_LIMITS = {'model_in':('metadataattributecategory','metadatapropertycategory')}
 #

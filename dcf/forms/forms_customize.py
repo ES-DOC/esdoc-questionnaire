@@ -101,11 +101,26 @@ class MetadataModelCustomizerForm(ModelForm):
             component_tree = customizer_instance.getVocabulary().getComponents()
             component_list_generator = list_from_tree(component_tree)
             for component_name in component_list_generator:
-                field_name = component_name[0].lower()+"_property_categories_tags"
-                self.fields[field_name] = CharField(label="Available Categories",required=False)
-                self.fields[field_name].initial="|".join([category.name for category in current_property_categories if category.component_name==component_name[0]])
+                tag_field_name = component_name[0].lower()+"_property_categories_tags"                
+                self.fields[tag_field_name] = CharField(label="Available Categories",required=False)
+                self.fields[tag_field_name].initial="|".join([category.name for category in current_property_categories if category.component_name==component_name[0].lower()])
+                update_field_widget_attributes(self.fields[tag_field_name],{"class":"tags"})
 
-                update_field_widget_attributes(self.fields[field_name],{"class":"tags"})
+                if customizer_instance.pk:
+                    extra_properties = 0
+                    initial_properties_data=None
+                else:
+                    initial_properties_data = [model_to_dict(temporary_property_customizer) for temporary_property_customizer in customizer_instance.temporary_properties if temporary_property_customizer.property.component_name.lower()==component_name[0].lower()]
+                    extra_properties = len(initial_properties_data)
+                formset_field_name = component_name[0].lower()+"_properties"
+                PropertiesFormSet = MetadataPropertyCustomizerInlineFormSetFactory(extra=extra_properties,method=_request.method)
+                self._subForms[formset_field_name] = [
+                    SubFormTypes.FORMSET,
+                    PropertiesFormSet,
+                    PropertiesFormSet(_request.POST,instance=customizer_instance) if (_request.method == "POST") else PropertiesFormSet(initial=initial_properties_data,instance=customizer_instance)
+                ]
+                
+
 
         except AttributeError:
             # if there were categories
@@ -354,12 +369,6 @@ class MetadataAttributeCustomizerForm(ModelForm):
                 return name
         except AttributeError:
             return None
-
-###class MetadataAttributeCustomizerFormSet(BaseInlineFormSet):
-###    pass
-###
-###    def __init__(self,*args,**kwargs):
-###        super(MetadataAttributeCustomizerFormSet,self).__init__(*args,**kwargs)
         
 
 def MetadataAttributeCustomizerInlineFormSetFactory(*args,**kwargs):
@@ -367,7 +376,6 @@ def MetadataAttributeCustomizerInlineFormSetFactory(*args,**kwargs):
     new_kwargs = {
         "can_delete" : False,
         "form"       : MetadataAttributeCustomizerForm,
-###        "formset"    : MetadataAttributeCustomizerFormSet,
         "fk_name"    : "parent" # required b/c there are 2 foreignkeys to 'metadatamodelcustomizer'; this is the one that is relevant for this inline form
     }
     new_kwargs.update(kwargs)
@@ -377,49 +385,64 @@ def MetadataAttributeCustomizerInlineFormSetFactory(*args,**kwargs):
     return _formset
 
 
-###
-###
-###
-
 class MetadataPropertyCustomizerForm(ModelForm):
     class Meta:
-        model = MetadataPropertyCustomizer
-        fields = ("order", "category", "displayed", "verbose_name", "default_value", "documentation", "required", "editable", "open", "multi", "nullable","values")
+        model   = MetadataPropertyCustomizer
+        fields  = ("category","displayed","required","editable","verbose_name","default_value","documentation","open","multi","nullable","order")
 
-    values = MultipleChoiceField(label="which choices should be provided");
+
 
     def __init__(self,*args,**kwargs):
+
+        method = kwargs.pop("method","GET")
         super(MetadataPropertyCustomizerForm,self).__init__(*args,**kwargs)
 
-        property = self.instance
+        property_customizer = self.instance
 
-        # by default a property exposes _all_ value choices
-        choices = property.getValues()
-        self.fields["values"].choices = choices
-        self.fields["values"].initial = [choice[0] for choice in choices]
-
-        self.fields['order'].widget = HiddenInput()     # don't want to show this field, but still need acccess to it from js
-        self.fields['documentation'].widget.attrs["rows"] = 3
-        update_field_widget_attributes(self.fields["displayed"],{"class":"linked","onchange":"link(this,'false',{'required' : 'false'});"})
-        update_field_widget_attributes(self.fields["order"],{"class":"set-label","onchange":"set_label(this,'field-order');"})
-        update_field_widget_attributes(self.fields["category"],{"class":"set-label","onchange":"set_label(this,'field-category');"})
-        update_field_widget_attributes(self.fields["values"],{"class":"dropdownchecklist"})
-                
-
+        # don't want to show these fields, but still want access to them
+        self.fields["order"].widget = HiddenInput()
+        
+        self.fields["category"].queryset = MetadataPropertyCategory.objects.none() # JQuery will take care of limiting this to the correct categories in the form
 
     def getPropertyName(self):
         try:
-            return self.instance.property.short_name
+            if self.is_bound:
+                return self.instance.property_name
+            else:
+                return self.initial["property_name"]
+        except AttributeError:
+            return None
+
+    def getCategoryName(self):
+        try:
+            if self.is_bound:
+                return self.instance.category.name
+            else:
+                category_pk = self.initial["category"]
+                name = MetadataAttributeCategory.objects.get(pk=category_pk).name
+                return name
         except AttributeError:
             return None
 
     def getPropertyOrder(self):
-        return self.instance.order
-
-    def getCategoryName(self):
         try:
-            return self.instance.category.name
+            if self.is_bound:
+                return self.instance.order
+            else:
+                return self.initial["order"]
         except AttributeError:
             return None
 
-MetadataPropertyCustomizerFormSet = modelformset_factory(MetadataPropertyCustomizer,MetadataPropertyCustomizerForm,extra=0)
+
+def MetadataPropertyCustomizerInlineFormSetFactory(*args,**kwargs):
+    _method = kwargs.pop("method","GET")
+    new_kwargs = {
+        "can_delete"  : False,
+        "form"        : MetadataPropertyCustomizerForm
+    }
+    new_kwargs.update(kwargs)
+
+    _formset = inlineformset_factory(MetadataModelCustomizer,MetadataPropertyCustomizer,*args,**new_kwargs)
+    _formset.form = staticmethod(curry(MetadataPropertyCustomizerForm,method=_method))
+    return _formset
+

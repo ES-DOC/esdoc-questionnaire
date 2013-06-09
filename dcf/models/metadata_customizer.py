@@ -31,7 +31,7 @@ from django.contrib.contenttypes import generic
 
 from dcf.utils import *
 from dcf.fields import *
-from dcf.models import MetadataCategorization#, MetadataAttributeCategory, MetadataPropertyCategory
+from dcf.models import MetadataCategorization, MetadataAttributeCategory, MetadataPropertyCategory
 
 class MetadataCustomizer(models.Model):
     class Meta:
@@ -185,27 +185,17 @@ class MetadataModelCustomizer(MetadataCustomizer):
         # this isn't quite as funny
         self.temporary_properties = []
         new_properties = self.getVocabulary().getProperties()
-        print "NEW_PROPERTIES="
-        print new_properties
+        for i,property in enumerate(new_properties):
+            temporary_property = MetadataPropertyCustomizer(
+                property        = property,
+                property_name   = property.name,
+                project         = self.project,
+                version         = self.version,
+                model           = self.model,
+                order           = (i+1))
+            temporary_property.reset(property)
+            self.temporary_properties.append(temporary_property)
 
-##        for i,property in enumerate(new_properties):
-##            temporary_property = MetadataPropertyCustomizer(
-##
-##            )
-##
-##        new_properties = self.getVocabulary().getProperties()
-##        # limit the properties to those associated with _this_ model
-##        for i,property in enumerate(new_properties.filter(model_name__iexact=_model.getName())):
-##            (new_property, created) = MetadataPropertyCustomizer.objects.get_or_create(
-##                                        property    = property,
-##                                        project     = self.project,
-##                                        version     = self.version,
-##                                        model       = self.model,
-##                                        parentGUID  = self.getGUID())
-##            if created:
-##                new_property.order=(i+1)
-##                new_property.reset(property)
-##
 
         # I CANNOT ADD TO A M2M FIELD BEFORE ITS'S BEEN SAVED
         # AND SAVING IS EXPENSIVE, SO I DON'T DO ANYTHING HERE
@@ -370,34 +360,42 @@ class MetadataPropertyCustomizer(MetadataCustomizer):
     class Meta:
         app_label = APP_LABEL
 
-    parent      = models.ForeignKey("MetadataModelCustomizer",blank=True,null=True,related_name="properties")
-    property    = models.ForeignKey("MetadataProperty",blank=False)
-    category    = models.ForeignKey("MetadataPropertyCategory",blank=True,null=True)
-    order       = models.PositiveIntegerField(blank=True,null=True)
+    parent        = models.ForeignKey("MetadataModelCustomizer",blank=True,null=True,related_name="properties")
+    property      = models.ForeignKey("MetadataProperty",blank=False)
+    property_name = models.CharField(max_length=LIL_STRING,blank=False)
+    category      = models.ForeignKey("MetadataPropertyCategory",blank=True,null=True,verbose_name="what category does this property belong to?")
+    order         = models.PositiveIntegerField(blank=True,null=True)
+
+
 
     # TODO: ADD MORE WAYS OF CUSTOMIZING PROPERTIES
-    displayed       = models.BooleanField(default=True,blank=True,verbose_name="should property be displayed")
-    required        = models.BooleanField(default=False,blank=True,verbose_name="is property required")
-    editable        = models.BooleanField(default=False,blank=True,verbose_name="can property be edited")
-    verbose_name    = models.CharField(max_length=64,blank=False,verbose_name="how should this property be labeled (overrides default name)")
-    default_value   = models.CharField(max_length=128,blank=True,null=True,verbose_name="what is the default value of this property")
-    documentation   = models.TextField(blank=True,verbose_name="help text to associate with property")
-    open        = models.BooleanField(default=False,blank=True,verbose_name="can a user specify their own property value")
-    multi       = models.BooleanField(default=False,blank=True,verbose_name="can a user specify more than one property value")
-    nullable    = models.BooleanField(default=False,blank=True,verbose_name="do you want to provide an explicit \"none\" value")
+    displayed       = models.BooleanField(default=True,blank=True,verbose_name="should this property be displayed?")
+    required        = models.BooleanField(default=False,blank=True,verbose_name="is this property required?")
+    editable        = models.BooleanField(default=False,blank=True,verbose_name="can this property be edited?")
+    verbose_name    = models.CharField(max_length=64,blank=False,verbose_name="how should this property be labeled (overrides default name)?")
+    default_value   = models.CharField(max_length=128,blank=True,null=True,verbose_name="what is the default value of this property?")
+    documentation   = models.TextField(blank=True,verbose_name="what is the help text to associate with property?")
+    open            = models.BooleanField(default=False,blank=True,verbose_name="check if a user can specify their own property value.")
+    multi           = models.BooleanField(default=False,blank=True,verbose_name="check if a user can specify more than one property value.")
+    nullable        = models.BooleanField(default=False,blank=True,verbose_name="check if a user can specify an explicit \"NONE\" value.")
 
-    def reset(self,*args):
+    def reset(self,*args,**kwargs):
 
-        property = args[0]
+        _property = args[0]
+        force_save = kwargs.pop("force_save",False)
 
         self.displayed = True
         self.required = True
         self.editable = True
 
-        #TODO
-
+        #TODO: ADD MORE CUSTOMIZATIONS
+        self.property = _property
+        
+        
         # reset forces a save
-        self.save()
+        if force_save:
+            self.save()
+
 
     def getCategory(self):
         return self.category
