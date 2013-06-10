@@ -65,6 +65,9 @@ class MetadataProperty(models.Model):
     def __unicode__(self):
         return u'MetadataProperty: %s' % self.name
 
+    def isFreeText(self):
+        return self.choice == "keyboard"
+    
 class MetadataPropertyValue(models.Model):
     class Meta:
         app_label = APP_LABEL

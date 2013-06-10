@@ -230,16 +230,14 @@ class MetadataModelCustomizerForm(ModelForm):
             subFormClass    = value[1]
             subFormInstance = value[2]
             if subFormType == SubFormTypes.FORM:
-                blah = subFormInstance.save(commit=False)
-                blah.save()
+                subModelInstance = subFormInstance.save(commit=False)
+                subModelInstance.save()
                 subFormInstance.save_m2m()
             elif subFormType == SubFormTypes.FORMSET:
-                for blah in subFormInstance.forms:
-                    foo = blah.save(commit=False)
-                    print "before saving, pk=%s"%foo.pk
-                    foo.save()
-                    blah.save_m2m()
-                    print "after saving, pk=%s"%foo.pk
+                for subForm in subFormInstance.forms:
+                    subModelInstance = subForm.save(commit=False)
+                    subModelInstance.save()
+                    subForm.save_m2m()
 #            subFormInstance.save(commit=_commit)
         print "TWO.TWO %s"%len(self.instance.attributes.all())
 
@@ -359,6 +357,7 @@ class MetadataAttributeCustomizerForm(ModelForm):
         except AttributeError:
             return None
 
+    
     def getCategoryName(self):
         try:
             if self.is_bound:
@@ -388,9 +387,7 @@ def MetadataAttributeCustomizerInlineFormSetFactory(*args,**kwargs):
 class MetadataPropertyCustomizerForm(ModelForm):
     class Meta:
         model   = MetadataPropertyCustomizer
-        fields  = ("category","displayed","required","editable","verbose_name","default_value","documentation","open","multi","nullable","order")
-
-
+        fields  = ("category","displayed","required","editable","verbose_name","documentation","default_value","values","default_values","open","multi","nullable","order","isFreeText","property_name")
 
     def __init__(self,*args,**kwargs):
 
@@ -399,11 +396,43 @@ class MetadataPropertyCustomizerForm(ModelForm):
 
         property_customizer = self.instance
 
+        # get the form data...
+        # if this is being loaded via POST, then the request will have been passed into the formset constructor
+        # so I just need to work out which part of that request applies to _this_ form
+        # if this is being loaded via GET, then the initial value will have been passed into the formset constructor
+        # so I can use that directly
+        property_data = {}
+        if method=="POST":
+            # (not sure why I can't do this in a list comprehension)
+            for key,value in self.data.iteritems():
+                if key.startswith(self.prefix+"-"):
+                    property_data[key.split(self.prefix+"-")[1]] = value
+        else:
+            property_data = self.initial
+
+
         # don't want to show these fields, but still want access to them
         self.fields["order"].widget = HiddenInput()
-        
+        self.fields["isFreeText"].widget = HiddenInput()
+        self.fields["property_name"].widget = HiddenInput()
         self.fields["category"].queryset = MetadataPropertyCategory.objects.none() # JQuery will take care of limiting this to the correct categories in the form
         update_field_widget_attributes(self.fields["category"],{"class":"set-label","onchange":"set_label(this,'field-category');"})
+
+        if property_data["isFreeText"]:
+            del self.fields["values"]
+            del self.fields["default_values"]
+        else:
+            del self.fields["default_value"]
+
+            current_choices = [(choice,choice) for choice in property_data["values_choices"].split("|")]
+            self.fields["default_values"].widget = SelectMultiple(choices=current_choices)
+            self.fields["values"].widget = SelectMultiple(choices=current_choices)
+            self.initial["values"] = [choice[0] for choice in current_choices]
+            # TODO: I WOULD MUCH RATHER NOT HAVE TO DO THE ABOVE TWO LINES
+            # AND JUST USE A CUSTOM ENUMERATION FIELD (SEE FIELDS.PY)
+            # BUT I CAN'T GET "CHOICES" TO PROPAGATE TO THE WIDGET
+            update_field_widget_attributes(self.fields["values"],{"class":"dropdownchecklist","onchange":"restrict_options(this,['default_values']);"})
+            update_field_widget_attributes(self.fields["default_values"],{"class":"dropdownchecklist"})
 
 
     def getPropertyName(self):

@@ -291,7 +291,7 @@ class MetadataAttributeCustomizer(MetadataCustomizer):
                     self.category = category                 
             except KeyError:
                 pass
-        
+
         self.required = (attribute.blank == False)
         self.editable = attribute.editable
         self.unique = attribute.unique
@@ -361,11 +361,11 @@ class MetadataPropertyCustomizer(MetadataCustomizer):
         app_label = APP_LABEL
 
     parent        = models.ForeignKey("MetadataModelCustomizer",blank=True,null=True,related_name="properties")
-    property      = models.ForeignKey("MetadataProperty",blank=False)
+    property      = models.ForeignKey("MetadataProperty",blank=True,null=True)
     property_name = models.CharField(max_length=LIL_STRING,blank=False)
     category      = models.ForeignKey("MetadataPropertyCategory",blank=True,null=True,verbose_name="what category does this property belong to?")
     order         = models.PositiveIntegerField(blank=True,null=True)
-
+    isFreeText    = models.BooleanField(default=False,blank=True)
 
 
     # TODO: ADD MORE WAYS OF CUSTOMIZING PROPERTIES
@@ -373,8 +373,11 @@ class MetadataPropertyCustomizer(MetadataCustomizer):
     required        = models.BooleanField(default=False,blank=True,verbose_name="is this property required?")
     editable        = models.BooleanField(default=False,blank=True,verbose_name="can this property be edited?")
     verbose_name    = models.CharField(max_length=64,blank=False,verbose_name="how should this property be labeled (overrides default name)?")
-    default_value   = models.CharField(max_length=128,blank=True,null=True,verbose_name="what is the default value of this property?")
     documentation   = models.TextField(blank=True,verbose_name="what is the help text to associate with property?")
+    default_value       = models.CharField(max_length=128,blank=True,null=True,verbose_name="what is the default value of this property?")
+    values          = EnumerationField(blank=False,verbose_name="choose the property values that should be presented to the user:")
+    default_values  = EnumerationField(blank=True,verbose_name="choose the default value(s), if any, for this property:")
+    values_choices  = models.TextField(blank=True,max_length=HUGE_STRING) # (made a textfield b/c kept running into max_length limit for big enumerations)
     open            = models.BooleanField(default=False,blank=True,verbose_name="check if a user can specify their own property value.")
     multi           = models.BooleanField(default=False,blank=True,verbose_name="check if a user can specify more than one property value.")
     nullable        = models.BooleanField(default=False,blank=True,verbose_name="check if a user can specify an explicit \"NONE\" value.")
@@ -389,13 +392,30 @@ class MetadataPropertyCustomizer(MetadataCustomizer):
         self.editable = True
 
         #TODO: ADD MORE CUSTOMIZATIONS
-        self.property = _property
-        
-        
+        self.property       = _property
+        self.verbose_name   = _property.name
+        self.multi          = _property.choice == "OR"
+        self.isFreeText     = _property.isFreeText()
+        self.documentation  = _property.description or ""
+        self.values_choices = "|".join([value.name for value in _property.values.all() if value.name])
+
         # reset forces a save
         if force_save:
             self.save()
 
+
+    def save(self,*args,**kwargs):
+        # just make sure that the parent exists before saving
+        # (parent ought to be set by virtue of this model being exposed in an inlineformset)
+        # (but the associated project & version may not have been set yet)
+        if self.parent and (not (hasattr(self,"project") or hasattr(self,"version"))):
+            self.setParent(self.parent)
+        return super(MetadataPropertyCustomizer,self).save(*args,**kwargs)
+
+    def setParent(self,model_customizer):
+        self.parent = model_customizer
+        self.project = model_customizer.project
+        self.version = model_customizer.version
 
     def getCategory(self):
         return self.category
