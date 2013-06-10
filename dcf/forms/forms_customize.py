@@ -387,7 +387,7 @@ def MetadataAttributeCustomizerInlineFormSetFactory(*args,**kwargs):
 class MetadataPropertyCustomizerForm(ModelForm):
     class Meta:
         model   = MetadataPropertyCustomizer
-        fields  = ("category","displayed","required","editable","verbose_name","documentation","default_value","values","default_values","open","multi","nullable","order","isFreeText","property_name")
+        fields  = ("category","displayed","required","editable","verbose_name","documentation","default_value","values","default_values","open","multi","nullable","order","isFreeText","property_name","component_name")
 
     def __init__(self,*args,**kwargs):
 
@@ -415,7 +415,9 @@ class MetadataPropertyCustomizerForm(ModelForm):
         self.fields["order"].widget = HiddenInput()
         self.fields["isFreeText"].widget = HiddenInput()
         self.fields["property_name"].widget = HiddenInput()
-        self.fields["category"].queryset = MetadataPropertyCategory.objects.none() # JQuery will take care of limiting this to the correct categories in the form
+        self.fields["component_name"].widget = HiddenInput()
+
+        self.fields["category"].queryset = MetadataPropertyCategory.objects.filter(component_name__iexact=property_data["component_name"])
         update_field_widget_attributes(self.fields["category"],{"class":"set-label","onchange":"set_label(this,'field-category');"})
 
         if property_data["isFreeText"]:
@@ -450,7 +452,7 @@ class MetadataPropertyCustomizerForm(ModelForm):
                 return self.instance.category.name
             else:
                 category_pk = self.initial["category"]
-                name = MetadataAttributeCategory.objects.get(pk=category_pk).name
+                name = MetadataPropertyCategory.objects.get(pk=category_pk).name
                 return name
         except AttributeError:
             return None

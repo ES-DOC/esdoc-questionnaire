@@ -363,6 +363,7 @@ class MetadataPropertyCustomizer(MetadataCustomizer):
     parent        = models.ForeignKey("MetadataModelCustomizer",blank=True,null=True,related_name="properties")
     property      = models.ForeignKey("MetadataProperty",blank=True,null=True)
     property_name = models.CharField(max_length=LIL_STRING,blank=False)
+    component_name = models.CharField(max_length=BIG_STRING,blank=False)
     category      = models.ForeignKey("MetadataPropertyCategory",blank=True,null=True,verbose_name="what category does this property belong to?")
     order         = models.PositiveIntegerField(blank=True,null=True)
     isFreeText    = models.BooleanField(default=False,blank=True)
@@ -391,8 +392,12 @@ class MetadataPropertyCustomizer(MetadataCustomizer):
         self.required = True
         self.editable = True
 
+        print "property %s has category %s " % (_property.name,_property.default_category)
+        
         #TODO: ADD MORE CUSTOMIZATIONS
         self.property       = _property
+        self.category       = _property.default_category
+        self.component_name = _property.component_name
         self.verbose_name   = _property.name
         self.multi          = _property.choice == "OR"
         self.isFreeText     = _property.isFreeText()

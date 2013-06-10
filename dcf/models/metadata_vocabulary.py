@@ -122,7 +122,7 @@ class MetadataVocabulary(models.Model):
 
                 (new_category, created) = MetadataPropertyCategory.objects.get_or_create(**category_filter_parameters)
 
-                new_category_mapping = {}
+                #new_category_mapping = {}
                 for i, property in enumerate(parameter_group.xpath("./parameter")):
 
                     property_name = property.xpath("@name")[0]
@@ -155,7 +155,7 @@ class MetadataVocabulary(models.Model):
         self.component_hierarchy = json.dumps(_component_hierarchy,separators=(',',':'))
         self.save() # have to ensure component_hierarchy gets saved in the db-
 
-        
+### CODE LEFTOVER FROM OLD CV FORMAT
 ###
 ###        newProperties = []
 ###        for i, model in enumerate(vocabulary_content.xpath("//model")):
@@ -188,7 +188,6 @@ class MetadataVocabulary(models.Model):
 ###                    for i, subProperty in enumerate(hasProperties[0].xpath(".//property")):
 ###                        newSubProperty = self.loadProperty(subProperty,modelName)
 ###                        newProperties.append(newSubProperty)
-###                        # TODO: SORT OUT MAPPING
 ###                        try:
 ###                            existing_properties = newCategoryMapping[propertyShortName]
 ###                            newCategoryMapping[modelName].append(newSubProperty.short_name)
@@ -206,51 +205,42 @@ class MetadataVocabulary(models.Model):
 ###                    newProperties.append(newProperty)
 ###
 ###            self.addProperties(newProperties)
-
-    def loadProperty(self,property_element,modelName):
-        propertyShortName = property_element.xpath("shortName/text()")[0]
-        propertyLongName = property_element.xpath("longName/text()") or None
-        if propertyLongName:
-            propertyLongName = propertyLongName[0]
-        else:
-            propertyLongName = propertyShortName
-
-## whoops, categories are defined on customizers - I can use the mapping to work it out
-##        parent = property_element.xpath("./ancestor::property")
-##        if parent:
-##            parent = parent[0]  # xpath returns a list
-##            parentShortName = parent.xpath("shortName/text()")[0]
-##            parentCategory = MetadataPropertyCategory.objects.get(name=parentShortName)
-##
-##            (newProperty, created) = MetadataProperty.objects.get_or_create(short_name=propertyShortName,long_name=propertyLongName,model_name=modelName,category=parentCategory)
-
-        (newProperty, created) = MetadataProperty.objects.get_or_create(short_name=propertyShortName,long_name=propertyLongName,model_name=modelName)
-
-        values = property_element.xpath("./values")
-        if values:
-            values = values[0]  # xpath returns a list
-
-            valueOpen = values.xpath("@open")
-            valueMulti = values.xpath("@multi")
-            valueNullable = values.xpath("@nullable")
-            newProperty.open = valueOpen and valueOpen[0].lower()=="true"
-            newProperty.multi = valueMulti and valueMulti[0].lower()=="true"
-            newProperty.nullable = valueNullable and valueNullable[0].lower()=="true"
-
-            newValues = []
-            for value in values.xpath(".//value"):
-                valueShortName = value.xpath("shortName/text()")[0]
-                valueLongName  = value.xpath("longName/text()") or None
-                if valueLongName:
-                    valueLongName = valueLongName[0]
-                else:
-                    valueLongName = valueShortName
-                newValues.append((valueShortName,valueLongName))
-
-            newProperty.setValues(newValues)
-            newProperty.save()
-
-        return newProperty
+###
+###    def loadProperty(self,property_element,modelName):
+###        propertyShortName = property_element.xpath("shortName/text()")[0]
+###        propertyLongName = property_element.xpath("longName/text()") or None
+###        if propertyLongName:
+###            propertyLongName = propertyLongName[0]
+###        else:
+###            propertyLongName = propertyShortName
+###
+###        (newProperty, created) = MetadataProperty.objects.get_or_create(short_name=propertyShortName,long_name=propertyLongName,model_name=modelName)
+###
+###        values = property_element.xpath("./values")
+###        if values:
+###            values = values[0]  # xpath returns a list
+###
+###            valueOpen = values.xpath("@open")
+###            valueMulti = values.xpath("@multi")
+###            valueNullable = values.xpath("@nullable")
+###            newProperty.open = valueOpen and valueOpen[0].lower()=="true"
+###            newProperty.multi = valueMulti and valueMulti[0].lower()=="true"
+###            newProperty.nullable = valueNullable and valueNullable[0].lower()=="true"
+###
+###            newValues = []
+###            for value in values.xpath(".//value"):
+###                valueShortName = value.xpath("shortName/text()")[0]
+###                valueLongName  = value.xpath("longName/text()") or None
+###                if valueLongName:
+###                    valueLongName = valueLongName[0]
+###                else:
+###                    valueLongName = valueShortName
+###                newValues.append((valueShortName,valueLongName))
+###
+###            newProperty.setValues(newValues)
+###            newProperty.save()
+###
+###        return newProperty
 
     def getCategories(self):
         return self.categories.all()
