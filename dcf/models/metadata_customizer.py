@@ -350,7 +350,7 @@ class MetadataScientificPropertyCustomizer(MetadataPropertyCustomizer):
 
     show_extra_attributes           = models.BooleanField(default=True,blank=True,verbose_name="check if extra property attributes should be displayed.")
     show_extra_attributes.help_text = "Check if the 'standard_name', 'long_name', 'description', and 'units' should be displayed along with the value of this property."
-    edit_extra_attributes           = models.BooleanField(default=True,blank=True,verbose_name="check if a user can edit the extra property attributes.")
+    edit_extra_attributes           = models.BooleanField(default=False,blank=True,verbose_name="check if a user can edit the extra property attributes.")
 
     standard_name   = models.CharField(max_length=64,blank=True,null=True)
     long_name       = models.CharField(max_length=64,blank=True,null=True)
@@ -400,7 +400,7 @@ class MetadataScientificPropertyCustomizer(MetadataPropertyCustomizer):
         self.description     = new_proxy.description
 
         self.show_extra_attributes = True
-        self.edit_extra_attributes = True
+        self.edit_extra_attributes = False
         
     @classmethod
     def getDataFromProxy(cls,proxy):
