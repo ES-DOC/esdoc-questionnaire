@@ -230,6 +230,8 @@ class MetadataModel(models.Model):
     def getDocumentRestriction(self):
         return self._metadata_document_restriction
 
+    def isPublished(self):
+        return self.published
 
 # I am purposefully not making this inherit from django.db.models;
 # (hopefully this will avoid the "bulk_create" error that sqlite3 gives for really large numbers of models)

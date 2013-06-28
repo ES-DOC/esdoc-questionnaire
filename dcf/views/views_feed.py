@@ -136,6 +136,9 @@ def serialize(request,project_name="",version_number="",model_name="",model_id="
     if not model_instance.isDocument():
         msg = "The model type '%s' is not an editable metadata document" % (model_class.getTitle())
         return dcf_error(request,msg)
+    if not model_instance.isPublished():
+        msg = "This model has not yet been published."
+        return dcf_error(request,msg)
  
     # CIM templates are stored as static files of the version
     # in order for this to work, the static location must be added to TEMPLATE_DIRS in settings.py
