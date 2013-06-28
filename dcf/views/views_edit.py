@@ -193,7 +193,6 @@ def edit_existing(request,version_number="",project_name="",model_name="",model_
             component_key = component.lower()
             model_forms[component_key] = form_class(instance=model_instances[component_key],prefix=component_key)
             scientific_properties = model_instances[component_key].getScientificProperties()
-            print "for %s there are %s scientific_properties" % (component_key,len(scientific_properties))
             scientific_property_formsets[component_key] = \
                 MetadataScientificPropertyFormSetFactory(
                     queryset    = scientific_properties,
