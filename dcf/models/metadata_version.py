@@ -60,8 +60,12 @@ class MetadataVersion(models.Model):
         self.models = models_dict_string
     
     def getModels(self):
-        models_dict_json = json.loads(self.models)
-        return models_dict_json
+        try:
+            models_dict_json = json.loads(self.models)
+            return models_dict_json
+        except ValueError:
+            # handles the case where this is called before the version has been registered
+            return None
 
     def getAllModelClasses(self):
         model_classes = []
@@ -78,6 +82,8 @@ class MetadataVersion(models.Model):
 
     def getModelClass(self,model_name):
         models_dict = self.getModels()
+        if not models_dict:
+            return None
         for key in models_dict.keys():
             if model_name.lower() == key.lower():
                 model_name = key
