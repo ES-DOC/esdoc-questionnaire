@@ -1,53 +1,11 @@
-/* top-level dcf JS code */
-
-/* TODO: EVENTUALLY, I'LL MOVE TO SOMETHING LIKE BACKBONE TO RE-ORGANIZE MY JS  */
-/* IN THE MEANTIME, I HAVE SEPARATED THEM OUT INTO MULTIPLE FILES,              */
-/* AND INCLUDED RELEVANT FNS FROM EACH ONE IN A VAR (LIKE NAMESPACING)          */
-/* THIS ISN'T PERFECT, BUT IT MAKES LIFE A BIT EASIER                           */
-
-function loadJS(js_path) {
-    // this fn loads another script
-    // I am not useing the getScript() fn, b/c that does not cache results
-    // instead I just make a standard AJAX call, but set "cache" to "true"
-    options = {dataType : "script", cache : true, url : js_path}
-    return $.ajax(options).done(function(script,status) {
-        console.log(status);
-    });
-};
-
-// code explicitly dealing w/ the customization form
-loadJS(JS_PATH+"/dcf_customize.js");
-// code explicitly dealing w/ the editing form
-loadJS(JS_PATH+"/dcf_edit.js");
-// code explicitly dealing w/ the interplay between fields
-loadJS(JS_PATH+"/dcf_fields.js");
-// code explicitly dealing w/ initializing widgets as they appear
-loadJS(JS_PATH+"/dcf_initialize.js");
-
-/* global vars */
-var VERSION
-var PROJECT
-var MODEL
-
-
-/* main fn in each dcf js file */
-/* it sets up all of the static JQuery widgets */
-/* this top-level fn also calls enableDCF for all the other js files */
 function enableDCF() {
 
     $(function() {
 
-        /*************************/
-        /* setup any global vars */
-        /*************************/
-        VERSION = $("div.global_vars span[name='version']").text();
-        PROJECT = $("div.global_vars span[name='project']").text();
-        MODEL   = $("div.global_vars span[name='model']").text();
+        $.ajaxSetup({            
+            headers: { "X-CSRFToken": getCookie("csrftoken") }
+        });
 
-        /************************/
-        /* setup JQuery widgets */
-        /************************/
-        
         /* enable the dialog boxes */
         /* (the msg dialog box is explicitly setup in the "dcf_base" template) */
         $("#help-dialog").dialog({
@@ -96,8 +54,234 @@ function enableDCF() {
            $("#help-dialog").dialog("option",{title: title, position: [x,y], height: 200, width: 400}).dialog("open");
            return false;
         });
+
+        /* enable collapsible fieldsets */
+        $(".coolfieldset").coolfieldset({speed:"fast"});
+        // if I need to open/close a fieldset use the following code:
+        // $(".coolfieldset[name='whatever'] legend").trigger("click");
+
+        /* enable tabs */
+        $(".tabs").tabs();
+
+        $(".enumeration-value").each(function() {
+            var enumeration_other = $(this).siblings(".enumeration-other:first");
+            $(enumeration_other).hide();
+        });
+
+        /* change the look and feel of a disabled field */
+        /* sets the "readonly" class on that field's label & the actual field */
+        /* CSS does the rest */
+        $(".readonly").each(function() {
+            // works for fields in a table (tr) or a div
+            $(this).closest("tr.field,div.field").find(".field_label,.field_value").addClass("readonly");
+        });
+
         
+        /* enable the tagging widgets */
+        $(".tags").tagit({
+           allowSpaces : true,
+           singleField : true,
+           singleFieldDelimiter : "|",
+           afterTagAdded : function(event,ui) {
+               var new_tag       = ui.tag
+               var new_tag_name  = $(new_tag).find(".tagit-label").text();
+               var new_tag_key   = new_tag_name.toLowerCase().replace(/ /g,'');
+               var new_tag_type  = $(new_tag).closest(".tagit").prev(".tags").attr("name");
+
+               var was_just_added = ($(new_tag).attr("class").indexOf("added") != -1);
+
+               if (new_tag_type == "standard_categories_tags") {
+                   /* standard_categories_tags cannot be deleted */
+                   $(new_tag).find(".tagit-close").hide();
+               }
+               else {
+                  /* scientific_categories_tags can be edited */
+                  $(new_tag).find(".tagit-label").before(
+                    "<a class='tagit-edit' onclick='edit_tag(this);'><span class='ui-icon ui-icon-pencil'></span></a>"
+                  );
+
+                  if (was_just_added) {
+                       $(new_tag).closest(".tab_content").find(".field_value[name='category'] select").each(function() {
+                          var new_option = new Option(new_tag_key,new_tag_name);
+                          $(this).append(new_option);
+                      });
+                  }
+
+               }
+           },
+           beforeTagRemoved : function(event,ui) {
+               var old_tag = ui.tag;
+               var old_tag_name  = $(old_tag).find(".tagit-label").text();
+               var old_tag_key   = old_tag_name.toLowerCase().replace(/ /g,'');
+               var old_tag_type  = $(old_tag).closest(".tagit").prev(".tags").attr("name");
+
+               // have to set this 1st, before the tag is removed
+               var category_selects = $(old_tag).closest(".tab_content").find(".field_value[name='category'] select")
+
+               if (old_tag_type.indexOf("scientific_categories_tags") !== -1) {
+                   categories = SCIENTIFIC_CATEGORIES;
+                   old_tag_component = old_tag_type.substr(0, old_tag_type.indexOf("_scientific_categories_tags"));
+               }
+               else {
+                   categories = STANDARD_CATEGORIES;
+                   alert("You shouldn't be deleting standard categories.  You're a very naughty boy.")
+               }
+
+               $("#confirm-dialog").html("Any properties belonging to this category will become uncategorized.  Are you sure you wish to continue?");
+               $("#confirm-dialog").dialog("option",{
+                   title : "Delete Category?",
+                   height : 200,
+                   width  : 400,
+                   buttons: {
+                       ok : function() {
+                           var category_to_delete = "";
+                           $.each(categories,function(i,category) {
+                               var category_fields = category.fields
+                               if ((category_fields.key == old_tag_key) && (category_fields.component_name == old_tag_component)) {
+                                 category_to_delete = category;
+                               }
+                           });
+                           category_to_delete.fields.remove = "True"
+
+                           $(category_selects).each(function() {
+                               var selector = "option:contains(" + old_tag_name + ")";
+                               $(this).find(selector).remove();
+                               $(this).trigger("change");
+                           });
+
+                           $(this).dialog("close");
+                       },
+                       cancel : function() {
+                           // the tag data is still in categories; just put it back in the widget
+                           var tag_widget = $(event.target);
+                           $(tag_widget).tagit("createTag",old_tag_name);
+                           $(this).dialog("close");
+                       }
+                   }
+               }).dialog("open");
+           }
+
+        });
+        $(".tagit-label").each(function() {
+            $(this).attr("title","click to toggle attributes of this category");
+        });
+        $(".tagit").sortable({
+            axis : "x",
+            items : "li:not(.tagit-new)",
+            placeholder : "sortable-item",
+            stop : function( event, ui ) {
+                var sorted_tag = ui["item"];
+                var sorted_tags = $(sorted_tag).closest("ul.tagit").find("li.tagit-choice");
+                var ordered_tag_list = $(sorted_tags).map(function() {
+                    return $(this).find(".tagit-label").text();
+                }).get().join("|");
+                var tag_type = $(sorted_tag).closest(".tagit").prev(".tags").attr("name");
+                order_categories(tag_type,ordered_tag_list);
+            }
+        });
+
+        $(".tagit-choice").click(function(event){
+            // if you really clicked the tag, and not an icon/button on the tag...
+            if ($(event.target).attr("class").indexOf("ui-icon") == -1) {
+                // toggle its state..
+                $(this).toggleClass("ui-state-active");
+                var tag_label = $(this).find(".tagit-label").text();
+                // and that of all corresonding properties...
+                $(this).closest(".tab_content").find(".accordion-header .label[name$='category']").each(function() {
+                    //alert("does " + $(this).text() " == " + )
+                    if ($(this).text()==tag_label) {
+                        var section = $(this).closest(".sortable-item");    // this is the accordion (recall it's wrapped in a div to enable sorting)
+                        $(section).toggle();
+                    }
+                });
+          }
+        });
+        /* I'm using separate widget to add tags, so disable the .tagit-new box */
+        $(".tagit-new").attr("style","display:none!important;");
+        /* and enable this widget */
+        $("[id$='_scientific_categories_tags_add']").keypress(function(e) {
+            if(e.which == 13) {
+                var input = $(e.target)
+                var tag_name = $(input).val();
+                var tag_widget = $(input).closest(".tab_content").find(".tags");
+                if ($(tag_widget).tagit("createTag",tag_name,"added")) {
+                    $(input).val("");
+                    $(tag_widget).next(".tagit:first").find(".tagit-choice").each(function(i,new_tag) {
+                        // TODO: THIS SEEMS PRETTY SLOW, SEARCHING THROUGH EVERY TAG
+                        //var new_tag       = this;
+                        var new_tag_name  = $(new_tag).find(".tagit-label").text();
+                        var new_tag_key   = new_tag_name.toLowerCase().replace(/ /g,'');
+                        var new_tag_type  = $(new_tag).closest(".tagit").prev(".tags").attr("name");
+                        var new_tag_component_name = $(new_tag).closest(".tab_content").attr("name");
+
+                        if ( ! isTagInCategories(new_tag_key,new_tag_component_name,SCIENTIFIC_CATEGORIES)) {
+                            
+                            var new_category = {
+                                "pk": 0,
+                                "model": "dcf.metadatascientificcategory",
+                                "fields": {
+                                    "name": new_tag_name,
+                                    "vocabulary": 0,
+                                    "description": "",
+                                    "project": 0,
+                                    "key": new_tag_key,
+                                    "component_name": new_tag_component_name,
+                                    "order": i,
+                                    "remove": false
+                                }
+                            }
+                            SCIENTIFIC_CATEGORIES.push(new_category);
+                        }
+                        else {
+                            // this handles the rare case where you are adding something that was previously removed in this session
+                            $.each(SCIENTIFIC_CATEGORIES,function(i,category) {
+                                category_fields = category.fields;
+                                if ((category_fields.key==new_tag_key) && (category_fields.component_name == new_tag_component_name)) {
+                                    category.fields.remove = false;
+                                }
+                            });
+                        }
+                    });
+                }
+                e.preventDefault();
+                return false;
+            }
+        });
+
+        $(".autocomplete").each(function(){
+            var suggestions = $(this).attr("suggestions").split("|");
+            $(this).autocomplete({
+                source : suggestions
+            });
+        });
+
         /* enable _fancy_ buttons */
+        $("button.add").button({
+            icons: { primary : "ui-icon-circle-plus" },
+            text: true
+        }).click(function(event) {
+            if ($(event.target).hasClass("FORM")) {
+                var form = $(event.target).closest(".coolfieldset-content").find(".form:first");
+                add_form(form);
+
+            }
+            else if ($(event.target).hasClass("FORMSET")) {
+                var dynamic_formset_add_button = $(event.target).parent(".add_details").prev(".accordion:first").find(".add-row:first");     
+                $(dynamic_formset_add_button).click();
+            }
+
+        });
+
+        $("button.remove").button({
+            icons: { primary : "ui-icon-circle-minus" },
+            text: true
+        }).click(function(event) {
+            var dynamic_formset_remove_button = $(event.target).closest(".accordion-content").next(".delete-row:first");
+            alert($(dynamic_formset_remove_button).attr("class"));
+            //.next(".delete-row:first");
+            $(dynamic_formset_remove_button).click();
+        });
+        
         $(".button").button();
         $(".subform-toolbar button").mouseover(function() {
             $(this).css('cursor', 'pointer');
@@ -130,25 +314,33 @@ function enableDCF() {
                 $(accordionHeaderIcon).addClass("ui-icon-triangle-1-e");
             });
         });
-        
-        /* enable collapsible fieldsets */
-        $(".coolfieldset").coolfieldset({speed:"fast"});
-        // if I need to open/close a fieldset use the following code:
-        // $(".coolfieldset[name='whatever'] legend").trigger("click");
-
-        /* enable tabs */
-        $(".tabs").tabs();
-        
-        /* change the look and feel of a disabled field */
-        /* sets the "readonly" class on that field's label & the actual field */
-        /* CSS does the rest */
-        $(".readonly").each(function() {
-            // works for fields in a table (tr) or a div
-            $(this).closest("tr.field,div.field").find(".field_label,.field_value").addClass("readonly");
+        /* enable the sort button */
+        $(".subform-toolbar button.sort").button({
+            icons : { primary : "ui-icon-arrowthick-2-n-s"},
+            text : true
+        }).click(function(event) {
+            var menu = $(this).next(".sort_by").show().position({
+                my : "left top", at : "left bottom", of : this
+            });
+            $(document).one("click",function() {
+                $(menu).hide();
+            });
+            return false;
+        });
+        $(".sort_by").each(function() {
+            var sort_button = $(this).prev(".sort");
+            $(this).menu().width("8em").hide();
+        });
+        $(".sort_by").click(function(event){
+            var sort_key = $(event.target).attr("name");
+            var items_to_sort = $(event.target).closest(".tab_content").find(".accordion:first");
+            sort_accordions(items_to_sort,sort_key);        // call the sort fn with the specified key & target
+            $(event.target).closest(".sort_by").hide();     // hide the sort_by menu
+            event.preventDefault();                         // don't actually follow the menu link (one of these is bound to work)
+            return false;                                   // don't actually follow the menu link (one of these is bound to work)
         });
 
-
-        /* enable multi-open accordions */
+        /* enable multiopen accordions */
         $(".accordion").multiOpenAccordion({
             active : "all",
             tabShown : function(event,ui) {
@@ -167,13 +359,10 @@ function enableDCF() {
                else {
                    /* otherwise set a class to override the default open style */
                    $(activeTab).addClass("open-accordion");
-                   
                    if($(activeContent).attr("class").indexOf("initialized")==-1) {
                        initialize_section(activeContent);
                        $(activeContent).addClass("initialized");
                    }
-
-
                }
            },
            tabHidden : function(event,ui) {
@@ -181,16 +370,53 @@ function enableDCF() {
                $(activeTab).removeClass("open-accordion");
            }
         });
+        /* wrap multi-accordions in a div in the editor */
+        /* (so that I can add/delete them dynamically as a unit */
+        $("#edit .accordion").find(".accordion-header").each(function() {
+            var prefix = $(this).closest(".accordion").attr("prefix");
+            var accordion_unit = "<div class='subform' prefix='" + prefix + "'></div>";
+            $(this).next().andSelf().wrapAll(accordion_unit);
+
+        });
+        /* enable sortable multi-open accordions in the customizer */
+        $("#customize .accordion").find(".accordion-header").each(function() {
+            /* first wrap each accordion header & content pair in a div */
+            /* b/c the sortable items need to be a single unit */
+            var accordion_unit = "<div class='sortable-item'></div>";
+            $(this).next().andSelf().wrapAll(accordion_unit);
+        });
+        $("#customize .accordion").sortable({
+            axis : "y",
+            handle : "h3",
+            placeholder : "sortable-accordion-placeholder",
+            stop : function( event, ui ) {
+                /* after sorting tag the sorted item so that I can cancel the open accordion event */
+                var sortedItem = ui["item"];
+                var sortedTab = $(sortedItem).find(".accordion-header");
+                $(sortedTab).addClass("sorted")
+                /* and re-calculate each field's order */
+                $(sortedTab).closest(".accordion").find(".accordion-content").each(function(i) {
+                    var order_input = $(this).find("input[name$='-order']");
+                    $(order_input).val(i+1);
+                    $(order_input).trigger("change");
+                });
+            }
+            /* TODO: JQUERY DOCUMENTATION IMPLIES SOME MORE CODE HERE TO HANDLE IE BUG */
+        });
 
         /* combo-boxes w/ checkboxes/radioboxes */
-        $(".dropdownchecklist").multiselect({
+        /* (futher customization is done in initialize section) */
+        $(".multislect").multiselect({
             autoOpen : false,
             minWidth : 500,
+            /*
             position : {
                 my: "left bottom",
                 at: "left top"
             },
+            */
             create : function(event, ui) {
+
                 var values = $(event.target).multiselect("getChecked").map(function(){
                     return this.value;
                 }).get();
@@ -247,159 +473,7 @@ function enableDCF() {
                 }
             }
         });
-        $(".dropdownchecklist[multiple]").multiselect({
-            noneSelectedText : "please enter selections",
-            selectedText : function(numChecked, numTotal, checkedItems){
-                if ($("#customize").length) {
-                    return numChecked + ' of ' + numTotal + ' selected';
-                }
-                MAX_LENGTH = 40;
-                if (numChecked > 0) {
-                    text = "\"" + checkedItems[0].value.substr(0,MAX_LENGTH);
-                    if (checkedItems[0].length >= MAX_LENGTH) {
-                        text += "...\"";
-                    }
-                    else {
-                        text += "\"";
-                    }                    
-                    if (numChecked > 1) {
-                        text += "  + " + (numChecked-1) + " more selections"
-                    }
-                    return text
-                }
-            },
-            header : true           
-        });
-        $(".dropdownchecklist:not([multiple])").multiselect({
-            noneSelectedText : "please enter selection",
-            selectedList : 1,
-            multiple : false,
-            header : false,
-            /* these next two handlers extend the plugin so that
-             * de-selecting an option in single mode causes the noneSelectedText to be shown */
-            open : function(event,ui) {
-                $(event.target).attr("previous_selection",$(event.target).val());
-            },
-            click : function(event,ui) {
-                if ($(event.target).attr("previous_selection") == ui.value)  {
-                    $(event.target).multiselect("uncheckAll");
-                }
-            }
-        });
-
-        $(".enumeration-other").each(function() {
-            $(this).css("font-style","italic");
-            $(this).before("<br/>");
-        });
-        $(".enumeration-other").change(function() {
-            var default_text = "please enter custom selection (or else deselect '--OTHER--' above)";
-            var value = $(this).val().replace(/\s+/g,'');
-            if (value) {
-                $(this).css("font-style","normal");
-            }
-            else {
-                $(this).val(default_text);
-                $(this).css("font-style","italic");
-            }
-        });
-
-        /* enable calendar widgets */
-        $(".datepicker").datepicker({
-            changeYear : true,
-            showButtonPanel : false,
-            showOn : 'button'
-        }).next("button").button({
-            icons : {
-                primary : "ui-icon-calendar"
-            },
-            text : false
-        });
-        $(".ui-datepicker-trigger").mouseover(function() {
-            $(this).css('cursor', 'pointer');
-        });
-        $(".ui-datepicker-trigger").attr("title","click to select date");
-        //$(".ui-datepicker-trigger").css("vertical-align","middle");
-
-        /********************************************/
-        /* now call the enablers for other js files */
-        /********************************************/
-        CUSTOMIZE.enableDCF();
-        EDIT.enableDCF();
-                
-    });
-};
-
-/* initially, a lot of the form elements are hidden */
-/* (inside accordions or behind inactive tabs) */
-/* so this fn gets called whenever a new section is displayed */
-/* it winds up repeating some of the functionality of enableJQueryWidgets below */
-function initialize_section(parent) {
-        // dropdownchecklists...
-        $(parent).find(".dropdownchecklist").multiselect({
-            autoOpen : false,
-            minWidth : 500,
-            position : {
-                my: "left bottom",
-                at: "left top"
-            },
-            create : function(event, ui) {
-                var values = $(event.target).multiselect("getChecked").map(function(){
-                    return this.value;
-                }).get();                
-
-                var enumeration_value = $(event.target)
-                var enumeration_other = $(enumeration_value).siblings(".enumeration-other:first");
-
-                if (values.indexOf("OTHER") != -1) {
-                    // if "--OTHER--" is selected, then show the enumeration-other
-                    $(enumeration_other).width($(enumeration_value).siblings(".ui-multiselect:first").width());
-                    $(enumeration_other).show();
-                }
-                else {
-                    $(enumeration_other).hide();
-                }
-                if (values.indexOf("NONE") != -1) {
-                    // if "--NONE--" is selected, then de-select everything else
-                    $(event.target).multiselect("getChecked").each(function() {
-                        if (this.value != "NONE") {
-                            this.click();
-                        }
-                    });
-                    $(enumeration_other).hide(); // (including the other textbox)
-                }
-
-                // sometimes these lists have an onchange event
-                // force the event callback to run upon initialization
-                $(this).trigger("change");
-            },
-            close : function(event,ui) {
-                var values = $(event.target).multiselect("getChecked").map(function(){
-                    return this.value;
-                }).get();
-
-                var enumeration_value = $(event.target)
-                var enumeration_other = $(enumeration_value).siblings(".enumeration-other:first");
-
-                if (values.indexOf("OTHER") != -1) {
-                    // if "--OTHER--" is selected, then show the enumeration-other
-                    $(enumeration_other).width($(enumeration_value).siblings(".ui-multiselect:first").width());
-                    $(enumeration_other).show();
-                }
-                else {
-                    $(enumeration_other).hide();
-                }
-                if (values.indexOf("NONE") != -1) {
-                    // if "--NONE--" is selected, then de-select everything else
-                    $(event.target).multiselect("getChecked").each(function() {
-                        if (this.value != "NONE") {
-                            this.click();
-                        }
-                    });
-                    $(enumeration_other).hide(); // (including the other textbox)
-                }
-            }
-        });
-        $(parent).find(".dropdownchecklist[multiple]").multiselect({
+        $(".multiselect[multiple]").multiselect({
             noneSelectedText : "please enter selections",
             selectedText : function(numChecked, numTotal, checkedItems){
                 if ($("#customize").length) {
@@ -422,7 +496,229 @@ function initialize_section(parent) {
             },
             header : true
         });
-        $(parent).find(".dropdownchecklist:not([multiple])").multiselect({        
+        $(".multiselect:not([multiple])").multiselect({
+            noneSelectedText : "please enter selection",
+            selectedList : 1,
+            multiple : false,
+            header : false,
+            /* these next two handlers extend the plugin so that
+             * de-selecting an option in single mode causes the noneSelectedText to be shown */
+            open : function(event,ui) {
+                $(event.target).attr("previous_selection",$(event.target).val());
+            },
+            click : function(event,ui) {
+                if ($(event.target).attr("previous_selection") == ui.value)  {
+                    $(event.target).multiselect("uncheckAll");
+                }
+            }
+        });
+
+        $(".enumeration-other").each(function() {
+            $(this).before("<br/>");
+        });
+        $(".enumeration-other").change(function() {
+            var default_text = "please enter custom selection (or else deselect '--OTHER--' above)";
+            var value = $(this).val().replace(/\s+/g,'');
+            if (! value) {
+                $(this).val(default_text);
+            }
+        });
+
+        /* enable the customize-subform button */
+        $("button.customize-subform").button({
+            icons : { primary : "ui-icon-extlink"}
+        });
+        // force the change event to hide/show the customize-subform button as appropriate
+        $(".field_value[name='customize_subform']").find("input").trigger("change");
+
+        /* dockable splitter */
+        $("#splitter").splitter({
+            minAsize:100,
+            maxAsize:400,
+            splitVertical:true,
+            A:$('#splitter_left'),
+            B:$('#splitter_right'),
+            closeableto: 1 // default is 0, but that causes dropped float bug
+        });
+
+        /* fancy treeview */
+        $.ui.dynatree.nodedatadefaults["icon"] = false; // Turn off icons by default
+        $(".pane").hide();  // hides panes unless they are activated by the treeview
+        $(".tree").dynatree({
+            checkbox        : true,
+            selectMode      : 3,
+            minExpandLevel  : 1,
+            onActivate      : function(node) {
+                active_pane_name = node.data.title.toLowerCase() + "_pane";
+                active_pane = $("#"+active_pane_name);
+                $(active_pane).show();
+                $(active_pane).toggleClass("active_pane");
+                $(active_pane).find(".tabs:first").tabs({"selected" : PREVIOUSLY_SELECTED_TAB})
+
+            },
+            onDeactivate    : function(node) {
+                inactive_pane_name = node.data.title.toLowerCase() + "_pane";
+                inactive_pane = $("#"+inactive_pane_name);
+                $(inactive_pane).hide();
+                $(inactive_pane).toggleClass("active_pane");
+                PREVIOUSLY_SELECTED_TAB = $(inactive_pane).find(".tabs:first").tabs("option","selected");
+            },
+            onSelect        : function(flag,node) {
+                selected_nodes = $(".tree").dynatree("getSelectedNodes");
+                $(".dynatree-partsel:not(.dynatree-selected").each(function() {
+                    var node = $.ui.dynatree.getNode(this);
+                    selected_nodes.push(node);
+                });
+                node.tree.visit(function(node){
+                   var pane = $("#"+node.data.title.toLowerCase()+"_pane");
+                   if ($.inArray(node,selected_nodes)>-1) {
+                        $(pane).find("input[name$='-active']").attr("checked",true);
+                        $(pane).removeClass("ui-state-disabled");
+                   }
+                   else {
+                        $(pane).find("input[name$='-active']").attr("checked",false);
+                        $(pane).addClass("ui-state-disabled");
+                   }
+                });
+            }
+        });
+        $(".tree").each(function() {
+            var root = $(this).dynatree("getRoot");
+            root.visit(function(node) {
+                node.select(true);
+                node.expand(true);
+            });
+            var first_child = root.getChildren()[0];
+            first_child.activate(true);
+        });
+       
+        /* enable calendar widgets */
+        $(".datepicker").datepicker({
+            changeYear : true,
+            showButtonPanel : false,
+            showOn : 'button'
+        }).next("button").button({
+            icons : {
+                primary : "ui-icon-calendar"
+            },
+            text : false
+        });
+        $(".ui-datepicker-trigger").mouseover(function() {
+            $(this).css('cursor', 'pointer');
+        });
+        $(".ui-datepicker-trigger").attr("title","click to select date");
+
+
+
+        /* now initialize all the visible sections */
+        initialize_section($(document));
+
+
+    });
+    /* end enableDCF */
+    
+};
+
+/* performse initialization on a per-section basis */
+/* (deals w/ positional things) */
+/* (or things that are hidden behind accordions, tabs, panes, etc.) */
+function initialize_section(parent) {
+
+        $(parent).find(".readonly").each(function() {
+            // works for fields in a table (tr) or a div
+            $(this).closest("tr.field,div.field").find(".field_label,.field_value").addClass("readonly");
+        });
+
+         $(parent).find(".multiselect").multiselect({
+            autoOpen : false,
+            minWidth : 500,
+            /*
+            position : {
+                my: "left bottom",
+                at: "left top"
+            },
+            */
+            create : function(event, ui) {
+                var values = $(event.target).multiselect("getChecked").map(function(){
+                    return this.value;
+                }).get();
+
+                var enumeration_value = $(event.target)
+                var enumeration_other = $(enumeration_value).siblings(".enumeration-other:first");
+
+                if (values.indexOf("OTHER") != -1) {
+                    // if "--OTHER--" is selected, then show the enumeration-other
+                    $(enumeration_other).width($(enumeration_value).siblings(".ui-multiselect:first").width());
+                    $(enumeration_other).show();t
+                }
+                else {
+                    $(enumeration_other).hide();
+                }
+                if (values.indexOf("NONE") != -1) {
+                    // if "--NONE--" is selected, then de-select everything else
+                    $(event.target).multiselect("getChecked").each(function() {
+                        if (this.value != "NONE") {
+                            this.click();
+                        }
+                    });
+                    $(enumeration_other).hide(); // (including the other textbox)
+                }
+
+                // sometimes these lists have an onchange event
+                // force the event callback to run upon initialization
+                $(this).trigger("change");
+            },
+            close : function(event,ui) {
+                var values = $(event.target).multiselect("getChecked").map(function(){
+                    return this.value;
+                }).get();
+
+                var enumeration_value = $(event.target)
+                var enumeration_other = $(enumeration_value).siblings(".enumeration-other:first");
+
+                if (values.indexOf("OTHER") != -1) {
+                    // if "--OTHER--" is selected, then show the enumeration-other
+                    $(enumeration_other).width($(enumeration_value).siblings(".ui-multiselect:first").width());
+                    $(enumeration_other).show();
+                }
+                else {
+                    $(enumeration_other).hide();
+                }
+                if (values.indexOf("NONE") != -1) {
+                    // if "--NONE--" is selected, then de-select everything else
+                    $(event.target).multiselect("getChecked").each(function() {
+                        if (this.value != "NONE") {
+                            this.click();
+                        }
+                    });
+                    $(enumeration_other).hide(); // (including the other textbox)
+                }
+            }
+         });
+         $(parent).find(".multiselect[multiple]").multiselect({
+            noneSelectedText : "please enter selections",
+            selectedText : function(numChecked, numTotal, checkedItems){
+                if ($("#customize").length) {
+                    return numChecked + ' of ' + numTotal + ' selected';
+                }
+                MAX_LENGTH = 40;
+                if (numChecked > 0) {
+                    text = "\"" + checkedItems[0].value.substr(0,MAX_LENGTH);
+                    if (checkedItems[0].length >= MAX_LENGTH) {
+                        text += "...\"";
+                    }
+                    else {
+                        text += "\"";
+                    }
+                    if (numChecked > 1) {
+                        text += "  + " + (numChecked-1) + " more selections"
+                    }
+                    return text
+                }
+            },
+            header : true
+        });
+        $(parent).find(".multiselect:not([multiple])").multiselect({
             noneSelectedText : "please enter selection",
             selectedList : 1,
             multiple : false,
@@ -440,219 +736,65 @@ function initialize_section(parent) {
         });
 
 
-        $(parent).find(".enumeration-other").each(function() {
-            $(this).css("font-style","italic");
-            $(this).before("<br/>");
-        });
-        $(parent).find(".enumeration-other").change(function() {
-            value = $(this).val().replace(/\s+/g,'');
-            if (value) {
-                $(this).css("font-style","normal");
+        $(parent).find(".subform").each(function() {
+            if (! $(this).hasClass("initialized")) {
+
+                var pane = $(this).closest(".pane");
+                var prefixes = $(this).parents(".subform").map(function() {
+                    return $(this).attr("prefix");
+                }).get().join("-");
+                var prefix = $(pane).attr("name") + "-" + prefixes + "-" + $(this).attr("prefix");
+                $(this).formset({
+                    prefix : prefix,
+                    added  : function(row) {
+                        add_formset(row);
+                    }
+                });
+                $(this).addClass("initialized");
             }
-            else {
-                $(this).val("please enter custom selection");
-                $(this).css("font-style","italic");
-            }
         });
+
 };
 
-/* returns a Django Form serialized into the specified format
- * (currently only JSON is supported; can't think why I'd need another format */
-function serialize_form(form,format) {
-    if(format.toLowerCase()=='json') {
-        var data = {};
-        $.each(form.serializeArray(), function() {
-            data[this.name] = this.value;
-        });
-        return data;
+
+function order_categories(category_type,ordered_categories) {
+    if (category_type=="standard_categories_tags") {
+        categories = STANDARD_CATEGORIES;
     }
     else {
-        alert("invalid serialization format");
+        categories = SCIENTIFIC_CATEGORIES;
     }
-};
-
-/* "links" a source field to a set of target fields;
- * sets the target fields' values according to the targets dictionary
- * when the source field equals 'linkingValue"
- * (targets must be in the same form/subform)
- */
-function link(source,linkingValue,targets) {
-   var sourceValueMatches = false;
-   var sourceType = $(source).attr("type");
-   if (sourceType == "checkbox") {
-     //if (((linkingValue.toLowerCase()=="true") && ($(source).is(":checked")))) || ((linkingValue.toLowerCase()=="false") && (1))) {
-     if ( ( ( linkingValue.toLowerCase()=="true" ) && ( $(source).is(":checked") ) )  || ( ( linkingValue.toLowerCase()=="false" ) && !( $(source).is(":checked") ) ) ) {
-         sourceValueMatches = true;
-     }
-   }
-   // TODO: ADD MORE CASES FOR OTHER TYPES OF SOURCE FIELDS
-   else {
-       alert("I don't know what to in the function 'link()' with a source of type '" + sourceType + "'.");
-   }
-
-   if (sourceValueMatches) {
-       for(var targetName in targets) {
-
-           var targetValue = targets[targetName];
-           var selector = ".field_value[name='" + targetName + "']";
-           // the target can either be an <input> or a <select>
-           // TODO: CAN IT BE ANYTHING ELSE?
-           var target = $(source).closest(".form").find(selector).find("input,select");
-           if ($(target).length>1) {
-               // yep, it's a multiwidget...
-               for (var i=0; i<targetValue.length; i++) {
-                   // so it must have been passed an array of values,
-                   // map each value to the corresponding multiwidget widget (unless the value is an explicit 'none')
-                   if (targetValue[i]!="None") {
-                       $(target[i]).val(targetValue[i]);
-                   }
-               }
-
-           }
-           else {
-               var targetType = $(target).attr("type");
-               if (targetType=="checkbox") {
-                   if (targetValue.toLowerCase()=="true") $(target).attr('checked', true);
-                   if (targetValue.toLowerCase()=="false") $(target).attr('checked', false);
-               }
-               // TODO: ADD MORE CASES FOR OTHER TYPES OF TARGET FIELDS
-               else {
-                   alert("I don't know what to in the function 'link()' with a target of type '" + targetType + "'.");
-               }
-           }
-       }
-   }
-};
-
-
-
-/* restricts the set of options of a set of target fields
- * to the selected options of the source field
- * (targets must be in the same form/subform)
- */
-function restrict_options(source,targets) {
-    var restrictions = [];
-    $(source).find("option:selected").each(function() {
-        restrictions.push($(this).val());
-    });
-
-    for (var i=0; i<targets.length; i++) {
-        var selector = "*[name='" + targets[i] + "']";
-        var target = $(source).closest(".form").find(selector).find("select");
-        var options = [];
-        $(target).find("option").each(function() {
-            options.push($(this).val());
+    ordered_categories_list = ordered_categories.split("|");
+    for (var i=0; i<ordered_categories_list.length; i++) {
+        category_name = ordered_categories_list[i];
+        category_key  = category_name.toLowerCase().replace(/ /g,'');
+        $.each(categories, function(j,v) {
+            if (v.fields.key == category_key) {
+                v.fields.order = i
+                return false;
+            }
         });
-
-        // (this is horrible syntax; "grep" doesn't mean the same thing in JQuery)
-        var in_options_but_not_restrictions = $.grep(options,function(el){
-           return $.inArray(el,restrictions) == -1;
-        });
-        var in_restrictions_but_not_options = $.grep(restrictions,function(el){
-           return $.inArray(el,options) == -1;
-        });
-
-        // remove everything in options and not in restrictions
-        $(in_options_but_not_restrictions).each(function() {
-            $(target).find("option[value='"+this+"']").remove();
-        });
-        // add everything in restrictions and not in options
-        $(in_restrictions_but_not_options).each(function() {
-            var option = $(source).find("option[value='"+this+"']");
-            $(target).append($("<option>").attr("value",this).text($(option).text()));
-
-        });
-
-        // refresh the multiselect widget if needed
-        if ($(target).hasClass("dropdownchecklist")) {
-            $(target).multiselect("refresh");
-        };
-
     }
 };
 
-/* toggles the visibility of a set of target fields
- * based on the value of the source field
- * (targets must be in same form/subform)
- */
-function enable(source,enablingValue,targets) {
-    var sourceValueMatches = false;
-    var sourceType = $(source).attr("type");
-    if (sourceType == "checkbox") {
-        if ( ( ( enablingValue.toLowerCase()=="true" ) && ( $(source).is(":checked") ) )  || ( ( enablingValue.toLowerCase()=="false" ) && !( $(source).is(":checked") ) ) ) {
-            sourceValueMatches = true;
-        }
-    }
-    // TODO: ADD MORE CASES FOR OTHER TYPES OF SOURCE FIELDS
-    else {
-        alert("I don't know what to in the function 'enable()' with a source of type '" + sourceType + "'.");
-    }
-
-    for (var i = 0; i < targets.length; i++) {
-        var selector = "*[name='" + targets[i] + "']";
-        var target = $(source).closest(".form").find(selector).filter("input,select,button");
-        var targetType = $(target).prop("tagName").toLowerCase();
-
-        if (targetType=="button") {
-            if (sourceValueMatches) $(target).button("enable");
-            else $(target).button("disable");
-        }
-        // TODO: ADD MORE CASES FOR OTHER TYPES OF TARGET FIELDS
-        else {
-           alert("I don't know what to in the function 'enable()' with a target of type '" + targetType + "'.");
-        }
-    }
-
-};
-
-function set_label(item,label_name) {
-    var selector = "span.label[name='"+label_name+"']"
-    var label = $(item).closest(".accordion-content").prev(".accordion-header").find(selector);
-    var input_type = $(item).prop("tagName").toLowerCase();
-    if (input_type=="select") {
-        var new_text = ($(item).val()) ? $(item).find("option:selected").text() : "None";
-        if (new_text=="") {
-            new_text = "None";
-        }
-        $(label).text( new_text );
-    }
-    else if (input_type=="input") {
-        var new_text = ($(item).val()) ? $(item).val() : "None";
-        $(label).text( new_text );
-    }
-    
-    //var new_text = ($(item).val()) ? $(item).find("option:selected").text() : "None";
-    //$(label).text( new_text );
-};
-
-
-/* copies (JSON) data - in most cases the global categories dictionaries - to a field
- * - in most cases the otherwise unused "attribute_categories_content" or "property_categories-content"
- * this makes sure that any edits to the tags gets saved in the view
- */
-function copy_data_to_field(dataName,fieldName) {
-    var data = window[dataName];
-    var field = $("form input[name='"+fieldName+"']")
-    $(field).val(JSON.stringify(data));
-};
 
 /* display an error in the correct location
  * also, color any containing tabs or accordions */
 function render_error(error) {
+    // render fieldsets
+    $(error).parents(".coolfieldset").each(function() {
+        // (doing this manually (w/ CSS) instead of via JQuery's built-in UI system)
+        // (b/c it would indicate that _everything_ in the fieldset is in error)'
+        $(this).addClass("error");
+    });
     // render accordions
     $(error).parents(".accordion-content").each(function() {
         $(this).prev(".accordion-header").addClass("ui-state-error");
     });
     // render tabs
     $(error).parents(".tab_content").each(function() {
-        var tab_id = $(this).closest(".ui-tabs-panel").attr("id");
+        var tab_id = $(this).parent().attr("id");
         $("a[href='#"+tab_id+"']").closest("li").addClass("ui-state-error");
-    });
-    // render fieldsets
-    $(error).parents(".coolfieldset").each(function() {
-        // (doing this manually instead of via JQuery's built-in UI system)
-        // (b/c it would indicate that everything in the fieldset is in error)'    
-        $(this).addClass("error");
     });
 };
 
@@ -674,4 +816,438 @@ function render_msg(parent) {
         });
     }
 };
-     
+
+
+function sort_accordions(accordions,key) {
+
+    if (key.indexOf("name")>=0) {
+        key_selector = "span[name='property_name']";
+    }
+    else if (key.indexOf("category")>=0) {
+       key_selector = "span[name='property_category']";
+    }
+    else if (key.indexOf("order")>=0) {
+       key_selector = "span[name='property_order']";
+
+    }
+    else {
+        alert("unknown sort key: "+key)
+    }
+
+    var sortable_items = $(accordions).children(".sortable-item").get();
+    sortable_items.sort(function(a,b){
+
+       var a_key = $(a).find(key_selector).text();
+       var b_key = $(b).find(key_selector).text();
+       if (key.indexOf("order")>=0) {
+           a_key = parseInt(a_key);
+           b_key = parseInt(b_key);
+       }
+
+       return (a_key < b_key) ? -1 : (a_key > b_key) ? 1 : 0;
+    });
+
+    $.each(sortable_items, function(i, item) {
+        $(accordions).append(item);
+    });
+
+};
+
+
+function set_label(item,label_name) {
+    var selector = "span.label[name='"+label_name+"']"
+    var label = $(item).closest(".accordion-content").prev(".accordion-header").find(selector);
+    var input_type = $(item).prop("tagName").toLowerCase();
+    if (input_type=="select") {
+        var new_text = ($(item).val()) ? $(item).find("option:selected").text() : "None";
+        if (new_text=="") {
+            new_text = "None";
+        }
+        $(label).text( new_text );
+    }
+    else if (input_type=="input") {
+        var new_text = ($(item).val()) ? $(item).val() : "None";
+        $(label).text( new_text );
+    }
+
+};
+
+
+/* restricts the set of options of a set of target fields
+ * to the selected options of the source field
+ * (targets must be in the same form/subform)
+ */
+function restrict_options(source,targets) {
+    var restrictions = [];
+    $(source).find("option:selected").each(function() {
+        restrictions.push($(this).val());
+    });
+
+    for (var i=0; i<targets.length; i++) {
+        var selector = "*[name$='" + targets[i] + "']";
+        var target = $(source).closest(".form").find(selector).find("select");
+        var options = [];
+        $(target).find("option").each(function() {
+            options.push($(this).val());
+        });
+       
+        // (this is horrible syntax; "grep" doesn't mean the same thing in JQuery)
+        var in_options_but_not_restrictions = $.grep(options,function(el){
+           return $.inArray(el,restrictions) == -1;
+        });
+        var in_restrictions_but_not_options = $.grep(restrictions,function(el){
+           return $.inArray(el,options) == -1;
+        });
+
+        // remove everything in options and not in restrictions
+        $(in_options_but_not_restrictions).each(function() {
+            $(target).find("option[value='"+this+"']").remove();
+        });
+        // add everything in restrictions and not in options
+        $(in_restrictions_but_not_options).each(function() {
+            var option = $(source).find("option[value='"+this+"']");
+            $(target).append($("<option>").attr("value",this).text($(option).text()));
+
+        });
+
+        // refresh the multiselect widget if needed
+        if ($(target).hasClass("multiselect")) {
+            $(target).multiselect("refresh");
+        };
+    }
+};
+
+
+/* toggles the visibility of a set of target fields
+ * based on the value of the source field
+ * (targets must be in same form/subform)
+ */
+function enable(source,enablingValue,targets) {
+    var sourceValueMatches = false;
+    if ($(source).attr("type") == "checkbox") {
+        if ( ( ( enablingValue.toLowerCase()=="true" ) && ( $(source).is(":checked") ) )  || ( ( enablingValue.toLowerCase()=="false" ) && !( $(source).is(":checked") ) ) ) {
+            sourceValueMatches = true;
+        }
+    }
+    else if ( ($(source).prop("tagName").toLowerCase()=="select") && ($(source).attr("multiple"))) {
+        alert("I still need to write a handler in enable() for multiselects");
+    }
+    else {
+        if ($(source).val() == enablingValue) {
+            sourceValueMatches = true;
+        }
+    }
+
+    for (var i = 0; i < targets.length; i++) {
+        var selector = "*[name$='" + targets[i] + "']";
+        var target = $(source).closest(".form").find(selector).filter("input,textarea,select,button");
+        var targetType = $(target).prop("tagName").toLowerCase();
+
+        if (targetType=="button") {
+            if (sourceValueMatches) $(target).button("enable");
+            else $(target).button("disable");
+        }
+        else if (targetType=="select") {
+            if (sourceValueMatches) {
+                $(target).unbind("focus");
+                $(target).closest("tr.field").find(".field_label, .field_value").removeClass("readonly");
+            }
+            else {
+                $(target).bind("focus",function() { $(this).blur(); })
+                $(target).closest("tr.field").find(".field_label, .field_value").addClass("readonly");
+            }
+        }
+        else { /* if ((targetType=="input") || (targetType=="textarea")) { */
+
+            if (sourceValueMatches) {
+                $(target).removeAttr("readonly");
+                $(target).closest("tr.field").find(".field_label, .field_value").removeClass("readonly");
+            }
+            else {
+                $(target).attr("readonly","readonly");
+                $(target).closest("tr.field").find(".field_label, .field_value").addClass("readonly");
+            }
+        }
+    }
+
+};
+
+/* used to check if a tag element exists in the categories dict */
+function isTagInCategories(tag_key,tag_component_name,categories) {
+    var found_tag = false;
+    $.each(categories,function(i,category) {
+        var category_fields = category.fields;
+        if ((category_fields.key == tag_key) && (category_fields.component_name == tag_component_name)) {
+            found_tag = true;
+            return false;
+        }
+    });
+    return found_tag;
+}
+
+/* takes the content of the global JSON variables and copies them back into hidden form fields */
+function copy_categories() {    
+    var standard_categories_content = $("#id_standard_categories_content");
+    var scientific_categories_content = $("#id_scientific_categories_content");
+    $(standard_categories_content).val(JSON.stringify(STANDARD_CATEGORIES));
+    $(scientific_categories_content).val(JSON.stringify(SCIENTIFIC_CATEGORIES));
+};
+
+
+function customize_subform(button) {
+
+    var field_name      = $(button).closest(".customize_subform_details").find(".field_name").text();
+    var version_number  = $(button).closest(".customize_subform_details").find(".version_number").text();
+    var project_name    = $(button).closest(".customize_subform_details").find(".project_name").text();
+    var model_name      = $(button).closest(".customize_subform_details").find(".model_name").text();
+    var customizer_name = $(button).closest(".customize_subform_details").find(".customizer_name").text();
+
+    var url = window.document.location.protocol + "//" + window.document.location.host + "/dcf/ajax/customize_subform/";
+    url += "?f=" + field_name + "&v=" + version_number + "&p=" + project_name + "&m=" + model_name + "&c=" + customizer_name;
+
+    var customize_subform_dialog = $("<div></div>");
+    $.ajax({
+         url        : url,
+         type       : "GET",
+         cache      : false,
+         success    : function(data) {
+            var title = "Customizing " + project_name.toLowerCase() + "::" + model_name.toLowerCase() + "::" + field_name.toLowerCase()
+            customize_subform_dialog.html(data);
+            customize_subform_dialog.dialog({
+                title : title,
+                modal : true,
+                dialogClass: "no-close",
+                height : 600,
+                width : 1000,
+                open : function() {
+                    // apply all of the JQuery code to _this_ dialog
+                    enableDCF();
+                    render_msg(customize_subform_dialog);
+                },
+
+                buttons : {
+                    save : function() {
+ 
+                        var subform_data = $(this).find("#customize_subform").serialize();
+                        /* I don't have to worry about populating the current form w/ the result of this POST */
+                        /* b/c the created customizer already has the same name/project/version so it will be found when needed */
+                        $.ajax({
+                            url     : url,
+                            type    : "POST",   // (POST mimics submit)
+                            data    : subform_data,
+                            cache   : false,
+                            success : function(data) {
+                                if (data == "success") {
+                                    $(customize_subform_dialog).dialog("close");
+                                }
+                                else {
+                                    $(customize_subform_dialog).html(data);
+                                    render_msg(customize_subform_dialog); // unlike the main forms, subforms have to explicitly call render_msg b/c they don't get re-opened on submit, the content just gets refreshed
+                                }
+                            },
+                            error   : function(xhr,status,error) {
+                               console.log(xhr.responseText + status + error);
+                            }
+
+                        })
+                    },
+                    cancel : function() {
+                        $(customize_subform_dialog).dialog("close");
+                    }
+                },
+                close   : function() {
+                    $(this).dialog("destroy");
+                }
+            }).dialog('open');
+         }
+     })
+
+};
+
+function edit_tag(edit_tag_icon) {
+    var tag_name = $(edit_tag_icon).next(".tagit-label").text();
+    var tag_key  = tag_name.toLowerCase().replace(/ /g,'');
+    var tag_type = $(edit_tag_icon).closest(".tagit").prev(".tags").attr("name");
+    if (tag_type.indexOf("scientific_categories_tags") !== -1) {
+        categories = SCIENTIFIC_CATEGORIES;
+        tag_component = tag_type.substr(0, tag_type.indexOf("_scientific_categories_tags"));
+    }
+    else {
+        categories = STANDARD_CATEGORIES;
+        alert("You shouldn't be editing standard categories.  You're a very naughty boy.")
+    }
+
+    var category_to_edit = "";
+    $.each(categories,function(i,category) {
+       var category_fields = category.fields
+       if ((category_fields.key == tag_key) && (category_fields.component_name == tag_component)) {
+           category_to_edit = category;
+           
+       }
+    });
+
+    var url = window.document.location.protocol + "//" + window.document.location.host + "/dcf/ajax/customize_category/";
+    url += "?k=" + category_to_edit.fields.key + 
+           "&c=" + category_to_edit.fields.component_name +
+           "&n=" + category_to_edit.fields.name +
+           "&d=" + category_to_edit.fields.description +
+           "&o=" + category_to_edit.fields.order
+
+    var data = category_to_edit;
+    var category_dialog = $("<div></div>");
+    $.ajax({
+         url        : url,
+         type       : "GET",
+         cache      : false,
+         success    : function(data) {
+            var title = "";
+            category_dialog.html(data);
+            category_dialog.dialog({
+                title : title,
+                modal : true,
+                dialogClass: "no-close",
+                height : 400,
+                width : 600,
+                open : function() {
+                    // apply all of the JQuery code to _this_ dialog
+                    enableDCF();
+                },
+
+                buttons : {
+                    ok : function() {
+                        form_data = $(this).find("#category_form").serializeArray();
+                        for (var i=0; i<form_data.length; i++) {
+                            field_data = form_data[i];
+                            category_to_edit.fields[field_data.name] = field_data.value;
+                        }
+                        $(category_dialog).dialog("close");
+                    },
+                    cancel : function() {
+                        $(category_dialog).dialog("close");
+                    }
+                },
+                close   : function() {
+                    $(this).dialog("destroy");
+                }
+            }).dialog('open');
+         }
+     })
+};
+
+
+
+
+
+
+ function getCookie(c_name)
+    {
+        if (document.cookie.length > 0)
+        {
+            c_start = document.cookie.indexOf(c_name + "=");
+            if (c_start != -1)
+            {
+                c_start = c_start + c_name.length + 1;
+                c_end = document.cookie.indexOf(";", c_start);
+                if (c_end == -1) c_end = document.cookie.length;
+                return unescape(document.cookie.substring(c_start,c_end));
+            }
+        }
+        return "";
+     }
+
+var PREVIOUSLY_SELECTED_TAB;
+
+
+function add_form(form) {
+    var add_details = $(form).next(".add_details");
+
+    var version_number  = $(add_details).find(".version_number").text();
+    var project_name    = $(add_details).find(".project_name").text();
+    var customizer_name = $(add_details).find(".customizer_name").text();
+    var model_name      = $(add_details).find(".model_name").text();
+    var field_name      = $(add_details).find(".field_name").text();
+
+    var url = window.document.location.protocol + "//" + window.document.location.host + "/dcf/ajax/add_model";
+    url += "?v=" + version_number + "&p=" + project_name + "&c=" + customizer_name + "&m=" + model_name + "&f=" + field_name;
+
+    $.ajax({
+        url     : url,
+        type    : "GET",
+        cache   : false,
+        success : function(data) {
+            $("#add-dialog").html(data);
+            $("#add-dialog").dialog({
+                modal       : true,
+                dialogClass : "no-close",
+                height      : 400,
+                width       : 400,
+                open        : function() {
+                    // calling this causes the splitter to be re-created
+                    // a good solution would be to check if it's initialized first
+                    // but since the add_model form doesn't rely on JQuery,
+                    // I've just commented it out
+                    // enableDCF();
+                },
+                buttons : {
+                    ok      : function() {
+                        alert("you clicked ok");
+                        $("#add-dialog").dialog("close");
+                    },
+                    cancel  : function() {
+                        $("#add-dialog").dialog("close");
+                    }
+                }
+            }).dialog("open");
+        }
+    });
+
+}
+
+function add_formset(row) {
+    var add_details = $(row).closest(".accordion").next(".add_details");
+
+    var version_number  = $(add_details).find(".version_number").text();
+    var project_name    = $(add_details).find(".project_name").text();
+    var customizer_name = $(add_details).find(".customizer_name").text();
+    var model_name      = $(add_details).find(".model_name").text();
+    var field_name      = $(add_details).find(".field_name").text();
+
+    var min      = $(add_details).find(".min").text();
+    var max      = $(add_details).find(".max").text();
+
+    var url = window.document.location.protocol + "//" + window.document.location.host + "/dcf/ajax/add_model";
+    url += "?v=" + version_number + "&p=" + project_name + "&c=" + customizer_name + "&m=" + model_name + "&f=" + field_name;
+  
+    $.ajax({
+        url     : url,
+        type    : "GET",
+        cache   : false,
+        success : function(data) {
+            $("#add-dialog").html(data);
+            $("#add-dialog").dialog({
+                modal       : true,
+                dialogClass : "no-close",
+                height      : 400,
+                width       : 400,
+                open        : function() {
+                    // calling this causes the splitter to be re-created
+                    // a good solution would be to check if it's initialized first
+                    // but since the add_model form doesn't rely on JQuery,
+                    // I've just commented it out
+                    // enableDCF();
+                },
+                buttons : {
+                    ok      : function() {
+                        alert("you clicked ok");
+                        $("#add-dialog").dialog("close");
+                    },
+                    cancel  : function() {
+                        $("#add-dialog").dialog("close");
+                    }
+                }
+            }).dialog("open");
+        }
+    });
+    
+}
+
