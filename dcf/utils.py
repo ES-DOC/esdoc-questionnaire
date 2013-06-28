@@ -269,3 +269,8 @@ def dict_to_html(dict):
   dict_to_html_aux(dict,html)
   html.append("</ul>")
   return "".join(html)
+
+def user_has_permission(user,restriction=""):
+    if restriction:
+        return user.has_perm(restriction)
+    return True

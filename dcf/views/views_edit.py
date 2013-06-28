@@ -125,6 +125,14 @@ def edit_existing(request,version_number="",project_name="",model_name="",model_
         return dcf_error(request,msg)
 
 
+    # check that the user has permission for this view
+    if not request.user.is_authenticated():
+        return HttpResponseRedirect('%s/?next=%s' % (settings.LOGIN_URL,request.path))
+    else:
+        if not user_has_permission(request.user,project.restriction_customize):
+            msg = "You do not have permission to access this resource."
+            return dcf_error(request,msg)
+
     model_instances = {}
     model_instances[model_instance.component_name] = model_instance
 
@@ -283,6 +291,14 @@ def edit_new(request,version_number="",project_name="",model_name=""):
                 # raise an error if there was no matching query
                 msg = "Unable to find any '%s' with the following parameters: %s" % (model_class.getTitle(), (", ").join([u'%s=%s'%(key,value) for (key,value) in model_filter_parameters.iteritems()]))
                 return dcf_error(request,msg)
+
+    # check that the user has permission for this view
+    if not request.user.is_authenticated():
+        return HttpResponseRedirect('%s/?next=%s' % (settings.LOGIN_URL,request.path))
+    else:
+        if not user_has_permission(request.user,project.restriction_customize):
+            msg = "You do not have permission to access this resource."
+            return dcf_error(request,msg)
 
     # if I'm here then I will be working w/ a new model...
     model_instance = model_class(**model_filter_parameters)

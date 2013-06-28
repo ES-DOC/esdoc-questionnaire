@@ -75,6 +75,16 @@ def customize_existing(request,version_number="",project_name="",model_name="",c
         return dcf_error(request,msg)
 
 
+    # check that the user has permission for this view
+    if not request.user.is_authenticated():
+        return HttpResponseRedirect('%s/?next=%s' % (settings.LOGIN_URL,request.path))
+    else:
+        if not user_has_permission(request.user,project.restriction_customize):
+            msg = "You do not have permission to access this resource."
+            return dcf_error(request,msg)
+
+
+
     if request.method == "POST":
                     
         validity = []
@@ -278,7 +288,16 @@ def customize_new(request,version_number="",project_name="",model_name=""):
                 # raise an error if there was no matching query
                 msg = "Unable to find any Customizer with the following parameters: %s" % (", ").join([u'%s=%s'%(key,value) for (key,value) in customizer_filter_parameters.iteritems()])
                 return dcf_error(request,msg)
-    
+
+    # check that the user has permission for this view
+    if not request.user.is_authenticated():
+        return HttpResponseRedirect('%s/?next=%s' % (settings.LOGIN_URL,request.path))
+    else:
+        if not user_has_permission(request.user,project.restriction_customize):
+            msg = "You do not have permission to access this resource."
+            return dcf_error(request,msg)
+
+
 
     # if I'm here then I will be working w/ new customizers...
     model_proxy                 = MetadataModelProxy.objects.get(version=version,model_name=model_name)
