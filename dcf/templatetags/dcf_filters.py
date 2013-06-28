@@ -94,9 +94,9 @@ def getElementsInCollectionAux(collection,elements=[]):
 
 @register.filter
 def getElementsInCollection(collection):
-    _elements = []
-    getElementsInCollectionAux(collection,_elements)
-    return _elements
+    elements = []
+    getElementsInCollectionAux(collection,elements)
+    return [e for e in elements if e]
 
 @register.filter
 def getFilename(filepath):
