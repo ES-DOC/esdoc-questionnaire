@@ -218,14 +218,14 @@ class Change(MetadataModel):
     name = MetadataAtomicField.Factory("charfield",blank=True,)
     name.help_text = "A mnemonic for describing a particular change."
                 # UML Attribute
-    changeTarget = MetadataManyToOneField(sourceModel='cim_1_8_1.Change',targetModel='cim_1_8_1.Document',blank=True,)
-    changeTarget.help_text = "The CIM element being changed.  If this is blank, then it is implied by the target of its parent (a Change instance currently can only appear as part of a reference which has a target anyway)."
+#    changeTarget = MetadataManyToOneField(sourceModel='cim_1_8_1.Change',targetModel='cim_1_8_1.Document',blank=True,)
+#    changeTarget.help_text = "The CIM element being changed.  If this is blank, then it is implied by the target of its parent (a Change instance currently can only appear as part of a reference which has a target anyway)."
                 # UML Attribute
     changeDate = MetadataAtomicField.Factory("datefield",blank=True,)
     changeDate.help_text = "The date the change was implemented."
                 # UML Attribute
-    changeAuthor = MetadataManyToOneField(sourceModel='cim_1_8_1.Change',targetModel='cim_1_8_1.ResponsibleParty',blank=True,)
-    changeAuthor.help_text = "The person that made the change."
+#    changeAuthor = MetadataManyToOneField(sourceModel='cim_1_8_1.Change',targetModel='cim_1_8_1.ResponsibleParty',blank=True,)
+#    changeAuthor.help_text = "The person that made the change."
                 # UML Attribute
     type = MetadataEnumerationField(enumeration='cim_1_8_1.ChangePropertyType',blank=True,)
 # UML Attribute

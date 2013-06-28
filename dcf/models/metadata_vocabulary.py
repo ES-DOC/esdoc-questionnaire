@@ -11,7 +11,7 @@
 ####################
 
 __author__="allyn.treshansky"
-__date__ ="Jan 31, 2013 11:26:58 AM"
+__date__ ="Jun 10, 2013 4:11:41 PM"
 
 """
 .. module:: metadata_vocabulary
@@ -19,9 +19,7 @@ __date__ ="Jan 31, 2013 11:26:58 AM"
 Summary of module goes here
 
 """
-
 from django.db import models
-import json
 import os
 
 from dcf.utils import *
@@ -38,18 +36,23 @@ def validate_vocabulary_file_extension(value):
 def validate_vocabulary_file_schema(value):
     return validate_file_schema(value,_SCHEMA_PATH)
 
-#@guid()
+
 class MetadataVocabulary(models.Model):
     class Meta:
-        app_label = APP_LABEL
+        app_label   = APP_LABEL
+        abstract    = False
+        # this is one of the few classes that I allow admin access to, so give it pretty names:
         verbose_name        = 'Metadata Vocabulary'
         verbose_name_plural = 'Metadata Vocabularies'
 
+    project = models.ForeignKey("MetadataProject",blank=True,null=True,related_name="vocabularies")
     file    = models.FileField(verbose_name="Vocabulary File",upload_to=_UPLOAD_PATH,validators=[validate_vocabulary_file_extension,validate_vocabulary_file_schema])
-    name    = models.CharField(max_length=LIL_STRING,blank=True,null=True,unique=True)
+    name    = models.CharField(max_length=255,blank=True,null=True,unique=True)
+    document_type = models.CharField(max_length=64,blank=False,choices=CIM_DOCUMENT_TYPES)
 
-    component_hierarchy = models.TextField(blank=True,null=True) # using TextField b/c the hierarchy could be arbitrariliy big
-   
+    component_tree = models.TextField(blank=True)
+    component_list = models.TextField(blank=True)
+    
     def __unicode__(self):
         if self.file:
             return u'%s' % os.path.basename(self.file.name)
@@ -66,33 +69,41 @@ class MetadataVocabulary(models.Model):
         if not self.name:
             self.name = vocabulary_file_name
 
-        if os.path.exists(vocabulary_file_path):
-            print "WARNING: THE FILE '%s' ALREADY EXISTS; IT IS BEING OVERWRITTEN." % vocabulary_file_path
-            os.remove(vocabulary_file_path)
+        force_overwrite = kwargs.pop("force_overwrite",True)
+        if force_overwrite:
+            if os.path.exists(vocabulary_file_path):
+                print "warning: the file '%s' is being overwritten" % vocabulary_file_path
+                os.remove(vocabulary_file_path)
 
         super(MetadataVocabulary, self).save(*args, **kwargs)
 
-    def loadVocabulary(self):
+    def register(self):
+
+        # this is a pretty intensive fn.
+        # thankfully, it only gets run when setting up the db,
+        # and not while using the forms.
+
+        if not self.document_type:
+            msg = "unable to register a vocabulary without an associated document_type"
+            print "error: %s" % msg
+            raise MetadataError(msg)
+
         self.file.open()
         vocabulary_content = et.parse(self.file)
         self.file.close()
 
-        _component_hierarchy = {}
+        component_hierarchy = {}
 
-        category_filter_parameters = {
-            "vocabulary"    : self
-        }
-        property_filter_parameters = {
-            "vocabulary"    : self
-        }
-        value_filter_parameters = {
-
-        }
+        category_filter_parameters  = { "vocabulary" : self }
+        property_filter_parameters  = { "vocabulary" : self, "model_name" : self.document_type, "type" : MetadataFieldTypes.PROPERTY }
+        value_filter_parameters     = { }
 
         for i, component in enumerate(vocabulary_content.xpath("//component")):
             component_name = component.xpath("@name")[0]
+
+            # parse the component hierarchy buried w/in the CV into a dictionary-of-lists-of-dictionaries
             component_ancestors = component.xpath("./ancestor-or-self::component/@name")
-            current_component_hierarchy = _component_hierarchy
+            current_component_hierarchy = component_hierarchy
             for ancestor in component_ancestors:
                 if type(current_component_hierarchy) is dict:
                     current_component_hierarchy = current_component_hierarchy.setdefault(ancestor,[])
@@ -101,7 +112,6 @@ class MetadataVocabulary(models.Model):
                     for _dict in current_component_hierarchy:
                         if ancestor in _dict:
                             current_component_hierarchy = _dict.setdefault(ancestor,[])
-                    # these weird next 4 lines break out of the for loop enclosing the if statement
                             found = True
                             break
                     if found:
@@ -112,17 +122,19 @@ class MetadataVocabulary(models.Model):
 
             category_filter_parameters["component_name"] = component_name.lower()
             property_filter_parameters["component_name"] = component_name.lower()
-            
+
             for i, parameter_group in enumerate(component.xpath("./parametergroup")):
 
                 parameter_group_name = parameter_group.xpath("@name")[0]
 
                 category_filter_parameters["name"]  = parameter_group_name
                 category_filter_parameters["key"]   = re.sub(r'\s','',parameter_group_name).lower()
+                category_filter_parameters["defaults"] = {"order" : (i+1), "description" : ""}
 
-                (new_category, created) = MetadataPropertyCategory.objects.get_or_create(**category_filter_parameters)
+                (new_category, created) = MetadataScientificCategory.objects.get_or_create(**category_filter_parameters)
+                if created:
+                    print "created category %s" % new_category
 
-                #new_category_mapping = {}
                 for i, property in enumerate(parameter_group.xpath("./parameter")):
 
                     property_name = property.xpath("@name")[0]
@@ -131,10 +143,12 @@ class MetadataVocabulary(models.Model):
 
                     property_filter_parameters["name"] = property_name
                     property_filter_parameters["choice"] = property_choice
-                    property_filter_parameters["default_category"] = new_category
-                    property_filter_parameters["description"] = property_definition[0] if property_definition else ""
-
-                    (new_property, created) = MetadataProperty.objects.get_or_create(**property_filter_parameters)
+                    property_filter_parameters["category"] = new_category
+                    property_filter_parameters["documentation"] = property_definition[0] if property_definition else ""
+            
+                    (new_property, created) = MetadataScientificPropertyProxy.objects.get_or_create(**property_filter_parameters)
+                    if created:
+                        print "created property %s" % new_property
 
                     value_filter_parameters["property"] = new_property
                     for i, value in enumerate(property.xpath("./value")):
@@ -149,112 +163,35 @@ class MetadataVocabulary(models.Model):
                         if value_format:
                             value_filter_parameters["format"] = value_format[0]
 
-                        (new_value, created) = MetadataPropertyValue.objects.get_or_create(**value_filter_parameters)
+                        (new_value, created) = MetadataScientificPropertyProxyValue.objects.get_or_create(**value_filter_parameters)
+                        if created:
+                            print "created property value %s" % new_value
 
-        # using json dumps/loads because I save the heierarchy as a string but serialize it as JSON (to pass to JQuery/HTML)
-        self.component_hierarchy = json.dumps(_component_hierarchy,separators=(',',':'))
-        self.save() # have to ensure component_hierarchy gets saved in the db-
+        print "converting component hierarchy to dictionary & list..."
+        self.setComponents(component_hierarchy)
+        self.save(force_overwrite=False) # have to ensure component_hierarchy gets saved in the db
 
-### CODE LEFTOVER FROM OLD CV FORMAT
-###
-###        newProperties = []
-###        for i, model in enumerate(vocabulary_content.xpath("//model")):
-###            modelName = model.xpath("name/text()")[0].lower()
-###            for i, property in enumerate(model.xpath(".//property")):
-###                propertyShortName = property.xpath("shortName/text()")[0]
-###                propertyLongName = property.xpath("longName/text()") or None
-###                if propertyLongName:
-###                    propertyLongName = propertyLongName[0]
-###                else:
-###                    propertyLongName = propertyShortName
-###
-###                hasProperties = property.xpath("./properties")
-###                hasValues = property.xpath("./values")
-###
-###                if hasProperties:
-###                    # if this bit of the vocab has sub-properties,
-###                    # then it is actually a category, not a property
-###
-###                    filter_parameters = {
-###                        "vocabulary"    : self,
-###                        "name"          : propertyShortName,
-###                        "description"   : propertyLongName,
-###                        "key"           : re.sub(r'\s','',propertyShortName).lower()
-###                    }
-###
-###                    (newCategory, created) = MetadataPropertyCategory.objects.get_or_create(**filter_parameters)
-###
-###                    newCategoryMapping = {}
-###                    for i, subProperty in enumerate(hasProperties[0].xpath(".//property")):
-###                        newSubProperty = self.loadProperty(subProperty,modelName)
-###                        newProperties.append(newSubProperty)
-###                        try:
-###                            existing_properties = newCategoryMapping[propertyShortName]
-###                            newCategoryMapping[modelName].append(newSubProperty.short_name)
-###                        except KeyError:
-###                            newCategoryMapping[modelName] = [newSubProperty.short_name]
-###                    if newCategoryMapping:
-###                        newCategory.setMapping(newCategoryMapping)
-###                        newCategory.save()
-###
-###                elif hasValues:
-###                    # if this bit of the vocab has sub-values
-###                    # then it is actually a property, not a category
-###
-###                    newProperty = self.loadProperty(property,modelName)
-###                    newProperties.append(newProperty)
-###
-###            self.addProperties(newProperties)
-###
-###    def loadProperty(self,property_element,modelName):
-###        propertyShortName = property_element.xpath("shortName/text()")[0]
-###        propertyLongName = property_element.xpath("longName/text()") or None
-###        if propertyLongName:
-###            propertyLongName = propertyLongName[0]
-###        else:
-###            propertyLongName = propertyShortName
-###
-###        (newProperty, created) = MetadataProperty.objects.get_or_create(short_name=propertyShortName,long_name=propertyLongName,model_name=modelName)
-###
-###        values = property_element.xpath("./values")
-###        if values:
-###            values = values[0]  # xpath returns a list
-###
-###            valueOpen = values.xpath("@open")
-###            valueMulti = values.xpath("@multi")
-###            valueNullable = values.xpath("@nullable")
-###            newProperty.open = valueOpen and valueOpen[0].lower()=="true"
-###            newProperty.multi = valueMulti and valueMulti[0].lower()=="true"
-###            newProperty.nullable = valueNullable and valueNullable[0].lower()=="true"
-###
-###            newValues = []
-###            for value in values.xpath(".//value"):
-###                valueShortName = value.xpath("shortName/text()")[0]
-###                valueLongName  = value.xpath("longName/text()") or None
-###                if valueLongName:
-###                    valueLongName = valueLongName[0]
-###                else:
-###                    valueLongName = valueShortName
-###                newValues.append((valueShortName,valueLongName))
-###
-###            newProperty.setValues(newValues)
-###            newProperty.save()
-###
-###        return newProperty
+    def setComponents(self,components_hierarchy):
+        component_list = []
+        component_list_generator = list_from_tree(components_hierarchy)
+        for component in component_list_generator:
+            component_list += component
 
-    def getCategories(self):
-        return self.categories.all()
+        component_list_string = "|".join(component_list)
+        component_tree_string = json.dumps(components_hierarchy)
+        self.component_tree = component_tree_string
+        self.component_list = component_list_string
 
-    def getProperties(self):
-        return self.default_properties.all()
+    def getComponentTree(self):
+        return json.loads(self.component_tree)
 
-    def addProperty(self,property):
-        self.default_properties.add(property)
+    def getComponentList(self):
+        return self.component_list.split("|")
 
-    def addProperties(self,properties):
-        # TODO: ENSURE THAT PROPERTIES ARGUMENT IS OF TYPE LIST
-        self.default_properties.add(*properties)
-
-    def getComponents(self):
-        return json.loads(self.component_hierarchy)
-
+def list_from_tree(tree):
+    yield tree.keys()
+    for (key,value) in tree.iteritems():
+        if isinstance(value,list):
+            for list_item in value:
+                for key in list_from_tree(list_item):
+                    yield key

@@ -15,12 +15,10 @@ __date__ ="$Jan 31, 2013 11:24:31 AM$"
 
 from dcf.fields import *
 
-from metadata_category          import MetadataCategory, MetadataAttributeCategory, MetadataPropertyCategory
-from metadata_model             import MetadataModel, MetadataEnumeration, MetadataAttribute, CIMDocument
-from metadata_property          import MetadataProperty, MetadataPropertyValue
-from metadata_categorization    import MetadataCategorization
+from metadata_model             import MetadataModel, MetadataEnumeration, MetadataProperty, MetadataDocument
+from metadata_proxy             import MetadataModelProxy, MetadataPropertyProxy, MetadataStandardPropertyProxy, MetadataScientificPropertyProxy, MetadataScientificPropertyProxyValue
+from metadata_customizer        import MetadataCustomizer, MetadataModelCustomizer, MetadataPropertyCustomizer, MetadataStandardPropertyCustomizer, MetadataScientificPropertyCustomizer
+from metadata_categorization    import MetadataCategorization, MetadataCategory, MetadataStandardCategory, MetadataScientificCategory
 from metadata_vocabulary        import MetadataVocabulary
 from metadata_version           import MetadataVersion
 from metadata_project           import MetadataProject
-from metadata_customizer        import MetadataModelCustomizer, MetadataAttributeCustomizer, MetadataPropertyCustomizer
-from metadata_test              import MetadataTest, MetadataTestFileModel

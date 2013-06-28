@@ -11,7 +11,7 @@
 ####################
 
 __author__="allyn.treshansky"
-__date__ ="Feb 1, 2013 5:04:50 PM"
+__date__ ="Jun 17, 2013 2:42:52 PM"
 
 """
 .. module:: views_ajax
@@ -31,301 +31,327 @@ import re
 
 from dcf.models import *
 from dcf.forms import *
+from dcf.utils import *
 
-def get_category(request, category_type=""):
-    category_key    = request.GET.get('k',None)
-    category_name   = request.GET.get('n',None)
-    version_name    = request.GET.get('v',None)
+def add_model(request):
+
+    version_number  = request.GET.get('v',None)
     project_name    = request.GET.get('p',None)
+    customizer_name = request.GET.get('c',None)
     model_name      = request.GET.get('m',None)
-    component_name  = request.GET.get('c',None)
+    field_name      = request.GET.get('f',None)
 
-    create_if_none  = request.GET.get('create_if_none',True) # unless otherwise specified, create the category if it's not in the db already
+    if not (version_number and project_name and customizer_name and model_name and field_name):
+        msg = "Insufficient parameters sent to add_model"
+        return HttpResponse(msg)
 
-    if not (category_type and category_key and category_name and version_name and project_name and model_name):
-        msg = "invalid HTPP parameters to get_category"
-        return HttpResponseBadRequest(msg)
-
-    # sanity checks on the version/project/model...
     try:
-        version = MetadataVersion.objects.get(name__iexact=METADATA_NAME,version=version_name)
-        project = MetadataProject.objects.get(name__iexact=project_name)
-        categorization = version.getDefaultCategorization()
-        vocabulary = project.getDefaultVocabulary()
-    except ObjectDoesNotExist:
-        msg = "invalid HTTP parameters to get_category"
-        return HttpResponseBadRequest(msg)
-    model = version.getModel(model_name)
-    if not model:
-        msg = "invalid HTTP parameters to get_category"
-        return HttpResponseBadRequest(msg)
+        version = MetadataVersion.objects.get(number=version_number)
+    except:
+        msg = "Invalid version specified"
+        return HttpResponse(msg)
 
-    category_filters = {
-        "key"   : category_key
+    try:
+        model_class = version.getModelClass(model_name)
+    except:
+        msg = "Invalid model specified"
+        return HttpResponse(msg)
+    if not model_class:
+        msg = "Invalid model specified"
+        return HttpResponse(msg)
+
+    metadata_field = model_class.getField(field_name)
+    # TODO: THE FIX FOR BULK_CREATE FOR SQLITE IS CAUSING CALLS TO CONTENTTYPE TO FAIL
+    # SO I AM REWRITING THIS TO USE THE SAVED MODELS FROM THE VERSION
+    #target_model_class = metadata_field.getTargetModelClass()
+    target_model_class = version.getModelClass(metadata_field.targetModelName.lower())
+    qs = target_model_class.objects.all()
+    # TODO: exclude those models that are already associated w/ this field
+
+    class _AddForm(forms.Form):
+        models = ModelChoiceField(
+            required=True,
+            empty_label=None,
+            label=target_model_class.getTitle(),
+            queryset=qs
+        )
+
+        def __init__(self,*args,**kwargs):
+            qs = kwargs.pop("queryset",None)
+            super(_AddForm,self).__init__(*args,**kwargs)
+            self.fields["models"].queryset = qs
+
+    add_form = _AddForm(queryset=qs)
+
+    dict = {
+        "STATIC_URL"    : "/static/",
+        "form"          : add_form,
     }
-    if category_type=="attribute":
-        category_class = MetadataAttributeCategory
-        category_filters["categorization"] = categorization
-    elif category_type=="property":
-        if not component_name:
-            msg = "invalid HTTP parameters to get_category"
-            return HttpResponseBadRequest(msg)
-        category_class = MetadataPropertyCategory
-        category_filters["vocabulary"] = vocabulary
-        category_filters["component_name"] = component_name
-    else:
-        msg = "invalid category_type: %s" % category_type
-        return HttpResponseBadRequest(msg)
-        
-    try:
-        category = category_class.objects.get(**category_filters)
-    except ObjectDoesNotExist:
-        if create_if_none:
-            category_filters["name"] = category_name
-            category = category_class.objects.create(**category_filters)
-        else:
-            msg = "invalid HTTP parameters to get_category"
-            return HttpResponseBadRequest(msg)
 
-    json_category = JSON_SERIALIZER.serialize([category])
-    return HttpResponse(json_category[1:len(json_category)-1], mimetype='application/json');
+    rendered_form = django.template.loader.render_to_string("dcf/dcf_add.html", dictionary=dict, context_instance=RequestContext(request))
+    return HttpResponse(rendered_form,mimetype='text/html')
 
-def edit_category(request, category_type=""):
-    
-    category_key    = request.GET.get('k',None)
-    category_name   = request.GET.get('n',None)
-    version_name    = request.GET.get('v',None)
-    project_name    = request.GET.get('p',None)
-    model_name      = request.GET.get('m',None)
-    component_name  = request.GET.get('c',None)
+def customize_category(request):
 
-    if not (category_type and category_key and category_name and version_name and project_name and model_name):
-        msg = "invalid HTPP parameters to delete_category"
-        return HttpResponseBadRequest(msg)
+    category_key            = request.GET.get('k',None)
+    category_name           = request.GET.get('n',None)
+    category_component_name = request.GET.get('c',None)
+    category_description    = request.GET.get('d',None)
+    category_order          = request.GET.get('o',None)
 
-    # sanity checks on the version/project/model...
-    try:
-        version = MetadataVersion.objects.get(name__iexact=METADATA_NAME,version=version_name)
-        project = MetadataProject.objects.get(name__iexact=project_name)
-    except ObjectDoesNotExist:
-        msg = "invalid HTTP parameters to delete_category"
-        return HttpResponseBadRequest(msg)
-    model = version.getModel(model_name)
-    if not model:
-        msg = "invalid HTTP parameters to delete_category"
-        return HttpResponseBadRequest(msg)
+    if not (category_key and category_name and category_component_name):
+        msg = "Insufficient parameters sent to edit_scientific_category"
+        return HttpResponse(msg)
 
-    if category_type=="attribute":
-        category_class = MetadataAttributeCategory
-    elif category_type=="property":
-        category_class = MetadataPropertyCategory        
-    else:
-        msg = "invalid category_type: %s" % category_type
-        return HttpResponseBadRequest(msg)
+    category = MetadataScientificCategory(
+        # I don't actually care about getting/saving this in the db
+        # I'll do that when I save the customize form
+        key            = category_key,
+        name           = category_name,
+        component_name = category_component_name,
+        description    = category_description,
+        order          = category_order,
+    )
 
-    try:
-        category = category_class.objects.get(key=category_key)
-    except ObjectDoesNotExist:
-        msg = "invalid HTTP parameters to get_category"
-        return HttpResponseBadRequest(msg)
+    category_form = MetadataScientificCategoryForm(instance=category)
 
-    # override the existing category values with those from the javascript category dictionary (they are more current)
-    for (key,value) in request.GET.iteritems():
-        if key in ["description","order"]:
-            # ACTUALLY, I ONLY WANT TO MODIFY CERTAIN FIELDS
-            # ANYTHING ELSE IS DANGEROUS
-            try:
-                setattr(category, key, value);
-            except:
-                pass
+    dict = {
+        "STATIC_URL"    : "/static/",
+        "form"          : category_form,
+        "component"     : category.component_name,
+    }
 
-    form = MetadataCategoryForm(instance=category)
+    rendered_form = django.template.loader.render_to_string("dcf/dcf_category.html", dictionary=dict, context_instance=RequestContext(request))
+    return HttpResponse(rendered_form,mimetype='text/html')
 
-    form_template = Template("\
-      <!-- don't need to re-load JS/CSS b/c it's already loaded in the parent page -->\
-      <div id='dcf'>\
-        <div id='customize'>\
-            <form>\
-                <br/>\
-                <div class='form'>\
-                    <table>\
-                        {% for field in form.visible_fields %}\
-                            <tr class='{% cycle \"odd\" \"even\" %}'>\
-                                <td class='field-label'>{{field.label}}:&nbsp;</td>\
-                                <td class='field-value'>\
-                                    <div class='field' name='{{field.name}}'>\
-                                        {{field}}\
-                                    </div>\
-                                </td>\
-                            </tr>\
-                        {% endfor %} {# /field in form.visible_fields #}\
-                    </table>\
-                </div> <!-- /.form -->\
-            </form>\
-        </div> <!-- /#customize -->\
-      </div> <!-- /#dcf -->\
-    ")
-    form_context  = Context({"STATIC_URL" : "/static/", "form" : form, })
 
-    return HttpResponse(form_template.render(form_context))
-
-def delete_category(request, category_type=""):
-    category_key    = request.GET.get('k',None)
-    category_name   = request.GET.get('n',None)
-    version_name    = request.GET.get('v',None)
-    project_name    = request.GET.get('p',None)
-    model_name      = request.GET.get('m',None)
-
-    if not (category_type and category_key and category_name and version_name and project_name and model_name):
-        msg = "invalid HTPP parameters to delete_category"
-        return HttpResponseBadRequest(msg)
-
-    # sanity checks on the version/project/model...
-    try:
-        version = MetadataVersion.objects.get(name__iexact=METADATA_NAME,version=version_name)
-        project = MetadataProject.objects.get(name__iexact=project_name)
-    except ObjectDoesNotExist:
-        msg = "invalid HTTP parameters to delete_category"
-        return HttpResponseBadRequest(msg)
-    model = version.getModel(model_name)
-    if not model:
-        msg = "invalid HTTP parameters to delete_category"
-        return HttpResponseBadRequest(msg)
-
-    if category_type=="attribute":
-        category_class = MetadataAttributeCategory
-    elif category_type=="property":
-        category_class = MetadataPropertyCategory
-    else:
-        msg = "invalid category_type: %s" % category_type
-        return HttpResponseBadRequest(msg)
-
-    try:
-        category = category_class.objects.get(key=category_key)
-    except ObjectDoesNotExist:
-            msg = "invalid HTTP parameters to get_category"
-            return HttpResponseBadRequest(msg)
-
-    id = category.id
-    type = category.getType()
-    
-    if type == CategoryTypes.PROPERTY:
-        category.delete()
-        msg = "deleted %s category: %s" % (type,id)
-    else:        
-        msg = "uwilling to deleted %s category: %s" % (type,id)
-
-    return HttpResponse(msg);
 
 def customize_subform(request):
 
-    attribute_name  = request.GET.get('a',None)
-    model_name      = request.GET.get('m',None)
+    field_name      = request.GET.get('f',None)
+    version_number  = request.GET.get('v',None)
     project_name    = request.GET.get('p',None)
-    version_name    = request.GET.get('v',None)
-
-    # TODO: for now just get the default model customizer...
-    # TODO: need to work out how to get the model customizer if it hasn't yet been saved
+    model_name      = request.GET.get('m',None)
+    customizer_name = request.GET.get('c',None)
 
     msg = ""
 
+    if not (field_name and version_number and project_name and model_name and customizer_name):
+        msg = "Insufficient parameters sent to customize_subform"
+        print msg
+        return HttpResponse(msg)
+    
     # try to get the requested project...
     try:
         project = MetadataProject.objects.get(name__iexact=project_name)
     except ObjectDoesNotExist:
         msg = "Cannot find the project '%s'.  Has it been registered?" % project_name
-        return HttpResponseBadRequest(msg)
+        print msg
+        return HttpResponse(msg)
 
     # try to get the requested version...
-    if version_name:
+    if version_number:
         try:
-            version = MetadataVersion.objects.get(name__iexact=METADATA_NAME,version=version_name)
+            version = MetadataVersion.objects.get(name__iexact=METADATA_NAME,number=version_number)
         except ObjectDoesNotExist:
-            msg = "Cannot find version '%s'.  Has it been registered?" % (version_name)
-            return HttpResponseBadRequest(msg)
+            msg = "Cannot find version '%s'.  Has it been registered?" % (version_number)
+            print msg
+            return HttpResponse(msg)
     else:
         version = project.getDefaultVersion()
         if not version:
             msg = "please specify a %s version; the %s project has no default one." % (METADATA_NAME,project)
-            return HttpResponseBadRequest(msg)
+            print msg
+            return HttpResponse(msg)
 
     # try to get the requested model (class)...
-    model_class = version.getModel(model_name)
+    model_class = version.getModelClass(model_name)
     if not model_class:
         msg = "Cannot find the model type '%s' in version '%s'.  Have all model types been loaded?" % (model_name, version)
-        return HttpResponseBadRequest(msg)
+        print msg
+        return HttpResponse(msg)
 
+    # get the default categorization and vocabulary...
+    categorizations = version.categorizations.all()
+    vocabularies = project.vocabularies.all()
+    # TODO: THIS IS CLEARLY DUMB,
+    # BUT THE RELATEDOBJECTMANAGER IS BEING USED FOR THE TIME WHEN
+    # THIS CODE CAN SUPPORT MULTPLE CATEGORIZATIONS
+    categorization  = categorizations[0] if categorizations else None
+    vocabulary  = vocabularies[0] if vocabularies else None
+    if not categorization:
+        msg = "There is no default categorization associated with version %s." % version
+        print msg
+        return dcf_error(request,msg)
+    if not vocabulary:
+        msg = "There is no default vocabulary associated with project %s." % project
+        print msg
+        return dcf_error(request,msg)
+
+    # try to get the existing customizers...
     try:
-        model_customizer = MetadataModelCustomizer.objects.get(project=project,version=version,model=model_name,default=1)
+        model_customizer = MetadataModelCustomizer.objects.get(project=project,version=version,model__iexact=model_name,name=customizer_name)
     except MetadataModelCustomizer.DoesNotExist:
         msg = "There is no default customization associated with '%s'" % (model_name)
-        return HttpResponseBadRequest(msg)
+        print msg
+        return HttpResponse(msg)
+    property_customizer = model_customizer.getStandardPropertyCustomizers().get(name=field_name)
 
-    attribute = model_customizer.attributes.get(attribute_name__iexact=attribute_name)
-    related_model_class = model_class._meta.get_field_by_name(attribute.attribute_name)[0].getTargetModelClass()
+    # and get the model this property points to (the one we want to customize)...
+    (target_model_app,target_model_name) = property_customizer.relationship_target_model.split(".")
+    target_model_name = target_model_name.lower()
+#    target_model_class = version.getModelClass(target_model_name)
 
-    # at this point:
-    # project = the project being customized
-    # version = the version being customized
-    # attribute = the attribute being customized (this is a relationshipfield)
-    # model_class = the model being customized
-    # related_model_class = the target model of the relationship
-    # model_customizer = the existing customizer for the model being customized
+    #target_model_type   = ContentType.objects.get(app_label=target_model_app,model=target_model_name)
+    #target_model_class  = target_model_type.model_class()
+    target_model_class  = version.getModelClass(target_model_name)
+    target_model_proxy  = MetadataModelProxy.objects.get(version=version,model_name=target_model_name)
 
-    # need to set related_model_customizer
-
-    filterParameters = {}
-    filterParameters["project"] = project
-    filterParameters["version"] = version
-    filterParameters["name"]    = model_customizer.name # this customizer should have the same name as the 'parent' customizer
-    filterParameters["model"]   = related_model_class.getName()
-
-    if attribute.subform_customizer:
-        related_model_customizer = attribute.subform_customizer
-    else:
-        try:
-            related_model_customizer = MetadataModelCustomizer.objects.get(**filterParameters)
-        except MetadataModelCustomizer.DoesNotExist:
-            related_model_customizer = MetadataModelCustomizer(**filterParameters)
-    # the above code replaces the following line (it handles the case where there was a customizer created previously by the subform but never attached to a parent customizer)
-    #related_model_customizer = attribute.subform_customizer or MetadataModelCustomizer(**filterParameters)
+    # so now that we know the target class and the customizer name, lets see if we can find a model customizer for it
+    created = False
+    try:
+        target_model_customizer = MetadataModelCustomizer.objects.get(
+            project=project,
+            version=version,
+            model=target_model_name,
+            name=customizer_name
+        )
+        print "EXISTING CUSTOMIZER"
+    except MetadataModelCustomizer.DoesNotExist:
+        print "NEW CUSTOMIZER"
+        target_model_customizer = MetadataModelCustomizer(
+            project=project,
+            version=version,
+            model=target_model_name,
+            name=customizer_name
+        )
+        target_model_customizer.reset(target_model_proxy)
+        created = True
 
     if request.method == "POST":
-        form = MetadataModelCustomizerForm(request.POST,instance=related_model_customizer,request=request)
-        if form.is_valid():
-            related_model_customizer = form.save(commit=False)
-            related_model_customizer.save()
-            form.save_subforms(commit=True)
-            form.save_m2m()
-
-            # ACTUALLY, DON'T THINK I NEED TO DO THIS ANYMORE B/C OF HOW I USE REVERSE RELATIONSHIPS FOR ATTRIBUTES
-            # outputting JSON w/ pk & name to add as option to formfield
-            json_related_model_customizer = json.dumps({"pk":related_model_customizer.pk,"unicode":u'%s'%related_model_customizer})
-            return HttpResponse(json_related_model_customizer,mimetype='application/json')
         
+        validity = []
+        model_customizer_form = MetadataModelCustomizerForm( \
+            request.POST,
+            instance=target_model_customizer,
+            initial = {
+                "project"                       : project,
+                "version"                       : version,
+                "model"                         : target_model_name,
+                "categorization"                : categorization,
+                "vocabularies"                  : [vocabulary],
+                "prefix"                        : "customize_subform",
+            }
+        )
+        standard_property_customizer_formset = MetadataStandardPropertyCustomizerInlineFormSetFactory(
+            instance=target_model_customizer,
+            prefix = "customize_subform",
+            request=request
+        )
+
+        print "ONE"
+        if model_customizer_form.is_valid():
+            print "yep"
         else:
-            msg = "Unable to save.  Please review the form and try again."
-            print form.errors
-            
-            
-    else:
-        form = MetadataModelCustomizerForm(instance=related_model_customizer,request=request)
-        
-    # gather all the extra information required by the template
-    dict = {}
-    dict["STATIC_URL"]          = "/static/"
-    dict["msg"]                 = msg
-    dict["form"]                = form
-    # (notice how global_vars is different from the other views; I want to reference the _related_ model)
-    dict["local_vars"]         = {
-                                    "version"   : version.version.lower(),
-                                    "project"   : project.name.lower(),
-                                    "model"     : related_model_class.getName().lower(),
-                                }
-    dict["project_name"]        = project.long_name
-    dict["parent_model_name"]   = model_class.getTitle()
-    dict["model_name"]          = related_model_class.getTitle()
-    dict["attribute_name"]      = attribute_name
+            print "nope"
+        validity += [model_customizer_form.is_valid()]
+        print validity
+        validity += [standard_property_customizer_formset.is_valid()]
+        print validity
 
+        
+        if all(validity):
+
+            target_model_customizer_instance = model_customizer_form.save()
+            standard_property_customizer_instances = standard_property_customizer_formset.save(commit=False)
+            for standard_property_customizer_instance in standard_property_customizer_instances:
+                standard_property_customizer_instance.setParent(target_model_customizer_instance)
+                standard_property_customizer_instance.save()
+
+            return HttpResponse("success")
+            #json_target_model_customizer = json.dumps({"pk":target_model_customizer.pk,"unicode":u'%s'%target_model_customizer})
+            #return HttpResponse(json_target_model_customizer,mimetype='application/json')
+
+        else:
+
+            msg = "Unable to save the customization.  Please review the form and try again."
+
+
+    else: # request.method == "GET":
+
+        model_customizer_form = MetadataModelCustomizerForm( \
+            instance=target_model_customizer,
+            initial = {
+                "project"                       : project,
+                "version"                       : version,
+                "model"                         : target_model_name,
+                "categorization"                : categorization,
+                "vocabularies"                  : [vocabulary],
+                "prefix"                        : "customize_subform",
+            }
+        )
+
+        if created:
+
+            standard_property_customizers = []
+            standard_property_proxies   = MetadataStandardPropertyProxy.objects.filter(version=version,model_name=target_model_name)
+            for standard_property_proxy in standard_property_proxies:
+                standard_property_customizer = MetadataStandardPropertyCustomizer(project=project,version=version,model=target_model_name)
+                standard_property_customizer.reset(standard_property_proxy)
+                standard_property_customizers.append(standard_property_customizer)
+
+            initial_standard_property_customizer_data = [
+                get_initial_data(standard_property_customizer,{
+                    "project"   : project,
+                    "version"   : version,
+                    "model"     : target_model_name,
+                    "category"  : standard_property_customizer.category,
+                    "proxy"     : standard_property_customizer.proxy,
+                })
+                for standard_property_customizer in standard_property_customizers
+            ]
+            standard_property_customizer_formset = MetadataStandardPropertyCustomizerInlineFormSetFactory(
+                instance=target_model_customizer,
+                initial=initial_standard_property_customizer_data,
+                extra=len(initial_standard_property_customizer_data),
+                prefix="customize_subform",
+                request=request,
+            )
+
+            # TODO: NOT CURRENTLY BOTHERING W/ SCIENTIFIC PROPERTIES OF SUBFORMS
+
+        else:
+
+            # using an existing customization (no need to deal w/ proxies)
+
+            standard_property_customizer_formset = MetadataStandardPropertyCustomizerInlineFormSetFactory(
+                instance    = target_model_customizer,
+                prefix = "customize_subform",
+                request     = request,
+                
+            )
+
+            # TODO: NOT CURRENTLY BOTHERING W/ SCIENTIFIC PROPERTIES OF SUBFORMS
+
+    
+    # gather all the extra information required by the template
+    dict = {
+        "STATIC_URL"                                  : "/static/",
+        "msg"                                         : msg,
+        "model_customizer_form"                       : model_customizer_form,
+        "standard_property_customizer_formset"        : standard_property_customizer_formset,
+        #"scientific_property_customizer_formset"      : scientific_property_customizer_formset,
+        "project"                                     : project,
+        "version"                                     : version,
+        "target_model_class"                          : target_model_class,
+        "parent_model_class"                          : model_class,
+        "parent_property_name"                        : field_name,
+        # some stuff I may need to do b/c of AJAX issues...
+        "csrf_token_value"                            : request.COOKIES["csrftoken"],
+        "field_name"                                  : field_name,
+    }
+
+    
     rendered_form = django.template.loader.render_to_string("dcf/dcf_customize_subform.html", dictionary=dict, context_instance=RequestContext(request))
     return HttpResponse(rendered_form,mimetype='text/html')
+

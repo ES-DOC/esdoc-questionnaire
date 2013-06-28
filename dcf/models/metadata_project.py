@@ -11,7 +11,7 @@
 ####################
 
 __author__="allyn.treshansky"
-__date__ ="Jan 31, 2013 11:26:17 AM"
+__date__ ="Jun 10, 2013 4:11:53 PM"
 
 """
 .. module:: metadata_project
@@ -20,50 +20,45 @@ Summary of module goes here
 
 """
 
-from django.core.exceptions import ValidationError
+from django.db import models
 
 from dcf.utils import *
 
-#@guid()
 class MetadataProject(models.Model):
-
     class Meta:
-        app_label = APP_LABEL
-        verbose_name = 'Metadata Project'
+        app_label           = APP_LABEL
+        abstract            = False
+        # this is one of the few classes that I allow admin access to, so give it pretty names:
+        verbose_name        = 'Metadata Project'
         verbose_name_plural = 'Metadata Projects'
 
-    name        = models.CharField(max_length=LIL_STRING,blank=False,unique=True,validators=[validate_no_spaces])
-    long_name   = models.CharField(max_length=BIG_STRING,blank=True)
-    description = models.TextField(blank=True)
-    
-    default_version     = models.ForeignKey("MetadataVersion",blank=True,null=True,related_name="project")
-    default_vocabulary  = models.ForeignKey("MetadataVocabulary",blank=True,null=True,related_name="project")
-    versions            = models.ManyToManyField("MetadataVersion",blank=True,null=True,verbose_name="Associated Versions")
-    vocabularies        = models.ManyToManyField("MetadataVocabulary",blank=True,null=True,verbose_name="Associated Vocabularies")
 
     _guid = models.CharField(max_length=64,unique=True,editable=False,blank=False,default=lambda:str(uuid4()))
+
+    name        = models.CharField(max_length=255,blank=False,unique=True,validators=[validate_no_spaces])
+    title       = models.CharField(max_length=BIG_STRING,blank=False)
+    description = models.TextField(blank=True)
+
+    default_version     = models.ForeignKey("MetadataVersion",blank=True,null=True,related_name="project")
+
+    restriction_customize   = models.CharField(max_length=64,blank=True,null=True)
+    restriction_edit        = models.CharField(max_length=64,blank=True,null=True)
+
     def getGUID(self):
         return self._guid
 
     def __unicode__(self):
-        if self.long_name:
-            return u'%s' % self.long_name
+        if self.title:
+            return u'%s' % self.title
         else:
             return u'%s' % self.name
-        
+
+    def getName(self):
+        return self.name
+    
+    def getTitle(self):
+        return self.title
+
     def getDefaultVersion(self):
         return self.default_version
 
-    def getDefaultVocabulary(self):
-        return self.default_vocabulary
-
-# cannot use clean here b/c saving m2m fields is a two-sept process
-# versions is not set when this is called
-# so I use a custom clean method on the admin form for MetadataProjects
-# (since these are only ever modified in the admin anyway)
-#    def clean(self, *args, **kwargs):
-#        default_version = self.default_version
-#        if not self in default_version.getProjects():
-#           raise ValidationError("A project's default_version must be it's the set of versions")
-#         super(MetadataProject,self).clean(*args,**kwargs)
-            

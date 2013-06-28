@@ -34,10 +34,6 @@
                  }
              }
 
-             /* used by loadJS (in "dcf.js" below)
-              * to know where to load scripts from
-              */
-             var JS_PATH = "{{ STATIC_URL }}dcf/js";
         </script>
         
         <!-- jquery ui -->
@@ -51,12 +47,13 @@
         <!-- checkboxes/radiobuttons in selects -->
         <script language="javascript" type="text/javascript" src="{{ STATIC_URL }}dcf/js/jquery/jquery.multiselect.js"></script>
         <!-- fancy treeview -->
-        <script language="javascript" type="text/javascript" src="{{ STATIC_URL }}dcf/js/jquery/jquery.jstree.js"></script>
+        <script language="javascript" type="text/javascript" src="{{ STATIC_URL }}dcf/js/jquery/jquery.dynatree.min.js"></script>
         <!-- dockable splitter -->
         <script language="javascript" type="text/javascript" src="{{ STATIC_URL }}dcf/js/jquery/jquery.splitter.js"></script>
         <!-- tagging widgets -->
         <script language="javascript" type="text/javascript" src="{{ STATIC_URL }}dcf/js/jquery/jquery.tag-it.js"></script>
-        <!-- custom js -->
+
+        <!-- custom javascript -->
         <script language="javascript" type="text/javascript" src="{{ STATIC_URL }}dcf/js/dcf.js"></script>
 
         <script language="javascript">
@@ -69,10 +66,15 @@
         <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}dcf/css/custom/jquery-ui-1.8.16.custom.css" />
         <!-- collapsible fieldsets -->
         <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}dcf/css/coolfieldset.css" />
+        <!-- checkboxes/radiobuttons in selects -->
+        <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}dcf/css/jquery.multiselect.css" />
+        <!-- fancy treeview -->
+        <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}dcf/css/dynatree/dynatree.css" />
+        <!-- dockable splitter -->
+        <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}dcf/css/splitter.css" />
         <!-- tagging widgets -->
         <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}dcf/css/tagit.css" />
-        <!-- dropdownselects -->
-        <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}dcf/css/jquery.multiselect.css" />
+
         <!-- custom css -->
         <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}dcf/css/dcf.css" />
 
@@ -108,17 +110,10 @@
             <div id="remove-dialog" title="remove">&nbsp;</div>
             <div id="saved-dialog" title="save">&nbsp;</div>
             <div id="published-dialog" title="publish">&nbsp;</div>
-
+            
             <!-- placeholder for messages to display to user -->
             <div id="msg">
                 {{msg}}
-            </div>
-
-            <div class="global_vars" style="display: none;">
-                <!-- ways to identify the current version/project/model -->
-                <span name="version">{{global_vars.version}}</span>     <!-- version.version (version.name is hard-coded as METADATA_NAME -->
-                <span name="project">{{global_vars.project}}</span>     <!-- project.name -->
-                <span name="model">{{global_vars.model}}</span>         <!-- model.getName() (not a field of MetadataModel, but the class attribute "_name" -->
             </div>
 
             
@@ -143,23 +138,6 @@
             <script>
                 if(window.jQuery) {
                     render_msg($(document));
-                   /* 
-                    var msg = $("#msg").text().trim();
-                    if (msg && msg.length) {
-                        $("#msg").dialog({
-                            modal : true,
-                            hide : "explode",
-                            height : 150,
-                            width : 350,
-                            title: "<span class='ui-icon ui-icon-notice'></span>",
-                            buttons: {
-                                OK: function() {
-                                    $(this).dialog("close");
-                                }
-                            }
-                        });
-                    }
-                    */
                 };
             </script>
             

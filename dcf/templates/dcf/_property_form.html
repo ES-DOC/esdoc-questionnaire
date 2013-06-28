@@ -1,0 +1,125 @@
+{# template for a scientific property form #}
+{# (which is part of a formset #}
+
+{# form is the form #}
+{# customizer is the property_customizer #}
+
+{% load dcf_filters %}
+
+{% if customizer.displayed %}
+
+
+    <h3 class="accordion-header">
+        <a>
+            <table width="100%" border="0">
+                <tr valign="middle">
+                    <td width="30%" align="left">
+                        <b>name:&nbsp;</b>
+                        <span name="property_name">{{form|getFieldValue:"name"}}</span>
+                    </td>
+                    <td width="30%" align="left">
+                        <b>value:&nbsp;</b>
+                        <span class="label" name="property_value">{{form|getFieldValue:form.property_value_field.name}}</span>
+                    </td>
+                    <td width="40%" align="left">
+                        &nbsp;
+                    </td>
+                </tr>
+            </table>
+        </a>
+    </h3> <!-- /.accordion-header -->
+    <div class="accordion-content">
+        <div class="form"> {# wrapping everything in a div.form so I can group together fields belonging to the same model #}
+
+            {% for hiddenField in form.hidden_fields %}
+                {{ hiddenField }}
+            {% endfor %} {# /hiddenField #}
+
+            <table width="100%">
+                <tr valign="top" class="odd field">
+                    {% with field=form.property_value_field %}
+                        <div class="field" name="{{field.name}}" width="100%">
+                            <td>
+                                 {% if customizer.documentation %}
+                                    <div class="help-button" title="click for more info" id="{{field.name}}_{{field.auto_id}}">
+                                        <span class="default-help-icon ui-icon-info" style="display: inline-block;">&nbsp;</span>
+                                        <div class="help-description" title="{{ customizer.verbose_name }}">
+                                            {{ customizer.documentation|safe }} {# the safe filter prevents inline HTML from being escaped  #}
+                                        </div> <!-- /.help-description -->
+                                    </div> <!-- /.help-button -->
+                                {% endif %} {# /customizer.documentation #}
+                                {% if customizer.required %}
+                                    <span class="field_label required">{{customizer.verbose_name}}:&nbsp;</span>
+                                {% else %}
+                                    <span class="field_label">{{customizer.verbose_name}}:&nbsp;</span>
+                                {% endif %} {# /customizer.required #}
+                            </td>
+                            <td>
+                                <div class="field_value">
+                                    {{ field }}
+                                </div>
+                                {% if field.errors %}
+                                    <div class="error-wrapper">
+                                        {{field.errors}}
+                                        <script class="error-script">
+                                            /* if there is any field error;
+                                            * display an error in the enclosing fieldset and accordion and tab (if applicable) */
+                                            //var error = $("script:.error-script:last");   // (browsers don't always render hidden scripts, so this line didn't workd)
+                                            var error = $("div.error-wrapper:last");        // (this line replaces it)
+                                            render_error(error);
+                                        </script>
+                                    </div>
+                                {% endif %} {# /field.errors #}
+                            </td>
+                        </div> <!-- /.field -->
+                    {% endwith %} {# /field #}                    
+                </tr>
+                {% if customizer.show_extra_attributes %}
+                    <tr>
+                        <td colspan="100">
+                            <fieldset class="coolfieldset">
+                                <legend title="click to show/hide content">
+                                    <span class="title">&nbsp;Additional Attributes&nbsp;</span>
+                                </legend>
+                                <div class="coolfieldset-content">
+                                    <table width="100%">
+                                        {% for field in form.getExtraFields %}
+                                            <tr valign="top" class="{% cycle 'even' 'odd' %} field">
+                                                <div class="field" name="{{field.name}}" width="100%">
+                                                    <td>
+                                                        <span class="field_label">{{field.label}}:&nbsp;</span>
+                                                    </td>
+                                                    <td>
+                                                        <div class="field_value">
+                                                            {{ field }}
+                                                        </div>
+                                                        {% if field.errors %}
+                                                            <div class="error-wrapper">
+                                                                {{field.errors}}
+                                                                <script class="error-script">
+                                                                    /* if there is any field error;
+                                                                    * display an error in the enclosing fieldset and accordion and tab (if applicable) */
+                                                                    //var error = $("script:.error-script:last");   // (browsers don't always render hidden scripts, so this line didn't workd)
+                                                                    var error = $("div.error-wrapper:last");        // (this line replaces it)
+                                                                    render_error(error);
+                                                                </script>
+                                                            </div>
+                                                        {% endif %} {# /field.errors #}
+                                                    </td>
+                                                </div> <!-- /.field -->
+                                            </tr>
+                                        {% endfor %} {# /field #}
+                                    </table>
+                                </div> <!-- /fieldset-content -->
+                            </fieldset>
+                        </td>
+                    </tr>
+                {% endif %}
+            </table>
+
+        </div> <!-- /.form -->
+    </div> <!-- /.accordion-content -->
+
+{% endif %} {# /customizer.displayed #}
+
+{# end template for a scientific property form #}

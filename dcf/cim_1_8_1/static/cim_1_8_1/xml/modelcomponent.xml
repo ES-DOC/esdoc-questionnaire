@@ -1,0 +1,15 @@
+{# this is the xml template for modelcomponents (v1.8.1) #}
+
+{% extends "cim_1_8_1/xml/cim.xml" %}
+
+{% load dcf_filters %}
+
+{% block content %}
+
+    <shortName>{{model.shortName}}</shortName>
+    <longName>{{model.longName}}</longName>
+    <description>{{model.description}}</description>
+    
+{% endblock %} {# /content #}
+
+

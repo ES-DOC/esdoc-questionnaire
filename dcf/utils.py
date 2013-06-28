@@ -11,19 +11,21 @@
 ####################
 
 __author__="allyn.treshansky"
-__date__ ="Jan 31, 2013 11:42:56 AM"
+__date__ ="Jun 10, 2013 4:17:21 PM"
 
 """
 .. module:: utils
 
-This module contains utility code (constants, error-handling, etc.).
+Summary of module goes here
 
 """
-
 
 from django.conf import settings
 
 from django.core.exceptions import ObjectDoesNotExist, ImproperlyConfigured, ValidationError
+
+from django.db import models
+from django.forms import model_to_dict
 
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes import generic
@@ -34,9 +36,11 @@ from django.utils import simplejson as json
 from django.core import serializers
 from lxml import etree as et
 
-
+from uuid import uuid4
 
 import re
+
+
 
 #############
 # constants #
@@ -46,12 +50,10 @@ import re
 APP_LABEL  = "dcf"
 
 #: the default names that metadata versions have (change this at your peril)
-METADATA_NAME = "CIM"
+METADATA_NAME = "cim"
 
-# no need for this; just use TextField instead of CharField
-##: a constant max_value for really really big strings
-#ENORMOUS_STRING = 4800
-
+#: a constant max_value for really really big strings
+ENORMOUS_STRING = 4800 # (no real need for this; just use TextField instead of CharField)
 #: a constant max_value for really big strings
 HUGE_STRING = 1200
 #: a constant max_value for big strings
@@ -59,32 +61,21 @@ BIG_STRING  = 400
 #: a constant max_value for normal strings
 LIL_STRING  = 255
 
+
 #: a constant tuple to add to "open" enumerations
 OPEN_CHOICE = [(u'OTHER',u'--OTHER--')]
 #: a constant tuple to add to "nullable" enumerations
 NULL_CHOICE  = [(u'NONE',u'--NONE--')]
 
+#: a hard-coded list of possible document types that these forms can support
+CIM_DOCUMENT_TYPES = [
+    ("modelcomponent","modelcomponent"),
+    ("statisticalmodelcomponent","statisticalmodelcomponent"),
+]
 #: a serializer to use throughout the app; defined once to avoid too many fn calls
 JSON_SERIALIZER = serializers.get_serializer("json")()
 #: a parser to use throughout the app; defined once to avoid too many fn calls
 XML_PARSER      = et.XMLParser(remove_blank_text=True)
-
-##################
-# error handling #
-##################
-
-class MetadataError(Exception):
-    """
-    Custom exception class for DCF
-
-    .. note:: As DCF is a web-application, it often makes more sense to use the :func`dcf.error` view with an appropriate message instead of raising an explicit MetadataError
-
-    """
-
-    def __init__(self,msg='unspecified metadata error'):
-        self.msg = msg
-    def __str__(self):
-        return "MetadataError: " + self.msg
 
 ################################
 # some custom field validators #
@@ -109,6 +100,7 @@ def validate_file_schema(value,schema_path):
     contents = et.parse(value)
 
     try:
+        print schema_path
         schema = et.XMLSchema(et.parse(schema_path))
     except IOError:
         msg = "Unable to find suitable schema to validate file against"
@@ -130,6 +122,23 @@ def validate_no_spaces(value):
     #if re.match('\s',value):
     if ' ' in value:
         raise ValidationError(u'%s may not contain spaces' % value)
+
+##################
+# error handling #
+##################
+
+class MetadataError(Exception):
+    """
+    Custom exception class for DCF
+
+    .. note:: As DCF is a web-application, it often makes more sense to use the :func`dcf.error` view with an appropriate message instead of raising an explicit MetadataError
+
+    """
+
+    def __init__(self,msg='unspecified metadata error'):
+        self.msg = msg
+    def __str__(self):
+        return "MetadataError: " + self.msg
 
 ##############################
 # enumerated types in Python #
@@ -158,8 +167,11 @@ class EnumeratedType(object):
     # comparisons are made via the _type attribute...
     def __eq__(self,other):
         if isinstance(other,self.__class__):
+            # comparing two enumeratedtypes
             return self.getType() == other.getType()
-        return False
+        else:
+            # comparing an enumeratedtype with a string
+            return self.getType() == other
     def __ne__(self,other):
         return not self.__eq__(other)
 
@@ -192,123 +204,6 @@ class EnumeratedTypeList(list):
         # otherwise return a value greater than the last position of the orderList
         return len(etOrderList)+1
 
-##################################################
-# and here are some enumerated types used by DCF #
-##################################################
-
-from django.forms.models import BaseForm, BaseFormSet, BaseInlineFormSet, BaseModelFormSet
-
-class SubFormType(EnumeratedType):
-    """
-    An enumeration of the different types of subForms that can be used by a parent form.
-    """
-    pass
-
-SubFormTypes = EnumeratedTypeList([
-    SubFormType("FORM","Form",BaseForm),
-    SubFormType("FORMSET","FormSet",BaseFormSet),
-])
-
-class CategoryType(EnumeratedType):
-    """
-    An enumeration of the different types of categories that can be specified in a customization
-    """
-    pass
-
-CategoryTypes = EnumeratedTypeList([
-    CategoryType("ATTRIBUTE","Attribute"),
-    CategoryType("PROPERTY","Property"),
-])
-
-###########################
-# a useful decorator      #
-# (adds a guid to models) #
-###########################
-
-from django.db.models.signals import post_init
-from django.db import models
-from django.forms.fields import CharField
-from django.forms.widgets import HiddenInput
-from uuid import uuid4
-import types
-
-class GUIDField(models.CharField):
-    """
-    A modelField to store a GUID
-    .. note:: this field shouldn't be used directly, the @guid decorator handles adding it to classes
-    """
-
-    def __init__(self, *args, **kwargs):
-        """
-        initialize a GUIDField;
-        it must be 64 chars, unique (for this class) in the db, not editable by any form, required, and already have a default guid value
-        """
-        kwargs['max_length'] = kwargs.get('max_length', 64 )
-        kwargs['unique']     = kwargs.get('unique', True )
-        kwargs['editable']   = kwargs.get('editable', True )
-        kwargs['blank']      = kwargs.get('blank', False )
-        kwargs['default']    = kwargs.get('default',lambda:str(uuid4()))
- 
-        super(GUIDField, self).__init__(*args, **kwargs)
-
-    def formfield(self,**kwwargs):
-
-        return CharField(initial=self.default,widget=HiddenInput)
-    
-    def contribute_to_class(self,cls,name):
-        """
-        called when a GUIDField is (dynamically) added to a class
-        this inserts the "getGUID" fn to that class
-        it also registers a callback w/ the cls post_init signal
-        (so that I can give it a unique value then)
-        """
-        def _getGUID(self):
-            return self._guid
-
-        cls.getGUID = types.MethodType(_getGUID,None,cls)
-#        post_init.connect(self.setValue,cls)
-
-        super(GUIDField,self).contribute_to_class(cls,name)
-            
-    def setValue(self,*args,**kwargs):
-
-        instance = kwargs.get("instance",None)
-        if instance:
-            # don't overwrite an existing guid
-            if not instance._guid:
-                instance._guid = str(uuid4())
-
-
-#    def pre_save(self, model_instance, add):
-#        """
-#        just in case the value wasn't already set
-#        (by the "default" kwarg in __init__),
-#        go ahead and set it before storing in the db
-#        """
-#        value = getattr(model_instance, self.attname, None)
-#        if not value:
-#            value = str(uuid4())
-#            setattr(model_instance,self.attname,value)
-#        return value
-
-def guid():
-    """
-    decorator that specifies that a model has a _guid element,
-    which can be accessed using the getGUID() method.
-    this is a unique way of identifying models, fields, customizers, whatever
-    (which is important when having to distinguish them in a Django Templage)
-    """
-    def decorator(obj):
-        
-        # create the field
-        guid_field = GUIDField()#default=lambda:str(uuid4()))
-        # add it to the object
-        guid_field.contribute_to_class(obj, "_guid")
-        # return the modified object
-        return obj
-
-    return decorator
-
 ##################
 # some other fns #
 ##################
@@ -327,15 +222,50 @@ def get_subclasses(parent,_subclasses=None):
             get_subclasses(subclass,_subclasses)
     return _subclasses
 
-def has_superclass(child,superclass_name):
-    superclass_names = [parent._meta.app_label+"."+parent._meta.object_name for parent in list(reversed(inspect.getmro(child)))[2:]]
-    return superclass_name in superclass_names
+def yield_list(list_to_yield):
+    """
+    creates a generator from a sequence
+    was using this to pass portions of initial to formsets
+    (via curried function); but wound up not doing that anymore
+    """
+    for list_element in list_to_yield:
+        yield list_element
+
+def get_from_model_or_dict(model,dict,attribute_name):
+    """
+    loads of form intialization is conditional on field values
+    however, if the form is rendered via GET then the underlying
+    model might not have fields set yet and data will have been passed in
+    by initial
+    """
+    pass
+
+# THIS TOOK A WHILE TO FIGURE OUT
+# model_to_dict IGNORES FOREIGNKEY FIELDS & MANYTOMANY FIELDS
+# THIS FN WILL UPDATE THE MODEL_DATA ACCORDING TO THE "update_fields" ARGUMENT
+def get_initial_data(model,update_fields={}):
+    dict = model_to_dict(model)
+    dict.update(update_fields)
+    for key,value in dict.iteritems():
+        if isinstance(value,tuple):
+            # TODO: model_to_dict IS BEHAVING WIERD W/ ScientificPropertyValue Fields
+            # UNTIL I CAN FIX IT, HERE IS HACK
+            #print "MODEL_TO_DICT RETURNED A TUPLE (%s) INSTEAD OF A STRING; CHANGING IT BACK"
+            dict[key] = value[0]
+    return dict
 
 
-def list_from_tree(tree):
-    yield tree.keys()
-    for (key,value) in tree.iteritems():
-        if isinstance(value,list):
-            for list_item in value:
-                for key in list_from_tree(list_item):
-                    yield key
+def dict_to_html_aux(dict,html):
+  for key,value in dict.iteritems():
+    html.append(u"<li id='%s'>%s"% (key.lower(),key))
+    if value:
+        html.append("<ul>")
+        for v in value:
+            dict_to_html_aux(v,html)
+        html.append("</ul>")
+
+def dict_to_html(dict):
+  html = ["<ul>"]
+  dict_to_html_aux(dict,html)
+  html.append("</ul>")
+  return "".join(html)

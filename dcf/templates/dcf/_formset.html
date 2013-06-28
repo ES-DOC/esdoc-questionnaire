@@ -1,6 +1,7 @@
-{# template for a formset #}
+{# template for a nested formset #}
+
 {# formset is the formset #}
-{# customizer is the customizer from the actual field #}
+{# customizer is the customizer from the target model #}
 
 {% load dcf_filters %}
 
@@ -13,8 +14,7 @@
 {{ formset.non_form_errors }}
 {{ formset.management_form }}
 
-{% with customizer=formset.getModelCustomizer %} {# customizer is the _model_ customizer (as opposed to the attribute customizers used elsewhere #}
-<div class="accordion">
+<div class="accordion" prefix="{{formset.prefix}}">
     
     {% for form in formset.forms %}
         <h3 class="accordion-header">
@@ -25,8 +25,12 @@
 
         <div class="accordion-content">
             <div class="form"> {# wrapping everything in a div.form so I can group together fields belonging to the same model #}
-                <button class="remove" type="button" title="remove this TODO from TODO">remove</button>
-                <div style="clear:both;"></div>
+                <div class="remove_detail">
+                    {{form.DELETE}}
+                    <button class="remove" type="button" title="remove this {{customizer.model_title}}">remove</button>
+                    <div style="clear:both;"></div>
+                </div>
+                
 
                 {# alright, this looks weird I know #}
                 {# but passing the template as a variable gets around Django's maximum recursion issue #}
@@ -34,13 +38,12 @@
                     {% include template %}
                 {% endwith %}
                 {# include "dcf/_form.html" #}
-                
+
+
             </div> <!-- /.form -->
         </div> <!-- /.accordion-content -->
 
     {% endfor %}
 
 </div> <!-- /.accordion -->
-{% endwith %} {# /customizer #}
 
-<button class="add" type="button" title="TODO">add new</button>

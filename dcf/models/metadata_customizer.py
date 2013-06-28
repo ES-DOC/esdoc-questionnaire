@@ -11,7 +11,7 @@
 ####################
 
 __author__="allyn.treshansky"
-__date__ ="Jan 31, 2013 11:26:35 AM"
+__date__ ="Jun 10, 2013 4:10:50 PM"
 
 """
 .. module:: metadata_customizer
@@ -19,54 +19,30 @@ __date__ ="Jan 31, 2013 11:26:35 AM"
 Summary of module goes here
 
 """
-
 from django.db import models
-from django.db.models.fields import NOT_PROVIDED
-from django.utils.functional import lazy
 
-from django.contrib.contenttypes.models import *
-from django.contrib.contenttypes import generic
+from dcf.utils  import *
+from dcf.models import *
 
-
-
-from dcf.utils import *
-from dcf.fields import *
-from dcf.models import MetadataCategorization, MetadataAttributeCategory, MetadataPropertyCategory
+from dcf.models.metadata_proxy import *
 
 class MetadataCustomizer(models.Model):
     class Meta:
-        app_label = APP_LABEL
-        abstract = True
+        app_label   = APP_LABEL
+        abstract    = True
 
-    # every object involved in customization references a particular project/version/model combination
-    # (having version & model may seem like overkill - since models belong to a particular version
-    # but I don't know in advance what type of model this will reference,
-    # so I would have to use a generic relationship.  this is complicated by the fact that
-    # I want to link to the model class and not a model instance, so I would have to use ContentType as opposed to MetadataModel.
-    # That is possible, however having done that Django does not allow filtering querysets with GenericForeignKeys.
-    # Rather than hack my way through this, I'm just using the name of the model instead of a relationship to its actual class
-
-    project = models.ForeignKey("MetadataProject",blank=False,editable=False)
-    version = models.ForeignKey("MetadataVersion",blank=False,editable=False)
-    model   = models.CharField(max_length=BIG_STRING,blank=False,editable=False)
-
-    loaded = models.BooleanField(blank=False,editable=False,default=False)
 
     _guid = models.CharField(max_length=64,unique=True,editable=False,blank=False,default=lambda:str(uuid4()))
+
+    project = models.ForeignKey("MetadataProject",blank=False,editable=True)
+    version = models.ForeignKey("MetadataVersion",blank=False,editable=True)
+    model   = models.CharField(max_length=BIG_STRING,blank=False,editable=True)
 
     def getGUID(self):
         return self._guid
 
-    def isLoaded(self):
-        return self.loaded
-
-    def getField(self,fieldName):
-        # return the actual field (not the db representation of the field)
-        # this is useful for interaction w/ a webform
-        try:
-            return self._meta.get_field_by_name(fieldName)[0]
-        except models.fields.FieldDoesNotExist:
-            return None
+    def save(self,*args,**kwargs):
+        super(MetadataCustomizer,self).save(*args,**kwargs)
 
     def getCommonCustomizers(self):
         """
@@ -76,40 +52,49 @@ class MetadataCustomizer(models.Model):
         model_class = self.__class__
         return model_class.objects.filter(project=self.project,version=self.version,model=self.model)
 
+    def getProject(self):
+        return self.project
+
+    def getVersion(self):
+        return self.version
+
+    def getCategorization(self):
+        # TODO: THIS ASSUMES THERE IS ONE CATEGORIZATION; THERE COULD BE MORE THAN ONE IN A FUTURE VERSION
+        categorizations = self.version.categorizations.all()
+        return categorizations[0] if categorizations else None
+
+    def getUniqueTogether(self):
+        unique_together = self._meta.unique_together
+        return list(unique_together)
+
 class MetadataModelCustomizer(MetadataCustomizer):
     class Meta:
-        app_label = APP_LABEL
+        app_label   = APP_LABEL
+        abstract    = False
         # TODO: REDO THIS W/ MYSQL (SEE http://stackoverflow.com/questions/6153552/mysql-error-1062-duplicate-entry-for-key-2)
-        unique_together = ('project', 'version', 'model', 'name')
-        
-    name                = models.CharField(max_length=LIL_STRING,verbose_name="Customization Name",blank=False,validators=[validate_no_spaces])
+        # ACTUALLY, OVERRIDING validate_unique ON THE FORMS WORKS PRETTY WILL
+        unique_together = ('project', 'version', 'model', 'name',)
+        verbose_name        = 'Model Customizer'
+        verbose_name_plural = 'Model Customizers'
+
+    name                = models.CharField(max_length=255,verbose_name="Customization Name",blank=False,validators=[validate_no_spaces])
     name.help_text      = "A unique name for this customization (ie: \"basic\" or \"advanced\")"
     description         = models.TextField(verbose_name="Customization Description",blank=True)
     description.help_text = "An explanation of how this customization is intended to be used.  This information is for informational purposes only."
-    default             = models.BooleanField(verbose_name="Is Default Customization",blank=True,editable=True)
+    default             = models.BooleanField(verbose_name="Is Default Customization",blank=True)
     default.help_text   = "Defines the default customization that is used by this project/model combination if no explicit customization is provided"
 
     model_title         = models.CharField(max_length=BIG_STRING,verbose_name="Name that should appear on the Document Form",blank=False)
     model_description   = models.TextField(verbose_name="A description of the document",blank=True)
     model_show_all_categories = models.BooleanField(verbose_name="Display empty categories",default=False)
     model_show_all_categories.help_text = "Include categories in the editing form for which there are no attributes associated with"
-    model_show_all_attributes = models.BooleanField(verbose_name="Display uncategorized fields",default=True)
-    model_show_all_attributes.help_text = "Include attributes in the editing form that have no associated category.  These will show up below any category tabs."
+    model_show_all_properties = models.BooleanField(verbose_name="Display uncategorized fields",default=True)
+    model_show_all_properties.help_text = "Include attributes in the editing form that have no associated category.  These will show up below any category tabs."
     model_nested        = models.BooleanField(verbose_name="Include the full component hierarchy",default=True)
     model_nested.help_text ="Some CIM SoftwareComponents are comprised of a hierarchy of nested child components.  Checking this option allows that full hiearchy to be edited at once in the CIM Editor."
 
-
-# BIG CHANGE
-# CANNOT DEAL W/ M2M BEFORE SAVING
-# SO REVERSING THIS; NOW ATTRIBUTES/PROPERTIES HAVE FOREIGN KEYS TO MODELS
-#    attributes          = models.ManyToManyField("MetadataAttributeCustomizer",blank=True,null=True)
-#    properties          = models.ManyToManyField("MetadataPropertyCustomizer",blank=True,null=True)
-    temporary_attributes = []
-    temporary_properties = []
-
-   
     def __unicode__(self):
-        return u'%s' % self.name
+        return u"%s::%s ('%s')" % (self.project,self.model,self.name)
 
     def getProject(self):
         return self.project
@@ -122,92 +107,66 @@ class MetadataModelCustomizer(MetadataCustomizer):
         .. note: this returns a class not an instance
         """
         version = self.getVersion()
-        return version.getModel(self.model)
-        
-    def getCategorization(self):
-        return self.version.default_categorization
+        return version.getModelClass(self.model)
 
-    def getCategorizations(self):
-        default_categorization = self.getCategorization()
-        if default_categorization:
-            return MetadataCategorization.objects.filter(id=default_categorization.id)
+    def getStandardPropertyCustomizers(self):
+        return self.standard_property_customizers.all()
+
+    def getScientificPropertyCustomizers(self):
+        return self.scientific_property_customizers.all()
+
+    def getPropertyCustomizers(self):
+        standard_property_customizers = self.getStandardPropertyCustomizers()
+        scientific_property_customizers = self.getScientificPropertyCustomizers()
+        return standard_property_customizers + scientific_property_customizers
+
+
+    def getActiveStandardPropertyCustomizersByCategory(self):
+        standard_property_customizers_by_category = {}
+        standard_property_customizers = self.getStandardPropertyCustomizers()
+        for category in self.getAllStandardCategories():
+            current_standard_property_customizers = [
+                standard_property_customizer for standard_property_customizer in standard_property_customizers
+                if (standard_property_customizer.displayed  and standard_property_customizer.category == category)
+            ]
+            current_standard_property_customizers.sort(key = lambda x: x.order)
+            standard_property_customizers_by_category[category.key] = current_standard_property_customizers
+        return standard_property_customizers_by_category
+
+    def getStandardCategories(self):
+        if self.model_show_all_categories:
+            return self.getAllStandardCategories()
         else:
-            return MetadataCategorization.objects.none()
+            return self.getActiveStandardCategories()
 
-    def getVocabulary(self):
-        return self.project.default_vocabulary
+    def getActiveStandardCategories(self):
+        standard_categories = [standard_property_customizer.category for 
+            standard_property_customizer in self.getStandardPropertyCustomizers()
+            if (standard_property_customizer.category and standard_property_customizer.displayed)
+        ]
+        standard_categories = list(set(standard_categories))
+        standard_categories.sort(key = lambda x: x.order)
+        return standard_categories
 
-    def getVocabularies(self):
-        return self.project.vocabularies.all()
+    def getAllStandardCategories(self):
+        standard_categories = [standard_property_customizer.category for
+            standard_property_customizer in self.getStandardPropertyCustomizers()
+            if standard_property_customizer.category
+        ]
+        standard_categories = list(set(standard_categories))
+        standard_categories.sort(key = lambda x: x.order)
+        return standard_categories
 
- 
     def __init__(self,*args,**kwargs):
-        super(MetadataCustomizer,self).__init__(*args,**kwargs)
-        _model = self.getModel()
+        super(MetadataModelCustomizer,self).__init__(*args,**kwargs)
 
-        # only one customizer can be the default one...
-        otherCustomizers = self.getCommonCustomizers().exclude(name=self.name)
-        if otherCustomizers.count() == 0:
-            # therefore, if this is the only customizer, it must be the default one...
-            self.default = True
-
-        if not self.isLoaded():
-            self.loadCustomizer()
-            self.loaded = True
-
-
-    def reset(self,*args):
-        _model = args[0]
-        self.model_title = _model.getTitle()
-        self.model_description = _model.getDescription()
-
-    def loadCustomizer(self):
-        _model = self.getModel()
-
-        self.reset(_model)
-
-        # sort out the attributes
-        # this is a bit funny, b/c they are actually fields on the model class
-        self.temporary_attributes = []
-        new_attributes = _model.getAttributes()
-        for i,attribute in enumerate(new_attributes):
-            temporary_attribute = MetadataAttributeCustomizer(
-                attribute_name  = attribute.getName(),
-                attribute_type  = attribute.getType(),
-                project         = self.project,
-                version         = self.version,
-                model           = self.model,
-                order           = (i+1))
-            temporary_attribute.reset(attribute)
-            self.temporary_attributes.append(temporary_attribute)
-
-        # sort out the properties
-        # this isn't quite as funny
-        self.temporary_properties = []
-        new_properties = self.getVocabulary().getProperties()
-        for i,property in enumerate(new_properties):
-            temporary_property = MetadataPropertyCustomizer(
-                property        = property,
-                property_name   = property.name,
-                project         = self.project,
-                version         = self.version,
-                model           = self.model,
-                order           = (i+1))
-            temporary_property.reset(property)
-            self.temporary_properties.append(temporary_property)
-
-
-        # I CANNOT ADD TO A M2M FIELD BEFORE ITS'S BEEN SAVED
-        # AND SAVING IS EXPENSIVE, SO I DON'T DO ANYTHING HERE
-        # INSTEAD I INITIALIZE THE CORRESPONDING FIELDS IN THE CORRESPONDING FORM
-        # CONFIDENT THAT THE ATTRIBUTES & PROPERTIES HAVE ALREADY BEEN CREATED ABOVE
-
-    
-
+#        # only one customizer can be the default one...
+#        otherCustomizers = self.getCommonCustomizers().exclude(name=self.name)
+#        if otherCustomizers.count() == 0:
+#            # therefore, if this is the only customizer, it must be the default one...
+#            self.default = True
 
     def save(self, *args, **kwargs):
-        super(MetadataModelCustomizer, self).save(*args, **kwargs)        
-
         # only one customizer can be the default one...
         otherCustomizers = self.getCommonCustomizers().exclude(name=self.name)
         if otherCustomizers:
@@ -219,208 +178,258 @@ class MetadataModelCustomizer(MetadataCustomizer):
             # if this is the only customizer, it must be the default one...
             self.default = True
 
-###        # now save the attributes/properties setup in init
-###        if len(self.temporary_attributes):
-###            for temporary_attribute in self.temporary_attributes:
-###                temporary_attribute.parent = self
-###                temporary_attribute.save()
-###            self.temporary_attributes = []
+        super(MetadataModelCustomizer, self).save(*args, **kwargs)
 
-    def recursivelyUpdateFields(self,new_fields):
-        """
-        changes the value of new_fields[name] with the specified value
-        then checks all the subform_customizers of child attributes and does the same
-        """
-        for (field_name,field_value) in new_fields.iteritems():
-            setattr(self,field_name,field_value)
+    def reset(self,proxy):
 
+        self.model_title        = proxy.model_title
+        self.model_description  = proxy.model_description
+        self.show_all_categories = False
+        self.show_all_properties = False
+        self.model_nested        = True
 
-        for attribute_customizer in self.attributes.all():
-            if attribute_customizer.subform_customizer:
-                attribute_customizer.subform_customizer.recursivelyUpateFields(new_fields)
-        self.save(force_update=True)
-
-class MetadataAttributeCustomizer(MetadataCustomizer):
+class MetadataPropertyCustomizer(MetadataCustomizer):
     class Meta:
-        app_label = APP_LABEL
+        app_label   = APP_LABEL
+        abstract    = True
 
-    #parentGUID        = models.CharField(max_length=64,blank=False,editable=False)
-    parent             = models.ForeignKey("MetadataModelCustomizer",blank=True,null=True,related_name="attributes")
-    attribute_name     = models.CharField(max_length=LIL_STRING,blank=False)
-    attribute_type     = models.CharField(max_length=LIL_STRING,blank=False)
-    category           = models.ForeignKey("MetadataAttributeCategory",blank=True,null=True)
-    order              = models.PositiveIntegerField(blank=True,null=True)
+    name = models.CharField(max_length=255)
+    type = models.CharField(max_length=64,blank=True,choices=[(type.getType(),type.getName()) for type in MetadataFieldTypes])
 
     # ways to customize _any_ field...
     displayed           = models.BooleanField(default=True,blank=True,verbose_name="should this property be displayed?")
-    required            = models.BooleanField(default=False,blank=True,verbose_name="is this property required?")
-    editable            = models.BooleanField(default=False,blank=True,verbose_name="can the value of this property be edited?")
+    required            = models.BooleanField(default=True,blank=True,verbose_name="is this property required?")
+    editable            = models.BooleanField(default=True,blank=True,verbose_name="can the value of this property be edited?")
     unique              = models.BooleanField(default=False,blank=True,verbose_name="must the value of this property be unique?")
     verbose_name        = models.CharField(max_length=64,blank=False,verbose_name="how should this property be labeled (overrides default name)?")
     default_value       = models.CharField(max_length=128,blank=True,null=True,verbose_name="what is the default value of this property?")
     documentation       = models.TextField(blank=True,verbose_name="what is the help text to associate with property?")
+    suggestions         = models.TextField(blank=True,verbose_name="are there any suggestions you would like to offer to users?")
+    suggestions.help_text = "Please enter a \"|\" separated list.  These suggestions will only take effect for text fields, in the case of Standard Properties, or for text fields or when \"OTHER\" is selected, in the case of Scientific Properties.  They appear as an auto-complete widget and not as a formal enumeration."
 
-    # ways to customize enumeration fields...
-    enumerations         = EnumerationField(blank=False,verbose_name="choose the property values that should be presented to the user:")
-    default_enumerations = EnumerationField(blank=True,verbose_name="choose the default value(s), if any, for this property:")
-    enumeration_choices  = models.TextField(blank=True,max_length=HUGE_STRING) # (made a textfield b/c kept running into max_length limit for big enumerations)
-    open                 = models.BooleanField(default=False,blank=True,verbose_name="check if a user can specify a custom property value.")
-    multi                = models.BooleanField(default=False,blank=True,verbose_name="check if a user can specify multiple property values.")
-    nullable             = models.BooleanField(default=False,blank=True,verbose_name="check if a user can specify an explicit \"NONE\" value.")
 
-    # ways to customize relationship fields...
-    cardinality                 = CardinalityField(blank=False,verbose_name="how many instances (min/max) of this property are desired?")
+   
+    def save(self,*args,**kwargs):
+        if self.parent:
+            self.setParent(self.parent)
+        super(MetadataPropertyCustomizer,self).save(*args,**kwargs)
+
+    def setParent(self,model_customizer):
+        self.parent     = model_customizer
+        self.project    = model_customizer.project
+        self.version    = model_customizer.version
+        self.model      = model_customizer.model
+
+    def __unicode__(self):
+        if self.parent:
+            return u'%s::%s (%s)' % (self.parent.model,self.name,self.parent.name)
+        return u'%s' % self.name
+
+class MetadataStandardPropertyCustomizer(MetadataPropertyCustomizer):
+    class Meta:
+        app_label   = APP_LABEL
+        abstract    = False
+        verbose_name        = 'Standard Prop. Customizer'
+        verbose_name_plural = 'Standard Prop. Customizers'
+
+    parent = models.ForeignKey("MetadataModelCustomizer",related_name="standard_property_customizers",blank=False,null=True)
+
+    proxy       = models.ForeignKey("MetadataStandardPropertyProxy",blank=True,related_name="customizer")
+    category    = models.ForeignKey("MetadataStandardCategory",blank=True,null=True)
+    field_type  = models.CharField(max_length=64,blank=True,null=True)
+    order       = models.PositiveIntegerField(blank=True,null=True)
+
+    # ways to customize an enumeration...
+    enumeration_values   = EnumerationField(blank=True,null=True,verbose_name="choose the property values that should be presented to the user:")
+    enumeration_default  = EnumerationField(blank=True,null=True,verbose_name="choose the default value(s), if any, for this property:")
+    enumeration_choices  = models.TextField(blank=True,null=True)
+    enumeration_open     = models.BooleanField(default=False,blank=True,verbose_name="check if a user can specify a custom property value.")
+    enumeration_multi    = models.BooleanField(default=False,blank=True,verbose_name="check if a user can specify multiple property values.")
+    enumeration_nullable = models.BooleanField(default=False,blank=True,verbose_name="check if a user can specify an explicit \"NONE\" value.")
+
+
+    # ways to customize a relationship...
+    relationship_target_model   = models.CharField(max_length=64,blank=True)
+    relationship_source_model   = models.CharField(max_length=64,blank=True)
+    relationship_cardinality    = CardinalityField(blank=True,verbose_name="how many instances (min/max) of this property are desired?")
     customize_subform           = models.BooleanField(default=False,blank=True,verbose_name="should this property be rendered in its own subform?")
     customize_subform.help_text = "Checking this radio button will cause the property to be rendered as a nested subform within the <i>parent</i> form; All properties of this model will be available to view and edit in that subform.\
                                    Unchecking it will cause the attribute to be rendered as a simple select widget."
-    subform_customizer  = models.ForeignKey("MetadataModelCustomizer",blank=True,null=True,related_name="subform_customizer")
+    subform_customizer          = models.ForeignKey("MetadataModelCustomizer",blank=True,null=True,related_name="property_customizer")
 
-    def __unicode__(self):
-        return u'%s::%s' % (self.parent.name if self.parent else "unspecified", self.attribute_name)
-    
-    def reset(self,*args,**kwargs):
-        attribute = args[0]
-        force_save = kwargs.pop("force_save",False)        
+    def getMin(self):
+        try:
+            cardinality = self.relationship_cardinality.split("|")
+            return cardinality[0]
+        except:
+            return None
 
-        model_name = self.model.lower()
-        categorization = self.version.default_categorization
-        for category in categorization.getCategories():
-            category_mapping = category.getMapping()
-            try:
-                if self.attribute_name.lower() in [attribute_name.lower() for attribute_name in category_mapping[model_name]]:                    
-                    self.category = category                 
-            except KeyError:
-                pass
-
-        self.required = (attribute.blank == False)
-        self.editable = attribute.editable
-        self.unique = attribute.unique
-        self.verbose_name = attribute.verbose_name
-        self.documentation = attribute.help_text
-        self.default_value = attribute.default if (attribute.default != NOT_PROVIDED) else None
-
-        self.attribute_type = attribute.getType()
-
-        if self.isAtomicField():
-            pass
-
-        if self.isRelationshipField():
-            self.customize_subform = False
-
-        if self.isEnumerationField():
-            enum          = attribute.getEnumerationClass()            
-            self.open     = enum.isOpen
-            self.multi    = enum.isMulti
-            self.nullable = enum.isNullable
-            self.enumeration_choices = "|".join(enum.getChoices())
-
-            if self.attribute_name == "role":
-                print "FLARB"
-                print "enum=%s"%enum
-                print "choices=%s"%self.enumeration_choices
-
-        if force_save:
-            self.save()
+    def getMax(self):
+        try:
+            cardinality = self.relationship_cardinality.split("|")
+            return cardinality[1]
+        except:
+            return None
 
     def save(self,*args,**kwargs):
-        # just make sure that the parent exists before saving
-        # (parent ought to be set by virtue of this model being exposed in an inlineformset)
-        # (but the associated project & version may not have been set yet)
-        print "BEGIN PARENT"
-        print self.parent
-        print "END PARENT"
-        if self.parent and (not (hasattr(self,"project") or hasattr(self,"version"))):
-            self.setParent(self.parent)
-        return super(MetadataAttributeCustomizer,self).save(*args,**kwargs)
+        super(MetadataStandardPropertyCustomizer,self).save(*args,**kwargs)
 
-    def setParent(self,model_customizer):
-        self.parent = model_customizer
-        self.project = model_customizer.project
-        self.version = model_customizer.version
+    def reset(self,new_proxy):
 
-    def isAtomicField(self):
-        return self.attribute_type.lower() in MODELFIELD_MAP.iterkeys()
+        self.proxy          = new_proxy
 
-    def isRelationshipField(self):
-        return self.attribute_type.lower() in [field._type.lower() for field in MetadataRelationshipField.__subclasses__()]
+        self.name           = new_proxy.name
+        self.type           = new_proxy.type
+        self.field_type     = new_proxy.field_type
 
-    def isEnumerationField(self):
-        return self.attribute_type.lower() in [field._type.lower() for field in MetadataEnumerationField.__subclasses__()] + [MetadataEnumerationField._type.lower()]
+        self.category       = new_proxy.category
+        self.order          = new_proxy.id
 
-    def getName(self):
-        return self.attribute_name
+        self.required       = new_proxy.required
+        self.editable       = new_proxy.editable
+        self.unique         = new_proxy.unique
+        self.verbose_name   = new_proxy.verbose_name or new_proxy.name
+        self.default_value  = new_proxy.default_value
+        self.documentation  = new_proxy.documentation
 
-    def getType(self):
-        return self.attribute_type
+        self.enumeration_choices    = new_proxy.enumeration_choices
+        self.enumeration_open       = new_proxy.enumeration_open
+        self.enumeration_multi      = new_proxy.enumeration_multi
+        self.enumeration_nullable   = new_proxy.enumeration_nullable
 
-    def getCategory(self):
-        return self.category
+        self.relationship_target_model  = new_proxy.relationship_target_model
+        self.relationship_source_model  = new_proxy.relationship_source_model
 
-class MetadataPropertyCustomizer(MetadataCustomizer):
+    @classmethod
+    def getDataFromProxy(cls,proxy):
+        data = {
+            "name"           : proxy.name,
+            "type"           : proxy.type,
+            "field_type"     : proxy.field_type,
+
+            "category"       : proxy.category,
+            "order"          : proxy.id,
+
+            "required"       : proxy.required,
+            "editable"       : proxy.editable,
+            "unique"         : proxy.unique,
+            "verbose_name"   : proxy.verbose_name or proxy.name,
+            "default_value"  : proxy.default_value,
+            "documentation"  : proxy.documentation,
+
+            "enumeration_choices"    : proxy.enumeration_choices,
+            "enumeration_open"       : proxy.enumeration_open,
+            "enumeration_multi"      : proxy.enumeration_multi,
+            "enumeration_nullable"   : proxy.enumeration_nullable,
+
+            "relationship_target_model"  : proxy.relationship_target_model,
+            "relationship_source_model"  : proxy.relationship_source_model,
+        }
+        return data
+
+class MetadataScientificPropertyCustomizer(MetadataPropertyCustomizer):
     class Meta:
-        app_label = APP_LABEL
+        app_label   = APP_LABEL
+        abstract    = False
+        verbose_name        = 'Scientific Prop. Customizer'
+        verbose_name_plural = 'Scientific Prop. Customizers'
 
-    parent        = models.ForeignKey("MetadataModelCustomizer",blank=True,null=True,related_name="properties")
-    property      = models.ForeignKey("MetadataProperty",blank=True,null=True)
-    property_name = models.CharField(max_length=LIL_STRING,blank=False)
-    component_name = models.CharField(max_length=BIG_STRING,blank=False)
-    category      = models.ForeignKey("MetadataPropertyCategory",blank=True,null=True,verbose_name="what category does this property belong to?")
-    order         = models.PositiveIntegerField(blank=True,null=True)
-    isFreeText    = models.BooleanField(default=False,blank=True)
+    parent = models.ForeignKey("MetadataModelCustomizer",related_name="scientific_property_customizers",blank=False,null=True)
+
+    proxy       = models.ForeignKey("MetadataScientificPropertyProxy",blank=True,related_name="customizer")
+    category    = models.ForeignKey("MetadataScientificCategory",blank=True,null=True)
+    order       = models.PositiveIntegerField(blank=True,null=True)
+
+    component_name  = models.CharField(max_length=64,blank=True)
+    vocabulary      = models.ForeignKey("MetadataVocabulary",blank=True,null=True)
+    choice          = models.CharField(max_length=64,blank=False,choices=SCIENTIFIC_PROPERTY_CHOICES)
+    open            = models.BooleanField(default=True,blank=True,verbose_name="check if a user can specify a custom property value.")
+    multi           = models.BooleanField(default=True,blank=True,verbose_name="check if a user can specify multiple property values.")
+    nullable        = models.BooleanField(default=True,blank=True,verbose_name="check if a user can specify an explicit \"NONE\" value.")
 
 
-    # TODO: ADD MORE WAYS OF CUSTOMIZING PROPERTIES
-    displayed       = models.BooleanField(default=True,blank=True,verbose_name="should this property be displayed?")
-    required        = models.BooleanField(default=False,blank=True,verbose_name="is this property required?")
-    editable        = models.BooleanField(default=False,blank=True,verbose_name="can this property be edited?")
-    verbose_name    = models.CharField(max_length=64,blank=False,verbose_name="how should this property be labeled (overrides default name)?")
-    documentation   = models.TextField(blank=True,verbose_name="what is the help text to associate with property?")
-    default_value       = models.CharField(max_length=128,blank=True,null=True,verbose_name="what is the default value of this property?")
-    values          = EnumerationField(blank=False,verbose_name="choose the property values that should be presented to the user:")
-    default_values  = EnumerationField(blank=True,verbose_name="choose the default value(s), if any, for this property:")
-    values_choices  = models.TextField(blank=True,max_length=HUGE_STRING) # (made a textfield b/c kept running into max_length limit for big enumerations)
-    open            = models.BooleanField(default=False,blank=True,verbose_name="check if a user can specify their own property value.")
-    multi           = models.BooleanField(default=False,blank=True,verbose_name="check if a user can specify more than one property value.")
-    nullable        = models.BooleanField(default=False,blank=True,verbose_name="check if a user can specify an explicit \"NONE\" value.")
+    show_extra_attributes           = models.BooleanField(default=True,blank=True,verbose_name="check if extra property attributes should be displayed.")
+    show_extra_attributes.help_text = "Check if the 'standard_name', 'long_name', 'description', and 'units' should be displayed along with the value of this property."
+    edit_extra_attributes           = models.BooleanField(default=True,blank=True,verbose_name="check if a user can edit the extra property attributes.")
 
-    def reset(self,*args,**kwargs):
+    standard_name   = models.CharField(max_length=64,blank=True,null=True)
+    long_name       = models.CharField(max_length=64,blank=True,null=True)
+    description     = models.TextField(max_length=64,blank=True,null=True)
 
-        _property = args[0]
-        force_save = kwargs.pop("force_save",False)
-
-        self.displayed = True
-        self.required = True
-        self.editable = True
-
-        print "property %s has category %s " % (_property.name,_property.default_category)
-        
-        #TODO: ADD MORE CUSTOMIZATIONS
-        self.property       = _property
-        self.category       = _property.default_category
-        self.component_name = _property.component_name
-        self.verbose_name   = _property.name
-        self.multi          = _property.choice == "OR"
-        self.isFreeText     = _property.isFreeText()
-        self.documentation  = _property.description or ""
-        self.values_choices = "|".join([value.name for value in _property.values.all() if value.name])
-
-        # reset forces a save
-        if force_save:
-            self.save()
-
+    value          = EnumerationField(blank=True,null=True,verbose_name="choose the property values that should be presented to the user:")
+    value_default  = EnumerationField(blank=True,null=True,verbose_name="choose the default value(s), if any, for this property:")
+    value_choices  = models.TextField(blank=True,null=True)
+    value_format    = models.CharField(max_length=LIL_STRING,blank=True,null=True,choices=SCIENTIFIC_PROPERTY_FORMAT,verbose_name="what is the format (ie: \"string\" or \"char\") for this property value?")
+    value_units     = models.CharField(max_length=LIL_STRING,blank=True,null=True)
 
     def save(self,*args,**kwargs):
-        # just make sure that the parent exists before saving
-        # (parent ought to be set by virtue of this model being exposed in an inlineformset)
-        # (but the associated project & version may not have been set yet)
-        if self.parent and (not (hasattr(self,"project") or hasattr(self,"version"))):
-            self.setParent(self.parent)
-        return super(MetadataPropertyCustomizer,self).save(*args,**kwargs)
+        super(MetadataScientificPropertyCustomizer,self).save(*args,**kwargs)
 
-    def setParent(self,model_customizer):
-        self.parent = model_customizer
-        self.project = model_customizer.project
-        self.version = model_customizer.version
+    def reset(self,new_proxy):
 
-    def getCategory(self):
-        return self.category
+        values = new_proxy.values.all()
+        self.proxy     = new_proxy
+
+        self.name           = new_proxy.name
+        self.type           = new_proxy.type
+
+        self.category       = new_proxy.category
+        self.order          = new_proxy.id
+
+        self.required       = new_proxy.required
+        self.editable       = new_proxy.editable
+        self.unique         = new_proxy.unique
+        self.verbose_name   = new_proxy.verbose_name or new_proxy.name
+        self.default_value  = new_proxy.default_value
+        self.documentation  = new_proxy.documentation
+
+        self.component_name = new_proxy.component_name
+        self.vocabulary     = new_proxy.vocabulary
+
+        self.choice          = new_proxy.choice
+        self.open            = False
+        self.multi           = (new_proxy.choice == "OR")
+        self.nullable        = False
+
+        self.value_choices   = "|".join([str(value.name) for value in values]),
+        self.value_format    = values[0].format,  # these will be the same for each value, so just take the 1st one
+        self.value_units     = values[0].units,   # these will be the same for each value, so just take the 1st one
+
+        self.standard_name   = new_proxy.standard_name
+        self.long_name       = new_proxy.long_name
+        self.description     = new_proxy.description
+
+        self.show_extra_attributes = True
+        self.edit_extra_attributes = True
+        
+    @classmethod
+    def getDataFromProxy(cls,proxy):
+        values = proxy.values.all()
+        data = {
+            "name"           : proxy.name,
+            "type"           : proxy.type,
+
+            "category"       : proxy.category,
+            "order"          : proxy.id,
+
+            "required"       : proxy.required,
+            "editable"       : proxy.editable,
+            "unique"         : proxy.unique,
+            "verbose_name"   : proxy.verbose_name or proxy.name,
+            "default_value"  : proxy.default_value,
+            "documentation"  : proxy.documentation,
+
+            "component_name" : proxy.component_name,
+            "vocabulary"     : proxy.vocabulary,
+
+            "choice"         : proxy.choice,
+            "open"           : False,
+            "multi"          : (proxy.choice == "OR"),
+            "nullable"       : False,
+
+            "value_choices"  : "|".join([value.name for value in values]),
+            "value_format"   : values[0].format,  # these will be the same for each value, so just take the 1st one
+            "value_units"    : values[0].units,   # these will be the same for each value, so just take the 1st one
+        }
+        return data
+

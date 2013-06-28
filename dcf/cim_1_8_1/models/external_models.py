@@ -60,7 +60,7 @@ class XS_Token(MetadataModel):
         super(XS_Token,self).__init__(*args,**kwargs)
 
     value = MetadataAtomicField.Factory("textfield",blank=True)
-    
+
 #########
 # XLINK #
 #########

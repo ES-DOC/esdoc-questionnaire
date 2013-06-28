@@ -11,7 +11,7 @@
 ####################
 
 __author__="allyn.treshansky"
-__date__ ="Jan 31, 2013 11:27:20 AM"
+__date__ ="Jun 10, 2013 4:10:30 PM"
 
 """
 .. module:: metadata_model
@@ -21,27 +21,28 @@ Summary of module goes here
 """
 
 from django.db import models
-import json
+from django.contrib.contenttypes.models import ContentType
+from django.contrib.contenttypes import generic
 
-from dcf.fields import *
 from dcf.utils import *
+from dcf.fields import *
 
-def CIMDocument(documentRestriction=""):
+def MetadataDocument(document_restriction=""):
     """
     specifies that a MetadataModel is a "CIM Document"
     this means that it can form the root element of a CIM Document,
     and can therefore be edited as a top-level model
     """
     def decorator(obj):
-        obj._isCIMDocument = True                           # specify this model as a CIM Document
-        obj._cimDocumentRestriction = documentRestriction   # specify what permission (if any) is needed to edit this document
+        obj._is_metadata_document          = True                   # specify this model as a CIM Document
+        obj._metadata_document_restriction = document_restriction   # specify what permission (if any) is needed to edit this document
 
         # add some fields to obj...
-        documentID = MetadataAtomicField.Factory("charfield",blank=False,)
+        documentID = MetadataAtomicField.Factory("charfield",blank=True,)
         documentID.help_text = "a unique indentifier for this document"
         documentID.contribute_to_class(obj,"documentID")
 
-        documentVersion = MetadataAtomicField.Factory("charfield",blank=False,)
+        documentVersion = MetadataAtomicField.Factory("charfield",blank=True,)
         documentVersion.contribute_to_class(obj,"documentVersion")
 
         metadataID = MetadataAtomicField.Factory("charfield",blank=True,)
@@ -58,14 +59,13 @@ def CIMDocument(documentRestriction=""):
         documentAuthor.help_text = "A contact for the author of this document (as opposed to the author of the artifact being described by this document; ie: the simulation or component or whatever).This includes information about the authoring institution."
         documentAuthor.contribute_to_class(obj,"documentAuthor")
 
-        documentCreationDate = MetadataAtomicField.Factory("datefield",blank=False,)
+        documentCreationDate = MetadataAtomicField.Factory("datefield",blank=True,)
         documentCreationDate.help_text = "The date the document was created."
         documentCreationDate.contribute_to_class(obj,"documentCreationDate")
 
         return obj
     return decorator
 
-#@guid()
 class MetadataModel(models.Model):
     # ideally, MetadataModel should be an ABC
     # but Django Models already have a metaclass: django.db.models.base.ModelBase
@@ -74,27 +74,89 @@ class MetadataModel(models.Model):
     #from abc import *
     #__metaclass__ = ABCMeta
     class Meta:
-        app_label = APP_LABEL
-        abstract = True
+        app_label   = APP_LABEL
+        abstract    = True
 
-    # every subclass needs to have its own instances of this next set of attributes:
-    _name        = "MetadataModel"                      # the name of the model; required
-    _title       = "Metadata Model"                     # a pretty title for the model for display purposes; optional
-    _description = "The base class for a MetadataModel" # some descriptive text about the model; optional
+    _name         = ""
+    _title        = ""
+    _description  = ""
+    _type         = ""
 
-    # if a model is a CIM Document, then these attributes get set using the @CIMDocument decorator
-    _isCIMDocument          = False
-    _cimDocumentRestriction = ""
+    # if a model is a CIM Document, then these attributes get set using the @Document decorator above
+    _is_metadata_document          = False
+    _metadata_document_restriction = ""
 
     _guid = models.CharField(max_length=64,unique=True,editable=False,blank=False,default=lambda:str(uuid4()))
+
+    metadata_project = models.ForeignKey("MetadataProject",blank=True,null=True,editable=False)
+    component_name   = models.CharField(max_length=BIG_STRING,blank=True,null=True,)
+    published        = models.BooleanField(default=False,)
+    active           = models.BooleanField(default=True,)
+
+
+
+    parent_content_type     = models.ForeignKey(ContentType,blank=True,null=True)
+    parent_id               = models.PositiveIntegerField(blank=True,null=True)
+    parent_object           = generic.GenericForeignKey('parent_content_type','parent_id')
+    # can't have a reverse generic relation b/c this is an abstract class
+    # so I do this manually in the getChildren fn below
+    #children                = generic.GenericRelation("MetadataModel",content_type_field="parent_content_type",object_id_field="parent_id")
+
+
+    scientific_properties   = generic.GenericRelation("MetadataProperty",content_type_field="model_content_type",object_id_field="model_id")
+
+    # order of using this confusing stuff:
+    # 1. save the parent
+    # 2. call addParent from the child
+    # 3. save the child
+    # 4. call getChildren from the parent
+
+    def getParent(self):
+        return self.parent_object
+    
+    def setParent(self,parent):
+        if not isinstance(parent,self.__class__):
+            msg = "unable to assign a parent of a different class"
+            raise MetadataError(msg)
+        self.parent_object = parent
+
+    def getChildren(self):
+        model_type = ContentType.objects.get_for_model(self)
+        model_class = model_type.model_class()
+        children = model_class.objects.filter(
+            parent_content_type__pk = model_type.id,
+            parent_id = self.id
+        )
+        return children
+
+    def getAllChildren(self):
+        children = []
+        self.getAllChildrenAux(children)
+        return children
+
+    def getAllChildrenAux(self,children):
+        for child in self.getChildren():
+            children.append(child)
+            child.getAllChildrenAux(children)
+
+    def addScientificProperty(self,property):
+        property.model_object = self
+
+    def addScientificProperties(self,properties):
+        for property in properties:         
+            self.addScientificProperty(property)
+
+    def getScientificProperties(self):
+        return self.scientific_properties.all()
+
     def getGUID(self):
         return self._guid
 
     def __unicode__(self):
-        if self._title != MetadataModel.getTitle():
-            return u'%s' % self._title
-        if self._name != MetadataModel.getName():
-            return u'%s' % self._name
+        return u'%s' % (self._name)
+
+    def setName(self,name):
+        self._name = name
 
     def getName(self):
         return self._name
@@ -103,12 +165,8 @@ class MetadataModel(models.Model):
     def getName(cls):
         return cls._name
 
-    def getTitle(self):
-        return self._title
-
-    @classmethod
-    def getTitle(cls):
-        return cls._title
+    def setDescription(self,description):
+        self._description = description
 
     def getDescription(self):
         return self._description
@@ -117,16 +175,30 @@ class MetadataModel(models.Model):
     def getDescription(cls):
         return cls._description
 
-    def isCIMDocument(self):
-        return self._isCIMDocument
+    def setTitle(self,title):
+        self._title = title
+        
+    def getTitle(self):
+        return self._title
+    
+    @classmethod
+    def getTitle(cls):
+        return cls._title
 
-    def getCIMDocumentRestriction(self):
-        return self._cimDocumentRestriction
+    def setType(self,type):
+        self._type = type
+
+    def getType(self):
+        return self._type
 
     @classmethod
-    def getAttributes(cls):
-        fields = [field for field in cls._meta.fields if issubclass(type(field),MetadataField)]
-        m2m_fields = [field for field in cls._meta.many_to_many if issubclass(type(field),MetadataField)]
+    def getType(cls):
+        return cls._type
+
+    @classmethod
+    def getFields(cls):
+        fields      = [field for field in cls._meta.fields if issubclass(type(field),MetadataField)]
+        m2m_fields  = [field for field in cls._meta.many_to_many if issubclass(type(field),MetadataField)]
         return fields + m2m_fields
 
     def getField(self,fieldName):
@@ -135,21 +207,37 @@ class MetadataModel(models.Model):
             return self._meta.get_field_by_name(fieldName)[0]
         except models.fields.FieldDoesNotExist:
             return None
+        
+    @classmethod
+    def getField(cls,fieldName):
+        # return the actual field (not the db representation of the field)
+        try:
+            return cls._meta.get_field_by_name(fieldName)[0]
+        except models.fields.FieldDoesNotExist:
+            return None
+
+    @classmethod
+    def isDocument(self):
+        return self._is_metadata_document
+
+    def isDocument(self):
+        return self._is_metadata_document
+
+    @classmethod
+    def getDocumentRestriction(self):
+        return self._metadata_document_restriction
+    
+    def getDocumentRestriction(self):
+        return self._metadata_document_restriction
 
 
-#@guid()
-class MetadataEnumeration(MetadataModel):
+# I am purposefully not making this inherit from django.db.models;
+# (hopefully this will avoid the "bulk_create" error that sqlite3 gives for really large numbers of models)
+# anyway, everything in an enumeration is static and I don't need to use db fields
+class MetadataEnumeration(object):
     class Meta:
         app_label = APP_LABEL
-
-    # every subclass needs to have its own instances of this next set of attributes:
-    _name        = "MetadataEnumeration"                      # the name of the model; required
-    _title       = "Metadata Enumeration"                     # a pretty title for the model for display purposes; optional
-    _description = "The base class for a MetadataEnumeration" # some descriptive text about the model; optional
-
-    # if a model is a CIM Document, then these attributes get set using the @CIMDocument decorator
-    _isCIMDocument          = False
-    _cimDocumentRestriction = ""
+        abstract  = True
 
     CHOICES     = []
     open        = False
@@ -183,12 +271,40 @@ class MetadataEnumeration(MetadataModel):
     @classmethod
     def isMulti(cls):
         return cls.multi
-#@guid()
-class MetadataAttribute(models.Model):
+
+class MetadataProperty(models.Model):
     class Meta:
         app_label = APP_LABEL
+        abstract  = False
 
-    _guid = models.CharField(max_length=64,unique=True,editable=False,blank=False,default=lambda:str(uuid4()))
-    def getGUID(self):
-        return self._guid
+    category        = models.ForeignKey("MetadataScientificCategory",blank=True,null=True,on_delete=models.SET_NULL)
+    customizer      = models.ForeignKey("MetadataScientificPropertyCustomizer",blank=True,null=True)
+    component_name  = models.CharField(max_length=64,blank=True)
+
+    property_enumeration  = MetadataEnumerationField(blank=True,null=True,verbose_name="value")
+    property_freetext     = MetadataAtomicField.Factory("charfield",blank=True,verbose_name="value")
+
+    choice                = MetadataAtomicField.Factory("charfield",blank=True)
+    name                  = MetadataAtomicField.Factory("charfield",blank=True,verbose_name="short name")
+    long_name             = MetadataAtomicField.Factory("charfield",blank=True,verbose_name="long name")
+    standard_name         = MetadataAtomicField.Factory("charfield",blank=True,verbose_name="standard name")
+    description           = MetadataAtomicField.Factory("textfield",blank=True,verbose_name="description")
+    
+    model_content_type      = models.ForeignKey(ContentType,blank=True,null=True)
+    model_id                = models.PositiveIntegerField(blank=True,null=True)
+    model_object            = generic.GenericForeignKey('model_content_type', 'model_id')
+
+    def customize(self,property_customizer):
+        self.customizer      = property_customizer
+        self.category        = property_customizer.category
+        self.component_name  = property_customizer.component_name
+        self.choice          = property_customizer.choice
+        self.name            = property_customizer.name
+
+        self.long_name       = property_customizer.long_name
+        self.standard_name   = property_customizer.standard_name
+        self.description     = property_customizer.description
+
+
+    
 

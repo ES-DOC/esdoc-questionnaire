@@ -2,7 +2,7 @@
 {# (also nested forms don't use tabs like top-level ones) #}
 
 {# form is the form #}
-{# customizer is the customizer from the actual field #}
+{# customizer is the customizer from the target_model #}
 
 {% load dcf_filters %}
 
@@ -12,43 +12,42 @@
         {{ hiddenField }}
     {% endfor %} {# /hiddenField #}
 
+
     <table width="100%">
-    {% for customizer in form|getAllActiveAttributes %}
         
-        {% with field=form|getFieldFromName:customizer.attribute_name %}
-            {% with attribute=form|getAttributeFromCustomizer:customizer %}
-                <!-- customizer is the MetadataAttributeCustomizer associated w/ this field -->
-                <!-- field is the MetadataField instance corresponding to this attribute -->
-                <!-- attribute is the attribute (formfield) itself -->
-                
-                <tr valign="top" class="{% cycle 'odd' 'even' %} field">
-                    {% if customizer.customize_subform %}
-                        <td colspan="100"> <!-- this just makes sure that the nested table spans the entire parent table -->
+        {% with customizers=form.standard_property_customizers|getAllValues %}
+            {% for customizer in customizers %}
+                {% with metadata_field=form|getMetadataField:customizer.name %}
+                    {% with field=form|getField:customizer.name %}
+                        <!-- customizer is the property customizer -->
+                        <!-- metadata_field is the MetadataField instance -->
+                        <!-- field is the formfield itself -->
 
-                            {# alright, this looks weird I know #}
-                            {# but passing the template as a variable gets around Django's maximum recursion issue #}
-                            {% with "dcf/_subform.html" as template %}
-                                {% include template %}
-                            {% endwith %}
-                            {# include "dcf/_subform.html" #}
+                        <tr valign="top" class="{% cycle 'odd' 'even' %} field">
+                            {% if customizer.customize_subform %}
+                                <td colspan="100"> <!-- this just makes sure that the nested table spans the entire parent table -->
+                                    {# alright, this looks weird I know #}
+                                    {# but passing the template as a variable gets around Django's maximum recursion issue #}
+                                    {% with "dcf/_subform.html" as template %}
+                                        {% include template %}
+                                    {% endwith %}
+                                </td>
+                            {% else %}
+                                {# alright, this looks weird I know #}
+                                {# but passing the template as a variable gets around Django's maximum recursion issue #}
+                                {% with "dcf/_field.html" as template %}
+                                    {% include template %}
+                                {% endwith %}
+                            {% endif %}
+                        </tr>
 
-                        </td>
-                    {% else %}
-                        {# alright, this looks weird I know #}
-                        {# but passing the template as a variable gets around Django's maximum recursion issue #}
-                        {% with "dcf/_field.html" as template %}
-                            {% include template %}
-                        {% endwith %}
-                        {# include "dcf/_field.html" #}
-                    {% endif %}
+                    {% endwith %} {# /field #}
+                {% endwith %} {# /metadata_field #}
+            {% endfor %} {# /customizer #}
+        {% endwith %} {# /customizers #}
 
-                </tr>
-            {% endwith %} {# /attribute #}
-        {% endwith %} {# /field #}
-    {% endfor %} {# /customizer #}
     </table>
 
-
-</div>
+</div> <!-- /.form -->
 
 {# end template for a form #}

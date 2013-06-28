@@ -11,7 +11,7 @@
 ####################
 
 __author__="allyn.treshansky"
-__date__ ="Jan 31, 2013 11:25:52 AM"
+__date__ ="Jun 10, 2013 5:31:04 PM"
 
 """
 .. module:: metadata_version
@@ -22,107 +22,167 @@ Summary of module goes here
 
 from django.db import models, DatabaseError
 from django.db.models import get_app, get_model, get_models
+from django.db.models.fields import NOT_PROVIDED
 from django.db.utils import DatabaseError as UtilsDatabaseError
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ObjectDoesNotExist, ImproperlyConfigured, ValidationError
 
-from dcf.utils import *
-from dcf.models import MetadataModel
 
-#@guid()
+
+from dcf.models import *
+from dcf.utils import *
+
 class MetadataVersion(models.Model):
     class Meta:
-        app_label = APP_LABEL
-        unique_together     = ("name", "version")
+        app_label   = APP_LABEL
+        abstract    = False
+        # this is one of the few classes that I allow admin access to, so give it pretty names:
         verbose_name        = 'Metadata Version'
         verbose_name_plural = 'Metadata Versions'
 
-    name    = models.CharField(max_length=LIL_STRING,blank=False)
-    version = models.CharField(max_length=LIL_STRING,blank=False)
-    default_categorization = models.ForeignKey("MetadataCategorization",blank=True,null=True,related_name="version")
-    # you cannot have a generic m2m field (at least not easily) to the abstract class MetadataModels
-    # so I'm just using a CharField to store a '|' separated list of their names in the db
-    # (later on at runtime in __init__, I use these to populate a dictionary of classes)
-    model_names  = models.TextField(blank=True)
-    models = {}
+    name    = models.CharField(max_length=255,blank=False)
+    number  = models.CharField(max_length=64,blank=False)
 
-    #_guid = models.CharField(max_length=64,unique=True,editable=False,blank=False,default=lambda:str(uuid4()))
-    #def getGUID(self):
-    #    return self._guid
+    models = models.TextField(blank=True) # dictionary of { "model_name" : [ "field_name1" ... "field_nameN" ], }
 
     def __unicode__(self):
-        _name = u'%s %s' % (self.name,self.version)
-        return _name
+        return u'%s' % (self.getAppName())
 
-    def __init__(self,*args,**kwargs):
-        """
-        Initialize a MetadataVersion.
-        For each model_name in model_names, get the corresponding MetadataModel class and add it to an internal dictionary.
-        """
-        super(MetadataVersion,self).__init__(*args,**kwargs)
-        app_name = self.name.lower() + "_" + re.sub(r'\.',"_",self.version)
-        
-        for model_name in self.model_names.split("|"):
+    def getAppName(self):
+        app_name = self.name.lower() + "_" + re.sub(r'\.','_',self.number)
+        return app_name
+
+    def getTitle(self):
+        return u'%s %s' % (self.name,self.number)
+    
+    def setModels(self,models_dict):
+        models_dict_string = json.dumps(models_dict,separators=(',',":"))
+        self.models = models_dict_string
+    
+    def getModels(self):
+        models_dict_json = json.loads(self.models)
+        return models_dict_json
+
+    def getAllModelClasses(self):
+        model_classes = []
+        models_dict = self.getModels()
+        for key in models_dict.keys():
             try:
-                # TODO: I HAVE NO IDEA WHY get_model WORKS, BUT ContentTypes DOESN'T ?!?
-                #model_type = ContentType.objects.get(app_label=app_name,model=model_name)
-                #self.models[model_name] = model_type.model_class()
-                self.models[model_name] = get_model(app_name,model_name)
-            except ObjectDoesNotExist:
-                # this might be called during "syncdb" before all MetadataModels exist in the db
-                # that's okay - it only has to work during "runserver"
+                app = self.getAppName()
+                model = get_model(app,key)
+                model_classes.append(model)
+            except:
                 pass
-        
-    def loadVersion(self):
-        app_name = self.name.lower() + "_" + re.sub(r'\.',"_",self.version)
-        app = get_app(app_name)
+        return model_classes
 
-        _models = []
+
+    def getModelClass(self,model_name):
+        models_dict = self.getModels()
+        for key in models_dict.keys():
+            if model_name.lower() == key.lower():
+                model_name = key
+                break
+
+        try:
+            app = self.getAppName()
+            model = get_model(app,model_name)
+        except:
+            msg = "unable to find model '%s'" % model_name
+            print "error: msg"
+            raise MetadataError(msg)
+        
+        return model
+        
+    def register(self):
+        models_dict = {}
+        app = get_app(self.getAppName())
+
+        model_filter_parameters    = {}
+        property_filter_parameters = {}
+
         for model in get_models(app):
             if issubclass(model,MetadataModel):
-                _models.append(model.getName().lower())
-        self.model_names = ("|").join(_models)
+                model_name = model.getName().lower()
+                if model_name in models_dict:
+                    msg = "multiple MetadataModels named '%s' exist in MetadataVersion %s" % (model_name,self)
+                    print "error: %s" % msg
+                    raise MetadataError(msg)
 
-        self.models = {}
+                models_dict[model_name] = []
 
-    def getModel(self,model_name):
-        try:
-            return self.models[model_name.lower()]
-        except KeyError:
-            return None
+                model_filter_parameters.clear()
+                model_filter_parameters["version"]              = self
+                model_filter_parameters["model_name"]           = model_name
+                model_filter_parameters["model_title"]          = model.getTitle()
+                model_filter_parameters["model_description"]    = model.getDescription()
+                model_filter_parameters["document_type"]        = model.getType()
 
-    def getProjects(self):
-        """
-        uses reverse relationship to list all MetadataProjects that have this version as a possible version
-        """
-        return self.metadataproject_set.all()
+                (model_proxy,created) = MetadataModelProxy.objects.get_or_create(**model_filter_parameters)
+                if created:
+                    print "created new model proxy: %s" % model_proxy
+                else:
+                    print "model proxy %s already exists" % model_proxy
+                  
+                for field in model.getFields():
+                    field_name = field.getName()
+                    field_type = field.getType().lower()
 
-    def getDefaultProjects(self):
-        """
-        uses reverse relationship to list all MetadataProjects that have this version as a default version
-        """
-        return self.project.all()
+                    property_filter_parameters.clear()
+                    property_filter_parameters["version"]       = self
+                    property_filter_parameters["model_name"]    = model_name
+                    property_filter_parameters["name"]          = field_name
+                    property_filter_parameters["field_type"]    = field_type                    
+                    property_filter_parameters["required"]      = field.blank == False
+                    property_filter_parameters["editable"]      = field.editable
+                    property_filter_parameters["unique"]        = field.unique
+                    property_filter_parameters["verbose_name"]  = field.verbose_name
+                    property_filter_parameters["documentation"] = field.help_text
+                    property_filter_parameters["default_value"] = field.default if (field.default != NOT_PROVIDED) else None
 
-    def getDefaultCategorization(self):
-        """
-        returns the default categorization associated with this version
-        """
-        return self.default_categorization
-    
+                    if isAtomicField(field_type):
+                        property_filter_parameters["type"] = MetadataFieldTypes.ATOMIC
+
+                    elif isRelationshipField(field_type):
+                        property_filter_parameters["type"] = MetadataFieldTypes.RELATIONSHIP
+                        property_filter_parameters["relationship_target_model"] = ".".join([field.targetAppName,field.targetModelName])
+                        property_filter_parameters["relationship_source_model"] = ".".join([field.sourceAppName,field.sourceModelName])
+
+                    elif isEnumerationField(field_type):
+                        enumeration = field.getEnumeration()
+                        property_filter_parameters["type"] = MetadataFieldTypes.ENUMERATION
+                        property_filter_parameters["enumeration_choices"]     = "|".join(enumeration.getChoices())
+                        property_filter_parameters["enumeration_open"]        = enumeration.isOpen()
+                        property_filter_parameters["enumeration_multi"]       = enumeration.isMulti()
+                        property_filter_parameters["enumeration_nullable"]    = enumeration.isNullable()
+
+                    else:
+                        pass
+
+                    (property_proxy,created) = MetadataStandardPropertyProxy.objects.get_or_create(**property_filter_parameters)
+                    if created:
+                        print "created new property proxy: %s" % property_proxy
+                    else:
+                        print "propery proxy %s already exists" % property_proxy
+
+                    models_dict[model_name].append(field_name)
+
+        self.setModels(models_dict)
+        self.save()
+
     @classmethod
-    def factory(cls,kwargs):
+    def factory(cls,*args,**kwargs):
         """
         Builds an instance of a MetadataVersion
         """
-
         try:
             # by convention, versions should be in their own Django Applications
-            # which are named <name>_<version> where any "." in <version> are replaced w/ "_"
-            # as in "cim_1_5"
-            app_name = kwargs["name"].lower() + "_" + re.sub(r'\.',"_",kwargs["version"])
+            # which are named <name>_<number>
+            # where any "." in <number> are replaced w/ "_" & names are all lowercase
+            # as in "cim_1_8_1"
+            app_name = kwargs["name"].lower() + "_" + re.sub(r'\.',"_",kwargs["number"])
             app = get_app(app_name)
         except KeyError:
-            msg = "name and version must be specified when creating a MetadataVersion"
+            msg = "name and number must be specified when creating a MetadataVersion"
             print "error: %s" % msg
             raise MetadataError(msg)
         except ImproperlyConfigured:
@@ -143,8 +203,3 @@ class MetadataVersion(models.Model):
             # that's okay - this only has to work during "runserver"
             print "database error while attempting to register MetadataVersion (try restarting server)"
             pass
-        except UtilsDatabaseError:
-            print "the other kind of database error"
-            pass
-
- 

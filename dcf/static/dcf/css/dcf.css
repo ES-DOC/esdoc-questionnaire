@@ -40,6 +40,7 @@ body {
 #dcf .field_label.readonly { color: #9c9a94 !important; }
 #dcf .field_value.readonly * { color: #9c9a94 !important; background: #dcdad5 !important; }
 
+
 #dcf span.required { font-weight: bold; }
 #dcf fieldset.required { border: 2px solid #000000; }
 #dcf fieldset.required legend { color: #000000; }
@@ -50,7 +51,7 @@ body {
 
 
 /* display errors */
-#dcf .error-wrapper { display: inline; background-color: #ff6666; padding: 4px; }
+#dcf .error-wrapper { display: inline; background-color: #ff6666; padding: 4px; margin-top: 2px; }
 #dcf .errorlist { display: inline; list-style-type: none; text-align: center; padding: 0px; margin: 0px; }
 #dcf .errorlist li { display: inline; background-color: #ff6666; }
 /* manually display errors for fieldsets; JQuery's built-in error rendering is a bit over-the-top */
@@ -74,8 +75,8 @@ body {
 #dcf .sort_by { position: absolute; z-index: 999999; }
 #dcf .help-button { display: inline; }
 #dcf .help-button .help-description { display: none !important; }
-#dcf button.add { float: left; margin-top: 8px; font-size: 11px; padding: 1px; }
-#dcf button.remove {float: right; margin: 4px; font-size: 11px; padding: 1px; }
+#dcf button.add { float: left; margin-top: 8px; font-size: 10px; padding: 1px; }
+#dcf button.remove {float: right; margin: 4px; font-size: 10px; padding: 1px; }
 
 
 #dcf button.customize-subform * { padding-top: 2px; padding-bottom: 2px; } /* since this button is part of a table row, make it a bit shorter than the others */
@@ -103,5 +104,14 @@ body {
 
 #dcf .enumeration-other { margin-top: 4px; }
 
+#dcf .tree a { white-space: normal !important; height: auto; padding: 1px 2px; z-index: }
+#dcf .tree li > ins { vertical-align: top; }
+#dcf .tree .jstree-hovered, #dcf .tree .jstree-clicked { border: 0px; }
+
 .no-close .ui-dialog-titlebar-close { display: none; } /* hide the close buttons on popoup dialogs (require explicitly pressing "ok" or "cancel" */
+
+#dcf .ui-autocomplete { max-height: 100px; overflow-y: auto; }
+
+#dcf .delete-row    { display: none !important; } /* these are created by the formset() method */
+#dcf .add-row       { display: none !important; } /* these are created by the formset() method */
 

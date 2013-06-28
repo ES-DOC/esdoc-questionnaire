@@ -22,6 +22,8 @@ Summary of module goes here
 
 from django.conf.urls.defaults import patterns, include, url
 
+from dcf.views import *
+
 # Uncomment the next two lines to enable the admin:
 from django.contrib import admin
 admin.autodiscover()
@@ -31,41 +33,26 @@ urlpatterns = patterns('',
     # the index page (just for development)...
     url(r'^$', 'dcf.views.index'),
 
-    # testing (just for development, obviously)...
-    url(r'^test/(?P<project_name>[^/]+)/(?P<model_name>[^/]+)/(?P<version_name>[^/]+)/$', 'dcf.views.test'),
-    url(r'^test/$', 'dcf.views.test'),
-    url(r'^test/(?P<model_id>[^/]+)/$', 'dcf.views.test'),
-    url(r'^test2/(?P<model_id>[^/]+)/$', 'dcf.views.test2'),
-    url(r'^test2/$', 'dcf.views.test2'),
-
     # TODO: custom error handling (400,403,404)?
 
     # customize a CIM form...
-    url(r'^customize/(?P<project_name>[^/]+)/(?P<model_name>[^/]+)/(?P<version_name>[^/]+)/$', 'dcf.views.customize'),
-    url(r'^customize/(?P<project_name>[^/]+)/(?P<model_name>[^/]+)/$', 'dcf.views.customize'),
-    url(r'^customize/instructions$', 'dcf.views.customize_instructions'),
+    url(r'^customize/(?P<project_name>[^/]+)/(?P<model_name>[^/]+)/(?P<version_number>[^/]+)/$', 'dcf.views.customize_new',name="customize_new"),
+    url(r'^customize/(?P<project_name>[^/]+)/(?P<model_name>[^/]+)/(?P<version_number>[^/]+)/(?P<customizer_id>[^/]+)/$', 'dcf.views.customize_existing',name="customize_existing"),
 
     # edit a CIM form...
-    url(r'^edit/(?P<project_name>[^/]+)/(?P<model_name>[^/]+)/(?P<version_name>[^/]+)/$', 'dcf.views.edit'),
-    url(r'^edit/(?P<project_name>[^/]+)/(?P<model_name>[^/]+)/$', 'dcf.views.edit'),
-    url(r'^edit/instructions$', 'dcf.views.edit_instructions'),
+    url(r'^edit/(?P<project_name>[^/]+)/(?P<model_name>[^/]+)/(?P<version_number>[^/]+)/$', 'dcf.views.edit_new', name="edit_new"),
+    url(r'^edit/(?P<project_name>[^/]+)/(?P<model_name>[^/]+)/(?P<version_number>[^/]+)/(?P<model_id>[^/]+)/$', 'dcf.views.edit_existing', name="edit_existing"),
 
-###    # view a CIM form...
-###    url(r'^view/(?P<version_name>[^/]+)/(?P<project_name>[^/]+)/(?P<model_name>[^/]+)/$', 'dcf.views.detail'),
-###    url(r'^view/(?P<project_name>[^/]+)/(?P<model_name>[^/]+)/$', 'dcf.views.detail'),
-#
-#
     # AJAX calls...
-    url(r'^ajax/get_category/(?P<category_type>[^/]+)/$', 'dcf.views.get_category'),
-    url(r'^ajax/edit_category/(?P<category_type>[^/]+)/$', 'dcf.views.edit_category'),
-    url(r'^ajax/delete_category/(?P<category_type>[^/]+)/$', 'dcf.views.delete_category'),
     url(r'^ajax/customize_subform/$', 'dcf.views.customize_subform'),
-###    url(r'^ajax/get_model_hierarchy', 'dcf.views.get_model_hierarchy'),
-#
-####    # ATOM feed...
-####    url(r'^feed/(?P<app_name>[^/]+)/(?P<model_type>[^/]+)/$', MetadataFeed()),
-####    url(r'^feed/(?P<app_name>[^/]+)/$', MetadataFeed()),
-###
+    url(r'^ajax/customize_category/$', 'dcf.views.customize_category'),
+    url(r'^ajax/add_model/$', 'dcf.views.add_model'),
+
+    # ATOM feed...
+    url(r'^feed/(?P<project_name>[^/]+)/(?P<model_name>[^/]+)/(?P<version_number>[^/]+)/(?P<model_id>[^/]+)/$', 'dcf.views.serialize'),
+    url(r'^feed/(?P<project_name>[^/]+)/(?P<model_name>[^/]+)/(?P<version_number>[^/]+)/$', MetadataFeed()),
+    url(r'^feed/(?P<project_name>[^/]+)/(?P<model_name>[^/]+)/$', MetadataFeed()),
+    url(r'^feed/(?P<project_name>[^/]+)/$', MetadataFeed()),
 
 )
 

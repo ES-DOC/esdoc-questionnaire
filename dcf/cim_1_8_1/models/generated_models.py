@@ -9,10 +9,11 @@ from dcf.cim_1_8_1.models import *
 # this registers this version w/ the db #
 #########################################
 
-MetadataVersion.factory({
-    "name"      :   "CIM",
-    "version"   :   "1.8.1",
-})
+MetadataVersion.factory(
+    name   =   "CIM",
+    number =   "1.8.1",
+)
+
 
 
 #############################
@@ -1183,6 +1184,8 @@ class gml_AbstractGeometryType(MetadataModel):
 
 
     name = MetadataAtomicField.Factory("charfield",blank=True,)
+    
+
 
 class DataSource(MetadataModel):
 
@@ -1468,7 +1471,7 @@ class OutputRequirement(NumericalRequirement):
     temporalAveraging = MetadataEnumerationField(enumeration='cim_1_8_1.TemporalAveType',blank=True,)
 
 
-@CIMDocument()
+@MetadataDocument()
 class SimulationRun(Simulation):
 
 
@@ -1603,7 +1606,7 @@ class Conformance(MetadataModel):
     type.help_text = "Describes the method that this simulation conforms to an experimental requirement (in case it is not specified by the change property of the reference to the source of this conformance)"
 
 
-###@CIMDocument()
+###@MetadataDocument()
 ###class Assimilation(Simulation):
 ###
 ###
@@ -1638,7 +1641,7 @@ class PhysicalModification(Conformance):
 
 
 
-@CIMDocument()
+@MetadataDocument()
 class SimulationComposite(Simulation):
 
 
@@ -1721,7 +1724,7 @@ class SpatioTemporalConstraint(NumericalRequirement):
 
 
 
-@CIMDocument()
+@MetadataDocument()
 class DownscalingSimulation(NumericalActivity):
 
 
@@ -1752,7 +1755,7 @@ class DownscalingSimulation(NumericalActivity):
     downscaledFrom = MetadataManyToOneField(sourceModel='cim_1_8_1.DownscalingSimulation',targetModel='cim_1_8_1.DataSource',blank=False,)
 
 
-@CIMDocument()
+@MetadataDocument()
 class NumericalExperiment(Experiment):
 
 
@@ -1782,7 +1785,7 @@ class NumericalExperiment(Experiment):
     calendar.help_text = "Is the numerical experiment representative of real time, a 360 day year or a perpetual period?"
 
 
-@CIMDocument()
+@MetadataDocument()
 class DataProcessing(NumericalActivity):
 
 
@@ -1846,7 +1849,7 @@ class DataProcessing(NumericalActivity):
 ###    duration = MetadataManyToOneField(sourceModel='cim_1_8_1.DataCollection',targetModel='cim_1_8_1.DateRange',blank=False,)
 ###
 ###
-###@CIMDocument()
+###@MetadataDocument()
 ###class Ensemble(NumericalActivity):
 ###
 ###
@@ -2051,7 +2054,7 @@ class InitialCondition(NumericalRequirement):
 ###    responsibleParty = MetadataManyToOneField(sourceModel='cim_1_8_1.DataDistribution',targetModel='cim_1_8_1.ResponsibleParty',blank=True,)
 ###
 ###
-@CIMDocument()
+@MetadataDocument()
 class DataObject(DataSource):
 
 
@@ -2430,7 +2433,7 @@ class DataCitation(MetadataModel):
 ###    resolvedBy.help_text = "person/organisation responsible for resolution, or the person/organisation who should be contacted with any queries about the resolution of this quality issue"
 ###
 ###
-###@CIMDocument()
+###@MetadataDocument()
 ###class CIM_Quality(MetadataModel):
 ###
 ###
@@ -2499,7 +2502,7 @@ class Standard(MetadataModel):
 
 
 
-@CIMDocument()
+@MetadataDocument()
 class Platform(MetadataModel):
 
 
@@ -3041,7 +3044,8 @@ class SoftwareComponent(DataSource):
     description = MetadataAtomicField.Factory("charfield",blank=True,)
     description.help_text = "A free-text description of the component."
                 # UML Attribute
-    license = MetadataManyToOneField(sourceModel='cim_1_8_1.SoftwareComponent',targetModel='cim_1_8_1.License',blank=True,)
+    license = MetadataAtomicField.Factory("charfield",blank=True)
+    #license = MetadataManyToOneField(sourceModel='cim_1_8_1.SoftwareComponent',targetModel='cim_1_8_1.License',blank=True,)
     license.help_text = "The license held by this piece of software"
                 # UML Attribute
     componentProperties = MetadataManyToOneField(sourceModel='cim_1_8_1.SoftwareComponent',targetModel='cim_1_8_1.ComponentProperties',blank=True,)
@@ -3058,7 +3062,7 @@ class SoftwareComponent(DataSource):
                 # UML Attribute
     responsibleParty = MetadataManyToManyField(sourceModel='cim_1_8_1.SoftwareComponent',targetModel='cim_1_8_1.ResponsibleParty',blank=True,)
 # UML Attribute
-    releaseDate = MetadataAtomicField.Factory("datefield",blank=True,)
+    releaseDate = MetadataAtomicField.Factory("datefield",blank=True,null=True)
     releaseDate.help_text = "The date of publication of the software component code (as opposed to the date of publication of the metadata document, or the date of deployment of the model)"
                 # UML Attribute
     previousVersion = MetadataAtomicField.Factory("charfield",blank=True,)
@@ -3198,7 +3202,7 @@ class Dependencies(MetadataModel):
 
 
 
-@CIMDocument()
+@MetadataDocument()
 class ProcessorComponent(SoftwareComponent):
 
 
@@ -3315,7 +3319,7 @@ class EntryPoint(MetadataModel):
 
 
 
-@CIMDocument()
+@MetadataDocument()
 class ModelComponent(SoftwareComponent):
 
 
@@ -3399,7 +3403,7 @@ class ScientificProperties(MetadataModel):
 
 
 
-@CIMDocument()
+@MetadataDocument()
 class StatisticalModelComponent(SoftwareComponent):
 
 

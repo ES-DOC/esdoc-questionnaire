@@ -11,7 +11,7 @@
 ####################
 
 __author__="allyn.treshansky"
-__date__ ="Jan 31, 2013 11:27:10 AM"
+__date__ ="Jun 10, 2013 4:11:32 PM"
 
 """
 .. module:: metadata_categorization
@@ -19,12 +19,12 @@ __date__ ="Jan 31, 2013 11:27:10 AM"
 Summary of module goes here
 
 """
+
 from django.db import models
-#from django.contrib.contenttypes.models import *
 import os
 
 from dcf.models import *
-from dcf.utils import *
+from dcf.utils  import *
 
 _UPLOAD_DIR  = "categorizations"
 _UPLOAD_PATH = os.path.join(APP_LABEL,_UPLOAD_DIR)    # this is a relative path (will be concatenated w/ MEDIA_ROOT by FileFIeld)
@@ -37,24 +37,17 @@ def validate_categorization_file_extension(value):
 def validate_categorization_file_schema(value):
     return validate_file_schema(value,_SCHEMA_PATH)
 
-
 class MetadataCategorization(models.Model):
     class Meta:
-        app_label = APP_LABEL
+        app_label   = APP_LABEL
+        abstract    = False
+        # this is one of the few classes that I allow admin access to, so give it pretty names:
         verbose_name        = 'Metadata Categorization'
         verbose_name_plural = 'Metadata Categorizations'
-    
+
+    version = models.ForeignKey("MetadataVersion",blank=True,related_name="categorizations")
     file    = models.FileField(verbose_name="Categorization File",upload_to=_UPLOAD_PATH,validators=[validate_categorization_file_extension,validate_categorization_file_schema])
-    name    = models.CharField(max_length=LIL_STRING,blank=True,null=True,unique=True)
-### THIS IS NO LONGER TRUE;
-### A CATEGORIZATION IS ONLY FOR ATTRIBUTES - AND USERS ARE PREVENTED FROM ADDING NEW ONES
-### (A VOCABULARY IS FOR PROPERTIES)
-###    # in theory, categories can be either instances of MetadataAttributeCategory or MetadataPropertyCategory so I have to use a generic relationship
-###    # however, Django only supports generic foreign keys, not m2m.
-###    # so I create a separate relationship table (MetadataCategoryRelation) which has a foreign key to categorization and a generic foreign key to content_types
-###    # there are some specific fns (getCategories, getAttributeCategories, getPropertyCategories, addCategory) to obfuscate that
-###    categories = models.ManyToManyField("MetadataCategoryRelation",blank=True,null=True)
-### AND, ANYWAY, THE RELATIONSHIP TO CATEGORIES IS DEALT W/ AT THE CATEGORY LEVEL, W/ A RELATED_NAME "category"
+    name    = models.CharField(max_length=255,blank=True,null=True,unique=True)
 
     def __unicode__(self):
         if self.file:
@@ -66,7 +59,6 @@ class MetadataCategorization(models.Model):
         before saving a categorization, check if a file of the same name already exists.
         if so, overwrite it.
         """
-
         categorization_file_name = os.path.basename(self.file.name)
         categorization_file_path = os.path.join(settings.MEDIA_ROOT,APP_LABEL,_UPLOAD_DIR,categorization_file_name)
 
@@ -74,84 +66,105 @@ class MetadataCategorization(models.Model):
             self.name = categorization_file_name
 
         if os.path.exists(categorization_file_path):
-            print "WARNING: THE FILE '%s' ALREADY EXISTS; IT IS BEING OVERWRITTEN." % categorization_file_path
+            print "warning: the file '%s' is being overwritten" % categorization_file_path
             os.remove(categorization_file_path)
 
-        super(MetadataCategorization, self).save(*args, **kwargs)
+        return super(MetadataCategorization, self).save(*args, **kwargs)
 
-    def loadCategorization(self):
+
+    def register(self):
+
+        if not self.version:
+            msg = "unable to register a categorization without an associated version"
+            print "error: %s" % msg
+            raise MetadataError(msg)
 
         self.file.open()
         categorization_content = et.parse(self.file)
         self.file.close()
 
-        filterParameters = {
-            "categorization"    : self
-        }
+        category_filter_parameters = { "categorization" : self }
+        properties_to_save = []
+
         for i, category in enumerate(categorization_content.xpath("//category")):
 
-            categoryName        = category.xpath("name/text()")
-            categoryDescription = category.xpath("description/text()") or None
-            categoryKey         = category.xpath("key/text()") or None
-            categoryOrder       = category.xpath("order/text()") or None
+            category_name        = category.xpath("name/text()")
+            category_description = category.xpath("description/text()") or None
+            category_key         = category.xpath("key/text()") or None
+            category_order       = category.xpath("order/text()") or None
+            category_filter_parameters["name"]          = category_name[0]
+            category_filter_parameters["description"]   = category_description[0] if category_description else ""
+            category_filter_parameters["key"]           = category_key[0] if category_key else re.sub(r'\s','',category_name[0]).lower()
+            category_filter_parameters["order"]         = category_order[0] if category_order else (i+1)
 
-            filterParameters["name"]  = categoryName[0]
+            (new_category, created) = MetadataStandardCategory.objects.get_or_create(**category_filter_parameters)
 
-            if categoryDescription:
-                filterParameters["description"] = categoryDescription[0]
-            if categoryKey:
-                filterParameters["key"]         = categoryKey[0]
-            else:
-                filterParameters["key"]         = re.sub(r'\s','',categoryName[0]).lower()
-            if categoryOrder:
-                filterParameters["order"]       = categoryOrder[0]
-            else:
-                filterParameters["order"]       = (i+1)
+            for i, field in enumerate(categorization_content.xpath("//field[category_key='%s']"%new_category.key)):
 
-            (newCategory, created) = MetadataAttributeCategory.objects.get_or_create(**filterParameters)
-            
-            newCategoryMapping = {}
-            for i, field in enumerate(categorization_content.xpath("//field[category_key='%s']"%newCategory.key)):
-                attributeName = field.xpath("name/text()")[0]
-                modelName = field.xpath("./ancestor::model/name/text()")[0]
-                # at this point I know that "attributeName" of "modelName" has "newCategory"
-                # I am storing this as a dictionary and using JSON to encode/decode it
+                model_name = field.xpath("./ancestor::model/name/text()")[0]
+                field_name = field.xpath("name/text()")[0]
+
                 try:
-                    existing_attributes = newCategoryMapping[modelName]
-                    newCategoryMapping[modelName].append(attributeName)
-                except KeyError:
-                    newCategoryMapping[modelName] = [attributeName]
+                    # (not using a filter here, b/c I want to do a case insensitive search...)
+                    property = MetadataStandardPropertyProxy.objects.get(version=self.version,model_name__iexact=model_name,name__iexact=field_name)
+                except MetadataStandardPropertyProxy.DoesNotExist:
+                    msg = "could not find property '%s' for model '%s' in version '%s'; creating a proxy anyway, but a mismatch between the categorization and the version is a bad idea" % \
+                        (field_name, model_name, self.version)
+                    print "WARNING: %s" % msg
+                    #raise MetadataError(msg)
+                    property = MetadataStandardPropertyProxy(version=self.version,model_name=model_name.lower(),name=field_name.lower())
 
-            newCategory.setMapping(newCategoryMapping)
-            newCategory.save()
+                if property.category != new_category:
+                    property.category = new_category
+                    properties_to_save.append(property)
 
+        for property in set(properties_to_save):
+            property.save()
+            
+class MetadataCategory(models.Model):
+    class Meta:
+        app_label   = APP_LABEL
+        abstract    = True
+        ordering    = [ "order" ]
 
-    def getCategories(self):
-        return self.categories.all()
+    name        = models.CharField(max_length=64,blank=True,editable=True)
+    description = models.TextField(blank=True,editable=True)
+    order       = models.PositiveIntegerField(blank=True,null=True,editable=True)
+    key         = models.CharField(max_length=64,blank=True,editable=True)
+    remove      = models.BooleanField(blank=False,null=False,default=False)
 
-    
-###    def getCategories(self):
-###        return [category.category for category in self.categories.all()]
-###
-###    def getAttributeCategories(self):
-###        return [category.category for category in self.categories.all() if isinstance(category.category,MetadataAttributeCategory)]
-###
-###    def getPropertyCategories(self):
-###        # can't return a list; have to return a QuerySet b/c of where this fn gets used
-###        # (initializing the queryset of m2m fields in forms)
-###        property_categories = [category.category for category in self.categories.all() if isinstance(category.category,MetadataPropertyCategory)]
-###        return MetadataPropertyCategory.objects.filter(id__in=property_categories)
-###
-###    def addCategory(self,category):
-###        category_relation = MetadataCategoryRelation(categorization=self,category=category)
-###        category_relation.save()
-###        self.categories.add(category_relation)
-###
-###    def addCategories(self,categories):
-###        category_relations = []
-###        for category in categories:
-###            category_relations.append(MetadataCategoryRelation(categorization=self,category=category))
-###        [category_relation.save() for category_relation in category_relations]
-###        self.categories.add(*category_relations) # the "*" expands the list into separate items
+    def __unicode__(self):
+        return u'%s' % self.name
 
 
+class MetadataStandardCategory(MetadataCategory):
+    # comes from categorization; bound to schema properties
+    class Meta:
+        app_label   = APP_LABEL
+        abstract    = False
+        unique_together = ("categorization","name")
+
+    categorization  = models.ForeignKey("MetadataCategorization",blank=False,null=False,editable=False,related_name="categories")
+
+    def __init__(self,*args,**kwargs):
+        super(MetadataStandardCategory,self).__init__(*args,**kwargs)
+
+class MetadataScientificCategory(MetadataCategory):
+    # comes from vocabulary/user; bound to CV properties
+    class Meta:
+        app_label   = APP_LABEL
+        abstract    = False
+        unique_together = ("vocabulary","component_name","name")
+
+    vocabulary      = models.ForeignKey("MetadataVocabulary",blank=True,null=True,editable=False,related_name="categories")
+    project         = models.ForeignKey("MetadataProject",blank=True,null=True,editable=False,related_name="categories")
+    component_name  = models.CharField(max_length=64,blank=True,null=True)
+
+    def __init__(self,*args,**kwargs):
+        super(MetadataScientificCategory,self).__init__(*args,**kwargs)
+
+    def isCustom(self):
+        if self.vocabulary:
+            return True
+        else:
+            return False

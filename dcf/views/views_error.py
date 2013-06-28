@@ -24,8 +24,6 @@ from django.template import *
 from django.shortcuts import *
 from django.http import *
 
-from dcf.utils import *
-
 def error(request,error_msg="",status_code=400):
 
     print error_msg

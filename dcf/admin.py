@@ -25,10 +25,9 @@ from django.core.exceptions import ValidationError
 from django.forms import ModelForm
 
 
-
 from dcf.models import *
 
-def load_metadata_versions(modeladmin, request, queryset):
+def register_metadata_versions(modeladmin, request, queryset):
     """
 
     This admin function (re)loads all of the :class:`dcf.models.MetadataModel`s into a :class:`dcf.models.MetadataVersion`.
@@ -42,10 +41,10 @@ def load_metadata_versions(modeladmin, request, queryset):
     """
 
     for version in queryset:
-        version.loadVersion()
+        version.register()
         version.save()
 
-load_metadata_versions.short_description = "(Re)Load all of the MetadataModels belonging to the selected Metadata Versions."
+register_metadata_versions.short_description = "Register all of the MetadataModels belonging to the selected MetadataVersions."
 
 
 class MetadataVersionAdmin(admin.ModelAdmin):
@@ -55,14 +54,14 @@ class MetadataVersionAdmin(admin.ModelAdmin):
     .. warning:: This class should never be accessed directly; it is used only by the Django Admin.
 
     """
-    actions = [load_metadata_versions]
+    actions = [register_metadata_versions]
 
-def load_metadata_categorizations(modeladmin, request, queryset):
+def register_metadata_categorizations(modeladmin, request, queryset):
     for categorization in queryset:
-        categorization.loadCategorization()
-        categorization.save()
+        categorization.register()
+        #categorization.save()
 
-load_metadata_categorizations.short_description = "(Re)Load all of the MetadataCategories belonging to the selected Metadata Categorization."
+register_metadata_categorizations.short_description = "Register all of the MetadataCategories belonging to the selected Metadata Categorization."
 
 class MetadataCategorizationAdmin(admin.ModelAdmin):
     """
@@ -71,15 +70,15 @@ class MetadataCategorizationAdmin(admin.ModelAdmin):
     .. warning:: This class should never be accessed directly; it is used only by the Django Admin.
 
     """
-    actions = [load_metadata_categorizations]
+    actions = [register_metadata_categorizations]
 
 
-def load_metadata_vocabularies(modeladmin, request, queryset):
+def register_metadata_vocabularies(modeladmin, request, queryset):
     for vocabulary in queryset:
-        vocabulary.loadVocabulary()
-        vocabulary.save()
+        vocabulary.register()
+        #vocabulary.save()
 
-load_metadata_vocabularies.short_description = "(Re)Load all of the MetadataProperties belonging to the selected Metadata Vocabulary."
+register_metadata_vocabularies.short_description = "Register all of the MetadataProperties belonging to the selected Metadata Vocabulary."
 
 class MetadataVocabularyAdmin(admin.ModelAdmin):
     """
@@ -88,35 +87,8 @@ class MetadataVocabularyAdmin(admin.ModelAdmin):
     .. warning:: This class should never be accessed directly; it is used only by the Django Admin.
 
     """
-    actions = [load_metadata_vocabularies]
+    actions = [register_metadata_vocabularies]
 
-class MetadataProjectAdminForm(ModelForm):
-    class Meta:
-        model = MetadataProject
-
-    def clean(self):
-        cleaned_data = self.cleaned_data
-        default_version = cleaned_data["default_version"]
-        versions = cleaned_data["versions"]
-        if default_version and not default_version in versions:
-            raise ValidationError("The Default Version must be one of this project's Associated Versions.")
-        default_vocabulary = cleaned_data["default_vocabulary"]
-        vocabularies = cleaned_data["vocabularies"]
-        if default_vocabulary and not default_vocabulary in vocabularies:
-            raise ValidationError("The Default Vocabulary must be one of this project's Associated Vocabularies.")
-
-        return cleaned_data
-
-
-def serialize_project(modeladmin, request, queryset):
-    for project in queryset:
-        print serializers.serialize("json",[project])
-
-serialize_project.short_description = "serialize to JSON (just for testing)"
-
-class MetadataProjectAdmin(admin.ModelAdmin):
-    form = MetadataProjectAdminForm
-    actions = [serialize_project]
 
 
 ###############################################################
@@ -126,9 +98,14 @@ class MetadataProjectAdmin(admin.ModelAdmin):
 admin.site.register(MetadataVersion,MetadataVersionAdmin)
 admin.site.register(MetadataCategorization,MetadataCategorizationAdmin)
 admin.site.register(MetadataVocabulary,MetadataVocabularyAdmin)
-admin.site.register(MetadataProject,MetadataProjectAdmin)
-#admin.site.register(MetadataPropertyCategory)
-#admin.site.register(MetadataAttributeCategory)
+admin.site.register(MetadataProject)
+
+# TODO: REMOVE AFTER DEBUGGING...
+#admin.site.register(MetadataStandardCategory)
+#admin.site.register(MetadataScientificCategory)
+#admin.site.register(MetadataModelCustomizer)
+#admin.site.register(MetadataStandardPropertyCustomizer)
+#admin.site.register(MetadataScientificPropertyCustomizer)
+#admin.site.register(MetadataStandardPropertyProxy)
+#admin.site.register(MetadataScientificPropertyProxy)
 #admin.site.register(MetadataProperty)
-#admin.site.register(MetadataAttribute)
-admin.site.register(TestModel)

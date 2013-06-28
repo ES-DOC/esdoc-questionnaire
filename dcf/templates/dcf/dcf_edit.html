@@ -18,15 +18,14 @@
 
 
 {% block title %}
-    Editing {{project_name|stripSpaces|escape}}::{{model_name|stripSpaces|escape}}
+    Editing {{project.getTitle|stripSpaces|escape}}::{{model_class.getTitle|stripSpaces|escape}}
 {% endblock %} {# /title #}
 
 {% block content %}
 
 
-
     <div class="title">
-        Editing {{model_name|aOrAn}} <u>{{model_name|escape}}</u> form for <u>{{project_name|escape}}</u>
+        Editing {{customizer.model_title|aOrAn}} <u>{{customizer.model_title}}</u> CIM Document
     </div> <!-- /.title -->
 
     <div id="edit">
@@ -36,9 +35,9 @@
             Use this form to create or modify an instance of {{model_name}} metadata.&nbsp;&nbsp;
             Fill out the fields on each tab from left to right, and on each subform from top to bottom.&nbsp;&nbsp;
             Fields or subforms with <span style="font-weight: bold;">bold</span> labels are required.&nbsp;&nbsp;
-            When you have finished, click the "save" button at the bottom of the page to store a local copy or the "publish" button to send a copy to a public metadata archive.&nbsp;&nbsp;
+            When you have finished, click the "save" button at the bottom of the page to store a local copy or the "publish" button to make the document available for others to view (using the ES-DOC toolset)e.&nbsp;&nbsp;
             Invalid entries are indicated using a <span style="color: #ff0000; font-weight: bold;">red</span> font.&nbsp;&nbsp;
-            <a href="/dcf/edit/instructions" target="blank">More detailed instructions</a> are available.&nbsp;&nbsp;
+            <a href="/dcf/edit/instructions" target="blank"><b>More detailed instructions</b></a> are available.&nbsp;&nbsp;
         </i>
     </p>
 
@@ -50,111 +49,174 @@
 
         <div class="form"> {# wrapping everything in a div.form so I can group together fields belonging to the same model #}
 
-            <fieldset class="coolfieldset">
+            <fieldset>
 
                 <div class="documentation">
-                    {{form.customizer.model_description}}
+                    {{model_customizer.model_description}}<br/>
                 </div>
 
 
-                <div class="tabs">
-                    {% with categories=form|getAttributeCategories %}
-                    <ul>
-
-                        {% for attribute_category in categories %}
-                            {% with active_attributes=form|getActiveAttributesOfCategory:attribute_category %}
-                                <li>
-                                    <a href="#tab-{{attribute_category.getGUID}}" title="{{attribute_category.description}}">
-                                        {{attribute_category.name}} <span style="font-size: small;">({{active_attributes|length}})</span>
-                                    </a>
-                                </li>
-                            {% endwith %} {# /active_attributes #}
-                        {% endfor %} {# /attribute_category #}
-                        <li>
-                            <a href="#tab-properties">
-                                <!-- TODO: THIS VALUE SHOULD COME FROM THE CATEGORIZATION FILE -->
-                                Scientific Properties (0)
-                            </a>
-                        </li>
-                    </ul>
-                    {% for attribute_category in categories %}
-
-                        <div id="tab-{{attribute_category.getGUID}}">
-                            <div class="tab-content">
-            
-                                    <table width="100%" border="0">
-                                    {% for customizer in form|getActiveAttributesOfCategory:attribute_category %}
-                                        {% with field=form|getFieldFromName:customizer.attribute_name %}
-                                            {% with attribute=form|getAttributeFromCustomizer:customizer %}
-                                                <!-- customizer is the MetadataAttributeCustomizer associated w/ this field -->
-                                                <!-- field is the MetadataField instance corresponding to this attribute -->
-                                                <!-- attribute is the attribute (formfield) itself -->
-                                                <tr valign="top" class="{% cycle 'odd' 'even' %} field">
-                                                    {% if customizer.customize_subform %}
-                                                        <td colspan="100"> <!-- this just makes sure that the nested table spans the entire parent table -->
-                                                            {% include "dcf/_subform.html" %}
-                                                        </td>
-                                                    {% else %}
-                                                        {% include "dcf/_field.html" %}
-                                                    {% endif %} {# /customizer.customizer_subform #}
-                                                </tr>
-                                            {% endwith %} {# /attribute #}
-                                        {% endwith %} {# /field #}
-                                    {% endfor %} {# /customizer #}
-                                    </table>
-                            </div>
-                        </div>
-                    {% endfor %} {# /attribute_category #}
-                    {% endwith %}
-                    <div id="tab-properties">
-                        <div class="tab-content">
-                            properties go here.  go go go.
-                        </div>
-                    </div>
-
-                </div>
-
-                {% if form.customizer.model_show_all_attributes %}
-                    {% with uncategorized_attributes=form|getActiveAttributesOfNoCategory %}
-                    <fieldset class="coolfieldset" name="uncategorized_attributes_fieldset">
-                        <legend title="click to show/hide content">
-                            <div class="help-button" title="click for more info" id="customization_details_formset">
+                {% if customizer.model_nested %}
+                <div id="splitter">
+                    <div id="splitter_left">
+                        <div style="background-color: #b9e0e3; text-align: center; font-weight: bold; padding: 2px; border: 1px solid #358c92;">
+                            <div class="help-button" title="click for more info" id="component_hierarchy">
                                 <span class="default-help-icon ui-icon-info" style="display: inline-block">&nbsp;</span>
-                                <div class="help-description" title="Uncategorized Attribute Details">
-                                    This section contains those CIM attributes that have not been categorized for this project.
+                                <div class="help-description" title="Component Hierarchy">
+                                    This section allows users to traverse the full component hierarchy of a document.  Use the checkboxes to indicate that component is to be included as part of the current document.
                                 </div> <!-- /.help-description -->
                             </div> <!-- /.help-button -->
-                            <span class="title">&nbsp;Other Attributes ({{uncategorized_attributes|length}})&nbsp;</span>
-                        </legend>
-                        <div class="coolfieldset-content">
-                            <table border="0" width="100%">
-                            {% for customizer in uncategorized_attributes %}
-                                {% with field=form|getFieldFromName:customizer.attribute_name %}
-                                    {% with attribute=form|getAttributeFromCustomizer:customizer %}
-                                        <tr valign="top" class="{% cycle 'odd' 'even' %} field">
-                                            {% if customizer.customize_subform %}
-                                                <td colspan="100"> <!-- this just makes sure that the nested table spans the entire parent table -->
-                                                    {% include "dcf/_subform.html" %}
-                                                </td>
-                                            {% else %}
-                                                {% include "dcf/_field.html" %}
-                                            {% endif %} {# /customizer.customizer_subform #}
-                                        </tr>
-                                    {% endwith %} {# /attribute #}
-                                {% endwith %} {# /field #}
-                            {% endfor %} {# /customizer #}
-                            </table>
+                            Component Hierarchy
                         </div>
+                        <div id="component_tree" class="tree">
+                            {{component_tree|safe}}
+                        </div>
+                    </div> <!-- /#splitter_left -->
+                    <div id="splitter_right">
+                {% endif %} {# /model_nested #}
 
-                    </fieldset>
-                    {% endwith %} {# /uncategorized_attributes #}
-                {% endif %} {# / form.customizer.model_show_all_attributes #}
+{% for component_name,form in forms.items %}
+    {% with model_customizer=form.customizer %}
+        {% with component_name_key=component_name.lower %}
+            <div class="pane" id="{{component_name_key|add:'_pane'}}" name="{{component_name_key}}">
+
+                <div>
+                    {{ form.active }}
+                    {{ form.published }}
+                    {{ form.component_name }}
+                    {{ form.parent_content_type }}
+                    {{ form.parent_id }}
+                    {{ form.parent_object }}
+                </div>
+                <div class="tabs">
+                    <ul>
+                        {% for category in standard_categories %}
+                            {% with category_key=category.key %}
+                                {% with customizers=form.standard_property_customizers|getValueFromKey:category_key %}
+                                    <li>
+                                        <a href="#tab-{{component_name_key}}-{{category_key}}" title="{{category.description}}">
+                                            {{category.name}} <span style="font-size: small;">({{customizers|length}})</span>
+                                        </a>
+                                    </li>
+                                {% endwith %} {# /customizers (standard) #}
+                            {% endwith %} {# /category_key #}
+                        {% endfor %} {# /category #}
+                        <li>
+                            {% with customizers=form.scientific_property_customizers|getValueFromKey:component_name_key %}
+                                <a href="#tab-{{component_name_key}}-scientific_properties">
+                                    Scientific Properties <span style="font-size: small;">({{customizers|getElementsInCollection|length}})</span>
+                                </a>
+                            {% endwith %} {# /customizers (scientific) #}
+                        </li>
+                    </ul>
+                    {% for category in standard_categories %}
+                        {% with category_key=category.key %}
+                            {% with customizers=form.standard_property_customizers|getValueFromKey:category_key %}
+                                <div id="tab-{{component_name_key}}-{{category_key}}">
+                                    <div class="tab_content">
+                                        <table width="100%" border="0">
+                                            {% for customizer in customizers %}
+                                                {% with metadata_field=form|getMetadataField:customizer.name %}
+                                                    {% with field=form|getField:customizer.name %}
+                                                        <!-- customizer is the property customizer -->
+                                                        <!-- metadata_field is the MetadataField instance -->
+                                                        <!-- field is the formfield itself -->
+                                                        <tr valign="top" class="{% cycle 'odd' 'even' %} field">
+                                                            {% if customizer.customize_subform %}
+                                                                <td colspan="100"> <!-- this just makes sure that the nested table spans the entire parent table -->
+                                                                    {% include "dcf/_subform.html" %}
+                                                                </td>
+                                                            {% else %}
+                                                                {% include "dcf/_field.html" %}
+                                                            {% endif %} {# /customizer.customizer_subform #}
+                                                        </tr>
+                                                    {% endwith %} {# /field #}
+                                                {% endwith %} {# /metadata_field #}
+                                            {% endfor %} {# customizer #}
+                                        </table>
+                                    </div> <!-- /.tab_content -->
+                                </div> {# /#tab-{{category_key}} #}
+                            {% endwith %} {# /customizers #}
+                        {% endwith %} {# /category_key #}
+                    {% endfor %} {# category #}
+                    <div id="tab-{{component_name_key}}-scientific_properties">
+                        <div class="tab_content">
+
+                            <div class="tabs">
+                                <ul>
+                                    {% for category in scientific_categories %}
+                                        {% if category.component_name.lower == component_name_key %}
+                                        <li>
+                                            <a href="#tab-{{component_name_key}}-{{category.key}}">
+                                                {{category.name}}
+                                            </a>
+                                        </li>
+                                        {% endif %} {# /category.component_name == component_name #}
+                                    {% endfor %} {# /category #}
+                                </ul>
+                                {% for category in scientific_categories %}
+                                    {% if category.component_name.lower == component_name_key %}
+
+                                    
+                                        <div id="tab-{{component_name_key}}-{{category.key}}">
+                                            <div class="tab_content">
+                                                <span class="documentation">{{category.description}}<br/></span>
+
+                                                <span class="subform-toolbar ui-widget-header ui-corner-all">
+                                                    <button type="button" class="expand" title="expand all {{customizer.verbose_name}}">expand all</button>
+                                                    <button type="button" class="collapse" title="collapse all {{customizer.verbose_name}}">collapse all</button>
+                                                </span> <!-- /.subform-toolbar -->
+                                                <div style="clear: both;">&nbsp;</div>
+
+                                                <div class="accordion">
+
+                                                    {% with formset=scientific_property_formsets|getValueFromKey:component_name_key %}
+
+                                                        {{ formset.non_form_errors }}
+                                                        {{ formset.management_form }}
+
+                                                        {% for form in formset %}
+                                                            {% with form_category=form|getFieldValue:"category" %}                                                            
+                                                                {% if form_category.lower == category.name.lower %}
+                                                                    {% with customizer=form.property_customizer %}
+                                                                        {% include "dcf/_property_form.html" %}
+                                                                    {% endwith %} {# /customizer #}
+                                                                {% endif %} {# /form_category == category.key #}
+                                                            {% endwith %} {# /form_category #}
+                                                        {% endfor %} {# /form #}
+                                                    {% endwith %} {# /formset #}
+                                                    
+                                                </div> <!-- /.accordion -->
+                                                
+                                            </div> <!-- /.tab_content -->
+                                        </div> <!-- /#tab-{{component_name_key}}-{{category.key}} -->
+                                    {% endif %} {# /category.component_name == component_name #}
+                                {% endfor %} {# /category #}
+                            </div>
+                        </div> <!-- /.tab_content -->
+                    </div> <!-- /#tab-{{component_name_key}}-scientific_properties -->
+                </div> <!-- /.tabs -->
+            </div> <!-- /.pane -->
+        {% endwith %} {# /component_name_key #}
+    {% endwith %} {# /model_customizer #}
+{% endfor %} {# /component_name, form #}
+
+
+                
+
+
+                {% if form.customizer.model_nested %}
+                    </div> <!-- /#splitter_right -->
+                </div> <!-- /#splitter -->
+                {% endif %}
+
+            </fieldset>
 
         </div> <!-- /.form -->
-        
+
         <div class="submit">
-            <input class="button" name="save" type="submit" value="save"/>
-            <input class="button" name="submit" type="submit" value="publish"/>
+            <input class="button" name="save_button" type="submit" value="save"/>
+            <input class="button" name="publish_button" type="submit" value="publish"/>
         </div> <!-- /.submit -->
         <div style="clear: both;">&nbsp;</div>
 
@@ -168,7 +230,7 @@
 {% block footer %}
     <div class="footer">
         This form is generated by <a target="_blank" href="https://github.com/ES-DOC/django-cim-forms">Django-CIM-Forms</a>.
-        It is based on <a target="_blank" href="http://blahblah/cim/{{version_number}}">{{version_name}} {{version_number}}</a>.
-        And it uses the Controlled Vocabulary <a target="_blank" href="{{vocabulary_path}}">{{vocabulary_path|getFilename}}</a>.
+        It is based on <a target="_blank" href="http://blahblah/cim/{{version.number}}">{{version.getTitle}}</a>.
+        And it uses the Controlled Vocabulary <a target="_blank" href="{{vocabulary.file.url}}">{{vocabulary.file.url|getFilename}}</a>.
     </div> <!-- /.footer -->
 {% endblock %} {# / footer #}

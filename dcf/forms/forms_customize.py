@@ -11,7 +11,7 @@
 ####################
 
 __author__="allyn.treshansky"
-__date__ ="Feb 1, 2013 4:42:47 PM"
+__date__ ="Jun 12, 2013 12:17:09 PM"
 
 """
 .. module:: forms_customize
@@ -19,148 +19,100 @@ __date__ ="Feb 1, 2013 4:42:47 PM"
 Summary of module goes here
 
 """
+
 from django.forms import *
-#from django.forms.models import BaseForm
-#from django.forms.models import BaseFormSet
-#from django.forms.models import BaseInlineFormSet
-#from django.forms.models import BaseModelFormSet
-#from django.forms.models import formset_factory
+from django.forms.models import BaseModelFormSet, BaseInlineFormSet
 from django.forms.models import inlineformset_factory
-#from django.forms.models import modelform_factory
 from django.forms.models import modelformset_factory
 from django.utils.functional import curry
 
 from dcf.models import *
 from dcf.utils import *
 
+from dcf.forms.forms_categorize import save_standard_categories, save_scientific_categories
+
 class MetadataModelCustomizerForm(ModelForm):
+
     class Meta:
         model   = MetadataModelCustomizer
-        fields  = ("name","description","default","version","categorization","vocabularies","model_title","model_description","model_show_all_categories","model_show_all_attributes","model_nested")
+        fields  = ( "name","description","default","model_title","model_description",   \
+                    "model_show_all_categories","model_show_all_properties",            \
+                    "model_nested","categorization","vocabularies",                     \
+                    "project","version","model" )
 
-    _subForms = {}
-    
-    customizer_fields   = ("name","description","default","version","categorization","vocabularies")
-    model_fields        = ("model_title","model_description","model_show_all_categories","model_show_all_attributes","model_nested")
+    customizer_fields   = ("name","description","default","categorization","vocabularies",)
+    model_fields        = ("model_title","model_description","model_show_all_categories","model_show_all_properties","model_nested")
+    model_fields_for_subform = ("model_title","model_description","model_show_all_categories","model_show_all_properties",)
 
-    version         = CharField(label="Metadata Version",required=False)
-    # TODO: IS THERE A BETTER WAY THAT I CAN SPECIFY THE QS? THIS SEEMS INNEFICIENT    
-    vocabularies    = ModelMultipleChoiceField(label="Controlled Vocabularies",required=False,queryset=MetadataVocabulary.objects.none())   # qs set to none() b/c actual value is set in init below
-    categorization  = ModelChoiceField(label="Categorization",required=False,queryset=MetadataCategorization.objects.none())                # qs set to none() b/c actual value is set in init below
+    # actual values for these fields is set below
+    #version         = ModelChoiceField(label="Metadata Version",required=False,queryset=MetadataVersion.objects.none())
+    categorization  = ModelChoiceField(label="Categorization",required=False,queryset=MetadataCategorization.objects.none())
+    vocabularies    = ModelMultipleChoiceField(label="Controlled Vocabularies",required=False,queryset=MetadataVocabulary.objects.none())
 
-    attribute_categories = ModelMultipleChoiceField(queryset=MetadataAttributeCategory.objects.none(),required=False) # the categories themselves
-    attribute_categories_tags = CharField(label="Available Categories",required=False)  # the field that is used for the tagging widget
-    attribute_categories_tags.help_text = "This widget contains the standard set of attribute categories associated with the metdata version.  If this set is unsuitable, or empty, then the categorization should be updated.  Please contact your administrator."
-    attribute_categories_content = CharField(required=False)    # a hidden field used to store the current content of the categories during javascript manipulation
-
-    property_categories = ModelMultipleChoiceField(queryset=MetadataPropertyCategory.objects.none(),required=False)
-    property_categories_tags = CharField(label="Available Categories",required=False)
-    property_categories_tags.help_text  = "This widget is used to customize the categories used to display scientific properties."
-    property_categories_content = CharField(required=False)  # a hidden field used to store the current content of the categories during javascript manipulation
+    standard_categories                 = ModelMultipleChoiceField(queryset=MetadataStandardCategory.objects.none(),required=False) # the categories themselves
+    standard_categories_tags            = CharField(label="Available Categories",required=False)                               # the field that is used for the tagging widget
+    standard_categories_content         = CharField(required=False)                                                         # and the actual (JSON) content of the db
+    standard_categories_tags.help_text  = "This widget contains the standard set of categories associated with the metdata version.  If this set is unsuitable, or empty, then the categorization should be updated.  Please contact your administrator."
+    scientific_categories_content       = CharField(required=False)
     
     def __init__(self,*args,**kwargs):
-        _request = kwargs.pop("request",None)
+        component_list = kwargs.pop("component_list",[])
         super(MetadataModelCustomizerForm,self).__init__(*args,**kwargs)
         customizer_instance = self.instance
 
+        model_data = self.data or self.initial
+        
+        self.fields["project"].widget           = HiddenInput()
+        self.fields["version"].widget           = HiddenInput()
+        self.fields["model"].widget             = HiddenInput()
 
-        # initialize the subforms...
-        if customizer_instance.pk:
-            initial_attributes_data=None
-            extra_attributes=0
-        else:
-            initial_attributes_data = [model_to_dict(temporary_attribute_customizer) for temporary_attribute_customizer in customizer_instance.temporary_attributes]
-            extra_attributes = len(initial_attributes_data)
 
-        AttributesFormSet = MetadataAttributeCustomizerInlineFormSetFactory(extra=extra_attributes,method=_request.method)
-        self._subForms["attributes"] = [
-            SubFormTypes.FORMSET,
-            AttributesFormSet,
-            AttributesFormSet(_request.POST,instance=customizer_instance) if (_request.method == "POST") else AttributesFormSet(initial=initial_attributes_data,instance=customizer_instance)
-        ]        
-
+        categorization                          = self.initial["categorization"]
+        vocabularies                            = self.initial["vocabularies"]
+        self.fields["vocabularies"].queryset    = MetadataVocabulary.objects.filter(pk__in=[vocabulary.pk for vocabulary in vocabularies])
+        self.fields["categorization"].queryset  = MetadataCategorization.objects.filter(pk__in=[categorization.pk])
+        self.fields["vocabularies"].initial     = vocabularies
+        self.fields["categorization"].initial   = categorization
+        
         try:
-            current_attribute_categories = customizer_instance.getCategorization().getCategories()
-      
-            self.fields["attribute_categories"].queryset = MetadataAttributeCategory.objects.filter(id__in=[category.id for category in current_attribute_categories])
-            self.fields["attribute_categories_tags"].initial="|".join([category.name for category in current_attribute_categories])
+            current_standard_categories = categorization.categories.all().order_by("order")
+            self.fields["standard_categories"].queryset = current_standard_categories
+            self.fields["standard_categories_tags"].initial="|".join([category.name for category in current_standard_categories])
+
         except AttributeError:
             # if there was no categorization assigned,
             # then attributes will not be associated w/ any categories
             # that's unfortunate, but it's not an error
             pass
 
-
         try:
-            current_property_categories = customizer_instance.getVocabulary().getCategories()
+            scientific_categories_dict = json.loads(model_data["scientific_categories_content"])
+            for component_name in component_list:
+                field_name = component_name.lower() + "_scientific_categories_tags"
+                self.fields[field_name] = CharField(label="Available Categories",required=False)
+                self.fields[field_name].initial = \
+                    "|".join([category["fields"]["name"] for category in scientific_categories_dict
+                    if category["fields"]["component_name"].lower() == component_name.lower()
+                ])
+                update_field_widget_attributes(self.fields[field_name],{"class":"tags"})
 
-            # TODO: ALSO ADD CUSTOM PROPERTIES!!!
-            self.fields["property_categories"].queryset = MetadataPropertyCategory.objects.filter(id__in=[category.id for category in current_property_categories])
-            self.fields["property_categories_tags"].initial="|".join([category.name for category in current_property_categories])
-
-            component_tree = customizer_instance.getVocabulary().getComponents()
-            component_list_generator = list_from_tree(component_tree)
-            for component_name in component_list_generator:
-                tag_field_name = component_name[0].lower()+"_property_categories_tags"                
-                self.fields[tag_field_name] = CharField(label="Available Categories",required=False)
-                self.fields[tag_field_name].initial="|".join([category.name for category in current_property_categories if category.component_name==component_name[0].lower()])
-                update_field_widget_attributes(self.fields[tag_field_name],{"class":"tags"})
-
-                if customizer_instance.pk:
-                    extra_properties = 0
-                    initial_properties_data=None
-                else:
-                    initial_properties_data = [model_to_dict(temporary_property_customizer) for temporary_property_customizer in customizer_instance.temporary_properties if temporary_property_customizer.property.component_name.lower()==component_name[0].lower()]
-                    extra_properties = len(initial_properties_data)
-                formset_field_name = component_name[0].lower()+"_properties"
-                PropertiesFormSet = MetadataPropertyCustomizerInlineFormSetFactory(extra=extra_properties,method=_request.method)
-                self._subForms[formset_field_name] = [
-                    SubFormTypes.FORMSET,
-                    PropertiesFormSet,
-                    PropertiesFormSet(_request.POST,instance=customizer_instance) if (_request.method == "POST") else PropertiesFormSet(initial=initial_properties_data,instance=customizer_instance)
-                ]
-                
-
-
-        except AttributeError:
-            # if there were categories
-            # then that's unfortunate, but it's not an error
+        except KeyError:
+            # when this form is used as a result of the customize_subform button
+            # I don't bother including scientific properties
             pass
-        
 
-### OLD WAY OF DOING THINGS. YUCK.
-###        # get all categories with a mapping to this model
-###        model_key = u'"%s":' % customizer_instance.model
-###        current_property_categories = MetadataPropertyCategory.objects.filter(mapping__contains=model_key)
-###
-###        self.fields["property_categories"].queryset = current_property_categories
-###        self.fields["property_categories_tags"].initial="|".join([category.name for category in current_property_categories])
-
-        # add specific attributes to the remaining fields...
-        self.fields["description"].widget.attrs["rows"] = 2
-        self.fields["model_description"].widget.attrs["rows"] = 4
-
-        self.fields["categorization"].queryset  = customizer_instance.getCategorizations()
-        self.fields["vocabularies"].queryset    = customizer_instance.getVocabularies()
-
-        update_field_widget_attributes(self.fields["attribute_categories_tags"],{"class":"tags"})
-        update_field_widget_attributes(self.fields["property_categories_tags"],{"class":"tags"})
-        update_field_widget_attributes(self.fields["attribute_categories_content"],{"class":"hidden"})
-        update_field_widget_attributes(self.fields["property_categories_content"],{"class":"hidden"})
-
-        self.fields["version"].initial          = customizer_instance.version
-        self.fields["categorization"].initial   = customizer_instance.getCategorization()
-        self.fields["vocabularies"].initial     = [customizer_instance.getVocabulary()]
-
-        self.fields["version"].widget.attrs["readonly"] = True
-        self.fields["categorization"].widget.attrs["disabled"] = True
-        self.fields["vocabularies"].widget.attrs["disabled"] = True
-        update_field_widget_attributes(self.fields["version"],{"class":"readonly"})
-        update_field_widget_attributes(self.fields["categorization"],{"class":"readonly"})
+        self.fields["description"].widget.attrs["rows"]         = 2
+        self.fields["model_description"].widget.attrs["rows"]   = 4
+# TODO: MARKING THESE AS "disabled" MEANS THEIR VALUES DON'T GET PROPAGATED THROUGH THE SYSTEM
+# SO I HAVE COMMENTED THIS OUT; BUT I STILL NEED A WAY TO PREVENT THEM FROM BEING SELECTED
+#        self.fields["vocabularies"].widget.attrs["disabled"]    = True
+#        self.fields["categorization"].widget.attrs["disabled"]    = True
         update_field_widget_attributes(self.fields["vocabularies"],{"class":"readonly"})
-
-        update_field_widget_attributes(self.fields["attribute_categories"],{"class":"hidden"})
-        update_field_widget_attributes(self.fields["property_categories"],{"class":"hidden"})
+        update_field_widget_attributes(self.fields["categorization"],{"class":"readonly"})
+        update_field_widget_attributes(self.fields["standard_categories_tags"],{"class":"tags"})
+        update_field_widget_attributes(self.fields["standard_categories"],{"class":"hidden"})
+        update_field_widget_attributes(self.fields["standard_categories_content"],{"class":"hidden"})
+        update_field_widget_attributes(self.fields["scientific_categories_content"],{"class":"hidden"})
 
     def getCustomizerFields(self):
         fields = list(self)
@@ -170,231 +122,57 @@ class MetadataModelCustomizerForm(ModelForm):
         fields = list(self)
         return [field for field in fields if field.name in self.model_fields]
 
-    def getAllSubForms(self):
-        # this fn does fancy stuff when called w/ a MetadataModel (it searches the full hierarchy of forms)
-        # for a customizer, just return the list
-        return self._subForms
+    def getModelFieldsForSubForm(self):
+        fields = list(self)
+        return [field for field in fields if field.name in self.model_fields_for_subform]
 
-    def is_valid(self):
-        subFormValidity = [subForm[2].is_valid() for subForm in self.getAllSubForms().itervalues() if subForm[2]]
-
-        if not all(subFormValidity):
-            for subForm in self.getAllSubForms().itervalues():
-                print "subform errors:"
-                print subForm[2].errors
-        
-        formValidity = all(subFormValidity) and super(MetadataModelCustomizerForm,self).is_valid()
-        return formValidity
-
+    # TODO: THIS IS THE ONLY FN I'M NOT HAPPY W/
+    # I HAVE TO SAVE THE CATEGORIES HERE JUST IN CASE THERE ARE NEW ONES THAT SCIENTIFIC PROPERTIES REFER TO
+    # OTHERWISE WHEN I TRY TO CLEAN SCIENTIFIC PROPERTIES, IT WILL FAIL
     def clean(self):
-        
-        customizer_instance = self.instance
         cleaned_data = self.cleaned_data
-
-        # this is clearly overkill to just check one field
-        # but it's future-proofed in case I want to check multiple fields at some later date
-        fields_to_update = {}
-        fields_to_check = ["name",]
-        if customizer_instance.pk:
-            for field_to_check in fields_to_check:
-                if cleaned_data[field_to_check] != getattr(customizer_instance,field_to_check):
-                    fields_to_update[field_to_check] = cleaned_data[field_to_check]
-
-        if fields_to_update:
-            for attributeSubForm in self._subForms["attributes"][2]:
-                if hasattr(attributeSubForm,"cleaned_data"):
-                    attribute_validated = True
-                    attribute_data = attributeSubForm.cleaned_data
-                else:
-                    # TODO: NOT SURE IF THIS MAKES SENSE;
-                    # IF THIS HASN'T VALIDATED, THEN AN ERROR WILL BE RAISED AND THINGS WON'T GET SAVED
-                    # BUT THIS WOULD BE CALLED AGAIN ONCE THAT ERROR IS FIXED AND THE FORM IS RE-SUBMITTED
-                    attribute_validated = False
-                    for key,value in attributeSubForm.data.iteritems():
-                        if key.startswith(attributeSubForm.prefix+"-"):
-                            attribute_data[key.split(attributeSubForm.prefix+"-")[1]] = value
-
-                # if this attribute is valid (ie: will be saved), and is a relationshipfield, and has 'customize_subform' set to True, and has created a subform_customizer...
-                if attribute_validated and is_relationship_field(attribute_data["attribute_type"]) and attribute_data["customize_subform"] and attribute_data["subform_customizer"]:
-                    # then update the fields of that subform_customizer
-                    subform_customizer = attribute_data["subform_customizer"]
-                    subform_customizer.recursivelyUpdateFields(fields_to_update)
+        project = cleaned_data["project"]
+        try:
+            # categories have to be explicitly saved separately
+            # b/c they are manipulated via a JQuery tagging widget and therefore aren't bound to a form
+            save_standard_categories(json.loads(self.data["standard_categories_content"]),project)
+            save_scientific_categories(json.loads(self.data["scientific_categories_content"]),project)
+        except:
+            # if this form is being evaluated in the context of a subform,
+            # then the categories will have been blank,
+            # and json.loads will raise an error
+            pass
 
         return cleaned_data
 
-    def save_subforms(self,*args,**kwargs):
-        print "TWO.ONE %s"%len(self.instance.attributes.all())
-        _commit = kwargs.pop("commit",True)
-        for key,value in self._subForms.iteritems():
-            subFormType     = value[0]
-            subFormClass    = value[1]
-            subFormInstance = value[2]
-            if subFormType == SubFormTypes.FORM:
-                subModelInstance = subFormInstance.save(commit=False)
-                subModelInstance.save()
-                subFormInstance.save_m2m()
-            elif subFormType == SubFormTypes.FORMSET:
-                for subForm in subFormInstance.forms:
-                    subModelInstance = subForm.save(commit=False)
-                    subModelInstance.save()
-                    subForm.save_m2m()
-#            subFormInstance.save(commit=_commit)
-        print "TWO.TWO %s"%len(self.instance.attributes.all())
 
+#    def validate_unique(self):
+#        model_customizer = self.instance
+#        try:
+#            model_customizer.validate_unique()
+#        except ValidationError, e:
+#            print "UNIQUEERROR"
+#            # TODO: THIS IS RECORDING AN ERROR FOR EVERY FIELD
+#            # IN THEORY, THERE COULD BE MULTIPLE UNIQUE_FIELD_SETS
+#            # ONLY SOME OF WHICH HAVE FAILED THIS VALIDATION
+#            for unique_field_set in model_customizer.getUniqueTogether():
+#                for unique_field in unique_field_set:
+#                    self.errors[unique_field] = "This value must be unique."
+   
+class MetadataStandardPropertyCustomizerForm(ModelForm):
 
-class MetadataAttributeCustomizerForm(ModelForm):
     class Meta:
-        model = MetadataAttributeCustomizer
-        fields = ("attribute_name", "attribute_type", "order", "category", "displayed", "verbose_name", "default_value", "documentation", "required", "editable", "unique", "cardinality", "enumerations", "default_enumerations", "open", "multi", "nullable", "enumeration_choices", "customize_subform")#, "subform_customizer")
+        model = MetadataStandardPropertyCustomizer
+        fields  = ( "name","type","field_type","order","category","displayed","required","editable",    \
+                    "default_value",  \
+                    "unique","verbose_name","documentation","suggestions","enumeration_values",         \
+                    "enumeration_default","enumeration_choices","enumeration_open","enumeration_multi", \
+                    "enumeration_nullable","relationship_target_model","relationship_source_model",     \
+                    "relationship_cardinality","customize_subform","subform_customizer", "proxy", )
 
     def __init__(self,*args,**kwargs):
-        
-        method = kwargs.pop("method","GET")
-        super(MetadataAttributeCustomizerForm,self).__init__(*args,**kwargs)
-
-        attribute_customizer = self.instance
-        
-        # get the form data...
-        # if this is being loaded via POST, then the request will have been passed into the formset constructor
-        # so I just need to work out which part of that request applies to _this_ form
-        # if this is being loaded via GET, then the initial value will have been passed into the formset constructor
-        # so I can use that directly
-        attribute_data = {}
-        if method=="POST":
-            # (not sure why I can't do this in a list comprehension)
-            for key,value in self.data.iteritems():
-                if key.startswith(self.prefix+"-"):
-                    attribute_data[key.split(self.prefix+"-")[1]] = value
-        else:
-            attribute_data = self.initial
-
-        attribute_type = attribute_data["attribute_type"]
-        attribute_name = attribute_data["attribute_name"]
-
-        # don't want to show these fields, but still want access to them
-        self.fields["attribute_name"].widget = HiddenInput()
-        self.fields["attribute_type"].widget = HiddenInput()
-        self.fields["order"].widget = HiddenInput()
-        self.fields["category"].widget = HiddenInput()
-        self.fields["enumeration_choices"].widget = HiddenInput()
-
-        self.fields['documentation'].widget.attrs["rows"] = 3
-
-        update_field_widget_attributes(self.fields["displayed"],{"class":"linked","onchange":"link(this,'false',{'required' : 'false'});"})
-        update_field_widget_attributes(self.fields["required"],{"class":"linked","onchange":"link(this,'true',{'cardinality' : ['1','None']});link(this,'false',{'cardinality' : ['0','None']});"})
-        update_field_widget_attributes(self.fields["order"],{"class":"set-label","onchange":"set_label(this,'field-order');"})
-        update_field_widget_attributes(self.fields["customize_subform"],{"onchange":"enable(this,'true',['customize-subform']);"})
-
-        if (attribute_type == "booleanfield"):
-            # default_value should be a T/F combobox for boolean fields
-            self.fields["default_value"].widget = Select(choices=((True,"True"),(False,"False")))
-
-        if not is_relationship_field(attribute_type):                    
-            del self.fields["customize_subform"]
-            del self.fields["cardinality"]
-        else:
-            del self.fields["default_value"]
-            pass
-
-        if not is_atomic_field(attribute_type):
-            del self.fields["unique"]
-        else:
-            pass
-
-        if not is_enumeration_field(attribute_type):
-            del self.fields["open"]
-            del self.fields["multi"]
-            del self.fields["nullable"]
-            del self.fields["enumerations"]
-            del self.fields["default_enumerations"]
-            del self.fields["enumeration_choices"]
-        else:
-            del self.fields["default_value"]
-
-            current_choices = [(choice,choice) for choice in attribute_data["enumeration_choices"].split("|")]
-            self.fields["default_enumerations"].widget = SelectMultiple(choices=current_choices)
-            self.fields["enumerations"].widget = SelectMultiple(choices=current_choices)
-            self.initial["enumerations"] = [choice[0] for choice in current_choices]
-            # TODO: I WOULD MUCH RATHER NOT HAVE TO DO THE ABOVE TWO LINES
-            # AND JUST USE A CUSTOM ENUMERATION FIELD (SEE FIELDS.PY)
-            # BUT I CAN'T GET "CHOICES" TO PROPAGATE TO THE WIDGET
-            update_field_widget_attributes(self.fields["enumerations"],{"class":"dropdownchecklist","onchange":"restrict_options(this,['default_enumerations']);"})
-            update_field_widget_attributes(self.fields["default_enumerations"],{"class":"dropdownchecklist"})
-
-        # no longer displaying category; all customization of categories for attributes must come from categorization file
-        #category = attribute.category
-        #if category and category.getType()==CategoryTypes.ATTRIBUTE:
-        #    # only bother showing the "category" widget if this is not a standard field
-        #    del self.fields["category"]
-
-###    def clean(self):
-###        print "CLEANING SUBFORM"
-###        super(MetadataAttributeCustomizerForm,self).clean()
-###        return self.cleaned_data
-###
-    def save(self,*args,**kwargs):
-        return super(MetadataAttributeCustomizerForm,self).save(*args,**kwargs)
-###
-###    def is_valid(self):
-###        print "IS_VALID SUBFORM"
-###        super(MetadataAttributeCustomizerForm,self).is_valid()
-
-    def getAttributeName(self):
-        try:
-            if self.is_bound:
-                return self.instance.attribute_name
-            else:
-                return self.initial["attribute_name"]
-        except AttributeError:
-            return None
-
-    def getAttributeOrder(self):
-        try:
-            if self.is_bound:
-                return self.instance.order
-            else:
-                return self.initial["order"]
-        except AttributeError:
-            return None
-
-    
-    def getCategoryName(self):
-        try:
-            if self.is_bound:
-                return self.instance.category.name
-            else:
-                category_pk = self.initial["category"]
-                name = MetadataAttributeCategory.objects.get(pk=category_pk).name
-                return name
-        except AttributeError:
-            return None
-        
-
-def MetadataAttributeCustomizerInlineFormSetFactory(*args,**kwargs):
-    _method = kwargs.pop("method","GET")
-    new_kwargs = {
-        "can_delete" : False,
-        "form"       : MetadataAttributeCustomizerForm,
-        "fk_name"    : "parent" # required b/c there are 2 foreignkeys to 'metadatamodelcustomizer'; this is the one that is relevant for this inline form
-    }
-    new_kwargs.update(kwargs)
-
-    _formset = inlineformset_factory(MetadataModelCustomizer,MetadataAttributeCustomizer,*args,**new_kwargs)
-    _formset.form = staticmethod(curry(MetadataAttributeCustomizerForm,method=_method))
-    return _formset
-
-
-class MetadataPropertyCustomizerForm(ModelForm):
-    class Meta:
-        model   = MetadataPropertyCustomizer
-        fields  = ("category","displayed","required","editable","verbose_name","documentation","default_value","values","default_values","open","multi","nullable","order","isFreeText","property_name","component_name")
-
-    def __init__(self,*args,**kwargs):
-
-        method = kwargs.pop("method","GET")
-        super(MetadataPropertyCustomizerForm,self).__init__(*args,**kwargs)
-
-        property_customizer = self.instance
+        super(MetadataStandardPropertyCustomizerForm,self).__init__(*args,**kwargs)
+        customizer_instance = self.instance
 
         # get the form data...
         # if this is being loaded via POST, then the request will have been passed into the formset constructor
@@ -402,7 +180,8 @@ class MetadataPropertyCustomizerForm(ModelForm):
         # if this is being loaded via GET, then the initial value will have been passed into the formset constructor
         # so I can use that directly
         property_data = {}
-        if method=="POST":
+        #if method=="POST":
+        if self.data:
             # (not sure why I can't do this in a list comprehension)
             for key,value in self.data.iteritems():
                 if key.startswith(self.prefix+"-"):
@@ -410,72 +189,292 @@ class MetadataPropertyCustomizerForm(ModelForm):
         else:
             property_data = self.initial
 
-
         # don't want to show these fields, but still want access to them
-        self.fields["order"].widget = HiddenInput()
-        self.fields["isFreeText"].widget = HiddenInput()
-        self.fields["property_name"].widget = HiddenInput()
-        self.fields["component_name"].widget = HiddenInput()
+        self.fields["name"].widget       = HiddenInput()
+        self.fields["type"].widget       = HiddenInput()
+        self.fields["category"].widget   = HiddenInput()
+        self.fields["order"].widget      = HiddenInput()
+        self.fields["field_type"].widget = HiddenInput()
+        self.fields["enumeration_choices"].widget = HiddenInput()
+        self.fields["relationship_target_model"].widget = HiddenInput()
+        self.fields["relationship_source_model"].widget = HiddenInput()
+        self.fields["subform_customizer"].widget        = HiddenInput()
+        self.fields["proxy"].widget  = HiddenInput()
 
-        self.fields["category"].queryset = MetadataPropertyCategory.objects.filter(component_name__iexact=property_data["component_name"])
-        update_field_widget_attributes(self.fields["category"],{"class":"set-label","onchange":"set_label(this,'field-category');"})
+        # customize some of the widgets
+        self.fields["documentation"].widget.attrs["rows"] = 3
+        self.fields["suggestions"].widget.attrs["rows"] = 2
 
-        if property_data["isFreeText"]:
-            del self.fields["values"]
-            del self.fields["default_values"]
+        # attach javascript events to some of the widgets
+        update_field_widget_attributes(self.fields["enumeration_open"],{"onchange":"enable(this,'true',['suggestions']);"})
+        update_field_widget_attributes(self.fields["category"],{"onchange":"set_label(this,'property_category');"})
+        update_field_widget_attributes(self.fields["order"],{"onchange":"set_label(this,'property_order');"})
+        update_field_widget_attributes(self.fields["customize_subform"],{"onchange":"enable(this,'true',['customize-subform']);"})
+        
+        metadata_field_type = customizer_instance.type if customizer_instance.pk else property_data["type"]
+        model_field_type = customizer_instance.field_type if customizer_instance.pk else property_data["field_type"]
+            
+        if not metadata_field_type == MetadataFieldTypes.ATOMIC:
+            pass
+        else:
+            if (model_field_type == "booleanfield"):
+                # default_value should be a T/F combobox for boolean fields
+                self.fields["default_value"].widget = Select(choices=((True,"True"),(False,"False")))
+
+        if not metadata_field_type == MetadataFieldTypes.RELATIONSHIP:
+            del self.fields["relationship_cardinality"]
+            del self.fields["relationship_source_model"]
+            del self.fields["relationship_target_model"]
+            del self.fields["customize_subform"]
+            del self.fields["subform_customizer"]
         else:
             del self.fields["default_value"]
+            del self.fields["suggestions"]
+            if model_field_type == "manytoonefield":
+                del self.fields["relationship_cardinality"]
 
-            current_choices = [(choice,choice) for choice in property_data["values_choices"].split("|")]
-            self.fields["default_values"].widget = SelectMultiple(choices=current_choices)
-            self.fields["values"].widget = SelectMultiple(choices=current_choices)
-            self.initial["values"] = [choice[0] for choice in current_choices]
-            # TODO: I WOULD MUCH RATHER NOT HAVE TO DO THE ABOVE TWO LINES
-            # AND JUST USE A CUSTOM ENUMERATION FIELD (SEE FIELDS.PY)
-            # BUT I CAN'T GET "CHOICES" TO PROPAGATE TO THE WIDGET
-            update_field_widget_attributes(self.fields["values"],{"class":"dropdownchecklist","onchange":"restrict_options(this,['default_values']);"})
-            update_field_widget_attributes(self.fields["default_values"],{"class":"dropdownchecklist"})
+        if not metadata_field_type == MetadataFieldTypes.ENUMERATION:
+            del self.fields["enumeration_values"]
+            del self.fields["enumeration_default"]
+            del self.fields["enumeration_choices"]
+            del self.fields["enumeration_open"]
+            del self.fields["enumeration_multi"]
+            del self.fields["enumeration_nullable"]
+        else:
 
-
-    def getPropertyName(self):
-        try:
-            if self.is_bound:
-                return self.instance.property_name
-            else:
-                return self.initial["property_name"]
-        except AttributeError:
-            return None
-
-    def getCategoryName(self):
-        try:
-            if self.is_bound:
-                return self.instance.category.name
-            else:
-                category_pk = self.initial["category"]
-                name = MetadataPropertyCategory.objects.get(pk=category_pk).name
-                return name
-        except AttributeError:
-            return None
-
-    def getPropertyOrder(self):
-        try:
-            if self.is_bound:
-                return self.instance.order
-            else:
-                return self.initial["order"]
-        except AttributeError:
-            return None
+            enumeration_choices = customizer_instance.enumeration_choices if customizer_instance.pk else property_data["enumeration_choices"]
+            try:
+                enumeration_values  = customizer_instance.enumeration_values if customizer_instance.pk else property_data["enumeration_values"]
+                enumeration_default = customizer_instance.enumeration_default if customizer_instance.pk else property_data["enumeration_default"]
+            except KeyError:
+                # default value for these fields is None
+                # therefore, if it wasn't set in a previous POST (and hence in property_data), then it will need to be explicitly set here
+                enumeration_values = enumeration_choices
+                enumeration_default = ""
 
 
-def MetadataPropertyCustomizerInlineFormSetFactory(*args,**kwargs):
-    _method = kwargs.pop("method","GET")
+            enumeration_choices_tuple = [(choice,choice) for choice in enumeration_choices.split("|")]
+            self.fields["enumeration_values"].widget    = SelectMultiple(choices=enumeration_choices_tuple)
+            self.fields["enumeration_default"].widget   = SelectMultiple(choices=enumeration_choices_tuple)
+            self.initial["enumeration_values"]          = enumeration_values.split("|") if enumeration_values else enumeration_choices.split("|")
+            self.initial["enumeration_default"]         = enumeration_default.split("|") if enumeration_default else []
+
+            # (have to do this down here b/c I change the widget above)
+            update_field_widget_attributes(self.fields["enumeration_values"],{"class":"multiselect","onchange":"restrict_options(this,['enumeration_default']);"})
+            update_field_widget_attributes(self.fields["enumeration_default"],{"class":"multiselect"})
+
+def MetadataStandardPropertyCustomizerFormSetFactory(*args,**kwargs):
+    _queryset   = kwargs.pop("queryset",None)
+    _initial    = kwargs.pop("initial",None)
+    _prefix     = kwargs.pop("prefix","standard_property")
+    _request    = kwargs.pop("request",None)
     new_kwargs = {
+        "extra"       : kwargs.pop("extra",0),
         "can_delete"  : False,
-        "form"        : MetadataPropertyCustomizerForm
+        "form"  : MetadataStandardPropertyCustomizerForm
     }
     new_kwargs.update(kwargs)
 
-    _formset = inlineformset_factory(MetadataModelCustomizer,MetadataPropertyCustomizer,*args,**new_kwargs)
-    _formset.form = staticmethod(curry(MetadataPropertyCustomizerForm,method=_method))
-    return _formset
+    _formset = modelformset_factory(MetadataStandardPropertyCustomizer,*args,**new_kwargs)
+    #_formset.form = staticmethod(curry(MetadataStandardPropertyCustomizerForm,request=_request))
 
+    if _request and _request.method == "POST":
+        return _formset(_request.POST,prefix=_prefix)
+
+    return _formset(queryset=_queryset,initial=_initial,prefix=_prefix)
+
+
+def MetadataStandardPropertyCustomizerInlineFormSetFactory(*args,**kwargs):
+    _prefix     = kwargs.pop("prefix","standard_property")
+    _request    = kwargs.pop("request",None)
+    _initial    = kwargs.pop("initial",[])
+    _instance   = kwargs.pop("instance")
+    new_kwargs = {
+        "can_delete" : False,
+        "extra"      : kwargs.pop("extra",0),
+        "form"       : MetadataStandardPropertyCustomizerForm,
+        "fk_name"    : "parent" # required in-case there are more than 1 fk's to "metadatamodelcustomizer"; this is the one that is relevant for this inline form
+    }
+    new_kwargs.update(kwargs)
+ 
+    _formset = inlineformset_factory(MetadataModelCustomizer,MetadataStandardPropertyCustomizer,*args,**new_kwargs)
+    #_formset.form = staticmethod(curry(MetadataStandardPropertyCustomizerForm,reques=_request))
+
+    if _request and _request.method == "POST":
+        return _formset(_request.POST,instance=_instance,prefix=_prefix)
+    
+    return _formset(initial=_initial,instance=_instance,prefix=_prefix)
+
+class MetadataScientificPropertyCustomizerForm(ModelForm):
+
+    class Meta:
+        model = MetadataScientificPropertyCustomizer
+        fields  = ( "name","type","order","component_name","vocabulary","choice","value_choices",   \
+                    "category","displayed","required","editable","default_value","unique",          \
+                    "verbose_name","documentation","value","value_default","suggestions","open",    \
+                    "multi","nullable","value_format","value_units", "choice", "proxy",             \
+                    "show_extra_attributes", "edit_extra_attributes", "standard_name", "long_name", \
+                    "description" )
+        #exclude = ("proxy","parent",)
+
+
+
+    def __init__(self,*args,**kwargs):
+        super(MetadataScientificPropertyCustomizerForm,self).__init__(*args,**kwargs)
+        customizer_instance = self.instance
+
+        # get the form data...
+        # if this is being loaded via POST, then the request will have been passed into the formset constructor
+        # so I just need to work out which part of that request applies to _this_ form
+        # if this is being loaded via GET, then the initial value will have been passed into the formset constructor
+        # so I can use that directly
+
+        property_data = {}
+        #if method=="POST":
+        if self.data:
+            # (not sure why I can't do this in a list comprehension)
+            for key,value in self.data.iteritems():
+                if key.startswith(self.prefix+"-"):
+                    property_data[key.split(self.prefix+"-")[1]] = value[0] if isinstance(value,tuple) else value
+        else:
+            property_data = self.initial
+
+        
+        # customize some of the widgets
+        self.fields["documentation"].widget.attrs["rows"] = 3
+        self.fields["suggestions"].widget.attrs["rows"] = 2
+        self.fields["description"].widget.attrs["rows"] = 3
+        self.fields["category"].queryset = MetadataScientificCategory.objects.filter(component_name=property_data["component_name"])
+
+        update_field_widget_attributes(self.fields["show_extra_attributes"],{"onchange":"enable(this,'true',['edit_extra_attributes','standard_name','long_name','description']);"})
+
+        # don't want to show these fields, but still want access to them
+        self.fields["name"].widget           = HiddenInput()
+        self.fields["type"].widget           = HiddenInput()
+        self.fields["order"].widget          = HiddenInput()
+        self.fields["component_name"].widget = HiddenInput()
+        self.fields["vocabulary"].widget     = HiddenInput()
+        self.fields["choice"].widget         = HiddenInput()
+        self.fields["value_choices"].widget  = HiddenInput()
+        self.fields["proxy"].widget         = HiddenInput()
+
+        property_choice_type = customizer_instance.choice if customizer_instance.pk else property_data["choice"]
+
+        if property_choice_type == "keyboard":
+            del self.fields["open"]
+            del self.fields["multi"]
+            del self.fields["nullable"]
+            del self.fields["value"]
+            del self.fields["value_default"]
+        else:
+            del self.fields["value_format"]
+            del self.fields["value_units"]
+            del self.fields["default_value"]
+            del self.fields["unique"]
+ 
+            value_choices = customizer_instance.value_choices if customizer_instance.pk else property_data["value_choices"]
+            try:
+                value  = customizer_instance.value if customizer_instance.pk else property_data["value"]
+                value_default = customizer_instance.value_default if customizer_instance.pk else property_data["value_default"]
+            except KeyError:
+                # default value for these fields is None
+                # therefore, if it wasn't set in a previous POST (and hence in property_data), then it will need to be explicitly set here
+                value = value_choices
+                value_default = ""
+
+            value_choices_tuple = [(choice,choice) for choice in value_choices.split("|")]
+            self.fields["value_default"].widget    = SelectMultiple(choices=value_choices_tuple)
+            self.fields["value"].widget            = SelectMultiple(choices=value_choices_tuple)
+            self.initial["value_default"]          = value_default.split("|") if value_default else []
+            self.initial["value"]                  = value.split("|") if value else value_choices.split("|")
+
+            # (have to do this down here b/c I change the widget above)
+            update_field_widget_attributes(self.fields["value"],{"class":"multiselect","onchange":"restrict_options(this,['value_default']);"})
+            update_field_widget_attributes(self.fields["value_default"],{"class":"multiselect"})
+
+            if property_choice_type == "OR":
+                self.initial["multi"] = True
+
+            elif property_choice_type == "XOR":
+                self.initial["multi"] = False
+
+        update_field_widget_attributes(self.fields["category"],{"onchange":"set_label(this,'property_category');"})
+        update_field_widget_attributes(self.fields["order"],{"onchange":"set_label(this,'property_order');"})
+
+    def clean(self):
+
+        cleaned_data = self.cleaned_data
+
+        # handles the case where I set a property category to a new category
+        if "category" not in cleaned_data:
+            category_key = self.prefix+"-category"
+            component_name_key = self.prefix+"-component_name"
+            category = MetadataScientificCategory.objects.get(
+                key=self.data[category_key],
+                component_name=self.data[component_name_key],
+            )
+            cleaned_data["category"] = category
+            del self.errors["category"]
+            
+        return cleaned_data
+
+
+#
+#class MetadataScientificPropertyCustomizerInlineFormSet(BaseInlineFormSet):
+#    filter_properties = {}
+#
+#
+#    def __init__(self,*args,**kwargs):
+#        _filter = kwargs.pop("filter",None)
+#        super(MetadataScientificPropertyCustomizerInlineFormSet,self).__init__(*args,**kwargs)
+#        self.filter_properties = _filter
+#        
+#    def get_queryset(self):
+#
+#        qs = super(MetadataScientificPropertyCustomizerInlineFormSet,self).get_queryset()
+#        if self.filter_properties:
+#            return qs.filter(component_name="atmosadvection")
+#        return qs
+
+def MetadataScientificPropertyCustomizerFormSetFactory(*args,**kwargs):
+    _queryset   = kwargs.pop("queryset",None)
+    _initial    = kwargs.pop("initial",None)
+    #_prefix     = kwargs.pop("prefix","scientific_property")
+    _request    = kwargs.pop("request",None)
+    new_kwargs = {
+        "extra"       : kwargs.pop("extra",0),
+        "can_delete"  : False,
+        "form"  : MetadataScientificPropertyCustomizerForm
+    }
+    new_kwargs.update(kwargs)
+
+    _formset = modelformset_factory(MetadataScientificPropertyCustomizer,*args,**new_kwargs)
+    #_formset.form = staticmethod(curry(MetadataStandardPropertyCustomizerForm,request=_request))
+
+    if _request and _request.method == "POST":
+        return _formset(_request.POST,prefix=_prefix)
+
+    return _formset(queryset=_queryset,initial=_initial,prefix=_prefix)
+
+def MetadataScientificPropertyCustomizerInlineFormSetFactory(*args,**kwargs):
+    _prefix     = kwargs.pop("prefix","scientific_property")
+    _request    = kwargs.pop("request",None)
+    _initial    = kwargs.pop("initial",[])
+    _instance   = kwargs.pop("instance")
+    _queryset   = kwargs.pop("queryset",None)
+    _filter     = kwargs.pop("filter",None)
+    new_kwargs = {
+        "can_delete" : False,
+        "extra"      : kwargs.pop("extra",0),
+        #"formset"    : MetadataScientificPropertyCustomizerInlineFormSet,
+        "form"       : MetadataScientificPropertyCustomizerForm,
+        "fk_name"    : "parent" # required in-case there are more than 1 fk's to "metadatamodelcustomizer"; this is the one that is relevant for this inline form
+    }
+    new_kwargs.update(kwargs)
+
+    _formset = inlineformset_factory(MetadataModelCustomizer,MetadataScientificPropertyCustomizer,*args,**new_kwargs)
+    #_formset.form = staticmethod(curry(MetadataScientificPropertyCustomizerForm,request=_request))
+
+    if _request and _request.method == "POST":
+        return _formset(_request.POST,queryset=_queryset,instance=_instance,prefix=_prefix)
+    return _formset(initial=_initial,instance=_instance,prefix=_prefix)

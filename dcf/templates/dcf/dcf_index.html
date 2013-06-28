@@ -10,10 +10,6 @@
 
 {% block scripts %}
 
-    $(document).ready(
-        enableDCF()
-    )
-
     /* fill the 'action' field w/ the appropriate value */
     /* based on which submit button was clicked */
     function set_action(actionName) {
@@ -81,7 +77,6 @@
 
     <div id="index">
 
-        <br/><br/>
         <p>
             <i>
                 This is just a temporary page showing how to get to other pages.  A real portal would probably want to hard-code these links.&nbsp;&nbsp;
@@ -98,7 +93,6 @@
 
         {% csrf_token %}
 
-        <br/><br/>
 
         <fieldset>
 

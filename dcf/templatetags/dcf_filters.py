@@ -11,17 +11,16 @@
 ####################
 
 __author__="allyn.treshansky"
-__date__ ="Jan 31, 2013 12:45:47 PM"
+__date__ ="Jun 10, 2013 5:49:37 PM"
 
 """
-.. module:: views_index
+.. module:: dcf_filters
 
 Summary of module goes here
 
 """
 
 from django import template
-from twisted.python.htmlizer import filter
 import os
 import re
 
@@ -31,7 +30,6 @@ from dcf.forms  import *
 
 register = template.Library()
 
-
 @register.filter
 def stripSpaces(string):
     """
@@ -39,6 +37,19 @@ def stripSpaces(string):
     """
     if string:
         return re.sub(r'\s+',"",string).strip()
+
+@register.filter
+def camelCase(string):
+    """
+    turns a set of words into a camelCase string
+    """
+    camel_case_string = ""
+    for i, word in enumerate(string.split(" ")):
+        if i==0:
+            camel_case_string += word[0].lower() + word[1:]
+        else:
+            camel_case_string += word[0].upper() + word[1:]
+    return camel_case_string
 
 @register.filter
 def aOrAn(string):
@@ -53,30 +64,77 @@ def aOrAn(string):
         return "a"
 
 @register.filter
+def getValueFromKey(dict,key):
+    if key in dict:
+        return dict[key]
+    return None
+
+
+@register.filter
+def getAllValues(dict):
+    values = getElementsInCollection(dict)
+    try:
+        # on the assumption that this is a list of MetadataCustomizers,
+        # try to sort and trim the list
+        values.sort(key = lambda x: x.order)
+        return [value for value in value if values.displayed]
+    except:
+        return values
+
+
+def getElementsInCollectionAux(collection,elements=[]):
+   if isinstance(collection,dict):
+     for value in collection.itervalues():
+       getElementsInCollectionAux(value,elements)
+   elif isinstance(collection,list):
+     for value in collection:
+       getElementsInCollectionAux(value,elements)
+   else:
+       return elements.append(collection)
+
+@register.filter
+def getElementsInCollection(collection):
+    _elements = []
+    getElementsInCollectionAux(collection,_elements)
+    return _elements
+
+@register.filter
 def getFilename(filepath):
     """
     given a url or path, returns the filename
     """
     return os.path.basename(filepath)
 
-@register.filter
-def getSubForm(form,field):
-    """
-    returns the subform associated w/ a field, if any
-    """
-    subForms            = form.getAllSubForms()  # note that I'm checking the full class hierarchy
-    subFormDescription  = subForms[field.name]   # subFormDescription[0] is the type, [1] is the class, [2] is the (current) instance
-    return subFormDescription[2]
 
 @register.filter
-def getNamedSubForm(form,subformName):
+def getFieldValue(form,field_name):
     """
-    returns a specific subform
-    (used by customizer form when I have some subforms w/ a constant name
+    returns the actual value of the field
+    rather than the formfield widget
+    (has a clever little check to see if it's a relationship field
     """
-    subForms            = form.getAllSubForms()
-    subFormDescription  = subForms[subformName]
-    return subFormDescription[2]
+    try:
+        field = form[field_name]
+        if type(field.field) == ModelChoiceField: # TODO: WHAT ABOUT MultipleChoiceField OR ModelMultipleChoiceField
+            EMPTY_CHOICE = "---------"
+            for (value,text) in field.field.choices:
+                if unicode(value) == unicode(field.value()):
+                    return text if (text != EMPTY_CHOICE) else None
+        return field.value()
+    except KeyError:
+        return None
+
+@register.filter
+def getField(form,field_name):
+    return form[field_name]
+
+
+@register.filter
+def getMetadataField(form,field_name):
+    """
+    returns the actual MetadataField instance (not the db/form representation of it)
+    """
+    return form.get_metadata_field(field_name)
 
 @register.filter
 def sortFormsByField(forms,fieldName):
@@ -95,87 +153,47 @@ def sortFormsByField(forms,fieldName):
     except (AttributeError, KeyError):
         # if the form's data hasn't been set yet, then use the value of the field from the model (initial)        
         forms.sort(key = lambda x: x.initial[fieldName])
-
     return forms
 
-
 @register.filter
-def getAttributeCategories(form):
-    customizer = form.getCustomizer()
-    if customizer.model_show_all_categories:
-        attribute_categories = [attribute.category for attribute in customizer.attributes.all() if attribute.category]
-        attribute_categories = list(set(attribute_categories))  # remove duplicates
-        attribute_categories.sort(key = lambda x: x.order)      # although categories are naturally sorted by "order",
-        return attribute_categories                             # getting them in the list comprehension above ignores that
-    else:
-        return getActiveAttributeCategories(form)
-
-@register.filter
-def getActiveAttributeCategories(form):
-    customizer = form.getCustomizer()
-    active_attribute_categories = [attribute.category for attribute in customizer.attributes.all() if attribute.category and attribute.displayed]
-    active_attribute_categories = list(set(active_attribute_categories))    # remove duplicates
-    active_attribute_categories.sort(key = lambda x: x.order)               # although categories are naturally sorted by "order",
-    return active_attribute_categories                                      # getting them in the list comprehension above ignores that
-
-@register.filter
-def getActiveAttributesOfCategory(form,category):
-    customizer = form.getCustomizer()
-    active_attributes = [attribute for attribute in customizer.attributes.all() if (attribute.category == category)]
-    active_attributes.sort(key = lambda x: x.order)
-    return active_attributes
-
-@register.filter
-def getActiveAttributesOfNoCategory(form):
-    customizer = form.getCustomizer()
-    active_attributes = [attribute for attribute in customizer.attributes.all() if not attribute.category]
-    active_attributes.sort(key = lambda x: x.order)
-    return active_attributes
-
-@register.filter
-def getAllActiveAttributes(form):
-    customizer = form.getCustomizer()
-    active_attributes = [attribute for attribute in customizer.attributes.all()]
-    active_attributes.sort(key = lambda x: x.order)
-    return active_attributes
-
-@register.filter
-def getFieldFromName(form,fieldName):
+def getSubFormByName(form,field_name):
     """
-    returns the actual MetadataField instance (not the db/form representation of it)
+    returns the subform associated w/ a field, if any
     """
-    return form.instance.getField(fieldName)
+    subForms        = form.getAllSubForms()  # note that I'm checking the full class hierarchy
+    subFormData     = subForms[field_name]   # subFormData[0] is the type, [1] is the class, [2] is the (current) instance
+    return subFormData[2]
+
+
+
+####
+### UNCHECKED BELOW HERE
+###
 
 @register.filter
-def getFormFieldFromName(form,fieldName):
-    """
-    okay, this one returns the form representation
-    """
-    return form[fieldName]
-
-@register.filter
-def getAttributeFromCustomizer(form,customizer):
-    """
-    returns the form field (the one that can be rendered by the form)
-    """
-    return form.__getitem__(customizer.attribute_name)
-
-
-@register.filter
-def getComponentList(form):
-    component_tree = getComponentTree(form)
-    component_list = []
-    component_list_generator = list_from_tree(component_tree)
-    for component in component_list_generator:
-        component_list += component
-    return component_list
+def getFormsByComponentName(formset,component_name):
+    forms = []
+    for form in formset:
+        if form["component_name"].value() == component_name:
+            forms.append(form)
+    return sortFormsByField(forms,"order")
 
 
 @register.filter
-def getComponentTree(form):
-    if type(form) == MetadataModelCustomizerForm:
-        customizer = form.instance
-    else:
-        customizer = form.getCustomizer()
-    component_hierarchy = customizer.getVocabulary().component_hierarchy
-    return json.loads(component_hierarchy)
+def getStandardPropertyCustomizers(form):
+    #print form.customizer
+    #print form.customizer.getStandardPropertyCustomizers()
+    return None
+
+@register.filter
+def getNamedPropertyFormSet(form,component_name):
+    #print form._propertyForms
+    return form._propertyForms[component_name.lower()]
+
+@register.filter
+def hasCategory(form,category):
+    print "checking if it has category %s" % category
+    model = form.instance
+    print "checking if %s has category %s" % (model,category)
+    print "it's category is %s" % model.category
+    return model.category == category

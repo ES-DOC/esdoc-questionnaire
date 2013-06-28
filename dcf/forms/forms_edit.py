@@ -11,7 +11,7 @@
 ####################
 
 __author__="allyn.treshansky"
-__date__ ="Feb 1, 2013 4:42:53 PM"
+__date__ ="Jun 12, 2013 12:17:41 PM"
 
 """
 .. module:: forms_edit
@@ -19,16 +19,25 @@ __date__ ="Feb 1, 2013 4:42:53 PM"
 Summary of module goes here
 
 """
+
 from django.forms import *
 from django.forms.models import BaseForm, BaseFormSet, BaseInlineFormSet, BaseModelFormSet, formset_factory, inlineformset_factory, modelform_factory, modelformset_factory
 
-from django.utils.functional import curry
-
-import inspect
 
 from dcf.models import *
 from dcf.utils import *
 
+
+class SubFormType(EnumeratedType):
+    """
+    An enumeration of the different types of subForms that can be used by a parent form.
+    """
+    pass
+
+SubFormTypes = EnumeratedTypeList([
+    SubFormType("FORM","Form",BaseForm),
+    SubFormType("FORMSET","FormSet",BaseFormSet),
+])
 
 def MetadataFormFactory(model_class,customizer,*args,**kwargs):
     kwargs["form"] = kwargs.pop("form",MetadataForm)
@@ -36,296 +45,512 @@ def MetadataFormFactory(model_class,customizer,*args,**kwargs):
 
     _form = modelform_factory(model_class,**kwargs)
     _form.customizer = customizer
-    _form
-
-
 
     return _form
 
-def MetadataFormSetFactory(submodel_class,attribute_customizer,*args,**kwargs):
-
-    formset = kwargs.pop("formset",MetadataFormSet)
-    can_delete = kwargs.pop("can_delete",True)
-
-    submodel_customizer = attribute_customizer.subform_customizer
-    # I'm going to be lenient;
-    # if a submodel_customizer was never defined,
-    # then just create a new one here
-    # (it will have all the default CIM values)
-    if not submodel_customizer:
-        filterParameters = {}
-        filterParameters["project"] = attribute_customizer.project
-        filterParameters["version"] = attribute_customizer.version
-        filterParameters["model"]   = submodel_class.getName()
-        filterParameters["name"]    = attribute_customizer.parent.name
-        (submodel_customizer,created) = MetadataModelCustomizer.objects.get_or_create(**filterParameters)
-
-        print "the customizer is for the model: %s" % submodel_class
-        print "and the new customizer has the following %s/%s/%s/%s" % (submodel_customizer.project,submodel_customizer.model,submodel_customizer.version,submodel_customizer.name)
-        print "the model has the following attributes: %s" % submodel_class.getAttributes()
-        print "and the customizer has the following corresponding attribute_customizers: %s" % submodel_customizer.attributes
 
 
+def MetadataFormSetFactory(model_class,customizer,*args,**kwargs):
+    _queryset   = kwargs.pop("queryset",None)
+    _initial    = kwargs.pop("initial",None)
+    _prefix     = kwargs.pop("prefix","formset")
+    _request    = kwargs.pop("request",None)
+    new_kwargs = {
+        "extra"       : kwargs.pop("extra",1),
+        "can_delete"  : True,
+        "formset"     : MetadataModelFormSet,
+        "form"        : MetadataFormFactory(model_class,customizer)
+    }
+    new_kwargs.update(kwargs)
 
-#    print "the customizer for %s has the following attributes %s" % (submodel_customizer.model,submodel_customizer.attributes.count())
+    _formset = modelformset_factory(model_class,*args,**new_kwargs)
+    _formset.customizer = customizer
+    _formset.prefix = _prefix
+    
+    #_formset.form = staticmethod(curry(form_class,request=_request))
 
-        
-    subform_class = MetadataFormFactory(submodel_class,submodel_customizer,*args,**kwargs)
-
-    kwargs["formset"] = formset
-    kwargs["can_delete"] = can_delete
-    _formset = modelformset_factory(submodel_class,*args,**kwargs)
-
-    _formset.attribute_customizer = attribute_customizer
-    _formset.model_customizer = submodel_customizer
-    # TODO: DOUBLE-CHECK THIS CALL TO staticmethod(curry(...))
-    # this ensures that the request and other kwargs passed to formsets gets propagated to all the child forms
-    _formset.form = staticmethod(curry(subform_class,request=MetadataFormSet._request))
+    if _request and _request.method == "POST":
+        return _formset(_request.POST,prefix=_prefix)
 
     return _formset
-
-
-
 
 def metadata_formfield_callback(field):
     formfield = field.formfield()
 
     if isinstance(field,MetadataField):
-        
+
         if isinstance(field,MetadataAtomicField):
             pass
-        
+
             if isinstance(field,models.DateField):
                 update_field_widget_attributes(formfield,{"class":"datepicker"})
-     
-        
+
+
         if isinstance(field,MetadataRelationshipField):
             pass
-        
+
         if isinstance(field,MetadataEnumerationField):
             pass
 
 
         pass
-    
+
     return formfield
+
+class MetadataModelFormSet(BaseModelFormSet):
+    _type = SubFormTypes.FORMSET
+    customizer = None   # this gets set by the factory method
+
+    def __init__(self,*args,**kwargs):
+        super(MetadataModelFormSet,self).__init__(*args,**kwargs)
+
+    def getType(self):
+        return self._type
+
+    def is_valid(self):
+        validity = [form.is_valid() for form in self.forms]
+        return all(validity)
+
+    def clean(self):
+        print "CLEANING A FORMSET"
+        for form in self:
+            print"ONE"
+            print type(form)
+            form.clean()
+            print "TWO"
+    
 
 class MetadataForm(ModelForm):
     _type = SubFormTypes.FORM
-    
-    _request    = None
-    _prefix     = None
 
-    _subForms   = {}
-    
-    customizer  = None
+    _subForms = {}
+    _propertyForms = {}
 
+    customizer = None   # this gets set by the factory method
 
-    def customize_attribute(self,attribute_customizer):
-        # each type of attribute (field) has a different set of customization options...
-        if attribute_customizer.isEnumerationField():
-            
-            multiwidget = self.fields[attribute_customizer.attribute_name].widget.widgets
-            multifield  = self.fields[attribute_customizer.attribute_name].fields
-            # set the choices of the field
-            current_choices = [(choice,choice) for choice in attribute_customizer.enumerations.split("|")]
-            default_choices = [choice for choice in attribute_customizer.default_enumerations.split("|")]
-            if attribute_customizer.nullable:
-                current_choices += NULL_CHOICE
-            else:
-                pass
-            if attribute_customizer.open:
-                current_choices += OPEN_CHOICE
-            else:
-                pass
-            if attribute_customizer.multi:
-                multiwidget[0] = SelectMultiple(choices=current_choices)
-            else:
-                multiwidget[0] = Select(choices=current_choices)
-            # set whether the field is editable
-            if not attribute_customizer.editable:
-                update_widget_attributes(multiwidget[0],{"disabled":"true"})
-                update_widget_attributes(multiwidget[1],{"disabled":"true"})
-            # set the default value
-            if attribute_customizer.multi:
-                self.initial[attribute_customizer.attribute_name] = [default_choices,"please enter custom selection"]
-            else:
-                self.initial[attribute_customizer.attribute_name] = [default_choices[0],"please enter custom selection"]
-
-            # some custom CSS added to enumeration widgets
-            update_widget_attributes(multiwidget[0],{"class":"enumeration-value dropdownchecklist"})
-            update_widget_attributes(multiwidget[1],{"class":"enumeration-other"})
-
-        elif attribute_customizer.isRelationshipField():
-            pass
-
-        else:   # attribute_customizer.isAtomicField()
-            # set the default value
-            self.initial[attribute_customizer.attribute_name] = attribute_customizer.default_value
-
-    def __init__(self,*args,**kwargs):
-        request = kwargs.pop('request', None)
-        super(MetadataForm,self).__init__(*args,**kwargs)
-
-        self._request = request
-        modelInstance = self.instance
-        customizer = self.customizer # this was set by the factory
-
-        print "IN INIT"
-        print "ONE: %s"%len(customizer.attributes.all())
-        for attribute_customizer in customizer.attributes.all():
-            self.customize_attribute(attribute_customizer)
-        print "TWO: %s"%len(customizer.attributes.all())
-
-
-
-        # TODO: MOVE THE FOLLOWING CODE INTO THE CUSTOMIZE METHOD (CALLED ABOVE)
-        attributes_to_replace_with_subForms = [(attribute,modelInstance.getField(attribute.attribute_name)) for attribute in customizer.attributes.all() if attribute.displayed and attribute.customize_subform]
-        for (attribute_customizer,attribute) in attributes_to_replace_with_subForms:
-
-            if attribute.getType()=="manytomanyfield":
-                subForm_type = SubFormTypes.FORMSET
-
-                submodel_class = attribute.getTargetModelClass()
-                submodel_customizer = attribute_customizer.subform_customizer
-
-                # TODO: AGAIN, MOVE ALL OF THIS LOGIC INTO THE SAVE METHOD OF ATTRIBUTE_CUSTOMIZER RATHER THAN HERE!!!
-                # I'm going to be lenient;
-                # if a submodel_customizer was never defined,
-                # then just create a new one here
-                # (it will have all the default CIM values)
-                if not submodel_customizer:
-                    filterParameters = {}
-                    filterParameters["project"] = attribute_customizer.project
-                    filterParameters["version"] = attribute_customizer.version
-                    filterParameters["model"]   = submodel_class.getName()
-                    filterParameters["name"]    = attribute_customizer.parent.name
-                    (submodel_customizer,created) = MetadataModelCustomizer.objects.get_or_create(**filterParameters)
-                    if created:
-                        print "CREATED NEW CUSTOMIZER FOR SUBFORMSET"
-                        # so, ordinarily, a customizer would have its attributes saved by virtue of saving the form
-                        # but this one is created internally, so I have to do this manually
-                        # users really ought to customize every form they are going to use
-                        # but if not, this will catch their oversight
-                        for temporary_attribute in submodel_customizer.temporary_attributes:
-                            temporary_attribute.parent = submodel_customizer
-                            temporary_attribute.save()
-                        submodel_customizer.temporary_attributes = []
-                        submodel_customizer.save()
-                        attribute_customizer.subform_customizer = submodel_customizer
-                        attribute_customizer.save()
-
-                subForm_class = MetadataFormSetFactory(attribute.getTargetModelClass(),attribute_customizer)
-                
-                try:
-                    subForm_queryest = getattr(modelInstance,attribute.getName()).all()
-                except ValueError: # ValueError ocurrs if the m2m field doesn't exist yet b/c the parent model hasn't been saved yet
-                    subForm_queryset = attribute.getTargetModelClass().objects.none()
-
-                subForm_instance = subForm_class(queryset=subForm_queryset)
-            
-            elif attribute.getType()=="manytoonefield":                
-                subForm_type = SubFormTypes.FORM
-
-                submodel_class = attribute.getTargetModelClass()
-                submodel_customizer = attribute_customizer.subform_customizer
-
-                # I'm going to be lenient;
-                # if a submodel_customizer was never defined,
-                # then just create a new one here
-                # (it will have all the default CIM values)
-                if not submodel_customizer:
-                    filterParameters = {}
-                    filterParameters["project"] = attribute_customizer.project
-                    filterParameters["version"] = attribute_customizer.version
-                    filterParameters["model"]   = submodel_class.getName()
-                    filterParameters["name"]    = attribute_customizer.parent.name
-                    (submodel_customizer,created) = MetadataModelCustomizer.objects.get_or_create(**filterParameters)
-                    if created:
-                        print "CREATED NEW CUSTOMIZER FOR SUBFORM"
-                        # so, ordinarily, a customizer would have its attributes saved by virtue of saving the form
-                        # but this one is created internally, so I have to do this manually
-                        # users really ought to customize every form they are going to use
-                        # but if not, this will catch their oversight
-                        for temporary_attribute in submodel_customizer.temporary_attributes:
-                            temporary_attribute.parent = submodel_customizer
-                            temporary_attribute.save()
-                        submodel_customizer.temporary_attributes = []
-                        submodel_customizer.save()
-
-                subForm_class = MetadataFormFactory(submodel_class,submodel_customizer)
-                subForm_instance = subForm_class()
-                                
-            else:
-                msg = "unknown type of subForm associated w/ attribute '%s' of type: '%s'" % (attribute.getName(),attribute.getType())
-                raise MetadataError(msg)
-
-            self._subForms[attribute.getName()] = (subForm_type,subForm_class,subForm_instance)
-        print "THREE: %s"%len(customizer.attributes.all())
-
-    def getCustomizer(self):
-        return self.customizer
+    standard_property_customizers   = {}
+    scientific_property_customizers = {}
 
     def getType(self):
         return self._type
 
-    def getAllSubForms(self):
-        # returns the union of all subforms for all ancestor classes
-        allSubForms = {}
-        model_class = self.Meta.model
-        for ancestor_model in reversed(inspect.getmro(model_class)):
-            if issubclass(ancestor_model,MetadataModel):
+    def __init__(self,*args,**kwargs):
+        _request = kwargs.pop("request",None)
+        super(MetadataForm,self).__init__(*args,**kwargs)
 
-                # I AM HERE !!!!
-                print ancestor_model
+
+        model_customizer = self.customizer # this will have been set by the factory
+
+        self.fields["active"].widget               = HiddenInput()
+        self.fields["published"].widget            = HiddenInput()
+        self.fields["component_name"].widget       = HiddenInput()
+        self.fields["parent_content_type"].widget  = HiddenInput()
+        self.fields["parent_id"].widget            = HiddenInput()
+        #self.fields["parent_object"].widget        = HiddenInput()
+
+
+        self.standard_property_customizers = {}
+        for standard_property_customizer in model_customizer.getStandardPropertyCustomizers().order_by("order"):
+            if standard_property_customizer.displayed:
+                category_key = standard_property_customizer.category.key if standard_property_customizer.category else "NONE"
+                if not category_key in self.standard_property_customizers:
+                    self.standard_property_customizers[category_key] = []
+                self.standard_property_customizers[category_key].append(standard_property_customizer)
+
+        self.scientific_property_customizers = {}
+        for scientific_property_customizer in model_customizer.getScientificPropertyCustomizers().order_by("order"):
+            if scientific_property_customizer.displayed:
+                component_name_key = scientific_property_customizer.component_name.lower()
+                if not component_name_key in self.scientific_property_customizers:
+                    self.scientific_property_customizers[component_name_key] = {}
+                category_key = scientific_property_customizer.category.key if scientific_property_customizer.category else "NONE"
+                if not category_key in self.scientific_property_customizers[component_name_key]:
+                    self.scientific_property_customizers[component_name_key][category_key] = []
+                self.scientific_property_customizers[component_name_key][category_key].append(scientific_property_customizer)
+
+        self._subForms = {}
+        for standard_property_customizer_set in self.standard_property_customizers.itervalues():
+            for standard_property_customizer in standard_property_customizer_set:
+
+                # do the standard customization that every field gets...
+                self.customize_field(standard_property_customizer)
+                
+                # then check to see if I have to deal w/ subforms...
+                if standard_property_customizer.customize_subform and standard_property_customizer.displayed:
+                    metadata_field = self.get_metadata_field(standard_property_customizer.name)
+                    # TODO THE FIX FOR BULK_CREATE IN SQLITE
+                    # CAUSES SOME LOOKUPS W/ CONTENTTYPE TO FAIL
+                    # SO FOR NOW I AM REPLACING THOSE W/ THE SAVED CLASSES IN THE VERSION
+                    #target_model_class = metadata_field.getTargetModelClass()
+                    target_model_class = self.customizer.version.getModelClass(metadata_field.targetModelName)
+                    target_model_name = target_model_class.getName().lower()
+                    (target_model_customizer,created) = MetadataModelCustomizer.objects.get_or_create(
+                        project = self.customizer.project,
+                        version = self.customizer.version,
+                        model   = target_model_name,
+                        name    = self.customizer.name,
+                    )
+                    
+                    if created:
+                        # if users never specified one in the customizer, just create a default one
+                        # that means I need to initialize it and create all the standard properties
+                        target_model_proxy = MetadataModelProxy.objects.get(
+                            version     = self.customizer.version,
+                            model_name  = target_model_name,
+                        )
+                        target_model_customizer.reset(target_model_proxy)
+                        target_model_customizer.save()
+                        target_standard_property_proxies = MetadataStandardPropertyProxy.objects.filter(
+                            version=self.customizer.version,
+                            model_name = target_model_class.getName(),
+                        )
+                        for target_standard_property_proxy in target_standard_property_proxies:
+                            target_standard_property_customizer = MetadataStandardPropertyCustomizer(
+                                project = self.customizer.project,
+                                version = self.customizer.version,
+                                model   = target_model_name,
+                            )
+                            target_standard_property_customizer.reset(target_standard_property_proxy)
+                            target_standard_property_customizer.setParent(target_model_customizer)
+                            target_standard_property_customizer.save()
+
+                    if standard_property_customizer.field_type == "manytomanyfield":
+                        subform_type        = SubFormTypes.FORMSET
+                        subform_class       = MetadataFormSetFactory(target_model_class,target_model_customizer)
+                        try:
+                            subform_queryset    = getattr(self.instance,standard_property_customizer.name).all()
+                        except ValueError: # ValueError ocurrs if the m2m field doesn't exist yet b/c the parent model hasn't been saved yet
+                            subform_queryset    = target_model_class.objects.none()
+                        subform_instance    = subform_class(queryset=subform_queryset,prefix=standard_property_customizer.name)
+                    elif standard_property_customizer.field_type == "manytoonefield":
+                        subform_type        = SubFormTypes.FORM
+                        subform_class       = MetadataFormFactory(target_model_class,target_model_customizer)
+                        submodel_instance   = getattr(self.instance,standard_property_customizer.name)
+                        if not submodel_instance:                            
+                            submodel_instance = target_model_class()
+                            submodel_instance.project = self.customizer.project
+                        subform_instance    = subform_class(instance=submodel_instance)
+
+                    self._subForms[standard_property_customizer.name] = \
+                        (subform_type,subform_class,subform_instance)
+
+###
+###        if self.customizer:
+###
+###            vocabulary = self.customizer.project.vocabularies.all()[0]
+###            for component_name in vocabulary.getComponentList():
+###                properties_of_component = MetadataScientificPropertyProxy.objects.filter(vocabulary=vocabulary,component_name__iexact=component_name[0].lower())
+###
+###                PropertiesFormSet = MetadataScientificPropertyFormSetFactory(
+###                    extra=len(properties_of_component)
+###                )
+###                self._propertyForms[component_name.lower()] = PropertiesFormSet
+
+
+    def is_valid(self):
+        for subForm in self.getAllSubForms().itervalues():
+            if subForm[2]:
+                if not subForm[2].is_valid():
+                    print "%s is not valid" % subForm[1]
+                    if subForm[0] == SubFormTypes.FORM:
+                        print subForm[2].errors
+                        print subForm[2].non_field_errors()
+                    else:
+                        print subForm[2].errors
+                        print subForm[2].non_form_errors()
+
+        #subform_validity = [subForm[2].is_valid() for subForm in self.getAllSubForms().itervalues() if subForm[2]]
+        mainform_validity = super(MetadataForm,self).is_valid()
+        return mainform_validity
+        #print "SUBFORM VALIDITY=%s"%subform_validity
+        #print "MAIN FORM VALIDITY=%s"%mainform_validity
+        #if not mainform_validity:
+        #    print
+        #validity = all(subform_validity) and mainform_validity
+        #return validity
+
+    def clean(self):
+        cleaned_data = self.cleaned_data
+        
+        standard_property_customizers = self.customizer.getStandardPropertyCustomizers()
+
+        model_class = self.Meta.model
+
+        for (field_name,field_value) in cleaned_data.iteritems():
+            
+            try:
+                property_customizer = standard_property_customizers.get(name=field_name)
+                    
+                # check all the different ways a field can be invalid according to a customizer...
+                if property_customizer.unique:
+                    filter_args = { field_name : field_value }
+                    existing_models = model_class.objects.filter(**filter_args).exclude(_guid=self.instance.getGUID())
+                    if existing_models:
+                        msg = "This value must be unique."
+                        self._errors[field_name] = self.error_class([msg])
+
+                if property_customizer.required and not field_value:
+                    self._errors[field_name] = "This field is required"
+                    del cleaned_data[field_name]
+
+                    
+            except ObjectDoesNotExist:
+                # some fields don't have customizers
+                # (active, published, component_name, parent)
+                # that's okay - just ignore them
+                pass
+            
+        return cleaned_data
+
+    def save(self,*args,**kwargs):
+        for (key,value) in self.getAllSubForms().iteritems():
+            subFormType     = value[0]
+            subFormClass    = value[1]
+            subFormInstance = value[2]
+
+            if subFormType == "FORM":
+                print "ONE"
+                subModelInstance = subFormInstance.save(commit=False)
+                print "TWO"
+                cleaned_data[key] = subModelInstance.save()
+                print "THREE"
+                subFormInstance.save_m2m()
+                print "FOUR"
+
+                print key
+                print cleaned_data[key]
+
+        return super(MetadataForm,self).save(*args,**kwargs)
+
+    def getAllSubForms(self):
+#        # returns the union of all subforms for all ancestor classes
+#        allSubForms = {}
+#        model_class = self.Meta.model
+#        for ancestor_model in reversed(inspect.getmro(model_class)):
+#            if issubclass(ancestor_model,MetadataModel):
+#                # I AM HERE !!!!
+#                pass
 
         return self._subForms
 
-###
-###        for ancestor in reversed(inspect.getmro())
-###        modelClass = self.getModelClass()
-###        for ancestor in reversed(inspect.getmro(modelClass)):
-###            if issubclass(ancestor,MetadataModel):
-###                ancestorForm = getFormClassFromModelClass(ancestor)
-###                if ancestorForm:
-###                    allSubForms = dict(allSubForms.items() + ancestorForm._subForms.items())
-###        return allSubForms
+    def customize_field(self,property_customizer):
 
-class MetadataFormSet(BaseModelFormSet):
-    _type = SubFormTypes.FORMSET
+        field_name = property_customizer.name
+        field_type = property_customizer.type
 
-    _request = None
-    _prefix  = None
 
-    model_customizer = None         # the customizer for the model that this formset is rendering
-    attribute_customizer = None     # the customizer for the attribute that this formset is replacing
+        if field_type == MetadataFieldTypes.ATOMIC:
+
+            if property_customizer.suggestions:
+                update_field_widget_attributes(self.fields[field_name],{"class":"autocomplete"})
+                update_field_widget_attributes(self.fields[field_name],{"suggestions":property_customizer.suggestions})
+        
+            if not property_customizer.editable:
+                update_field_widget_attributes(self.fields[field_name],{"class":"readonly","readonly":"readonly"})
+
+            if property_customizer.default_value:
+                self.initial[field_name] = property_customizer.default_value
+
+        
+        elif field_type == MetadataFieldTypes.RELATIONSHIP:
+
+            pass
+
+        elif field_type == MetadataFieldTypes.ENUMERATION:
+
+            multiwidget = self.fields[field_name].widget.widgets
+            multifield  = self.fields[field_name].fields
+
+         
+            # set the choices of the field
+
+
+            try:
+
+                current_choices = [(choice,choice) for choice in property_customizer.enumeration_values.split("|")]
+                default_choices = [choice for choice in property_customizer.enumeration_default.split("|")]
+                if property_customizer.enumeration_nullable:
+                    current_choices += NULL_CHOICE
+
+                if property_customizer.enumeration_open:
+                    current_choices += OPEN_CHOICE
+
+                if property_customizer.enumeration_multi:
+                    multiwidget[0] = SelectMultiple(choices=current_choices)
+                else:
+                    multiwidget[0] = Select(choices=current_choices)
+
+                if not property_customizer.editable:
+                    update_widget_attributes(multiwidget[0],{"disabled":"true"})
+                    update_widget_attributes(multiwidget[1],{"disabled":"true"})
+
+                if property_customizer.enumeration_multi:
+                    self.initial[field_name] = [default_choices,"please enter custom selection"]
+                else:
+                    self.initial[field_name] = [default_choices[0],"please enter custom selection"]
+
+                if property_customizer.suggestions:
+                    update_widget_attributes(multiwidget[1],{"class":"autocomplete"})
+                    update_widget_attributes(multiwidget[1],{"suggestions":property_customizer.suggestions})
+
+            except:
+                pass
+            
+            # some custom CSS added to enumeration widgets
+            update_widget_attributes(multiwidget[0],{"class":"enumeration-value multiselect"})
+            update_widget_attributes(multiwidget[1],{"class":"enumeration-other"})
+
+        else:
+            pass
+
+    def get_metadata_field(self,field_name):
+        return self.instance.getField(field_name)
+
+
+class MetadataScientificPropertyForm(ModelForm):
+    class Meta:
+        model = MetadataProperty
+
+    _type = SubFormTypes.FORM
+    property_customizer     = None
+    property_value_field    = None
+    extra_fields   = ("standard_name","long_name","description",)
 
     def getType(self):
         return self._type
 
-    def getRequest(self):
-        return self._request
+    def getExtraFields(self):
+        fields = list(self)
+        return [field for field in fields if field.name in self.extra_fields]
+        
 
-    def getPrefix(self):
-        return self._prefix
-
-    def getAttributeCustomizer(self):
-        return self.attribute_customizer
-
-    def getModelCustomizer(self):
-        return self.model_customizer
-
-    @classmethod
-    def getDefaultPrefix(cls):
-        return str(uuid4())
-
+    def getPropertyValueField(self):
+        try:
+            return self["property_enumeration"]
+        except KeyError:
+            return self["property_freetext"]
+    
     def __init__(self,*args,**kwargs):
-        request = kwargs.pop("request",None)
-        prefix  = kwargs.pop("prefix",self.getDefaultPrefix())
+        _request = kwargs.pop("request",None)
+        super(MetadataScientificPropertyForm,self).__init__(*args,**kwargs)
 
-        self.form = curry(self.form,request=request)
+        property_data = {}
+        if self.data:
+            # (not sure why I can't do this in a list comprehension)
+            for key,value in self.data.iteritems():
+                if key.startswith(self.prefix+"-"):
+                    property_data[key.split(self.prefix+"-")[1]] = value[0] if isinstance(value,tuple) else value
+        else:
+            property_data = self.initial
 
-        super(MetadataFormSet,self).__init__(*args,**kwargs)
+        self.property_customizer = property_data["customizer"]
+        if not isinstance(self.property_customizer,MetadataScientificPropertyCustomizer):
+            self.property_customizer = MetadataScientificPropertyCustomizer.objects.get(pk=property_data["customizer"])
 
-        self._request = request
-        self._prefix = prefix
+        self.fields["category"].widget            = HiddenInput()
+        self.fields["customizer"].widget          = HiddenInput()
+        self.fields["component_name"].widget      = HiddenInput()
+        self.fields["name"].widget                = HiddenInput()
+        self.fields["choice"].widget              = HiddenInput()
+        self.fields["model_content_type"].widget  = HiddenInput()
+        self.fields["model_id"].widget            = HiddenInput()
+        #self.fields["model_object"].widget        = HiddenInput()
+
+        self.fields["description"].widget.attrs["rows"] = 3
+        self.fields["property_enumeration"].label       = "Value"
+        self.fields["property_freetext"].label          = "Value"
+
+        choice = property_data["choice"]
+
+
+        if choice == "keyboard":
+
+            self.property_value_field = self["property_freetext"]
+
+            del self.fields["property_enumeration"]
+
+            update_field_widget_attributes(self.fields["property_freetext"],{"onchange":"set_label(this,'property_value');"})
+
+            if self.property_customizer.suggestions:
+                update_field_widget_attributes(self.fields["property_freetext"],{"class":"autocomplete"})
+                update_field_widget_attributes(self.fields["property_freetext"],{"suggestions":property_customizer.suggestions})
+
+        else:
+
+            self.property_value_field = self["property_enumeration"]
+
+            del self.fields["property_freetext"]
+
+            update_field_widget_attributes(self.fields["property_enumeration"],{"onchange":"set_label(this,'property_value');"})
+            
+            multiwidget = self.fields["property_enumeration"].widget.widgets
+            multifield  = self.fields["property_enumeration"].fields
+
+            current_choices = [(choice,choice) for choice in self.property_customizer.value.split("|")]
+            default_choices = [choice for choice in self.property_customizer.value_default.split("|")]
+            if self.property_customizer.nullable:
+                current_choices += NULL_CHOICE
+
+            if self.property_customizer.open:
+                current_choices += OPEN_CHOICE
+
+            if self.property_customizer.multi:
+                multiwidget[0] = SelectMultiple(choices=current_choices)
+            else:
+                multiwidget[0] = Select(choices=current_choices)
+
+            if not self.property_customizer.editable:
+                update_widget_attributes(multiwidget[0],{"disabled":"true"})
+                update_widget_attributes(multiwidget[1],{"disabled":"true"})
+
+            if self.property_customizer.multi:
+                self.initial["property_enumerations"] = [default_choices,"please enter custom selection"]
+            else:
+                self.initial["property_choices"] = [default_choices[0],"please enter custom selection"]
+
+            if self.property_customizer.suggestions:
+                update_widget_attributes(multiwidget[1],{"class":"autocomplete"})
+                update_widget_attributes(multiwidget[1],{"suggestions":self.property_customizer.suggestions})
+
+            # some custom CSS added to enumeration widgets
+            update_widget_attributes(multiwidget[0],{"class":"enumeration-value multiselect"})
+            update_widget_attributes(multiwidget[1],{"class":"enumeration-other"})
+
+        
+        if not self.property_customizer.edit_extra_attributes:            
+            for field in self.getExtraFields():
+                update_field_widget_attributes(self.fields[field.name],{"class":"readonly","readonly":"readonly"})
+
+        
+def MetadataScientificPropertyFormFactory(model_class,customizer,*args,**kwargs):
+    kwargs["form"] = kwargs.pop("form",MetadataScientificPropertyForm)
+    kwargs["formfield_callback"] = metadata_formfield_callback
+
+    _form = modelform_factory(model_class,**kwargs)
+    _form.customizer = customizer
+
+    return _form
+
+def MetadataScientificPropertyFormSetFactory(*args,**kwargs):
+    _queryset       = kwargs.pop("queryset",MetadataProperty.objects.none())
+    _initial        = kwargs.pop("initial",None)
+    _prefix         = kwargs.pop("prefix","scientific_property")
+    _customizers    = kwargs.pop("customizers",None)
+    _request        = kwargs.pop("request",None)
+    new_kwargs = {
+        "extra"       : kwargs.pop("extra",0),
+        "can_delete"  : False,
+        "form"        : MetadataScientificPropertyForm
+#        "form"        : MetadataScientificFormFactory(MetadataProperty,customizer)
+
+    }
+    new_kwargs.update(kwargs)
+
+    _formset = modelformset_factory(MetadataProperty,*args,**new_kwargs)
+    #_formset.form = staticmethod(curry(MetadataStandardPropertyCustomizerForm,request=_request))
+
+    if _request and _request.method == "POST":
+        return _formset(_request.POST,prefix=_prefix)
+
+    return _formset(queryset=_queryset,initial=_initial,prefix=_prefix)
+
