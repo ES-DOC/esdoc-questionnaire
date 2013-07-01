@@ -47,14 +47,21 @@ def find_component_parent(component_name,component_collection,parent=None):
                         return parent
 
 
-def check_parameters(request,version_number="",project_name="",model_name=""):
+def check_parameters(version_number="",project_name="",model_name="",msg=""):
+
+    project         = None
+    version         = None
+    customizer      = None
+    categorization  = None
+    vocabulary      = None
+    model_class     = None
 
     # try to get the requested project...
     try:
         project = MetadataProject.objects.get(name__iexact=project_name)
     except ObjectDoesNotExist:
         msg = "Cannot find the project '%s'.  Has it been registered?" % project_name
-        return dcf_error(request,msg)
+        return (project,version,customizer,categorization,vocabulary,model_class,msg)
 
     # try to get the requested version...
     if version_number:
@@ -62,19 +69,25 @@ def check_parameters(request,version_number="",project_name="",model_name=""):
             version = MetadataVersion.objects.get(name__iexact=METADATA_NAME,number=version_number)
         except ObjectDoesNotExist:
             msg = "Cannot find version '%s_%s'.  Has it been registered?" % (METADATA_NAME,version_number)
-            return dcf_error(request,msg)
+            return (project,version,customizer,categorization,vocabulary,model_class,msg)
     else:
         version = project.getDefaultVersion()
         if not version:
             msg = "please specify a version; the '%s' project has no default one." % project.getName()
-            return dcf_error(request,msg)
+            return (project,version,customizer,categorization,vocabulary,model_class,msg)
+
+    # try to get the requested model...
+    model_class = version.getModelClass(model_name)
+    if not model_class:
+        msg = "Cannot find the model type '%s' in version '%s'.  Have all model types been registered?" % (model_name, version)
+        return (project,version,customizer,categorization,vocabulary,model_class,msg)
 
     # try to get the default customizer for this project/version/model...
     try:
         customizer = MetadataModelCustomizer.objects.get(project=project,version=version,model=model_name,default=1)
     except MetadataModelCustomizer.DoesNotExist:
         msg = "There is no default customization associated with '%s'" % (model_name)
-        return dcf_error(request,msg)
+        return (project,version,customizer,categorization,vocabulary,model_class,msg)
 
     # get the default categorization and vocabulary...
     categorizations = version.categorizations.all()
@@ -86,22 +99,21 @@ def check_parameters(request,version_number="",project_name="",model_name=""):
     vocabulary  = vocabularies[0] if vocabularies else None
     if not categorization:
         msg = "There is no default categorization associated with version %s." % version
-        return dcf_error(request,msg)
+        return (project,version,customizer,categorization,vocabulary,model_class,msg)
     if not vocabulary:
         msg = "There is no default vocabulary associated with project %s." % project
-        return dcf_error(request,msg)
+        return (project,version,customizer,categorization,vocabulary,model_class,msg)
 
-    # try to get the requested model...
-    model_class = version.getModelClass(model_name)
-
-    return (project,version,customizer,categorization,vocabulary,model_class)
+    return (project,version,customizer,categorization,vocabulary,model_class,msg)
 
 def edit_existing(request,version_number="",project_name="",model_name="",model_id=""):
 
     msg = ""
 
-    (project,version,customizer,categorization,vocabulary,model_class) = \
-    check_parameters(request,version_number,project_name,model_name)
+    (project,version,customizer,categorization,vocabulary,model_class,msg) = \
+    check_parameters(version_number,project_name,model_name)
+    if not all ([project,version,customizer,categorization,vocabulary,model_class]):
+        return dcf_error(request,msg)
 
     try:
         component_tree = vocabulary.getComponentTree()
@@ -139,12 +151,14 @@ def edit_existing(request,version_number="",project_name="",model_name="",model_
 
     for model in model_instance.getAllChildren():
         model_instances[model.component_name] = model
-
+    
     form_class = MetadataFormFactory(model_class,customizer)
     
     if request.method == "POST":
     
         model_forms = {}
+        scientific_property_formsets = {}
+
         for component in component_list:
             component_key = component.lower()
             model_forms[component_key] = form_class(
@@ -152,6 +166,15 @@ def edit_existing(request,version_number="",project_name="",model_name="",model_
                 instance=model_instances[component_key],
                 prefix=component_key
             )
+            scientific_properties = model_instances[component_key].getScientificProperties()
+            scientific_property_formsets[component_key] = \
+                MetadataScientificPropertyFormSetFactory(
+                    queryset    = scientific_properties,
+                    prefix      = component_key + "_scientific_property",
+                    request     = request,
+                )
+
+
 
         validity = []
 
@@ -163,7 +186,15 @@ def edit_existing(request,version_number="",project_name="",model_name="",model_
                 print "%s is invalid" % component_name
                 print model_form.errors
                 print model_form.non_field_errors()
-
+        for (component_name,scientific_property_formset) in scientific_property_formsets.iteritems():
+            if scientific_property_formset.is_valid():
+                validity.append(True)
+            else:
+                validity.append(False)
+                print "%s has invalid scientific properties" % component_name
+                print scientific_property_formset.errors
+                print scientific_property_formset.non_form_errors()
+                
         if all(validity):
             root_component = component_list[0].lower()
             for (component_name,model_form) in model_forms.iteritems():
@@ -172,6 +203,9 @@ def edit_existing(request,version_number="",project_name="",model_name="",model_
                     model_instances[component_name].published=True
                 model_instances[component_name].save()
                 model_form.save_m2m()
+            for (component_name,scientific_property_formset) in scientific_property_formsets.iteritems():
+                # TODO: DON'T THINK I NEED TO SAVE FORMSETS & THEN SAVE INSTANCES
+                scientific_property_formset.save()
 
 
             
@@ -194,7 +228,7 @@ def edit_existing(request,version_number="",project_name="",model_name="",model_
         if request.GET.get("success",False):
             msg = "Successfully saved the model: '%s'." % model_instance.shortName
 
-                
+
         model_forms = {}
         scientific_property_formsets = {}
         for component in component_list:
@@ -236,8 +270,10 @@ def edit_new(request,version_number="",project_name="",model_name=""):
 
     msg = ""
 
-    (project,version,customizer,categorization,vocabulary,model_class) = \
-    check_parameters(request,version_number,project_name,model_name)
+    (project,version,customizer,categorization,vocabulary,model_class,msg) = \
+    check_parameters(version_number,project_name,model_name,msg)
+    if not all ([project,version,customizer,categorization,vocabulary,model_class]):
+        return dcf_error(request,msg)
 
     try:
         component_tree = vocabulary.getComponentTree()
@@ -349,6 +385,7 @@ def edit_new(request,version_number="",project_name="",model_name=""):
                 print "%s is invalid" % component_name
                 print model_form.errors
                 print model_form.non_field_errors()
+
         for (component_name,scientific_property_formset) in scientific_property_formsets.iteritems():
             if scientific_property_formset.is_valid():
                 validity.append(True)
@@ -375,6 +412,7 @@ def edit_new(request,version_number="",project_name="",model_name=""):
                 if parent_component:
                     model_instances[component_name].setParent(model_instances[parent_component.lower()])
                 model_instances[component_name].addScientificProperties(scientific_property_instances[component_name])
+
                 for scientific_property in scientific_property_instances[component_name]:
                     scientific_property.save()  # have to re-save the component after setting it as a property of the model
                 model_instances[component_name].save()
