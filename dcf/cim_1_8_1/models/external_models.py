@@ -69,6 +69,23 @@ class XS_Token(MetadataModel):
 # GML #
 #######
 
+
+class gml_AbstractGeometryType(CustomGrid):
+
+
+    class Meta:
+        app_label = "cim_1_8_1"
+        abstract = False
+
+    _name        = "gml_AbstractGeometryType"
+    _title       = "gml_AbstractGeometryType"
+    _description = ""
+
+    def __init__(self,*args,**kwargs):
+        super(gml_AbstractGeometryType,self).__init__(*args,**kwargs)
+
+
+
 #######
 # GMD #
 #######
