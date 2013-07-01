@@ -120,14 +120,25 @@ def getFieldValue(form,field_name):
         
             value = field.value()
             if value:
-                if "||" in value:
+                if isinstance(value,list):
+                    multi = False
+                    value_list = value
+                    if isinstance(value[0],list):
+                        multi = True
+                        value_list = value
+                elif "||" in value:
+                    multi = True
                     value_list = [v.split("|") for v in value.split("||")]
                     value_list = [value_list[0],value_list[1][0]]
+                elif "|" in value:
+                    multi = False
+                    value_list = value.split("|")
+
+                if multi:
                     for i,v in enumerate(value_list[0]):
                         if v == OPEN_CHOICE[0][0]:
                             value_list[0][i] = "OTHER: %s" % value_list[1]
                     num_enumerations = len(value_list[0])
-                    print value_list
                     if num_enumerations > 0:
                         if num_enumerations > 1:
                             return "%s + %s more selections" % (value_list[0][0], (num_enumerations - 1))
@@ -136,7 +147,6 @@ def getFieldValue(form,field_name):
                     else:
                         return None
                 else:
-                    value_list = value.split("|")
                     if value_list[0] == OPEN_CHOICE[0][0]:
                         return "OTHER: %s" % value_list[1]
                     else:

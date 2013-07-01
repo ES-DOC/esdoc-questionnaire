@@ -15,8 +15,10 @@
 
     <table width="100%">
         
-        {% with customizers=form.standard_property_customizers|getAllValues %}
+        {% with customizers=form.getStandardPropertyCustomizers|getAllValues %}
+        
             {% for customizer in customizers %}
+            
                 {% with metadata_field=form|getMetadataField:customizer.name %}
                     {% with field=form|getField:customizer.name %}
                         <!-- customizer is the property customizer -->

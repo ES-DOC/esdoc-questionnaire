@@ -134,6 +134,13 @@ class MetadataForm(ModelForm):
     def getType(self):
         return self._type
 
+    def getStandardPropertyCustomizers(self):
+        print self.standard_property_customizers
+        return self.standard_property_customizers
+
+    def getScientificPropertyCustomizers(self):
+        return self.scientific_property_customizers
+    
     def __init__(self,*args,**kwargs):
         _request = kwargs.pop("request",None)
         super(MetadataForm,self).__init__(*args,**kwargs)
@@ -157,6 +164,9 @@ class MetadataForm(ModelForm):
                     self.standard_property_customizers[category_key] = []
                 self.standard_property_customizers[category_key].append(standard_property_customizer)
 
+        print "INITIALIZING %s" % self.instance.getTitle()
+        print self.standard_property_customizers
+        
         self.scientific_property_customizers = {}
         for scientific_property_customizer in model_customizer.getScientificPropertyCustomizers().order_by("order"):
             if scientific_property_customizer.displayed:
@@ -195,14 +205,14 @@ class MetadataForm(ModelForm):
                         # if users never specified one in the customizer, just create a default one
                         # that means I need to initialize it and create all the standard properties
                         target_model_proxy = MetadataModelProxy.objects.get(
-                            version     = self.customizer.version,
-                            model_name  = target_model_name,
+                            version = self.customizer.version,
+                            model_name__iexact  = target_model_name,
                         )
                         target_model_customizer.reset(target_model_proxy)
                         target_model_customizer.save()
                         target_standard_property_proxies = MetadataStandardPropertyProxy.objects.filter(
-                            version=self.customizer.version,
-                            model_name = target_model_class.getName(),
+                            version = self.customizer.version,
+                            model_name__iexact = target_model_class.getName(),
                         )
                         for target_standard_property_proxy in target_standard_property_proxies:
                             target_standard_property_customizer = MetadataStandardPropertyCustomizer(
@@ -248,36 +258,34 @@ class MetadataForm(ModelForm):
 
 
     def is_valid(self):
-        for subForm in self.getAllSubForms().itervalues():
-            if subForm[2]:
-                if not subForm[2].is_valid():
-                    print "%s is not valid" % subForm[1]
-                    if subForm[0] == SubFormTypes.FORM:
-                        print subForm[2].errors
-                        print subForm[2].non_field_errors()
-                    else:
-                        print subForm[2].errors
-                        print subForm[2].non_form_errors()
-
-        #subform_validity = [subForm[2].is_valid() for subForm in self.getAllSubForms().itervalues() if subForm[2]]
+        print "CALLING IS_VALID FOR FORM"
+        for (field_name,sub_form) in self.getAllSubForms().iteritems():
+            if sub_form[2].is_valid():
+                print "HOORAY!  %s is valid" % field_name
+            else:
+                print "BOO! %s is invalid" % field_name
+                if sub_form[0] == SubFormTypes.FORM:
+                    print "FORM ERRORS:"
+                    print sub_form[2].errors
+                    print sub_form[2].non_field_errors()
+                elif sub_form[0] == SubFormTypes.FORMSET:
+                    print "FORMSET ERRORS:"
+                    print sub_form[2].errors
+                    print sub_form[2].non_form_errors()
+        subform_validity = [subForm[2].is_valid() for subForm in self.getAllSubForms().itervalues() if subForm[2]]
         mainform_validity = super(MetadataForm,self).is_valid()
-        return mainform_validity
-        #print "SUBFORM VALIDITY=%s"%subform_validity
-        #print "MAIN FORM VALIDITY=%s"%mainform_validity
-        #if not mainform_validity:
-        #    print
-        #validity = all(subform_validity) and mainform_validity
-        #return validity
+        validity = all(subform_validity) and mainform_validity
+        return validity
 
     def clean(self):
+
         cleaned_data = self.cleaned_data
         
         standard_property_customizers = self.customizer.getStandardPropertyCustomizers()
 
         model_class = self.Meta.model
 
-        for (field_name,field_value) in cleaned_data.iteritems():
-            
+        for (field_name,field_value) in cleaned_data.iteritems():            
             try:
                 property_customizer = standard_property_customizers.get(name=field_name)
                     
