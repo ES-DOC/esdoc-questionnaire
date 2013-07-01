@@ -32,6 +32,10 @@ from dcf.views.views_error import error as dcf_error
 
 
 
+def customize_instructions(request):
+    return render_to_response('dcf/dcf_customize_instructions.html', {}, context_instance=RequestContext(request))
+
+
 def customize_existing(request,version_number="",project_name="",model_name="",customizer_id="",**kwargs):
 
     msg = ""

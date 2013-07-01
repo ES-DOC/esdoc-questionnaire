@@ -5,6 +5,6 @@ from views_index        import index
 from views_error        import error
 from views_feed         import MetadataFeed, serialize
 from views_ajax         import *
-from views_customize    import *
+from views_customize    import customize_new, customize_existing, customize_instructions
 from views_edit         import *
 

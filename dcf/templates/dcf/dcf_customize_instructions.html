@@ -32,17 +32,37 @@
             </p>
         </li>
 
+        <li><span class="title">The use of the form</span>
+            <p>
+                The form is accessed relative to a particular <b>project</b>, <b>model type</b>, and <b>metadata version</b>, as with:
+                <blockquote>
+                    http://your.domain.com/dcf/customize/downscaling/modelcomponent/1.8.1
+                </blockquote>
+                This will bring up a blank customizer for a modelcomponent at CIM v1.8.1 to be used by the "downscaling" project.
+                Additionally, you could specify an existing customizer in the system either by directly accessing its id:
+                <blockquote>
+                    http://your.domain.com/dcf/customize/downscaling/modelcomponent/1.8.1/42
+                </blockquote>
+                Or by specifying a set of keyword arguments:
+                <blockquote>
+                    http://your.domain.com/dcf/customize/downscaling/modelcomponent/1.8.1/?name=one
+                </blockquote>
+                In order to use the customization form, you must be an administrator of the relevant project.
+                Although several customizations may exist for a given project/model/version combination, only one of those - the default one - will be used by the CIM Editor.
+            </p>
+
         <li><span class="title">The layout of the form</span>
             <p>
                 The form contains three sections:
                 <ol>
                     <li>a collection of fields that describe the current customization:
-                        <a href="{{STATIC_URL}}dcf/img/screenshots/customization_form.png"><img width="80%" src="{{STATIC_URL}}dcf/img/screenshots/customization_form.png"/></a>
-                    <li>a widget containing all potential field categories in the model:
-                        <a href="{{STATIC_URL}}dcf/img/screenshots/category_widget.png"><img width="80%" src="{{STATIC_URL}}dcf/img/screenshots/category_widget.png"/></a>
-                    <li>a fieldset containing all potential fields in the model:
-                        <a href="{{STATIC_URL}}dcf/img/screenshots/fields_widget.png"><img width="80%" src="{{STATIC_URL}}dcf/img/screenshots/fields_widget.png"/></a>
+                        <a href="{{STATIC_URL}}dcf/img/screenshots/customization_fieldset.png"><img width="80%" src="{{STATIC_URL}}dcf/img/screenshots/customization_fieldset.png"/></a>
+                    <li>a collection of fields to customize the model itself:
+                        <a href="{{STATIC_URL}}dcf/img/screenshots/document_fieldset.png"><img width="80%" src="{{STATIC_URL}}dcf/img/screenshots/document_fieldset.png"/></a>
+                    <li>a fieldset containing all potential properties in the model:
+                        <a href="{{STATIC_URL}}dcf/img/screenshots/property_fieldset.png"><img width="80%" src="{{STATIC_URL}}dcf/img/screenshots/property_fieldset.png"/></a>
                 </ol>
+                This latter section is further divided into "Standard Properties" (those deriving from the CIM Schema itself) and "Scientific Properties" (those deriving from the Controlled Vocabulary being used by this model type).
             </p>
             <p>
                 The <b>Categories Widget</b> is used to categorize each field.  These categories correspond to the tabs that appear across the top of the actual metadata entry form.

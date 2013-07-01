@@ -38,6 +38,7 @@ urlpatterns = patterns('',
     # customize a CIM form...
     url(r'^customize/(?P<project_name>[^/]+)/(?P<model_name>[^/]+)/(?P<version_number>[^/]+)/$', 'dcf.views.customize_new',name="customize_new"),
     url(r'^customize/(?P<project_name>[^/]+)/(?P<model_name>[^/]+)/(?P<version_number>[^/]+)/(?P<customizer_id>[^/]+)/$', 'dcf.views.customize_existing',name="customize_existing"),
+    url(r'^customize/instructions$', 'dcf.views.customize_instructions'),
 
     # edit a CIM form...
     url(r'^edit/(?P<project_name>[^/]+)/(?P<model_name>[^/]+)/(?P<version_number>[^/]+)/$', 'dcf.views.edit_new', name="edit_new"),
