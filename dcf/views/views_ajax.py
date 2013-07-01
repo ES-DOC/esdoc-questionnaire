@@ -247,10 +247,6 @@ def customize_subform(request):
             request=request
         )
 
-#        if model_customizer_form.is_valid():
-#            print "yep"
-#        else:
-#            print "nope"
         validity += [model_customizer_form.is_valid()]
         validity += [standard_property_customizer_formset.is_valid()]
 
