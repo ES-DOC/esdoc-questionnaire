@@ -216,9 +216,7 @@ def customize_subform(request):
             model=target_model_name,
             name=customizer_name
         )
-        print "EXISTING CUSTOMIZER"
     except MetadataModelCustomizer.DoesNotExist:
-        print "NEW CUSTOMIZER"
         target_model_customizer = MetadataModelCustomizer(
             project=project,
             version=version,
@@ -249,15 +247,12 @@ def customize_subform(request):
             request=request
         )
 
-        print "ONE"
-        if model_customizer_form.is_valid():
-            print "yep"
-        else:
-            print "nope"
+#        if model_customizer_form.is_valid():
+#            print "yep"
+#        else:
+#            print "nope"
         validity += [model_customizer_form.is_valid()]
-        print validity
         validity += [standard_property_customizer_formset.is_valid()]
-        print validity
 
         
         if all(validity):
