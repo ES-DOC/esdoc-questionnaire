@@ -115,14 +115,49 @@ def getFieldValue(form,field_name):
     """
     try:
         field = form[field_name]
-        if type(field.field) == ModelChoiceField: # TODO: WHAT ABOUT MultipleChoiceField OR ModelMultipleChoiceField
+
+        if type(field.field) == MetadataEnumerationFormField:
+        
+            value = field.value()
+            if value:
+                if "||" in value:
+                    value_list = [v.split("|") for v in value.split("||")]
+                    value_list = [value_list[0],value_list[1][0]]
+                    for i,v in enumerate(value_list[0]):
+                        if v == OPEN_CHOICE[0][0]:
+                            value_list[0][i] = "OTHER: %s" % value_list[1]
+                    num_enumerations = len(value_list[0])
+                    print value_list
+                    if num_enumerations > 0:
+                        if num_enumerations > 1:
+                            return "%s + %s more selections" % (value_list[0][0], (num_enumerations - 1))
+                        else:
+                            return value_list[0][0]
+                    else:
+                        return None
+                else:
+                    value_list = value.split("|")
+                    if value_list[0] == OPEN_CHOICE[0][0]:
+                        return "OTHER: %s" % value_list[1]
+                    else:
+                        return value_list[0]                    
+            else:
+                return None
+            
+        elif type(field.field) == ModelChoiceField: # TODO: WHAT ABOUT MultipleChoiceField OR ModelMultipleChoiceField
             EMPTY_CHOICE = "---------"
             for (value,text) in field.field.choices:
                 if unicode(value) == unicode(field.value()):
                     return text if (text != EMPTY_CHOICE) else None
-        return field.value()
+        else:
+            value = field.value()
+            return value if value else None
+
     except KeyError:
         return None
+
+#<span class="label" name="property_value">{{form|getFieldValue:form.property_value_field.name}}</span>
+
 
 @register.filter
 def getField(form,field_name):
