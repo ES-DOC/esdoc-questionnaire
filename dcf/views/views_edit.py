@@ -429,7 +429,7 @@ def edit_new(request,version_number="",project_name="",model_name=""):
 
         else:
 
-            msg = "Unable to save the customization.  Please review the form and try again."
+            msg = "Unable to save the model.  Please review the form and try again."
 
             
 
