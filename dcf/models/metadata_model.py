@@ -233,6 +233,18 @@ class MetadataModel(models.Model):
     def isPublished(self):
         return self.published
 
+    def __unicode__(self):
+        name = self.getTitle()
+        if hasattr(self,"name"):
+            return u'%s: %s' % (name,self.name)
+        if hasattr(self,"longName"):
+            return u'%s: %s' % (name,self.longName)
+        if hasattr(self,"shortName"):
+            return u'%s: %s' % (name,self.shortName)
+        if hasattr(self,"individualName"):
+            return u'%s: %s' % (name,self.individualName)
+        return u'%s' % name
+
 # I am purposefully not making this inherit from django.db.models;
 # (hopefully this will avoid the "bulk_create" error that sqlite3 gives for really large numbers of models)
 # anyway, everything in an enumeration is static and I don't need to use db fields
