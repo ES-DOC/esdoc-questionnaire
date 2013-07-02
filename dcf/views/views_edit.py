@@ -164,7 +164,8 @@ def edit_existing(request,version_number="",project_name="",model_name="",model_
             model_forms[component_key] = form_class(
                 request.POST,
                 instance=model_instances[component_key],
-                prefix=component_key
+                prefix=component_key,
+                request=request,
             )
             scientific_properties = model_instances[component_key].getScientificProperties()
             scientific_property_formsets[component_key] = \
@@ -233,7 +234,7 @@ def edit_existing(request,version_number="",project_name="",model_name="",model_
         scientific_property_formsets = {}
         for component in component_list:
             component_key = component.lower()
-            model_forms[component_key] = form_class(instance=model_instances[component_key],prefix=component_key)
+            model_forms[component_key] = form_class(instance=model_instances[component_key],prefix=component_key,request=request)
             scientific_properties = model_instances[component_key].getScientificProperties()
             scientific_property_formsets[component_key] = \
                 MetadataScientificPropertyFormSetFactory(
@@ -365,7 +366,8 @@ def edit_new(request,version_number="",project_name="",model_name=""):
             model_forms[component_key] = form_class(
                 request.POST,
                 instance=model_instances[component_key],
-                prefix=component_key
+                prefix=component_key,
+                request=request,
             )
 
         for component in component_list:
@@ -442,7 +444,7 @@ def edit_new(request,version_number="",project_name="",model_name=""):
             component_key = component.lower()
             model_filter_parameters.update({"component_name":component_key})
             model_instances[component_key] = model_class(**model_filter_parameters)
-            model_forms[component_key] = form_class(instance=model_instances[component_key],prefix=component_key)
+            model_forms[component_key] = form_class(instance=model_instances[component_key],prefix=component_key,request=request)
 
         scientific_property_formsets = {}
         scientific_property_customizers = customizer.getScientificPropertyCustomizers()

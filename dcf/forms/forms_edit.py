@@ -21,6 +21,7 @@ Summary of module goes here
 """
 
 from django.forms import *
+from django.utils.functional import curry
 from django.forms.models import BaseForm, BaseFormSet, BaseInlineFormSet, BaseModelFormSet, formset_factory, inlineformset_factory, modelform_factory, modelformset_factory
 
 
@@ -42,9 +43,11 @@ SubFormTypes = EnumeratedTypeList([
 def MetadataFormFactory(model_class,customizer,*args,**kwargs):
     kwargs["form"] = kwargs.pop("form",MetadataForm)
     kwargs["formfield_callback"] = metadata_formfield_callback
+    _request = kwargs.pop("request",None)
 
     _form = modelform_factory(model_class,**kwargs)
     _form.customizer = customizer
+    _form.request    = _request
 
     return _form
 
@@ -55,23 +58,25 @@ def MetadataFormSetFactory(model_class,customizer,*args,**kwargs):
     _initial    = kwargs.pop("initial",None)
     _prefix     = kwargs.pop("prefix","formset")
     _request    = kwargs.pop("request",None)
+
+    form_class  = MetadataFormFactory(model_class,customizer)
+
     new_kwargs = {
         "extra"       : kwargs.pop("extra",1),
         "can_delete"  : True,
         "formset"     : MetadataModelFormSet,
-        "form"        : MetadataFormFactory(model_class,customizer)
+        "form"        : form_class
     }
     new_kwargs.update(kwargs)
 
     _formset = modelformset_factory(model_class,*args,**new_kwargs)
+    _formset.form       = staticmethod(curry(form_class,request=_request))
+    _formset.prefix     = _prefix
     _formset.customizer = customizer
-    _formset.prefix = _prefix
-    
-    #_formset.form = staticmethod(curry(form_class,request=_request))
 
-    if _request and _request.method == "POST":
-        return _formset(_request.POST,prefix=_prefix)
-
+#    if _request and _request.method == "POST":
+#        return _formset(_request.POST,prefix=_prefix)
+        
     return _formset
 
 def metadata_formfield_callback(field):
@@ -111,13 +116,9 @@ class MetadataModelFormSet(BaseModelFormSet):
         validity = [form.is_valid() for form in self.forms]
         return all(validity)
 
-    def clean(self):
-        print "CLEANING A FORMSET"
-        for form in self:
-            print"ONE"
-            print type(form)
-            form.clean()
-            print "TWO"
+#    def clean(self):
+#        for form in self.forms:
+#            form.clean()
     
 
 class MetadataForm(ModelForm):
@@ -127,6 +128,7 @@ class MetadataForm(ModelForm):
     _propertyForms = {}
 
     customizer = None   # this gets set by the factory method
+    request    = None   # this either gets set by the factory method, or can be passed into __init__
 
     standard_property_customizers   = {}
     scientific_property_customizers = {}
@@ -135,7 +137,6 @@ class MetadataForm(ModelForm):
         return self._type
 
     def getStandardPropertyCustomizers(self):
-        print self.standard_property_customizers
         return self.standard_property_customizers
 
     def getScientificPropertyCustomizers(self):
@@ -144,7 +145,8 @@ class MetadataForm(ModelForm):
     def __init__(self,*args,**kwargs):
         _request = kwargs.pop("request",None)
         super(MetadataForm,self).__init__(*args,**kwargs)
-
+        if _request:
+            self.request = _request
 
         model_customizer = self.customizer # this will have been set by the factory
 
@@ -163,9 +165,6 @@ class MetadataForm(ModelForm):
                 if not category_key in self.standard_property_customizers:
                     self.standard_property_customizers[category_key] = []
                 self.standard_property_customizers[category_key].append(standard_property_customizer)
-
-        print "INITIALIZING %s" % self.instance.getTitle()
-        print self.standard_property_customizers
         
         self.scientific_property_customizers = {}
         for scientific_property_customizer in model_customizer.getScientificPropertyCustomizers().order_by("order"):
@@ -224,22 +223,29 @@ class MetadataForm(ModelForm):
                             target_standard_property_customizer.setParent(target_model_customizer)
                             target_standard_property_customizer.save()
 
+                    prefix = self.instance.component_name + "_" + standard_property_customizer.name
                     if standard_property_customizer.field_type == "manytomanyfield":
                         subform_type        = SubFormTypes.FORMSET
-                        subform_class       = MetadataFormSetFactory(target_model_class,target_model_customizer)
+                        subform_class       = MetadataFormSetFactory(target_model_class,target_model_customizer,request=self.request)
                         try:
                             subform_queryset    = getattr(self.instance,standard_property_customizer.name).all()
                         except ValueError: # ValueError ocurrs if the m2m field doesn't exist yet b/c the parent model hasn't been saved yet
                             subform_queryset    = target_model_class.objects.none()
-                        subform_instance    = subform_class(queryset=subform_queryset,prefix=standard_property_customizer.name)
+                        if self.request and self.request.method == "POST":
+                            subform_instance    = subform_class(self.request.POST,queryset=subform_queryset,prefix=prefix)
+                        else:
+                            subform_instance    = subform_class(queryset=subform_queryset,prefix=prefix)
                     elif standard_property_customizer.field_type == "manytoonefield":
                         subform_type        = SubFormTypes.FORM
-                        subform_class       = MetadataFormFactory(target_model_class,target_model_customizer)
+                        subform_class       = MetadataFormFactory(target_model_class,target_model_customizer,request=self.request)
                         submodel_instance   = getattr(self.instance,standard_property_customizer.name)
                         if not submodel_instance:                            
                             submodel_instance = target_model_class()
                             submodel_instance.project = self.customizer.project
-                        subform_instance    = subform_class(instance=submodel_instance)
+                        if self.request and self.request.method == "POST":
+                            subform_instance    = subform_class(self.request.POST,instance=submodel_instance,prefix=prefix)
+                        else:
+                            subform_instance    = subform_class(instance=submodel_instance,prefix=prefix)
 
                     self._subForms[standard_property_customizer.name] = \
                         (subform_type,subform_class,subform_instance)
@@ -258,27 +264,12 @@ class MetadataForm(ModelForm):
 
 
     def is_valid(self):
-        print "CALLING IS_VALID FOR FORM"
-        for (field_name,sub_form) in self.getAllSubForms().iteritems():
-            if sub_form[2].is_valid():
-                print "HOORAY!  %s is valid" % field_name
-            else:
-                print "BOO! %s is invalid" % field_name
-                if sub_form[0] == SubFormTypes.FORM:
-                    print "FORM ERRORS:"
-                    print sub_form[2].errors
-                    print sub_form[2].non_field_errors()
-                elif sub_form[0] == SubFormTypes.FORMSET:
-                    print "FORMSET ERRORS:"
-                    print sub_form[2].errors
-                    print sub_form[2].non_form_errors()
         subform_validity = [subForm[2].is_valid() for subForm in self.getAllSubForms().itervalues() if subForm[2]]
         mainform_validity = super(MetadataForm,self).is_valid()
         validity = all(subform_validity) and mainform_validity
         return validity
 
     def clean(self):
-
         cleaned_data = self.cleaned_data
         
         standard_property_customizers = self.customizer.getStandardPropertyCustomizers()
@@ -311,24 +302,60 @@ class MetadataForm(ModelForm):
         return cleaned_data
 
     def save(self,*args,**kwargs):
+        saved_instance = super(MetadataForm,self).save(*args,**kwargs)
+
         for (key,value) in self.getAllSubForms().iteritems():
             subFormType     = value[0]
             subFormClass    = value[1]
             subFormInstance = value[2]
 
-            if subFormType == "FORM":
-                print "ONE"
-                subModelInstance = subFormInstance.save(commit=False)
-                print "TWO"
-                cleaned_data[key] = subModelInstance.save()
-                print "THREE"
-                subFormInstance.save_m2m()
-                print "FOUR"
+            if subFormInstance.has_changed():
 
-                print key
-                print cleaned_data[key]
+                if subFormType == "FORM":
 
-        return super(MetadataForm,self).save(*args,**kwargs)
+                    subModelInstance = subFormInstance.save(commit=False)
+                    subModelInstance.save()
+                    subFormInstance.save_m2m()
+
+                    setattr(saved_instance,key,subModelInstance)
+
+                elif subFormType == "FORMSET":
+
+                    subModelInstances = subFormInstance.save(commit=False)
+                    for subModelInstance in subModelInstances:
+                        subModelInstance.save()
+                    subFormInstance.save_m2m()
+
+                    # TODO: I AM HERE; THIS DOESN'T WORK
+                    setattr(saved_instance,key,subModelInstances)
+
+
+        return saved_instance
+
+#    def save(self,*args,**kwargs):
+#        cleaned_data = self.cleaned_data
+#
+#        for (key,value) in self.getAllSubForms().iteritems():
+#            subFormType     = value[0]
+#            subFormClass    = value[1]
+#            subFormInstance = value[2]
+#
+#            if subFormType == "FORM":
+#                subModelInstance = subFormInstance.save(commit=False)
+#                subModelInstance.save()
+#                subFormInstance.save_m2m()
+#                cleaned_data[key] = subModelInstance
+#
+#            elif subFormType == "FORMSET":
+#                subModelInstances = subFormInstance.save(commit=False)
+#                _instances = []
+#                for subModelInstance in subModelInstances:
+#                    _instances.append(subModelInstance.save())
+#                subFormInstance.save_m2m()
+#                cleaned_data[key] = _instances
+#
+#
+#        return super(MetadataForm,self).save(*args,**kwargs)
 
     def getAllSubForms(self):
 #        # returns the union of all subforms for all ancestor classes
