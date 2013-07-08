@@ -35,13 +35,13 @@ class MetadataModelCustomizerForm(ModelForm):
 
     class Meta:
         model   = MetadataModelCustomizer
-        fields  = ( "name","description","default","model_title","model_description",   \
-                    "model_show_all_categories","model_show_all_properties",            \
-                    "model_nested","categorization","vocabularies",                     \
+        fields  = ( "name","description","default","model_title","model_description",      \
+                    "model_show_all_categories","model_show_all_properties",               \
+                    "model_nested","model_root_component","categorization","vocabularies", \
                     "project","version","model" )
 
     customizer_fields   = ("name","description","default","categorization","vocabularies",)
-    model_fields        = ("model_title","model_description","model_show_all_categories","model_show_all_properties","model_nested")
+    model_fields        = ("model_title","model_description","model_show_all_categories","model_show_all_properties","model_nested","model_root_component")
     model_fields_for_subform = ("model_title","model_description","model_show_all_categories","model_show_all_properties",)
 
     # actual values for these fields is set below

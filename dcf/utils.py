@@ -121,7 +121,7 @@ def validate_no_spaces(value):
     # TODO: WHY DOESN'T THIS WORK?
     #if re.match('\s',value):
     if ' ' in value:
-        raise ValidationError(u'%s may not contain spaces' % value)
+        raise ValidationError(u"'%s' may not contain spaces" % value)
 
 ##################
 # error handling #

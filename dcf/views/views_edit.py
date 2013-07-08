@@ -53,7 +53,7 @@ def check_parameters(version_number="",project_name="",model_name="",msg=""):
     version         = None
     customizer      = None
     categorization  = None
-    vocabulary      = None
+    vocabularies    = None
     model_class     = None
 
     # try to get the requested project...
@@ -61,7 +61,7 @@ def check_parameters(version_number="",project_name="",model_name="",msg=""):
         project = MetadataProject.objects.get(name__iexact=project_name)
     except ObjectDoesNotExist:
         msg = "Cannot find the project '%s'.  Has it been registered?" % project_name
-        return (project,version,customizer,categorization,vocabulary,model_class,msg)
+        return (project,version,customizer,categorization,vocabularies,model_class,msg)
 
     # try to get the requested version...
     if version_number:
@@ -69,42 +69,41 @@ def check_parameters(version_number="",project_name="",model_name="",msg=""):
             version = MetadataVersion.objects.get(name__iexact=METADATA_NAME,number=version_number)
         except ObjectDoesNotExist:
             msg = "Cannot find version '%s_%s'.  Has it been registered?" % (METADATA_NAME,version_number)
-            return (project,version,customizer,categorization,vocabulary,model_class,msg)
+            return (project,version,customizer,categorization,vocabularies,model_class,msg)
     else:
         version = project.getDefaultVersion()
         if not version:
             msg = "please specify a version; the '%s' project has no default one." % project.getName()
-            return (project,version,customizer,categorization,vocabulary,model_class,msg)
+            return (project,version,customizer,categorization,vocabularies,model_class,msg)
 
     # try to get the requested model...
     model_class = version.getModelClass(model_name)
     if not model_class:
         msg = "Cannot find the model type '%s' in version '%s'.  Have all model types been registered?" % (model_name, version)
-        return (project,version,customizer,categorization,vocabulary,model_class,msg)
+        return (project,version,customizer,categorization,vocabularies,model_class,msg)
 
     # try to get the default customizer for this project/version/model...
     try:
         customizer = MetadataModelCustomizer.objects.get(project=project,version=version,model=model_name,default=1)
     except MetadataModelCustomizer.DoesNotExist:
         msg = "There is no default customization associated with '%s'" % (model_name)
-        return (project,version,customizer,categorization,vocabulary,model_class,msg)
+        return (project,version,customizer,categorization,vocabularies,model_class,msg)
 
-    # get the default categorization and vocabulary...
+    # get the default categorization and vocabularies...
     categorizations = version.categorizations.all()
-    vocabularies = project.vocabularies.all()
+    vocabularies = customizer.vocabularies.all()
     # TODO: THIS IS CLEARLY DUMB,
     # BUT THE RELATEDOBJECTMANAGER IS BEING USED FOR THE TIME WHEN
     # THIS CODE CAN SUPPORT MULTPLE CATEGORIZATIONS
     categorization  = categorizations[0] if categorizations else None
-    vocabulary  = vocabularies[0] if vocabularies else None
     if not categorization:
         msg = "There is no default categorization associated with version %s." % version
-        return (project,version,customizer,categorization,vocabulary,model_class,msg)
-    if not vocabulary:
-        msg = "There is no default vocabulary associated with project %s." % project
-        return (project,version,customizer,categorization,vocabulary,model_class,msg)
+        return (project,version,customizer,categorization,vocabularies,model_class,msg)
+    if not vocabularies:
+        msg = "There are no default vocabularies associated with customizer %s." % customizer
+        return (project,version,customizer,categorization,vocabularies,model_class,msg)
 
-    return (project,version,customizer,categorization,vocabulary,model_class,msg)
+    return (project,version,customizer,categorization,vocabularies,model_class,msg)
 
 def edit_existing(request,version_number="",project_name="",model_name="",model_id=""):
 
@@ -271,22 +270,32 @@ def edit_new(request,version_number="",project_name="",model_name=""):
 
     msg = ""
 
-    (project,version,customizer,categorization,vocabulary,model_class,msg) = \
+    (project,version,customizer,categorization,vocabularies,model_class,msg) = \
     check_parameters(version_number,project_name,model_name,msg)
-    if not all ([project,version,customizer,categorization,vocabulary,model_class]):
+    if not all ([project,version,customizer,categorization,vocabularies,model_class]):
         return dcf_error(request,msg)
 
-    try:
-        component_tree = vocabulary.getComponentTree()
-        component_list = vocabulary.getComponentList()
-        
-        if not any(component_list):
-            msg = "There is no component hierarchy defined in this vocabulary.  Has it been registered?"
-            return dcf_error(request,msg)
-    except:
-        msg = "There is no component hierarchy defined in this vocabulary.  Has it been registered?"
-        return dcf_error(request,msg)
+    component_list = []
+    component_tree = {}
+    if customizer.model_root_component:
+        component_list.append(customizer.model_root_component)
+        component_tree[customizer.model_root_component] = []
     
+    # TODO: THIS WILL BREAK IF THE SAME KEY IS IN DIFFERENT VOCABS
+    for vocabulary in vocabularies:
+        try:
+            component_list += vocabulary.getComponentList()
+            if component_tree:
+                component_tree[customizer.model_root_component].append(vocabulary.getComponentTree())
+            else:
+                component_tree.update(vocabulary.getComponentTree())
+            if not any(component_list): # don't need to check component_tree; if it has one it will have the other
+                msg = "There is no component hierarchy defined in vocabulary '%s'.  Has it been registered?" % vocabulary
+                return dcf_error(request,msg)
+        except:
+            msg = "There is no component hierarchy defined in vocabulary '%s'.  Has it been registered?" % vocabulary
+            return dcf_error(request,msg)
+
     model_filter_parameters = {
         "metadata_project"   : project,
     }
@@ -370,13 +379,17 @@ def edit_new(request,version_number="",project_name="",model_name=""):
                 request=request,
             )
 
+        scientific_property_customizers = customizer.getScientificPropertyCustomizers()
         for component in component_list:
             component_key = component.lower()
-            scientific_property_formsets[component_key] = \
-                MetadataScientificPropertyFormSetFactory(
-                    prefix      = component_key + "_scientific_property",
-                    request     = request,  # the factory will pass request.POST as appropriate
-                )
+            # as below, only create a formset if there are scientific properties associated w/ this component
+            # (there will not be any for custom root component)
+            if scientific_property_customizers.filter(component_name__iexact=component_key):
+                scientific_property_formsets[component_key] = \
+                    MetadataScientificPropertyFormSetFactory(
+                        prefix      = component_key + "_scientific_property",
+                        request     = request,  # the factory will pass request.POST as appropriate
+                    )
 
 
         for (component_name,model_form) in model_forms.iteritems():
@@ -410,15 +423,21 @@ def edit_new(request,version_number="",project_name="",model_name=""):
 
             for (component_name,model_form) in model_forms.iteritems():
 
-                parent_component = find_component_parent(component_name,component_tree)
-                if parent_component:
-                    model_instances[component_name].setParent(model_instances[parent_component.lower()])
-                model_instances[component_name].addScientificProperties(scientific_property_instances[component_name])
+                try:
 
-                for scientific_property in scientific_property_instances[component_name]:
-                    scientific_property.save()  # have to re-save the component after setting it as a property of the model
-                model_instances[component_name].save()
-                model_form.save_m2m()
+                    parent_component = find_component_parent(component_name,component_tree)
+                    if parent_component:
+                        model_instances[component_name].setParent(model_instances[parent_component.lower()])
+                    model_instances[component_name].addScientificProperties(scientific_property_instances[component_name])
+
+                    for scientific_property in scientific_property_instances[component_name]:
+                        scientific_property.save()  # have to re-save the component after setting it as a property of the model
+                    model_instances[component_name].save()
+                    model_form.save_m2m()
+
+                except KeyError:
+                    # if this is one of the components that has no scientific properties associated with it, just ignore it
+                    pass
             
             root_component = component_list[0].lower()
             edit_existing_url = reverse("edit_existing",kwargs={
@@ -434,7 +453,6 @@ def edit_new(request,version_number="",project_name="",model_name=""):
             msg = "Unable to save the model.  Please review the form and try again."
 
             
-
     else: # request.method == "GET"
 
         
@@ -455,20 +473,29 @@ def edit_new(request,version_number="",project_name="",model_name=""):
                 scientific_property = MetadataProperty()
                 scientific_property.customize(scientific_property_customizer)
                 scientific_properties.append(scientific_property)
-            initial_scientific_property_data = [
-                get_initial_data(scientific_property,{"category" : scientific_property.category, "customizer" : scientific_property.customizer })
-                for scientific_property in scientific_properties
-            ]
-            scientific_property_formsets[component_key] = \
-                MetadataScientificPropertyFormSetFactory(
-                    initial     = initial_scientific_property_data,
-                    extra       = len(initial_scientific_property_data),                    
-                    prefix      = component_key + "_scientific_property",
-                    request     = request,
-                )
-            
+            if scientific_properties:
+                initial_scientific_property_data = [
+                    get_initial_data(scientific_property,{"category" : scientific_property.category, "customizer" : scientific_property.customizer })
+                    for scientific_property in scientific_properties
+                ]
+                scientific_property_formsets[component_key] = \
+                    MetadataScientificPropertyFormSetFactory(
+                        initial     = initial_scientific_property_data,
+                        extra       = len(initial_scientific_property_data),
+                        prefix      = component_key + "_scientific_property",
+                        request     = request,
+                    )
+            else:
+                # if there truly are no scientific properties associated w/ this component
+                # (such as would happen for a custom-defined root component)
+                # then don't bother creating a formset for it
+                pass
+    
     standard_categories = customizer.getStandardCategories()
-    scientific_categories = scientific_categories = vocabulary.categories.all() | project.categories.all()
+    scientific_categories   = project.categories.all().order_by("order")
+    for vocabulary in vocabularies:
+        scientific_categories = scientific_categories | vocabulary.categories.all().order_by("order")
+
 
     # gather all the extra information required by the template
     dict = {
@@ -480,7 +507,7 @@ def edit_new(request,version_number="",project_name="",model_name=""):
         "customizer"                    : customizer,
         "project"                       : project,
         "version"                       : version,
-        "vocabulary"                    : vocabulary,
+        "vocabularies"                  : vocabularies,
         "model_class"                   : model_class,
         "component_list"                : component_list,
         "component_tree"                : dict_to_html(component_tree),

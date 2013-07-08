@@ -94,6 +94,8 @@ class MetadataModelCustomizer(MetadataCustomizer):
     model_show_all_properties.help_text = "Include attributes in the editing form that have no associated category.  These will show up below any category tabs."
     model_nested        = models.BooleanField(verbose_name="Include the full component hierarchy",default=True)
     model_nested.help_text ="Some CIM SoftwareComponents are comprised of a hierarchy of nested child components.  Checking this option allows that full hiearchy to be edited at once in the CIM Editor."
+    model_root_component = models.CharField(max_length=LIL_STRING,verbose_name="Name of the root component",blank=True,validators=[validate_no_spaces])
+    model_root_component.help_text = "If this SoftwareComponent uses mulitple CVs, then the corresponding component hierarchies can either be grouped under a single root component, or else kept separate.  If they are to be grouped under a single root component, please provide the component name here."
 
     def __unicode__(self):
         return u"%s::%s ('%s')" % (self.project,self.model,self.name)
