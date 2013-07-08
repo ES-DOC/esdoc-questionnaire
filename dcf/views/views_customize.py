@@ -57,7 +57,7 @@ def customize_existing(request,version_number="",project_name="",model_name="",c
 
     # get the default categorization and vocabulary...
     categorizations = version.categorizations.all()
-    vocabularies    = project.vocabularies.all()
+    vocabularies = project.vocabularies.all().filter(document_type__iexact=model_name)
     categorization  = categorizations[0] if categorizations else None
     if not categorization:
         msg = "There is no default categorization associated with version %s." % version
@@ -224,7 +224,7 @@ def customize_new(request,version_number="",project_name="",model_name=""):
 
     # get the default categorization and vocabulary...
     categorizations = version.categorizations.all()
-    vocabularies = project.vocabularies.all()
+    vocabularies = project.vocabularies.all().filter(document_type__iexact=model_name)
     # TODO: THIS IS CLEARLY DUMB,
     # BUT THE RELATEDOBJECTMANAGER IS BEING USED FOR THE TIME WHEN
     # THIS CODE CAN SUPPORT MULTPLE CATEGORIZATIONS

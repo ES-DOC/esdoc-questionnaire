@@ -29,7 +29,7 @@ class Migration(SchemaMigration):
         # Adding model 'MetadataModelProxy'
         db.create_table('dcf_metadatamodelproxy', (
             ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('_guid', self.gf('django.db.models.fields.CharField')(default='90cb4ab3-4006-4cbc-a6c4-d0c6ef03ddfa', unique=True, max_length=64)),
+            ('_guid', self.gf('django.db.models.fields.CharField')(default='9a93b018-2043-4420-a787-a106f7f6fdae', unique=True, max_length=64)),
             ('version', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['dcf.MetadataVersion'])),
             ('model_name', self.gf('django.db.models.fields.CharField')(max_length=64)),
             ('document_type', self.gf('django.db.models.fields.CharField')(max_length=64, blank=True)),
@@ -41,7 +41,7 @@ class Migration(SchemaMigration):
         # Adding model 'MetadataStandardPropertyProxy'
         db.create_table('dcf_metadatastandardpropertyproxy', (
             ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('_guid', self.gf('django.db.models.fields.CharField')(default='1f1e6d98-e5fe-457c-81af-cc7df529a49f', unique=True, max_length=64)),
+            ('_guid', self.gf('django.db.models.fields.CharField')(default='334c7ce3-e2bb-4907-881a-10c715242023', unique=True, max_length=64)),
             ('model_name', self.gf('django.db.models.fields.CharField')(max_length=255)),
             ('name', self.gf('django.db.models.fields.CharField')(max_length=255)),
             ('type', self.gf('django.db.models.fields.CharField')(max_length=255, blank=True)),
@@ -69,7 +69,7 @@ class Migration(SchemaMigration):
         # Adding model 'MetadataScientificPropertyProxy'
         db.create_table('dcf_metadatascientificpropertyproxy', (
             ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('_guid', self.gf('django.db.models.fields.CharField')(default='082d1922-b4c1-4103-bc65-a71ef8b1c7f9', unique=True, max_length=64)),
+            ('_guid', self.gf('django.db.models.fields.CharField')(default='3542d37a-1ef7-4da0-9579-9d3bc923c3b4', unique=True, max_length=64)),
             ('model_name', self.gf('django.db.models.fields.CharField')(max_length=255)),
             ('name', self.gf('django.db.models.fields.CharField')(max_length=255)),
             ('type', self.gf('django.db.models.fields.CharField')(max_length=255, blank=True)),
@@ -105,7 +105,7 @@ class Migration(SchemaMigration):
         # Adding model 'MetadataModelCustomizer'
         db.create_table('dcf_metadatamodelcustomizer', (
             ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('_guid', self.gf('django.db.models.fields.CharField')(default='42b12b90-d285-49a6-b50c-9ef7778fbfad', unique=True, max_length=64)),
+            ('_guid', self.gf('django.db.models.fields.CharField')(default='7882bb72-3106-458a-855e-5b4167719061', unique=True, max_length=64)),
             ('project', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['dcf.MetadataProject'])),
             ('version', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['dcf.MetadataVersion'])),
             ('model', self.gf('django.db.models.fields.CharField')(max_length=400)),
@@ -126,7 +126,7 @@ class Migration(SchemaMigration):
         # Adding model 'MetadataStandardPropertyCustomizer'
         db.create_table('dcf_metadatastandardpropertycustomizer', (
             ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('_guid', self.gf('django.db.models.fields.CharField')(default='f2c98017-33b7-453b-883a-29d65d82e0ed', unique=True, max_length=64)),
+            ('_guid', self.gf('django.db.models.fields.CharField')(default='18f79426-b6b3-4993-bbd6-40257e9d879e', unique=True, max_length=64)),
             ('project', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['dcf.MetadataProject'])),
             ('version', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['dcf.MetadataVersion'])),
             ('model', self.gf('django.db.models.fields.CharField')(max_length=400)),
@@ -162,7 +162,7 @@ class Migration(SchemaMigration):
         # Adding model 'MetadataScientificPropertyCustomizer'
         db.create_table('dcf_metadatascientificpropertycustomizer', (
             ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('_guid', self.gf('django.db.models.fields.CharField')(default='3fc3da87-fffe-45b4-8194-437a98aa50a9', unique=True, max_length=64)),
+            ('_guid', self.gf('django.db.models.fields.CharField')(default='52c45a1e-6573-4db7-8ca9-eb992ea333e3', unique=True, max_length=64)),
             ('project', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['dcf.MetadataProject'])),
             ('version', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['dcf.MetadataVersion'])),
             ('model', self.gf('django.db.models.fields.CharField')(max_length=400)),
@@ -264,7 +264,7 @@ class Migration(SchemaMigration):
         # Adding model 'MetadataProject'
         db.create_table('dcf_metadataproject', (
             ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('_guid', self.gf('django.db.models.fields.CharField')(default='67a150de-f536-4986-a352-7344d2b1b94a', unique=True, max_length=64)),
+            ('_guid', self.gf('django.db.models.fields.CharField')(default='e7827cfa-55d6-4881-9ac4-bb9bab0caed1', unique=True, max_length=64)),
             ('name', self.gf('django.db.models.fields.CharField')(unique=True, max_length=255)),
             ('title', self.gf('django.db.models.fields.CharField')(max_length=400)),
             ('description', self.gf('django.db.models.fields.TextField')(blank=True)),
@@ -352,7 +352,7 @@ class Migration(SchemaMigration):
         },
         'dcf.metadatamodelcustomizer': {
             'Meta': {'unique_together': "(('project', 'version', 'model', 'name'),)", 'object_name': 'MetadataModelCustomizer'},
-            '_guid': ('django.db.models.fields.CharField', [], {'default': "'5d461921-d871-4834-ae91-03c707c3804f'", 'unique': 'True', 'max_length': '64'}),
+            '_guid': ('django.db.models.fields.CharField', [], {'default': "'03027e2f-711d-41af-99db-2f108ad5dca8'", 'unique': 'True', 'max_length': '64'}),
             'default': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
             'description': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
@@ -368,7 +368,7 @@ class Migration(SchemaMigration):
         },
         'dcf.metadatamodelproxy': {
             'Meta': {'object_name': 'MetadataModelProxy'},
-            '_guid': ('django.db.models.fields.CharField', [], {'default': "'40061949-e766-49b9-9294-eb74ef6cdff2'", 'unique': 'True', 'max_length': '64'}),
+            '_guid': ('django.db.models.fields.CharField', [], {'default': "'743e08b1-877d-440b-b94d-b78059ded1d7'", 'unique': 'True', 'max_length': '64'}),
             'document_type': ('django.db.models.fields.CharField', [], {'max_length': '64', 'blank': 'True'}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'model_description': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
@@ -378,7 +378,7 @@ class Migration(SchemaMigration):
         },
         'dcf.metadataproject': {
             'Meta': {'object_name': 'MetadataProject'},
-            '_guid': ('django.db.models.fields.CharField', [], {'default': "'0bdcb791-2353-4942-a568-f0bd2e04c943'", 'unique': 'True', 'max_length': '64'}),
+            '_guid': ('django.db.models.fields.CharField', [], {'default': "'0180646d-2618-409b-9ce9-8935cc19b3c6'", 'unique': 'True', 'max_length': '64'}),
             'default_version': ('django.db.models.fields.related.ForeignKey', [], {'blank': 'True', 'related_name': "'project'", 'null': 'True', 'to': "orm['dcf.MetadataVersion']"}),
             'description': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
@@ -417,7 +417,7 @@ class Migration(SchemaMigration):
         },
         'dcf.metadatascientificpropertycustomizer': {
             'Meta': {'object_name': 'MetadataScientificPropertyCustomizer'},
-            '_guid': ('django.db.models.fields.CharField', [], {'default': "'5264287c-34c2-4ecc-ae0e-b6ff63762210'", 'unique': 'True', 'max_length': '64'}),
+            '_guid': ('django.db.models.fields.CharField', [], {'default': "'651b0846-884a-46d5-b2ba-b9e4442c0ea0'", 'unique': 'True', 'max_length': '64'}),
             'category': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['dcf.MetadataScientificCategory']", 'null': 'True', 'blank': 'True'}),
             'choice': ('django.db.models.fields.CharField', [], {'max_length': '64'}),
             'component_name': ('django.db.models.fields.CharField', [], {'max_length': '64', 'blank': 'True'}),
@@ -455,7 +455,7 @@ class Migration(SchemaMigration):
         },
         'dcf.metadatascientificpropertyproxy': {
             'Meta': {'unique_together': "(('model_name', 'component_name', 'name', 'category'),)", 'object_name': 'MetadataScientificPropertyProxy'},
-            '_guid': ('django.db.models.fields.CharField', [], {'default': "'8f03bafd-44f4-48fe-9f22-d94e57b85168'", 'unique': 'True', 'max_length': '64'}),
+            '_guid': ('django.db.models.fields.CharField', [], {'default': "'714ec72f-50de-4591-b82e-18a0f15d4865'", 'unique': 'True', 'max_length': '64'}),
             'category': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['dcf.MetadataScientificCategory']", 'null': 'True', 'blank': 'True'}),
             'choice': ('django.db.models.fields.CharField', [], {'max_length': '64', 'null': 'True', 'blank': 'True'}),
             'component_name': ('django.db.models.fields.CharField', [], {'max_length': '64', 'blank': 'True'}),
@@ -494,7 +494,7 @@ class Migration(SchemaMigration):
         },
         'dcf.metadatastandardpropertycustomizer': {
             'Meta': {'object_name': 'MetadataStandardPropertyCustomizer'},
-            '_guid': ('django.db.models.fields.CharField', [], {'default': "'92b9218d-d7f6-467e-89ff-c7b8887563c2'", 'unique': 'True', 'max_length': '64'}),
+            '_guid': ('django.db.models.fields.CharField', [], {'default': "'1906a5dd-45e3-4a9b-869d-b2de73b66b26'", 'unique': 'True', 'max_length': '64'}),
             'category': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['dcf.MetadataStandardCategory']", 'null': 'True', 'blank': 'True'}),
             'customize_subform': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
             'default_value': ('django.db.models.fields.CharField', [], {'max_length': '128', 'null': 'True', 'blank': 'True'}),
@@ -528,7 +528,7 @@ class Migration(SchemaMigration):
         },
         'dcf.metadatastandardpropertyproxy': {
             'Meta': {'unique_together': "(('version', 'model_name', 'name'),)", 'object_name': 'MetadataStandardPropertyProxy'},
-            '_guid': ('django.db.models.fields.CharField', [], {'default': "'c8c5f7fb-56ce-465f-a686-ccfe291df6d8'", 'unique': 'True', 'max_length': '64'}),
+            '_guid': ('django.db.models.fields.CharField', [], {'default': "'d480069b-4e3c-41ca-8448-ac3e64e77153'", 'unique': 'True', 'max_length': '64'}),
             'category': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['dcf.MetadataStandardCategory']", 'null': 'True', 'blank': 'True'}),
             'default_value': ('django.db.models.fields.CharField', [], {'max_length': '255', 'null': 'True', 'blank': 'True'}),
             'documentation': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
