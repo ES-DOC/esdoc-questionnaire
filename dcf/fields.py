@@ -27,6 +27,8 @@ import django.forms.widgets
 from django.db import models
 from django.db.models import get_app, get_model, get_models
 
+from south.modelsinspector import introspector, add_introspection_rules
+
 from dcf.utils import *
 
 def update_field_widget_attributes(field,widget_attributes):
@@ -92,6 +94,11 @@ class MetadataField(models.Field):
     def isEnumerationField(self):
         return self._type.lower() in [MetadataEnumerationField._type.lower()]
 
+    def south_field_triple(self):
+        field_class_path = self.__class__.__module__ + "." + self.__class__.__name__
+        args,kwargs = introspector(self)
+        return (field_class_path,args,kwargs)
+
 def isAtomicField(field_type):
     return field_type.lower() in MODELFIELD_MAP.iterkeys()
 
@@ -144,10 +151,18 @@ class MetadataAtomicField(MetadataField):
         #           pass
 
         class _MetadataAtomicField(cls,model_field_class):
+
             def __init__(self,*args,**kwargs):
                 kwargs.update(model_field_class_kwargs)
                 super(_MetadataAtomicField,self).__init__(**kwargs)
-                self._type = model_field_class_name
+                self._type   = model_field_class_name
+
+            def south_field_triple(self):
+                #field_class_path = model_field_class.__class__.__module__ + "." + model_field_class.__class__.__name__
+                #field_class_path = self.__class__.__module__ + "." + self.__class__.__name__
+                field_class_path = "django.db.models.fields" + "." + model_field_class.__name__
+                args,kwargs = introspector(self)
+                return (field_class_path,args,kwargs)
 
         return _MetadataAtomicField(**kwargs)
 
@@ -325,13 +340,14 @@ class MetadataEnumerationFormField(django.forms.fields.MultiValueField):
                     raise forms.ValidationError(msg)
             return "|".join(value)
         
-
-
 class MetadataEnumerationField(models.CharField,MetadataField):
     class Meta:
         abstract = False
 
     _type = "EnumerationField"
+
+    _args   = None
+    _kwargs = None
 
     enumerationAppName    = ""
     enumerationModelName  = ""
@@ -344,6 +360,9 @@ class MetadataEnumerationField(models.CharField,MetadataField):
         enumeration = kwargs.pop('enumeration',None)
         kwargs["max_length"] = HUGE_STRING
         super(MetadataEnumerationField,self).__init__(*args,**kwargs)
+
+        self._args      = args
+        self._kwargs    = kwargs
         
         if enumeration:
             (self.enumerationAppName, self.enumerationModelName) =  enumeration.split(".")
@@ -363,8 +382,10 @@ class MetadataEnumerationField(models.CharField,MetadataField):
             print "error: %s" % msg
             return None
 
-
-
+    def south_field_triple(self):
+        field_class_path = self.__class__.__module__ + "." + self.__class__.__name__
+        args,kwargs = introspector(self)
+        return (field_class_path,args,kwargs)
 
 #################################
 # fields used by the customizer #
@@ -392,7 +413,7 @@ class EnumerationFormField(django.forms.fields.MultipleChoiceField):
         #return super(EnumerationFormField,self).clean(value)
 
 class EnumerationField(models.TextField):
-    _choices = None
+    _choices     = None
 
     def formfield(self,**kwargs):
         new_kwargs = {
@@ -409,6 +430,7 @@ class EnumerationField(models.TextField):
         new_kwargs.update(kwargs)
         return super(EnumerationField,self).formfield(**new_kwargs)
 
+    
     def get_db_prep_value(self, value, connection, prepared=False):
         if isinstance(value, basestring):
             return value
@@ -431,6 +453,11 @@ class EnumerationField(models.TextField):
 
     def getChoices(self):
         return self._choices
+
+    def south_field_triple(self):
+        field_class_path = self.__class__.__module__ + "." + self.__class__.__name__
+        args,kwargs = introspector(self)
+        return (field_class_path,args,kwargs)
 
 class CardinalityFormFieldWidget(django.forms.widgets.MultiWidget):
     def __init__(self,*args,**kwargs):
@@ -483,41 +510,93 @@ class CardinalityField(models.CharField):
 
         super(CardinalityField,self).__init__(*args,**kwargs)
 
-class MetadataPropertyValueFormFieldWidget(django.forms.widgets.MultiWidget):
+    def south_field_triple(self):
+        field_class_path = self.__class__.__module__ + "." + self.__class__.__name__
+        args,kwargs = introspector(self)
+        return (field_class_path,args,kwargs)
 
-    def __init__(self,*args,**kwargs):
-        widgets = (
-            # these will be replaced by the form's __init__ method
-            # but I need to put something in the tuple so I can change it later
-            django.forms.fields.TextInput(),
-            django.forms.fields.TextInput()
-        )
-        super(MetadataPropertyValueFormFieldWidget,self).__init__(widgets,*args,**kwargs)
+#class MetadataPropertyValueFormFieldWidget(django.forms.widgets.MultiWidget):
+#
+#    def __init__(self,*args,**kwargs):
+#        widgets = (
+#            # these will be replaced by the form's __init__ method
+#            # but I need to put something in the tuple so I can change it later
+#            django.forms.fields.TextInput(),
+#            django.forms.fields.TextInput()
+#        )
+#        super(MetadataPropertyValueFormFieldWidget,self).__init__(widgets,*args,**kwargs)
+#
+#    def decompress(self,value):
+#        if value:
+#            return value.split("|")
+#        else:
+#            return [u'',u'']
+#
+#class MetadataPropertyValueFormField(django.forms.fields.MultiValueField):
+#
+#    def __init__(self,*args,**kwargs):
+#        fields = (
+#            django.forms.fields.CharField(),
+#            django.forms.fields.CharField(required=False)
+#        )
+#        widget = MetadataPropertyValueFormFieldWidget()
+#        super(MetadataPropertyValueFormField,self).__init__(fields,widget,*args,**kwargs)
+#        self.widget = widget
+#
+#class MetadataPropertyValueField(models.CharField,MetadataField):
+#    # very similar to MetadataEnumerationField, but choices don't come from an external class
+#
+#    def __init__(self,*args,**kwargs):
+#        kwargs["max_length"] = HUGE_STRING
+#        super(MetadataPropertyValueField,self).__init__(*args,**kwargs)
+#
+#    def formfield(self,**kwargs):
+#        return MetadataPropertyValueFormField()
+#
 
-    def decompress(self,value):
-        if value:
-            return value.split("|")
-        else:
-            return [u'',u'']
 
-class MetadataPropertyValueFormField(django.forms.fields.MultiValueField):
-
-    def __init__(self,*args,**kwargs):
-        fields = (
-            django.forms.fields.CharField(),
-            django.forms.fields.CharField(required=False)
-        )
-        widget = MetadataPropertyValueFormFieldWidget()
-        super(MetadataPropertyValueFormField,self).__init__(fields,widget,*args,**kwargs)
-        self.widget = widget
-
-class MetadataPropertyValueField(models.CharField,MetadataField):
-    # very similar to MetadataEnumerationField, but choices don't come from an external class
-
-    def __init__(self,*args,**kwargs):
-        kwargs["max_length"] = HUGE_STRING
-        super(MetadataPropertyValueField,self).__init__(*args,**kwargs)
-
-    def formfield(self,**kwargs):
-        return MetadataPropertyValueFormField()
-
+#add_introspection_rules(
+#    [
+##        (
+##            # field_class
+##            [EnumerationField],
+##            # args
+##            [],
+##            # kwargs
+##            {
+##            "blank" :
+##            "null" :
+##            "verbose_name" :
+##            },
+##        ),
+#    ],
+#    # location
+#    ["^dcf\.fields\.EnumerationField"]
+#)
+#
+#add_introspection_rules(
+#    [
+##        (
+##            # field_class
+##            [CardinalityField],
+##            # args
+##            [],
+##            # kwargs
+##            {
+##            "blank" :
+##            "null" :
+##            "verbose_name" :
+##            },
+##        ),
+#    ],
+#    # location
+#    ["^dcf\.fields\.CardinalityField"]
+#)
+#
+#
+#add_introspection_rules(
+#    [
+#    ],
+#    # location
+#    ["^dcf\.fields\.MetadataEnumerationField"]
+#)

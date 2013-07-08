@@ -47,7 +47,7 @@ class MetadataModelCustomizerForm(ModelForm):
     # actual values for these fields is set below
     #version         = ModelChoiceField(label="Metadata Version",required=False,queryset=MetadataVersion.objects.none())
     categorization  = ModelChoiceField(label="Categorization",required=False,queryset=MetadataCategorization.objects.none())
-    vocabularies    = ModelMultipleChoiceField(label="Controlled Vocabularies",required=False,queryset=MetadataVocabulary.objects.none())
+    #vocabularies    = ModelMultipleChoiceField(label="Controlled Vocabularies",required=False,queryset=MetadataVocabulary.objects.none())
 
     standard_categories                 = ModelMultipleChoiceField(queryset=MetadataStandardCategory.objects.none(),required=False) # the categories themselves
     standard_categories_tags            = CharField(label="Available Categories",required=False)                               # the field that is used for the tagging widget
@@ -105,9 +105,7 @@ class MetadataModelCustomizerForm(ModelForm):
         self.fields["model_description"].widget.attrs["rows"]   = 4
 # TODO: MARKING THESE AS "disabled" MEANS THEIR VALUES DON'T GET PROPAGATED THROUGH THE SYSTEM
 # SO I HAVE COMMENTED THIS OUT; BUT I STILL NEED A WAY TO PREVENT THEM FROM BEING SELECTED
-#        self.fields["vocabularies"].widget.attrs["disabled"]    = True
 #        self.fields["categorization"].widget.attrs["disabled"]    = True
-        update_field_widget_attributes(self.fields["vocabularies"],{"class":"readonly"})
         update_field_widget_attributes(self.fields["categorization"],{"class":"readonly"})
         update_field_widget_attributes(self.fields["standard_categories_tags"],{"class":"tags"})
         update_field_widget_attributes(self.fields["standard_categories"],{"class":"hidden"})

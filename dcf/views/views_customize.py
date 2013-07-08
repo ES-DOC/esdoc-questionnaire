@@ -22,6 +22,7 @@ Summary of module goes here
 
 from django.core.exceptions import ObjectDoesNotExist, FieldError, MultipleObjectsReturned
 from django.core.urlresolvers import reverse
+from itertools import chain
 from django.http import *
 from django.shortcuts import *
 
@@ -58,25 +59,29 @@ def customize_existing(request,version_number="",project_name="",model_name="",c
     categorizations = version.categorizations.all()
     vocabularies    = project.vocabularies.all()
     categorization  = categorizations[0] if categorizations else None
-    vocabulary      = vocabularies[0] if vocabularies else None
     if not categorization:
         msg = "There is no default categorization associated with version %s." % version
         return dcf_error(request,msg)
-    if not vocabulary:
-        msg = "There is no default vocabulary associated with project %s." % project
+    if not vocabularies:
+        msg = "There are no default vocabularies associated with project %s." % project
         return dcf_error(request,msg)
 
-    standard_categories         = categorization.categories.all()
-    scientific_categories       = vocabulary.categories.all() | project.categories.all()
-
-    try:
-        component_list = vocabulary.getComponentList()
-        if not any(component_list):
+    component_list = []
+    for vocabulary in vocabularies:
+        try:
+            component_list += vocabulary.getComponentList()
+            if not any(component_list):
+                msg = "There is no component hierarchy defined in this vocabulary.  Has it been registered?"
+                return dcf_error(request,msg)
+        except:
             msg = "There is no component hierarchy defined in this vocabulary.  Has it been registered?"
             return dcf_error(request,msg)
-    except:
-        msg = "There is no component hierarchy defined in this vocabulary.  Has it been registered?"
-        return dcf_error(request,msg)
+
+    standard_categories     = categorization.categories.all().order_by("order")
+
+    scientific_categories   = project.categories.all().order_by("order")
+    for vocabulary in vocabularies:
+        scientific_categories = scientific_categories | vocabulary.categories.all().order_by("order")
 
 
     # check that the user has permission for this view
@@ -99,7 +104,7 @@ def customize_existing(request,version_number="",project_name="",model_name="",c
             component_list = component_list,
             initial = {
                 "categorization"                : categorization,
-                "vocabularies"                  : [vocabulary],
+                "vocabularies"                  : vocabularies,
                 "standard_categories_content"   : JSON_SERIALIZER.serialize(standard_categories),
                 "scientific_categories_content" : JSON_SERIALIZER.serialize(scientific_categories),
             }
@@ -150,7 +155,7 @@ def customize_existing(request,version_number="",project_name="",model_name="",c
             component_list = component_list,
             initial = {
                 "categorization"                : categorization,
-                "vocabularies"                  : [vocabulary],
+                "vocabularies"                  : vocabularies,
                 "standard_categories_content"   : JSON_SERIALIZER.serialize(standard_categories),
                 "scientific_categories_content" : JSON_SERIALIZER.serialize(scientific_categories),
             }
@@ -179,7 +184,7 @@ def customize_existing(request,version_number="",project_name="",model_name="",c
         "project"                                     : project,
         "version"                                     : version,
         "categorization"                              : categorization,
-        "vocabulary"                                  : vocabulary,
+        "vocabularies"                                : vocabularies,
         "model_class"                                 : model_class,
         "component_list"                              : component_list,
     }
@@ -224,30 +229,31 @@ def customize_new(request,version_number="",project_name="",model_name=""):
     # BUT THE RELATEDOBJECTMANAGER IS BEING USED FOR THE TIME WHEN
     # THIS CODE CAN SUPPORT MULTPLE CATEGORIZATIONS
     categorization  = categorizations[0] if categorizations else None
-    vocabulary  = vocabularies[0] if vocabularies else None
     if not categorization:
         msg = "There is no default categorization associated with version %s." % version
         return dcf_error(request,msg)
-    if not vocabulary:
-        msg = "There is no default vocabulary associated with project %s." % project
+    if not vocabularies:
+        msg = "There are no default vocabularies associated with project %s." % project
         return dcf_error(request,msg)
 
-    try:
-# don't need the tree for customizers; only for editors
-#        component_tree = vocabulary.getComponentTree()
-        component_list = vocabulary.getComponentList()
-        if not any(component_list):
+    component_list = []
+    for vocabulary in vocabularies:
+        try:
+            component_list += vocabulary.getComponentList()
+            if not any(component_list):
+                msg = "There is no component hierarchy defined in this vocabulary.  Has it been registered?"
+                return dcf_error(request,msg)
+        except:
             msg = "There is no component hierarchy defined in this vocabulary.  Has it been registered?"
             return dcf_error(request,msg)
-    except:
-        msg = "There is no component hierarchy defined in this vocabulary.  Has it been registered?"
-        return dcf_error(request,msg)
 
     standard_categories     = categorization.categories.all().order_by("order")
-    scientific_categories   = vocabulary.categories.all() | project.categories.all()
-    scientific_categories   = scientific_categories.order_by("order")
 
-    # at this point I know the project, model, version, categorization, vocabulary, and categories
+    scientific_categories   = project.categories.all().order_by("order")
+    for vocabulary in vocabularies:
+        scientific_categories = scientific_categories | vocabulary.categories.all().order_by("order")
+
+    # at this point I know the project, model, version, categorization, vocabularies, and categories
 
     customizer_filter_parameters = {
         "project"   : project,
@@ -320,7 +326,7 @@ def customize_new(request,version_number="",project_name="",model_name=""):
             instance=model_customizer_instance,
             initial = {
                 "categorization"                : categorization,
-                "vocabularies"                  : [vocabulary],
+                "vocabularies"                  : vocabularies,
                 "standard_categories_content"   : JSON_SERIALIZER.serialize(standard_categories),
                 "scientific_categories_content" : JSON_SERIALIZER.serialize(scientific_categories),
             }
@@ -380,7 +386,8 @@ def customize_new(request,version_number="",project_name="",model_name=""):
             standard_property_customizers.append(standard_property_customizer)
 
         scientific_property_customizers = []
-        scientific_property_proxies = MetadataScientificPropertyProxy.objects.filter(vocabulary=vocabulary)
+        #scientific_property_proxies = MetadataScientificPropertyProxy.objects.filter(vocabulary=vocabulary)
+        scientific_property_proxies = MetadataScientificPropertyProxy.objects.filter(vocabulary__in=vocabularies)
         for scientific_property_proxy in scientific_property_proxies:
             scientific_property_customizer = MetadataScientificPropertyCustomizer(**customizer_filter_parameters)
             scientific_property_customizer.reset(scientific_property_proxy)
@@ -394,7 +401,7 @@ def customize_new(request,version_number="",project_name="",model_name=""):
                 "version"                       : version,
                 "model"                         : model_name,
                 "categorization"                : categorization,
-                "vocabularies"                  : [vocabulary],
+                "vocabularies"                  : vocabularies,
                 "standard_categories_content"   : JSON_SERIALIZER.serialize(standard_categories),
                 "scientific_categories_content" : JSON_SERIALIZER.serialize(scientific_categories),
             }
@@ -444,10 +451,9 @@ def customize_new(request,version_number="",project_name="",model_name=""):
         "scientific_property_customizer_formset"      : scientific_property_customizer_formset,
         "project"                                     : project,
         "version"                                     : version,
-        "vocabulary"                                  : vocabulary,
+        "vocabularies"                                : vocabularies,
         "model_class"                                 : model_class,
         "component_list"                              : component_list,
-        #"component_tree"                              : component_tree,
     }
 
     return render_to_response('dcf/dcf_customize.html', dict, context_instance=RequestContext(request))

@@ -83,6 +83,8 @@ class MetadataModelCustomizer(MetadataCustomizer):
     description.help_text = "An explanation of how this customization is intended to be used.  This information is for informational purposes only."
     default             = models.BooleanField(verbose_name="Is Default Customization",blank=True)
     default.help_text   = "Defines the default customization that is used by this project/model combination if no explicit customization is provided"
+    vocabularies        = models.ManyToManyField("MetadataVocabulary",blank=True,null=True)
+    vocabularies.help_text = "Choose which Controlled Vocabularies apply to this model."
 
     model_title         = models.CharField(max_length=BIG_STRING,verbose_name="Name that should appear on the Document Form",blank=False)
     model_description   = models.TextField(verbose_name="A description of the document",blank=True)
