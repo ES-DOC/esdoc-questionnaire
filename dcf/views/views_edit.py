@@ -86,7 +86,7 @@ def check_parameters(version_number="",project_name="",model_name="",msg=""):
     try:
         customizer = MetadataModelCustomizer.objects.get(project=project,version=version,model=model_name,default=1)
     except MetadataModelCustomizer.DoesNotExist:
-        msg = "There is no default customization associated with '%s'" % (model_name)
+        msg = "There is no default customization associated with '%s' for project '%s' at version '%s'" % (model_name,project,version)
         return (project,version,customizer,categorization,vocabularies,model_class,msg)
 
     # get the default categorization and vocabularies...
@@ -109,21 +109,19 @@ def edit_existing(request,version_number="",project_name="",model_name="",model_
 
     msg = ""
 
-    (project,version,customizer,categorization,vocabulary,model_class,msg) = \
+    (project,version,customizer,categorization,vocabularies,model_class,msg) = \
     check_parameters(version_number,project_name,model_name)
-    if not all ([project,version,customizer,categorization,vocabulary,model_class]):
+    if not all ([project,version,customizer,categorization,vocabularies,model_class]):
         return dcf_error(request,msg)
 
-    try:
-        component_tree = vocabulary.getComponentTree()
-        component_list = vocabulary.getComponentList()
-
-        if not any(component_list):
-            msg = "There is no component hierarchy defined in this vocabulary.  Has it been registered?"
+    # check that the user has permission for this view
+    if not request.user.is_authenticated():
+        return HttpResponseRedirect('%s/?next=%s' % (settings.LOGIN_URL,request.path))
+    else:
+        if not user_has_permission(request.user,project.restriction_edit):
+            msg = "You do not have permission to access this resource."
             return dcf_error(request,msg)
-    except:
-        msg = "There is no component hierarchy defined in this vocabulary.  Has it been registered?"
-        return dcf_error(request,msg)
+
 
     # try to get the requested model...    
     try:
@@ -135,29 +133,44 @@ def edit_existing(request,version_number="",project_name="",model_name="",model_
         msg = "The model type '%s' is not an editable metadata document" % (model_class.getTitle())
         return dcf_error(request,msg)
 
+    model_instances                 = {}
+    model_forms                     = {}
+    scientific_property_formsets    = {}
 
-    # check that the user has permission for this view
-    if not request.user.is_authenticated():
-        return HttpResponseRedirect('%s/?next=%s' % (settings.LOGIN_URL,request.path))
-    else:
-        if not user_has_permission(request.user,project.restriction_customize):
-            msg = "You do not have permission to access this resource."
-            return dcf_error(request,msg)
-
-    model_instances = {}
     model_instances[model_instance.component_name] = model_instance
-
-
     for model in model_instance.getAllChildren():
         model_instances[model.component_name] = model
     
     form_class = MetadataFormFactory(model_class,customizer)
-    
+
+
+    component_list = []
+    component_tree = {}
+    if customizer.model_root_component:
+        component_list.append(customizer.model_root_component)
+        component_tree[customizer.model_root_component] = []
+    for vocabulary in vocabularies:
+        try:
+            component_list += vocabulary.getComponentList()
+            if customizer.model_root_component:
+                component_tree[customizer.model_root_component].append(vocabulary.getComponentTree())
+            else:
+                component_tree.update(vocabulary.getComponentTree())
+            if not any(component_list): # don't need to check component_tree; if it has one it will have the other
+                msg = "There is no component hierarchy defined in vocabulary '%s'.  Has it been registered?" % vocabulary
+                return dcf_error(request,msg)
+        except:
+            msg = "There is no component hierarchy defined in vocabulary '%s'.  Has it been registered?" % vocabulary
+            return dcf_error(request,msg)
+
+
+    standard_categories     = customizer.getStandardCategories()
+    scientific_categories   = project.categories.all().order_by("order")
+    for vocabulary in vocabularies:
+        scientific_categories = scientific_categories | vocabulary.categories.all().order_by("order")
+
     if request.method == "POST":
     
-        model_forms = {}
-        scientific_property_formsets = {}
-
         for component in component_list:
             component_key = component.lower()
             model_forms[component_key] = form_class(
@@ -167,20 +180,20 @@ def edit_existing(request,version_number="",project_name="",model_name="",model_
                 request=request,
             )
             scientific_properties = model_instances[component_key].getScientificProperties()
-            scientific_property_formsets[component_key] = \
-                MetadataScientificPropertyFormSetFactory(
-                    queryset    = scientific_properties,
-                    prefix      = component_key + "_scientific_property",
-                    request     = request,
-                )
-
-
+            if scientific_properties:
+                scientific_property_formsets[component_key] = \
+                    MetadataScientificPropertyFormSetFactory(
+                        queryset    = scientific_properties,
+                        prefix      = component_key + "_scientific_property",
+                        request     = request,
+                    )
 
         validity = []
 
         for (component_name,model_form) in model_forms.iteritems():
             if model_form.is_valid():
                 validity.append(True)
+                print "%s is valid" % component_name
             else:
                 validity.append(False)
                 print "%s is invalid" % component_name
@@ -189,6 +202,7 @@ def edit_existing(request,version_number="",project_name="",model_name="",model_
         for (component_name,scientific_property_formset) in scientific_property_formsets.iteritems():
             if scientific_property_formset.is_valid():
                 validity.append(True)
+                print "%s has valid scientific properties" % component_name
             else:
                 validity.append(False)
                 print "%s has invalid scientific properties" % component_name
@@ -204,10 +218,8 @@ def edit_existing(request,version_number="",project_name="",model_name="",model_
                 model_instances[component_name].save()
                 model_form.save_m2m()
             for (component_name,scientific_property_formset) in scientific_property_formsets.iteritems():
-                # TODO: DON'T THINK I NEED TO SAVE FORMSETS & THEN SAVE INSTANCES
+                # TODO: DON'T THINK I NEED TO SAVE FORMSETS & THEN SAVE INSTANCES AS ABOVE
                 scientific_property_formset.save()
-
-
             
             edit_existing_url = reverse("edit_existing",kwargs={
                 "version_number" : version.number,
@@ -222,28 +234,27 @@ def edit_existing(request,version_number="",project_name="",model_name="",model_
             msg = "Unable to save the model.  Please review the form and try again."
 
 
-
     else: # request.method == "GET"
 
         if request.GET.get("success",False):
             msg = "Successfully saved the model: '%s'." % model_instance.shortName
 
 
-        model_forms = {}
-        scientific_property_formsets = {}
         for component in component_list:
             component_key = component.lower()
-            model_forms[component_key] = form_class(instance=model_instances[component_key],prefix=component_key,request=request)
+            model_forms[component_key] = form_class(
+                instance=model_instances[component_key],
+                prefix=component_key,
+                request=request
+            )
             scientific_properties = model_instances[component_key].getScientificProperties()
-            scientific_property_formsets[component_key] = \
-                MetadataScientificPropertyFormSetFactory(
-                    queryset    = scientific_properties,
-                    prefix      = component_key + "_scientific_property",
-                    request     = request,
-                )
-
-    standard_categories     = customizer.getStandardCategories()
-    scientific_categories   = scientific_categories = vocabulary.categories.all() | project.categories.all()
+            if scientific_properties:
+                scientific_property_formsets[component_key] = \
+                    MetadataScientificPropertyFormSetFactory(
+                        queryset    = scientific_properties,
+                        prefix      = component_key + "_scientific_property",
+                        request     = request,
+                    )
 
 
     # gather all the extra information required by the template
@@ -256,14 +267,13 @@ def edit_existing(request,version_number="",project_name="",model_name="",model_
         "customizer"                    : customizer,
         "project"                       : project,
         "version"                       : version,
-        "vocabulary"                    : vocabulary,
+        "vocabularies"                  : vocabularies,
         "model_class"                   : model_class,
         "component_list"                : component_list,
         "component_tree"                : dict_to_html(component_tree),
     }
     
     return render_to_response('dcf/dcf_edit.html', dict, context_instance=RequestContext(request))
-
 
 
 def edit_new(request,version_number="",project_name="",model_name=""):
@@ -275,26 +285,14 @@ def edit_new(request,version_number="",project_name="",model_name=""):
     if not all ([project,version,customizer,categorization,vocabularies,model_class]):
         return dcf_error(request,msg)
 
-    component_list = []
-    component_tree = {}
-    if customizer.model_root_component:
-        component_list.append(customizer.model_root_component)
-        component_tree[customizer.model_root_component] = []
-    
-    # TODO: THIS WILL BREAK IF THE SAME KEY IS IN DIFFERENT VOCABS
-    for vocabulary in vocabularies:
-        try:
-            component_list += vocabulary.getComponentList()
-            if component_tree:
-                component_tree[customizer.model_root_component].append(vocabulary.getComponentTree())
-            else:
-                component_tree.update(vocabulary.getComponentTree())
-            if not any(component_list): # don't need to check component_tree; if it has one it will have the other
-                msg = "There is no component hierarchy defined in vocabulary '%s'.  Has it been registered?" % vocabulary
-                return dcf_error(request,msg)
-        except:
-            msg = "There is no component hierarchy defined in vocabulary '%s'.  Has it been registered?" % vocabulary
+    # check that the user has permission for this view
+    if not request.user.is_authenticated():
+        return HttpResponseRedirect('%s/?next=%s' % (settings.LOGIN_URL,request.path))
+    else:
+        if not user_has_permission(request.user,project.restriction_edit):
+            msg = "You do not have permission to access this resource."
             return dcf_error(request,msg)
+
 
     model_filter_parameters = {
         "metadata_project"   : project,
@@ -338,22 +336,44 @@ def edit_new(request,version_number="",project_name="",model_name=""):
                 msg = "Unable to find any '%s' with the following parameters: %s" % (model_class.getTitle(), (", ").join([u'%s=%s'%(key,value) for (key,value) in model_filter_parameters.iteritems()]))
                 return dcf_error(request,msg)
 
-    # check that the user has permission for this view
-    if not request.user.is_authenticated():
-        return HttpResponseRedirect('%s/?next=%s' % (settings.LOGIN_URL,request.path))
-    else:
-        if not user_has_permission(request.user,project.restriction_customize):
-            msg = "You do not have permission to access this resource."
-            return dcf_error(request,msg)
-
     # if I'm here then I will be working w/ a new model...
     model_instance = model_class(**model_filter_parameters)
-
     if not model_instance.isDocument():
         msg = "The model type '%s' is not an editable metadata document" % (model_class.getTitle())
         return dcf_error(request,msg)
 
+    model_instances                 = {}
+    scientific_property_instances   = {}
+    model_forms                     = {}
+    scientific_property_formsets    = {}
+
     form_class = MetadataFormFactory(model_class,customizer)
+
+    component_list = []
+    component_tree = {}
+    if customizer.model_root_component:
+        component_list.append(customizer.model_root_component)
+        component_tree[customizer.model_root_component] = []    
+    # TODO: THIS WILL BREAK IF THE SAME KEY IS IN DIFFERENT VOCABS
+    for vocabulary in vocabularies:
+        try:
+            component_list += vocabulary.getComponentList()
+            if component_tree:
+                component_tree[customizer.model_root_component].append(vocabulary.getComponentTree())
+            else:
+                component_tree.update(vocabulary.getComponentTree())
+            if not any(component_list): # don't need to check component_tree; if it has one it will have the other
+                msg = "There is no component hierarchy defined in vocabulary '%s'.  Has it been registered?" % vocabulary
+                return dcf_error(request,msg)
+        except:
+            msg = "There is no component hierarchy defined in vocabulary '%s'.  Has it been registered?" % vocabulary
+            return dcf_error(request,msg)
+
+    standard_categories = customizer.getStandardCategories()
+    scientific_categories   = project.categories.all().order_by("order")
+    for vocabulary in vocabularies:
+        scientific_categories = scientific_categories | vocabulary.categories.all().order_by("order")
+
 
     if request.method == "POST":
 
@@ -361,13 +381,6 @@ def edit_new(request,version_number="",project_name="",model_name=""):
             msg = "Please save the model before publishing it."
             return dcf_error(request,msg)
     
-        validity = []
-
-        model_instances                 = {}
-        scientific_property_instances   = {}
-        model_forms                     = {}
-        scientific_property_formsets    = {}
-
         for component in component_list:
             component_key = component.lower()
             model_filter_parameters.update({"component_name":component_key})
@@ -391,25 +404,26 @@ def edit_new(request,version_number="",project_name="",model_name=""):
                         request     = request,  # the factory will pass request.POST as appropriate
                     )
 
+        validity = []
 
         for (component_name,model_form) in model_forms.iteritems():
             if model_form.is_valid():
                 validity.append(True)
+                print "%s is valid" % component_name
             else:
                 validity.append(False)
                 print "%s is invalid" % component_name
                 print model_form.errors
                 print model_form.non_field_errors()
-
         for (component_name,scientific_property_formset) in scientific_property_formsets.iteritems():
             if scientific_property_formset.is_valid():
                 validity.append(True)
+                print "%s has valid scientific properties" % component_name
             else:
                 validity.append(False)
                 print "%s has invalid scientific properties" % component_name
                 print scientific_property_formset.errors
                 print scientific_property_formset.non_form_errors()
-
 
         if all(validity):
 
@@ -422,22 +436,19 @@ def edit_new(request,version_number="",project_name="",model_name=""):
                 scientific_property_instances[component_name] = scientific_property_formset.save()
 
             for (component_name,model_form) in model_forms.iteritems():
-
+                parent_component = find_component_parent(component_name,component_tree)
+                if parent_component:
+                    model_instances[component_name].setParent(model_instances[parent_component.lower()])
                 try:
-
-                    parent_component = find_component_parent(component_name,component_tree)
-                    if parent_component:
-                        model_instances[component_name].setParent(model_instances[parent_component.lower()])
                     model_instances[component_name].addScientificProperties(scientific_property_instances[component_name])
-
                     for scientific_property in scientific_property_instances[component_name]:
                         scientific_property.save()  # have to re-save the component after setting it as a property of the model
-                    model_instances[component_name].save()
-                    model_form.save_m2m()
-
                 except KeyError:
                     # if this is one of the components that has no scientific properties associated with it, just ignore it
                     pass
+
+                model_instances[component_name].save()
+                model_form.save_m2m()
             
             root_component = component_list[0].lower()
             edit_existing_url = reverse("edit_existing",kwargs={
@@ -454,17 +465,17 @@ def edit_new(request,version_number="",project_name="",model_name=""):
 
             
     else: # request.method == "GET"
-
         
-        model_instances = {}
-        model_forms = {}
         for component in component_list:
             component_key = component.lower()
             model_filter_parameters.update({"component_name":component_key})
             model_instances[component_key] = model_class(**model_filter_parameters)
-            model_forms[component_key] = form_class(instance=model_instances[component_key],prefix=component_key,request=request)
+            model_forms[component_key] = form_class(
+                instance=model_instances[component_key],
+                prefix=component_key,
+                request=request
+            )
 
-        scientific_property_formsets = {}
         scientific_property_customizers = customizer.getScientificPropertyCustomizers()
         for component in component_list:
             component_key = component.lower()
@@ -491,12 +502,7 @@ def edit_new(request,version_number="",project_name="",model_name=""):
                 # then don't bother creating a formset for it
                 pass
     
-    standard_categories = customizer.getStandardCategories()
-    scientific_categories   = project.categories.all().order_by("order")
-    for vocabulary in vocabularies:
-        scientific_categories = scientific_categories | vocabulary.categories.all().order_by("order")
-
-
+    
     # gather all the extra information required by the template
     dict = {
         "msg"                           : msg,
@@ -512,6 +518,5 @@ def edit_new(request,version_number="",project_name="",model_name=""):
         "component_list"                : component_list,
         "component_tree"                : dict_to_html(component_tree),
     }
-
 
     return render_to_response('dcf/dcf_edit.html', dict, context_instance=RequestContext(request))
