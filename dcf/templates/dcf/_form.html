@@ -8,9 +8,11 @@
 
 <div class="form" style="display:block;"> {# wrapping everything in a div.form so I can group together fields belonging to the same model #}
 
-    {% for hiddenField in form.hidden_fields %}
-        {{ hiddenField }}
-    {% endfor %} {# /hiddenField #}
+    <div class="hidden_fields">
+        {% for hiddenField in form.hidden_fields %}
+            {{ hiddenField }}
+        {% endfor %} {# /hiddenField #}
+    </div>
 
 
     <table width="100%">
