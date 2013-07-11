@@ -90,6 +90,21 @@ class MetadataVocabularyAdmin(admin.ModelAdmin):
     actions = [register_metadata_vocabularies]
 
 
+def update_metadata_modelcustomizers(modeladmin, request, queryset):
+    for customizer in queryset:
+        customizer.updateScientificProperties()
+        #customizer.save()
+
+update_metadata_modelcustomizers.short_description = "Updates an existing MetadataModelCustomizer with any missing (scientific) property customizers."
+
+class MetadataModelCustomizerAdmin(admin.ModelAdmin):
+    """
+    Custom Django Admin class for MetadataModelCustomizers.
+
+    .. warning:: This class should never be accessed directly; it is used only by the Django Admin.
+
+    """
+    actions = [update_metadata_modelcustomizers]
 
 ###############################################################
 # here are the actual classes that DjangoAdmin has access to  #
@@ -100,12 +115,13 @@ admin.site.register(MetadataCategorization,MetadataCategorizationAdmin)
 admin.site.register(MetadataVocabulary,MetadataVocabularyAdmin)
 admin.site.register(MetadataProject)
 
+admin.site.register(MetadataModelCustomizer,MetadataModelCustomizerAdmin)
+
 # TODO: REMOVE AFTER DEBUGGING...
 #admin.site.register(MetadataStandardCategory)
 #admin.site.register(MetadataScientificCategory)
-#admin.site.register(MetadataModelCustomizer)
 #admin.site.register(MetadataStandardPropertyCustomizer)
-#admin.site.register(MetadataScientificPropertyCustomizer)
+admin.site.register(MetadataScientificPropertyCustomizer)
 #admin.site.register(MetadataStandardPropertyProxy)
 #admin.site.register(MetadataScientificPropertyProxy)
 #admin.site.register(MetadataProperty)

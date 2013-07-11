@@ -113,6 +113,29 @@ class MetadataModelCustomizer(MetadataCustomizer):
         version = self.getVersion()
         return version.getModelClass(self.model)
 
+    def updateScientificProperties(self):
+        vocabularies = self.vocabularies.all()
+
+        customizer_filter_parameters = {
+            "project"   : self.project,
+            "version"   : self.version,
+            "model"     : self.model,
+        }
+
+        scientific_property_proxies = MetadataScientificPropertyProxy.objects.filter(vocabulary__in=vocabularies)
+        for scientific_property_proxy in scientific_property_proxies:
+            customizer_filter_parameters["proxy"]           = scientific_property_proxy
+            customizer_filter_parameters["name"]            = scientific_property_proxy.name
+            customizer_filter_parameters["component_name"]  = scientific_property_proxy.component_name
+            customizer_filter_parameters["category"]        = scientific_property_proxy.category
+            (scientific_property_customizer, created) = MetadataScientificPropertyCustomizer.objects.get_or_create(**customizer_filter_parameters)
+            if created:
+                print "adding %s to %s" % (scientific_property_customizer,self)
+                scientific_property_customizer.reset(scientific_property_proxy)
+                scientific_property_customizer.setParent(self)
+                scientific_property_customizer.save()
+
+
     def getStandardPropertyCustomizers(self):
         return self.standard_property_customizers.all()
 
