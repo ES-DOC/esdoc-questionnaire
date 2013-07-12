@@ -120,6 +120,7 @@ class MetadataModelCustomizer(MetadataCustomizer):
             "project"   : self.project,
             "version"   : self.version,
             "model"     : self.model,
+            "parent"    : self,
         }
 
         scientific_property_proxies = MetadataScientificPropertyProxy.objects.filter(vocabulary__in=vocabularies)
@@ -132,7 +133,7 @@ class MetadataModelCustomizer(MetadataCustomizer):
             if created:
                 print "adding %s to %s" % (scientific_property_customizer,self)
                 scientific_property_customizer.reset(scientific_property_proxy)
-                scientific_property_customizer.setParent(self)
+                #scientific_property_customizer.setParent(self)
                 scientific_property_customizer.save()
 
 
