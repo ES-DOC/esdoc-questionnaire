@@ -66,7 +66,12 @@
                                             * display an error in the enclosing fieldset and accordion and tab (if applicable) */
                                             //var error = $("script:.error-script:last");   // (browsers don't always render hidden scripts, so this line didn't workd)
                                             var error = $("div.error-wrapper:last");        // (this line replaces it)
-                                            render_error(error);
+                                            //render_error(error);
+                                            //FUNCTION_QUEUE.queue("errors",function(next) {
+                                            //    render_error(error);
+                                            //    next();
+                                            //});
+                                            // decided to to handle all errors at once from dcf.js instead of one-at-a-time here
                                         </script>
                                     </div>
                                 {% endif %} {# /field.errors #}
@@ -101,7 +106,12 @@
                                                                     * display an error in the enclosing fieldset and accordion and tab (if applicable) */
                                                                     //var error = $("script:.error-script:last");   // (browsers don't always render hidden scripts, so this line didn't workd)
                                                                     var error = $("div.error-wrapper:last");        // (this line replaces it)
-                                                                    render_error(error);
+                                                                    //render_error(error);                                                                    
+                                                                    //FUNCTION_QUEUE.queue("errors",function(next) {
+                                                                    //    render_error(error);
+                                                                    //    next();
+                                                                    //});
+                                                                    // decided to to handle all errors at once from dcf.js instead of one-at-a-time here
                                                                 </script>
                                                             </div>
                                                         {% endif %} {# /field.errors #}

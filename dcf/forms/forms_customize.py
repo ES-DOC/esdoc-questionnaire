@@ -354,7 +354,7 @@ class MetadataScientificPropertyCustomizerForm(ModelForm):
         self.fields["vocabulary"].widget     = HiddenInput()
         self.fields["choice"].widget         = HiddenInput()
         self.fields["value_choices"].widget  = HiddenInput()
-        self.fields["proxy"].widget         = HiddenInput()
+        self.fields["proxy"].widget          = HiddenInput()
 
         property_choice_type = customizer_instance.choice if customizer_instance.pk else property_data["choice"]
 

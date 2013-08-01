@@ -235,6 +235,11 @@ class MetadataManyToManyField(models.ManyToManyField,MetadataRelationshipField):
             (self.targetAppName,self.targetModelName) = targetModel.split(".")
 
 
+    def update(self,instances):
+        super(MetadataManyToManyField,self).clear()
+        super(MetadataManyToManyField,self).add(instances)
+
+
 class MetadataManyToOneField(models.ForeignKey,MetadataRelationshipField):
     _type = "manytoonefield"
 

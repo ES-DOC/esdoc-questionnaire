@@ -1,13 +1,35 @@
+
+var PREVIOUSLY_SELECTED_TAB = 0;
+
+var FUNCTION_QUEUE = $({});
+
+var INITIALIZED = 0;
+
 function enableDCF() {
 
     $(function() {
 
-        $.ajaxSetup({            
+        /* BEGIN enable ajax access to the same domain */
+
+        $.ajaxSetup({
             headers: { "X-CSRFToken": getCookie("csrftoken") }
         });
 
-        /* enable the dialog boxes */
-        /* (the msg dialog box is explicitly setup in the "dcf_base" template) */
+        /* END enable ajax access to the same domain */
+
+        /* BEGIN enable the dialog boxes */
+        
+
+        var msg_dialog = $("#msg").dialog({
+            autoOpen:false,hide:'explode',modal:true
+        });
+        // have to do a bit more setup of the msg dialog to customize its title
+        // (see http://bugs.jqueryui.com/ticket/6016)
+        msg_dialog.data( "uiDialog" )._title = function(title) {
+            title.html( this.options.title );
+        };
+        msg_dialog.dialog('option', 'title', '<span class="ui-icon ui-icon-notice"></span>');
+
         $("#help-dialog").dialog({
             autoOpen:false,hide:'explode',modal:true
         });
@@ -30,259 +52,14 @@ function enableDCF() {
             autoOpen:false,hide:'explode',modal:true
         });
 
-        /* add functionality to help-buttons (icons masquerading as buttons) */
-        $(".help-button").mouseover(function() {
-            $(this).css('cursor', 'pointer');
-        });
-        $(".help-button").hover(
-            function() {
-                $(this).children(".ui-icon-info").addClass('hover-help-icon');
-            },
-            function() {
-                $(this).children(".ui-icon-info").removeClass('hover-help-icon');
-            }
-        );
-        $(".help-button").click(function() {
-           /* I escape any periods that may be in the ids (unlikely) so that JQuery doesn't interepret them as class selectors */
-           var id = "#" + $(this).attr("id").replace(/(:|\.)/g,'\\$1');
-           var x = $(this).offset().left - $(document).scrollLeft();
-           var y = $(this).offset().top - $(document).scrollTop();
-           var $description = $(id + " > .help-description");
-           var title = $description.attr("title");
-           var text = $description.html();
-           $("#help-dialog").html(text);
-           $("#help-dialog").dialog("option",{title: title, position: [x,y], height: 200, width: 400}).dialog("open");
-           return false;
-        });
+        /* END enable the dialog boxes */
 
-        /* enable collapsible fieldsets */
-        $(".coolfieldset").coolfieldset({speed:"fast"});
-        // if I need to open/close a fieldset use the following code:
-        // $(".coolfieldset[name='whatever'] legend").trigger("click");
+        /* BEGIN enable fancy buttons */
 
-        /* enable tabs */
-        $(".tabs").tabs();
-
-        $(".enumeration-value").each(function() {
-            var enumeration_other = $(this).siblings(".enumeration-other:first");
-            $(enumeration_other).hide();
-        });
-
-        /* change the look and feel of a disabled field */
-        /* sets the "readonly" class on that field's label & the actual field */
-        /* CSS does the rest */
-        $(".readonly").each(function() {
-            // works for fields in a table (tr) or a div
-            $(this).closest("tr.field,div.field").find(".field_label,.field_value").addClass("readonly");
-        });
-
-        
-        /* enable the tagging widgets */
-        $(".tags").tagit({
-           allowSpaces : true,
-           singleField : true,
-           singleFieldDelimiter : "|",
-           afterTagAdded : function(event,ui) {
-               var new_tag       = ui.tag
-               var new_tag_name  = $(new_tag).find(".tagit-label").text();
-               var new_tag_key   = new_tag_name.toLowerCase().replace(/ /g,'');
-               var new_tag_type  = $(new_tag).closest(".tagit").prev(".tags").attr("name");
-
-               var was_just_added = ($(new_tag).attr("class").indexOf("added") != -1);
-
-               if (new_tag_type == "standard_categories_tags") {
-                   /* standard_categories_tags cannot be deleted */
-                   $(new_tag).find(".tagit-close").hide();
-               }
-               else {
-                  /* scientific_categories_tags can be edited */
-                  $(new_tag).find(".tagit-label").before(
-                    "<a class='tagit-edit' onclick='edit_tag(this);'><span class='ui-icon ui-icon-pencil'></span></a>"
-                  );
-
-                  if (was_just_added) {
-                       $(new_tag).closest(".tab_content").find(".field_value[name='category'] select").each(function() {
-                          var new_option = new Option(new_tag_key,new_tag_name);
-                          $(this).append(new_option);
-                      });
-                  }
-
-               }
-           },
-           beforeTagRemoved : function(event,ui) {
-               var old_tag = ui.tag;
-               var old_tag_name  = $(old_tag).find(".tagit-label").text();
-               var old_tag_key   = old_tag_name.toLowerCase().replace(/ /g,'');
-               var old_tag_type  = $(old_tag).closest(".tagit").prev(".tags").attr("name");
-
-               // have to set this 1st, before the tag is removed
-               var category_selects = $(old_tag).closest(".tab_content").find(".field_value[name='category'] select")
-
-               if (old_tag_type.indexOf("scientific_categories_tags") !== -1) {
-                   categories = SCIENTIFIC_CATEGORIES;
-                   old_tag_component = old_tag_type.substr(0, old_tag_type.indexOf("_scientific_categories_tags"));
-               }
-               else {
-                   categories = STANDARD_CATEGORIES;
-                   alert("You shouldn't be deleting standard categories.  You're a very naughty boy.")
-               }
-
-               $("#confirm-dialog").html("Any properties belonging to this category will become uncategorized.  Are you sure you wish to continue?");
-               $("#confirm-dialog").dialog("option",{
-                   title : "Delete Category?",
-                   height : 200,
-                   width  : 400,
-                   buttons: {
-                       ok : function() {
-                           var category_to_delete = "";
-                           $.each(categories,function(i,category) {
-                               var category_fields = category.fields
-                               if ((category_fields.key == old_tag_key) && (category_fields.component_name == old_tag_component)) {
-                                 category_to_delete = category;
-                               }
-                           });
-                           category_to_delete.fields.remove = "True"
-
-                           $(category_selects).each(function() {
-                               var selector = "option:contains(" + old_tag_name + ")";
-                               $(this).find(selector).remove();
-                               $(this).trigger("change");
-                           });
-
-                           $(this).dialog("close");
-                       },
-                       cancel : function() {
-                           // the tag data is still in categories; just put it back in the widget
-                           var tag_widget = $(event.target);
-                           $(tag_widget).tagit("createTag",old_tag_name);
-                           $(this).dialog("close");
-                       }
-                   }
-               }).dialog("open");
-           }
-
-        });
-        $(".tagit-label").each(function() {
-            $(this).attr("title","click to toggle attributes of this category");
-        });
-        $(".tagit").sortable({
-            axis : "x",
-            items : "li:not(.tagit-new)",
-            placeholder : "sortable-item",
-            stop : function( event, ui ) {
-                var sorted_tag = ui["item"];
-                var sorted_tags = $(sorted_tag).closest("ul.tagit").find("li.tagit-choice");
-                var ordered_tag_list = $(sorted_tags).map(function() {
-                    return $(this).find(".tagit-label").text();
-                }).get().join("|");
-                var tag_type = $(sorted_tag).closest(".tagit").prev(".tags").attr("name");
-                order_categories(tag_type,ordered_tag_list);
-            }
-        });
-
-        $(".tagit-choice").click(function(event){
-            // if you really clicked the tag, and not an icon/button on the tag...
-            if ($(event.target).attr("class").indexOf("ui-icon") == -1) {
-                // toggle its state..
-                $(this).toggleClass("ui-state-active");
-                var tag_label = $(this).find(".tagit-label").text();
-                // and that of all corresonding properties...
-                $(this).closest(".tab_content").find(".accordion-header .label[name$='category']").each(function() {
-                    //alert("does " + $(this).text() " == " + )
-                    if ($(this).text()==tag_label) {
-                        var section = $(this).closest(".sortable-item");    // this is the accordion (recall it's wrapped in a div to enable sorting)
-                        $(section).toggle();
-                    }
-                });
-          }
-        });
-        /* I'm using separate widget to add tags, so disable the .tagit-new box */
-        $(".tagit-new").attr("style","display:none!important;");
-        /* and enable this widget */
-        $("[id$='_scientific_categories_tags_add']").keypress(function(e) {
-            if(e.which == 13) {
-                var input = $(e.target)
-                var tag_name = $(input).val();
-                var tag_widget = $(input).closest(".tab_content").find(".tags");
-                if ($(tag_widget).tagit("createTag",tag_name,"added")) {
-                    $(input).val("");
-                    $(tag_widget).next(".tagit:first").find(".tagit-choice").each(function(i,new_tag) {
-                        // TODO: THIS SEEMS PRETTY SLOW, SEARCHING THROUGH EVERY TAG
-                        //var new_tag       = this;
-                        var new_tag_name  = $(new_tag).find(".tagit-label").text();
-                        var new_tag_key   = new_tag_name.toLowerCase().replace(/ /g,'');
-                        var new_tag_type  = $(new_tag).closest(".tagit").prev(".tags").attr("name");
-                        var new_tag_component_name = $(new_tag).closest(".tab_content").attr("name");
-
-                        if ( ! isTagInCategories(new_tag_key,new_tag_component_name,SCIENTIFIC_CATEGORIES)) {
-                            
-                            var new_category = {
-                                "pk": 0,
-                                "model": "dcf.metadatascientificcategory",
-                                "fields": {
-                                    "name": new_tag_name,
-                                    "vocabulary": 0,
-                                    "description": "",
-                                    "project": 0,
-                                    "key": new_tag_key,
-                                    "component_name": new_tag_component_name,
-                                    "order": i,
-                                    "remove": false
-                                }
-                            }
-                            SCIENTIFIC_CATEGORIES.push(new_category);
-                        }
-                        else {
-                            // this handles the rare case where you are adding something that was previously removed in this session
-                            $.each(SCIENTIFIC_CATEGORIES,function(i,category) {
-                                category_fields = category.fields;
-                                if ((category_fields.key==new_tag_key) && (category_fields.component_name == new_tag_component_name)) {
-                                    category.fields.remove = false;
-                                }
-                            });
-                        }
-                    });
-                }
-                e.preventDefault();
-                return false;
-            }
-        });
-
-        $(".autocomplete").each(function(){
-            var suggestions = $(this).attr("suggestions").split("|");
-            $(this).autocomplete({
-                source : suggestions
-            });
-        });
-
-        /* enable _fancy_ buttons */
-        $("button.add").button({
-            icons: { primary : "ui-icon-circle-plus" },
-            text: true
-        }).click(function(event) {
-            if ($(event.target).hasClass("FORM")) {
-                var form = $(event.target).closest(".coolfieldset-content").find(".form:first");
-                add_form(form);
-
-            }
-            else if ($(event.target).hasClass("FORMSET")) {
-                var dynamic_formset_add_button = $(event.target).parent(".add_details").prev(".accordion:first").find(".add-row:first");     
-                $(dynamic_formset_add_button).click();
-            }
-
-        });
-
-        $("button.remove").button({
-            icons: { primary : "ui-icon-circle-minus" },
-            text: true
-        }).click(function(event) {
-            var dynamic_formset_remove_button = $(event.target).closest(".accordion-content").next(".delete-row:first");
-            alert($(dynamic_formset_remove_button).attr("class"));
-            //.next(".delete-row:first");
-            $(dynamic_formset_remove_button).click();
-        });
-        
         $(".button").button();
+
+        /* buttons for manipulating accordions */
+
         $(".subform-toolbar button").mouseover(function() {
             $(this).css('cursor', 'pointer');
         });
@@ -314,7 +91,7 @@ function enableDCF() {
                 $(accordionHeaderIcon).addClass("ui-icon-triangle-1-e");
             });
         });
-        /* enable the sort button */
+
         $(".subform-toolbar button.sort").button({
             icons : { primary : "ui-icon-arrowthick-2-n-s"},
             text : true
@@ -339,16 +116,73 @@ function enableDCF() {
             event.preventDefault();                         // don't actually follow the menu link (one of these is bound to work)
             return false;                                   // don't actually follow the menu link (one of these is bound to work)
         });
+        
+        /* help-buttons (icons masquerading as buttons) */
 
-        /* enable multiopen accordions */
+        $(".help-button").mouseover(function() {
+            $(this).css('cursor', 'pointer');
+        });
+        $(".help-button").hover(
+            function() {
+                $(this).children(".ui-icon-info").addClass('hover-help-icon');
+            },
+            function() {
+                $(this).children(".ui-icon-info").removeClass('hover-help-icon');
+            }
+        );
+        $(".help-button").click(function() {
+           /* I escape any periods that may be in the ids (unlikely) so that JQuery doesn't interepret them as class selectors */
+           var id = "#" + $(this).attr("id").replace(/(:|\.)/g,'\\$1');
+           var x = $(this).offset().left - $(document).scrollLeft();
+           var y = $(this).offset().top - $(document).scrollTop();
+           var $description = $(id + " > .help-description");
+           var title = $description.attr("title");
+           var text = $description.html();
+           $("#help-dialog").html(text);
+           $("#help-dialog").dialog("option",{title: title, position: [x,y], height: 200, width: 400}).dialog("open");
+           return false;
+        });
+
+        /* add and remove formsets (and forms) */
+
+        $("button.add").button({
+            icons: { primary : "ui-icon-circle-plus" },
+            text: true
+        }).click(function(event) {
+            if ($(event.target).hasClass("FORM")) {
+                var form = $(event.target).closest(".coolfieldset-content").find(".form:first");
+                add_form(form);
+
+            }
+            else if ($(event.target).hasClass("FORMSET")) {
+                var dynamic_formset_add_button = $(event.target).parent(".add_details").prev(".accordion").children(".add-row:first");
+                $(dynamic_formset_add_button).click();
+            }
+
+        });
+
+        $("button.remove").button({
+            icons: { primary : "ui-icon-circle-minus" },
+            text: true
+        }).click(function(event) {
+            var dynamic_formset_remove_button = $(event.target).closest(".accordion-content").next(".delete-row:first");
+            alert($(dynamic_formset_remove_button).attr("class"));
+            //.next(".delete-row:first");
+            $(dynamic_formset_remove_button).click();
+        });
+
+        /* END enable fancy buttons */
+
+        /* BEGIN enable accordions */
+
+        /* (more accordion setup is done below) */
+
         $(".accordion").multiOpenAccordion({
-            active : "all",
             tabShown : function(event,ui) {
                var activeTab = ui["tab"];
                var activeContent = ui["content"];
                if ($(activeTab).hasClass("sorted")) {
-                   /* if the accordion content is being open just b/c it was clicked during sorting */
-                   /* then hide it and reset all relevant styles */
+                   /* if the accordion content is being opened just b/c it was clicked during sorting, then hide it and reset all relevant styles */
                    $(activeContent).hide();
                    $(activeTab).removeClass("sorted ui-state-active");
                    $(activeTab).addClass("ui-state-default");
@@ -357,241 +191,370 @@ function enableDCF() {
                    $(activeTabIcon).addClass("ui-icon-triangle-1-e");
                }
                else {
-                   /* otherwise set a class to override the default open style */
+                   /* otherwise set a class to override the default open style (b/c it looks bad) */
                    $(activeTab).addClass("open-accordion");
-                   if($(activeContent).attr("class").indexOf("initialized")==-1) {
-                       initialize_section(activeContent);
-                       $(activeContent).addClass("initialized");
-                   }
                }
            },
            tabHidden : function(event,ui) {
                var activeTab = ui["tab"];
                $(activeTab).removeClass("open-accordion");
-           }
+           },
+           active : false   // this _should_ hide all panes, but there is a known bug [http://code.google.com/p/jquery-multi-open-accordion/issues/detail?id=15] preventing this
         });
-        /* wrap multi-accordions in a div in the editor */
-        /* (so that I can add/delete them dynamically as a unit */
-        $("#edit .accordion").find(".accordion-header").each(function() {
-            var prefix = $(this).closest(".accordion").attr("prefix");
-            var accordion_unit = "<div class='subform' prefix='" + prefix + "'></div>";
-            $(this).next().andSelf().wrapAll(accordion_unit);
+        $(".ui-accordion-content").each(function() {
+            $(this).hide(); // see comment about "active : false" above
+        });
 
+        /* END enable accordions */
+
+        /* BEGIN enable containers */
+
+        /* some of the container widgets can be selectively hidden and shown */
+        /* if this javascript code is run while they are hidden, then it doesn't always get applied properly */
+        /* so where possible I bind the widget's custom display event to initializeContainer */
+        /* where that isn't possible, I just bind the regular show event to initializeContainer */
+        /* (note that this is only possible b/c I redefined the show/hide fns in dcf_base.html) */
+
+        // fieldsets...
+        $(".coolfieldset").coolfieldset({
+            speed   : "fast"
         });
-        /* enable sortable multi-open accordions in the customizer */
-        $("#customize .accordion").find(".accordion-header").each(function() {
-            /* first wrap each accordion header & content pair in a div */
-            /* b/c the sortable items need to be a single unit */
-            var accordion_unit = "<div class='sortable-item'></div>";
-            $(this).next().andSelf().wrapAll(accordion_unit);
+// not bothering to call initializeContainer w/ fieldsets,
+// since they won't have any content that needs initializing (that isn't a container itself)
+//        $(".coolfieldset-content").bind("show", function() {
+//           initializeContainer($(this));
+//        });
+//        // probably don't need the call above, since coolfieldsets are open by default, instead should use the call below
+//        $(".coolfieldset-content").each(function() {
+//            initializeContainer($(this));
+//        });
+        // btw, if I need to open/close a fieldset use the following code:
+        // $(".coolfieldset[name='whatever'] legend").trigger("click");
+
+        // accordions...
+        // (more accordion setup is done both above and below)
+        $(".accordion-content").bind("show",function() {
+            initializeContainer($(this));
         });
-        $("#customize .accordion").sortable({
-            axis : "y",
-            handle : "h3",
-            placeholder : "sortable-accordion-placeholder",
-            stop : function( event, ui ) {
-                /* after sorting tag the sorted item so that I can cancel the open accordion event */
-                var sortedItem = ui["item"];
-                var sortedTab = $(sortedItem).find(".accordion-header");
-                $(sortedTab).addClass("sorted")
-                /* and re-calculate each field's order */
-                $(sortedTab).closest(".accordion").find(".accordion-content").each(function(i) {
-                    var order_input = $(this).find("input[name$='-order']");
-                    $(order_input).val(i+1);
-                    $(order_input).trigger("change");
-                });
+
+        // tabs...
+        $(".tabs").tabs({
+            activate : function(event,ui) {
+                initializeContainer(ui.newPanel);
             }
-            /* TODO: JQUERY DOCUMENTATION IMPLIES SOME MORE CODE HERE TO HANDLE IE BUG */
-        });
-
-        /* combo-boxes w/ checkboxes/radioboxes */
-        /* (futher customization is done in initialize section) */
-        $(".multislect").multiselect({
-            autoOpen : false,
-            minWidth : 500,
-            /*
-            position : {
-                my: "left bottom",
-                at: "left top"
-            },
-            */
-            create : function(event, ui) {
-
-                var values = $(event.target).multiselect("getChecked").map(function(){
-                    return this.value;
-                }).get();
-
-                var enumeration_value = $(event.target)
-                var enumeration_other = $(enumeration_value).siblings(".enumeration-other:first");
-
-                if (values.indexOf("OTHER") != -1) {
-                    // if "--OTHER--" is selected, then show the enumeration-other
-                    $(enumeration_other).width($(enumeration_value).siblings(".ui-multiselect:first").width());
-                    $(enumeration_other).show();
-                }
-                else {
-                    $(enumeration_other).hide();
-                }
-                if (values.indexOf("NONE") != -1) {
-                    // if "--NONE--" is selected, then de-select everything else
-                    $(event.target).multiselect("getChecked").each(function() {
-                        if (this.value != "NONE") {
-                            this.click();
-                        }
-                    });
-                    $(enumeration_other).hide(); // (including the other textbox)
-                }
-
-                // sometimes these lists have an onchange event
-                // force the event callback to run upon initialization
-                $(this).trigger("change");
-            },
-            close : function(event,ui) {
-                var values = $(event.target).multiselect("getChecked").map(function(){
-                    return this.value;
-                }).get();
-
-                var enumeration_value = $(event.target)
-                var enumeration_other = $(enumeration_value).siblings(".enumeration-other:first");
-
-                if (values.indexOf("OTHER") != -1) {
-                    // if "--OTHER--" is selected, then show the enumeration-other
-                    $(enumeration_other).width($(enumeration_value).siblings(".ui-multiselect:first").width());
-                    $(enumeration_other).show();
-                }
-                else {
-                    $(enumeration_other).hide();
-                }
-                if (values.indexOf("NONE") != -1) {
-                    // if "--NONE--" is selected, then de-select everything else
-                    $(event.target).multiselect("getChecked").each(function() {
-                        if (this.value != "NONE") {
-                            this.click();
-                        }
-                    });
-                    $(enumeration_other).hide(); // (including the other textbox)
-                }
-            }
-        });
-        $(".multiselect[multiple]").multiselect({
-            noneSelectedText : "please enter selections",
-            selectedText : function(numChecked, numTotal, checkedItems){
-                if ($("#customize").length) {
-                    return numChecked + ' of ' + numTotal + ' selected';
-                }
-                MAX_LENGTH = 40;
-                if (numChecked > 0) {
-                    text = "\"" + checkedItems[0].value.substr(0,MAX_LENGTH);
-                    if (checkedItems[0].length >= MAX_LENGTH) {
-                        text += "...\"";
-                    }
-                    else {
-                        text += "\"";
-                    }
-                    if (numChecked > 1) {
-                        text += "  + " + (numChecked-1) + " more selections"
-                    }
-                    return text
-                }
-            },
-            header : true
-        });
-        $(".multiselect:not([multiple])").multiselect({
-            noneSelectedText : "please enter selection",
-            selectedList : 1,
-            multiple : false,
-            header : false,
-            /* these next two handlers extend the plugin so that
-             * de-selecting an option in single mode causes the noneSelectedText to be shown */
-            open : function(event,ui) {
-                $(event.target).attr("previous_selection",$(event.target).val());
-            },
-            click : function(event,ui) {
-                if ($(event.target).attr("previous_selection") == ui.value)  {
-                    $(event.target).multiselect("uncheckAll");
-                }
-            }
-        });
-
-        $(".enumeration-other").each(function() {
-            $(this).before("<br/>");
-        });
-        $(".enumeration-other").change(function() {
-            var default_text = "please enter custom selection (or else deselect '--OTHER--' above)";
-            var value = $(this).val().replace(/\s+/g,'');
-            if (! value) {
-                $(this).val(default_text);
-            }
-        });
-
-        /* enable the customize-subform button */
-        $("button.customize-subform").button({
-            icons : { primary : "ui-icon-extlink"}
-        });
-        // force the change event to hide/show the customize-subform button as appropriate
-        $(".field_value[name='customize_subform']").find("input").trigger("change");
-
-        /* dockable splitter */
-        $("#splitter").splitter({
-            minAsize:100,
-            maxAsize:400,
-            splitVertical:true,
-            A:$('#splitter_left'),
-            B:$('#splitter_right'),
-            closeableto: 1 // default is 0, but that causes dropped float bug
-        });
-
-        /* fancy treeview */
-        $.ui.dynatree.nodedatadefaults["icon"] = false; // Turn off icons by default
-        $(".pane").hide();  // hides panes unless they are activated by the treeview
-        $(".tree").dynatree({
-            checkbox        : true,
-            selectMode      : 3,
-            minExpandLevel  : 1,
-            onActivate      : function(node) {
-                active_pane_name = node.data.title.toLowerCase() + "_pane";
-                active_pane = $("#"+active_pane_name);
-                $(active_pane).show();
-                $(active_pane).toggleClass("active_pane");
-                $(active_pane).find(".tabs:first").tabs({"selected" : PREVIOUSLY_SELECTED_TAB})
-
-            },
-            onDeactivate    : function(node) {
-                inactive_pane_name = node.data.title.toLowerCase() + "_pane";
-                inactive_pane = $("#"+inactive_pane_name);
-                $(inactive_pane).hide();
-                $(inactive_pane).toggleClass("active_pane");
-                PREVIOUSLY_SELECTED_TAB = $(inactive_pane).find(".tabs:first").tabs("option","selected");
-            },
-            onSelect        : function(flag,node) {
-                selected_nodes = $(".tree").dynatree("getSelectedNodes");
-                $(".dynatree-partsel:not(.dynatree-selected").each(function() {
-                    var node = $.ui.dynatree.getNode(this);
-                    selected_nodes.push(node);
-                });
-                node.tree.visit(function(node){
-                   var pane = $("#"+node.data.title.toLowerCase()+"_pane");
-                   if ($.inArray(node,selected_nodes)>-1) {
-                        $(pane).find("input[name$='-active']").attr("checked",true);
-                        $(pane).removeClass("ui-state-disabled");
-                   }
-                   else {
-                        $(pane).find("input[name$='-active']").attr("checked",false);
-                        $(pane).addClass("ui-state-disabled");
-                   }
-                });
-            }
-        });
-        $(".tree").each(function() {
-            var root = $(this).dynatree("getRoot");
-            root.visit(function(node) {
-                node.select(true);
-                node.expand(true);
-            });
-            var first_child = root.getChildren()[0];
-            first_child.activate(true);
         });
        
+        // panes...
+        $(".pane").hide(); // hide panes unless they are explicitly activated by the treeview
+        $(".pane").bind("show", function() {
+            initializeContainer($(this));
+        });
+
+        /* END enable containers */
+
+        /* BEGIN enable CUSTOMIZER-SPECIFIC things */
+
+        if ($("#customize").length) {
+
+            // tagging...
+            $(".tags").tagit({
+               allowSpaces : true,
+               singleField : true,
+               singleFieldDelimiter : "|",
+               afterTagAdded : function(event,ui) {
+                   var new_tag       = ui.tag
+                   var new_tag_name  = $(new_tag).find(".tagit-label").text();
+                   var new_tag_key   = new_tag_name.toLowerCase().replace(/ /g,'');
+                   var new_tag_type  = $(new_tag).closest(".tagit").prev(".tags").attr("name");
+
+                   var was_just_added = ($(new_tag).attr("class").indexOf("added") != -1);
+
+                   if (new_tag_type == "standard_categories_tags") {
+                       /* standard_categories_tags cannot be deleted */
+                       $(new_tag).find(".tagit-close").hide();
+                   }
+                   else {
+                      /* scientific_categories_tags can be edited */
+                      $(new_tag).find(".tagit-label").before(
+                        "<a class='tagit-edit' onclick='edit_tag(this);'><span class='ui-icon ui-icon-pencil'></span></a>"
+                      );
+
+                      if (was_just_added) {
+                           $(new_tag).closest(".tab_content").find(".field_value[name='category'] select").each(function() {
+                              var new_option = new Option(new_tag_key,new_tag_name);
+                              $(this).append(new_option);
+                          });
+                      }
+
+                   }
+               },
+               beforeTagRemoved : function(event,ui) {
+                   var old_tag = ui.tag;
+                   var old_tag_name  = $(old_tag).find(".tagit-label").text();
+                   var old_tag_key   = old_tag_name.toLowerCase().replace(/ /g,'');
+                   var old_tag_type  = $(old_tag).closest(".tagit").prev(".tags").attr("name");
+
+                   // have to set this 1st, before the tag is removed
+                   var category_selects = $(old_tag).closest(".tab_content").find(".field_value[name='category'] select")
+
+                   if (old_tag_type.indexOf("scientific_categories_tags") !== -1) {
+                       categories = SCIENTIFIC_CATEGORIES;
+                       old_tag_component = old_tag_type.substr(0, old_tag_type.indexOf("_scientific_categories_tags"));
+                   }
+                   else {
+                       categories = STANDARD_CATEGORIES;
+                       alert("You shouldn't be deleting standard categories.  You're a very naughty boy.")
+                   }
+
+                   $("#confirm-dialog").html("Any properties belonging to this category will become uncategorized.  Are you sure you wish to continue?");
+                   $("#confirm-dialog").dialog("option",{
+                       title : "Delete Category?",
+                       height : 200,
+                       width  : 400,
+                       buttons: {
+                           ok : function() {
+                               var category_to_delete = "";
+                               $.each(categories,function(i,category) {
+                                   var category_fields = category.fields
+                                   if ((category_fields.key == old_tag_key) && (category_fields.component_name == old_tag_component)) {
+                                     category_to_delete = category;
+                                   }
+                               });
+                               category_to_delete.fields.remove = "True"
+
+                               $(category_selects).each(function() {
+                                   var selector = "option:contains(" + old_tag_name + ")";
+                                   $(this).find(selector).remove();
+                                   $(this).trigger("change");
+                               });
+
+                               $(this).dialog("close");
+                           },
+                           cancel : function() {
+                               // the tag data is still in categories; just put it back in the widget
+                               var tag_widget = $(event.target);
+                               $(tag_widget).tagit("createTag",old_tag_name);
+                               $(this).dialog("close");
+                           }
+                       }
+                   }).dialog("open");
+               }
+
+            });
+            $(".tagit-label").each(function() {
+                $(this).attr("title","click to toggle attributes of this category");
+            });
+            $(".tagit").sortable({
+                axis : "x",
+                items : "li:not(.tagit-new)",
+                placeholder : "sortable-item",
+                stop : function( event, ui ) {
+                    var sorted_tag = ui["item"];
+                    var sorted_tags = $(sorted_tag).closest("ul.tagit").find("li.tagit-choice");
+                    var ordered_tag_list = $(sorted_tags).map(function() {
+                        return $(this).find(".tagit-label").text();
+                    }).get().join("|");
+                    var tag_type = $(sorted_tag).closest(".tagit").prev(".tags").attr("name");
+                    order_categories(tag_type,ordered_tag_list);
+                }
+            });
+
+            $(".tagit-choice").click(function(event){
+                // if you really clicked the tag, and not an icon/button on the tag...
+                if ($(event.target).attr("class").indexOf("ui-icon") == -1) {
+                    // toggle its state..
+                    $(this).toggleClass("ui-state-active");
+                    var tag_label = $(this).find(".tagit-label").text();
+                    // and that of all corresonding properties...
+                    $(this).closest(".tab_content").find(".accordion-header .label[name$='category']").each(function() {
+                        //alert("does " + $(this).text() " == " + )
+                        if ($(this).text()==tag_label) {
+                            var section = $(this).closest(".sortable-item");    // this is the accordion (recall it's wrapped in a div to enable sorting)
+                            $(section).toggle();
+                        }
+                    });
+              }
+            });
+            /* I'm using separate widget to add tags, so disable the .tagit-new box */
+            $(".tagit-new").attr("style","display:none!important;");
+            /* and enable this widget */
+            $("[id$='_scientific_categories_tags_add']").keypress(function(e) {
+                if(e.which == 13) {
+                    var input = $(e.target)
+                    var tag_name = $(input).val();
+                    var tag_widget = $(input).closest(".tab_content").find(".tags");
+                    if ($(tag_widget).tagit("createTag",tag_name,"added")) {
+                        $(input).val("");
+                        $(tag_widget).next(".tagit:first").find(".tagit-choice").each(function(i,new_tag) {
+                            // TODO: THIS SEEMS PRETTY SLOW, SEARCHING THROUGH EVERY TAG
+                            var new_tag_name  = $(new_tag).find(".tagit-label").text();
+                            var new_tag_key   = new_tag_name.toLowerCase().replace(/ /g,'');
+                            var new_tag_type  = $(new_tag).closest(".tagit").prev(".tags").attr("name");
+                            var new_tag_component_name = $(new_tag).closest(".tab_content").attr("name");
+
+                            if ( ! isTagInCategories(new_tag_key,new_tag_component_name,SCIENTIFIC_CATEGORIES)) {
+
+                                var new_category = {
+                                    "pk": 0,
+                                    "model": "dcf.metadatascientificcategory",
+                                    "fields": {
+                                        "name": new_tag_name,
+                                        "vocabulary": 0,
+                                        "description": "",
+                                        "project": 0,
+                                        "key": new_tag_key,
+                                        "component_name": new_tag_component_name,
+                                        "order": i,
+                                        "remove": false
+                                    }
+                                }
+                                SCIENTIFIC_CATEGORIES.push(new_category);
+                            }
+                            else {
+                                // this handles the rare case where you are adding something that was previously removed in this session
+                                $.each(SCIENTIFIC_CATEGORIES,function(i,category) {
+                                    category_fields = category.fields;
+                                    if ((category_fields.key==new_tag_key) && (category_fields.component_name == new_tag_component_name)) {
+                                        category.fields.remove = false;
+                                    }
+                                });
+                            }
+                        });
+                    }
+                    e.preventDefault();
+                    return false;
+                }
+            });
+
+            /* enable sortable multi-open accordions in the customizer */
+            $("#customize .accordion").find(".accordion-header").each(function() {
+                /* first wrap each accordion header & content pair in a div */
+                /* b/c the sortable items need to be a single unit */
+                var accordion_unit = "<div class='sortable-item'></div>";
+                $(this).next().andSelf().wrapAll(accordion_unit);
+            });
+            $("#customize .accordion").sortable({
+                axis : "y",
+                handle : "h3",
+                placeholder : "sortable-accordion-placeholder",
+                stop : function( event, ui ) {
+                    /* after sorting tag the sorted item so that I can cancel the open accordion event */
+                    var sortedItem = ui["item"];
+                    var sortedTab = $(sortedItem).find(".accordion-header");
+                    $(sortedTab).addClass("sorted")
+                    /* and re-calculate each field's order */
+                    $(sortedTab).closest(".accordion").find(".accordion-content").each(function(i) {
+                        var order_input = $(this).find("input[name$='-order']");
+                        $(order_input).val(i+1);
+                        $(order_input).trigger("change");
+                    });
+                }
+                // TODO: jquery documentation implies some more code here to handle IE bug
+            });
+
+            /* enable the customize-subform button */
+            $("button.customize-subform").button({
+                icons : { primary : "ui-icon-extlink"}
+            });
+            // force the change event to hide/show the customize-subform button as appropriate
+            $(".field_value[name='customize_subform']").find("input").trigger("change");
+
+        }
+
+        /* END enable CUSTOMIZER-SPECIFIC things */
+
+        /* BEGIN enable EDITOR-SPECIFIC things */
+
+        if ($("#edit").length) {
+
+            /* wrap multi-accordions in a div */
+            /* (so that I can add/delete them dynamically as a unit */
+            $("#edit .accordion:not(.scientific_properties)").find(".accordion-header").each(function() {
+                var prefix = $(this).closest(".accordion").attr("prefix");
+                var accordion_unit = "<div class='subform' prefix='" + prefix + "'></div>";
+                $(this).next().andSelf().wrapAll(accordion_unit);
+            });
+
+
+            /* dockable splitter */
+            /* TODO: THIS IS NOT CURRENTLY USED */
+            $("#splitter").splitter({
+                minAsize:100,
+                maxAsize:400,
+                splitVertical:true,
+                A:$('#splitter_left'),
+                B:$('#splitter_right'),
+                closeableto: 1 // default is 0, but that causes dropped float bug
+            });
+
+            /* fancy treeview */
+            $.ui.dynatree.nodedatadefaults["icon"] = false; // Turn off icons by default
+            $(".tree").dynatree({
+                debugLevel      : 0,
+                checkbox        : true,
+                selectMode      : 3,
+                minExpandLevel  : 1,
+                onActivate      : function(node) {
+                    active_pane_name = node.data.title.toLowerCase() + "_pane";
+                    active_pane = $("#"+active_pane_name);
+                    $(active_pane).show();
+                    $(active_pane).toggleClass("active_pane");
+                    $(active_pane).find(".tabs:first").tabs({"active" : PREVIOUSLY_SELECTED_TAB})
+                },
+                onDeactivate    : function(node) {
+                    inactive_pane_name = node.data.title.toLowerCase() + "_pane";
+                    inactive_pane = $("#"+inactive_pane_name);
+                    PREVIOUSLY_SELECTED_TAB = $(inactive_pane).find(".tabs:first").tabs("option","active");
+                    $(inactive_pane).hide();
+                    $(inactive_pane).toggleClass("active_pane");
+                },
+                onSelect        : function(flag,node) {
+                    selected_nodes = $(".tree").dynatree("getSelectedNodes");
+                    $(".dynatree-partsel:not(.dynatree-selected").each(function() {
+                        var node = $.ui.dynatree.getNode(this);
+                        selected_nodes.push(node);
+                    });
+                    node.tree.visit(function(node){
+                       var pane = $("#"+node.data.title.toLowerCase()+"_pane");
+                       if ($.inArray(node,selected_nodes)>-1) {
+                            $(pane).find("input[name$='-active']").attr("checked",true);
+                            $(pane).removeClass("ui-state-disabled");
+                       }
+                       else {
+                            $(pane).find("input[name$='-active']").attr("checked",false);
+                            $(pane).addClass("ui-state-disabled");
+                       }
+                    });
+                }
+            });
+            $(".tree").each(function() {
+                var root = $(this).dynatree("getRoot");
+                root.visit(function(node) {
+                    node.select(true);  // TODO: this is selecting everything by default; it should get select status from python
+                    node.expand(true);
+                });
+                var first_child = root.getChildren()[0];
+                first_child.activate(true);
+            });
+
+        }
+
+        /* END enable EDITOR-SPECIFIC things */
+
+        /* BEGIN enable misc widgets */
+
+        /* some widgets' functionality aren't dependent on being visible
+         * so I can initialize them here and just be done with it
+         */
+
+        /* enable autocompletion */
+        $(".autocomplete").each(function(){
+            var suggestions = $(this).attr("suggestions").split("|");
+            $(this).autocomplete({
+                source : suggestions
+            });
+        });
+
         /* enable calendar widgets */
         $(".datepicker").datepicker({
             changeYear : true,
@@ -608,98 +571,135 @@ function enableDCF() {
         });
         $(".ui-datepicker-trigger").attr("title","click to select date");
 
+        /* END enable misc widgets */
 
 
-        /* now initialize all the visible sections */
-        initialize_section($(document));
+        INITIALIZED = 1;
+        
+        /* BEGIN render any errors */
 
+        //FUNCTION_QUEUE.dequeue("errors");
 
-    });
-    /* end enableDCF */
-    
-};
-
-/* performse initialization on a per-section basis */
-/* (deals w/ positional things) */
-/* (or things that are hidden behind accordions, tabs, panes, etc.) */
-function initialize_section(parent) {
-
-        $(parent).find(".readonly").each(function() {
-            // works for fields in a table (tr) or a div
-            $(this).closest("tr.field,div.field").find(".field_label,.field_value").addClass("readonly");
+        $(".error-wrapper").each(function() {
+           render_error($(this));
         });
 
-         $(parent).find(".multiselect").multiselect({
-            autoOpen : false,
-            minWidth : 500,
-            /*
-            position : {
-                my: "left bottom",
-                at: "left top"
-            },
-            */
-            create : function(event, ui) {
-                var values = $(event.target).multiselect("getChecked").map(function(){
+        /* END render any errors */
+
+    })
+
+};
+
+function initializeContainer(container) {
+
+    if (! $(container).hasClass("initialized")) {
+
+
+
+        /* change the look and feel of a disabled field */
+        /* sets the "readonly" class on that field's label & the actual field */
+        /* CSS does the rest */
+        $(container).find(".readonly:not(.readonly-initialized)").each(function() {
+            // works for fields in a table (tr) or a div
+            $(this).closest("tr.field,div.field").find(".field_label,.field_value").addClass("readonly");
+            $(this).addClass("readonly-initialized");
+        });
+
+        /* enumerations */
+        $(container).find(".enumeration-other:not(.enumeration-other-initialized)").change(function() {
+            var DEFAULT_OTHER_TEXT = "please enter custom selection (or else de-selected '--OTHER' above)";
+            var value = $(this).val().replace(/\s+/g,'');
+            if (! value) {
+                $(this).val(DEFAULT_OTHER_TEXT);
+            }
+        });
+        /*
+        $(container).find(".enumeration-value:not(.enumeration-value-initialized)").each(function() {
+            // hide enumeration-other (will be overwritten if "--OTHER--" is selected below)
+            var enumeration_other = $(this).siblings(".enumeration-other:first");
+            $(enumeration_other).hide();
+            $(this).addClass("enumeration-value-initialized");
+        });
+        */
+        $(container).find(".enumeration-other:not(.enumeration-other-initialized").each(function() {
+            $(this).before("<br/>");
+            // hide enumeration-other (will be overwritten if "--OTHER--" is selected below)
+            $(this).hide();
+            $(this).addClass("enumeration-other-initialized");
+        });
+
+
+        /* combo-boxes w/ checkboxes & radioboxes */
+        $(container).find(".multiselect:not(.multiselect-initialized)").multiselect({
+            autoOpen    : false,
+            minWidth    : 500,
+            create      : function(event,ui) {
+
+                var enumeration_value = $(event.target);
+                var enumeration_other = $(enumeration_value).siblings(".enumeration-other:first");
+
+                var values = $(enumeration_value).multiselect("getChecked").map(function() {
                     return this.value;
                 }).get();
 
-                var enumeration_value = $(event.target)
-                var enumeration_other = $(enumeration_value).siblings(".enumeration-other:first");
-
                 if (values.indexOf("OTHER") != -1) {
-                    // if "--OTHER--" is selected, then show the enumeration-other
-                    $(enumeration_other).width($(enumeration_value).siblings(".ui-multiselect:first").width());
-                    $(enumeration_other).show();t
+                    // if "--OTHER--" is selected, then show enumeration-other
+                    $(enumeration_other).width($(enumeratio_value).siblings(".ui-multiselect:first").width());
+                    $(enumeration_other).show();
                 }
                 else {
                     $(enumeration_other).hide();
                 }
+
                 if (values.indexOf("NONE") != -1) {
-                    // if "--NONE--" is selected, then de-select everything else
-                    $(event.target).multiselect("getChecked").each(function() {
+                    // if "--NONE--" is slected, then de-select everything else
+                    $(enumeration_value).multiselect("getChecked").each(function() {
                         if (this.value != "NONE") {
                             this.click();
                         }
                     });
-                    $(enumeration_other).hide(); // (including the other textbox)
+                    $(enumeration_other).hide();
                 }
 
                 // sometimes these lists have an onchange event
                 // force the event callback to run upon initialization
                 $(this).trigger("change");
+
             },
-            close : function(event,ui) {
-                var values = $(event.target).multiselect("getChecked").map(function(){
+            close       : function(event,ui) {
+
+                var enumeration_value = $(event.target);
+                var enumeration_other = $(enumeration_value).siblings(".enumeration-other:first");
+
+                var values = $(enumeration_value).multiselect("getChecked").map(function() {
                     return this.value;
                 }).get();
 
-                var enumeration_value = $(event.target)
-                var enumeration_other = $(enumeration_value).siblings(".enumeration-other:first");
-
                 if (values.indexOf("OTHER") != -1) {
-                    // if "--OTHER--" is selected, then show the enumeration-other
+                    // if "--OTHER--" is selected, then show enumeration-other
                     $(enumeration_other).width($(enumeration_value).siblings(".ui-multiselect:first").width());
                     $(enumeration_other).show();
                 }
                 else {
                     $(enumeration_other).hide();
                 }
+
                 if (values.indexOf("NONE") != -1) {
-                    // if "--NONE--" is selected, then de-select everything else
-                    $(event.target).multiselect("getChecked").each(function() {
+                    // if "--NONE--" is slected, then de-select everything else
+                    $(enumeration_value).multiselect("getChecked").map(function() {
                         if (this.value != "NONE") {
                             this.click();
                         }
-                    });
-                    $(enumeration_other).hide(); // (including the other textbox)
+                    })
+                    $(enumeration_other).hide();
                 }
             }
-         });
-         $(parent).find(".multiselect[multiple]").multiselect({
-            noneSelectedText : "please enter selections",
-            selectedText : function(numChecked, numTotal, checkedItems){
+        })
+        $(container).find(".multiselect[multiple]:not(.multiselect-initialized)").multiselect({
+            noneSelectedText    : "please enter selections",
+            selectedText        : function(numChecked, numTotal, checkedItems) {
                 if ($("#customize").length) {
-                    return numChecked + ' of ' + numTotal + ' selected';
+                    return numChecked + ' of ' + numTotal + ' selected ';
                 }
                 MAX_LENGTH = 40;
                 if (numChecked > 0) {
@@ -713,48 +713,52 @@ function initialize_section(parent) {
                     if (numChecked > 1) {
                         text += "  + " + (numChecked-1) + " more selections"
                     }
-                    return text
+                    return text;
                 }
             },
-            header : true
+            header              : true
         });
-        $(parent).find(".multiselect:not([multiple])").multiselect({
-            noneSelectedText : "please enter selection",
-            selectedList : 1,
-            multiple : false,
-            header : false,
-            /* these next two handlers extend the plugin so that
-             * de-selecting an option in single mode causes the noneSelectedText to be shown */
-            open : function(event,ui) {
+        $(container).find(".multiselect:not([multiple]):not(.multiselect-initialized)").multiselect({
+            noneSelectedText    : "please enter selection",
+            selectedList        : 1,
+            multiple            : false,
+            header              : false,
+            // these next 2 handlers extend the plugin so that de-selecting an option in singl emode causes noneSelectedText to be shown
+            open                : function(event,ui) {
                 $(event.target).attr("previous_selection",$(event.target).val());
             },
-            click : function(event,ui) {
-                if ($(event.target).attr("previous_selection") == ui.value)  {
+            click               : function(event,ui) {
+                if ($(event.target).attr("previous_selection") == ui.value) {
                     $(event.target).multiselect("uncheckAll");
                 }
             }
         });
+        $(container).find(".multiselect").addClass("multiselect-initialized");
 
 
-        $(parent).find(".subform").each(function() {
-            if (! $(this).hasClass("initialized")) {
+        /* deal w/ dynamic formsets */
 
-                var pane = $(this).closest(".pane");
-                var prefixes = $(this).parents(".subform").map(function() {
-                    return $(this).attr("prefix");
-                }).get().join("-");
-                var prefix = $(pane).attr("name") + "-" + prefixes + "-" + $(this).attr("prefix");
+        //$(container).find(".accordion:not(.scientific_properties):not(.formset-initialized)").each(function() {
+        $(container).find(".subform:not(.formset-initialized)").each(function() {
+            if ($(this).is(":visible")) {
+//            var prefixes = $(this).parents(".subform").map(function() {
+//                return $(this).attr("prefix");
+//            }).get().join("-");
+                var prefix = $(this).attr("prefix");
                 $(this).formset({
-                    prefix : prefix,
-                    added  : function(row) {
+                    prefix          : prefix,
+                    formCssClass    : prefix + "_subform",
+                    added           : function(row) {
                         add_formset(row);
                     }
-                });
-                $(this).addClass("initialized");
+                })
+                $(this).addClass("formset-initialized")
             }
         });
 
-};
+        $(container).addClass("initialized");
+    }
+}
 
 
 function order_categories(category_type,ordered_categories) {
@@ -781,20 +785,28 @@ function order_categories(category_type,ordered_categories) {
 /* display an error in the correct location
  * also, color any containing tabs or accordions */
 function render_error(error) {
-    // render fieldsets
+
+    // render fieldsets...
     $(error).parents(".coolfieldset").each(function() {
         // (doing this manually (w/ CSS) instead of via JQuery's built-in UI system)
         // (b/c it would indicate that _everything_ in the fieldset is in error)'
         $(this).addClass("error");
     });
-    // render accordions
+    // render accordions...
     $(error).parents(".accordion-content").each(function() {
         $(this).prev(".accordion-header").addClass("ui-state-error");
     });
-    // render tabs
+    // render tabs...
     $(error).parents(".tab_content").each(function() {
         var tab_id = $(this).parent().attr("id");
         $("a[href='#"+tab_id+"']").closest("li").addClass("ui-state-error");
+    });
+    // render treeview nodes...
+    var pane_name = $(error).closest(".pane").attr("name");
+    $("#component_tree .dynatree-title").each(function() {
+       if ($(this).text().toLowerCase() == pane_name) {
+           $(this).addClass("error");   // as above doing this via CSS instead of JQuery
+       }
     });
 };
 
@@ -807,7 +819,8 @@ function render_msg(parent) {
             hide : "explode",
             height : 150,
             width : 350,
-            title: "<span class='ui-icon ui-icon-notice'></span>",
+            // no longer able to set this in JQuery UI > 10.3
+            //title: "<span class='ui-icon ui-icon-notice'></span>",
             buttons: {
                 OK: function() {
                     $(this).dialog("close");
@@ -1155,12 +1168,12 @@ function edit_tag(edit_tag_icon) {
         return "";
      }
 
-var PREVIOUSLY_SELECTED_TAB;
+
 
 
 function add_form(form) {
     var add_details = $(form).next(".add_details");
-
+    
     var version_number  = $(add_details).find(".version_number").text();
     var project_name    = $(add_details).find(".project_name").text();
     var customizer_name = $(add_details).find(".customizer_name").text();

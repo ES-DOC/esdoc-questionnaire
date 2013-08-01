@@ -3,14 +3,19 @@
 {% load dcf_filters %}
 
 &nbsp;<br/>&nbsp;<br/>
-<div class="error-wrapper">
+<div class="error-wrapper" id="{{form.prefix}}">
     {{field.errors}}
     <script class="error-script">
         /* if there is any field error;
         * display an error in the enclosing fieldset and accordion and tab (if applicable) */
         //var error = $("script:.error-script:last");   // (browsers don't always render hidden scripts, so this line didn't work)'
         var error = $("div.error-wrapper:last");        // (this line replaces it)
-        render_error(error);
+        //render_error(error);
+        //FUNCTION_QUEUE.queue("errors",function(next) {
+        //    render_error(error);
+        //    next();
+        //});
+        // decided to to handle all errors at once from dcf.js instead of one-at-a-time here
     </script> <!-- /.error-script -->
 </div> <!-- /.error-wrapper -->
 &nbsp;<br/>&nbsp;<br/>

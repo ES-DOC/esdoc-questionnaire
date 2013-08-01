@@ -223,7 +223,7 @@ class MetadataForm(ModelForm):
                             target_standard_property_customizer.setParent(target_model_customizer)
                             target_standard_property_customizer.save()
 
-                    prefix = self.instance.component_name + "_" + standard_property_customizer.name
+                    prefix = self.instance.component_name + "_" + standard_property_customizer.name.lower()
                     if standard_property_customizer.field_type == "manytomanyfield":
                         subform_type        = SubFormTypes.FORMSET
                         subform_class       = MetadataFormSetFactory(target_model_class,target_model_customizer,request=self.request)
@@ -302,7 +302,9 @@ class MetadataForm(ModelForm):
         return cleaned_data
 
     def save(self,*args,**kwargs):
-        saved_instance = super(MetadataForm,self).save(*args,**kwargs)
+#        _commit = kwargs.pop("commit",True)
+#        if not _commit:
+#            return super(MetadataForm,self).save(*args,**kwargs)
 
         for (key,value) in self.getAllSubForms().iteritems():
             subFormType     = value[0]
@@ -311,13 +313,14 @@ class MetadataForm(ModelForm):
 
             if subFormInstance.has_changed():
 
+                
                 if subFormType == "FORM":
 
                     subModelInstance = subFormInstance.save(commit=False)
                     subModelInstance.save()
                     subFormInstance.save_m2m()
-
-                    setattr(saved_instance,key,subModelInstance)
+            
+                    self.cleaned_data[key] = subModelInstance.pk
 
                 elif subFormType == "FORMSET":
 
@@ -326,11 +329,9 @@ class MetadataForm(ModelForm):
                         subModelInstance.save()
                     subFormInstance.save_m2m()
 
-                    # TODO: I AM HERE; THIS DOESN'T WORK
-                    setattr(saved_instance,key,subModelInstances)
+                    self.cleaned_data[key] = [subModelInstance.pk for subModelInstance in subModelInstances]
 
-
-        return saved_instance
+        return super(MetadataForm,self).save(*args,**kwargs)
 
 #    def save(self,*args,**kwargs):
 #        cleaned_data = self.cleaned_data
@@ -520,7 +521,7 @@ class MetadataScientificPropertyForm(ModelForm):
             
             multiwidget = self.fields["property_enumeration"].widget.widgets
             multifield  = self.fields["property_enumeration"].fields
-
+      
             current_choices = [(choice,choice) for choice in self.property_customizer.value.split("|")]
             default_choices = [choice for choice in self.property_customizer.value_default.split("|")]
             if self.property_customizer.nullable:

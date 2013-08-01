@@ -54,9 +54,10 @@ body {
 #dcf .error-wrapper { display: inline; background-color: #ff6666; padding: 4px; margin-top: 2px; }
 #dcf .errorlist { display: inline; list-style-type: none; text-align: center; padding: 0px; margin: 0px; }
 #dcf .errorlist li { display: inline; background-color: #ff6666; }
-/* manually display errors for fieldsets; JQuery's built-in error rendering is a bit over-the-top */
+/* manually display errors for fieldsets & treeview; JQuery's built-in error rendering is a bit over-the-top */
 #dcf fieldset.error { border: 2px solid #ff6666; }
 #dcf fieldset.error legend { color: #ff6666; }
+#dcf .tree .dynatree-title.error { border: 1px solid #ff6666; color: #ff6666; }
 
 #dcf fieldset { border: 2px solid #B9E0E3; padding: 0.5em; margin-right: 1.0em; margin-top: 1.0em; margin-bottom: 1.0em; margin-left: 0px; }
 #dcf fieldset legend { font-size: 110%; padding-left: 13px; padding-right: 0.5em; }
@@ -92,7 +93,10 @@ body {
 #dcf .accordion h3.open-accordion { background: #b9e0e3 url(../img/default_ui_background.png) repeat-x 50% 50%; border: 1px solid #666666;}
 #dcf .accordion h3.ui-state-hover.open-accordion { background: #358c92 url(../img/active_ui_background.png) repeat-x 50% 50%; border: 1px solid #666666;}
 
-#dcf .accordion-header table tr td { font-size: 9pt !important; }
+
+#dcf .accordion-header * { font-size: 9pt !important; }
+#dcf .accordion-header span.ui-icon { border: 1px solid green; width: 16px; height: 16px; display: inline; padding: 20px; }
+
 
 /* make tags pretty and more obviously interactive */
 #dcf ul.tagit  { border: 2px solid #358c92; background: #ffffff; min-height: 2em; }
@@ -104,7 +108,7 @@ body {
 
 #dcf .enumeration-other { margin-top: 4px; }
 
-#dcf .tree a { white-space: normal !important; height: auto; padding: 1px 2px; z-index: }
+#dcf .tree a { white-space: normal !important; height: auto; padding: 1px 2px; }
 #dcf .tree li > ins { vertical-align: top; }
 #dcf .tree .jstree-hovered, #dcf .tree .jstree-clicked { border: 0px; }
 
@@ -112,6 +116,7 @@ body {
 
 #dcf .ui-autocomplete { max-height: 100px; overflow-y: auto; }
 
-#dcf .delete-row    { display: none !important; } /* these are created by the formset() method */
+
+/*#dcf .delete-row    { display: none !important; } *//* these are created by the formset() method */
 #dcf .add-row       { display: none !important; } /* these are created by the formset() method */
 

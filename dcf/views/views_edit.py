@@ -193,21 +193,21 @@ def edit_existing(request,version_number="",project_name="",model_name="",model_
         for (component_name,model_form) in model_forms.iteritems():
             if model_form.is_valid():
                 validity.append(True)
-                print "%s is valid" % component_name
+                #print "%s is valid" % component_name
             else:
                 validity.append(False)
-                print "%s is invalid" % component_name
-                print model_form.errors
-                print model_form.non_field_errors()
+                #print "%s is invalid" % component_name
+                #print model_form.errors
+                #print model_form.non_field_errors()
         for (component_name,scientific_property_formset) in scientific_property_formsets.iteritems():
             if scientific_property_formset.is_valid():
                 validity.append(True)
-                print "%s has valid scientific properties" % component_name
+                #print "%s has valid scientific properties" % component_name
             else:
                 validity.append(False)
-                print "%s has invalid scientific properties" % component_name
-                print scientific_property_formset.errors
-                print scientific_property_formset.non_form_errors()
+                #print "%s has invalid scientific properties" % component_name
+                #print scientific_property_formset.errors
+                #print scientific_property_formset.non_form_errors()
                 
         if all(validity):
             root_component = component_list[0].lower()
@@ -409,21 +409,21 @@ def edit_new(request,version_number="",project_name="",model_name=""):
         for (component_name,model_form) in model_forms.iteritems():
             if model_form.is_valid():
                 validity.append(True)
-                print "%s is valid" % component_name
+                #print "%s is valid" % component_name
             else:
                 validity.append(False)
-                print "%s is invalid" % component_name
-                print model_form.errors
-                print model_form.non_field_errors()
+                #print "%s is invalid" % component_name
+                #print model_form.errors
+                #print model_form.non_field_errors()
         for (component_name,scientific_property_formset) in scientific_property_formsets.iteritems():
             if scientific_property_formset.is_valid():
                 validity.append(True)
-                print "%s has valid scientific properties" % component_name
+                #print "%s has valid scientific properties" % component_name
             else:
                 validity.append(False)
-                print "%s has invalid scientific properties" % component_name
-                print scientific_property_formset.errors
-                print scientific_property_formset.non_form_errors()
+                #print "%s has invalid scientific properties" % component_name
+                #print scientific_property_formset.errors
+                #print scientific_property_formset.non_form_errors()
 
         if all(validity):
 
@@ -501,7 +501,7 @@ def edit_new(request,version_number="",project_name="",model_name=""):
                 # (such as would happen for a custom-defined root component)
                 # then don't bother creating a formset for it
                 pass
-    
+
     
     # gather all the extra information required by the template
     dict = {

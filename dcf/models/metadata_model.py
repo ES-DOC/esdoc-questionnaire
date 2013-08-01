@@ -234,16 +234,15 @@ class MetadataModel(models.Model):
         return self.published
 
     def __unicode__(self):
-        name = self.getTitle()
         if hasattr(self,"name"):
-            return u'%s: %s' % (name,self.name)
+            return u'%s' % (self.name)
         if hasattr(self,"longName"):
-            return u'%s: %s' % (name,self.longName)
+            return u'%s' % (self.longName)
         if hasattr(self,"shortName"):
-            return u'%s: %s' % (name,self.shortName)
+            return u'%s' % (self.shortName)
         if hasattr(self,"individualName"):
-            return u'%s: %s' % (name,self.individualName)
-        return u'%s' % name
+            return u'%s' % (self.individualName)
+        return u'%s' % self.getTitle()
 
 # I am purposefully not making this inherit from django.db.models;
 # (hopefully this will avoid the "bulk_create" error that sqlite3 gives for really large numbers of models)
