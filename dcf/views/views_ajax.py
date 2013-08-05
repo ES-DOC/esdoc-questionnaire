@@ -33,7 +33,7 @@ from dcf.models import *
 from dcf.forms import *
 from dcf.utils import *
 
-def add_model(request):
+def add_submodel(request):
 
     version_number  = request.GET.get('v',None)
     project_name    = request.GET.get('p',None)
@@ -42,7 +42,7 @@ def add_model(request):
     field_name      = request.GET.get('f',None)
 
     if not (version_number and project_name and customizer_name and model_name and field_name):
-        msg = "Insufficient parameters sent to add_model"
+        msg = "Insufficient parameters sent to add_submodel"
         return HttpResponse(msg)
 
     try:
@@ -66,7 +66,7 @@ def add_model(request):
     #target_model_class = metadata_field.getTargetModelClass()
     target_model_class = version.getModelClass(metadata_field.targetModelName.lower())
     qs = target_model_class.objects.all()
-    # TODO: exclude those models that are already associated w/ this field
+    # TODO: exclude those models that are already associated w/ this field?
 
     class _AddForm(forms.Form):
         models = ModelChoiceField(
@@ -88,8 +88,53 @@ def add_model(request):
         "form"          : add_form,
     }
 
-    rendered_form = django.template.loader.render_to_string("dcf/dcf_add.html", dictionary=dict, context_instance=RequestContext(request))
+    rendered_form = django.template.loader.render_to_string("dcf/dcf_add_submodel.html", dictionary=dict, context_instance=RequestContext(request))
     return HttpResponse(rendered_form,mimetype='text/html')
+
+def get_submodel(request):
+
+    version_number  = request.GET.get('v',None)
+    project_name    = request.GET.get('p',None)
+    customizer_name = request.GET.get('c',None)
+    model_name      = request.GET.get('m',None)
+    field_name      = request.GET.get('f',None)
+    id_to_get       = request.GET.get('i',None)
+
+    if not (version_number and project_name and customizer_name and model_name and field_name):
+        msg = "Insufficient parameters sent to get_submodel"
+        return HttpResponse(msg)
+
+    try:
+        version = MetadataVersion.objects.get(number=version_number)
+    except:
+        msg = "Invalid version specified"
+        return HttpResponse(msg)
+
+    try:
+        model_class = version.getModelClass(model_name)
+    except:
+        msg = "Invalid model specified"
+        return HttpResponse(msg)
+    if not model_class:
+        msg = "Invalid model specified"
+        return HttpResponse(msg)
+
+    metadata_field = model_class.getField(field_name)
+    # TODO: THE FIX FOR BULK_CREATE FOR SQLITE IS CAUSING CALLS TO CONTENTTYPE TO FAIL
+    # SO I AM REWRITING THIS TO USE THE SAVED MODELS FROM THE VERSION
+    #target_model_class = metadata_field.getTargetModelClass()
+    target_model_class = version.getModelClass(metadata_field.targetModelName.lower())
+
+    target_model = target_model_class.objects.get(id=id_to_get)
+
+    # can't do this:
+    #json_data = JSON_SERIALIZER.serialize([target_model])
+    # b/c it will not serialize the fields of any parent models [as per https://docs.djangoproject.com/en/dev/topics/serialization/?from=olddocs#inherited-models]
+    # instead I have to manually do this:
+    serializer = MetadataSerializer()
+    json_data = serializer.serialize([target_model])
+
+    return HttpResponse(json_data);
 
 def customize_category(request):
 

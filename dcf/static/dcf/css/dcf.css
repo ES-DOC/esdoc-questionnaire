@@ -95,7 +95,7 @@ body {
 
 
 #dcf .accordion-header * { font-size: 9pt !important; }
-#dcf .accordion-header span.ui-icon { border: 1px solid green; width: 16px; height: 16px; display: inline; padding: 20px; }
+#dcf .accordion-header span.ui-icon { border: 1px solid green; width: 16px; height: 16px; }
 
 
 /* make tags pretty and more obviously interactive */

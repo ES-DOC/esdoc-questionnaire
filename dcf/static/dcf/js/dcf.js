@@ -1180,7 +1180,7 @@ function add_form(form) {
     var model_name      = $(add_details).find(".model_name").text();
     var field_name      = $(add_details).find(".field_name").text();
 
-    var url = window.document.location.protocol + "//" + window.document.location.host + "/dcf/ajax/add_model";
+    var url = window.document.location.protocol + "//" + window.document.location.host + "/dcf/ajax/add_submodel";
     url += "?v=" + version_number + "&p=" + project_name + "&c=" + customizer_name + "&m=" + model_name + "&f=" + field_name;
 
     $.ajax({
@@ -1217,6 +1217,9 @@ function add_form(form) {
 }
 
 function add_formset(row) {
+
+    var form_to_add = $(row).find(".form:first")
+    
     var add_details = $(row).closest(".accordion").next(".add_details");
 
     var version_number  = $(add_details).find(".version_number").text();
@@ -1228,7 +1231,7 @@ function add_formset(row) {
     var min      = $(add_details).find(".min").text();
     var max      = $(add_details).find(".max").text();
 
-    var url = window.document.location.protocol + "//" + window.document.location.host + "/dcf/ajax/add_model";
+    var url = window.document.location.protocol + "//" + window.document.location.host + "/dcf/ajax/add_submodel";
     url += "?v=" + version_number + "&p=" + project_name + "&c=" + customizer_name + "&m=" + model_name + "&f=" + field_name;
   
     $.ajax({
@@ -1251,7 +1254,29 @@ function add_formset(row) {
                 },
                 buttons : {
                     ok      : function() {
-                        alert("you clicked ok");
+
+                        var id_to_add = $(this).find("select").val();
+                        var url = window.document.location.protocol + "//" + window.document.location.host + "/dcf/ajax/get_submodel";
+                        url += "?v=" + version_number + "&p=" + project_name + "&c=" + customizer_name + "&m=" + model_name + "&f=" + field_name + "&i=" + id_to_add;
+
+                        $.ajax({
+                            url     : url,
+                            type    : "GET",
+                            cache   : false,
+                            dataType    : "json",
+                            success : function(data) {
+                                alert("one");
+                                // ajax returns string; need to convert it to json
+                                populate($.parseJSON(data),form_to_add);
+                                //populate(data,form_to_add);
+                                alert("two");
+                            },
+                            error   : function(xhr,status,error) {
+                               console.log("AJAX ERROR: " + xhr.responseText + status + error);
+                            }
+
+                        });
+
                         $("#add-dialog").dialog("close");
                     },
                     cancel  : function() {
@@ -1264,3 +1289,40 @@ function add_formset(row) {
     
 }
 
+function populate(data, form) {
+    alert("IN POPULATE");
+    alert("data = " + data);
+    alert("form class = " + $(form).attr("class"));
+
+
+    //{'pk': 1, 'model': u'cim_1_8_1.responsibleparty', 'fields': {'organisationName': u'', 'positionName': u'', 'individualName': u'Sylvia Murphy', '_guid': u'bed2c50d-a867-4826-b1a5-154d904966fa', 'abbreviation': u'', 'parent_id': None, 'role': u'|', 'metadata_project': None, 'published': False, 'active': True, 'contactInfo': [], 'parent_content_type': None, 'component_name': u''}}
+
+    for(var i=0; i <data.length; i++) {
+        alert(data[i]);
+    }
+    
+    $.each(data, function(){
+        $.each(this,function(key,value) {
+            alert("looking at " + key)
+        })
+    
+    /*
+        alert("looking at " + key);
+        if (key=="pk") {
+            alert("key equaled pk");
+            $(form).find("input[name$='-id']").val(value);
+        }
+        if (key=="fields") {
+            alert("key equaled fields");
+            for (key in value) {
+                alert("looking at " + key + " (within fields)");
+                if (value.hasOwnProperty(key)) {
+                    // match all elements with the name of the key (that are children of field)
+                    var selector = "*[name$='-"+key+"']";
+                    $(form).find(selector).val(value[key]);
+                }
+            }
+        }
+        */
+    });
+}

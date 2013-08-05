@@ -47,7 +47,8 @@ urlpatterns = patterns('',
     # AJAX calls...
     url(r'^ajax/customize_subform/$', 'dcf.views.customize_subform'),
     url(r'^ajax/customize_category/$', 'dcf.views.customize_category'),
-    url(r'^ajax/add_model/$', 'dcf.views.add_model'),
+    url(r'^ajax/add_submodel/$', 'dcf.views.add_submodel'),
+    url(r'^ajax/get_submodel/$', 'dcf.views.get_submodel'),
 
     # ATOM feed...
     url(r'^feed/(?P<project_name>[^/]+)/(?P<model_name>[^/]+)/(?P<version_number>[^/]+)/(?P<model_id>[^/]+)/$', 'dcf.views.serialize'),
