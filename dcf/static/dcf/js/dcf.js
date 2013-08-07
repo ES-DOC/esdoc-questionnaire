@@ -1258,23 +1258,18 @@ function add_formset(row) {
                         var id_to_add = $(this).find("select").val();
                         var url = window.document.location.protocol + "//" + window.document.location.host + "/dcf/ajax/get_submodel";
                         url += "?v=" + version_number + "&p=" + project_name + "&c=" + customizer_name + "&m=" + model_name + "&f=" + field_name + "&i=" + id_to_add;
-
                         $.ajax({
-                            url     : url,
-                            type    : "GET",
-                            cache   : false,
+                            url     :    url,
+                            type        : "GET",
+                            cache       : false,
                             dataType    : "json",
                             success : function(data) {
-                                alert("one");
-                                // ajax returns string; need to convert it to json
-                                populate($.parseJSON(data),form_to_add);
-                                //populate(data,form_to_add);
-                                alert("two");
+                                //populate($.parseJSON(data),form_to_add);
+                                populate(data[0],form_to_add);
                             },
                             error   : function(xhr,status,error) {
-                               console.log("AJAX ERROR: " + xhr.responseText + status + error);
+                               console.log("AJAX ERROR: " + xhr.responseText + " " + status + " " + error);
                             }
-
                         });
 
                         $("#add-dialog").dialog("close");
@@ -1284,45 +1279,28 @@ function add_formset(row) {
                     }
                 }
             }).dialog("open");
+        },
+        error   : function(xhr,status,error) {
+            console.log("AJAX ERROR: " + xhr.responseText + " " + status + " " + error);
         }
     });
     
 }
 
 function populate(data, form) {
-    alert("IN POPULATE");
-    alert("data = " + data);
-    alert("form class = " + $(form).attr("class"));
-
-
-    //{'pk': 1, 'model': u'cim_1_8_1.responsibleparty', 'fields': {'organisationName': u'', 'positionName': u'', 'individualName': u'Sylvia Murphy', '_guid': u'bed2c50d-a867-4826-b1a5-154d904966fa', 'abbreviation': u'', 'parent_id': None, 'role': u'|', 'metadata_project': None, 'published': False, 'active': True, 'contactInfo': [], 'parent_content_type': None, 'component_name': u''}}
-
-    for(var i=0; i <data.length; i++) {
-        alert(data[i]);
-    }
-    
-    $.each(data, function(){
-        $.each(this,function(key,value) {
-            alert("looking at " + key)
-        })
-    
-    /*
-        alert("looking at " + key);
-        if (key=="pk") {
-            alert("key equaled pk");
+    $.each(data,function(key,value) {
+        if (key=="pk") {        
             $(form).find("input[name$='-id']").val(value);
         }
         if (key=="fields") {
-            alert("key equaled fields");
             for (key in value) {
-                alert("looking at " + key + " (within fields)");
                 if (value.hasOwnProperty(key)) {
+                    alert("looking at " + key + " : " + value[key]);
                     // match all elements with the name of the key (that are children of field)
                     var selector = "*[name$='-"+key+"']";
-                    $(form).find(selector).val(value[key]);
+                    $(form).find(selector).val("snaarf");
                 }
             }
         }
-        */
     });
 }

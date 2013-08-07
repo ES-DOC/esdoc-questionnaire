@@ -44,20 +44,23 @@ def MetadataFormFactory(model_class,customizer,*args,**kwargs):
     kwargs["form"] = kwargs.pop("form",MetadataForm)
     kwargs["formfield_callback"] = metadata_formfield_callback
     _request = kwargs.pop("request",None)
+    _component_name = kwargs.pop("component_name",None)
 
     _form = modelform_factory(model_class,**kwargs)
-    _form.customizer = customizer
-    _form.request    = _request
+    _form.customizer        = customizer
+    _form.request           = _request
+    _form.component_name    = _component_name
 
     return _form
 
 
 
 def MetadataFormSetFactory(model_class,customizer,*args,**kwargs):
-    _queryset   = kwargs.pop("queryset",None)
-    _initial    = kwargs.pop("initial",None)
-    _prefix     = kwargs.pop("prefix","formset")
-    _request    = kwargs.pop("request",None)
+    _queryset       = kwargs.pop("queryset",None)
+    _initial        = kwargs.pop("initial",None)
+    _prefix         = kwargs.pop("prefix","formset")
+    _request        = kwargs.pop("request",None)
+    _component_name = kwargs.pop("component_name",None)
 
     form_class  = MetadataFormFactory(model_class,customizer)
 
@@ -65,12 +68,12 @@ def MetadataFormSetFactory(model_class,customizer,*args,**kwargs):
         "extra"       : kwargs.pop("extra",1),
         "can_delete"  : True,
         "formset"     : MetadataModelFormSet,
-        "form"        : form_class
+        "form"        : form_class,
     }
     new_kwargs.update(kwargs)
 
     _formset = modelformset_factory(model_class,*args,**new_kwargs)
-    _formset.form       = staticmethod(curry(form_class,request=_request))
+    _formset.form       = staticmethod(curry(form_class,request=_request,component_name=_component_name))
     _formset.prefix     = _prefix
     _formset.customizer = customizer
 
@@ -144,9 +147,13 @@ class MetadataForm(ModelForm):
     
     def __init__(self,*args,**kwargs):
         _request = kwargs.pop("request",None)
+        _component_name = kwargs.pop("component_name",None)
         super(MetadataForm,self).__init__(*args,**kwargs)
         if _request:
             self.request = _request
+        if _component_name:
+            self.component_name = _component_name
+            self.instance.component_name = self.component_name
 
         model_customizer = self.customizer # this will have been set by the factory
 
@@ -159,7 +166,8 @@ class MetadataForm(ModelForm):
 
 
         self.standard_property_customizers = {}
-        for standard_property_customizer in model_customizer.getStandardPropertyCustomizers().order_by("order"):
+        # TODO: PRETTY SURE I CAN GO AHEAD AND DELETE THE "order_by" FILTER BELOW, B/C PROPERTIES HAVE ORDERING SPECIFIED IN THEIR Meta OPTIONS
+        for standard_property_customizer in model_customizer.getStandardPropertyCustomizers():#.order_by("order"):
             if standard_property_customizer.displayed:
                 category_key = standard_property_customizer.category.key if standard_property_customizer.category else "NONE"
                 if not category_key in self.standard_property_customizers:
@@ -167,7 +175,8 @@ class MetadataForm(ModelForm):
                 self.standard_property_customizers[category_key].append(standard_property_customizer)
         
         self.scientific_property_customizers = {}
-        for scientific_property_customizer in model_customizer.getScientificPropertyCustomizers().order_by("order"):
+        # TODO: PRETTY SURE I CAN GO AHEAD AND DELETE THE "order_by" FILTER BELOW, B/C PROPERTIES HAVE ORDERING SPECIFIED IN THEIR Meta OPTIONS
+        for scientific_property_customizer in model_customizer.getScientificPropertyCustomizers():#.order_by("order"):
             if scientific_property_customizer.displayed:
                 component_name_key = scientific_property_customizer.component_name.lower()
                 if not component_name_key in self.scientific_property_customizers:
@@ -222,26 +231,30 @@ class MetadataForm(ModelForm):
                             target_standard_property_customizer.reset(target_standard_property_proxy)
                             target_standard_property_customizer.setParent(target_model_customizer)
                             target_standard_property_customizer.save()
-
+                    
                     prefix = self.instance.component_name + "_" + standard_property_customizer.name.lower()
+
                     if standard_property_customizer.field_type == "manytomanyfield":
                         subform_type        = SubFormTypes.FORMSET
-                        subform_class       = MetadataFormSetFactory(target_model_class,target_model_customizer,request=self.request)
+                        subform_class       = MetadataFormSetFactory(target_model_class,target_model_customizer,request=self.request,component_name=self.component_name)
                         try:
                             subform_queryset    = getattr(self.instance,standard_property_customizer.name).all()
                         except ValueError: # ValueError ocurrs if the m2m field doesn't exist yet b/c the parent model hasn't been saved yet
                             subform_queryset    = target_model_class.objects.none()
                         if self.request and self.request.method == "POST":
                             subform_instance    = subform_class(self.request.POST,queryset=subform_queryset,prefix=prefix)
-                        else:
+                        else:    
                             subform_instance    = subform_class(queryset=subform_queryset,prefix=prefix)
+
                     elif standard_property_customizer.field_type == "manytoonefield":
                         subform_type        = SubFormTypes.FORM
-                        subform_class       = MetadataFormFactory(target_model_class,target_model_customizer,request=self.request)
+                        subform_class       = MetadataFormFactory(target_model_class,target_model_customizer,request=self.request,component_name=self.component_name)
                         submodel_instance   = getattr(self.instance,standard_property_customizer.name)
                         if not submodel_instance:                            
                             submodel_instance = target_model_class()
                             submodel_instance.project = self.customizer.project
+                            # TODO: probably don't have to do this, since the _init fn of the form will set it based on the kwarg passed to the factory
+                            submodel_instance.component_name = self.instance.component_name
                         if self.request and self.request.method == "POST":
                             subform_instance    = subform_class(self.request.POST,instance=submodel_instance,prefix=prefix)
                         else:
@@ -290,8 +303,6 @@ class MetadataForm(ModelForm):
 
                 if property_customizer.required and not field_value:
                     self._errors[field_name] = "This field is required"
-                    del cleaned_data[field_name]
-
                     
             except ObjectDoesNotExist:
                 # some fields don't have customizers
@@ -311,25 +322,47 @@ class MetadataForm(ModelForm):
             subFormClass    = value[1]
             subFormInstance = value[2]
 
-            if subFormInstance.has_changed():
+            if subFormType == "FORM":
 
+                if subFormInstance.has_changed():
                 
-                if subFormType == "FORM":
-
                     subModelInstance = subFormInstance.save(commit=False)
                     subModelInstance.save()
                     subFormInstance.save_m2m()
             
                     self.cleaned_data[key] = subModelInstance.pk
 
-                elif subFormType == "FORMSET":
+            elif subFormType == "FORMSET":
 
-                    subModelInstances = subFormInstance.save(commit=False)
-                    for subModelInstance in subModelInstances:
-                        subModelInstance.save()
-                    subFormInstance.save_m2m()
+                if subFormInstance.has_changed():
+                    print "FORMSET HAS CHANGED"
+                else:
+                    print "FORMSET HAS NOT CHANGED"
+                if subFormInstance.cleaned_data:
+                    print "FORMSET HAS CLEANED_DATA"
+                else:
+                    print "FORMSET DOESN'T HAVE CLEANED_DATA"
 
-                    self.cleaned_data[key] = [subModelInstance.pk for subModelInstance in subModelInstances]
+                for subFormInstanceForm in subFormInstance:
+
+                    if subFormInstanceForm.has_changed():
+                        print "FORM HAS CHANGED"
+                    else:
+                        print "FORM HAS NOT CHANGED"
+                    if subFormInstanceForm.cleaned_data:
+                        print "FORM HAS CLEANED_DATA"
+                    else:
+                        print "FORM DOESN'T HAVE CLEANED_DATA"
+                
+                subModelInstances = subFormInstance.save(commit=False)
+                for subModelInstance in subModelInstances:
+                    subModelInstance.save()
+                subFormInstance.save_m2m()
+
+                self.cleaned_data[key] = [subModelInstance.pk for subModelInstance in subModelInstances]
+
+            else:
+                print "FORM HASN'T CHANGED"
 
         return super(MetadataForm,self).save(*args,**kwargs)
 

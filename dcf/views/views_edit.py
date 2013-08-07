@@ -176,6 +176,7 @@ def edit_existing(request,version_number="",project_name="",model_name="",model_
             model_forms[component_key] = form_class(
                 request.POST,
                 instance=model_instances[component_key],
+                component_name=component_key,
                 prefix=component_key,
                 request=request,
             )
@@ -244,6 +245,7 @@ def edit_existing(request,version_number="",project_name="",model_name="",model_
             component_key = component.lower()
             model_forms[component_key] = form_class(
                 instance=model_instances[component_key],
+                component_name=component_key,
                 prefix=component_key,
                 request=request
             )
@@ -388,6 +390,7 @@ def edit_new(request,version_number="",project_name="",model_name=""):
             model_forms[component_key] = form_class(
                 request.POST,
                 instance=model_instances[component_key],
+                component_name = component_key,
                 prefix=component_key,
                 request=request,
             )
@@ -472,6 +475,7 @@ def edit_new(request,version_number="",project_name="",model_name=""):
             model_instances[component_key] = model_class(**model_filter_parameters)
             model_forms[component_key] = form_class(
                 instance=model_instances[component_key],
+                component_name = component_key,
                 prefix=component_key,
                 request=request
             )

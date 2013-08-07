@@ -222,13 +222,6 @@ def getFormsByComponentName(formset,component_name):
             forms.append(form)
     return sortFormsByField(forms,"order")
 
-
-@register.filter
-def getStandardPropertyCustomizers(form):
-    #print form.customizer
-    #print form.customizer.getStandardPropertyCustomizers()
-    return None
-
 @register.filter
 def getNamedPropertyFormSet(form,component_name):
     #print form._propertyForms

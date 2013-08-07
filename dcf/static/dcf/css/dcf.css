@@ -56,7 +56,7 @@ body {
 #dcf .errorlist li { display: inline; background-color: #ff6666; }
 /* manually display errors for fieldsets & treeview; JQuery's built-in error rendering is a bit over-the-top */
 #dcf fieldset.error { border: 2px solid #ff6666; }
-#dcf fieldset.error legend { color: #ff6666; }
+#dcf fieldset.error > legend { color: #ff6666; }
 #dcf .tree .dynatree-title.error { border: 1px solid #ff6666; color: #ff6666; }
 
 #dcf fieldset { border: 2px solid #B9E0E3; padding: 0.5em; margin-right: 1.0em; margin-top: 1.0em; margin-bottom: 1.0em; margin-left: 0px; }
@@ -118,5 +118,5 @@ body {
 
 
 /*#dcf .delete-row    { display: none !important; } *//* these are created by the formset() method */
-#dcf .add-row       { display: none !important; } /* these are created by the formset() method */
+/*#dcf .add-row       { display: none !important; } *//* these are created by the formset() method */
 

@@ -61,6 +61,7 @@ def add_submodel(request):
         return HttpResponse(msg)
 
     metadata_field = model_class.getField(field_name)
+    print "METADATA_FIELD=%s"%metadata_field
     # TODO: THE FIX FOR BULK_CREATE FOR SQLITE IS CAUSING CALLS TO CONTENTTYPE TO FAIL
     # SO I AM REWRITING THIS TO USE THE SAVED MODELS FROM THE VERSION
     #target_model_class = metadata_field.getTargetModelClass()
@@ -134,7 +135,12 @@ def get_submodel(request):
     serializer = MetadataSerializer()
     json_data = serializer.serialize([target_model])
 
-    return HttpResponse(json_data);
+
+    json_data_string = json.dumps(json_data)
+    #return HttpResponse(json_data);
+    #return HttpResponse([json_data],content_type="application/json; charset=utf-8");
+    #return HttpResponse(u'"%s"'%json_data);
+    return HttpResponse(json_data_string)
 
 def customize_category(request):
 

@@ -40,6 +40,20 @@
                         {% endwith %} {# /customizer #}
                     {% endwith %}
 
+                <div class="add_details">
+                    <div style="display: none;">
+                        <span class="version_number">{{version.number}}</span>
+                        <span class="project_name">{{project.name}}</span>
+                        <span class="customizer_name">{{model_customizer.name}}</span>
+                        <span class="model_name">{{model_class.getName}}</span>
+                        <span class="field_name">{{field.name}}</span>
+                        <span class="min">{{customizer.getMin}}</span>
+                        <span class="max">{{customizer.getMax}}</span>
+                    </div>
+                    <br/>
+                    <button class="add {{subFormType}}" type="button" title="TODO">add</button>
+                </div> <!-- /.add_details -->
+
                 {% else %} {% if subFormType == "FORM" %}
 
                     {% with form=subForm %}
@@ -54,19 +68,6 @@
                     {% endwith %}
 
                 {% endif %} {% endif %} {# / subFormType == "FORMSET", subFormType == "FORM" #}
-
-                 <div class="add_details">
-                    <div style="display: none;">
-                        <span class="version_number">{{version.number}}</span>
-                        <span class="project_name">{{project.name}}</span>
-                        <span class="customizer_name">{{model_customizer.name}}</span>
-                        <span class="model_name">{{model_class.getName}}</span>
-                        <span class="field_name">{{field.name}}</span>
-                        <span class="min">{{customizer.getMin}}</span>
-                        <span class="max">{{customizer.getMax}}</span>
-                    </div>
-                    <br/><button class="add {{subFormType}}" type="button" title="TODO">add</button>
-                </div> <!-- /.add_details -->
 
             {% endwith %} {# /subFormType #}
        {% endwith %} {# /subForm #}

@@ -259,6 +259,7 @@ class MetadataStandardPropertyCustomizer(MetadataPropertyCustomizer):
         abstract    = False
         verbose_name        = 'Standard Prop. Customizer'
         verbose_name_plural = 'Standard Prop. Customizers'
+        ordering = ['order']
 
     parent = models.ForeignKey("MetadataModelCustomizer",related_name="standard_property_customizers",blank=False,null=True)
 
@@ -361,7 +362,8 @@ class MetadataScientificPropertyCustomizer(MetadataPropertyCustomizer):
         abstract    = False
         verbose_name        = 'Scientific Prop. Customizer'
         verbose_name_plural = 'Scientific Prop. Customizers'
-
+        ordering = ['order']
+        
     parent = models.ForeignKey("MetadataModelCustomizer",related_name="scientific_property_customizers",blank=False,null=True)
 
     proxy       = models.ForeignKey("MetadataScientificPropertyProxy",blank=True,related_name="customizer")
