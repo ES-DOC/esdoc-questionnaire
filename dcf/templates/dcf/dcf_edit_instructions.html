@@ -3,7 +3,7 @@
 {% extends "dcf/dcf_base.html" %}
 
 {% block title %}
-    Instructions for the Metadata Editing Form
+    Instructions for the CIM Questionnaire
 {% endblock %} {# /title #}
 
 {% block style %}
@@ -16,42 +16,116 @@
 {% block content %}
 
     <div class="title">
-        Instructions for the Metadata Editing Form
+        Instructions for the CIM Questionnaire
     </div> <!-- /.title -->
 
     <div id="instructions">
 
         <ol>
-        <li><span class="title">The purpose of the form</span>
+        <li><span class="title">What is a CIM Document and why should I create one to describe my model</span>
             <p>
-                This editing form is provided for users to create and modify instances of CIM Metadata Documents.     
+                 The  Common Information Model (CIM) provides a way to document, view, search, and compare the properties of the various types of models used in climate science.
+                 By entering the information for your model, you are joining an international community that seeks common standards  and increased transparency in climate modeling.
+                 The CIM Questionnaire allows you to create a <i>CIM Document</i> that describes your regional climate model, and its many components.
+                 When the required fields are filled in, the CIM Document may then be <i>published</i> to an international repository where they will be stored.
+                 Other CIM-aware tools have access to documents in that repository.
             </p>
         </li>
 
-        <li><span class="title">The layout of the form:</span>
+        <li><span class="title">Advice before creating a CIM Document</span>
             <p>
-                The form contains a set of tabs across the top.  Each tab corresponds to a particular category of properties.  The numbers on the tab correspond to the total number of properties left to update within that category.
-                <a href="{{STATIC_URL}}dcf/img/screenshots/editing_tabs.png"><img width="80%" src="{{STATIC_URL}}dcf/img/screenshots/editing_tabs.png"/></a>
+                CIM documents can be quite large and complex.  The CIM Questionnaire can be customized for particular project/model combinations to only expose relevant CIM properties in intuitive ways.
+                Even so, we encourage you to produce a detailed description of the main features of the model, and have this at hand while filling out the CIM Questionnaire.
+                Do not feel that you need to complete the entire document in one go.  Provided you fill in the bare minimum of required properties, the remaining properties can be completed at a later time.
             </p>
-                Each property may contain an optional help icon <a href="{{STATIC_URL}}dcf/img/screenshots/help_icon.png"><img style="display:inline; border:0px;" align="middle" src="{{STATIC_URL}}dcf/img/screenshots/help_icon.png"/></a> with useful information.
-                
-                Properties that are required are indicated by a bold font.  There are several different types of properties:
-                <ul>
-                    <li>"atomic" properties: simple things like strings, integers, dates, etc.</li>
-                    <li>enumerations: properties whose values are restricted to a list of options.  Enumerations may be "closed" (ie: completely restricted to the set of options presented) or "open" (ie: the user can select the option "OTHER" and then type in their own value).  They can be restricted to a single value or multiple values.  And they can include an explicit "NONE" value.</li>
-                    <li>relationships: properties that define a mapping from the current CIM type to another CIM type.</li>
-                    <li>scientific properties</li>
-                </ul>
-            </p>
-
-            <p>
-                Relationship fields may be rendered as subforms.  In this case...
-                <a href="{{STATIC_URL}}dcf/img/screenshots/editing_subform.png"><img width="80%" src="{{STATIC_URL}}dcf/img/screenshots/editing_subform.png"/></a>
-            </p>
-
         </li>
 
-        <li><span class="title">A form can be saved and published.  Saving simply stores the current state of the form to the local database.  Publishing serializes the form to a CIM Document and exposes it in the built-in ATOM feed.  Other tools and services can then ingest the document (the CIM Viewer, for instance).</span>
+        <li><span class="title">The layout of the form</span>
+            <p>
+                The CIM Questionnaire is divided into several sections:
+                <a href="{{STATIC_URL}}dcf/img/screenshots/full_questionnaire.png"><img width="1000px" src="{{STATIC_URL}}dcf/img/screenshots/full_questionnaire.png"/></a>
+            </p>
+            <p>
+                Along the left is the "Component Hierarchy."  This is a clickable treeview with branches of the tree corresponding to sub-components of the model.
+                Note that if the top-level component has no sub-components, then this section may not appear.
+            </p>
+            <p>
+                To the right of the Component Hierarchy are the "Component Panes."  This contains all of the properties belonging to the currently selected component.
+                Each property is assigned to a particular category which correspond to the tabs along the top of the Component Pane.
+                In the example above, the categories are "Document Properties," "Basic Properties," "Component Properties", and "Scientific Properties."
+                These categories are defined by ES-DOC and are specific to particular versions of the CIM.
+                In this example the first three categories correspond to "Standard Properties" which are built into the CIM Schema while the last category corresponds to "Scientific Properties" which are defined by particular Controlled Vocabularies.
+                The different types of properties, and the different widgets associated with properties will be discussed below.
+            </p>
+            <p>
+                Beneath the Component Panes are the form buttons.  There is a button for saving and for publishing the CIM Document.
+                Saving a CIM Document will store it in a local database.  Saved documents can be viewed and edited in the CIM Questionnaire by project members.
+                Publishing a CIM Document will save it and then expose the document in the built-in ATOM feed.
+                ES-DOC maintains a public CIM Archive that reads from this ATOM feed and ingests new documents as they appear.
+                Other CIM-aware tools (such as the ES-DOC CIM Viewer and CIM Comparator) can access documents in that public archive.
+            </p>
+        </li>
+
+        <li><span class="title">Types and characteristics of CIM Properties</span>
+            <p>
+                Each property may contain an optional help icon with useful information:
+                <a href="{{STATIC_URL}}dcf/img/screenshots.bak/help_icon.png"><img style="display:inline; border:0px;" align="top" src="{{STATIC_URL}}dcf/img/screenshots/help_icon.png"/></a>
+            </p>
+            <p>
+                Required properties are indicated by a bold font and/or a bold containing element.
+                Properties with errors (an error would appear "save" is pressed while a property has an invalid value or a missing value when required) are indicated with a red font and/or red containing elements.
+                As an example, the following screenshot shows the Questionnaire indicating an error for every component, in the "Component Properties" category, in the "individualName" of the first "responsibleParty."
+                <a href="{{STATIC_URL}}dcf/img/screenshots/questionnaire_errors.png"><img width="1000px" src="{{STATIC_URL}}dcf/img/screenshots/questionnaire_errors.png"/></a>
+            </p>
+            <p>
+                There are several different types of properties:
+                <dl>
+                    <dt>Atomic Properties</dt>
+                    <dd>
+                        These are simple things like strings, integers, dates, etc.
+                        They are rendered as normal field input widgets.
+                    </dd>
+                    <dt>Enumerations</dt>
+                    <dd>
+                        These are properties whose values are restricted to a list of options.
+                        They can require a single selection or allow multiple selections.
+                        And they can be "closed" (completely restricted to the set of options presented) or "open" (allow a user to select the option "OTHER" and then type in their own custom value).</dd>
+                        <table border="0" align="center">
+                            <tr valign="top">
+                                <td>
+                                    <a href="{{STATIC_URL}}dcf/img/screenshots/multiselect_single.png"><img width="400px" src="{{STATIC_URL}}dcf/img/screenshots/multiselect_single.png"/></a>
+                                </td>
+                                <td>
+                                    <a href="{{STATIC_URL}}dcf/img/screenshots/multiselect_multi.png"><img width="400px" src="{{STATIC_URL}}dcf/img/screenshots/multiselect_multi.png"/></a>
+                                </td>
+                                <td>
+                                    <a href="{{STATIC_URL}}dcf/img/screenshots/multiselect_other.png"><img width="400px" src="{{STATIC_URL}}dcf/img/screenshots/multiselect_other.png"/></a>
+                                </td>
+                            </tr>
+                        </table>
+                    <dt>Relationships</dt>
+                    <dd>
+                        These are properties which define a mapping from the current CIM class to another CIM class.
+                        Sometimes (usually) these are rendered as subforms.
+                        In this case, if the mapping is one-to-one, the subform will be rendered as a collection of properties within a fieldset:
+                        <a href="{{STATIC_URL}}dcf/img/screenshots/relationship_onetoone.png"><img width="700px" src="{{STATIC_URL}}dcf/img/screenshots/relationship_onetoone.png"/></a>
+                        <br/>
+                        Otherwise, if the mapping is one-to-many, several subforms will be rendered within an accordion:
+                        <a href="{{STATIC_URL}}dcf/img/screenshots/relationship_onetomany.png"><img width="700px" src="{{STATIC_URL}}dcf/img/screenshots/relationship_onetomany.png"/></a>
+                        Note the buttons giving you the ability to add and remove extra instances as required.
+                    </dd>
+                </dl>
+            </p>
+        </li>
+
+        <li><span class="title">Filling out the Questionniare</span>
+            <p>
+                First of all, you must be a member of the project you wish to create or view metadata with the CIM Questionnaire.
+            </p>
+            <p>
+                Starting at the topmost component in the Component Hierarchy, fill out the properties in each category on the Component Pane from left to right.
+            </p>
+        </li>
 
     </ol>
 

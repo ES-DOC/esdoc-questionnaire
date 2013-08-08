@@ -117,6 +117,9 @@ body {
 #dcf .ui-autocomplete { max-height: 100px; overflow-y: auto; }
 
 
-/*#dcf .delete-row    { display: none !important; } *//* these are created by the formset() method */
-/*#dcf .add-row       { display: none !important; } *//* these are created by the formset() method */
+#dcf .delete-row    { display: none !important; } /* these are created by the formset() method */
+#dcf .add-row       { display: none !important; } /* these are created by the formset() method */
+
+#dcf #instructions span.title { font-weight: bold; }
+#dcf #instructions dt { font-weight: bold; padding: 4px; }
 

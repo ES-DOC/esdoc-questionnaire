@@ -43,6 +43,7 @@ urlpatterns = patterns('',
     # edit a CIM form...
     url(r'^edit/(?P<project_name>[^/]+)/(?P<model_name>[^/]+)/(?P<version_number>[^/]+)/$', 'dcf.views.edit_new', name="edit_new"),
     url(r'^edit/(?P<project_name>[^/]+)/(?P<model_name>[^/]+)/(?P<version_number>[^/]+)/(?P<model_id>[^/]+)/$', 'dcf.views.edit_existing', name="edit_existing"),
+    url(r'^edit/instructions$', 'dcf.views.edit_instructions'),
 
     # AJAX calls...
     url(r'^ajax/customize_subform/$', 'dcf.views.customize_subform'),

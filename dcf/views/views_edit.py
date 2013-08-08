@@ -105,6 +105,10 @@ def check_parameters(version_number="",project_name="",model_name="",msg=""):
 
     return (project,version,customizer,categorization,vocabularies,model_class,msg)
 
+
+def edit_instructions(request):
+    return render_to_response('dcf/dcf_edit_instructions.html', {}, context_instance=RequestContext(request))
+
 def edit_existing(request,version_number="",project_name="",model_name="",model_id=""):
 
     msg = ""
