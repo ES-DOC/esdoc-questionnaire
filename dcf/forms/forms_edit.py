@@ -68,7 +68,7 @@ def MetadataFormSetFactory(model_class,customizer,*args,**kwargs):
         "extra"       : kwargs.pop("extra",1),
         "can_delete"  : True,
         "formset"     : MetadataModelFormSet,
-        "form"        : form_class,
+        "form"        : form_class
     }
     new_kwargs.update(kwargs)
 
@@ -116,6 +116,15 @@ class MetadataModelFormSet(BaseModelFormSet):
         return self._type
 
     def is_valid(self):
+        print "CALLING IS_VALID FOR A FORMSET!"
+        print [form.has_changed() for form in self.forms]
+        return super(MetadataModelFormSet,self).is_valid()
+
+        # only check active subforms!!!
+        #        activeSubForms = [subForm.save() for subForm in subFormInstance if subForm.cleaned_data and subForm not in subFormInstance.deleted_forms]
+
+
+
         validity = [form.is_valid() for form in self.forms]
         return all(validity)
 
@@ -277,18 +286,26 @@ class MetadataForm(ModelForm):
 
 
     def is_valid(self):
-        subform_validity = [subForm[2].is_valid() for subForm in self.getAllSubForms().itervalues() if subForm[2]]
+        subform_validity = [subForm[2].is_valid() for subForm in self.getAllSubForms().itervalues() if subForm[2].has_changed()]
         mainform_validity = super(MetadataForm,self).is_valid()
         validity = all(subform_validity) and mainform_validity
         return validity
 
     def clean(self):
+
+
+        print ""
+        print "IN CLEAN (%s) : %s" % (self.instance.getName(),self.instance.component_name)
+        print "empty_permitted: %s" % self.empty_permitted
+        print "has_changed: %s" % self.has_changed()
+
         cleaned_data = self.cleaned_data
         
         standard_property_customizers = self.customizer.getStandardPropertyCustomizers()
 
         model_class = self.Meta.model
 
+        errors_to_ignore = []
         for (field_name,field_value) in cleaned_data.iteritems():            
             try:
                 property_customizer = standard_property_customizers.get(name=field_name)
@@ -301,18 +318,37 @@ class MetadataForm(ModelForm):
                         msg = "This value must be unique."
                         self._errors[field_name] = self.error_class([msg])
 
-                if property_customizer.required and not field_value:
-                    self._errors[field_name] = "This field is required"
+
+                if not property_customizer.customize_subform:
+
+                    # so long as this field has not been replaced by a subform
+                    # check that it is valid...
+                    if property_customizer.required and not field_value:
+                        self._errors[field_name] = "This field is required"
+
+                else:
+
+                    # don't check for errors on fields replaced by subforms here
+                    # instead the subform itself will be checked in the recursive call to is_valid
+                    errors_to_ignore.append(field_name)
                     
             except ObjectDoesNotExist:
                 # some fields don't have customizers
                 # (active, published, component_name, parent)
                 # that's okay - just ignore them
                 pass
-            
+
+        for field_name in errors_to_ignore:
+#            print "trying to ignore %s in %s" % (field_name,self.instance.getName())
+#            for (key,value) in self._errors.iteritems():
+#                print "error in %s: %s" % (key,value)
+            del cleaned_data[field_name]
+
+
         return cleaned_data
 
     def save(self,*args,**kwargs):
+        print "IN SAVE"
 #        _commit = kwargs.pop("commit",True)
 #        if not _commit:
 #            return super(MetadataForm,self).save(*args,**kwargs)
@@ -436,8 +472,12 @@ class MetadataForm(ModelForm):
 
             try:
 
-                current_choices = [(choice,choice) for choice in property_customizer.enumeration_values.split("|")]
-                default_choices = [choice for choice in property_customizer.enumeration_default.split("|")]
+                default_choices =  [choice for choice in property_customizer.enumeration_default.split("|")]
+                #current_choices =  INITIAL_CHOICE   # need to give an initial value (to allow Django to compare final values against; see http://stackoverflow.com/questions/14933475/django-formset-validating-all-forms)
+                #current_choices += [(choice,choice) for choice in property_customizer.enumeration_values.split("|")]
+                # TODO: WHY CAN'T I DO THIS IN TWO STEPS (ABOVE)? WHY MUST I DO IT IN ONE STEP (BELOW)?
+                current_choices = INITIAL_CHOICE + [(choice,choice) for choice in property_customizer.enumeration_values.split("|")]
+                
                 if property_customizer.enumeration_nullable:
                     current_choices += NULL_CHOICE
 

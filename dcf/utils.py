@@ -66,6 +66,8 @@ LIL_STRING  = 255
 OPEN_CHOICE = [(u'OTHER',u'--OTHER--')]
 #: a constant tuple to add to "nullable" enumerations
 NULL_CHOICE  = [(u'NONE',u'--NONE--')]
+#: a constant tuple to add to all enumerations (this prevents Django from thinking that all forms have changed; it provides an initial value to compare the final value against; see http://stackoverflow.com/questions/14933475/django-formset-validating-all-forms for more info)
+INITIAL_CHOICE = [("","Please make a selection")]
 
 #: a hard-coded list of possible document types that these forms can support
 CIM_DOCUMENT_TYPES = [

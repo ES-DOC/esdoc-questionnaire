@@ -303,7 +303,7 @@ class MetadataEnumerationFormField(django.forms.fields.MultiValueField):
     def __init__(self,*args,**kwargs):
         fields = (
             django.forms.fields.CharField(required=False),
-            django.forms.fields.CharField(required=False)
+            django.forms.fields.CharField(required=False,initial="lalala")
         )
         widget = MetadataEnumerationFormFieldWidget()
         super(MetadataEnumerationFormField,self).__init__(fields,widget,*args,**kwargs)
