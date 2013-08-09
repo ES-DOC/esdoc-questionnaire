@@ -155,7 +155,7 @@ function enableDCF() {
 
             }
             else if ($(event.target).hasClass("FORMSET")) {
-                var dynamic_formset_add_button = $(event.target).parent(".add_details").prev(".accordion").children(".add-row:first");
+                var dynamic_formset_add_button = $(event.target).parent(".add_details").prev(".accordion").children(".add-row:last");
                 $(dynamic_formset_add_button).click();
             }
 
@@ -166,9 +166,27 @@ function enableDCF() {
             text: true
         }).click(function(event) {
             var dynamic_formset_remove_button = $(event.target).closest(".accordion-content").next(".delete-row:first");
-            alert($(dynamic_formset_remove_button).attr("class"));
-            //.next(".delete-row:first");
-            $(dynamic_formset_remove_button).click();
+
+            $("#remove-dialog").html("\
+                <p>Are you sure you wish to remove this item?</p>\
+                <p><i>This will not delete it from the database; It will only remove its relationship to this model.</i></p>\
+            ");
+            $("#remove-dialog").dialog({
+                modal       : true,
+                dialogClass : "no-close",
+                height      : 400,
+                width       : 400,
+                buttons : {
+                    ok      : function() {
+                        $("#remove-dialog").dialog("close");
+                        $(dynamic_formset_remove_button).click();
+                    },
+                    cancel  : function() {
+                        $("#remove-dialog").dialog("close");
+                    }
+                }
+            }).dialog("open");
+
         });
 
         /* END enable fancy buttons */
@@ -1295,10 +1313,39 @@ function populate(data, form) {
         if (key=="fields") {
             for (key in value) {
                 if (value.hasOwnProperty(key)) {
-                    alert("looking at " + key + " : " + value[key]);
                     // match all elements with the name of the key (that are children of field)
-                    var selector = "*[name$='-"+key+"']";
-                    $(form).find(selector).val("snaarf");
+                    
+                    var field_selector  = "*[name$='-"+key+"'],[name$='-"+key+"_0']";
+                    var field           = $(form).find(field_selector);
+                    if ($(field).length) {
+
+                        var field_type      = $(field).prop("tagName").toLowerCase();                                         
+                    
+                        // field can either be input, select (single or multi), or subform (form or formset)
+                        if (field_type == "input") {
+                            $(field).val(value[key]);                        
+                        }
+                        else if (field_type == "select") {
+                            if ($(field).filter("[multiple='multiple']")) {                                
+                                var field_value = String(value[key]).split("||");
+                                var enumeration_value = field_value[0].split("|");
+                                var enumeration_other = field_value[1];
+                                $(field).val(enumeration_value)
+                                $(form).find("*[name$='-"+key+"_1']").val(enumeration_other);
+
+                            }
+                            else {
+                                var field_value = String(value[key]).split("|");
+                                var enumeration_value = field_value[0];
+                                var enumeration_other = field_value[1];
+                                $(field).val(enumeration_value);
+                                $(form).find("*[name$='-"+key+"_1']").val(enumeration_other);
+                            }
+                        }
+                        else {
+                            alert(key + " is a relationship")
+                        }
+                    }
                 }
             }
         }
