@@ -133,6 +133,7 @@ def serialize(request,project_name="",version_number="",model_name="",model_id="
     except ObjectDoesNotExist:
         msg = "Cannot find the specified model.  Please try again."
         return dcf_error(request,msg)
+
     if not model_instance.isDocument():
         msg = "The model type '%s' is not an editable metadata document" % (model_class.getTitle())
         return dcf_error(request,msg)

@@ -16,7 +16,7 @@
 
         <documentID>{{model.getGUID}}</documentID>
         <documentVersion>{{model.getVersion}}</documentVersion>
-        <!-- TODO: <documentAuthor> can find all responsibleParties w/ that role; but the CIM has cardinality 0:1; not sure how to decide which 1 to use -->
+        <documentAuthor>{{model.documentAuthor}}</documentAuthor>
         <documentCreationDate>{{model.created|date:"c"}}</documentCreationDate>
 
     </{{model.getTitle|camelCase}}>
