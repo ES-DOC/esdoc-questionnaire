@@ -40,7 +40,8 @@ def add_submodel(request):
     customizer_name = request.GET.get('c',None)
     model_name      = request.GET.get('m',None)
     field_name      = request.GET.get('f',None)
-
+    model_id        = request.GET.get('i',None)
+    
     if not (version_number and project_name and customizer_name and model_name and field_name):
         msg = "Insufficient parameters sent to add_submodel"
         return HttpResponse(msg)
@@ -61,13 +62,17 @@ def add_submodel(request):
         return HttpResponse(msg)
 
     metadata_field = model_class.getField(field_name)
-    print "METADATA_FIELD=%s"%metadata_field
+    
     # TODO: THE FIX FOR BULK_CREATE FOR SQLITE IS CAUSING CALLS TO CONTENTTYPE TO FAIL
     # SO I AM REWRITING THIS TO USE THE SAVED MODELS FROM THE VERSION
     #target_model_class = metadata_field.getTargetModelClass()
     target_model_class = version.getModelClass(metadata_field.targetModelName.lower())
     qs = target_model_class.objects.all()
-    # TODO: exclude those models that are already associated w/ this field?
+
+    if model_id:
+        existing_model = model_class.objects.get(pk=model_id)
+        existing_field = getattr(existing_model,field_name)
+        qs = qs.exclude(pk__in=existing_field.all())
 
     class _AddForm(forms.Form):
         models = ModelChoiceField(

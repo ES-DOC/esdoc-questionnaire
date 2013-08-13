@@ -46,6 +46,7 @@
                         <span class="project_name">{{project.name}}</span>
                         <span class="customizer_name">{{model_customizer.name}}</span>
                         <span class="model_name">{{model_class.getName}}</span>
+                        <span class="model_id">{{form.pk.value|default_if_none:""}}</span>
                         <span class="field_name">{{field.name}}</span>
                         <span class="min">{{customizer.getMin}}</span>
                         <span class="max">{{customizer.getMax}}</span>

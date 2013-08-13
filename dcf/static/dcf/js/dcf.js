@@ -1244,13 +1244,14 @@ function add_formset(row) {
     var project_name    = $(add_details).find(".project_name").text();
     var customizer_name = $(add_details).find(".customizer_name").text();
     var model_name      = $(add_details).find(".model_name").text();
+    var model_id        = $(add_details).find(".model_id").text();
     var field_name      = $(add_details).find(".field_name").text();
 
     var min      = $(add_details).find(".min").text();
     var max      = $(add_details).find(".max").text();
 
     var url = window.document.location.protocol + "//" + window.document.location.host + "/dcf/ajax/add_submodel";
-    url += "?v=" + version_number + "&p=" + project_name + "&c=" + customizer_name + "&m=" + model_name + "&f=" + field_name;
+    url += "?v=" + version_number + "&p=" + project_name + "&c=" + customizer_name + "&m=" + model_name + "&f=" + field_name + "&i=" + model_id;
   
     $.ajax({
         url     : url,
@@ -1307,8 +1308,9 @@ function add_formset(row) {
 
 function populate(data, form) {
     $.each(data,function(key,value) {
-        if (key=="pk") {        
-            $(form).find("input[name$='-id']").val(value);
+        if (key=="pk") {
+            var pk_input=$(form).find("input[name$='-pk']");
+            $(pk_input).val(value);
         }
         if (key=="fields") {
             for (key in value) {
