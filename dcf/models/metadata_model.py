@@ -152,9 +152,6 @@ class MetadataModel(models.Model):
     def getGUID(self):
         return self._guid
 
-    def __unicode__(self):
-        return u'%s' % (self._name)
-
     def setName(self,name):
         self._name = name
 
@@ -234,14 +231,17 @@ class MetadataModel(models.Model):
         return self.published
 
     def __unicode__(self):
+        # just check for likely identifying attributes...
         if hasattr(self,"name"):
             return u'%s' % (self.name)
-        if hasattr(self,"longName"):
-            return u'%s' % (self.longName)
         if hasattr(self,"shortName"):
             return u'%s' % (self.shortName)
         if hasattr(self,"individualName"):
             return u'%s' % (self.individualName)
+        if hasattr(self,"longName"):
+            return u'%s' % (self.longName)
+        if hasattr(self,"onlineResource"):
+            return u'%s' % (self.onlineResource)
         return u'%s' % self.getTitle()
 
 # I am purposefully not making this inherit from django.db.models;
