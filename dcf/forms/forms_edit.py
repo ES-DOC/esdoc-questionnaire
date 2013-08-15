@@ -116,14 +116,7 @@ class MetadataModelFormSet(BaseModelFormSet):
         return self._type
 
     def is_valid(self):
-        print "CALLING IS_VALID FOR A FORMSET!"
-        print [form.has_changed() for form in self.forms]
-        return super(MetadataModelFormSet,self).is_valid()
-
-        # only check active subforms!!!
-        #        activeSubForms = [subForm.save() for subForm in subFormInstance if subForm.cleaned_data and subForm not in subFormInstance.deleted_forms]
-
-
+#        return super(MetadataModelFormSet,self).is_valid()
 
         validity = [form.is_valid() for form in self.forms]
         return all(validity)
@@ -134,6 +127,7 @@ class MetadataModelFormSet(BaseModelFormSet):
     
 
 class MetadataForm(ModelForm):
+
     _type = SubFormTypes.FORM
 
     _subForms = {}
@@ -145,8 +139,13 @@ class MetadataForm(ModelForm):
     standard_property_customizers   = {}
     scientific_property_customizers = {}
 
+    pk = IntegerField(required=False)
+
     def getType(self):
         return self._type
+
+    def getModelClass(self):
+        return self.Meta.model
 
     def getStandardPropertyCustomizers(self):
         return self.standard_property_customizers
@@ -166,13 +165,19 @@ class MetadataForm(ModelForm):
 
         model_customizer = self.customizer # this will have been set by the factory
 
+        # I can't just use the default 'pk' or 'id' field,
+        # since a lot of these models are inherited models,
+        # and only the base classes have ids
+        # (Django takes care of this for models, but not forms)
+        self.fields["pk"].initial = self.instance.pk
+
+        self.fields["pk"].widget                   = HiddenInput()
         self.fields["active"].widget               = HiddenInput()
         self.fields["published"].widget            = HiddenInput()
         self.fields["component_name"].widget       = HiddenInput()
         self.fields["parent_content_type"].widget  = HiddenInput()
         self.fields["parent_id"].widget            = HiddenInput()
         #self.fields["parent_object"].widget        = HiddenInput()
-
 
         self.standard_property_customizers = {}
         # TODO: PRETTY SURE I CAN GO AHEAD AND DELETE THE "order_by" FILTER BELOW, B/C PROPERTIES HAVE ORDERING SPECIFIED IN THEIR Meta OPTIONS
@@ -242,8 +247,10 @@ class MetadataForm(ModelForm):
                             target_standard_property_customizer.save()
                     
                     prefix = self.instance.component_name + "_" + standard_property_customizer.name.lower()
+                    prefix = self.prefix + "-" + standard_property_customizer.name.lower()
 
                     if standard_property_customizer.field_type == "manytomanyfield":
+                        # FORMSET
                         subform_type        = SubFormTypes.FORMSET
                         subform_class       = MetadataFormSetFactory(target_model_class,target_model_customizer,request=self.request,component_name=self.component_name)
                         try:
@@ -251,11 +258,14 @@ class MetadataForm(ModelForm):
                         except ValueError: # ValueError ocurrs if the m2m field doesn't exist yet b/c the parent model hasn't been saved yet
                             subform_queryset    = target_model_class.objects.none()
                         if self.request and self.request.method == "POST":
-                            subform_instance    = subform_class(self.request.POST,queryset=subform_queryset,prefix=prefix)
+                            #subform_instance    = subform_class(self.request.POST,queryset=subform_queryset,prefix=prefix)
+                            # TODO: RECTIFY QS!!!!!!!
+                            subform_instance    = subform_class(self.request.POST,prefix=prefix)
                         else:    
                             subform_instance    = subform_class(queryset=subform_queryset,prefix=prefix)
 
                     elif standard_property_customizer.field_type == "manytoonefield":
+                        # FORM
                         subform_type        = SubFormTypes.FORM
                         subform_class       = MetadataFormFactory(target_model_class,target_model_customizer,request=self.request,component_name=self.component_name)
                         submodel_instance   = getattr(self.instance,standard_property_customizer.name)
@@ -292,12 +302,6 @@ class MetadataForm(ModelForm):
         return validity
 
     def clean(self):
-
-
-        print ""
-        print "IN CLEAN (%s) : %s" % (self.instance.getName(),self.instance.component_name)
-        print "empty_permitted: %s" % self.empty_permitted
-        print "has_changed: %s" % self.has_changed()
 
         cleaned_data = self.cleaned_data
         
@@ -348,7 +352,12 @@ class MetadataForm(ModelForm):
         return cleaned_data
 
     def save(self,*args,**kwargs):
-        print "IN SAVE"
+
+        if self.instance.component_name=="regionalmodel":
+            bPrint = True
+        else:
+            bPrint = False
+
 #        _commit = kwargs.pop("commit",True)
 #        if not _commit:
 #            return super(MetadataForm,self).save(*args,**kwargs)
@@ -370,62 +379,56 @@ class MetadataForm(ModelForm):
 
             elif subFormType == "FORMSET":
 
-                if subFormInstance.has_changed():
-                    print "FORMSET HAS CHANGED"
-                else:
-                    print "FORMSET HAS NOT CHANGED"
-                if subFormInstance.cleaned_data:
-                    print "FORMSET HAS CLEANED_DATA"
-                else:
-                    print "FORMSET DOESN'T HAVE CLEANED_DATA"
-
+                subFormInstancesToSave = []
                 for subFormInstanceForm in subFormInstance:
+                    if not subFormInstanceForm in subFormInstance.deleted_forms:
+                        existing_model_data   = subFormInstanceForm.data[subFormInstanceForm.prefix+"-pk"]
+                        new_model_data        = False
+                        try:
+                            if subFormInstanceForm.cleaned_data:
+                                new_model_data = True
+                        except AttributeError:
+                            pass
 
-                    if subFormInstanceForm.has_changed():
-                        print "FORM HAS CHANGED"
-                    else:
-                        print "FORM HAS NOT CHANGED"
-                    if subFormInstanceForm.cleaned_data:
-                        print "FORM HAS CLEANED_DATA"
-                    else:
-                        print "FORM DOESN'T HAVE CLEANED_DATA"
+                        if existing_model_data:
+                            # have to _replace_ the existing model w/ the form data...
+                            existing_model_class    = subFormInstanceForm.getModelClass()
+                            existing_model_dict     = subFormInstanceForm.save(commit=False).__dict__
+                            existing_model_qs       = existing_model_class.objects.filter(id=existing_model_data)
+
+# TODO: DOUBLE-CHECK THAT THIS WILL STILL WORK W/ NESTED SUBFORMS (M2M)
+
+                            model_fields_to_keep = [field.name for field in existing_model_class.getFields()]
+                            model_fields_to_delete = []
+                            for field_name in existing_model_dict.keys():
+                                if not field_name in model_fields_to_keep:
+                                    model_fields_to_delete.append(field_name)
+                            for model_field_to_delete in model_fields_to_delete:
+                                del(existing_model_dict[model_field_to_delete])
+
+                            # have to work w/ a qs to update multiple fields at once (see http://stackoverflow.com/questions/1576664/how-to-update-multiple-fields-of-a-django-model-instance)
+                            existing_model_qs.update(**existing_model_dict)
+                            existing_model = existing_model_qs[0]
+                            existing_model.save()
+                            subFormInstancesToSave.append(existing_model)
+
+                        elif new_model_data:
+                            # can just save the form normally in the case of newly entered data...
+                            subFormInstanceForm.save()
+                            subFormInstancesToSave.append(subFormInstanceForm)
+#                       else:
+#                           print "form is empty"
+
+                self.cleaned_data[key] = [subFormInstance.pk for subFormInstance in subFormInstancesToSave]
                 
-                subModelInstances = subFormInstance.save(commit=False)
-                for subModelInstance in subModelInstances:
-                    subModelInstance.save()
-                subFormInstance.save_m2m()
-
-                self.cleaned_data[key] = [subModelInstance.pk for subModelInstance in subModelInstances]
-
-            else:
-                print "FORM HASN'T CHANGED"
+##                subModelInstances = subFormInstance.save(commit=False)
+##                for subModelInstance in subModelInstances:
+##                    subModelInstance.save()
+##                subFormInstance.save_m2m()
+##
+##                self.cleaned_data[key] = [subModelInstance.pk for subModelInstance in subModelInstances]
 
         return super(MetadataForm,self).save(*args,**kwargs)
-
-#    def save(self,*args,**kwargs):
-#        cleaned_data = self.cleaned_data
-#
-#        for (key,value) in self.getAllSubForms().iteritems():
-#            subFormType     = value[0]
-#            subFormClass    = value[1]
-#            subFormInstance = value[2]
-#
-#            if subFormType == "FORM":
-#                subModelInstance = subFormInstance.save(commit=False)
-#                subModelInstance.save()
-#                subFormInstance.save_m2m()
-#                cleaned_data[key] = subModelInstance
-#
-#            elif subFormType == "FORMSET":
-#                subModelInstances = subFormInstance.save(commit=False)
-#                _instances = []
-#                for subModelInstance in subModelInstances:
-#                    _instances.append(subModelInstance.save())
-#                subFormInstance.save_m2m()
-#                cleaned_data[key] = _instances
-#
-#
-#        return super(MetadataForm,self).save(*args,**kwargs)
 
     def getAllSubForms(self):
 #        # returns the union of all subforms for all ancestor classes
@@ -552,6 +555,7 @@ class MetadataScientificPropertyForm(ModelForm):
         else:
             property_data = self.initial
 
+        
         self.property_customizer = property_data["customizer"]
         if not isinstance(self.property_customizer,MetadataScientificPropertyCustomizer):
             self.property_customizer = MetadataScientificPropertyCustomizer.objects.get(pk=property_data["customizer"])
