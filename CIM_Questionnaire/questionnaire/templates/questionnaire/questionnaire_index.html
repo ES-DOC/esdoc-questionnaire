@@ -1,0 +1,53 @@
+{% extends "questionnaire/questionnaire_base.html" %}
+
+{% block title %}
+
+    CIM Questionnaire
+
+{% endblock %} {# /title #}
+
+{% block content %}
+
+    <div class="title">
+        Welcome to the CIM Questionnaire
+    </div> <!-- /.title -->
+
+    <div class="documentation">
+        <p>
+            If you are seeing this page, then you have not selected a project.  Please select from the available projects or documents below.  Authentication may be required.  Alternatively, click on the following links for more information:
+            <ul>
+                <li><a href="/admin"><b>Django Admin Interface</b></a> (for registering versions/projects/etc.&nbsp;&nbsp;</li>
+            </ul>
+        </p>
+
+    </div>
+
+    <form method="POST" action="">
+
+        {% csrf_token %}
+
+
+        <fieldset>
+
+           {{ form }}
+
+
+            <div class="submit">
+                <input class="button" name="customize" type="submit" value="customize" onclick="set_action('customize');"/>
+                <input class="button" name="view" type="submit" value="view" onclick="set_action('view');"/>
+                <input class="button" name="edit" type="submit" value="edit" onclick="set_action('edit');"/>
+            </div> <!-- /.submit -->
+            <div style="clear: both;">&nbsp;</div>
+
+        </fieldset>
+
+    </form>
+
+{% endblock %} {# /content #}
+
+{% block footer %}
+
+    <!-- no footer -->
+    &nbsp;
+    
+{% endblock %} {# /footer #}

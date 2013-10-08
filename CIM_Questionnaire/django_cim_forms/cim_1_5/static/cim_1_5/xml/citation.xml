@@ -1,0 +1,17 @@
+{% load metadata_filters %}
+
+<citation>
+    <gmd:title>
+        <gco:CharacterString>{{model.title}}</gco:CharacterString>
+    </gmd:title>
+
+    <gmd:date>
+        <!-- this is a required CIM field that is not used by dycoremodel -->
+    </gmd:date>
+
+    <gmd:collectiveTitle>
+        <gco:CharacterString>{{model.collectiveTitle}}</gco:CharacterString>
+    </gmd:collectiveTitle>
+
+</citation>
+

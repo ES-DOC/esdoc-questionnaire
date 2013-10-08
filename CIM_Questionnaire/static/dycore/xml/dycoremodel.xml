@@ -1,0 +1,121 @@
+{% extends "django_cim_forms/xml/metadata_base.xml" %}
+
+{% load metadata_filters %}
+
+{% block content %}
+
+
+    {# custom content for DycoreModel #}
+    
+    <shortName>{{model.shortName}}</shortName>
+    <longName>{{model.longName}}</longName>
+
+    {% if model.description %}
+        <description>{{model.description}}</description>
+    {% endif %} {# / description #}
+
+    <componentProperties>
+        {# these next two properties are custom additions to dycoremodel #}
+        {# there is no place else to put them but in <scientificProperties> #}
+        {% if model.parallelization %}
+            <componentProperty represented="true">
+                <shortName>parallelization</shortName>
+                <longName>{{model|getFieldVerboseName:"parallelization"}}</longName>
+                {# use similar logic here as with other properties #}
+                {% with values=model.parallelization|split:"|" %}
+                    {% if values.1 %}
+                        <!-- this property has a custom value -->
+                        <value>other</value>
+                        <value>{{values.1}}</value>
+                    {% else %}
+                        <value>{{values.0}}</value>
+                    {% endif %} {# /values.1 #}
+                {% endwith %}                
+            </componentProperty>
+        {% endif %}
+        {% if model.dataFormat %}
+            <componentProperty represented="true">
+                <shortName>dataFormat</shortName>
+                <longName>{{model|getFieldVerboseName:"dataFormat"}}</longName>
+                {# use similar logic here as with other properties #}
+                {% with values=model.dataFormat|split:"|" %}
+                    {% if values.1 %}
+                        <!-- this property has a custom value -->
+                        <value>other</value>
+                        <value>{{values.1}}</value>
+                    {% else %}
+                        <value>{{values.0}}</value>
+                    {% endif %} {# /values.1 #}
+                {% endwith %}
+            </componentProperty>    
+        {% endif %}
+
+        {% with nested_properties=model.properties.all|nestPropertiesFromModel %}
+            {% with "cim_1_5/xml/property.xml" as template %}
+                {% with keys=nested_properties.keys values=nested_properties.values %}
+                    {% include template %}
+                {% endwith %}
+            {% endwith %}
+        {% endwith %}
+    </componentProperties>
+
+    {% for responsibleParty in model.responsibleParties.all %}
+        {% with "cim_1_5/xml/responsible_party.xml" as template %}
+            {% with model=responsibleParty %}
+                {% include template %}
+            {% endwith %}
+        {% endwith %}        
+    {% endfor %}
+
+    {% if model.releaseDate %}
+        <releaseDate>
+            {# this will only provide fully-specified dates if the underlying field is based on DateTime #}
+            {# in general, django-cim-forms uses just Date #}
+            {{model.releaseDate|date:"c"}}
+        </releaseDate>
+    {% endif %} {# / releaseDate #}
+
+    {% if model.fundingSource %}
+        <fundingSource>
+            {{model.fundingSource}}
+        </fundingSource>
+    {% endif %} {# / fundingSource #}
+
+    {% for citation in model.citations.all %}
+        {% with "cim_1_5/xml/citation.xml" as template %}
+            {% with model=citation %}
+                {% include template %}
+            {% endwith %}
+        {% endwith %}
+    {% endfor %}
+
+    {% if model.onlineResource %}
+        <onlineResource>
+            <gmd:linkage>
+                <gmd:URL>{{model.onlineResource}}</gmd:URL>
+            </gmd:linkage>
+        </onlineResource>
+    {% endif %} {# / onlineResource #}
+
+    {% if model.componentLanguage %}
+        <componentLanguage>
+            <name>
+                {{model.componentLanguage|enumeratedValue}}
+            </name>
+        </componentLanguage>
+    {% endif %} {# / componentLanguage #}
+
+
+    <type open="{{model|isOpenEnumeration:'type'}}" value="{{model.type|enumeratedValue}}">
+        <controlledVocabulary>
+            <name>{{model.project|enumeratedValue}}</name>
+            <server>
+                <!-- TODO: this is currently hard-coded; work it out dynamically -->
+                http://earthsystemcog.org/projects/dcmip-2012/
+            </server>
+        </controlledVocabulary>
+    </type>
+
+{% endblock %} {# /content #}
+
+
