@@ -32,6 +32,7 @@ o review settings.py
 
   verify that the db/port/user/pwd exist (postgres is recommended; try `createdb <db> -O <user> -p <port>`)
   to avoid profiling (recommended) set PROFILE and SETUP_HPY to "False"
+  if needed, update STATIC_ROOT and STATICFILES_DIR
 
 o start a virtual python enviroment (recommended)
 
@@ -48,28 +49,25 @@ o python manage.py syncdb
 
   this may generate a "transaction aborted" DatabaseError; this is an issue w/ v0.9.9.6 which will be fixed in future versions; for now comment out the offending bits of django_cim_forms/cim_1_5/forms.py, dycore/forms.py, dycore/models.py, dcf/cim_1_8_1/models/generated_models.py; then un-comment them once `syncdb` succeeds
   
-  this may generate a "value too long" DatabaseError; this is a known issue w/ Django and PostGres; to fix it run `sudo -u postgres psql -a -d <db> -f django_postgres_fix.sql`
+  this may generate a "value too long" DatabaseError; this is a known issue w/ Django and PostGres; to fix it run `psql -a -U <user> -d <db> -f django_postgres_fix.sql` (you may have to sudo -s as postgres to do this)
 
 o python manage.py migrate dcf 
+
+o gather the static media files from the different applications into a single directory; first ensure location specified in settings.py by STATIC_ROOT exists
+
+  `python manage.py collectstatic`
 
 o copy over existing data
 
   `python manage.py loaddata fixtures/*.gz`
 
-o gather the static media files from the different applications into a single directory
-
-  `mkdir static`
-  `python manage.py collectstatic`
-
-
 STARTUP
 
-o Start the CIM Questionnaire within the embedded Django development server:
+o Start the CIM Questionnaire either via the embedded Django server:
 
-  python manage.py runserver
+  `python manage.py runserver`
 
-(By default, the Django server is available on port 8000)
+  or through apache:
 
+  ensure apache conf is properly setup and restart the apache server
 
-
-FIXTURES?
