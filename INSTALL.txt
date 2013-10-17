@@ -14,6 +14,10 @@ o Django 1.5.2+
 o South
   easy_install --upgrade south
 
+o django-openid-auth
+
+  pip install django-openid-auth python-openid
+
 o libXML
   pip install lxml
   
