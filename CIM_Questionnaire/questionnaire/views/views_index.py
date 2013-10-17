@@ -22,10 +22,31 @@ Summary of module goes here
 
 from questionnaire.views import *
 
-@profile("questionnaire_index.prof")
+from django.forms import *
+
 def index(request):
 
-    return render_to_response('questionnaire/questionnaire_index.html', {}, context_instance=RequestContext(request))
+    class _IndexForm(forms.Form):
+        class Meta:
+            pass
+
+#        projects        = ModelChoiceField()
+#        versions        = ModelChoiceField()
+#        vocabularies    = ModelMultipleChoiceField()
+#        customizations  = ModelChoiceField()
+#        models          = ModelChoiceField()
+        action          = CharField(max_length=64)
+
+        def __init__(self,*args,**kwargs):
+            super(_IndexForm,self).__init__(*args,**kwargs)
+
+    if request.method == "POST":
+        form = _IndexForm(request.POST)
+        print form
+    else: # request.method == "GET":
+        form = _IndexForm()
+        
+    return render_to_response('questionnaire/questionnaire_index.html', {'form' : form}, context_instance=RequestContext(request))
 
 #
 #    allVersions         = MetadataVersion.objects.all()

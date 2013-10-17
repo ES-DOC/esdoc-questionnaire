@@ -7,9 +7,31 @@
 
     <head>
 
-        <!-- custom css -->
-        <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}questionnaire/css/questionnaire.css" />
+        <link rel="shortcut icon" href="{{ STATIC_URL }}questionnaire/img/favicon.ico" />
 
+        <!-- ext js -->
+        <script language="javascript" type="text/javascript" src="{{ STATIC_URL }}questionnaire/js/ext/underscore-min.js"></script>
+        <script language="javascript" type="text/javascript" src="{{ STATIC_URL }}questionnaire/js/ext/backbone-min.js"></script>
+        <script language="javascript" type="text/javascript" src="{{ STATIC_URL }}questionnaire/js/ext/jquery-min.js"></script>
+        <script language="javascript" type="text/javascript" src="{{ STATIC_URL }}questionnaire/js/ext/jquery-ui-min.js"></script>
+
+        <!-- custom js -->
+        <script language="javascript" type="text/javascript" src="{{ STATIC_URL }}questionnaire/js/questionnaire.js"></script>
+
+        <!-- page js -->
+        <script language="javascript">
+            {% block scripts %}
+                 // custom js goes here //
+            {% endblock %} {# /scripts #}
+        </script>
+
+        <!-- ext css -->
+        <link rel="stylesheet" type="text/css" src="{{ STATIC_URL }}questionnaire/css/ext/le-frog/jquery-ui-1.10.3.custom.css"/>
+
+        <!-- custom css -->
+        <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}questionnaire/css/questionnaire2.css" />
+
+        <!-- page css -->
         <style>
             {% block style %}
                 /* custom css goes here */

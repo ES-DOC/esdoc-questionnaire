@@ -21,6 +21,9 @@ urlpatterns = patterns('',
     # project help
     url(r'^help/$',    'questionnaire.views.help',     name='questionnaire_help'),
 
+    # project authentication
+    url(r'^login/$',   'questionnaire.views.login',    name='questionnaire_login'),
+
     # application-specific stuff...
 
     # django-cim-forms
