@@ -113,7 +113,6 @@ class MetadataModel(models.Model):
     def __init__(self,*args,**kwargs):
         super(MetadataModel,self).__init__(*args,**kwargs)
 
-        print "INIT"
         if not self._guid:
             self._guid = str(uuid4())
 

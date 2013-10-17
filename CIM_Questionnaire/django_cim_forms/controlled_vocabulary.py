@@ -197,9 +197,9 @@ class MetadataControlledVocabulary(models.Model):
             longName = item.xpath("longName/text()") or None
             if shortName: shortName = strip_completely(shortName[0])
             if longName: longName = strip_completely(longName[0])
-            print "about to create %s..." % shortName
+            #print "about to create %s..." % shortName
             (model,created) = cls.objects.get_or_create(shortName=shortName,longName=longName)
-            print "...created %s" % shortName
+            #print "...created %s" % shortName
             # figure out if it has values
             # and, if so, work out if they are "open," "multi," or "nullable"...
             xpath_values_expression="//item[shortName/text()='%s']/values" % shortName
@@ -262,6 +262,6 @@ class MetadataControlledVocabulary(models.Model):
             model.parent = parent
 
             if created:
-                print "storing %s" % model
+                #print "storing %s" % model
                 model.save()
 

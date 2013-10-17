@@ -122,7 +122,6 @@ def getFieldsOfType(form,fieldType):
 @register.filter
 def getAllPropertyFieldTypes(form):
     fieldTypes = form._fieldTypes.keys()
-    print fieldTypes
     if form._fieldTypeOrder:
         fieldTypes = [fieldType for fieldType in fieldTypes if (fieldType.getType() in form._fieldTypeOrder)]
         fieldTypes.sort(key=lambda fieldType: EnumeratedTypeList.comparator(fieldType,form._fieldTypeOrder))

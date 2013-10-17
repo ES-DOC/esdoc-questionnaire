@@ -134,9 +134,6 @@ def detail(request, model_name, app_name="django_cim_forms", model_id=None):
     ModelClass = ModelType.model_class()
     FormClass  = getFormClassFromModelClass(ModelClass)
 
-    print "modelclass=%s" % ModelClass
-    print "formclass=%s" % FormClass
-
     # sanity checks on the model & form...
     if not(ModelClass and issubclass(ModelClass,MetadataModel)):
         msg = "The model type '%s' is not an editable CIM Document." % model_name

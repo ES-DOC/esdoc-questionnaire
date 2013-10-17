@@ -46,8 +46,6 @@ SubFormTypes = EnumeratedTypeList([
 def getFormClassFromModelClass(ModelClass):
     form_name = ModelClass.getName() + "_form"
     app_name = ModelClass._meta.app_label
-    print "form_name=%s"%form_name
-    print "app_name=%s"%app_name
     # I assume that the form class is defined in 'app_name.forms.form_name' but I can't be certain
     # so I loop through all valid variants of app_name using this list comprehension
     for (full_app_name,app_module) in [(key,value) for (key,value) in sys.modules.iteritems() if app_name in key and value]:
