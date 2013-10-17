@@ -16,15 +16,15 @@ o django-openid-auth
 
 o libXML
   
-a POSTGreSQL database is recommended.  However, Django also supports MySQL and SQLite3.
-
-sometimes postgres complains about "value too long for type character varying"; that is likely a problem with Django's built-in table "auth_permission" and the field "name".that needs to change from length 50 to length 100; the SQL is:
+a PostGres database is recommended.  However, Django also supports MySQL and SQLite3.
 
 DOWNLOAD
 
 Download the software at the desired version from the github repository
 
 cd <install directory>
+tar xvfz django-cim-forms.<version>.tar.gz
+cd CIM_Questionnaire
 
 CONFIGURATION
 
