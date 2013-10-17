@@ -52,10 +52,14 @@ o python manage.py syncdb
 
 o python manage.py migrate dcf 
 
+o copy over existing data
+
+  `python manage.py loaddata fixtures/*.gz`
+
 o gather the static media files from the different applications into a single directory
 
-  mkdir static
-  python manage.py collectstatic
+  `mkdir static`
+  `python manage.py collectstatic`
 
 
 STARTUP

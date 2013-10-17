@@ -1,2 +1,2 @@
 include *.txt setup.py
-recursive-include CIM_Questionnaire *.py *.html *.js *.css *.xml *.xsd *.xsl *.csv *.gif *.jpg *.png *.ico *.wsgi *.sch *.json *.gz
+recursive-include CIM_Questionnaire *.py *.html *.js *.css *.xml *.xsd *.xsl *.xmi *.csv *.gif *.jpg *.png *.ico *.wsgi *.sch *.json *.gz
