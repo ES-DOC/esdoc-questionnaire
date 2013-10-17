@@ -84,13 +84,13 @@ def customize_existing(request,version_number="",project_name="",model_name="",c
         scientific_categories = scientific_categories | vocabulary.categories.all().order_by("order")
 
 
-    # check that the user has permission for this view
-    if not request.user.is_authenticated():
-        return HttpResponseRedirect('%s/?next=%s' % (settings.LOGIN_URL,request.path))
-    else:
-        if not user_has_permission(request.user,project.restriction_customize):
-            msg = "You do not have permission to access this resource."
-            return dcf_error(request,msg)
+#    # check that the user has permission for this view
+#    if not request.user.is_authenticated():
+#        return HttpResponseRedirect('%s/?next=%s' % (settings.LOGIN_URL,request.path))
+#    else:
+#        if not user_has_permission(request.user,project.restriction_customize):
+#            msg = "You do not have permission to access this resource."
+#            return dcf_error(request,msg)
 
 
 
@@ -299,13 +299,13 @@ def customize_new(request,version_number="",project_name="",model_name=""):
                 msg = "Unable to find any Customizer with the following parameters: %s" % (", ").join([u'%s=%s'%(key,value) for (key,value) in customizer_filter_parameters.iteritems()])
                 return dcf_error(request,msg)
 
-    # check that the user has permission for this view
-    if not request.user.is_authenticated():
-        return HttpResponseRedirect('%s/?next=%s' % (settings.LOGIN_URL,request.path))
-    else:
-        if not user_has_permission(request.user,project.restriction_customize):
-            msg = "You do not have permission to access this resource."
-            return dcf_error(request,msg)
+#    # check that the user has permission for this view
+#    if not request.user.is_authenticated():
+#        return HttpResponseRedirect('%s/?next=%s' % (settings.LOGIN_URL,request.path))
+#    else:
+#        if not user_has_permission(request.user,project.restriction_customize):
+#            msg = "You do not have permission to access this resource."
+#            return dcf_error(request,msg)
 
 
 

@@ -40,8 +40,6 @@ from uuid import uuid4
 
 import re
 
-
-
 #############
 # constants #
 #############
@@ -78,6 +76,7 @@ CIM_DOCUMENT_TYPES = [
 JSON_SERIALIZER = serializers.get_serializer("json")()
 #: a parser to use throughout the app; defined once to avoid too many fn calls
 XML_PARSER      = et.XMLParser(remove_blank_text=True)
+
 
 
 ###################################################

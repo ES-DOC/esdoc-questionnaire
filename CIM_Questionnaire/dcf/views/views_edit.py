@@ -26,10 +26,14 @@ from django.core.urlresolvers import reverse
 from django.http import *
 from django.shortcuts import *
 
+from profiling          import encode_profile as profile_usage
+from profiling          import profile_memory as profile_memory
+
 from dcf.utils  import *
 from dcf.models import *
 from dcf.forms  import *
 from dcf.views.views_error import error as dcf_error
+
 
 def find_component_parent(component_name,component_collection,parent=None):
     """
@@ -118,13 +122,13 @@ def edit_existing(request,version_number="",project_name="",model_name="",model_
     if not all ([project,version,customizer,categorization,vocabularies,model_class]):
         return dcf_error(request,msg)
 
-    # check that the user has permission for this view
-    if not request.user.is_authenticated():
-        return HttpResponseRedirect('%s/?next=%s' % (settings.LOGIN_URL,request.path))
-    else:
-        if not user_has_permission(request.user,project.restriction_edit):
-            msg = "You do not have permission to access this resource."
-            return dcf_error(request,msg)
+#    # check that the user has permission for this view
+#    if not request.user.is_authenticated():
+#        return HttpResponseRedirect('%s/?next=%s' % (settings.LOGIN_URL,request.path))
+#    else:
+#        if not user_has_permission(request.user,project.restriction_edit):
+#            msg = "You do not have permission to access this resource."
+#            return dcf_error(request,msg)
 
 
     # try to get the requested model...    
@@ -281,7 +285,6 @@ def edit_existing(request,version_number="",project_name="",model_name="",model_
     
     return render_to_response('dcf/dcf_edit.html', dict, context_instance=RequestContext(request))
 
-
 def edit_new(request,version_number="",project_name="",model_name=""):
 
     msg = ""
@@ -291,13 +294,13 @@ def edit_new(request,version_number="",project_name="",model_name=""):
     if not all ([project,version,customizer,categorization,vocabularies,model_class]):
         return dcf_error(request,msg)
 
-    # check that the user has permission for this view
-    if not request.user.is_authenticated():
-        return HttpResponseRedirect('%s/?next=%s' % (settings.LOGIN_URL,request.path))
-    else:
-        if not user_has_permission(request.user,project.restriction_edit):
-            msg = "You do not have permission to access this resource."
-            return dcf_error(request,msg)
+#    # check that the user has permission for this view
+#    if not request.user.is_authenticated():
+#        return HttpResponseRedirect('%s/?next=%s' % (settings.LOGIN_URL,request.path))
+#    else:
+#        if not user_has_permission(request.user,project.restriction_edit):
+#            msg = "You do not have permission to access this resource."
+#            return dcf_error(request,msg)
 
 
     model_filter_parameters = {
@@ -527,4 +530,6 @@ def edit_new(request,version_number="",project_name="",model_name=""):
         "component_tree"                : dict_to_html(component_tree),
     }
 
+
     return render_to_response('dcf/dcf_edit.html', dict, context_instance=RequestContext(request))
+
