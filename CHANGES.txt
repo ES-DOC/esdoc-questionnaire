@@ -1,2 +1,6 @@
-Django CIM Forms
+CIM Questionnaire
+
+Beginning at v0.9.9.6 this has been rewritten as a Django Project rather than a Django Application.  It can therefore be run as it's own webserver, without having to be embedded in an existing (Django) server.
+
+
 
