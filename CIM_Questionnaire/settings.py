@@ -122,6 +122,12 @@ MIDDLEWARE_CLASSES = (
     # 'django.middleware.clickjacking.XFrameOptionsMiddleware',
 )
 
+AUTHENTICATION_BACKENDS = (
+    'django.contrib.auth.backends.ModelBackend',
+    'django_openid_auth.auth.OpenIDBackend',
+)
+
+
 ROOT_URLCONF = 'urls'
 
 TEMPLATE_DIRS = (
@@ -137,6 +143,11 @@ TEMPLATE_CONTEXT_PROCESSORS += (
      'django.core.context_processors.request',
 )
 
+# login page
+LOGIN_URL = '/login'
+# page to redirect after successfull authentication, if 'next' parameter is not provided
+LOGIN_REDIRECT_URL='/' 
+
 # Python dotted path to the WSGI application used by Django's runserver.
 WSGI_APPLICATION = 'wsgi.application'
 
@@ -149,7 +160,10 @@ INSTALLED_APPS = (
     'django.contrib.staticfiles',
     'django.contrib.admin',    
     'django.contrib.admindocs',
+    # db migration...
     'south',
+    # openid authentication...
+    'django_openid_auth',
     # project-level app...
     'questionnaire',
     # old apps from DCMIP-2012...
@@ -191,5 +205,11 @@ LOGGING = {
     }
 }
 
-PROFILE = True
+
+######################################
+# tools for usage & memory profiling #
+######################################
+
+PROFILE 	 = False
 PROFILE_LOG_BASE = rel('profiles/'),
+SETUP_HPY 	 = False
