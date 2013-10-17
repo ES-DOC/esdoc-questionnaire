@@ -1,6 +1,6 @@
 CIM QUESTIONNAIRE INSTALLATION INSTRUCTIONS
 
-The following instructions describe how to install the CIM Questionnaire on a Unix-type server (Cent-OS, Linux, Mac-OSX) for the purpose of starting to use and test the web application. In a production environment, the CoG should really be front-ended by a separately installed Apache httpd server (not covered here).
+The following instructions describe how to install the CIM Questionnaire on a Unix-type server (Cent-OS, Linux, Mac-OSX) for the purpose of starting to use and test the web application. 
 
 PRE-REQUISITES
 
@@ -9,33 +9,20 @@ The system must have the following Python packages installed:
 o Python 2.7.2+
 
 o Django 1.5.2+
-  easy_install --upgrade django
 
 o South
-  easy_install --upgrade south
 
 o django-openid-auth
 
-  pip install django-openid-auth python-openid
-
 o libXML
-  pip install lxml
   
 a POSTGreSQL database is recommended.  However, Django also supports MySQL and SQLite3.
 
-pip install psycopg2  (may require sudo get-apt install libpq-dev)
-
 sometimes postgres complains about "value too long for type character varying"; that is likely a problem with Django's built-in table "auth_permission" and the field "name".that needs to change from length 50 to length 100; the SQL is:
 
-ALTER TABLE auth_permission DROP COLUMN name;
-ALTER TABLE auth_permission ADD COLUMN name character varying(100);
-ALTER TABLE auth_permission ALTER COLUMN name SET NOT NULL;
-
-
- 
 DOWNLOAD
 
-Download the software from the github repository:
+Download the software at the desired version from the github repository
 
 cd <install directory>
 
@@ -43,22 +30,42 @@ CONFIGURATION
 
 o review settings.py
 
+  verify that the db/port/user/pwd exist (postgres is recommended; try `createdb <db> -O <user> -p <port>`)
+  to avoid profiling (recommended) set PROFILE and SETUP_HPY to "False"
+
+o start a virtual python enviroment (recommended)
+
+  pip install django
+  pip install psycopg2 (may require `sudo get-apt install libq-dev`)
+  pip install lxml (may require `sudo get-apt install libxml2`)
+  pip install django-openid-auth python-openid
+  pip install south
+  pip install guppy (for profiling)
+
 INITIALIZATION
 
 o python manage.py syncdb 
 
-o python manage.py migrate cog 
+  this may generate a "transaction aborted" DatabaseError; this is an issue w/ v0.9.9.6 which will be fixed in future versions; for now comment out the offending bits of django_cim_forms/cim_1_5/forms.py, dycore/forms.py, dycore/models.py, dcf/cim_1_8_1/models/generated_models.py; then un-comment them once `syncdb` succeeds
+  
+  this may generate a "value too long" DatabaseError; this is a known issue w/ Django and PostGres; to fix it run `sudo -u postgres psql -a -d <db> -f django_postgres_fix.sql`
+
+o python manage.py migrate dcf 
 
 o gather the static media files from the different applications into a single directory
 
-mkdir static
-python manage.py collectstatic
+  mkdir static
+  python manage.py collectstatic
 
 
 STARTUP
 
 o Start the CIM Questionnaire within the embedded Django development server:
-python manage.py runserver
 
-By default, the Django server is available on port 8000
+  python manage.py runserver
 
+(By default, the Django server is available on port 8000)
+
+
+
+FIXTURES?
