@@ -33,6 +33,9 @@ o review settings.py
   verify that the db/port/user/pwd exist (postgres is recommended; try `createdb <db> -O <user> -p <port>`)
   to avoid profiling (recommended) set PROFILE and SETUP_HPY to "False"
   if needed, update STATIC_ROOT and STATICFILES_DIR
+  if desired, set EMAIL_HOST and EMAIL_HOST_USER and EMAIL_HOST_PASSWORD and DEFAULT_FROM_EMAIL and SERVER_EMAIL
+
+  for production deployments, it is recommended to set DEBUG to "False" and add the appropriate value(s) for ALLOWED_HOSTS
 
 o start a virtual python enviroment (recommended)
 
