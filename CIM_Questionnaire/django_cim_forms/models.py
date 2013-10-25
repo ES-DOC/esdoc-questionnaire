@@ -160,6 +160,7 @@ class MetadataModel(models.Model):
     
     # overriding save to work out when/how to update vs insert
     def save(self, *args, **kwargs):
+        print "TRYING TO SAVE A METADATAMODEL!"
         force_insert = kwargs.pop("force_insert",False)
         if force_insert:
 ##            # TODO: GET THIS WORKING!!!!!!!!!
