@@ -14,7 +14,7 @@ setup(
     url='https://github.com/ES-DOC',
     license='NCSA Open Source License, see LICENSE.txt',
     description='CIM Questionnaire',
-    long_description=open('README.txt').read(),
+    long_description=open('README.md').read(),
     zip_safe=False,
     include_package_data=True,
     install_requires=[
