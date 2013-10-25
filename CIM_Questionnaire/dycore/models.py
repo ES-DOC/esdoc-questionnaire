@@ -67,7 +67,6 @@ class DycoreModel(ModelComponent):
             "version","releaseDate","parallelization","dataFormat","componentLanguage","onlineResource","institution","fundingSource","responsibleParties","citations",
             "properties",
         ])
-     
         self.setInitialValues({
             "embedded"          : False,
             "type"              : "AtmosDynamicalCore",
@@ -91,7 +90,6 @@ class DycoreModel(ModelComponent):
         
 #def setup_dycoremodel():
 try:
-    print "setup_dycoremodel"
     DycoreModel.customizeFields({
         "shortName"     : {"_unique" : True, "verbose_name" : "Model Acronym", "help_text" : "The acronym commonly used to describe the model",},
         "longName"      : {"help_text" : "The full name of the model with all acronyms spelled out",},
@@ -112,18 +110,13 @@ try:
             "title"             : {"verbose_name" : "Citation", "help_text" : "The common title of the publication.  For example, <p>Staniforth and Wood (2008)</p> in case of two authors or <p>White et al. (2005)</p> in case of more than two authors.",},
             "collectiveTitle"   : {"verbose_name" : "Bibliographic entry", "help_text": "The complete bibliographic reference of this publication.  For example, <p>Staniforth A., and N. Wood, 2008: Aspects of the dynamical core of a nonhydrostatic, deep-atmosphere, unified weather and climate-prediciton model. J Comput. Phys., 227, 3445-3464</p> in the case of two authors or <p>White A. A., B. J. Hoskins, I. Roulstone, and A. Staniforth, 2005: Consistent approximate models of the global atmosphere: shallow, deep, hydrostatic, quasi-hydrostatic and non-hydrostatic. Quart. J. Roy. Meteorol. Soc., 131, 2081-2107</p> in the case of more than two authors.", "_required" : True,},
         })
-    print "success"
 except DatabaseError:
-    print "failure"
     # this will fail on syncdb; once I move to South, it won't matter
     pass
 
 #def setup_dycorescientificproperties_cv():
 try:
-    print "setup_dycorescientificproperties_cv"
     DycoreScientificProperties_cv.loadCV()
-    print "success"
 except DatabaseError:
-    print "failure"
     # this will fail on syncdb; once I move to South, it won't matter
     pass
