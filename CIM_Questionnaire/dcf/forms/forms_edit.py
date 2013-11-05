@@ -586,7 +586,7 @@ class MetadataScientificPropertyForm(ModelForm):
 
             if self.property_customizer.suggestions:
                 update_field_widget_attributes(self.fields["property_freetext"],{"class":"autocomplete"})
-                update_field_widget_attributes(self.fields["property_freetext"],{"suggestions":property_customizer.suggestions})
+                update_field_widget_attributes(self.fields["property_freetext"],{"suggestions":self.property_customizer.suggestions})
 
         else:
 
