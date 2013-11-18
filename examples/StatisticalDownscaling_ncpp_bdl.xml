@@ -4,9 +4,9 @@
 <vocab mmrevision="" mmurl="" mmlcrevision="" transrevision="" transURL="">
   <component name="StatisticalDowscaling" rawName="StatisticalDowscaling" esgName="StatisticalDowscaling">
     <definition status="missing">Definition of component type StatisticalDowscaling required</definition>
-    <parametergroup name="General Attributes" rawName="" esgName="" componentView="false"/>
-    <parametergroup name="StatisticalDownscalingKeyProperties" rawName="StatisticalDownscaling_KeyProperties" esgName="KeyProperties" componentView="true">
-      <parametergroup name="Method" rawName="Method" esgName="Method" componentView="false">
+    <parametergroup name="General Attributes" rawName="" esgName="" />
+    <parametergroup name="StatisticalDownscalingKeyProperties" rawName="StatisticalDownscaling_KeyProperties" esgName="KeyProperties" >
+      <parametergroup name="Method" rawName="Method" esgName="Method" >
         <parameter name="MauranClassificationType" rawName="MauranClassificationType" esgName="MauranClassificationType" choice="OR">
           <definition status="missing">Definition of property name MauranClassificationType required</definition>
           <value name="PP (Perfect Prog)"/>
@@ -59,8 +59,8 @@
           <value name="other"/>
           <value name="N/A"/>
         </parameter>
-        <parametergroup name="MethodPhases" rawName="MethodPhases" esgName="MethodPhases" componentView="false">
-          <parametergroup name="LearningPeriod (&quot;Calibration Period&quot;?)" rawName="LearningPeriod (&quot;Calibration Period&quot;?)" esgName="LearningPeriod (&quot;Calibration Period&quot;?)" componentView="false">
+        <parametergroup name="MethodPhases" rawName="MethodPhases" esgName="MethodPhases" >
+          <parametergroup name="LearningPeriod (&quot;Calibration Period&quot;?)" rawName="LearningPeriod (&quot;Calibration Period&quot;?)" esgName="LearningPeriod (&quot;Calibration Period&quot;?)" >
             <parameter name="FirstYear" rawName="FirstYear" esgName="FirstYear" choice="keyboard">
               <definition status="missing">Definition of property name FirstYear required</definition>
               <value format="numerical" units="(years)"/>
@@ -74,7 +74,7 @@
               <value format="string"/>
             </parameter>
           </parametergroup>
-          <parametergroup name="ValidationPeriod" rawName="ValidationPeriod" esgName="ValidationPeriod" componentView="false">
+          <parametergroup name="ValidationPeriod" rawName="ValidationPeriod" esgName="ValidationPeriod" >
             <parameter name="FirstYear" rawName="FirstYear" esgName="FirstYear" choice="keyboard">
               <definition status="missing">Definition of property name FirstYear required</definition>
               <value format="numerical" units="(years)"/>
@@ -96,7 +96,7 @@
               <value format="string"/>
             </parameter>
           </parametergroup>
-          <parametergroup name="ApplicationPeriod" rawName="ApplicationPeriod" esgName="ApplicationPeriod" componentView="false">
+          <parametergroup name="ApplicationPeriod" rawName="ApplicationPeriod" esgName="ApplicationPeriod" >
             <parameter name="FirstYear" rawName="FirstYear" esgName="FirstYear" choice="keyboard">
               <definition status="missing">Definition of property name FirstYear required</definition>
               <value format="numerical" units="(years)"/>
@@ -121,7 +121,7 @@
           <value name="N/A"/>
         </parameter>
       </parametergroup>
-      <parametergroup name="SpatialTreatment" rawName="SpatialTreatment" esgName="SpatialTreatment" componentView="false">
+      <parametergroup name="SpatialTreatment" rawName="SpatialTreatment" esgName="SpatialTreatment" >
         <parameter name="OutputDataType" rawName="OutputDataType" esgName="OutputDataType" choice="OR">
           <definition status="missing">Definition of property name OutputDataType required</definition>
           <value name="station"/>
@@ -140,7 +140,7 @@
           <value format="string"/>
         </parameter>
       </parametergroup>
-      <parametergroup name="TemporalTreatment" rawName="TemporalTreatment" esgName="TemporalTreatment" componentView="false">
+      <parametergroup name="TemporalTreatment" rawName="TemporalTreatment" esgName="TemporalTreatment" >
         <parameter name="DevelomentTimeWindow" rawName="DevelomentTimeWindow" esgName="DevelomentTimeWindow" choice="XOR">
           <definition status="missing">Definition of property name DevelomentTimeWindow required</definition>
           <value name="month"/>
@@ -156,8 +156,8 @@
         </parameter>
       </parametergroup>
     </parametergroup>
-    <parametergroup name="Variables" rawName="Variables" esgName="Variables" componentView="true">
-      <parametergroup name="Local Predictands" rawName="Local Predictands" esgName="Local Predictands" componentView="false">
+    <parametergroup name="Variables" rawName="Variables" esgName="Variables" >
+      <parametergroup name="Local Predictands" rawName="Local Predictands" esgName="Local Predictands" >
         <parameter name="CalibrationPredictandOriginType" rawName="CalibrationPredictandOriginType" esgName="CalibrationPredictandOriginType" choice="XOR">
           <definition status="missing">Definition of property name CalibrationPredictandOriginType required</definition>
           <value name="station"/>
@@ -210,7 +210,7 @@
           <value name="other"/>
           <value name="N/A"/>
         </parameter>
-        <parametergroup name="PreProcessing" rawName="PreProcessing" esgName="PreProcessing" componentView="false">
+        <parametergroup name="PreProcessing" rawName="PreProcessing" esgName="PreProcessing" >
           <parameter name="PreprocessingMethod" rawName="PreprocessingMethod" esgName="PreprocessingMethod" choice="OR">
             <definition status="provided">Provide any other relevant details about the pre-processing step.</definition>
             <value name="anomalies"/>
@@ -229,14 +229,14 @@
             <value format="string"/>
           </parameter>
         </parametergroup>
-        <parametergroup name="PostProcessing" rawName="PostProcessing" esgName="PostProcessing" componentView="false">
+        <parametergroup name="PostProcessing" rawName="PostProcessing" esgName="PostProcessing" >
           <parameter name="PostprocessingMethod" rawName="PostprocessingMethod" esgName="PostprocessingMethod" choice="keyboard">
             <definition status="provided">Provide any relevant details about the post-processing step (e.g. how the full signal is rebuild: use of trends, seasonal cycle and downscalled anomalies).</definition>
             <value format="string"/>
           </parameter>
         </parametergroup>
       </parametergroup>
-      <parametergroup name="Large Scale Predictors" rawName="Large Scale Predictors" esgName="Large Scale Predictors" componentView="false">
+      <parametergroup name="Large Scale Predictors" rawName="Large Scale Predictors" esgName="Large Scale Predictors" >
         <parameter name="CalibrationPredictorOriginType" rawName="CalibrationPredictorOriginType" esgName="CalibrationPredictorOriginType" choice="XOR">
           <definition status="missing">Definition of property name CalibrationPredictorOriginType required</definition>
           <value name="analysis/reanalysis"/>
@@ -291,7 +291,7 @@
           <definition status="missing">Definition of property name TemporalTreatment required</definition>
           <value format="string"/>
         </parameter>
-        <parametergroup name="PreProcessing" rawName="PreProcessing" esgName="PreProcessing" componentView="false">
+        <parametergroup name="PreProcessing" rawName="PreProcessing" esgName="PreProcessing" >
           <parameter name="PreprocessingMethod" rawName="PreprocessingMethod" esgName="PreprocessingMethod" choice="OR">
             <definition status="missing">Definition of property name PreprocessingMethod required</definition>
             <value name="anomalies"/>
@@ -311,8 +311,8 @@
     </parametergroup>
     <component name="WeatherTyping" rawName="WeatherTyping" esgName="WeatherTyping">
       <definition status="missing">Definition of component type WeatherTyping required</definition>
-      <parametergroup name="General Attributes" rawName="" esgName="" componentView="false"/>
-      <parametergroup name="Classification" rawName="Classification" esgName="Classification" componentView="false">
+      <parametergroup name="General Attributes" rawName="" esgName="" />
+      <parametergroup name="Classification" rawName="Classification" esgName="Classification" >
         <parameter name="ClassificationMethod" rawName="ClassificationMethod" esgName="ClassificationMethod" choice="XOR">
           <definition status="provided">Final classification of the days by assignation to a weather-type over the reconstruction period.</definition>
           <value name="analogs"/>
@@ -367,8 +367,8 @@
     </component>
     <component name="WeatherGenerator" rawName="WeatherGenerator" esgName="WeatherGenerator">
       <definition status="missing">Definition of component type WeatherGenerator required</definition>
-      <parametergroup name="General Attributes" rawName="" esgName="" componentView="false"/>
-      <parametergroup name="statisticalModel" rawName="statisticalModel" esgName="statisticalModel" componentView="false">
+      <parametergroup name="General Attributes" rawName="" esgName="" />
+      <parametergroup name="statisticalModel" rawName="statisticalModel" esgName="statisticalModel" >
         <parameter name="Method" rawName="Method" esgName="Method" choice="XOR">
           <definition status="missing">Definition of property name Method required</definition>
           <value name="precipitation occurence (Markov chain)"/>
@@ -394,8 +394,8 @@
     </component>
     <component name="TransferFunction" rawName="TransferFunction" esgName="TransferFunction">
       <definition status="missing">Definition of component type TransferFunction required</definition>
-      <parametergroup name="General Attributes" rawName="" esgName="" componentView="false"/>
-      <parametergroup name="Predictor-PredictandRelation" rawName="Predictor-PredictandRelation" esgName="Predictor-PredictandRelation" componentView="false">
+      <parametergroup name="General Attributes" rawName="" esgName="" />
+      <parametergroup name="Predictor-PredictandRelation" rawName="Predictor-PredictandRelation" esgName="Predictor-PredictandRelation" >
         <parameter name="SchemeType" rawName="SchemeType" esgName="SchemeType" choice="XOR">
           <definition status="missing">Definition of property name SchemeType required</definition>
           <value name="linear"/>
@@ -429,7 +429,7 @@
     </component>
     <component name="BiasCorrection" rawName="BiasCorrection" esgName="BiasCorrection">
       <definition status="missing">Definition of component type BiasCorrection required</definition>
-      <parametergroup name="General Attributes" rawName="" esgName="" componentView="false"/>
+      <parametergroup name="General Attributes" rawName="" esgName="" />
     </component>
   </component>
 </vocab>
