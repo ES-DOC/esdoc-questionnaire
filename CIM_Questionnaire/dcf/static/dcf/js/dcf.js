@@ -764,9 +764,6 @@ function initializeContainer(container) {
             }).get().join("-");
                 var prefix = $(this).attr("prefix");
                 
-                alert("OLD PREFIX WAS " + prefix);
-                alert("NEW PREFIX MIGHT BE " + prefixes);
-
                 $(this).formset({
                     prefix          : prefix,
                     formCssClass    : prefix + "_subform",
