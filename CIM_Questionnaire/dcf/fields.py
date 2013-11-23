@@ -81,8 +81,10 @@ class MetadataField(models.Field):
     def getType(self):
         return self._type
 
-    def contribute_to_class(self,cls,name):
+    def contribute_to_class(self,cls,name,*args,**kwargs):
         self._name = name
+        ### in Django v1.6 the virtual_only kwargs seems to be deprecated
+        virtual_only    = kwargs.pop("virtual_only",False)
         super(MetadataField,self).contribute_to_class(cls,name)
 
     def isAtomicField(self):
@@ -243,7 +245,7 @@ class MetadataManyToManyField(models.ManyToManyField,MetadataRelationshipField):
 class MetadataManyToOneField(models.ForeignKey,MetadataRelationshipField):
     _type = "manytoonefield"
 
-    def contribute_to_class(self,cls, name):
+    def contribute_to_class(self,cls,name,*args,**kwargs):
         preferred_related_name = name.lower() + "." + self.sourceAppName + "." + self.sourceModelName + "." + self.targetAppName + "." + self.targetModelName
         if self.related_query_name() != preferred_related_name:
             self.rel.related_name = preferred_related_name
@@ -451,7 +453,10 @@ class EnumerationField(models.TextField):
         if isinstance(value, list):
             return value
         else:
-            return value.split("|")
+            try:
+                return value.split("|")
+            except:
+                return []
 
     def validate(self,value,model_instance):
         # I already validated against the formfield

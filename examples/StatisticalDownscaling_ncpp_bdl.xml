@@ -5,7 +5,7 @@
   <component name="StatisticalDowscaling" rawName="StatisticalDowscaling" esgName="StatisticalDowscaling">
     <definition status="missing">Definition of component type StatisticalDowscaling required</definition>
     <parametergroup name="General Attributes" rawName="" esgName="" />
-    <parametergroup name="StatisticalDownscalingKeyProperties" rawName="StatisticalDownscaling_KeyProperties" esgName="KeyProperties" >
+    <component name="StatisticalDownscalingKeyProperties" rawName="StatisticalDownscaling_KeyProperties" esgName="KeyProperties" >
       <parametergroup name="Method" rawName="Method" esgName="Method" >
         <parameter name="MauranClassificationType" rawName="MauranClassificationType" esgName="MauranClassificationType" choice="OR">
           <definition status="missing">Definition of property name MauranClassificationType required</definition>
@@ -59,7 +59,7 @@
           <value name="other"/>
           <value name="N/A"/>
         </parameter>
-        <parametergroup name="MethodPhases" rawName="MethodPhases" esgName="MethodPhases" >
+        <component name="MethodPhases" rawName="MethodPhases" esgName="MethodPhases" >
           <parametergroup name="LearningPeriod (&quot;Calibration Period&quot;?)" rawName="LearningPeriod (&quot;Calibration Period&quot;?)" esgName="LearningPeriod (&quot;Calibration Period&quot;?)" >
             <parameter name="FirstYear" rawName="FirstYear" esgName="FirstYear" choice="keyboard">
               <definition status="missing">Definition of property name FirstYear required</definition>
@@ -110,7 +110,7 @@
               <value format="string"/>
             </parameter>
           </parametergroup>
-        </parametergroup>
+        </component>
         <parameter name="ExplicitBiasCorrection" rawName="ExplicitBiasCorrection" esgName="ExplicitBiasCorrection" choice="OR">
           <definition status="missing">Definition of property name ExplicitBiasCorrection required</definition>
           <value name="Quantile Mapping"/>
@@ -155,8 +155,10 @@
           <value format="string"/>
         </parameter>
       </parametergroup>
-    </parametergroup>
-    <parametergroup name="Variables" rawName="Variables" esgName="Variables" >
+    </component>
+    <component name="Variables" rawName="Variables" esgName="Variables">
+      <definition status="missing">Definition of component type Variables required</definition>
+      <parametergroup name="General Attributes" rawName="" esgName="" />
       <parametergroup name="Local Predictands" rawName="Local Predictands" esgName="Local Predictands" >
         <parameter name="CalibrationPredictandOriginType" rawName="CalibrationPredictandOriginType" esgName="CalibrationPredictandOriginType" choice="XOR">
           <definition status="missing">Definition of property name CalibrationPredictandOriginType required</definition>
@@ -308,7 +310,7 @@
           </parameter>
         </parametergroup>
       </parametergroup>
-    </parametergroup>
+    </component>
     <component name="WeatherTyping" rawName="WeatherTyping" esgName="WeatherTyping">
       <definition status="missing">Definition of component type WeatherTyping required</definition>
       <parametergroup name="General Attributes" rawName="" esgName="" />
