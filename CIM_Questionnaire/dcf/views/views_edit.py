@@ -371,6 +371,7 @@ def edit_new(request,version_number="",project_name="",model_name=""):
                 component_tree[customizer.model_root_component].append(vocabulary.getComponentTree())
             else:
                 component_tree.update(vocabulary.getComponentTree())
+            
             if not any(component_list): # don't need to check component_tree; if it has one it will have the other
                 msg = "There is no component hierarchy defined in vocabulary '%s'.  Has it been registered?" % vocabulary
                 return dcf_error(request,msg)

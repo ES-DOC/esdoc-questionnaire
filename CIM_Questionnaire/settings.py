@@ -18,7 +18,7 @@ MANAGERS = ADMINS
 ###DATABASES = {
 ###    'default': {
 ###        'ENGINE'    : 'django.db.backends.sqlite3',               # Add 'postgresql_psycopg2', 'mysql', 'sqlite3' or 'oracle'.
-###        'NAME'      : rel('./database/django.data'),                      # Or path to database file if using sqlite3.
+###        'NAME'      : rel('./database/cim_questionnaire_db_sqlite_webfaction_prod'),                      # Or path to database file if using sqlite3.
 ###        # The following settings are not used with sqlite3:
 ###        'USER'      : '',
 ###        'PASSWORD'  : '',
@@ -43,7 +43,7 @@ MANAGERS = ADMINS
 DATABASES = {
     'default': {
         'ENGINE'    : 'django.db.backends.postgresql_psycopg2', # Add 'postgresql_psycopg2', 'mysql', 'sqlite3' or 'oracle'.
-        'NAME'      : 'cim_questionnaire',                      # Or path to database file if using sqlite3.
+        'NAME'      : '',                      # Or path to database file if using sqlite3.
         'USER'      : '',
         'PASSWORD'  : '',
         'HOST'      : '127.0.0.1',                              # Empty for localhost through domain sockets or '127.0.0.1' for localhost through TCP.
@@ -224,3 +224,10 @@ LOGGING = {
 PROFILE 	 = False
 PROFILE_LOG_BASE = rel('profiles/'),
 SETUP_HPY 	 = False
+
+##################################
+# DJANGO_CIM_FORMS ATOM_FEED_DIR #
+##################################
+
+ATOM_FEED_DIR = rel('django_cim_forms/feed')
+
