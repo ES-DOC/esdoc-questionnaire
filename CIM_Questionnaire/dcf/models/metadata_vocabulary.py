@@ -45,8 +45,10 @@ class MetadataVocabulary(models.Model):
         verbose_name        = 'Metadata Vocabulary'
         verbose_name_plural = 'Metadata Vocabularies'
 
-    project = models.ForeignKey("MetadataProject",blank=True,null=True,related_name="vocabularies")
-    file    = models.FileField(verbose_name="Vocabulary File",upload_to=_UPLOAD_PATH,validators=[validate_vocabulary_file_extension,validate_vocabulary_file_schema])
+#    project = models.ForeignKey("MetadataProject",blank=True,null=True,related_name="vocabularies")
+    projects = models.ManyToManyField("MetadataProject",blank=True,null=True,related_name="vocabularies")
+#    file    = models.FileField(verbose_name="Vocabulary File",upload_to=_UPLOAD_PATH,validators=[validate_vocabulary_file_extension,validate_vocabulary_file_schema])
+    file    = models.FileField(verbose_name="Vocabulary File",upload_to=_UPLOAD_PATH,validators=[validate_vocabulary_file_extension])
     name    = models.CharField(max_length=255,blank=True,null=True,unique=True)
     document_type = models.CharField(max_length=64,blank=False,choices=CIM_DOCUMENT_TYPES)
 
@@ -75,6 +77,7 @@ class MetadataVocabulary(models.Model):
                 print "warning: the file '%s' is being overwritten" % vocabulary_file_path
                 os.remove(vocabulary_file_path)
 
+        print "ABOUT TO SAVE"
         super(MetadataVocabulary, self).save(*args, **kwargs)
 
     def register(self):
