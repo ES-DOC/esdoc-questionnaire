@@ -4,11 +4,11 @@
 <vocab mmrevision="" mmurl="" mmlcrevision="" transrevision="" transURL="">
   <component name="StatisticalDowscaling" rawName="StatisticalDowscaling" esgName="StatisticalDowscaling">
     <definition status="missing">Definition of component type StatisticalDowscaling required</definition>
-    <parametergroup name="General Attributes" rawName="" esgName="" />
-    <component name="StatisticalDownscalingKeyProperties" rawName="StatisticalDownscaling_KeyProperties" esgName="KeyProperties" >
-      <parametergroup name="Method" rawName="Method" esgName="Method" >
+    <parametergroup name="General Attributes" rawName="" esgName="" componentView="false"/>
+    <parametergroup name="StatisticalDownscalingKeyProperties" rawName="StatisticalDownscaling_KeyProperties" esgName="KeyProperties" componentView="true">
+      <parametergroup name="General Attributes" rawName="StatisticalDownscalingKeyPropertiesAttributes_" esgName="" componentView="false">
         <parameter name="MauranClassificationType" rawName="MauranClassificationType" esgName="MauranClassificationType" choice="OR">
-          <definition status="missing">Definition of property name MauranClassificationType required</definition>
+          <definition status="provided">The MauranClassificationType is a classification following the system used by Maraun et. al. Reviews of Geophysics, 2010.</definition>
           <value name="PP (Perfect Prog)"/>
           <value name="MOS (model output statistics)"/>
           <value name="Weather Generator"/>
@@ -17,7 +17,7 @@
           <value name="N/A"/>
         </parameter>
         <parameter name="MethodType" rawName="MethodType" esgName="MethodType" choice="OR">
-          <definition status="missing">Definition of property name MethodType required</definition>
+          <definition status="provided">The MethodType describes the statistical core of the specific method.</definition>
           <value name="weather typing"/>
           <value name="change factor (including delta)"/>
           <value name="weather analog"/>
@@ -53,75 +53,74 @@
           </parameter>
         </constraint>
         <parameter name="Predictor-PredictandRelationship" rawName="Predictor-PredictandRelationship" esgName="Predictor-PredictandRelationship" choice="OR">
-          <definition status="missing">Definition of property name Predictor-PredictandRelationship required</definition>
+          <definition status="provided">Where homegeneous implies surface predictors to surface predictands (as in Rummukainen 1997) and heterogeneous implies upper-air predictors to surface predictands.</definition>
           <value name="homogeneous"/>
           <value name="heterogeneous"/>
           <value name="other"/>
           <value name="N/A"/>
         </parameter>
-        <component name="MethodPhases" rawName="MethodPhases" esgName="MethodPhases" >
-          <parametergroup name="LearningPeriod (&quot;Calibration Period&quot;?)" rawName="LearningPeriod (&quot;Calibration Period&quot;?)" esgName="LearningPeriod (&quot;Calibration Period&quot;?)" >
-            <parameter name="FirstYear" rawName="FirstYear" esgName="FirstYear" choice="keyboard">
-              <definition status="missing">Definition of property name FirstYear required</definition>
-              <value format="numerical" units="(years)"/>
-            </parameter>
-            <parameter name="LastYear" rawName="LastYear" esgName="LastYear" choice="keyboard">
-              <definition status="missing">Definition of property name LastYear required</definition>
-              <value format="numerical" units="(years)"/>
-            </parameter>
-            <parameter name="AdditionalInformation" rawName="AdditionalInformation" esgName="AdditionalInformation" choice="keyboard">
-              <definition status="missing">Definition of property name AdditionalInformation required</definition>
-              <value format="string"/>
-            </parameter>
-          </parametergroup>
-          <parametergroup name="ValidationPeriod" rawName="ValidationPeriod" esgName="ValidationPeriod" >
-            <parameter name="FirstYear" rawName="FirstYear" esgName="FirstYear" choice="keyboard">
-              <definition status="missing">Definition of property name FirstYear required</definition>
-              <value format="numerical" units="(years)"/>
-            </parameter>
-            <parameter name="LastYear" rawName="LastYear" esgName="LastYear" choice="keyboard">
-              <definition status="missing">Definition of property name LastYear required</definition>
-              <value format="numerical" units="(years)"/>
-            </parameter>
-            <parameter name="ValidationType" rawName="ValidationType" esgName="ValidationType" choice="XOR">
-              <definition status="missing">Definition of property name ValidationType required</definition>
-              <value name="jacknife"/>
-              <value name="cross-validation"/>
-              <value name="split sample"/>
-              <value name="other"/>
-              <value name="N/A"/>
-            </parameter>
-            <parameter name="AdditionalInformation" rawName="AdditionalInformation" esgName="AdditionalInformation" choice="keyboard">
-              <definition status="missing">Definition of property name AdditionalInformation required</definition>
-              <value format="string"/>
-            </parameter>
-          </parametergroup>
-          <parametergroup name="ApplicationPeriod" rawName="ApplicationPeriod" esgName="ApplicationPeriod" >
-            <parameter name="FirstYear" rawName="FirstYear" esgName="FirstYear" choice="keyboard">
-              <definition status="missing">Definition of property name FirstYear required</definition>
-              <value format="numerical" units="(years)"/>
-            </parameter>
-            <parameter name="LastYear" rawName="LastYear" esgName="LastYear" choice="keyboard">
-              <definition status="missing">Definition of property name LastYear required</definition>
-              <value format="numerical" units="(years)"/>
-            </parameter>
-            <parameter name="AdditionalInformation" rawName="AdditionalInformation" esgName="AdditionalInformation" choice="keyboard">
-              <definition status="missing">Definition of property name AdditionalInformation required</definition>
-              <value format="string"/>
-            </parameter>
-          </parametergroup>
-        </component>
         <parameter name="ExplicitBiasCorrection" rawName="ExplicitBiasCorrection" esgName="ExplicitBiasCorrection" choice="OR">
-          <definition status="missing">Definition of property name ExplicitBiasCorrection required</definition>
-          <value name="Quantile Mapping"/>
-          <value name="Scaling"/>
-          <value name="Other"/>
-          <value name="None"/>
+          <definition status="provided">Is an explicit bias correction step included in this method?  If so, please describe the type of bias correction used</definition>
+          <value name="quantile mapping"/>
+          <value name="scaling"/>
+          <value name="none"/>
           <value name="other"/>
           <value name="N/A"/>
         </parameter>
       </parametergroup>
-      <parametergroup name="SpatialTreatment" rawName="SpatialTreatment" esgName="SpatialTreatment" >
+      <parametergroup name="MethodPhases" rawName="MethodPhases" esgName="MethodPhases" componentView="true">
+        <parametergroup name="LearningPeriod" rawName="LearningPeriod" esgName="LearningPeriod" componentView="false">
+          <parameter name="FirstYear" rawName="FirstYear" esgName="FirstYear" choice="keyboard">
+            <definition status="missing">Definition of property name FirstYear required</definition>
+            <value format="numerical" units="(years)"/>
+          </parameter>
+          <parameter name="LastYear" rawName="LastYear" esgName="LastYear" choice="keyboard">
+            <definition status="missing">Definition of property name LastYear required</definition>
+            <value format="numerical" units="(years)"/>
+          </parameter>
+          <parameter name="AdditionalInformation" rawName="AdditionalInformation" esgName="AdditionalInformation" choice="keyboard">
+            <definition status="provided">For example, BCCA used even numbered years for calibration and odd numbered years for validation</definition>
+            <value format="string"/>
+          </parameter>
+        </parametergroup>
+        <parametergroup name="ValidationPeriod" rawName="ValidationPeriod" esgName="ValidationPeriod" componentView="false">
+          <parameter name="FirstYear" rawName="FirstYear" esgName="FirstYear" choice="keyboard">
+            <definition status="missing">Definition of property name FirstYear required</definition>
+            <value format="numerical" units="(years)"/>
+          </parameter>
+          <parameter name="LastYear" rawName="LastYear" esgName="LastYear" choice="keyboard">
+            <definition status="missing">Definition of property name LastYear required</definition>
+            <value format="numerical" units="(years)"/>
+          </parameter>
+          <parameter name="ValidationType" rawName="ValidationType" esgName="ValidationType" choice="XOR">
+            <definition status="missing">Definition of property name ValidationType required</definition>
+            <value name="jacknife"/>
+            <value name="cross-validation"/>
+            <value name="split sample"/>
+            <value name="other"/>
+            <value name="N/A"/>
+          </parameter>
+          <parameter name="AdditionalInformation" rawName="AdditionalInformation" esgName="AdditionalInformation" choice="keyboard">
+            <definition status="provided">For example, BCCA used even numbered years for calibration and odd numbered years for validation</definition>
+            <value format="string"/>
+          </parameter>
+        </parametergroup>
+        <parametergroup name="ApplicationPeriod" rawName="ApplicationPeriod" esgName="ApplicationPeriod" componentView="false">
+          <parameter name="FirstYear" rawName="FirstYear" esgName="FirstYear" choice="keyboard">
+            <definition status="missing">Definition of property name FirstYear required</definition>
+            <value format="numerical" units="(years)"/>
+          </parameter>
+          <parameter name="LastYear" rawName="LastYear" esgName="LastYear" choice="keyboard">
+            <definition status="missing">Definition of property name LastYear required</definition>
+            <value format="numerical" units="(years)"/>
+          </parameter>
+          <parameter name="AdditionalInformation" rawName="AdditionalInformation" esgName="AdditionalInformation" choice="keyboard">
+            <definition status="provided">Was anything done differently than in the other phases?</definition>
+            <value format="string"/>
+          </parameter>
+        </parametergroup>
+      </parametergroup>
+      <parametergroup name="SpatialTreatment" rawName="SpatialTreatment" esgName="SpatialTreatment" componentView="false">
         <parameter name="OutputDataType" rawName="OutputDataType" esgName="OutputDataType" choice="OR">
           <definition status="missing">Definition of property name OutputDataType required</definition>
           <value name="station"/>
@@ -129,18 +128,18 @@
           <value name="other"/>
           <value name="N/A"/>
         </parameter>
-        <constraint name="If OutputDataType is &quot;gridded&quot;">
+        <constraint name="if OutputDataType is &quot;gridded&quot;">
           <parameter name="GridResolution" rawName="GridResolution" esgName="GridResolution" choice="keyboard">
             <definition status="missing">Definition of property name GridResolution required</definition>
             <value format="numerical"/>
           </parameter>
         </constraint>
         <parameter name="RegionDevelopedFor" rawName="RegionDevelopedFor" esgName="RegionDevelopedFor" choice="keyboard">
-          <definition status="missing">Definition of property name RegionDevelopedFor required</definition>
+          <definition status="provided">For example,BCSD was developed for the US.</definition>
           <value format="string"/>
         </parameter>
       </parametergroup>
-      <parametergroup name="TemporalTreatment" rawName="TemporalTreatment" esgName="TemporalTreatment" >
+      <parametergroup name="TemporalTreatment" rawName="TemporalTreatment" esgName="TemporalTreatment" componentView="false">
         <parameter name="DevelomentTimeWindow" rawName="DevelomentTimeWindow" esgName="DevelomentTimeWindow" choice="XOR">
           <definition status="missing">Definition of property name DevelomentTimeWindow required</definition>
           <value name="month"/>
@@ -151,77 +150,75 @@
           <value name="N/A"/>
         </parameter>
         <parameter name="AdditionalInformation" rawName="AdditionalInformation" esgName="AdditionalInformation" choice="keyboard">
-          <definition status="missing">Definition of property name AdditionalInformation required</definition>
+          <definition status="provided">For example, a list of three-letter acronymns indicating which months are used, or a description of the moving window.</definition>
           <value format="string"/>
         </parameter>
       </parametergroup>
-    </component>
-    <component name="Variables" rawName="Variables" esgName="Variables">
-      <definition status="missing">Definition of component type Variables required</definition>
-      <parametergroup name="General Attributes" rawName="" esgName="" />
-      <parametergroup name="Local Predictands" rawName="Local Predictands" esgName="Local Predictands" >
-        <parameter name="CalibrationPredictandOriginType" rawName="CalibrationPredictandOriginType" esgName="CalibrationPredictandOriginType" choice="XOR">
-          <definition status="missing">Definition of property name CalibrationPredictandOriginType required</definition>
-          <value name="station"/>
-          <value name="gridded observations"/>
-          <value name="satellite"/>
-          <value name="GCM"/>
-          <value name="other"/>
-          <value name="N/A"/>
-        </parameter>
-        <parameter name="CalibrationPredictandOriginName" rawName="CalibrationPredictandOriginName" esgName="CalibrationPredictandOriginName" choice="XOR">
-          <definition status="missing">Definition of property name CalibrationPredictandOriginName required</definition>
-          <value name="SAFRAN analysis"/>
-          <value name="Maurer 2002"/>
-          <value name="PRISM"/>
-          <value name="GHCN"/>
-          <value name="other"/>
-          <value name="N/A"/>
-        </parameter>
-        <parameter name="PredictandPDFSubset" rawName="PredictandPDFSubset" esgName="PredictandPDFSubset" choice="XOR">
-          <definition status="missing">Definition of property name PredictandPDFSubset required</definition>
-          <value name="extremes only"/>
-          <value name="all data but extremes"/>
-          <value name="all data"/>
-          <value name="other"/>
-          <value name="N/A"/>
-        </parameter>
-        <parameter name="PredictandFrequency" rawName="PredictandFrequency" esgName="PredictandFrequency" choice="XOR">
-          <definition status="missing">Definition of property name PredictandFrequency required</definition>
-          <value name="monthly"/>
-          <value name="daily"/>
-          <value name="hourly"/>
-          <value name="other"/>
-          <value name="N/A"/>
-        </parameter>
-        <parameter name="TemporalTreatment" rawName="TemporalTreatment" esgName="TemporalTreatment" choice="keyboard">
-          <definition status="missing">Definition of property name TemporalTreatment required</definition>
-          <value format="string"/>
-        </parameter>
-        <parameter name="PredictandVariables" rawName="PredictandVariables" esgName="PredictandVariables" choice="OR">
-          <definition status="provided">Local surface variables.</definition>
-          <value name="precipitation"/>
-          <value name="t_average"/>
-          <value name="t_min"/>
-          <value name="t_max"/>
-          <value name="wind speed"/>
-          <value name="wind components"/>
-          <value name="solar radiation"/>
-          <value name="relative humidity"/>
-          <value name="specific humidity"/>
-          <value name="other"/>
-          <value name="N/A"/>
-        </parameter>
-        <parametergroup name="PreProcessing" rawName="PreProcessing" esgName="PreProcessing" >
+    </parametergroup>
+    <parametergroup name="Variables" rawName="Variables" esgName="Variables" componentView="true">
+      <parametergroup name="LocalPredictands" rawName="LocalPredictands" esgName="LocalPredictands" componentView="true">
+        <parametergroup name="PredictandDetails" rawName="PredictandDetails" esgName="PredictandDetails" componentView="false">
+          <parameter name="CalibrationPredictandOriginType" rawName="CalibrationPredictandOriginType" esgName="CalibrationPredictandOriginType" choice="XOR">
+            <definition status="missing">Definition of property name CalibrationPredictandOriginType required</definition>
+            <value name="station"/>
+            <value name="gridded observations"/>
+            <value name="satellite"/>
+            <value name="GCM"/>
+            <value name="other"/>
+            <value name="N/A"/>
+          </parameter>
+          <parameter name="CalibrationPredictandOriginName" rawName="CalibrationPredictandOriginName" esgName="CalibrationPredictandOriginName" choice="XOR">
+            <definition status="provided">If the origin type is "station", then the specific stations will be defined in the simulation, this name refers to the preferred dataset (if it exists).  If the origin type is "GCM," this name refers to the GCM run idientified as specifically as possible.  Also, if the origin type is "GCM," then this refers to a high-resolution GCM used in perfect model experiments.</definition>
+            <value name="SAFRAN analysis"/>
+            <value name="Maurer 2002"/>
+            <value name="PRISM"/>
+            <value name="GHCN"/>
+            <value name="other"/>
+            <value name="N/A"/>
+          </parameter>
+          <parameter name="PredictandPDFSubset" rawName="PredictandPDFSubset" esgName="PredictandPDFSubset" choice="XOR">
+            <definition status="missing">Definition of property name PredictandPDFSubset required</definition>
+            <value name="extremes only"/>
+            <value name="all data but extremes"/>
+            <value name="all data"/>
+            <value name="other"/>
+            <value name="N/A"/>
+          </parameter>
+          <parameter name="PredictandFrequency" rawName="PredictandFrequency" esgName="PredictandFrequency" choice="XOR">
+            <definition status="missing">Definition of property name PredictandFrequency required</definition>
+            <value name="monthly"/>
+            <value name="daily"/>
+            <value name="hourly"/>
+            <value name="other"/>
+            <value name="N/A"/>
+          </parameter>
+          <parameter name="TemporalTreatment" rawName="TemporalTreatment" esgName="TemporalTreatment" choice="keyboard">
+            <definition status="provided">Are any variables only used in specific times of year as predictors?  If so, please list the variables and corresponding months/seasons.  For example, in AARM, for precipitation, a predictor was selected for each month based on three variables using RMSE.  Most methods do not have special treatment of predictands.</definition>
+            <value format="string"/>
+          </parameter>
+          <parameter name="PredictandVariables" rawName="PredictandVariables" esgName="PredictandVariables" choice="OR">
+            <definition status="provided">Local surface variables.</definition>
+            <value name="precipitation"/>
+            <value name="t_average"/>
+            <value name="t_min"/>
+            <value name="t_max"/>
+            <value name="wind speed"/>
+            <value name="wind components"/>
+            <value name="solar radiation"/>
+            <value name="relative humidity"/>
+            <value name="specific humidity"/>
+            <value name="other"/>
+            <value name="N/A"/>
+          </parameter>
+        </parametergroup>
+        <parametergroup name="PreProcessing" rawName="PreProcessing" esgName="PreProcessing" componentView="false">
           <parameter name="PreprocessingMethod" rawName="PreprocessingMethod" esgName="PreprocessingMethod" choice="OR">
-            <definition status="provided">Provide any other relevant details about the pre-processing step.</definition>
+            <definition status="missing">Definition of property name PreprocessingMethod required</definition>
             <value name="anomalies"/>
             <value name="EOF filtering"/>
             <value name="sqrt for precipitation"/>
             <value name="log of precipitation"/>
-            <value name="statistical distribution parameters">
-              <definition status="provided">Relationship between the predictor(s) and the statistical distribution parameters of the predictand.</definition>
-            </value>
+            <value name="statistical distribution parameters"/>
             <value name="frequencies of extremes"/>
             <value name="other"/>
             <value name="N/A"/>
@@ -231,71 +228,73 @@
             <value format="string"/>
           </parameter>
         </parametergroup>
-        <parametergroup name="PostProcessing" rawName="PostProcessing" esgName="PostProcessing" >
+        <parametergroup name="PostProcessing" rawName="PostProcessing" esgName="PostProcessing" componentView="false">
           <parameter name="PostprocessingMethod" rawName="PostprocessingMethod" esgName="PostprocessingMethod" choice="keyboard">
             <definition status="provided">Provide any relevant details about the post-processing step (e.g. how the full signal is rebuild: use of trends, seasonal cycle and downscalled anomalies).</definition>
             <value format="string"/>
           </parameter>
         </parametergroup>
       </parametergroup>
-      <parametergroup name="Large Scale Predictors" rawName="Large Scale Predictors" esgName="Large Scale Predictors" >
-        <parameter name="CalibrationPredictorOriginType" rawName="CalibrationPredictorOriginType" esgName="CalibrationPredictorOriginType" choice="XOR">
-          <definition status="missing">Definition of property name CalibrationPredictorOriginType required</definition>
-          <value name="analysis/reanalysis"/>
-          <value name="GCM"/>
-          <value name="satellite"/>
-          <value name="other"/>
-          <value name="N/A"/>
-        </parameter>
-        <parameter name="CalibrationPredictorOriginName" rawName="CalibrationPredictorOriginName" esgName="CalibrationPredictorOriginName" choice="XOR">
-          <definition status="missing">Definition of property name CalibrationPredictorOriginName required</definition>
-          <value name="NCEP1"/>
-          <value name="NCEP2"/>
-          <value name="ERA40"/>
-          <value name="ERAinterim"/>
-          <value name="other"/>
-          <value name="N/A"/>
-        </parameter>
-        <parameter name="Predictors" rawName="Predictors" esgName="Predictors" choice="OR">
-          <definition status="provided">Large scale atmospheric variables.</definition>
-          <value name="sea-level pressure"/>
-          <value name="precipitation"/>
-          <value name="wind field"/>
-          <value name="geopotential height at 500 mb"/>
-          <value name="geopotential height at 700 mb"/>
-          <value name="geopotential height at 850 mb"/>
-          <value name="specific humidity"/>
-          <value name="temperature at 850 mb"/>
-          <value name="t_average"/>
-          <value name="t_min"/>
-          <value name="t_max"/>
-          <value name="other"/>
-          <value name="N/A"/>
-        </parameter>
-        <parameter name="PredictorPDFSubset" rawName="PredictorPDFSubset" esgName="PredictorPDFSubset" choice="XOR">
-          <definition status="missing">Definition of property name PredictorPDFSubset required</definition>
-          <value name="extremes only"/>
-          <value name="all data"/>
-          <value name="all data but extremes"/>
-          <value name="other"/>
-          <value name="N/A"/>
-        </parameter>
-        <parameter name="PredictorFrequency" rawName="PredictorFrequency" esgName="PredictorFrequency" choice="XOR">
-          <definition status="missing">Definition of property name PredictorFrequency required</definition>
-          <value name="monthly"/>
-          <value name="daily"/>
-          <value name="hourly"/>
-          <value name="several frequencies used"/>
-          <value name="other"/>
-          <value name="N/A"/>
-        </parameter>
-        <parameter name="TemporalTreatment" rawName="TemporalTreatment" esgName="TemporalTreatment" choice="keyboard">
-          <definition status="missing">Definition of property name TemporalTreatment required</definition>
-          <value format="string"/>
-        </parameter>
-        <parametergroup name="PreProcessing" rawName="PreProcessing" esgName="PreProcessing" >
+      <parametergroup name="LargeScalePredictors" rawName="LargeScalePredictors" esgName="LargeScalePredictors" componentView="true">
+        <parametergroup name="PredictorDetails" rawName="PredictorDetails" esgName="PredictorDetails" componentView="false">
+          <parameter name="CalibrationPredictorOriginType" rawName="CalibrationPredictorOriginType" esgName="CalibrationPredictorOriginType" choice="XOR">
+            <definition status="missing">Definition of property name CalibrationPredictorOriginType required</definition>
+            <value name="analysis/reanalysis"/>
+            <value name="GCM"/>
+            <value name="satellite"/>
+            <value name="other"/>
+            <value name="N/A"/>
+          </parameter>
+          <parameter name="CalibrationPredictorOriginName" rawName="CalibrationPredictorOriginName" esgName="CalibrationPredictorOriginName" choice="XOR">
+            <definition status="provided">The name of the analysis (NCEP1, ERA40) or satellite</definition>
+            <value name="NCEP1"/>
+            <value name="NCEP2"/>
+            <value name="ERA40"/>
+            <value name="ERAinterim"/>
+            <value name="other"/>
+            <value name="N/A"/>
+          </parameter>
+          <parameter name="Predictors" rawName="Predictors" esgName="Predictors" choice="OR">
+            <definition status="provided">Large scale atmospheric variables.</definition>
+            <value name="sea-level pressure"/>
+            <value name="precipitation"/>
+            <value name="wind field"/>
+            <value name="geopotential height at 500 mb"/>
+            <value name="geopotential height at 700 mb"/>
+            <value name="geopotential height at 850 mb"/>
+            <value name="specific humidity"/>
+            <value name="temperature at 850 mb"/>
+            <value name="t_average"/>
+            <value name="t_min"/>
+            <value name="t_max"/>
+            <value name="other"/>
+            <value name="N/A"/>
+          </parameter>
+          <parameter name="PredictorPDFSubset" rawName="PredictorPDFSubset" esgName="PredictorPDFSubset" choice="XOR">
+            <definition status="missing">Definition of property name PredictorPDFSubset required</definition>
+            <value name="extremes only"/>
+            <value name="all data"/>
+            <value name="all data but extremes"/>
+            <value name="other"/>
+            <value name="N/A"/>
+          </parameter>
+          <parameter name="PredictorFrequency" rawName="PredictorFrequency" esgName="PredictorFrequency" choice="XOR">
+            <definition status="missing">Definition of property name PredictorFrequency required</definition>
+            <value name="monthly"/>
+            <value name="daily"/>
+            <value name="hourly"/>
+            <value name="several frequencies used"/>
+            <value name="other"/>
+            <value name="N/A"/>
+          </parameter>
+          <parameter name="TemporalTreatment" rawName="TemporalTreatment" esgName="TemporalTreatment" choice="keyboard">
+            <definition status="provided">Are any variables only used in specific times of year as predictors?  If so, please list the variables and corresponding months/seasons.  For example, in AARM, for precipitation, a predictor was selected for each month based on three variables using RMSE.</definition>
+            <value format="string"/>
+          </parameter>
+        </parametergroup>
+        <parametergroup name="PreProcessing" rawName="PreProcessing" esgName="PreProcessing" componentView="false">
           <parameter name="PreprocessingMethod" rawName="PreprocessingMethod" esgName="PreprocessingMethod" choice="OR">
-            <definition status="missing">Definition of property name PreprocessingMethod required</definition>
+            <definition status="provided">unless otherwise specified (as with "sqrt for precipitation") these are applied to all predictors</definition>
             <value name="anomalies"/>
             <value name="EOF filtering"/>
             <value name="sqrt for precipitation"/>
@@ -310,11 +309,11 @@
           </parameter>
         </parametergroup>
       </parametergroup>
-    </component>
+    </parametergroup>
     <component name="WeatherTyping" rawName="WeatherTyping" esgName="WeatherTyping">
       <definition status="missing">Definition of component type WeatherTyping required</definition>
-      <parametergroup name="General Attributes" rawName="" esgName="" />
-      <parametergroup name="Classification" rawName="Classification" esgName="Classification" >
+      <parametergroup name="General Attributes" rawName="" esgName="" componentView="false"/>
+      <parametergroup name="Classification" rawName="Classification" esgName="Classification" componentView="false">
         <parameter name="ClassificationMethod" rawName="ClassificationMethod" esgName="ClassificationMethod" choice="XOR">
           <definition status="provided">Final classification of the days by assignation to a weather-type over the reconstruction period.</definition>
           <value name="analogs"/>
@@ -358,19 +357,19 @@
             </value>
             <value name="other"/>
           </parameter>
-          <constraint name="if ClusterNumType is &quot;subjective&quot;">
-            <parameter name="NumberOfClusters" rawName="NumberOfClusters" esgName="NumberOfClusters" choice="keyboard">
-              <definition status="provided">Number of clusters defined a-priori.</definition>
-              <value format="numerical"/>
-            </parameter>
-          </constraint>
+        </constraint>
+        <constraint name="if ClusterNumType is &quot;subjective&quot;">
+          <parameter name="NumberOfClusters" rawName="NumberOfClusters" esgName="NumberOfClusters" choice="keyboard">
+            <definition status="provided">Number of clusters defined a-priori.</definition>
+            <value format="numerical"/>
+          </parameter>
         </constraint>
       </parametergroup>
     </component>
     <component name="WeatherGenerator" rawName="WeatherGenerator" esgName="WeatherGenerator">
       <definition status="missing">Definition of component type WeatherGenerator required</definition>
-      <parametergroup name="General Attributes" rawName="" esgName="" />
-      <parametergroup name="statisticalModel" rawName="statisticalModel" esgName="statisticalModel" >
+      <parametergroup name="General Attributes" rawName="" esgName="" componentView="false"/>
+      <parametergroup name="statisticalModel" rawName="statisticalModel" esgName="statisticalModel" componentView="false">
         <parameter name="Method" rawName="Method" esgName="Method" choice="XOR">
           <definition status="missing">Definition of property name Method required</definition>
           <value name="precipitation occurence (Markov chain)"/>
@@ -396,8 +395,8 @@
     </component>
     <component name="TransferFunction" rawName="TransferFunction" esgName="TransferFunction">
       <definition status="missing">Definition of component type TransferFunction required</definition>
-      <parametergroup name="General Attributes" rawName="" esgName="" />
-      <parametergroup name="Predictor-PredictandRelation" rawName="Predictor-PredictandRelation" esgName="Predictor-PredictandRelation" >
+      <parametergroup name="General Attributes" rawName="" esgName="" componentView="false"/>
+      <parametergroup name="Predictor-PredictandRelation" rawName="Predictor-PredictandRelation" esgName="Predictor-PredictandRelation" componentView="false">
         <parameter name="SchemeType" rawName="SchemeType" esgName="SchemeType" choice="XOR">
           <definition status="missing">Definition of property name SchemeType required</definition>
           <value name="linear"/>
@@ -431,7 +430,7 @@
     </component>
     <component name="BiasCorrection" rawName="BiasCorrection" esgName="BiasCorrection">
       <definition status="missing">Definition of component type BiasCorrection required</definition>
-      <parametergroup name="General Attributes" rawName="" esgName="" />
+      <parametergroup name="General Attributes" rawName="" esgName="" componentView="false"/>
     </component>
   </component>
 </vocab>
