@@ -1,75 +1,81 @@
-####################
-# Django-CIM-Forms #
-####################
+CIM QUESTIONNAIRE INSTALLATION INSTRUCTIONS
 
-Django-CIM-Forms (DCF) is a set of Django Applications that generate webforms based on CIM-compatible metadata models and controlled vocabularies for use in a Django Framework.
+The following instructions describe how to install the CIM Questionnaire on a Unix-type server (Cent-OS, Linux, Mac-OSX) for the purpose of starting to use and test the web application. 
 
-DCF is separated into a top-level application ("django_cim_forms") which contains all of the base classes and generic code used to work with models and forms, and sub-applications for particular versions of the CIM (currently, only "cim_1_5" exists) which contain all of the models and base forms for the classes defined in that version of the CIM.  
+PRE-REQUISITES
 
-Additionally, to fully use DCF, one or more custom applications are required.  These define a subset of CIM models and forms that should be rendered for a particular user community.  DCF provides a set of functions (which in the long-term will be made accessible via an Admin GUI) to customize how those models and forms are rendered.  Without these customizations, the base models and forms may be unsuitable for users.  Advice on how to customize models and forms is given at the bottom of this document.
+The system must have the following Python packages installed:
 
-################
-# Requirements #
-################
+o Python 2.7.2+
 
-1.  As a Django Application, DCF must be integrated into an existing Django Project.
-2.  That project must be deployed in an environment with the following packages:
-2a. Python 2.6+
-2b. Django 1.4+
-2c. lxml 2.3.3+ (used for parsing and manipulating XML files)
-2d. distribute  (used as part of the installation process)
-2e. pip (used as part of the installation process)
-3.  DCF makes heavy use of JQuery, but all of the required libraries are included as part of the distribution
-4.  Using a virtual Python environment is recommended, but not required.
+o Django 1.5.2+
 
-#############################
-# Installation Instructions #
-#############################
+o South
 
-1. use pip to install the desired version of DCF:
+o django-openid-auth
 
-   pip install -I https://github.com/ES-DOC/django-cim-forms/raw/master/dist/django-cim-forms-<version>.tar.gz
+o libXML
+  
+a PostGres database is recommended.  However, Django also supports MySQL and SQLite3.
 
-   (You can use the "--no-deps" flag if you do not wish to reinstall any of the above dependencies that may already exist on your system.)
+DOWNLOAD
 
-2. In the Django project hosting DCF, modify "settings.py" as follows:
+Download the software at the desired version from the github repository
 
-    add 'django_cim_forms', 'django_cim_forms.cim_1_5' to INSTALLED_APPS
-    add the location of static files (for example, rel('static/')) to TEMPLATE_DIRS
+cd <install directory>
+tar xvfz django-cim-forms.<version>.tar.gz
+cd CIM_Questionnaire
 
-3. In the Django project hosting DCF, modify "urls.py" as follows:
+CONFIGURATION
 
-    add "(r'^metadata/', include('django_cim_forms.urls')), to the list of pattersn
+o review settings.py
 
-4. In the Django project hosting DCF, run python manage.py collectstatic
+  verify that the db/port/user/pwd exist (postgres is recommended; try `createdb <db> -O <user> -p <port>`)
+  to avoid profiling (recommended) set PROFILE and SETUP_HPY to "False"
+  if needed, update STATIC_ROOT and STATICFILES_DIR
+  if desired, set EMAIL_HOST and EMAIL_HOST_USER and EMAIL_HOST_PASSWORD and DEFAULT_FROM_EMAIL and SERVER_EMAIL
 
-5. In the Django project hosting DCF, run python manage.py syncdb
+  for production deployments, it is recommended to set DEBUG to "False" and add the appropriate value(s) for ALLOWED_HOSTS
 
-6. Each time you start the Django server, DCF will check for any new additions to the set of Controlled Vocabularies (CVs).  It will print an informative message each time a CV property is added to the database.
+o start a virtual python enviroment (recommended)
 
-7. Using Django's built-in admin interface, navigate to http://<domain>/admin/sites/site/ and ensure that your domain is listed.  (This is required for the built-in ATOM Feed to work.)
+  pip install django
+  pip install psycopg2 (may require `sudo get-apt install libq-dev`)
+  pip install lxml (may require `sudo get-apt install libxml2`)
+  pip install django-openid-auth python-openid
+  pip install south
+  pip install guppy (for profiling)
 
-#####################################################
-# Installation Instructions for Custom Applications #
-#####################################################
+INITIALIZATION
 
-Using DCF by itself does not make much sense.  It is expected that users will have custom applications that inherit from DCF.  Currently, these are governed by ES-DOC and so the same installation instructions apply:
+o python manage.py syncdb 
 
-1. install the desired version from github via pip
-2. add the application to "settings.py" (note that no changes to "urls.py" are needed)
+  this may generate a "transaction aborted" DatabaseError; this is an issue w/ v0.9.9.6 which will be fixed in future versions; for now comment out the offending bits of django_cim_forms/cim_1_5/forms.py, dycore/forms.py, dycore/models.py, dcf/cim_1_8_1/models/generated_models.py; then un-comment them once `syncdb` succeeds
+  
+  this may generate a "value too long" DatabaseError; this is a known issue w/ Django and PostGres; to fix it run `psql -a -U <user> -d <db> -f django_postgres_fix.sql` (you may have to sudo -s as postgres to do this)
 
-######################
-# Usage Instructions #
-######################
+o python manage.py migrate dcf 
 
-1. To test that the applications have installed properly navigate to:
+o gather the static media files from the different applications into a single directory; first ensure location specified in settings.py by STATIC_ROOT exists
 
-    http://<domain>/metadata
+  `python manage.py collectstatic`
 
-   You should see a simple test message printed to the screen.
+o copy over existing data
 
-   Next navigate to:
+  `python manage.py loaddata fixtures/*.gz`
 
-    http://<domain>/metadata/<custom application name>/<customized model name>
+STARTUP
 
-   You should see a form for creating a CIM Metadata representation of <customized model> for <custom application>.
+o Start the CIM Questionnaire either via the embedded Django server:
+
+  `python manage.py runserver`
+
+  or through apache:
+
+  ensure apache conf is properly setup and restart the apache server
+
+USE
+
+o ordinarily admins would have to manually upload and register Controlled Vocabularies and Categorizations (and Projects and Versions); using fixtures, as above, avoids this requirement
+
+o however, the ATOM feed functionality requires that the correct domain be specifed in the "sites" table via the admin interface.
