@@ -1,0 +1,181 @@
+{% load dcf_filters %}
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html>
+
+{% block head %}
+
+    <head>
+
+        <!-- jquery -->
+        <!-- TODO: USE MINIFIED JQUERY IN PRODUCTION -->
+        <script language="javascript" type="text/javascript" src="{{ STATIC_URL }}dcf/js/jquery/jquery-1.6.3.js"></script>
+
+        <script language="javascript">
+            /* redefining javascript trim() fn,
+             * which doesn't exist in IE,
+             * to use JQuery trim() fn,
+             * which does exist in above script
+             */
+
+             String.prototype.trim = function() {
+                 return $.trim(this);
+             };
+
+            /* redefining javascript indexOf() fn,
+             * which doesn't exist in IE 8.0
+             */
+             if (!Array.prototype.indexOf) {
+                 Array.prototype.indexOf = function(obj, start) {
+                     for (var i = (start || 0), j = this.length; i < j; i++) {
+                         if (this[i] === obj) { return i; }
+                     }
+                     return -1;
+                 }
+             }
+             
+             /* updating JQuery dialog widget to _not_ escape title
+              * (bug in v1.10.x as per http://bugs.jqueryui.com/ticket/6016
+              */
+/*             jQuery.widget('ui.dialog', jQuery.extend({}, jQuery.ui.dialog.prototype, {
+                 _title : function(titleBar) {
+                     titleBar.html(this.options.title || '&#160;');
+                 }
+             }));
+*/
+             /* redefining jquery show() and hide() fns
+              * so that I can bind event handlers to them
+              * (thanks to http://stackoverflow.com/questions/1225102/jquery-event-to-trigger-action-when-a-div-is-made-visible)
+              */
+             $.each(["show", "hide", "toggle"], function() {
+                var old_function = $.fn[this];
+                $.fn[this] = function() {
+                    var initially_hidden  = this.find(":hidden").add(this.filter(":hidden"));
+                    var initially_visible = this.find(":visible").add(this.filter(":visible"));
+                    var result = old_function.apply(this, arguments);
+                    var newly_visible = initially_hidden.filter(":visible");
+                    var newly_hidden  = initially_visible.filter(":hidden");
+                    newly_visible.each(function() {
+                        $(this).triggerHandler("show");
+                    });
+                    newly_hidden.each(function() {
+                        $(this).triggerHandler("hide");
+                    });
+                    return result;
+                }
+            });
+
+        </script>
+        
+        <!-- jquery ui -->
+        <script language="javascript" type="text/javascript" src="{{ STATIC_URL }}dcf/js/jquery/jquery-ui-1.10.3.custom.js"></script>
+        <!-- collapsible fieldsets -->
+        <script language="javascript" type="text/javascript" src="{{ STATIC_URL }}dcf/js/jquery/jquery.coolfieldset.js"></script>
+        <!-- (multi) accordion plugin -->
+        <script language="javascript" type="text/javascript" src="{{ STATIC_URL }}dcf/js/jquery/jquery.multi-open-accordion-1.5.3.js"></script>
+        <!-- dynamic formsets -->
+        <script language="javascript" type="text/javascript" src="{{ STATIC_URL }}dcf/js/jquery/jquery.formset.js"></script>
+        <!-- checkboxes/radiobuttons in selects -->
+        <script language="javascript" type="text/javascript" src="{{ STATIC_URL }}dcf/js/jquery/jquery.multiselect.js"></script>
+        <!-- fancy treeview -->
+        <script language="javascript" type="text/javascript" src="{{ STATIC_URL }}dcf/js/jquery/jquery.dynatree.min.js"></script>
+        <!-- dockable splitter -->
+        <script language="javascript" type="text/javascript" src="{{ STATIC_URL }}dcf/js/jquery/jquery.splitter.js"></script>
+        <!-- tagging widgets -->
+        <script language="javascript" type="text/javascript" src="{{ STATIC_URL }}dcf/js/jquery/jquery.tag-it.js"></script>
+
+        <!-- custom javascript -->
+        <script language="javascript" type="text/javascript" src="{{ STATIC_URL }}dcf/js/dcf.js"></script>
+
+        <script language="javascript">
+            {% block scripts %}
+                 
+            {% endblock %} {# /scripts #}
+        </script>
+
+        <!-- jquery -->
+        <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}dcf/css/custom/jquery-ui-1.10.3.custom.css" />
+        <!-- collapsible fieldsets -->
+        <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}dcf/css/coolfieldset.css" />
+        <!-- checkboxes/radiobuttons in selects -->
+        <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}dcf/css/jquery.multiselect.css" />
+        <!-- fancy treeview -->
+        <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}dcf/css/dynatree/dynatree.css" />
+        <!-- dockable splitter -->
+        <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}dcf/css/splitter.css" />
+        <!-- tagging widgets -->
+        <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}dcf/css/tagit.css" />
+
+        <!-- custom css -->
+        <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}dcf/css/dcf.css" />
+
+        <style>
+            {% block style %}
+                /* custom css goes here */
+            {% endblock %} {# /style #}
+        </style>
+
+        <title>
+            {% block title %}
+                {# custom title goes here #}
+            {% endblock %} {# /title #}
+        </title>
+
+    </head>
+
+{% endblock %} {# / head #}
+
+<body>
+
+{% block main %}
+
+    <div id="dcf">
+
+            <!-- some pre-ready divs to use for popups -->
+            <!-- (more efficient than creating them from scratch) -->
+            <!-- (more efficient than having loads of custom ones) -->
+            <div id="help-dialog" title="help">&nbsp;</div>
+            <div id="confirm-dialog" title="confirm">&nbsp;</div>
+            <div id="edit-dialog" title="edit">&nbsp;</div>
+            <div id="add-dialog" title="add/replace"> &nbsp;</div>
+            <div id="remove-dialog" title="remove">&nbsp;</div>
+            <div id="saved-dialog" title="save">&nbsp;</div>
+            <div id="published-dialog" title="publish">&nbsp;</div>
+            
+            <!-- placeholder for messages to display to user -->
+            <div id="msg">
+                {{msg}}
+            </div>
+
+            
+            {% block header %}
+                <!-- default header -->
+                <div class="header">
+                    <a href="http://www.earthsystemcurator.org/esdoc/index.shtml"><img src="{{ STATIC_URL }}dcf/img/esdoc_logo_purple.png"/></a>
+                </div> <!-- /.header -->
+            {% endblock %} {# /header #}
+
+            {% block content %}
+                you forgot to provide content!
+            {% endblock %} {# /content #}
+
+            {% block footer %}
+                <!-- default footer -->
+                <div class="footer">
+                    This form is generated by the <a target="_blank" href="https://github.com/ES-DOC/django-cim-forms">CIM Questionnaire</a>.
+                </div> <!-- /.footer -->
+            {% endblock %} {# / footer #}
+            
+            <script>
+                if(window.jQuery) {
+                    render_msg($(document));
+                };
+            </script>
+            
+            
+        </div>  <!-- /#dcf -->
+
+{% endblock %} {# / main #}
+</body>
+
+</html>

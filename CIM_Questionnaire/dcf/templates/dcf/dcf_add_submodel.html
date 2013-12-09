@@ -1,0 +1,52 @@
+{% load dcf_filters %}
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<div id='dcf'>
+
+    <!-- placeholder for messages to display to user -->
+    <div id="msg">
+        {{msg}}
+    </div>
+
+    <div class="title" style="font-size: 120% !important;">
+        Available Items
+    </div> <!-- /.title -->
+
+    <div id='edit'>
+        <div id="add">
+            <form id="add_form"">
+                <div class="form">
+                    {% for hiddenField in form.hidden_fields %}
+                        {{ hiddenField }}
+                    {% endfor %} {# /hiddenField #}
+                  
+                            <table width="100%" border="0">
+                                {% for field in form.visible_fields %}
+                                    {% with field_label=field.label field_id="document_details_"|add:field.name %}
+                                        <tr valign="top" class="{% cycle 'odd' 'even' %} field">
+                                            <td>
+                                                {% if field.help_text %}
+                                                    {% include "dcf/_help.html" %}
+                                                {% endif %} {# /field.help_text #}
+                                               <span class="field_label">
+                                                    {{field.label}}:&nbsp;
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span class="field_value">
+                                                    {{field}}
+                                                </span>
+                                                {% if field.errors %}
+                                                    {% include "dcf/_error.html" %}
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                    {% endwith %} {# /field_label, field_id #}
+                                {% endfor %} {# /field #}
+                            </table>
+                    
+                </div> <!-- /.form -->
+           </form>
+        </div> <!-- /#add -->
+    </div> <!-- /#edit -->
+</div> <!-- /#dcf -->

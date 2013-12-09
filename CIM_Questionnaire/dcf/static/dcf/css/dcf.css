@@ -1,0 +1,125 @@
+/* custom CSS for django-cim-forms */
+
+body {
+    /* taken from COG for now */
+    margin: 0;
+    padding: 0;
+    font-size: 10pt;
+    font-family: "Lucida Grande","DejaVu Sans","Bitstream Vera Sans",Verdana,Arial,sans-serif;
+    color: #333;
+    background: #FFFFFF;
+}
+
+* {
+    /* rounded just looks better */
+    -moz-border-radius: 4px;
+    border-radius: 4px;
+}
+
+#dcf {
+    /* give the page a border */
+    border: 1px solid #B9E0E3;
+    padding: 4px;
+    margin: 4px;
+}
+
+#dcf div.header { text-align: left; }
+/* the old logo was 140px */
+/*#dcf div.header img { width: 140px; } */
+/* the new logo is 225px */
+#dcf div.header img { width: 200px; }
+#dcf div.footer { text-align: center; font-style: italic; margin-top: 4px; }
+
+#dcf div.title { font-size: x-large; color: #358C92; text-align: center; }
+
+#dcf .documentation { font-style: italic; padding: 2px; }
+
+/* disable certain fields */
+/* (but don't compeletely remove them, else the Django View won't have access to them on HTTP POST */
+#dcf .hidden { display: none; }
+#dcf .field_label.readonly { color: #9c9a94 !important; }
+#dcf .field_value.readonly * { color: #9c9a94 !important; background: #dcdad5 !important; }
+
+
+#dcf span.required { font-weight: bold; }
+#dcf fieldset.required { border: 2px solid #000000; }
+#dcf fieldset.required legend { color: #000000; }
+
+
+#dcf div.submit { margin-top: 8px; float: right; }
+#dcf div.submit input.button { width: 120px; padding-top: 12px; padding-bottom: 12px; font-weight: bold; border-width: 2px; }
+
+
+/* display errors */
+#dcf .error-wrapper { display: inline; background-color: #ff6666; padding: 4px; margin-top: 2px; }
+#dcf .errorlist { display: inline; list-style-type: none; text-align: center; padding: 0px; margin: 0px; }
+#dcf .errorlist li { display: inline; background-color: #ff6666; }
+/* manually display errors for fieldsets & treeview; JQuery's built-in error rendering is a bit over-the-top */
+#dcf fieldset.error { border: 2px solid #ff6666; }
+#dcf fieldset.error > legend { color: #ff6666; }
+#dcf .tree .dynatree-title.error { border: 1px solid #ff6666; color: #ff6666; }
+
+#dcf fieldset { border: 2px solid #B9E0E3; padding: 0.5em; margin-right: 1.0em; margin-top: 1.0em; margin-bottom: 1.0em; margin-left: 0px; }
+#dcf fieldset legend { font-size: 110%; padding-left: 13px; padding-right: 0.5em; }
+#dcf fieldset legend span.title { background: #358c92 url(../img/default_ui_background.png) repeat-x 50% 50%; }
+#dcf fieldset legend:hover span.title { color: #f7f7f7; background: #358c92 url(../img/active_ui_background.png) repeat-x 50% 50%; }
+
+#dcf table tr.odd { background-color: #ffffff; }
+#dcf table tr.even { background-color: #eeeeee; }
+#dcf table tr.field td:first-child { width: 30%; }
+#dcf table tr.field td:first-child+td { width: 70%; }   /* slightly hacky way of doing things b/c nth-child pseudo-selector is not supprted by all browsers */
+
+
+/* buttons */
+#dcf .ui-button-text { font-size: inherit !important; } /* forces buttons to be sized relative to their text (otherwise I can't override default JQuery sizes) */
+#dcf .subform-toolbar { padding: 4px; float: right;  }
+#dcf .sort_by { position: absolute; z-index: 999999; }
+#dcf .help-button { display: inline; }
+#dcf .help-button .help-description { display: none !important; }
+#dcf button.add { float: left; margin-top: 8px; font-size: 10px; padding: 1px; }
+#dcf button.remove {float: right; margin: 4px; font-size: 10px; padding: 1px; }
+
+
+#dcf button.customize-subform * { padding-top: 2px; padding-bottom: 2px; } /* since this button is part of a table row, make it a bit shorter than the others */
+
+#dcf button.ui-datepicker-trigger { font-size: 11px; margin-left: 4px; }
+
+/* BE SURE TO RENAME UI-ICON IMAGES TO "_default" AND "_hover" AS NEEDED */
+#dcf .default-help-icon    { width: 16px; height: 16px; background-image: url(./custom/images/ui-icons_default.png); }
+#dcf .hover-help-icon      { width: 16px; height: 16px; background-image: url(./custom/images/ui-icons_hover.png); }
+
+/* explicitly reset the img/color for open accordion headers */
+/* (by default, JQuery applies no style to them once opened) */
+#dcf .accordion h3.open-accordion { background: #b9e0e3 url(../img/default_ui_background.png) repeat-x 50% 50%; border: 1px solid #666666;}
+#dcf .accordion h3.ui-state-hover.open-accordion { background: #358c92 url(../img/active_ui_background.png) repeat-x 50% 50%; border: 1px solid #666666;}
+
+
+#dcf .accordion-header * { font-size: 9pt !important; }
+/*#dcf .accordion-header span.ui-icon { border: 1px solid green; width: 16px; height: 16px; }*/
+
+
+/* make tags pretty and more obviously interactive */
+#dcf ul.tagit  { border: 2px solid #358c92; background: #ffffff; min-height: 2em; }
+#dcf .tagit-label { cursor: default;}
+#dcf ul.tagit li.tagit-choice .tagit-edit { cursor: pointer; float: left; margin-right: 2px; margin-left: -4px; }
+#dcf ul.tagit li.tagit-choice .tagit-show { cursor: pointer; float: left; margin-right: 2px; margin-left: -4px; }
+#dcf ul.tagit li.tagit-choice .tagit-show-label { width: 16px; height: 16px;  }
+#dcf ul.tagit li.tagit-choice.unselected { color: red; }
+
+#dcf .enumeration-other { margin-top: 4px; }
+
+#dcf .tree a { white-space: normal !important; height: auto; padding: 1px 2px; }
+#dcf .tree li > ins { vertical-align: top; }
+#dcf .tree .jstree-hovered, #dcf .tree .jstree-clicked { border: 0px; }
+
+.no-close .ui-dialog-titlebar-close { display: none; } /* hide the close buttons on popoup dialogs (require explicitly pressing "ok" or "cancel" */
+
+#dcf .ui-autocomplete { max-height: 100px; overflow-y: auto; }
+
+
+#dcf .delete-row    { display: none !important; } /* these are created by the formset() method */
+#dcf .add-row       { display: none !important; } /* these are created by the formset() method */
+
+#dcf #instructions span.title { font-weight: bold; }
+#dcf #instructions dt { font-weight: bold; padding: 4px; }
+

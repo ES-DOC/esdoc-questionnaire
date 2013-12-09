@@ -1,0 +1,173 @@
+{# this displays a metadata subform #}
+
+    {% load metadata_filters %}
+
+    {# required b/c the individual form ids are here #}
+    {% for hiddenField in form.hidden_fields %}
+        {{ hiddenField }}
+    {% endfor %} {# /hiddenField #}
+
+
+    {#{{form.errors}}#} <!-- not sure if this should go here -->
+
+
+    {% with activeFieldTypes=form|getActiveFieldTypes %}
+        {% if activeFieldTypes %}
+            <div class="tabs">
+                <ul> <!-- tab menu -->
+                    {% for fieldType in activeFieldTypes %}
+                        <li><a href="#tab-{{fieldType.getType}}-{{form|getModelGuid}}">{{ fieldType.getName }}</a></li>
+                    {% endfor %} {# /fieldType #}
+                </ul> <!-- /tab menu -->
+
+                {% for fieldType in activeFieldTypes %}
+                   <div id="tab-{{fieldType.getType}}-{{form|getModelGuid}}">
+                        <div class="tab-content">
+                            {% with fieldsOfType=form|getFieldsOfType:fieldType %}
+                                {% for field in form.visible_fields %}
+                                    {% if field.name in fieldsOfType %}
+
+                                        {% if field|isInSubForms:form %}
+                                            {% if field|required:form %}
+                                                <fieldset class="coolfieldset required" name="{{field.name}}">
+                                            {% else %}
+                                                <fieldset class="coolfieldset" name="{{field.name}}">
+                                            {% endif %} {# /field|required #}
+                                                <legend title="click to show/hide content">
+
+                                                    {% if field.help_text %}
+                                                        <div class="help-button" title="click for more info" id="{{form.getName}}_{{field.auto_id}}">
+                                                            <!-- JQuery ui-icons are handled via <spans>; weird, I know -->
+                                                            <span class="default-help-icon ui-icon-info" style="display: inline-block;">&nbsp;</span>
+                                                            
+                                                            <div class="help-description" title="{{field|verbose_name:form}}">
+                                                                {{ field.help_text|safe }} {# the safe filter prevents inline HTML from being escaped  #}
+                                                            </div> <!-- /.help-description -->
+                                                        </div> <!-- /.help-button -->
+                                                    {% endif %} {# /field.help_text #}
+                                                    {{ field|verbose_name:form}}
+                                                </legend>
+                                                <div class="coolfieldset-content">
+
+                                                    <div class="hidden">
+                                                        <span class="current_guid">{{form|getModelGuid}}</span>
+                                                    </div> <!-- /.hidden -->
+
+                                                    {% with subForm=form|getSubForm:field %}
+                                                        {% with subFormType=subForm.getSubFormType.getType %}
+                                                            {% if subFormType == "FORM" %}
+
+                                                                {% if field|canAddRemote:form %}
+
+                                                                    <span class="subform-toolbar ui-widget-header ui-corner-all">
+                                                                        <button type="button" class="add {{subFormType}} remote" title="add new {{ field|verbose_name:form }}">add</button>
+                                                                    </span> <!-- /.subform-toolbar -->
+                                                                    <div style="clear: both;">&nbsp;</div>
+
+                                                                {% endif %}
+
+                                                                {# in theory, django doesn't have recursive templates #}
+                                                                {# but this bit of indirection gets around that limitation #}
+                                                                {% with "django_cim_forms/_form.html" as template %}
+                                                                    {% with form=subForm %}
+                                                                        {% include template %}
+                                                                    {% endwith %}
+                                                                {% endwith %}
+
+                                                            {% else %} {% if subFormType == "FORMSET" %}
+
+                                                                {% with "django_cim_forms/_formset.html" as template %}
+                                                                    {% with formset=subForm %}
+                                                                        {% include template %}
+                                                                    {% endwith %}
+                                                                {% endwith %}
+
+                                                          {% endif %} {% endif %} {# /subFormType==FORM|FORMSET #}
+                                                      {% endwith %} {# /subFormType #}
+                                                  {% endwith %} {# /subForm #}
+
+                                                </div> <!-- /.coolfieldset-content -->
+                                            </fieldset> <!-- /.coolfieldset -->
+
+                                        {% else %}
+
+                                            {% include "django_cim_forms/_field.html" %}
+
+                                        {% endif %} {# / field|isInSubForms:form #}
+                                    {% endif %} {# /field.name in fieldsOfType #}
+                                {% endfor %} {# / field in form.visible_fields #}
+                            {% endwith %} {# / fieldsOfType #}
+                        </div> <!-- /.tab-content -->
+                    </div> <!-- /#tab-{{fieldType.getType}}-{{form|getModelGuid}} -->
+                {% endfor %} {# /fieldType #}
+            </div> <!-- /.tabs -->
+
+        {% else %}
+
+                                {% for field in form.visible_fields %}
+
+                                        {% if field|isInSubForms:form %}
+                                            {% if field|required:form %}
+                                                <fieldset class="coolfieldset required" name="{{field.name}}">
+                                            {% else %}
+                                                <fieldset class="coolfieldset" name="{{field.name}}">
+                                            {% endif %} {# /field|required #}
+                                                <legend title="click to show/hide content">
+
+                                                    {% if field.help_text %}
+                                                        <div class="help-button" title="click for more info" id="{{form.getName}}_{{field.auto_id}}">
+                                                            <!-- JQuery ui-icons are handled via <spans>; weird, I know -->
+                                                            <span class="default-help-icon ui-icon-info" style="display: inline-block;">&nbsp;</span>
+                                                            <div class="help-description" title="{{ field|verbose_name:form }}">
+                                                                {{ field.help_text|safe }} {# the safe filter prevents inline HTML from being escaped  #}
+                                                            </div> <!-- /.help-description -->
+                                                        </div> <!-- /.help-button -->
+                                                    {% endif %} {# /field.help_text #}
+                                                    {{ field|verbose_name:form}}
+                                                </legend>
+                                                <div class="coolfieldset-content">
+
+                                                    <div class="hidden">
+                                                        <span class="current_guid">{{form|getModelGuid}}</span>
+                                                    </div> <!-- /.hidden -->
+
+                                                    {% with subForm=form|getSubForm:field %}
+                                                        {% with subFormType=subForm.getSubFormType.getType %}
+                                                            {% if subFormType == "FORM" %}
+
+                                                                {# in theory, django doesn't have recursive templates #}
+                                                                {# but this bit of indirection gets around that limitation #}
+                                                                {% with "django_cim_forms/_form.html" as template %}
+                                                                    {% with form=subForm %}
+                                                                        {% include template %}
+                                                                    {% endwith %}
+                                                                {% endwith %}
+
+                                                            {% else %} {% if subFormType == "FORMSET" %}
+
+                                                                {% with "django_cim_forms/_formset.html" as template %}
+                                                                    {% with formset=subForm %}
+                                                                        {% include template %}
+                                                                    {% endwith %}
+                                                                {% endwith %}
+
+                                                          {% endif %} {% endif %} {# /subFormType==FORM|FORMSET #}
+                                                      {% endwith %} {# /subFormType #}
+                                                  {% endwith %} {# /subForm #}
+
+                                                </div> <!-- /.coolfieldset-content -->
+                                            </fieldset> <!-- /.coolfieldset -->
+
+                                        {% else %}
+
+                                            {% include "django_cim_forms/_field.html" %}
+
+                                        {% endif %} {# / field|isInSubForms:form #}
+                                {% endfor %} {# / field in form.visible_fields #}
+
+        {% endif %} {# /activeFieldTypes #}
+    {% endwith %} {# /activeFieldTypes #}
+    
+    
+    
+{# end of displaying a metadata subform #}
