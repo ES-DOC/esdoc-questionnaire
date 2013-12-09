@@ -18,14 +18,14 @@ What is the CIM ?
 Metafor was a European project tasked with defining a metadata standard for describing scientific processes, particularly climate modelling processes.  This metadata standard came to be known as the CIM (Common Information Model).
 
 
-What is django-cim-forms ?
+What is esdoc-questionnaire ?
 --------------------------------------
 
-django-cim-forms is a standalone Django project that allows users to create CIM instances via webforms.  These forms are automatically generated based on the structure of the CIM.  They can also be customized for particular user communities. 
+esdoc-questionnaire is a standalone Django project that allows users to create CIM instances via webforms.  These forms are automatically generated based on the structure of the CIM.  They can also be customized for particular user communities. 
 
 
 
-What are the contents of django-cim-forms ?
+What are the contents of esdoc-questionnaire ?
 --------------------------------------
 
     \CIM_Questionnaire	Django project root
@@ -36,5 +36,5 @@ What are the contents of django-cim-forms ?
 Further Information ?
 --------------------------------------
 
-Please refer to the documentation for further information: http://es-doc.github.com/django-cim-forms
+Please refer to the documentation for further information: http://es-doc.github.com/esdoc-questionnaire
 
