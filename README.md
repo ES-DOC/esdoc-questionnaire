@@ -36,5 +36,4 @@ What are the contents of esdoc-questionnaire ?
 Further Information ?
 --------------------------------------
 
-Please refer to the documentation for further information: http://es-doc.github.com/esdoc-questionnaire
-
+Please refer to the documentation for further information: http://es-doc.github.io/esdoc-questionnaire/
