@@ -1,4 +1,4 @@
-django-cim-forms
+esdoc-questionnaire
 ===============
 
 Django project supporing the CIM Questionnaire for the esdoc eco-system.
