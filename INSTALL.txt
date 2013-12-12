@@ -78,4 +78,4 @@ USE
 
 o ordinarily admins would have to manually upload and register Controlled Vocabularies and Categorizations (and Projects and Versions); using fixtures, as above, avoids this requirement
 
-o however, the ATOM feed functionality requires that the correct domain be specifed in the "sites" table via the admin interface.
+o the ATOM feed functionality requires that the correct domain be specifed in the "sites" table via the admin interface.
