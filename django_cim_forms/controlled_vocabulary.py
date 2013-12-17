@@ -46,17 +46,15 @@ def get_cv_remote(cv_name):
     else:
         return cv_response.read()
 
-def get_cv_local(cv_name):
-    try:
-        cv_filepath  = CV_ROOT + cv_name + ".xml"
-        cv_file = open(cv_filepath, 'r')
-        cv_text = cv_file.read()
-        cv_file.close()
-        return cv_text
 
-    except IOError, e:
-        msg = e.strerror
-        raise MetadataError(msg)
+def get_cv_local(cv_name):
+    cv_filepath  = CV_ROOT + cv_name + ".xml"
+    try:
+        with open(cv_filepath, 'r') as cv_file:
+            return cv_file.read()
+    except IOError as e:
+        raise MetadataError(e.strerror)
+
 
 def get_cv(cv_name):
     # TODO: get_cv_remote is timing out... why?
@@ -67,6 +65,24 @@ def get_cv(cv_name):
     except CvError:
         cv = get_cv_local(cv_name)
     return cv
+
+
+def _xpath(node, xpath):
+    """Helper function to address lxml smart strings memory leakage issue.
+
+    :param lxml.etree.Element node: An xml element.
+    :param str xpath: An xpath statement.
+
+    :returns: Resuls of xpath expression evaluation.
+    :rtype: list or lxml.etree.Element
+
+    """
+    if node is None:
+        raise ValueError("Xpath expression cannot be evaluated against a null XML node.")
+    if xpath is None or not len(xpath):
+        raise ValueError("Xpath expression is invalid.")
+
+    return node.xpath(xpath, smart_strings=False)
 
 
 #########
