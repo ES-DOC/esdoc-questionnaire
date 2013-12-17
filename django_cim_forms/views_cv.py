@@ -7,46 +7,48 @@
 #
 #    This project is distributed according to the terms of the MIT license [http://www.opensource.org/licenses/MIT].
 
+import os
+
 from lxml import etree as et
 
 from django.template import *
 from django.shortcuts import *
 from django.http import *
 
-import os
-rel = lambda *x: os.path.join(os.path.abspath(os.path.dirname(__file__)), *x)
-
-et_parser = et.XMLParser(remove_blank_text=True)
-
 from django_cim_forms.helpers import *
 
-def detail(request,cv_name):
-    cv_filename = cv_name + ".xml"
-    cv_filepath = rel('cv/') + cv_filename
-    cv_query = request.GET.get('q')
 
+def _get_cv_filepath(cv_name):
+    """Returns cv filepath dervied from cv name."""
+    path = os.path.abspath(os.path.dirname(__file__))
+    path = os.path.join(path, 'cv')
+    path = os.path.join(path, cv_name + ".xml")
+
+    return path
+
+
+def _run_xpath(cv_text, cv_query):
+    """Evaluates a cv xpath expression."""
     try:
-        cv_text = open(cv_filepath, "rb").read()
-        if cv_query:
-            return run_xpath(cv_text,cv_query.rstrip('\"').lstrip('\"'))
-        return HttpResponse(cv_text, mimetype="text/xml")
-    except:
-        msg = "error retrieving cv: ", cv_name
-        return HttpResponseBadRequest(msg)
-
-################################################
-# evaluate an xpath expression on a cv         #
-# (the expression is passed via HTTP GET above #
-################################################
-
-def run_xpath(cv_text,cv_query):
-    cv_tree = et.fromstring(cv_text,et_parser)
-    try:
-        results = et.Element("results")
-        for node in cv_tree.xpath(cv_query):
-            results.append(node)
-        return HttpResponse(et.tostring(results,pretty_print=True),mimetype="text/xml")
+        cv = et.fromstring(cv_text, et.XMLParser(remove_blank_text=True))
+        cv = cv.xpath(cv_query, smart_strings=False)
+        cv = reduce(lambda results, item : results.append(item), cv, et.Element("results"))
+        return HttpResponse(et.tostring(cv, pretty_print=True), mimetype="text/xml")        
     except:# XPathSyntaxError, e:
-        msg = "error evaluating xpath expression: " % cv_query
-        return HttpResponseBadRequest(msg)
+        return HttpResponseBadRequest("error evaluating xpath expression: {0}.".format(cv_query))
+
+
+def detail(request, cv_name):
+    try:
+        with open(_get_cv_filepath(cv_name), "rb") as cv:
+            cv_text = cv.read()
+            cv_query = request.GET.get('q')
+            if cv_query:
+                cv_query = cv_query.rstrip('\"').lstrip('\"')
+                return _run_xpath(cv_text, cv_query)
+            else:
+                return HttpResponse(cv_text, mimetype="text/xml")
+    except:
+        return HttpResponseBadRequest("error retrieving cv: {0}".format(cv_name))
+
 
