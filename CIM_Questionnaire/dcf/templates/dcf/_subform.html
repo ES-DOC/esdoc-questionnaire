@@ -1,0 +1,77 @@
+{% load dcf_filters %}
+
+<!-- customizer is the property customizer -->
+<!-- metadata_field is the MetadataField instance -->
+<!-- field is the formfield itself -->
+
+{% if customizer.required %}
+    <fieldset class="coolfieldset required">
+{% else %}
+    <fieldset class="coolfieldset">
+{% endif %}
+
+    <legend title="click to show/hide content">
+           {% if customizer.documentation %}
+                <div class="help-button" title="click for more info" id="{{metadata_field.getName}}_{{field.auto_id}}">
+                    <span class="default-help-icon ui-icon-info" style="display: inline-block;">&nbsp;</span>
+                    <div class="help-description" title="{{ customizer.verbose_name }}">
+                        {{ customizer.documentation|safe }} {# the safe filter prevents inline HTML from being escaped  #}
+                    </div> <!-- /.help-description -->
+                </div> <!-- /.help-button -->
+            {% endif %} {# /customizer.documentation #}
+            {{ customizer.verbose_name}}
+    </legend>
+
+    <div class="coolfieldset-content">
+        
+       {% with subForm=form|getSubFormByName:field.name %}
+           {% with subFormType=subForm.getType|stringformat:"s" %}       
+
+               {% if subFormType == "FORMSET" %}
+
+                    {% with formset=subForm %}
+                        {% with customizer=formset.customizer %}
+                            <span class="documentation">{{customizer.model_description}}<br/><br/></span>
+                            {# alright, this looks weird I know #}
+                            {# but passing the template as a variable gets around Django's maximum recursion issue #}
+                            {% with "dcf/_formset.html" as template %}
+                                {% include template %}
+                            {% endwith %}
+                        {% endwith %} {# /customizer #}
+                    {% endwith %}
+
+                <div class="add_details">
+                    <div style="display: none;">
+                        <span class="version_number">{{version.number}}</span>
+                        <span class="project_name">{{project.name}}</span>
+                        <span class="customizer_name">{{model_customizer.name}}</span>
+                        <span class="model_name">{{model_class.getName}}</span>
+                        <span class="model_id">{{form.pk.value|default_if_none:""}}</span>
+                        <span class="field_name">{{field.name}}</span>
+                        <span class="min">{{customizer.getMin}}</span>
+                        <span class="max">{{customizer.getMax}}</span>
+                    </div>
+                    <br/>
+                    <button class="add {{subFormType}}" type="button" title="add a new instance of {{customizer.verbose_name}}">add</button>
+                </div> <!-- /.add_details -->
+
+                {% else %} {% if subFormType == "FORM" %}
+
+                    {% with form=subForm %}
+                        {% with customizer=form.customizer %}
+                            <span class="documentation">{{customizer.model_description}}<br/><br/></span>
+                            {# alright, this looks weird I know #}
+                            {# but passing the template as a variable gets around Django's maximum recursion issue #}
+                            {% with "dcf/_form.html" as template %}
+                                {% include template %}
+                            {% endwith %}
+                        {% endwith %} {# /customizer #}
+                    {% endwith %}
+
+                {% endif %} {% endif %} {# / subFormType == "FORMSET", subFormType == "FORM" #}
+
+            {% endwith %} {# /subFormType #}
+       {% endwith %} {# /subForm #}
+
+</fieldset>
+

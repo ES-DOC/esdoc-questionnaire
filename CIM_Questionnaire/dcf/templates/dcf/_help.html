@@ -1,0 +1,12 @@
+{# this displays help for a metadata field #}
+
+{% load dcf_filters %}
+
+<div class="help-button" title="click for more info" id="{{field_id}}">
+    <span class="default-help-icon ui-icon-info" style="display: inline-block;">&nbsp;</span>
+    <div class="help-description" title="{{field_label}}">
+        {{ field.help_text|safe }} {# the safe filter prevents inline HTML from being escaped  #}
+    </div> <!-- /.help-description -->
+</div> <!-- /.help-button -->
+
+

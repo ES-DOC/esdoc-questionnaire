@@ -1,0 +1,49 @@
+{# this is the xml template for modelcomponents (v1.8.1) #}
+
+{% extends "cim_1_8_1/xml/cim.xml" %}
+
+{% load dcf_filters %}
+
+{% block content %}
+
+    <shortName>{{model.shortName}}</shortName>
+    {% if model.longName %}
+    <longName>{{model.longName}}</longName>
+    {% endif %} {# /model.longName #}
+    {% if model.description %}
+    <description>{{model.description}}</description>
+    {% endif %} {# /model.description #}
+
+    {% if model.license %}
+        {% with mode=model.license %}
+            {% include "cim_1_8_1/xml/license.xml" %}
+        {% endwith %}
+    {% endif %} {# /model.license #}
+    
+    {% for responsibleParty in model.responsibleParty.all %}
+        {% with model=responsibleParty %}
+            {% include "cim_1_8_1/xml/responsibleparty.xml" %}
+        {% endwith %}
+    {% endfor %}
+
+    {% if model.releaseDate %}
+        <releaseDate>{{model.releaseDate}}</releaseDate>
+    {% endif %} {# /model.releaseDate #}
+
+    {% if model.previousVersion %}
+        <previousVersion>{{model.previousVersion}}</previousVersion>
+    {% endif %} {# /model.previousVersion #}
+
+    {% if model.fundingSource %}
+        <fundingSource>{{model.fundingSource}}</fundingSource>
+    {% endif %}
+
+    {% for citation in model.citation.all %}
+        {% with model=citation %}
+            {% include "cim_1_8_1/xml/citation.xml" %}
+        {% endwith %}
+    {% endfor %}
+    
+{% endblock %} {# /content #}
+
+

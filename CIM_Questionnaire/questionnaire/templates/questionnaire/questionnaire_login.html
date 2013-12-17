@@ -1,0 +1,93 @@
+{% extends "questionnaire/questionnaire_base.html" %}
+
+{% block scripts %}
+
+    /* just setup a minimum of jquery-ui functionality */
+    $(document).ready(
+        function() {
+            $(".button").button();
+
+            /* initialize fieldsets */
+            $(".collapsible_fieldset").addClass("expanded");
+            $(".collapsible_fieldset legend").click(function() {
+                $(this).next(".collapsible_fieldset_content").slideToggle( "fast", function() {
+                    var fieldset = $(this).parent("fieldset");
+                    $(fieldset).toggleClass("collapsed");
+                    $(fieldset).toggleClass("expanded");
+                });
+            });
+        }
+    );
+
+{% endblock %} {# /scripts #}
+
+{% block title %}
+
+    CIM Questionnaire
+
+{% endblock %} {# /title #}
+
+{% block user %}
+    <!-- no user content needed for login page -->
+{% endblock %} {# /user #}
+
+{% block content %}
+
+    <div class="title">
+        Please login to the CIM Questionnaire
+    </div> <!-- /.title -->
+
+    <div class="documentation">
+        <p>
+            The CIM Questionnaire supports both open-id authentication and local account holders.  Please login using your preferred method.
+        </p>
+    </div>
+        
+    <fieldset class="collapsible_fieldset">
+        <legend title="click to toggle content">
+            <span class="title">&nbsp;open-id&nbsp;</span>
+        </legend>
+        
+        <div class="collapsible_fieldset_content">
+            <form method="POST" action=".">
+                {% csrf_token %}
+
+                blah
+
+                <div class="submit">
+                    <input class="button"  name="remote"  type="submit"   value="submit"/>
+                </div> <!-- /.submit -->
+
+            </form>
+        </div>
+
+    </fieldset>
+
+    <fieldset class="collapsible_fieldset">
+        <legend title="click to toggle content">
+            <span class="title">&nbsp;local account&nbsp;</span>
+        </legend>
+
+        <div class="collapsible_fieldset_content">
+            <form method="POST" action="{% url 'django.contrib.auth.views.login' %}">
+                {% csrf_token %}
+
+                <table width="100%">
+                    {% for field in form %}
+                        <tr class="{% cycle 'odd' 'even' %} field">
+                            <td>&nbsp;{{field.label}}:&nbsp;</td>
+                            <td>{{field}}</td>
+                        </tr>
+                    {% endfor %}
+                </table>
+
+                <div class="submit">
+                    <input class="button"  name="local"  type="submit"   value="submit"/>
+                </div> <!-- /.submit -->
+                
+            </form>
+
+        </div>
+    </fieldset>
+
+{% endblock %} {# /content #}

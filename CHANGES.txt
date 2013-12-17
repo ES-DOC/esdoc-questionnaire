@@ -1,4 +1,20 @@
-METADATA ENTRY FORM
+CIM Questionnaire
 
-version 0.1, 15 March 2012
-o Initial software distribution
+Beginning at v0.9.9.6 this has been rewritten as a Django Project rather than a Django Application.  It can therefore be run as it's own webserver, without having to be embedded in an existing (Django) server.
+
+v0.10.0.0
+
+* updated versioning structure to be inline w/ other ES-DOC projects
+* use of fixtures to migrate dbs
+
+v0.10.0.1
+
+* updated handling of ATOM feeds
+
+v0.10.0.2
+
+* ability for vocabularies to apply to multiple projects
+
+
+
+

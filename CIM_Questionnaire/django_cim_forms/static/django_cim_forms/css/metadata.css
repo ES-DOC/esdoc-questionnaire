@@ -1,0 +1,84 @@
+/*
+#    Django-CIM-Forms
+#    Copyright (c) 2012 CoG. All rights reserved.
+#
+#    Developed by: Earth System CoG
+#    University of Colorado, Boulder
+#    http://cires.colorado.edu/
+#
+#    This project is distributed according to the terms of the MIT license [http://www.opensource.org/licenses/MIT].
+*/
+
+body {
+    /* taken from COG for now */
+    margin: 0;
+    padding: 0;
+    font-size: 9pt;
+    font-family: "Lucida Grande","DejaVu Sans","Bitstream Vera Sans",Verdana,Arial,sans-serif;
+    color: #333;
+    background: #FFFFFF;
+}
+
+#metadata { border: 1px solid #B9E0E3; padding: 4px; margin: 4px; }
+
+#metadata .error-wrapper { display: block; margin-top: 4px; }
+#metadata .errorlist { display: inline; list-style-type: none; text-align: center; padding: 0px; margin: 0px; }
+#metadata .errorlist li { display: inline; background-color: #ff6666; padding-right: 4px; }
+
+#metadata div.title { font-size: large; color: #358C92; }
+
+#metadata .documentation { font-style: italic; }
+
+#metadata div.submit { margin-top: 8px; float: right; }
+
+#metadata fieldset { border: 2px solid #B9E0E3; padding: 0.5em; margin-right: 1.0em; margin-top: 1.0em; margin-bottom: 1.0em; margin-left: 0px; }
+#metadata fieldset legend { color: #358C92; font-size: 90%; padding-left: 13px; padding-right: 0.5em; }
+
+#metadata fieldset.required { border: 2px solid #000000; }
+#metadata fieldset.required legend { color: #000000; }
+
+#metadata .field { display: block; margin-top: 12px; }
+
+#metadata .field * { vertical-align: top; }
+
+/*#metadata .atomic { width: 90%; }*/
+
+
+/* these attributes are irrelevant now that enumeration-other appears _below_ enumeration-value
+#metadata .enumeration-value { margin-right: 4px; }
+#metadata .enumeration-other { margin-left: 4px; width: 25em; } */
+#metadata .enumeration-other { margin-top: 4px; width: 25em; }
+/* I'm using the same enumeration construct for "unbound properties" (properties that require a custom input) */
+/* in that case I want to ensure that the combobox is never displayed while the textbox is always displayed */
+#metadata .custom-property .enumeration-value { display: none !important; }
+#metadata .custom-property .enumeration-other { display: inline !important; }
+
+
+#metadata .help-button { display: inline; }
+#metadata .help-button .help-description { display: none !important; }
+
+/* BE SURE TO RENAME UI-ICON IMAGES TO "_default" AND "_hover" AS NEEDED */
+#metadata .default-help-icon { width: 16px; height: 16px; background-image: url(./custom/images/ui-icons_default.png); }
+#metadata .hover-help-icon { width: 16px; height: 16px; background-image: url(./custom/images/ui-icons_hover.png); }
+
+#metadata .subform-toolbar { padding: 4px; float: right;  }
+
+#metadata button { width: 24px; height: 24px; } /* ensures buttons err towards squareness instead of rectangularness */
+
+#metadata .ui-tabs .ui-tabs-hide { /* hides inactive tab panels w/out making them display: none - so I can still dynamically size stuff */
+    position: absolute !important; left: -10000px !important; display: block;
+}
+
+#metadata span.required { font-weight: bold; }
+#metadata .hidden { display: none !important; }
+
+#metadata button.change { float: right; }
+#metadata button.remove { float: right; }
+
+#metadata .delete-field { display: none !important; }
+#metadata .delete-row { display: none !important; } /* these are created by the formset() method */
+#metadata .add-row { display: none !important; } /* these are created by the formset() method */
+
+#metadata .scroll-pane { overflow: auto; }
+
+#metadata .metadata-properties .tab-content { margin-bottom: 6px; }
