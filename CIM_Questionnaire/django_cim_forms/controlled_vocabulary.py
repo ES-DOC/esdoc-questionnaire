@@ -50,24 +50,11 @@ def get_cv_remote(cv_name):
 def get_cv_local(cv_name):
     cv_filepath  = CV_ROOT + cv_name + ".xml"
     try:
-<<<<<<< HEAD:django_cim_forms/controlled_vocabulary.py
         with open(cv_filepath, 'r') as cv_file:
             return cv_file.read()
     except IOError as e:
         raise MetadataError(e.strerror)
 
-=======
-        cv_filepath  = CV_ROOT + cv_name + ".xml"
-        cv_file = open(cv_filepath, 'r')
-        cv_text = cv_file.read()
-        cv_file.close()
-        return cv_text
-
-    except IOError, e:
-        msg = e.strerror
-        print cv_filepath
-        raise MetadataError(msg)
->>>>>>> devel:CIM_Questionnaire/django_cim_forms/controlled_vocabulary.py
 
 def get_cv(cv_name):
     # TODO: get_cv_remote is timing out... why?
@@ -217,22 +204,15 @@ class MetadataControlledVocabulary(models.Model):
         parser = et.XMLParser(remove_blank_text=True)
         cv = et.fromstring(get_cv(cv_name),parser)
         xpath_item_expression = "//item"
-<<<<<<< HEAD:django_cim_forms/controlled_vocabulary.py
         items = _xpath(cv, xpath_item_expression)
-        
-=======
-        items = cv.xpath(xpath_item_expression)
 
->>>>>>> devel:CIM_Questionnaire/django_cim_forms/controlled_vocabulary.py
         for item in items:
             # create the property if it doesn't already exist...
             shortName = _xpath(item, "shortName/text()") or None
             longName = _xpath(item, "longName/text()") or None
             if shortName: shortName = strip_completely(shortName[0])
             if longName: longName = strip_completely(longName[0])
-            print "about to create %s..." % shortName
             (model,created) = cls.objects.get_or_create(shortName=shortName,longName=longName)
-            #print "...created %s" % shortName
             # figure out if it has values
             # and, if so, work out if they are "open," "multi," or "nullable"...
             xpath_values_expression="//item[shortName/text()='%s']/values" % shortName
@@ -261,7 +241,7 @@ class MetadataControlledVocabulary(models.Model):
 #                print "%s IS CUSTOM AND VALUES=%s" % (model, values)
             for value in values:
                 valueShortName = _xpath(value, "shortName/text()")
-                valueShortName = strip_completely(valueShortName[0])                
+                valueShortName = strip_completely(valueShortName[0])
                 valueLongName = _xpath(value, "longName/text()")
                 #longName can have embedded markup in it, so I'm doing things a bit differently...
                 #valueLongName = v for v in value.xpath("longName/child::node()")
@@ -295,6 +275,6 @@ class MetadataControlledVocabulary(models.Model):
             model.parent = parent
 
             if created:
-                #print "storing %s" % model
+                print "storing %s" % model
                 model.save()
 
