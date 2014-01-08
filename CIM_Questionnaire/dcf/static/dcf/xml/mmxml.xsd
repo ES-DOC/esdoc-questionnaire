@@ -38,13 +38,14 @@
             <xs:element name="value" maxOccurs="unbounded">
                 <xs:complexType>
                     <xs:sequence>
-                        <xs:element name="definition" type="DefinitionType" minOccurs="0" maxOccurs="1"/>
+                        <xs:element name="definition" type="DefinitionType" minOccurs="0"
+                            maxOccurs="1"/>
                     </xs:sequence>
                     <xs:attribute name="name" use="optional"/>
                     <xs:attribute name="units" use="optional"/>
                     <xs:attribute name="format" use="optional"/>
                 </xs:complexType>
-            </xs:element>            
+            </xs:element>
         </xs:sequence>
         <xs:attributeGroup ref="ParameterAttributes"/>
     </xs:complexType>
@@ -55,7 +56,7 @@
         </xs:sequence>
         <xs:attribute name="name" use="required"/>
     </xs:complexType>
-    
+
     <xs:complexType name="ParameterGroupType">
         <xs:sequence>
             <xs:choice minOccurs="0" maxOccurs="unbounded">
@@ -64,6 +65,7 @@
             </xs:choice>
         </xs:sequence>
         <xs:attributeGroup ref="ParameterAttributes"/>
+        <xs:attribute name="componentView" type="xs:boolean"/>
     </xs:complexType>
 
     <xs:complexType name="ComponentType">
