@@ -167,6 +167,7 @@ class MetadataVocabulary(models.Model):
                             value_filter_parameters["format"] = value_format[0]
 
                         (new_value, created) = MetadataScientificPropertyProxyValue.objects.get_or_create(**value_filter_parameters)
+
                         if created:
                             print "created property value %s" % new_value
 
