@@ -225,6 +225,7 @@ def customize_new(request,version_number="",project_name="",model_name=""):
     # get the default categorization and vocabulary...
     categorizations = version.categorizations.all()
     vocabularies = project.vocabularies.all().filter(document_type__iexact=model_name)
+    
     # TODO: THIS IS CLEARLY DUMB,
     # BUT THE RELATEDOBJECTMANAGER IS BEING USED FOR THE TIME WHEN
     # THIS CODE CAN SUPPORT MULTPLE CATEGORIZATIONS
@@ -233,7 +234,7 @@ def customize_new(request,version_number="",project_name="",model_name=""):
         msg = "There is no default categorization associated with version %s." % version
         return dcf_error(request,msg)
     if not vocabularies:
-        msg = "There are no default vocabularies associated with project %s." % project
+        msg = "There are no default vocabularies associated with '%s' within the project '%s'." % (model_class.getTitle(),project)
         return dcf_error(request,msg)
 
     component_list = []
