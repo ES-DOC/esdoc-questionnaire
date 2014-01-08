@@ -45,7 +45,7 @@ MANAGERS = ADMINS
 #        'ENGINE'    : 'django.db.backends.postgresql_psycopg2', # Add 'postgresql_psycopg2', 'mysql', 'sqlite3' or 'oracle'.
 #        'NAME'      : '',                      # Or path to database file if using sqlite3.
 #        'USER'      : '',
-#        'PASSWORD'  : '!',
+#        'PASSWORD'  : '',
 #        'HOST'      : '127.0.0.1',                              # Empty for localhost through domain sockets or '127.0.0.1' for localhost through TCP.
 #        'PORT'      : '5432',                                   # Set to empty string for default.
 #    }
@@ -76,7 +76,7 @@ USE_I18N = True
 USE_L10N = True
 
 # If you set this to False, Django will not use timezone-aware datetimes.
-USE_TZ = True
+USE_TZ = False
 
 # Absolute filesystem path to the directory that will hold user-uploaded files.
 # Example: "/var/www/example.com/media/"
