@@ -21,6 +21,7 @@ Summary of module goes here
 """
 
 from django.core.exceptions import ObjectDoesNotExist, FieldError, MultipleObjectsReturned
+from django.db.models.fields import *
 from django.core.urlresolvers import reverse
 from itertools import chain
 from django.http import *
@@ -262,19 +263,26 @@ def customize_new(request,version_number="",project_name="",model_name=""):
         "model"     : model_name,
     }
     if request.method == "GET":
+        # check if the user added any parameters to the request
         for (key,value) in request.GET.iteritems():
-            if value.lower()=="true":
-                customizer_filter_parameters[key] = 1
-            elif value.lower()=="false":
-                customizer_filter_parameters[key] = 0
-            else:
-                # I can assume that the filter parameter is not boolean
-                key = key + "__iexact"  # this ensures that the filter is case-insenstive
-                # bear in mind that if I ever change to using get_or_craete, the filter will have to be case-sensitive
-                # see https://code.djangoproject.com/ticket/7789 for more info
+            value = re.sub('[\"\']','',value) # strip out any quotes
+            field_type = type(MetadataModelCustomizer.getField(key))
+            if field_type == BooleanField:
+                # special case for boolean fields
+                if value.lower()=="true" or value=="1":
+                    customizer_filter_parameters[key] = True
+                elif value.lower()=="false" or value=="0":
+                    customizer_filter_parameters[key] = False
+                else:
+                    customizer_filter_parameters[key] = value
+            elif field_type == CharField or field_type == TextField:
+                # this ensures that the filter is case-insenstive for strings
                 key = key + "__iexact"
-                customizer_filter_parameters[key] = re.sub('[\"\']','',value) # strip out any quotes
-
+                # bear in mind that if I ever change to using get_or_create, the filter will have to be case-sensitive
+                # see https://code.djangoproject.com/ticket/7789 for more info
+                customizer_filter_parameters[key] = value
+            else:
+                customizer_filter_parameters[key] = value        
         if len(customizer_filter_parameters) > 3:
             # if there were (extra) filter parameters passed
             # then try to get the customizer w/ those parameters

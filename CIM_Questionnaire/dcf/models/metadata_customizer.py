@@ -67,6 +67,27 @@ class MetadataCustomizer(models.Model):
         unique_together = self._meta.unique_together
         return list(unique_together)
 
+    def getField(self,field_name):
+        try:
+            field = self._meta.get_field_by_name(field_name)
+        except FieldDoesNotExist:
+            msg = "Could not find a field called '%s'" % (field_name)
+            #raise QuestionnaireError(msg)
+            print msg
+            return None
+        return field[0]
+    
+    @classmethod
+    def getField(cls,field_name):
+        try:
+            field = cls._meta.get_field_by_name(field_name)
+        except FieldDoesNotExist:
+            msg = "Could not find a field called '%s'" % (field_name)
+            #raise QuestionnaireError(msg)
+            print msg
+            return None
+        return field[0]
+
 class MetadataModelCustomizer(MetadataCustomizer):
     class Meta:
         app_label   = APP_LABEL
