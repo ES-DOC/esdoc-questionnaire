@@ -153,11 +153,19 @@ class MetadataAtomicField(MetadataField):
         #           pass
 
         class _MetadataAtomicField(cls,model_field_class):
+            _model_field_class = model_field_class
 
             def __init__(self,*args,**kwargs):
                 kwargs.update(model_field_class_kwargs)
                 super(_MetadataAtomicField,self).__init__(**kwargs)
                 self._type   = model_field_class_name
+
+            def getModelClass(self):
+                return self._model_field_class
+
+            @classmethod
+            def getModelClass(cls):
+                return cls._model_field_class
 
             def south_field_triple(self):
                 #field_class_path = model_field_class.__class__.__module__ + "." + model_field_class.__class__.__name__
