@@ -307,17 +307,28 @@ def edit_new(request,version_number="",project_name="",model_name=""):
         "metadata_project"   : project,
     }
     if request.method == "GET":
+        # check if the user added any parameters to the request
         for (key,value) in request.GET.iteritems():
-            key = key + "__iexact"  # this ensures that the filter is case-insenstive
-            # bear in mind that if I ever change to using get_or_craete, the filter will have to be case-sensitive
-            # see https://code.djangoproject.com/ticket/7789 for more info
-            if value.lower()=="true":
-                model_filter_parameters[key] = 1
-            elif value.lower()=="false":
-                model_filter_parameters[key] = 0
-            else:
-                model_filter_parameters[key] = re.sub('[\"\']','',value) # strip out any quotes
-
+            value = re.sub('[\"\']','',value) # strip out any quotes
+            field_type = type(model_class.getField(key))
+            if issubclass(field_type,MetadataField):
+                field_model_class = field_type.getModelClass()
+                if field_model_class == django.db.models.fields.BooleanField:
+                    if value.lower()=="true" or value=="1":
+                        model_filter_parameters[key] = True
+                    elif value.lower()=="false" or value=="0":
+                        model_filter_parameters[key] = False
+                    else:
+                        model_filter_parameters[key] = value
+                elif field_model_class == django.db.models.fields.CharField or field_model_class == django.db.models.fields.TextField:
+                    # this ensures that the filter is case-insenstive for strings
+                    key = key + "__iexact"
+                    # bear in mind that if I ever change to using get_or_create, the filter will have to be case-sensitive
+                    # see https://code.djangoproject.com/ticket/7789 for more info
+                    model_filter_parameters[key] = value
+                else:
+                    model_filter_parameters[key] = value
+          
         if len(model_filter_parameters) > 1:
             # if there were (extra) filter parameters passed
             # then try to get the customizer w/ those parameters
@@ -340,7 +351,7 @@ def edit_new(request,version_number="",project_name="",model_name=""):
                 # raise an error if those filter params weren't enough to uniquely identify a customizer
                 msg = "Unable to find a <i>single</i> '%s' with the following parameters: %s" % (model_class.getTitle(), (", ").join([u'%s=%s'%(key,value) for (key,value) in model_filter_parameters.iteritems()]))
                 return dcf_error(request,msg)
-            except MetadataModelCustomizer.DoesNotExist:
+            except model_class.DoesNotExist:
                 # raise an error if there was no matching query
                 msg = "Unable to find any '%s' with the following parameters: %s" % (model_class.getTitle(), (", ").join([u'%s=%s'%(key,value) for (key,value) in model_filter_parameters.iteritems()]))
                 return dcf_error(request,msg)
