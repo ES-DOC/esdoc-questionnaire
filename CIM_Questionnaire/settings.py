@@ -192,8 +192,8 @@ INSTALLED_APPS = (
 
 # Modify temporarily the session serializer because the json serializer in
 # Django 1.6 can't serialize openid.yadis.manager.YadisServiceManager objects
-SESSION_SERIALIZER = 'django.contrib.sessions.serializers.JSONSerializer'
-SESSION_SERIALIZER = 'django.contrib.sessions.serializers.Pickle'
+#SESSION_SERIALIZER = 'django.contrib.sessions.serializers.JSONSerializer'
+SESSION_SERIALIZER = 'django.contrib.sessions.serializers.PickleSerializer'
 
 # A sample logging configuration. The only tangible logging
 # performed by this configuration is to send an email to
