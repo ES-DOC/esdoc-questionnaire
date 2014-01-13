@@ -6,7 +6,7 @@
 from setuptools import setup, find_packages
 
 setup(
-    name='django-cim-forms',
+    name='cim_questionnaire',
     version='0.10.2.0',  # major.minor.patch (good idea to append deployment id in production)
     author='Allyn Treshansky',
     author_email='allyn.treshansky@noaa.gov',
