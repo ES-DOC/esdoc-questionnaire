@@ -102,6 +102,7 @@ class MetadataModelCustomizer(MetadataCustomizer):
     name.help_text      = "A unique name for this customization (ie: \"basic\" or \"advanced\")"
     description         = models.TextField(verbose_name="Customization Description",blank=True)
     description.help_text = "An explanation of how this customization is intended to be used.  This information is for informational purposes only."
+    #default             = models.NullBooleanField(verbose_name="Is Default Customization",blank=True)
     default             = models.BooleanField(verbose_name="Is Default Customization",blank=True)
     default.help_text   = "Defines the default customization that is used by this project/model combination if no explicit customization is provided"
     vocabularies        = models.ManyToManyField("MetadataVocabulary",blank=True,null=True)
