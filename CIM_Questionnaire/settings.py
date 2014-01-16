@@ -177,8 +177,6 @@ INSTALLED_APPS = (
     'django.contrib.admindocs',
     # db migration...
     'south',
-    # db backup...
-    'dbbackup',
     # openid authentication...
 #    'django_openid_auth',
     'django_authopenid',
@@ -227,20 +225,13 @@ LOGGING = {
 }
 
 
-##########################
-# setup info for backups #
-##########################
-
-DBBACKUP_STORAGE = 'dbbackup.storage.filesystem_storage'
-DBBACKUP_FILESYSTEM_DIRECTORY = rel('backups/')
-
 ######################################
 # tools for usage & memory profiling #
 ######################################
 
-PROFILE 	 = False
-PROFILE_LOG_BASE = rel('profiles/')
-SETUP_HPY 	 = False
+PROFILE 	 		= False
+PROFILE_LOG_BASE 	= rel('profiles/')
+SETUP_HPY 	 		= False
 
 ##################################
 # DJANGO_CIM_FORMS ATOM_FEED_DIR #
