@@ -2,6 +2,26 @@ CIM Questionnaire
 
 Beginning at v0.9.9.6 this has been rewritten as a Django Project rather than a Django Application.  It can therefore be run as it's own webserver, without having to be embedded in an existing (Django) server.
 
+v0.10.2.1
+
+v0.10.2.0
+
+* added support for the automatic backing up & restoration of databases
+* rewrote how GET parameters are parsed so that users can now explicitly specify in the URL details of the customization/model they are looking for
+* included some minor additional fixes - that were missed out from the last release - to fully support the Statistical Downscaling Controlled Vocabulary (CV)
+
+v0.10.1.1
+
+* provided support for the new structures introduced by the Statistical Downscaling CV
+
+v0.10.0.2
+
+* added the ability for CVs to be used by multiple projects
+
+v0.10.0.1
+
+* updated directory structure for handling ATOM feeds
+
 v0.10.0.0
 
 * updated versioning structure to be inline w/ other ES-DOC projects
