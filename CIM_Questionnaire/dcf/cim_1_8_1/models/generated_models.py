@@ -3022,8 +3022,11 @@ class SoftwareComponent(DataSource):
     longName = MetadataAtomicField.Factory("charfield",blank=True,)
     longName.help_text = "The name of the model (that is recognized externally)."
                 # UML Attribute
-    description = MetadataAtomicField.Factory("charfield",blank=True,)
+    description = MetadataAtomicField.Factory("textfield",blank=True,)
     description.help_text = "A free-text description of the component."
+                    # UML Attribute
+    version = MetadataAtomicField.Factory("charfield",blank=True,)
+    version.help_text = "The version of this component."
                 # UML Attribute
     license = MetadataAtomicField.Factory("charfield",blank=True)
     #license = MetadataManyToOneField(sourceModel='cim_1_8_1.SoftwareComponent',targetModel='cim_1_8_1.License',blank=True,)
