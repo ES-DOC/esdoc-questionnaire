@@ -6,7 +6,7 @@ __date__ ="$Jan 15, 2014 15:28:06 PM$"
 import os
 import datetime
 
-from subprocess     import call
+from subprocess     import call, check_call
 from django.conf    import settings
 
 rel = lambda *x: os.path.join(os.path.abspath(os.path.dirname(__file__)), *x)
@@ -18,7 +18,12 @@ if __name__ == "__main__":
 
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "settings")
 
-    DATABASE    = settings.DATABASES["default"]
+    try:
+        DATABASE    = settings.DATABASES["default"]
+    except KeyError:
+        msg = "unable to find valid database configuration"
+        raise Exception(msg)
+
 
     ENGINE      = DATABASE["ENGINE"]
     NAME        = DATABASE["NAME"]
@@ -33,6 +38,7 @@ if __name__ == "__main__":
         BACKUP_FILE     = "%sbackup_%s_%s.sql.tgz" % (BACKUP_DIR,NAME,TIMESTAMP)
         BACKUP_COMMAND  = "/usr/bin/pg_dump"
         BACKUP_ARGS     = ["-Ft","-v","-b","-c","-O","-f%s"%(BACKUP_FILE),NAME]
+        #BACKUP_ARGS     = ["-Ft","-v","-b","-c","-f%s"%(BACKUP_FILE),NAME]
 
     elif "sqlite" in ENGINE:
         print "backing up a sqlite db..."
@@ -52,4 +58,15 @@ if __name__ == "__main__":
 
 
     BACKUP_ARGS.insert(0,BACKUP_COMMAND)
-    call(BACKUP_ARGS)
+
+    try:
+        check_call(BACKUP_ARGS)
+        print "succesfully created %s" % (BACKUP_FILE)
+    except OSError:
+        msg = "unable to find %s" % (BACKUP_COMMAND)
+        raise Exception(msg)
+    except subprocess.CalledProcessError:
+        pass # handle errors in the called executable
+
+    #call(BACKUP_ARGS)
+    #print "succesfully created %s" % (BACKUP_FILE)

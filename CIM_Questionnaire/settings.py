@@ -154,6 +154,8 @@ TEMPLATE_DIRS = (
 # makes 'request' object available in templates
 TEMPLATE_CONTEXT_PROCESSORS += (
      'django.core.context_processors.request',
+     # requirement of messaging framework...
+     'django.contrib.messages.context_processors.messages',
      # requirement of openid
      'django_authopenid.context_processors.authopenid',
 )
@@ -179,6 +181,7 @@ INSTALLED_APPS = (
     'south',
     # openid authentication...
 #    'django_openid_auth',
+    'registration',
     'django_authopenid',
     # project-level app...
     'questionnaire',
@@ -229,9 +232,9 @@ LOGGING = {
 # tools for usage & memory profiling #
 ######################################
 
-PROFILE 	 		= False
-PROFILE_LOG_BASE 	= rel('profiles/')
-SETUP_HPY 	 		= False
+PROFILE 	 = False
+PROFILE_LOG_BASE = rel('profiles/')
+SETUP_HPY 	 = False
 
 ##################################
 # DJANGO_CIM_FORMS ATOM_FEED_DIR #
