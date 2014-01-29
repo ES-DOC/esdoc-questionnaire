@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 ##########################
 # script to restore a db #
@@ -8,23 +8,84 @@
 # usage #
 #########
 
-USAGE="Usage: `basename $0`"
+USAGE="Usage: `basename $0` -v <full path to virtualenv> [-l <full path to logfile> (defaults to cwd/backups/logfile.txt)]"
+
+####################
+# global variables #
+####################
+
+TIMESTAMP="`date +%Y-%m-%d-%H%M`"
+LOGFILE="`pwd`/backups/logfile.txt"
+SCRIPT="`pwd`/db_backup.py"
+CURRENT_VIRTUALENV=`basename $VIRTUAL_ENV 2>/dev/null`
+REQUIRED_VIRTUALENV=""
+MSG="\n--------------------\n$TIMESTAMP: running `basename $0` from `pwd`..."
+ERROR=0
 
 ###############
 # get options #
 ###############
 
-if [ $# -ne 0 ]; then
-  echo $USAGE >&2
-  exit
+while getopts v:l: OPT
+do
+  case $OPT in
+    v) REQUIRED_VIRTUALENV="$OPTARG"; shift;;
+    l) LOGFILE="$OPTARG"; shift;;
+    *) echo $USAGE>&2; exit;;
+  esac
+  shift
+done;
+
+#################
+# check options #
+#################
+
+# is there a place to write output...
+if [ ! -f $LOGFILE ]; then
+  echo "unable to locate valid logfile">&2; 
+  exit;
+fi
+
+# is there a backup script to run...
+if [ ! -f "$SCRIPT" ]; then
+  MSG="$MSG\n$TIMESTAMP: unable to run `basename $0` due to no inability to locate $SCRIPT"
+  ERROR=1
+fi
+
+# was a virtualenv specified...
+if [ -z "$REQUIRED_VIRTUALENV" ]; then
+  MSG="$MSG\n$TIMESTAMP: unable to run `basename $0` due to no virtualenv specified"
+  ERROR=1
+else
+
+  # is there currently a virtualenv running...
+  # if not, can we start the required one...
+  if [ -z "$CURRENT_VIRTUALENV" ]; then
+    source "$REQUIRED_VIRTUALENV/bin/activate"
+    CURRENT_VIRTUALENV=`basename $VIRTUAL_ENV 2>/dev/null`
+  fi
+fi
+
+# is the correct virtualenv running...
+if [ "`basename $REQUIRED_VIRTUALENV`" != "$CURRENT_VIRTUALENV" ]; then
+  MSG="$MSG\n$TIMESTAMP: unable to run `basename $0` due to invalid virtualenv"
+  ERROR=1
 fi
 
 ############
 # do stuff #
 ############
 
-python manage.py dbbackup -v 3 --compress
+# quit if any of the checks failed...
+if [ $ERROR -eq 1 ]; then
 
-###########
-# the end #
-###########
+  echo -e $MSG>>$LOGFILE
+
+# otherwise run the script and write the output...
+else
+
+  SCRIPT_OUTPUT=`python $SCRIPT`
+  MSG="$MSG\nScript Output: $SCRIPT_OUTPUT"
+  echo -e $MSG>>$LOGFILE
+
+fi
