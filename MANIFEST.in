@@ -1,3 +1,3 @@
 include *.txt *.md setup.py
-recursive-include CIM_Questionnaire *.py *.html *.js *.css *.xml *.xsd *.xsl *.xmi *.csv *.gif *.jpg *.png *.ico *.wsgi *.sch *.json *.sql *.sh *.gz
+recursive-include CIM_Questionnaire *.py *.html *.js *.css *.xml *.xsd *.xsl *.xmi *.csv *.gif *.jpg *.png *.ico *.wsgi *.sch *.json *.sql *.sh *.gz *.txt
 prune CIM_Questionnaire/static
