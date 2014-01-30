@@ -52,9 +52,6 @@ if [ ! -f "$SCRIPT" ]; then
   ERROR=1
 fi
 
-#I AM HERE I AM HERE I AM HERE
-#I WANT THIS TO WORK IF A VIRTUALENV WAS NOT SPECIFIED 
-
 # was a virtualenv specified...
 if [ -n "$REQUIRED_VIRTUALENV" ]; then
 
