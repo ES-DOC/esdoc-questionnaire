@@ -8,7 +8,7 @@
 # usage #
 #########
 
-USAGE="Usage: `basename $0` -v <full path to virtualenv> [-l <full path to logfile> (defaults to cwd/backups/logfile.txt)]"
+USAGE="Usage: `basename $0` [-v <full path to virtualenv>] [-l <full path to logfile> (defaults to cwd/backups/logfile.txt)]"
 
 ####################
 # global variables #
@@ -48,28 +48,42 @@ fi
 
 # is there a backup script to run...
 if [ ! -f "$SCRIPT" ]; then
-  MSG="$MSG\n$TIMESTAMP: unable to run `basename $0` due to no inability to locate $SCRIPT"
+  MSG="$MSG\n$TIMESTAMP: unable to run `basename $0` due to inability to locate $SCRIPT"
   ERROR=1
 fi
+
+#I AM HERE I AM HERE I AM HERE
+#I WANT THIS TO WORK IF A VIRTUALENV WAS NOT SPECIFIED 
 
 # was a virtualenv specified...
-if [ -z "$REQUIRED_VIRTUALENV" ]; then
-  MSG="$MSG\n$TIMESTAMP: unable to run `basename $0` due to no virtualenv specified"
-  ERROR=1
-else
+if [ -n "$REQUIRED_VIRTUALENV" ]; then
 
-  # is there currently a virtualenv running...
-  # if not, can we start the required one...
-  if [ -z "$CURRENT_VIRTUALENV" ]; then
-    source "$REQUIRED_VIRTUALENV/bin/activate"
-    CURRENT_VIRTUALENV=`basename $VIRTUAL_ENV 2>/dev/null`
+  
+  if [ ! -d "$REQUIRED_VIRTUALENV" ]; then
+    MSG="$MSG\n$TIMESTAMP: unable to run `basename $0` due to inability to locate virtualenv: $REQUIRED_VIRTUALENV"
+    ERROR=1
+
+  else
+    # is there currently a virtualenv running...
+    # if not, can we start the required one...
+    if [ -z "$CURRENT_VIRTUALENV" ]; then
+      source "$REQUIRED_VIRTUALENV/bin/activate"
+      CURRENT_VIRTUALENV=`basename $VIRTUAL_ENV 2>/dev/null`
+    fi
   fi
-fi
 
-# is the correct virtualenv running...
-if [ "`basename $REQUIRED_VIRTUALENV`" != "$CURRENT_VIRTUALENV" ]; then
-  MSG="$MSG\n$TIMESTAMP: unable to run `basename $0` due to invalid virtualenv"
-  ERROR=1
+  # is the correct virtualenv running...
+  if [ "`basename $REQUIRED_VIRTUALENV`" != "$CURRENT_VIRTUALENV" ]; then
+    MSG="$MSG\n$TIMESTAMP: unable to run `basename $0` due to invalid virtualenv"
+    ERROR=1
+
+  else
+    MSG="$MSG\n$TIMESTAMP: running w/ the $CURRENT_VIRTUALENV python environment"
+  fi
+
+else
+  MSG="$MSG\n$TIMESTAMP: running w/ the default python environment"
+
 fi
 
 ############
@@ -80,6 +94,7 @@ fi
 if [ $ERROR -eq 1 ]; then
 
   echo -e $MSG>>$LOGFILE
+  echo -e $MSG
 
 # otherwise run the script and write the output...
 else
@@ -87,5 +102,6 @@ else
   SCRIPT_OUTPUT=`python $SCRIPT`
   MSG="$MSG\nScript Output: $SCRIPT_OUTPUT"
   echo -e $MSG>>$LOGFILE
+  echo -e $MSG
 
 fi

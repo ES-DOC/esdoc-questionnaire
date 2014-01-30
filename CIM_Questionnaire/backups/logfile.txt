@@ -1,0 +1,47 @@
+
+--------------------
+2014-01-29-1656: running db_backup.sh from /home/likewise-open/WX/allyn.treshansky/Dropbox/WORK/NESII/ES-DOC/esdoc-questionnaire-current/CIM_Questionnaire...
+2014-01-29-1656: unable to run db_backup.sh due to inability to locate asdf
+2014-01-29-1656: unable to run db_backup.sh due to invalid virtualenv
+
+--------------------
+2014-01-29-1656: running db_backup.sh from /home/likewise-open/WX/allyn.treshansky/Dropbox/WORK/NESII/ES-DOC/esdoc-questionnaire-current/CIM_Questionnaire...
+2014-01-29-1656: unable to run db_backup.sh due to inability to locate virtualenv: asdf
+2014-01-29-1656: unable to run db_backup.sh due to invalid virtualenv
+
+--------------------
+2014-01-29-1657: running db_backup.sh from /home/likewise-open/WX/allyn.treshansky/Dropbox/WORK/NESII/ES-DOC/esdoc-questionnaire-current/CIM_Questionnaire...
+Script Output: backing up a postgres db...
+
+--------------------
+2014-01-29-1658: running db_backup.sh from /home/likewise-open/WX/allyn.treshansky/Dropbox/WORK/NESII/ES-DOC/esdoc-questionnaire-current/CIM_Questionnaire...
+Script Output: backing up a postgres db...
+
+--------------------
+2014-01-29-1659: running db_backup.sh from /home/likewise-open/WX/allyn.treshansky/Dropbox/WORK/NESII/ES-DOC/esdoc-questionnaire-current/CIM_Questionnaire...
+Script Output: backing up a postgres db... foo
+
+--------------------
+2014-01-29-1659: running db_backup.sh from /home/likewise-open/WX/allyn.treshansky/Dropbox/WORK/NESII/ES-DOC/esdoc-questionnaire-current/CIM_Questionnaire...
+Script Output: backing up a postgres db...
+
+--------------------
+2014-01-29-1703: running db_backup.sh from /home/likewise-open/WX/allyn.treshansky/Dropbox/WORK/NESII/ES-DOC/esdoc-questionnaire-current/CIM_Questionnaire...
+Script Output: backing up a postgres db... succesfully created /home/likewise-open/WX/allyn.treshansky/Dropbox/WORK/NESII/ES-DOC/esdoc-questionnaire-current/CIM_Questionnaire/backups/backup_current_questionnaire_2014-01-29-1703.sql.tgz
+
+--------------------
+2014-01-29-1703: running db_backup.sh from /home/likewise-open/WX/allyn.treshansky/Dropbox/WORK/NESII/ES-DOC/esdoc-questionnaire-current/CIM_Questionnaire...
+2014-01-29-1703: unable to run db_backup.sh due to invalid virtualenv
+
+--------------------
+2014-01-29-1704: running db_backup.sh from /home/likewise-open/WX/allyn.treshansky/Dropbox/WORK/NESII/ES-DOC/esdoc-questionnaire-current/CIM_Questionnaire...
+Script Output: backing up a postgres db... succesfully created /home/likewise-open/WX/allyn.treshansky/Dropbox/WORK/NESII/ES-DOC/esdoc-questionnaire-current/CIM_Questionnaire/backups/backup_current_questionnaire_2014-01-29-1704.sql.tgz
+
+--------------------
+2014-01-29-1704: running db_backup.sh from /home/likewise-open/WX/allyn.treshansky/Dropbox/WORK/NESII/ES-DOC/esdoc-questionnaire-current/CIM_Questionnaire...
+Script Output: backing up a postgres db... succesfully created /home/likewise-open/WX/allyn.treshansky/Dropbox/WORK/NESII/ES-DOC/esdoc-questionnaire-current/CIM_Questionnaire/backups/backup_current_questionnaire_2014-01-29-1704.sql.tgz
+
+--------------------
+2014-01-29-1706: running db_backup.sh from /home/likewise-open/WX/allyn.treshansky/Dropbox/WORK/NESII/ES-DOC/esdoc-questionnaire-current/CIM_Questionnaire...
+2014-01-29-1706: running w/ the default python environment
+Script Output: backing up a postgres db... succesfully created /home/likewise-open/WX/allyn.treshansky/Dropbox/WORK/NESII/ES-DOC/esdoc-questionnaire-current/CIM_Questionnaire/backups/backup_current_questionnaire_2014-01-29-1706.sql.tgz

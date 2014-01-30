@@ -64,9 +64,8 @@ if __name__ == "__main__":
         print "succesfully created %s" % (BACKUP_FILE)
     except OSError:
         msg = "unable to find %s" % (BACKUP_COMMAND)
+        print msg
         raise Exception(msg)
     except subprocess.CalledProcessError:
+        print "error"
         pass # handle errors in the called executable
-
-    #call(BACKUP_ARGS)
-    #print "succesfully created %s" % (BACKUP_FILE)
