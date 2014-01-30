@@ -80,7 +80,12 @@ if [ -n "$REQUIRED_VIRTUALENV" ]; then
   fi
 
 else
-  echo -e "running w/ the default Python environemnt\n"
+
+  if [ -z "$CURRENT_VIRTUALENV" ]; then
+    echo -e "running w/ the default python environmen\n"
+  else
+    echo -e "running w/ the $CURRENT_VIRTUALENV python environment\n"
+  fi
 
 fi
 
@@ -91,8 +96,8 @@ fi
 while true; do
     read -p "This script will delete the existing db contents.  Do you wish to continue? " input
     case $input in
-        [Yy]* ) echo "yes"; break;;
-        [Nn]* ) echo "no";  exit;;
+        [Yy]* ) break;;
+        [Nn]* ) exit;;
         [Cc]*|[Xx]*|[Qq]* ) exit;;
         * ) echo "Please choose a valid option.";;
     esac

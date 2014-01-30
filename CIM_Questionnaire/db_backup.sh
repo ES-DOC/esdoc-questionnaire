@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# (an explicit reference to bash is required for the 'source' command to work)
+# (some Ubuntu distributions symlink sh to 'dash')
+
 ##########################
 # script to restore a db #
 ##########################
@@ -79,7 +82,12 @@ if [ -n "$REQUIRED_VIRTUALENV" ]; then
   fi
 
 else
-  MSG="$MSG\n$TIMESTAMP: running w/ the default python environment"
+
+  if [ -z "$CURRENT_VIRTUALENV" ]; then
+    MSG="$MSG\n$TIMESTAMP: running w/ the default python environment"
+  else
+    MSG="$MSG\n$TIMESTAMP: running w/ the $CURRENT_VIRTUALENV python environment"
+  fi
 
 fi
 
@@ -87,7 +95,7 @@ fi
 # do stuff #
 ############
 
-# quit if any of the checks failed...
+# quit if any of the above checks failed...
 if [ $ERROR -eq 1 ]; then
 
   echo -e $MSG>>$LOGFILE

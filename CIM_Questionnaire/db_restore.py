@@ -1,4 +1,3 @@
-import subprocess
 #! /usr/bin/python
 
 __author__="allyn.treshansky"
@@ -7,13 +6,12 @@ __date__ ="$Jan 15, 2014 15:28:06 PM$"
 import os
 import argparse
 
-from subprocess     import call, check_call
+from subprocess     import call, check_call, CalledProcessError
 from django.conf    import settings
 
 if __name__ == "__main__":
 
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "settings")
-
 
     try:
         DATABASE    = settings.DATABASES["default"]
@@ -42,7 +40,13 @@ if __name__ == "__main__":
         print "restoring up a postgres db..."
 
         RESTORE_COMMAND  = "/usr/bin/pg_restore"
-        RESTORE_ARGS     = ["-c","-v","-d%s"%(NAME),"-U%s"%(USER),"-W",RESTORE_FILE]
+        #
+        # note the use of "-O" which does not try to match ownership of the original backed-up db        
+        # (however, "-h -U -W" ensures users still must be authenticated against the db being changed)
+        #
+        RESTORE_ARGS     = ["-c","-v","-d%s"%(NAME),"-O","-h%s"%(HOST),"-U%s"%(USER),"-W",RESTORE_FILE]
+
+        #RESTORE_ARGS     = ["-c","-v","-d%s"%(NAME),"-U%s"%(USER),"-W",RESTORE_FILE]
         #RESTORE_ARGS     = ["-c","-v","-d%s"%(NAME),"-W",RESTORE_FILE]
 
     elif "sqlite" in ENGINE:
@@ -61,6 +65,7 @@ if __name__ == "__main__":
         msg = "unkown db type '%s'; aborting" % (ENGINE)
         raise Exception(msg)
 
+
     RESTORE_ARGS.insert(0,RESTORE_COMMAND)
 
     try:
@@ -68,6 +73,8 @@ if __name__ == "__main__":
         print "succesfully restored %s" % (RESTORE_FILE)
     except OSError:
         msg = "unable to find %s" % (RESTORE_COMMAND)
+        print msg
         raise Exception(msg)
-    except subprocess.CalledProcessError:
+    except CalledProcessError:
+        print "error"
         pass # handle errors in the called executable
