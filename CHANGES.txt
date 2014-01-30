@@ -4,6 +4,9 @@ Beginning at v0.9.9.6 this has been rewritten as a Django Project rather than a 
 
 v0.10.2.1
 
+* updated the backup/restore scripts to work across different servers, databases, users, and environments
+* ensured old forms for built-in DCMIP project are initialized correctly
+
 v0.10.2.0
 
 * added support for the automatic backing up & restoration of databases
