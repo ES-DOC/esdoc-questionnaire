@@ -26,14 +26,15 @@ ERROR=0
 # get options #
 ###############
 
-while getopts v:l: OPT
-do
+while getopts v:l: OPT; do
   case $OPT in
-    v) REQUIRED_VIRTUALENV="$OPTARG"; shift;;
-    l) LOGFILE="$OPTARG"; shift;;
-    *) echo $USAGE>&2; exit;;
+    v) REQUIRED_VIRTUALENV="$OPTARG"
+       ;;
+    l) LOGFILE="$OPTARG"
+       ;;
+    *) echo $USAGE>&2; 
+       exit;;
   esac
-  shift
 done;
 
 #################
@@ -48,14 +49,13 @@ fi
 
 # is there a backup script to run...
 if [ ! -f "$SCRIPT" ]; then
-  MSG="$MSG\n$TIMESTAMP: unable to run `basename $0` due to inability to locate $SCRIPT"
+  MSG="$MSG\n$TIMESTAMP: unable to run `basename $0` due to inability to locate backup script: $SCRIPT"
   ERROR=1
 fi
 
 # was a virtualenv specified...
 if [ -n "$REQUIRED_VIRTUALENV" ]; then
 
-  
   if [ ! -d "$REQUIRED_VIRTUALENV" ]; then
     MSG="$MSG\n$TIMESTAMP: unable to run `basename $0` due to inability to locate virtualenv: $REQUIRED_VIRTUALENV"
     ERROR=1
