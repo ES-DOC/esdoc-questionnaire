@@ -95,7 +95,6 @@ if __name__ == "__main__":
     # if I had to touch the filesystem,
     # be sure to clean up...
     try:
-        #tmpfile.close()
         os.unlink(tmpfile_path)
     except:
         pass
