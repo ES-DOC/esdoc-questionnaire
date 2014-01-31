@@ -49,7 +49,7 @@ if __name__ == "__main__":
         # `pg_restore -l $BACKUP_FILE | grep -vi plpgsql > $TMPFILE`
         # and then run the same restore command as below w/ the addition of "-L $TMPFILE"
         # technically, this is a bad solution b/c of the "shell=True" argument
-        # so, perhaps I should just ignore the errors (by not including the "-e" flag)
+        # so, perhaps I should just ignore the errors (by never including the "-e" flag)
         (tmpfile,tmpfile_path) = tempfile.mkstemp(dir=os.getcwd())
         call("%s -l %s | grep -vi plpgsql > %s"%(RESTORE_COMMAND,RESTORE_FILE,tmpfile_path),shell=True)
 
@@ -57,7 +57,7 @@ if __name__ == "__main__":
         # note the use of "-O" which does not try to match ownership of the original backed-up db        
         # (however, "-U -W" ensures users still must be authenticated against the db being changed)
         #
-        RESTORE_ARGS     = ["-e","-c","-v","-L%s"%(tmpfile_path),"-d%s"%(NAME),"-O","-h%s"%(HOST),"-p%s"%(PORT),"-U%s"%(USER),"-W",RESTORE_FILE]
+        RESTORE_ARGS     = ["-c","-v","-L%s"%(tmpfile_path),"-d%s"%(NAME),"-O","-h%s"%(HOST),"-p%s"%(PORT),"-U%s"%(USER),"-W",RESTORE_FILE]
         #RESTORE_ARGS     = ["-c","-v","-d%s"%(NAME),"-O","-h%s"%(HOST),"-p%s"%(PORT),"-U%s"%(USER),"-W",RESTORE_FILE]
         #RESTORE_ARGS     = ["-c","-v","-d%s"%(NAME),"-U%s"%(USER),"-W",RESTORE_FILE]
         #RESTORE_ARGS     = ["-c","-v","-d%s"%(NAME),"-W",RESTORE_FILE]

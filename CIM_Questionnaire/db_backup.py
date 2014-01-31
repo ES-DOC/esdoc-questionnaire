@@ -17,7 +17,7 @@ BACKUP_DIR  = rel('backups/')
 if __name__ == "__main__":
 
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "settings")
-    tmp_env = os.environ.copy() # used for production environments, where I may not want to change global settings
+    tmp_env = os.environ.copy() # used for production environments, where I may not want to or be able to change global settings
 
     try:
         DATABASE    = settings.DATABASES["default"]
