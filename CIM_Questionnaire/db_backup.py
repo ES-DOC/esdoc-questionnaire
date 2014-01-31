@@ -17,6 +17,7 @@ BACKUP_DIR  = rel('backups/')
 if __name__ == "__main__":
 
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "settings")
+    tmp_env = os.environ.copy() # used for production environments, where I may not want to change global settings
 
     try:
         DATABASE    = settings.DATABASES["default"]
@@ -43,7 +44,11 @@ if __name__ == "__main__":
         #  This option is only meaningful for the plain-text format.
         #  For the archive formats, you can specify the option when you call pg_restore.
         #
-        BACKUP_ARGS     = ["-Ft","-v","-b","-c","-O","-f%s"%(BACKUP_FILE),NAME]
+        BACKUP_ARGS     = ["-Ft","-v","-b","-c","-O","-h%s"%(HOST),"-p%s"%(PORT),"-U%s"%(USER),"-w","-f%s"%(BACKUP_FILE),NAME]
+        #BACKUP_ARGS     = ["-Ft","-v","-b","-c","-O","-h%s"%(HOST),"-p%s"%(PORT),"-U%s"%(USER),"-f%s"%(BACKUP_FILE),NAME]
+        #BACKUP_ARGS     = ["-Ft","-v","-b","-c","-O","-f%s"%(BACKUP_FILE),NAME]
+
+        tmp_env["PGPASSWORD"] = PASSWORD # bypass directly inputting a password by using the '-w' flag and setting an environment variable
 
     elif "sqlite" in ENGINE:
         print "backing up a sqlite db..."
@@ -65,7 +70,7 @@ if __name__ == "__main__":
     BACKUP_ARGS.insert(0,BACKUP_COMMAND)
 
     try:
-        check_call(BACKUP_ARGS)
+        check_call(BACKUP_ARGS,env=tmp_env)
         print "succesfully created %s" % (BACKUP_FILE)
     except OSError:
         msg = "unable to find %s" % (BACKUP_COMMAND)
