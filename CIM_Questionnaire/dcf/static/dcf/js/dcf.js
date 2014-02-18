@@ -1367,48 +1367,34 @@ function update_formset(form) {
 }
 
 function inherit(item) {
-    var item_name = $(item).attr("name");
-    var active_pane_name = $(item).closest(".active_pane").attr("name").toLowerCase();
-    var child_panes = $("#component_tree li#" + active_pane_name).find("li");
-    if ($(item).attr("type") == "checkbox") {
-        // checkbox
-        
-    }
-    else if ($(item).prop("tagName").toLowerCase()=="select") {
-            if ($(source).attr("multiple")) {
-                // multiple select
-                
-            }
-            else {
-                // single select
-                
-            }
-    }
-    else {
-        // text input or textarea
-        var item_value = $(item).val();
-        $(child_panes).each(function() {
-            var child_pane_name = $(this).attr("id");
-            //var actual_child_pane = $(".pane[name='"+child_pane_name+"']");
-            var child_item_name = child_pane_name + "-" + item_name.substring(item_name.indexOf('-')+1);
-            var child_item = $("input[name='"+child_item_name+"'],textarea[name='"+child_item_name+"']");
-            $(child_item).val(item_value);
-        });
-    }
-    /*
-    var selector = "span.label[name='"+label_name+"']"
-    var label = $(item).closest(".accordion-content").prev(".accordion-header").find(selector);
-    var input_type = $(item).prop("tagName").toLowerCase();
-    if (input_type=="select") {
-        var new_text = ($(item).val()) ? $(item).find("option:selected").text() : "None";
-        if (new_text=="") {
-            new_text = "None";
+    var inherited_options = $(item).next();    
+    if ($(inherited_options).find(".enable_inheritance").is(":checked")) {
+        var item_name = $(item).attr("name");
+        var active_pane_name = $(item).closest(".active_pane").attr("name").toLowerCase();
+        var child_panes = $("#component_tree li#" + active_pane_name).find("li");
+        if ($(item).attr("type") == "checkbox") {
+            // checkbox
+
         }
-        $(label).text( new_text );
+        else if ($(item).prop("tagName").toLowerCase()=="select") {
+                if ($(source).attr("multiple")) {
+                    // multiple select
+
+                }
+                else {
+                    // single select
+
+                }
+        }
+        else {
+            // text input or textarea
+            var item_value = $(item).val();
+            $(child_panes).each(function() {
+                var child_pane_name = $(this).attr("id");
+                var child_item_name = child_pane_name + "-" + item_name.substring(item_name.indexOf('-')+1);
+                var child_item = $("input[name='"+child_item_name+"'],textarea[name='"+child_item_name+"']");
+                $(child_item).val(item_value);
+            });
+        }
     }
-    else if (input_type=="input") {
-        var new_text = ($(item).val()) ? $(item).val() : "None";
-        $(label).text( new_text );
-    }
-    */
 };

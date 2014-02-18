@@ -35,7 +35,8 @@
                     <div class="field_value">
                         {{ field }}
                         {% if customizer.inherited %}
-                            <div class="inherited-icon" title="This field's value will be passed onto its children.">
+                            <div class="inherited-options" title="This field's value will be passed onto its children.">
+                                <input class="enable_inheritance" type="checkbox" checked="checked"/>
                                 <span class="ui-icon ui-icon-link" style="display: inline-block;">&nbsp;</span>
                             </div> <!-- /.inherited-icon -->
                         {% endif %}
