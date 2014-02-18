@@ -44,6 +44,8 @@ class MetadataProject(models.Model):
     restriction_customize   = models.CharField(max_length=64,blank=True,null=True)
     restriction_edit        = models.CharField(max_length=64,blank=True,null=True)
 
+    authenticated           = models.BooleanField(default=False)
+
     def getGUID(self):
         return self._guid
 
