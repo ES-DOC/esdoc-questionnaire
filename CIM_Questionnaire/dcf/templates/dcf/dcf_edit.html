@@ -56,6 +56,9 @@
                 </div>
 
                 {% if customizer.model_nested %}
+                <div class="hidden">
+                    <div id="component_tree">{{component_tree|safe}}</div>
+                </div>
                 <table border="0" width="100%">
                     <tr valign="top">
                         <td width="15%">

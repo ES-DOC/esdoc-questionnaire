@@ -163,7 +163,7 @@ class MetadataStandardPropertyCustomizerForm(ModelForm):
         model = MetadataStandardPropertyCustomizer
         fields  = ( "name","type","field_type","order","category","displayed","required","editable",    \
                     "default_value",  \
-                    "unique","verbose_name","documentation","suggestions","enumeration_values",         \
+                    "unique","verbose_name","documentation","suggestions","inherited","enumeration_values",         \
                     "enumeration_default","enumeration_choices","enumeration_open","enumeration_multi", \
                     "enumeration_nullable","relationship_target_model","relationship_source_model",     \
                     "relationship_cardinality","customize_subform","subform_customizer", "proxy", )

@@ -446,6 +446,8 @@ class MetadataForm(ModelForm):
         field_name = property_customizer.name
         field_type = property_customizer.type
 
+        if property_customizer.inherited:
+            update_field_widget_attributes(self.fields[field_name],{"class":"inherited","onchange":"inherit(this);"})
 
         if field_type == MetadataFieldTypes.ATOMIC:
 

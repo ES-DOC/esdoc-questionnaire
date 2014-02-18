@@ -34,6 +34,11 @@
                 <td>
                     <div class="field_value">
                         {{ field }}
+                        {% if customizer.inherited %}
+                            <div class="inherited-icon" title="This field's value will be passed onto its children.">
+                                <span class="ui-icon ui-icon-link" style="display: inline-block;">&nbsp;</span>
+                            </div> <!-- /.inherited-icon -->
+                        {% endif %}
                     </div>
 
                     {% if field.errors %}

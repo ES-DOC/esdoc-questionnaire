@@ -79,6 +79,7 @@ body {
 #dcf button.add { float: left; margin-top: 8px; font-size: 10px; padding: 1px; }
 #dcf button.remove {float: right; margin: 4px; font-size: 10px; padding: 1px; }
 
+#dcf .inherited-icon { display: inline; }
 
 #dcf button.customize-subform * { padding-top: 2px; padding-bottom: 2px; } /* since this button is part of a table row, make it a bit shorter than the others */
 

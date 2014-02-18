@@ -290,6 +290,8 @@ class MetadataStandardPropertyCustomizer(MetadataPropertyCustomizer):
     field_type  = models.CharField(max_length=64,blank=True,null=True)
     order       = models.PositiveIntegerField(blank=True,null=True)
 
+    inherited           = models.BooleanField(default=False,blank=True,verbose_name="should this property be inherited by children?")
+
     # ways to customize an enumeration...
     enumeration_values   = EnumerationField(blank=True,null=True,verbose_name="choose the property values that should be presented to the user:")
     enumeration_default  = EnumerationField(blank=True,null=True,verbose_name="choose the default value(s), if any, for this property:")
