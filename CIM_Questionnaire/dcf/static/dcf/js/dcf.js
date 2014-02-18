@@ -1374,7 +1374,12 @@ function inherit(item) {
         var child_panes = $("#component_tree li#" + active_pane_name).find("li");
         if ($(item).attr("type") == "checkbox") {
             // checkbox
-
+            $(child_panes).each(function() {
+                var child_pane_name = $(this).attr("id");
+                var child_item_name = child_pane_name + "-" + item_name.substring(item_name.indexOf('-')+1);
+                var child_item = $("input[name='"+child_item_name+"'],textarea[name='"+child_item_name+"']");
+                $(child_item).prop("checked",$(item).is(":checked"));
+            });
         }
         else if ($(item).prop("tagName").toLowerCase()=="select") {
                 if ($(source).attr("multiple")) {
