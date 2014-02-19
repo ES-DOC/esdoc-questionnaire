@@ -107,7 +107,7 @@ def customize_existing(request,version_number="",project_name="",model_name="",c
             component_list = component_list,
             initial = {
                 "categorization"                : categorization,
-                "vocabularies"                  : vocabularies,
+#                "vocabularies"                  : vocabularies,
                 "standard_categories_content"   : JSON_SERIALIZER.serialize(standard_categories),
                 "scientific_categories_content" : JSON_SERIALIZER.serialize(scientific_categories),
             }
@@ -158,7 +158,7 @@ def customize_existing(request,version_number="",project_name="",model_name="",c
             component_list = component_list,
             initial = {
                 "categorization"                : categorization,
-                "vocabularies"                  : vocabularies,
+ #               "vocabularies"                  : vocabularies,
                 "standard_categories_content"   : JSON_SERIALIZER.serialize(standard_categories),
                 "scientific_categories_content" : JSON_SERIALIZER.serialize(scientific_categories),
             }
@@ -339,7 +339,7 @@ def customize_new(request,version_number="",project_name="",model_name=""):
             instance=model_customizer_instance,
             initial = {
                 "categorization"                : categorization,
-                "vocabularies"                  : vocabularies,
+  #              "vocabularies"                  : vocabularies,
                 "standard_categories_content"   : JSON_SERIALIZER.serialize(standard_categories),
                 "scientific_categories_content" : JSON_SERIALIZER.serialize(scientific_categories),
             }
@@ -414,7 +414,7 @@ def customize_new(request,version_number="",project_name="",model_name=""):
                 "version"                       : version,
                 "model"                         : model_name,
                 "categorization"                : categorization,
-                "vocabularies"                  : vocabularies,
+   #             "vocabularies"                  : vocabularies,
                 "standard_categories_content"   : JSON_SERIALIZER.serialize(standard_categories),
                 "scientific_categories_content" : JSON_SERIALIZER.serialize(scientific_categories),
             }
