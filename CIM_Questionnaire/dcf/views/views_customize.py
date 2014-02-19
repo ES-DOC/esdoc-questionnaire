@@ -22,6 +22,8 @@ Summary of module goes here
 
 from django.core.exceptions import ObjectDoesNotExist, FieldError, MultipleObjectsReturned
 from django.db.models.fields import *
+from django.contrib.sites.models    import get_current_site
+
 from django.core.urlresolvers import reverse
 from itertools import chain
 from django.http import *

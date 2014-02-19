@@ -24,6 +24,9 @@ from django import template
 import os
 import re
 
+from django.contrib.sites.models import Site
+from django.contrib.auth.models  import User
+
 from dcf.fields import *
 from dcf.models import *
 from dcf.forms  import *
@@ -234,3 +237,40 @@ def hasCategory(form,category):
     print "checking if %s has category %s" % (model,category)
     print "it's category is %s" % model.category
     return model.category == category
+
+
+@register.filter
+def site_type(site):
+    if isinstance(site,Site):
+        return site.metadata_site.get_type()
+    else:
+        return None
+
+
+@register.filter
+def is_member_of(user,project):
+    if isinstance(user,User):
+        if user.is_superuser:
+            # admin is a member of _all_ projects
+            return True
+        return user.metadata_user.is_member_of(project)
+    return False
+
+@register.filter
+def is_user_of(user, project):
+    if isinstance(user,User):
+        if user.is_superuser:
+            # admin has _all_ permisions
+            return True
+        return  user.metadata_user.is_user_of(project)
+    return False
+
+@register.filter
+def is_admin_of(user, project):
+    if isinstance(user,User):
+        if user.is_superuser:
+            # admin has _all_ permisions
+            return True
+        return  user.metadata_user.is_admin_of(project)
+    return False
+

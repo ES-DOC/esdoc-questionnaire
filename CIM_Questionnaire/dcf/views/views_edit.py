@@ -25,6 +25,8 @@ from django.core.exceptions import ObjectDoesNotExist, FieldError, MultipleObjec
 from django.core.urlresolvers import reverse
 from django.http import *
 from django.shortcuts import *
+from django.contrib.sites.models    import get_current_site
+
 
 from profiling          import encode_profile as profile_usage
 from profiling          import profile_memory as profile_memory
@@ -269,6 +271,8 @@ def edit_existing(request,version_number="",project_name="",model_name="",model_
 
     # gather all the extra information required by the template
     dict = {
+            "site"                                  : get_current_site(request),
+
         "msg"                           : msg,
         "forms"                         : model_forms,
         "scientific_property_formsets"  : scientific_property_formsets,
@@ -528,6 +532,8 @@ def edit_new(request,version_number="",project_name="",model_name=""):
     
     # gather all the extra information required by the template
     dict = {
+            "site"                                  : get_current_site(request),
+
         "msg"                           : msg,
         "forms"                         : model_forms,
         "scientific_property_formsets"  : scientific_property_formsets,
