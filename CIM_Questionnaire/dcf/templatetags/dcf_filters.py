@@ -274,3 +274,14 @@ def is_admin_of(user, project):
         return  user.metadata_user.is_admin_of(project)
     return False
 
+@register.filter
+def number_of_properties(category,property_formset):
+    properties = []
+    try:
+        for property_form in property_formset:
+            property_customizer = property_form.property_customizer
+            if (property_customizer.displayed and property_customizer.category == category):
+                properties.append(property_form.instance)
+    except TypeError:   # fails w/ the empty form
+        pass
+    return len(properties)

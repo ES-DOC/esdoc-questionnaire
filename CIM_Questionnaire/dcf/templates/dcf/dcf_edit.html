@@ -156,18 +156,28 @@
                                 <ul>
                                     {% for category in scientific_categories %}
                                         {% if category.component_name.lower == component_name_key %}
-                                        <li>
-                                            <a href="#tab-{{component_name_key}}-{{category.key}}">
-                                                {{category.name}}
-                                            </a>
-                                        </li>
+                                            {% with formset=scientific_property_formsets|getValueFromKey:component_name_key %}
+                                                {% with number_of_properties=category|number_of_properties:formset %}
+                                                    {% if model_customizer.model_show_all_categories or number_of_properties %}
+                                                        <li>
+                                                            <a href="#tab-{{component_name_key}}-{{category.key}}">
+                                                                {{category.name}}
+                                                                <span style="font-size: small;">({{number_of_properties}})</span>
+                                                            </a>
+                                                        </li>
+                                                    {% endif %}
+                                              {% endwith %}
+                                            {% endwith %}
                                         {% endif %} {# /category.component_name == component_name #}
                                     {% endfor %} {# /category #}
                                 </ul>
                                 {% for category in scientific_categories %}
                                     {% if category.component_name.lower == component_name_key %}
+                                            {% with formset=scientific_property_formsets|getValueFromKey:component_name_key %}
+                                                {% with number_of_properties=category|number_of_properties:formset %}
+                                                    {% if model_customizer.model_show_all_categories or number_of_properties %}
 
-                                    
+
                                         <div id="tab-{{component_name_key}}-{{category.key}}">
                                             <div class="tab_content">
                                                 <span class="documentation">{{category.description}}<br/></span>
@@ -200,6 +210,10 @@
                                                 
                                             </div> <!-- /.tab_content -->
                                         </div> <!-- /#tab-{{component_name_key}}-{{category.key}} -->
+                                              {% endif %}
+                                          {% endwith %}
+                                       {% endwith %}
+
                                     {% endif %} {# /category.component_name == component_name #}
                                 {% endfor %} {# /category #}
                             </div>
