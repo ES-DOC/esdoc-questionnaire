@@ -58,6 +58,17 @@ def customize_existing(request,version_number="",project_name="",model_name="",c
     version     = model_customizer_instance.getVersion()
     model_class = model_customizer_instance.getModel()
 
+    # check authentication...
+    # (not using @login_required b/c some projects ignore authentication)
+    if project.authenticated:
+        current_user = request.user
+        print current_user
+        if not current_user.is_authenticated():
+            return redirect('/dcf/login/?next=%s'%(request.path))
+        if not (request.user.is_superuser or request.user.metadata_user.is_admin_of(project)):
+            msg = "User '%s' does not have permission to edit customizations for project '%s'." % (request.user,project_name)
+            return dcf_error(request,msg)
+
     # get the default categorization and vocabulary...
     categorizations = version.categorizations.all()
     vocabularies = project.vocabularies.all().filter(document_type__iexact=model_name)
@@ -224,6 +235,17 @@ def customize_new(request,version_number="",project_name="",model_name=""):
     if not model_class:
         msg = "Cannot find the model type '%s' in version '%s'.  Have all model types been registered?" % (model_name, version)
         return dcf_error(request,msg)
+
+
+    # check authentication...
+    # (not using @login_required b/c some projects ignore authentication)
+    if project.authenticated:
+        current_user = request.user
+        if not current_user.is_authenticated():
+            return redirect('/dcf/login/?next=%s'%(request.path))
+        if not (request.user.is_superuser or request.user.metadata_user.is_admin_of(project)):
+            msg = "User '%s' does not have permission to edit customizations for project '%s'." % (request.user,project_name)
+            return dcf_error(request,msg)
 
     # get the default categorization and vocabulary...
     categorizations = version.categorizations.all()

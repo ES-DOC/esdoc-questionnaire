@@ -87,7 +87,7 @@ def check_parameters(version_number="",project_name="",model_name="",msg=""):
     if not model_class:
         msg = "Cannot find the model type '%s' in version '%s'.  Have all model types been registered?" % (model_name, version)
         return (project,version,customizer,categorization,vocabularies,model_class,msg)
-
+ 
     # try to get the default customizer for this project/version/model...
     try:
         customizer = MetadataModelCustomizer.objects.get(project=project,version=version,model=model_name,default=1)
@@ -124,14 +124,16 @@ def edit_existing(request,version_number="",project_name="",model_name="",model_
     if not all ([project,version,customizer,categorization,vocabularies,model_class]):
         return dcf_error(request,msg)
 
-#    # check that the user has permission for this view
-#    if not request.user.is_authenticated():
-#        return HttpResponseRedirect('%s/?next=%s' % (settings.LOGIN_URL,request.path))
-#    else:
-#        if not user_has_permission(request.user,project.restriction_edit):
-#            msg = "You do not have permission to access this resource."
-#            return dcf_error(request,msg)
-
+    # check authentication...
+    # (not using @login_required b/c some projects ignore authentication)
+    if project.authenticated:
+        current_user = request.user
+        print current_user
+        if not current_user.is_authenticated():
+            return redirect('/dcf/login/?next=%s'%(request.path))
+        if not (request.user.is_superuser or request.user.metadata_user.is_user_of(project)):
+            msg = "User '%s' does not have permission to edit customizations for project '%s'." % (request.user,project_name)
+            return dcf_error(request,msg)
 
     # try to get the requested model...    
     try:
@@ -172,7 +174,6 @@ def edit_existing(request,version_number="",project_name="",model_name="",model_
         except:
             msg = "There is no component hierarchy defined in vocabulary '%s'.  Has it been registered?" % vocabulary
             return dcf_error(request,msg)
-
 
     standard_categories     = customizer.getStandardCategories()
     scientific_categories   = project.categories.all().order_by("order")
@@ -298,14 +299,16 @@ def edit_new(request,version_number="",project_name="",model_name=""):
     if not all ([project,version,customizer,categorization,vocabularies,model_class]):
         return dcf_error(request,msg)
 
-#    # check that the user has permission for this view
-#    if not request.user.is_authenticated():
-#        return HttpResponseRedirect('%s/?next=%s' % (settings.LOGIN_URL,request.path))
-#    else:
-#        if not user_has_permission(request.user,project.restriction_edit):
-#            msg = "You do not have permission to access this resource."
-#            return dcf_error(request,msg)
-
+   # check authentication...
+    # (not using @login_required b/c some projects ignore authentication)
+    if project.authenticated:
+        current_user = request.user
+        print current_user
+        if not current_user.is_authenticated():
+            return redirect('/dcf/login/?next=%s'%(request.path))
+        if not (request.user.is_superuser or request.user.metadata_user.is_user_of(project)):
+            msg = "User '%s' does not have permission to edit customizations for project '%s'." % (request.user,project_name)
+            return dcf_error(request,msg)
 
     model_filter_parameters = {
         "metadata_project"   : project,
