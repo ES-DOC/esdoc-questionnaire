@@ -34,6 +34,9 @@ body {
 
 #dcf .documentation { font-style: italic; padding: 2px; }
 
+
+#dcf div.header div#user { float: right; font-size: smaller !important; }
+
 /* disable certain fields */
 /* (but don't compeletely remove them, else the Django View won't have access to them on HTTP POST */
 #dcf .hidden { display: none; }
@@ -88,6 +91,8 @@ body {
 /* BE SURE TO RENAME UI-ICON IMAGES TO "_default" AND "_hover" AS NEEDED */
 #dcf .default-help-icon    { width: 16px; height: 16px; background-image: url(./custom/images/ui-icons_default.png); }
 #dcf .hover-help-icon      { width: 16px; height: 16px; background-image: url(./custom/images/ui-icons_hover.png); }
+
+#dcf .sort_vocabularies { display: inline; padding: 4px; }
 
 /* explicitly reset the img/color for open accordion headers */
 /* (by default, JQuery applies no style to them once opened) */

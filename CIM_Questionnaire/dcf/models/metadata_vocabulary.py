@@ -44,6 +44,8 @@ class MetadataVocabulary(models.Model):
         # this is one of the few classes that I allow admin access to, so give it pretty names:
         verbose_name        = 'Metadata Vocabulary'
         verbose_name_plural = 'Metadata Vocabularies'
+        
+        ordering = [ "order" ]
 
 #    project = models.ForeignKey("MetadataProject",blank=True,null=True,related_name="vocabularies")
     projects = models.ManyToManyField("MetadataProject",blank=True,null=True,related_name="vocabularies")
@@ -55,6 +57,8 @@ class MetadataVocabulary(models.Model):
 
     component_tree = models.TextField(blank=True)
     component_list = models.TextField(blank=True)
+
+    order = models.IntegerField(null=True,blank=True)
     
     def __unicode__(self):
         if self.file:

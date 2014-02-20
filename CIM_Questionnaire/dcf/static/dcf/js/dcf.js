@@ -58,6 +58,8 @@ function enableDCF() {
 
         $(".button").button();
 
+        $("#user a").button();
+        
         /* buttons for manipulating accordions */
 
         $(".subform-toolbar button").mouseover(function() {
@@ -189,8 +191,18 @@ function enableDCF() {
 
         });
 
+        $("button#sort_vocabulary_up").button({
+            icons: { primary : "ui-icon-arrowthick-1-n" },
+            text: false
+        });
+        $("button#sort_vocabulary_down").button({
+            icons: { primary : "ui-icon-arrowthick-1-s" },
+            text: false
+        });
+
         /* END enable fancy buttons */
 
+        
         /* BEGIN enable accordions */
 
         /* (more accordion setup is done below) */
@@ -1374,11 +1386,14 @@ function inherit(item) {
         var child_panes = $("#component_tree li#" + active_pane_name).find("li");
         if ($(item).attr("type") == "checkbox") {
             // checkbox
+            var item_value = $(item).is(":checked");
             $(child_panes).each(function() {
                 var child_pane_name = $(this).attr("id");
                 var child_item_name = child_pane_name + "-" + item_name.substring(item_name.indexOf('-')+1);
-                var child_item = $("input[name='"+child_item_name+"'],textarea[name='"+child_item_name+"']");
-                $(child_item).prop("checked",$(item).is(":checked"));
+                var child_item = $("input[name='"+child_item_name+"']");
+                if ($(child_item).next().find(".enable_inheritance").is(":checked")) {
+                    $(child_item).prop("checked",item_value);
+                }
             });
         }
         else if ($(item).prop("tagName").toLowerCase()=="select") {
@@ -1388,7 +1403,16 @@ function inherit(item) {
                 }
                 else {
                     // single select
-
+                    var item_value = $(item).val();
+                    //var other_value = $(item)
+                    $(child_panes).each(function() {
+                        var child_pane_name = $(this).attr("id");
+                        var child_item_name = child_pane_name + "-" + item_name.substring(item_name.indexOf('-')+1);
+                        var child_item = $("select[name='"+child_item_name+"']");
+                        if ($(child_item).next().find(".enable_inheritance").is(":checked")) {
+                            $(child_item).val(item_value);
+                        }
+                    });
                 }
         }
         else {
@@ -1398,8 +1422,29 @@ function inherit(item) {
                 var child_pane_name = $(this).attr("id");
                 var child_item_name = child_pane_name + "-" + item_name.substring(item_name.indexOf('-')+1);
                 var child_item = $("input[name='"+child_item_name+"'],textarea[name='"+child_item_name+"']");
-                $(child_item).val(item_value);
+                if ($(child_item).next().find(".enable_inheritance").is(":checked")) {
+                    $(child_item).val(item_value);
+                }
             });
         }
     }
 };
+
+function move_option_up(select_id) {
+    var select = $("select[id='"+select_id+"']");
+    $(select).find(":selected").each(function(i,option) {
+        if (!$(this).prev().length) return false;
+        $(this).insertBefore($(this).prev());
+    });
+//    $(select).focus().blur();
+};
+
+
+function move_option_down(select_id) {
+    var select = $("select[id='"+select_id+"']");
+    $($(select).find(":selected").get().reverse()).each(function(i,option) {
+        if (!$(this).next().length) return false;
+        $(this).insertAfter($(this).next());
+    });
+//    $(select).focus().blur();
+}

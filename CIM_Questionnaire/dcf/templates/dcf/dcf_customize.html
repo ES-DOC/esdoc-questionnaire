@@ -84,6 +84,12 @@
                                     <td>
                                         <span class="field_value">
                                             {{field}}
+                                            {% if field.name == 'vocabularies' %}
+                                                <span id="sort_vocabularies" title="Use these buttons to move the selected vocabulary up or down.">
+                                                    <button type="button" id="sort_vocabulary_up" onclick="move_option_up('{{field.auto_id}}');" title="Use these buttons to move the selected vocabulary up or down.">&nbsp;</button>
+                                                    <button type="button" id="sort_vocabulary_down" onclick="move_option_down('{{field.auto_id}}');" title="Use these buttons to move the selected vocabulary up or down.">&nbsp;</button>
+                                                </span>
+                                            {% endif %}
                                         </span>
                                         {% if field.errors %}
                                             {% include "dcf/_error.html" %}
@@ -95,7 +101,7 @@
                     </table>
                 </div> <!-- /.coolfieldset-content -->
             </fieldset> <!-- /.coolfieldset[name='customization_details_fieldset' -->
-
+            
             <fieldset class="coolfieldset" name="document_details_fieldset">
                 <legend title="click to show/hide content">
                     <div class="help-button" title="click for more info" id="document_details_fieldset">

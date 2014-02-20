@@ -145,6 +145,13 @@ class MetadataModelCustomizerForm(ModelForm):
 
         return cleaned_data
 
+    def save(self, *args, **kwargs):
+        ordered_vocabularies = self.cleaned_data["vocabularies"]
+        for i, vocabulary in enumerate(ordered_vocabularies):
+            vocabulary.order = i
+            vocabulary.save()
+
+        return super(MetadataModelCustomizerForm, self).save(*args, **kwargs)
 
 #    def validate_unique(self):
 #        model_customizer = self.instance
