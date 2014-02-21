@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# (an explicit reference to bash is required for the 'source' command to work)
+# (some Ubuntu distributions symlink sh to 'dash')
+
 ##########################
 # script to restore a db #
 ##########################
