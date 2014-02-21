@@ -667,14 +667,13 @@ function initializeContainer(container) {
 
                 var enumeration_value = $(event.target);
                 var enumeration_other = $(enumeration_value).siblings(".enumeration-other:first");
-
                 var values = $(enumeration_value).multiselect("getChecked").map(function() {
                     return this.value;
                 }).get();
 
                 if (values.indexOf("OTHER") != -1) {
                     // if "--OTHER--" is selected, then show enumeration-other
-                    $(enumeration_other).width($(enumeratio_value).siblings(".ui-multiselect:first").width());
+                    $(enumeration_other).width($(enumeration_value).siblings(".ui-multiselect:first").width());
                     $(enumeration_other).show();
                 }
                 else {
@@ -693,7 +692,7 @@ function initializeContainer(container) {
 
                 // sometimes these lists have an onchange event
                 // force the event callback to run upon initialization
-                $(this).trigger("change");
+                //$(this).trigger("change");
 
             },
             close       : function(event,ui) {
@@ -724,7 +723,28 @@ function initializeContainer(container) {
                     $(enumeration_other).hide();
                 }
             }
-        })
+        });
+
+        $(".ui-multiselect").bind("show",function(event,ui){
+            $(this).siblings(".multiselect.inherited:first").each(function(){
+                var enumeration_value = $(this);
+                var enumeration_other = $(enumeration_value).siblings(".enumeration-other:first");
+
+                var values = $(enumeration_value).multiselect("getChecked").map(function() {
+                    return this.value;
+                }).get();
+
+                if (values.indexOf("OTHER") != -1) {
+                    // if "--OTHER--" is selected, then show enumeration-other
+                    $(enumeration_other).width($(enumeration_value).siblings(".ui-multiselect:first").width());
+                    $(enumeration_other).show();
+                }
+                else {
+                    $(enumeration_other).hide();
+                }
+            });
+        });
+        
         $(container).find(".multiselect[multiple]:not(.multiselect-initialized)").multiselect({
             noneSelectedText    : "please enter selections",
             selectedText        : function(numChecked, numTotal, checkedItems) {
@@ -1378,14 +1398,19 @@ function update_formset(form) {
     });
 }
 
+
+
+
 function inherit(item) {
-    var inherited_options = $(item).next();    
-    if ($(inherited_options).find(".enable_inheritance").is(":checked")) {
-        var item_name = $(item).attr("name");
-        var active_pane_name = $(item).closest(".active_pane").attr("name").toLowerCase();
-        var child_panes = $("#component_tree li#" + active_pane_name).find("li");
-        if ($(item).attr("type") == "checkbox") {
-            // checkbox
+
+    if ($(item).attr("type") == "checkbox") {
+        // checkbox
+        var inherited_options = $(item).next(".inherited-options");
+        if ($(inherited_options).find(".enable_inheritance").is(":checked")) {
+            var item_name = $(item).attr("name");
+            var active_pane_name = $(item).closest(".active_pane").attr("name").toLowerCase();
+            var child_panes = $("#component_tree li#" + active_pane_name).find("li");
+
             var item_value = $(item).is(":checked");
             $(child_panes).each(function() {
                 var child_pane_name = $(this).attr("id");
@@ -1396,27 +1421,65 @@ function inherit(item) {
                 }
             });
         }
-        else if ($(item).prop("tagName").toLowerCase()=="select") {
-                if ($(source).attr("multiple")) {
-                    // multiple select
 
-                }
-                else {
-                    // single select
-                    var item_value = $(item).val();
-                    //var other_value = $(item)
-                    $(child_panes).each(function() {
-                        var child_pane_name = $(this).attr("id");
-                        var child_item_name = child_pane_name + "-" + item_name.substring(item_name.indexOf('-')+1);
-                        var child_item = $("select[name='"+child_item_name+"']");
-                        if ($(child_item).next().find(".enable_inheritance").is(":checked")) {
-                            $(child_item).val(item_value);
+    }
+    else if ($(item).prop("tagName").toLowerCase()=="select") {
+        
+        if ($(item).attr("multiple")) {
+            // multiple select
+            var item_value = $(item).multiselect("getChecked").map(function() {
+                return this.value;
+            }).get();
+
+            var select_button = $(item).multiselect("getButton");
+            var inherited_options = $(select_button).nextAll(".inherited-options:first");
+            if ($(inherited_options).find(".enable_inheritance").is(":checked")) {
+                var item_name  = $(item).attr("name")
+                var active_pane_name = $(item).closest(".pane").attr("name").toLowerCase();
+                var child_panes = $("#component_tree li#" + active_pane_name).find("li");
+                $(child_panes).each(function() {
+                    var child_pane_name = $(this).attr("id");
+                    var child_item_name = child_pane_name + "-" + item_name.substring(item_name.indexOf('-')+1);
+                    var child_item = $("select[name='"+child_item_name+"']");                
+                    if ($(child_item).nextAll(".inherited-options:first").find(".enable_inheritance").is(":checked")) {
+                        $(child_item).multiselect().multiselect("uncheckAll");
+                        // hacky way of setting values, not sure why $(child_item).val(item_value) doesn't work
+                        for (var i=0; i<item_value.length; i++) {
+                            $(child_item).multiselect("widget").find("input[value='"+item_value[i]+"']").click();
                         }
-                    });
-                }
+                    }
+                });
+            }
         }
         else {
-            // text input or textarea
+            // single select
+            var item_value = $(item).val();
+            var select_button = $(item).multiselect("getButton");
+            var inherited_options = $(select_button).nextAll(".inherited-options:first");
+            if ($(inherited_options).find(".enable_inheritance").is(":checked")) {
+                var item_name  = $(item).attr("name")
+                var active_pane_name = $(item).closest(".pane").attr("name").toLowerCase();
+                var child_panes = $("#component_tree li#" + active_pane_name).find("li");
+                $(child_panes).each(function() {
+                    var child_pane_name = $(this).attr("id");
+                    var child_item_name = child_pane_name + "-" + item_name.substring(item_name.indexOf('-')+1);
+                    var child_item = $("select[name='"+child_item_name+"']");
+                    if ($(child_item).nextAll(".inherited-options:first").find(".enable_inheritance").is(":checked")) {
+                        $(child_item).val(item_value);
+                    }
+                });
+            }
+        }
+    }
+    else {
+        // text input or textarea
+        inherited_options = $(item).next(".inherited-options");
+        if ($(inherited_options).find(".enable_inheritance").is(":checked")) {
+            var item_name = $(item).attr("name");
+
+            var active_pane_name = $(item).closest(".active_pane").attr("name").toLowerCase();
+            var child_panes = $("#component_tree li#" + active_pane_name).find("li");
+
             var item_value = $(item).val();
             $(child_panes).each(function() {
                 var child_pane_name = $(this).attr("id");
@@ -1424,6 +1487,9 @@ function inherit(item) {
                 var child_item = $("input[name='"+child_item_name+"'],textarea[name='"+child_item_name+"']");
                 if ($(child_item).next().find(".enable_inheritance").is(":checked")) {
                     $(child_item).val(item_value);
+                    if ($(child_item).hasClass("enumeration-other")) {
+                        $(child_item).show();
+                    }
                 }
             });
         }
