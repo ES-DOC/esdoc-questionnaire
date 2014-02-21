@@ -62,7 +62,6 @@ def customize_existing(request,version_number="",project_name="",model_name="",c
     # (not using @login_required b/c some projects ignore authentication)
     if project.authenticated:
         current_user = request.user
-        print current_user
         if not current_user.is_authenticated():
             return redirect('/dcf/login/?next=%s'%(request.path))
         if not (request.user.is_superuser or request.user.metadata_user.is_admin_of(project)):
