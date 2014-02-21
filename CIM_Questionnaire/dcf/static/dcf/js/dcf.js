@@ -587,9 +587,9 @@ function enableDCF() {
 
         /* enable calendar widgets */
         $(".datepicker").datepicker({
-            changeYear : true,
+            changeYear      : true,
             showButtonPanel : false,
-            showOn : 'button'
+            showOn          : 'button'
         }).next("button").button({
             icons : {
                 primary : "ui-icon-calendar"
@@ -1402,7 +1402,7 @@ function update_formset(form) {
 
 
 function inherit(item) {
-
+    
     if ($(item).attr("type") == "checkbox") {
         // checkbox
         var inherited_options = $(item).next(".inherited-options");
@@ -1421,10 +1421,8 @@ function inherit(item) {
                 }
             });
         }
-
     }
     else if ($(item).prop("tagName").toLowerCase()=="select") {
-        
         if ($(item).attr("multiple")) {
             // multiple select
             var item_value = $(item).multiselect("getChecked").map(function() {
@@ -1473,7 +1471,7 @@ function inherit(item) {
     }
     else {
         // text input or textarea
-        inherited_options = $(item).next(".inherited-options");
+        inherited_options = $(item).nextAll(".inherited-options:first");
         if ($(inherited_options).find(".enable_inheritance").is(":checked")) {
             var item_name = $(item).attr("name");
 
@@ -1481,11 +1479,12 @@ function inherit(item) {
             var child_panes = $("#component_tree li#" + active_pane_name).find("li");
 
             var item_value = $(item).val();
+            
             $(child_panes).each(function() {
                 var child_pane_name = $(this).attr("id");
                 var child_item_name = child_pane_name + "-" + item_name.substring(item_name.indexOf('-')+1);
                 var child_item = $("input[name='"+child_item_name+"'],textarea[name='"+child_item_name+"']");
-                if ($(child_item).next().find(".enable_inheritance").is(":checked")) {
+                if ($(child_item).nextAll(".inherited-options:first").find(".enable_inheritance").is(":checked")) {
                     $(child_item).val(item_value);
                     if ($(child_item).hasClass("enumeration-other")) {
                         $(child_item).show();
