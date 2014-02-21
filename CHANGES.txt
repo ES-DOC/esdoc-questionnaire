@@ -2,6 +2,14 @@ CIM Questionnaire
 
 Beginning at v0.9.9.6 this has been rewritten as a Django Project rather than a Django Application.  It can therefore be run as it's own webserver, without having to be embedded in an existing (Django) server.
 
+v0.10.2.2
+
+* added basic index page (project-specific pages will follow in a subsequent release)
+* added support for distinguishing between different types of site (production, development, local)
+* added basic user support (full user profiles and open-id support will follow in a subsequent release)
+* CV selection in the customizer is saved correctly
+* CVs can be ordered
+
 v0.10.2.1
 
 * updated the backup/restore scripts to work across different servers, databases, users, and environments
