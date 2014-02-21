@@ -160,6 +160,18 @@
                 <!-- default header -->
                 <div class="header">
                     <a href="http://www.earthsystemcurator.org/esdoc/index.shtml"><img src="{{ STATIC_URL }}dcf/img/esdoc_logo_purple.png"/></a>
+
+                    {% block user %}
+                        <!-- default user login/logout block -->
+                        <div id="user">
+                            {% if request.user.is_authenticated %}
+                                welcome: <b>{{ request.user }}</b>&nbsp; <a title="logout" href="{% url 'logout' %}?next={{ request.path }}">logout</a>
+                            {% else %}
+                                <a title="login" href="{% url 'login' %}?next={{ request.path }}">login</a>
+                            {% endif %}
+                        </div>
+                    {% endblock %} {# /user #}
+
                 </div> <!-- /.header -->
             {% endblock %} {# /header #}
 
