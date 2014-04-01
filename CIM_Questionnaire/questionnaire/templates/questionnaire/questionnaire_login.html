@@ -1,25 +1,46 @@
 {% extends "questionnaire/questionnaire_base.html" %}
 
-{% block scripts %}
+{% load questionnaire_filters %}
 
-    /* just setup a minimum of jquery-ui functionality */
+{% block scripts %}
+    <script language="javascript" type="text/javascript" src="{{ STATIC_URL }}questionnaire/js/questionnaire_authenticate.js"></script>
+
+    <script language="javascript">
+
+    /* just setup the minimum of jquery-ui functionality */
     $(document).ready(
         function() {
-            $(".button").button();
 
-            /* initialize fieldsets */
-            $(".collapsible_fieldset").addClass("expanded");
-            $(".collapsible_fieldset legend").click(function() {
-                $(this).next(".collapsible_fieldset_content").slideToggle( "fast", function() {
-                    var fieldset = $(this).parent("fieldset");
-                    $(fieldset).toggleClass("collapsed");
-                    $(fieldset).toggleClass("expanded");
-                });
-            });
+            var parent = document.body;
+
+            init_dialogs(parent);
+            init_errors(parent);
+
+            init_widget(readonlies,parent);
+            init_widget(buttons,parent);
+            init_widget(fieldsets,parent);
+            init_widget(helps,parent);
+
+            // specific to customizer...
+            init_widget(providers,parent);
+
         }
     );
 
-{% endblock %} {# /scripts #}
+    </script>
+{% endblock %} {# / scripts #}
+
+{% block style %}
+    <style type="text/css">
+
+        #questionnaire .provider_choices            { list-style-type: none; padding-left: 0px; }
+        #questionnaire .provider_choices li         { display: inline; padding-right: 16px; }
+        #questionnaire .provider_choices img        { border: 2px solid #B9E0E3; }
+        #questionnaire .provider_choices img:hover  { border: 2px solid #358C92; }
+
+    </style>
+
+{% endblock %} {# / style #}
 
 {% block title %}
 
@@ -42,52 +63,64 @@
             The CIM Questionnaire supports both open-id authentication and local account holders.  Please login using your preferred method.
         </p>
     </div>
+
+    {% if next %} {# keep the next parameter through any unsuccessful attempts #}
+        <form method="POST" action="/login/?next={{next}}">
+    {% else %}
+        <form method="POST" action="/login/">
+    {% endif %} {# /next #}
+
+        {% csrf_token %}
+
+        {% for form in forms %}
         
-    <fieldset class="collapsible_fieldset">
-        <legend title="click to toggle content">
-            <span class="title">&nbsp;open-id&nbsp;</span>
-        </legend>
-        
-        <div class="collapsible_fieldset_content">
-            <form method="POST" action=".">
-                {% csrf_token %}
-
-                blah
-
-                <div class="submit">
-                    <input class="button"  name="remote"  type="submit"   value="submit"/>
-                </div> <!-- /.submit -->
-
-            </form>
-        </div>
-
-    </fieldset>
-
-    <fieldset class="collapsible_fieldset">
-        <legend title="click to toggle content">
-            <span class="title">&nbsp;local account&nbsp;</span>
-        </legend>
-
-        <div class="collapsible_fieldset_content">
-            <form method="POST" action="{% url 'django.contrib.auth.views.login' %}">
-                {% csrf_token %}
-
-                <table width="100%">
-                    {% for field in form %}
-                        <tr class="{% cycle 'odd' 'even' %} field">
-                            <td>&nbsp;{{field.label}}:&nbsp;</td>
-                            <td>{{field}}</td>
-                        </tr>
-                    {% endfor %}
-                </table>
-
-                <div class="submit">
-                    <input class="button"  name="local"  type="submit"   value="submit"/>
-                </div> <!-- /.submit -->
+            <fieldset class="collapsible_fieldset">
+                <legend title="click to toggle content">
+                    <span class="title">&nbsp;{{form.get_title}}&nbsp;</span>
+                </legend>
                 
-            </form>
+                <div class="collapsible_fieldset_content">
+    
+                    <table width="100%">
+                        
+                        {% if form.non_field_errors %}
+                            <tr>
+                                <td colspan="0"  style="padding: 8px;">
+                                    <div class="error_wrapper">
+                                        &nbsp;{{ form.non_field_errors }}&nbsp;
+                                    </div>                                
+                                </td>
+                            </tr>
+                        {% endif %} {# / form.non_field_errors #}
+                
+                        {% for field in form %}
+                            <tr class="{% cycle 'odd' 'even' %} field">
+                                <td>
+                                    &nbsp;{{field.label}}:&nbsp;
+                                </td>
+                                <td>
+                                    {{field}}
 
-        </div>
-    </fieldset>
+                                    {% if field.errors %}
+                                        {% include "questionnaire/_error.html" %}
+                                    {% endif %} {# / field.errors #}
+                                    
+                                </td>
+                            </tr>
+                        {% endfor %} {# / field in form #}
+                        
+                    </table>
 
+                    <div class="submit" style="float: left !important;"> <!-- overwrite the default .submit style; it just looks better on this page -->
+                        <input class="button"  name="{{form.prefix}}"  type="submit"   value="submit"/>
+                    </div> <!-- /.submit -->
+
+                </div> <!-- / .collapsible_fieldset_content -->
+            
+            </fieldset> <!-- / .collapsible_fieldset -->
+
+        {% endfor %} {# / form in forms #}
+
+    </form>
+    
 {% endblock %} {# /content #}

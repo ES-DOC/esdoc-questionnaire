@@ -1,31 +1,40 @@
 {% extends "questionnaire/questionnaire_base.html" %}
 
+{% load questionnaire_filters %}
+
 {% block scripts %}
+    <script language="javascript">
 
-    /* fill the 'action' field w/ the appropriate value */
-    /* based on which submit button was clicked */
-    function set_action(actionName) {        
-        $("input[name='action']").val(actionName);
-    };
-
-    /* just setup a minimum of jquery-ui functionality */    
+    /* just setup the minimum of jquery-ui functionality */
     $(document).ready(
         function() {
-            $(".button").button({
-                icons: { primary: "ui-icon-locked" },
-                text: false
-            });
+
+            render_msg($("#msg"));
+
+            var parent = document.body;
+
+            init_dialogs(parent);
+            init_errors(parent);
+
+            init_widget(users,parent);
+            init_widget(buttons,parent);
+            init_widget(helps,parent);
+            
         }
     );
- 
+        
+    </script>
 {% endblock %} {# /scripts #}
 
 {% block style %}
 
-    #questionnaire div.submit { margin-top: 8px; float: right; }
-    #questionnaire div.submit input.button { width: 120px; padding-top: 12px; padding-bottom: 12px; font-weight: bold; border-width: 2px; }
+    <style type="text/css">
 
-{% endblock %} {# /style #}
+        #questionnaire tr.field td:first-child  { font-weight: bold; }
+        
+    </style>
+
+{% endblock %} {# / style #}
 
 {% block title %}
 
@@ -41,9 +50,9 @@
 
     <div class="documentation">
         <p>
-            If you are seeing this page, then you have not selected a project.  Please select from the available projects or documents below.  Authentication may be required.  Alternatively, click on the following links for more information:
+            If you are seeing this page, then you have not selected a project.  Please select from the available projects below.  Authentication may be required.  Alternatively, click on the following links for more information:
             <ul>
-                <li><a href="/admin"><b>Django Admin Interface</b></a> (for registering versions/projects/etc.)&nbsp;&nbsp;</li>
+                <li><a href="/admin/questionnaire"><b>Django Admin Interface</b></a> (for registering projects/versions/vocabularies/etc.)&nbsp;&nbsp;</li>
                 <li><a href="/help"><b>CIM Questionnaire help</b></a>&nbsp;&nbsp;</li>
             </ul>
         </p>
@@ -56,34 +65,21 @@
 
         <fieldset>
 
-            <table width="80%" border="0" style="margin-left: auto; margin-right: auto;">
-                <tr valign="top">
-                    {% for field in form %}
-                        <td align="center">
-                            {% if field.name == "action" %}
-                                <div style="display: none;">
-                                    {{field}}
-                                </div>
-                            {% else %}
-                                {{field.label}}:&nbsp;
-                                {{field}}
-                                {% if field.errors %}
-                                    <br/>
-                                    <div class="error-wrapper">
-                                        {{field.errors}}
-                                    </div>
-                                {% endif %} {# /field.errors #}
-                            {% endif %} {# /field.name == "action" #}
-                        </td>
-                    {% endfor %} {# /field in form #}
-                </tr>
+            <table width="100%">
+                {% for field in form %}
+                    <tr class="{% cycle 'odd' 'even' %} field" name="{{field.html_name}}">
+                        {% include "questionnaire/_field.html" %}
+                    </tr>
+                {% endfor %} {# / field in form #}
             </table>
 
             <div class="submit">
+                <input class="button"  type="submit"   value="submit"/>
+                <!--
                 <input class="button"  name="customize"  type="submit"   value="customize"   onclick="set_action('customize');"/>
-                <input class="button"  name="view"       type="submit"   value="view"        onclick="set_action('view');"/>
                 <input class="button"  name="edit"       type="submit"   value="edit"        onclick="set_action('edit');"/>
-                <input class="button"  name="login"      type="submit"   value="login"       onclick="set_action('login');"/>
+                <input class="button"  name="view"       type="submit"   value="view"        onclick="set_action('view');"/>
+                -->
             </div> <!-- /.submit -->
             <div style="clear: both;">&nbsp;</div>
 
@@ -96,6 +92,5 @@
 {% block footer %}
 
     <!-- no footer -->
-    &nbsp;
     
 {% endblock %} {# /footer #}

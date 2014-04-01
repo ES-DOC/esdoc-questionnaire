@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- configuration.xsd -->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+
+    <xs:annotation>
+        <xs:documentation>
+            This schema defines the format of CIM Version files for the CIM Questionnaire.
+        </xs:documentation>
+    </xs:annotation>
+
+    <xs:element name="version">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="name" type="xs:string"/>
+                <xs:element name="description" type="xs:string" minOccurs="0"/>
+                <xs:element name="classes">
+                    <xs:complexType>
+                        <xs:sequence>
+                            <xs:element name="class" type="ClassType" maxOccurs="unbounded"/>
+                        </xs:sequence>
+                    </xs:complexType>
+                </xs:element>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:complexType name="ClassType">
+        <xs:sequence>
+            <xs:element name="name" type="xs:string"/>
+            <xs:element name="description" type="xs:string" minOccurs="0"/>
+            <xs:element name="attributes">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="attribute" type="AttributeType" maxOccurs="unbounded"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="AttributeType">
+        <xs:sequence>
+            <xs:element name="name" type="xs:string"/>
+            <xs:element name="type">
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:enumeration value="ATOMIC"/>
+                        <xs:enumeration value="RELATIONSHIP"/>
+                        <xs:enumeration value="ENUMERATION"/>
+                        <xs:enumeration value="PROPERTY"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:choice>
+                <xs:element name="enumeration" type="EnumerationType" minOccurs="0" maxOccurs="1"/>
+                <xs:element name="relationship" type="RelationshipType" minOccurs="0" maxOccurs="1"/>                
+            </xs:choice>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="EnumerationType">
+        <xs:sequence>
+            <xs:element name="choice" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>    
+        <xs:attribute name="open" type="xs:boolean"/>
+        <xs:attribute name="multi" type="xs:boolean"/>
+        <xs:attribute name="nullable" type="xs:boolean"/>
+    </xs:complexType>
+
+    <xs:complexType name="RelationshipType">
+        <xs:sequence>
+            <xs:element name="cardinality" minOccurs="0" maxOccurs="1">
+                <xs:complexType>
+                    <xs:attribute name="min" use="required"/>
+                    <xs:attribute name="max" use="required"/>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="target" type="NonEmptyStringType" minOccurs="1" maxOccurs="1"/>
+        </xs:sequence>
+    </xs:complexType>
+    
+    <xs:simpleType name="NonEmptyStringType">
+        <xs:restriction base="xs:string">
+            <xs:minLength value="1"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+</xs:schema>

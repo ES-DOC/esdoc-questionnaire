@@ -1,5 +1,39 @@
 {% extends "questionnaire/questionnaire_base.html" %}
 
+{% load questionnaire_filters %}
+
+{% block scripts %}
+    <script language="javascript">
+
+    /* just setup a minimum of jquery-ui functionality */
+    $(document).ready(
+        function() {
+
+            render_msg($("#msg"));
+
+            var parent = document.body;
+
+            init_dialogs(parent);
+            init_errors(parent);
+
+            init_widget(users,parent);
+            //init_widget(readonlies,parent);
+            //init_widget(buttons,parent);
+            //init_widget(fieldsets,parent);
+            //init_widget(tabs,parent);
+            init_widget(selects,parent);
+            //init_widget(accordions,parent);
+            //init_widget(tags,parent);
+            //init_widget(helps,parent);
+            //init_widget(enablers,parent);
+
+        }
+    );
+
+    </script>
+
+{% endblock %} {# /scripts #}
+
 {% block title %}
 
     CIM Questionnaire
@@ -21,4 +55,15 @@
 
     TEST!
 
+  <select id="id_projects" class="multiselect" name="projects" multiple="multiple"">
+<option value="4">downscaling</option>
+<option selected="selected" value="1">hiwpp</option>
+</select>
+
 {% endblock %} {# /content #}
+
+
+{% block footer %}
+    {{ block.super }}
+    Look at me adding content to an existing block!
+{% endblock %} {# /footer #}

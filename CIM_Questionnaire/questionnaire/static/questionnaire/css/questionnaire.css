@@ -1,5 +1,11 @@
 /* custom CSS for CIM_Questionnaire */
 
+/* some colors:
+#B9E0E3 borders (lt teal)
+#FF6666 errors  (lt red)
+#358C92 titles  (dk teal)
+*/
+
 body {
     /* taken from CoG for now */
     margin: 0;
@@ -23,13 +29,32 @@ body {
     margin: 4px;
 }
 
+/* begin popup dialog boxes */
+
+#questionnaire .hidden_dialog { display: none; } /* still need to do this for pages where dialogs aren't initialized w/ JQuery */
+
+.no_close .ui-dialog-titlebar-close { display: none; } /* hide the close buttons on popoup dialogs (require explicitly pressing "ok" or "cancel" */
+
+.msg td.success {   background: transparent url(../img/success.png) no-repeat center center !important; }
+.msg td.error   {   background: transparent url(../img/error.png)   no-repeat center center !important; }
+/* can also have classes 'info' & 'warning' & 'debug' according to messaging framework */
+
+/* end popup dialog boxes */
+
 /* begin header */
 
 #questionnaire div.header { text-align: left; }
 
 #questionnaire div.header img { width: 200px; }
 
-#questionnaire div.header div#user { float: right; }
+#questionnaire div.header div#user { float: right; font-size: smaller !important; }
+
+/*
+#questionnaire div.header div#user a:link       { text-decoration: none; padding: 2px;  background: url(../img/default_ui_background.png) repeat-x 50% 50%; }      
+#questionnaire div.header div#user a:visited    { text-decoration: none; padding: 2px;  background: url(../img/default_ui_background.png) repeat-x 50% 50%; }  
+#questionnaire div.header div#user a:hover      { text-decoration: none; padding: 2px;  background: url(../img/active_ui_background.png) repeat-x 50% 50%; color: #f7f7f7; }  
+#questionnaire div.header div#user a:active     { text-decoration: none; padding: 2px;  background: url(../img/default_ui_background.png) repeat-x 50% 50%; }
+*/
 
 /* end header */
 
@@ -48,8 +73,8 @@ body {
 #questionnaire table tr {margin-bottom: 4px; }
 #questionnaire table tr.odd { background-color: #fff; }
 #questionnaire table tr.even { background-color: #eee; }
-#questionnaire table tr.field td:first-child { width: 20%; }
-#questionnaire table tr.field td:first-child+td { width: 80%; }   /* slightly hacky way of doing things b/c nth-child pseudo-selector is not supprted by all browsers */
+#questionnaire table tr.field td:first-child { width: 30%; }
+#questionnaire table tr.field td:first-child+td { width: 70%; }   /* slightly hacky way of doing things b/c nth-child pseudo-selector is not supprted by all browsers */
 
 
 #questionnaire fieldset { border: 2px solid #B9E0E3; padding: 0.5em; margin-right: 1.0em; margin-top: 1.0em; margin-bottom: 1.0em; margin-left: 0px; }
@@ -60,4 +85,90 @@ body {
 #questionnaire fieldset legend:hover span.title { background: #358c92 url(../img/active_ui_background.png) repeat-x 50% 50%; color: #f7f7f7; }
 
 
+/* begin buttons */
+
+#questionnaire .ui-button-text { font-size: inherit !important; } /* forces buttons to be sized relative to their text (otherwise I can't override default JQuery sizes) */
+
+#questionnaire div.submit { margin-top: 8px; float: right; }
+#questionnaire div.submit input.button { width: 120px; padding-top: 8px; padding-bottom: 8px; font-weight: bold; border-width: 2px; }
+
+#questionnaire .subform_toolbar { padding: 4px; float: right;  }
+#questionnaire .sort_by { position: absolute; }/*z-index: 999999; }*/
+
+
+
+
+/* end buttons */
+
+/* begin accordions */
+
+#questionnaire .accordion_header * { font-size: 9pt !important; }
+
+/* explicitly reset the background for open accordion headers */
+/* (by default, JQuery applies no style to them once opened) */
+#questionnaire .accordion .accordion_header.open_accordion { background: url(../img/default_ui_background.png) repeat-x 50% 50%; border: 1px solid #B9E0E3;}
+#questionnaire .accordion .accordion_header.open_accordion.ui-state-hover { background: url(../img/active_ui_background.png) repeat-x 50% 50%; border: 1px solid #B9E0E3;}
+
+#questionnaire h3.accordion_header .open_accordion { padding: 100px;}
+#questionnaire .accordion_header .open_accordion.ui-state-hover { background: #358c92 url(../img/active_ui_background.png) repeat-x 50% 50%; border: 1px solid #666666;}
+
+#questionnaire input.label { background: none; border: none; cursor: pointer; }
+/* end accordions */
+
 /* end content */
+
+/* begin some one-off styles */
+
+.hidden   { display: none; }
+.hidden * { display: none; }
+
+/* begin fixing JQuery widgets */
+
+.ui-multiselect-checkboxes span { margin-left: 4px !important; }
+button.ui-multiselect           { margin-top:  4px !important; }
+
+.ui-menu li a { color: inherit;} /* no idea why this is not the default color?!? */
+
+.ui-accordion-header .ui-icon { float: left; margin-top: 4px; margin-right: 4px; }  /* fixes icon forcing content onto newline */
+.ui-accordoin-header.ui-state-active { background-color: green !important;}
+
+.tagit { border: 2px solid #358C92; background: #ffffff; min-height: 2em; padding: 6px !important;}
+.tagit .tagit-choice .tagit-edit { cursor: pointer; float: left; margin-right: 4px; margin-left: -4px; }
+.tagit .tagit-choice .tagit-close { cursor: pointer; }
+.tagit-label { cursor: default; }
+.add_tag input { border: 2px solid #358C92; }
+
+.sortable_item { border: 1px dashed #cccccc; }
+
+/*
+#dcf ul.tagit li.tagit-choice .tagit-edit { cursor: pointer; float: left; margin-right: 2px; margin-left: -4px; }
+#dcf ul.tagit li.tagit-choice .tagit-show { cursor: pointer; float: left; margin-right: 2px; margin-left: -4px; }
+#dcf ul.tagit li.tagit-choice .tagit-show-label { width: 16px; height: 16px;  }
+#dcf ul.tagit li.tagit-choice.unselected { color: red; }
+*/
+
+/* end fixing JQuery widgets */
+
+/* end some one-off styles */
+
+/* begin help icons */
+
+#questionnaire .help_button { display: inline; }
+#questionnaire .help_button .help_description { display: none !important; }
+/* BE SURE TO RENAME UI-ICON IMAGES TO "_default" AND "_hover" AS NEEDED */
+#questionnaire .default-help-icon    { width: 16px; height: 16px; background-image: url(./ext/images/ui-icons_default.png); }
+#questionnaire .hover-help-icon      { width: 16px; height: 16px; background-image: url(./ext/images/ui-icons_hover.png); }
+
+/* end help icons */
+
+/* begin errors */
+
+#questionnaire .error_wrapper               { display: inline; background-color: #FF6666; padding: 2px; margin-left: 4px; }
+#questionnaire .error_wrapper .errorlist    { display: inline; list-style-type: none; text-align: center; padding: 0px; margin: 0px; }
+#questionnaire .error_wrapper .errorlist li { display: inline; background-color: #FF6666; }
+#questionnaire fieldset.error { border-color: #FF6666; }
+#questionnaire fieldset.error > legend span.title { color: #FF6666; }
+#questionnaire fieldset.error > legend:hover span.title { color: #f7f7f7; }
+
+
+/* end errors */

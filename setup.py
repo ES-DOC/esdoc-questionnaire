@@ -6,8 +6,8 @@
 from setuptools import setup, find_packages
 
 setup(
-    name='django-cim-forms',
-    version='0.10.0.2',  # major.minor.patch (good idea to append deployment id in production)
+    name='cim_questionnaire',
+    version='1.0.0',  # major.minor.patch (good idea to append deployment id in production)
     author='Allyn Treshansky',
     author_email='allyn.treshansky@noaa.gov',
     packages=find_packages(),
@@ -20,7 +20,7 @@ setup(
     install_requires=[
         "Django",
         "distribute",
-        "south", 
+        "south>=0.8.2", # v0.8.2 fails w/ DateTimeFields (see https://code.djangoproject.com/ticket/21312) 
         "lxml",
     ],
 )

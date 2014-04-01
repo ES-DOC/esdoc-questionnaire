@@ -1,0 +1,33 @@
+{# this displays a formset #}
+
+
+{{ formset.management_form }}
+{{ formset.non_form_errors }}
+
+{% if formset.forms %}
+
+    <span class="subform_toolbar ui-widget-header ui-corner-all">
+        <button type="button" class="sort">sort</button>
+        <ul class="sort_by">
+            <li><a href="#" name="sort_by_name">by name</a></li>
+            <li><a href="#" name="sort_by_category">by category</a></li>
+            <li><a href="#" name="sort_by_order" title="(category order + property order)">by order</a></li>
+        </ul>
+        <button type="button" class="expand" title="expand all properties">expand all</button>
+        <button type="button" class="collapse" title="collapse all properties">collapse all</button>
+    </span> <!-- /.subform_toolbar -->
+    <div style="clear: both;">&nbsp;</div>
+
+{% endif %}
+
+<div class="accordion" prefix="{{formset.prefix}}">
+    {% for form in formset.forms %}
+        <h3 class="accordion_header">
+            <a>
+                {{customizer.model_title}}:&nbsp;<span name="name">{{form.instance}}</span>
+            </a>
+        </h3> <!-- /.accordion-header -->
+      {{form}}
+      
+    {% endfor %}
+</div> <!-- /.accordion -->

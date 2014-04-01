@@ -20,33 +20,48 @@ Summary of module goes here
 
 """
 
-from questionnaire.views import *
 
+from django import forms
 from django.forms import *
 
-def index(request):
+from questionnaire.views  import *
+from questionnaire.models import *
+from questionnaire.utils  import get_version
+
+def questionnaire_index(request):
+
+    active_projects = MetadataProject.objects.filter(active=True)
 
     class _IndexForm(forms.Form):
         class Meta:
-            pass
+            fields  = ("projects",)
 
-#        projects        = ModelChoiceField()
-#        versions        = ModelChoiceField()
-#        vocabularies    = ModelMultipleChoiceField()
-#        customizations  = ModelChoiceField()
-#        models          = ModelChoiceField()
-        action          = CharField(max_length=64)
+        projects        = ModelChoiceField(queryset=active_projects,label="Active Metadata Projects",required=True)
+        projects.help_text = "This is a list of all projects that have registered as 'active' with the CIM Questionnaire."
 
         def __init__(self,*args,**kwargs):
             super(_IndexForm,self).__init__(*args,**kwargs)
 
     if request.method == "POST":
         form = _IndexForm(request.POST)
-        print form
+        if form.is_valid():
+            project             = form.cleaned_data["projects"]
+            project_index_url   = reverse("project_index",kwargs={
+                "project_name"      : project.name,
+            })
+            return HttpResponseRedirect(project_index_url)
+
     else: # request.method == "GET":
         form = _IndexForm()
       
-    return render_to_response('questionnaire/questionnaire_index.html', {'form' : form}, context_instance=RequestContext(request))
+    # gather all the extra information required by the template
+    dict = {
+        "site"                  : get_current_site(request),
+        "form"                  : form,
+        "questionnaire_version" : get_version(),
+    }
+
+    return render_to_response('questionnaire/questionnaire_index.html', dict, context_instance=RequestContext(request))
 
 #
 #    allVersions         = MetadataVersion.objects.all()
@@ -118,4 +133,97 @@ def index(request):
 #
 #    return render_to_response('dcf/dcf_index.html', {"form":form,"data":data}, context_instance=RequestContext(request))
 
+def questionnaire_project_index(request,project_name=""):
 
+    if not project_name:
+        return HttpResponseRedirect(reverse("index"))
+
+    try:
+        project = MetadataProject.objects.get(name__iexact=project_name,active=True)
+    except MetadataProject.DoesNotExist:
+        msg = "Could not find an active project named '%s'." % (project_name)
+        return error(request,msg)
+
+    customizers = MetadataModelCustomizer.objects.filter(project=project)
+
+   # I AM HERE
+    
+    class _AdminIndexForm(forms.Form):
+        class Meta:
+            pass
+
+        versions        = ModelChoiceField(queryset=MetadataVersion.objects.filter(registered=True),label="Metadata Version",required=True)
+        models          = ModelChoiceField(queryset=MetadataModelProxy.objects.all(),label="Metadata Model",required=True)
+        customizations  = ModelChoiceField(queryset=MetadataModelCustomizer.objects.filter(project=project),label="Form Customization",required=False)
+        customizations.help_text = "If this field is left blank, a <i>new</i> customization will be created."
+
+    class _UserIndexForm(forms.Form):
+        class Meta:
+            pass
+
+        versions        = ModelChoiceField(queryset=MetadataVersion.objects.filter(registered=True),label="Metadata Version",required=True)
+        models          = ModelChoiceField(queryset=MetadataModelProxy.objects.all(),label="Metadata Model",required=True)
+
+    class _DefaultIndexForm(forms.Form):
+        class Meta:
+            pass
+
+        versions        = ModelChoiceField(queryset=MetadataVersion.objects.filter(registered=True),label="Metadata Version",required=True)
+        models          = ModelChoiceField(queryset=MetadataModelProxy.objects.all(),label="Metadata Model",required=True)
+
+    if request.method == "POST":
+        admin_form   = _AdminIndexForm(request.POST,prefix="admin")
+        user_form    = _UserIndexForm(request.POST,prefix="user")
+        default_form = _DefaultIndexForm(request.POST,prefix="default")
+        if "admin_customize" in request.POST:
+            remove_form_errors(user_form)
+            remove_form_errors(default_form)
+            if admin_form.is_valid():
+                version = admin_form.cleaned_data["versions"]
+                model = admin_form.cleaned_data["models"]
+                customization = admin_form.cleaned_data["customizations"]
+                if customization:
+                    url = "/%s/customize/%s/%s?name=%s" % (project_name,version.name,model.name,customization.name)
+                else:
+                    url = "/%s/customize/%s/%s" % (project_name,version.name,model.name)
+                return redirect(url)
+            
+        elif "user_edit" in request.POST:
+            remove_form_errors(admin_form)
+            remove_form_errors(default_form)
+            if user_form.is_valid():
+                print "user_edit"
+        elif "user_create" in request.POST:
+            remove_form_errors(admin_form)
+            remove_form_errors(default_form)
+            if user_form.is_valid():
+                print "user_create"
+        elif "default_view" in request.POST:
+            remove_form_errors(admin_form)
+            remove_form_errors(user_form)
+            if default_form.is_valid():
+                print "default_view"
+        else:
+            msg = "unknown action recieved."
+            messages.add_message(request, messages.ERROR, msg)
+        
+
+    else: # request.method == "GET":
+        admin_form   = _AdminIndexForm(prefix="admin")
+        user_form    = _UserIndexForm(prefix="user")
+        default_form = _DefaultIndexForm(prefix="default")
+
+        pass
+
+    # gather all the extra information required by the template
+    dict = {
+        "site"          : get_current_site(request),
+        "project"       : project,
+        "admin_form"    : admin_form,
+        "user_form"     : user_form,
+        "default_form"  : default_form,
+        "questionnaire_version" : get_version(),
+    }
+
+
+    return render_to_response('questionnaire/questionnaire_project_index.html', dict, context_instance=RequestContext(request))

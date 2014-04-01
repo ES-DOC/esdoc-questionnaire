@@ -1,20 +1,28 @@
 CIM Questionnaire
 
-Beginning at v0.9.9.6 this has been rewritten as a Django Project rather than a Django Application.  It can therefore be run as it's own webserver, without having to be embedded in an existing (Django) server.
+v1.0.0
+
+* entire rewrite to improve efficiency
+
+v0.10.2.0
+
+* scripts for automatic backup/restore of databases
+
+v0.10.1.1
+
+* support of features in "statistical downscaling controlled vocabulary"
+
+v0.10.0.2
+
+* ability for controlled vocabularies to be used by multiple projects
+
+v0.10.0.1
+
+* explicitly specified location of ATOM feeds
 
 v0.10.0.0
 
 * updated versioning structure to be inline w/ other ES-DOC projects
 * use of fixtures to migrate dbs
 
-v0.10.0.1
-
-* updated handling of ATOM feeds
-
-v0.10.0.2
-
-* ability for vocabularies to apply to multiple projects
-
-
-
-
+Beginning at v0.9.9.6 this has been rewritten as a Django Project rather than a Django Application.  It can therefore be run as it's own webserver, without having to be embedded in an existing (Django) server.

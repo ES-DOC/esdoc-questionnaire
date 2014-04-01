@@ -1,13 +1,91 @@
 {% extends "questionnaire/questionnaire_base.html" %}
 
+{% load questionnaire_filters %}
+
+{% block scripts %}
+
+    <script language="javascript">
+
+    var ERROR_CODES = {
+        200 : "OK",
+        301 : "Moved Permanently",
+        302 : "Found",
+        400 : "Bad Request",
+        403 : "Forbidden",
+        404 : "Not Found",
+        408 : "Request Timeout",
+        500 : "Internal Server Error"
+    };
+
+    /* just setup the minimum of jquery-ui functionality */
+    $(document).ready(
+        function() {
+
+            var parent = document.body;
+
+            init_dialogs(parent);
+
+            init_widget(users,parent);
+            init_widget(buttons,parent);
+            init_widget(helps,parent);
+            
+        }
+    );
+
+    </script>
+
+{% endblock %} {# /scripts #}
+
+{% block style %}
+    <style type="text/css">
+
+        #questionnaire table    { border: 0px; padding: 8px; }
+        #questionnaire table td { border: 0px; padding: 8px; }
+
+        #questionnaire .icon    {}
+        #questionnaire .msg     { font-weight: bold; }
+        #questionnaire .status  {}
+
+    </style>
+
+{% endblock %} {# /style #}
+
 {% block title %}
 
-    CIM Questionnaire
+    CIM Questionnaire Error
 
 {% endblock %} {# /title #}
 
 {% block content %}
 
-    CIM Questionnaire; error
+    <div class="title">
+        CIM Questionnaire Error!
+    </div> <!-- /.title -->
+
+    <fieldset>
+        <table>
+            <tr valign="center">
+                <td class="icon">
+                    <img height='32px' src='{{STATIC_URL}}questionnaire/img/warning.png'/>
+                </td>
+                <td class="msg">
+                    {{error_msg|safe}} {# the 'safe' filter allows me to embed HTML #}
+                </td>
+                <td class="status">
+                    {% if status_code != 200 %}
+                        (
+                        {{status_code}}
+                        <script language="javascript">
+                            document.write(
+                                ": " + ERROR_CODES[{{status_code}}]
+                            );
+                        </script>
+                        )
+                    {% endif %} {# / status_code != 200 #}
+                </td>
+            </tr>
+        </table>
+    </fieldset>
+
 
 {% endblock %} {# /content #}

@@ -1,0 +1,47 @@
+/* custom CSS for CIM_Questionnaire customizer */
+
+/* some colors:
+#B9E0E3 borders (lt teal)
+#FF6666 errors  (lt red)
+#358C92 titles  (dk teal)
+*/
+
+.ui-tabs.ui-tabs-vertical > .ui-tabs-nav {
+    float: left;
+   /* width: 10em;*/
+    background: #358C92;   
+}
+
+.ui-tabs.ui-tabs-vertical > .ui-tabs-nav li {
+    clear: left;
+    width: 100%;
+    margin: 0.2em 0;
+    overflow: hidden;
+    position: relative;
+    right: -1px;
+    z-index: 2;    
+}
+
+.ui-tabs.ui-tabs-vertical > .ui-tabs-nav li a {
+    display: block;
+    width: 100%;
+    padding: 0.6em 1em;
+}
+
+.ui-tabs.ui-tabs-vertical > .ui-tabs-nav li a:hover {
+    cursor: pointer;
+}
+
+.ui-tabs.ui-tabs-vertical > .ui-tabs-nav li.ui-tabs-active {
+    border-right: 1px solid #ffffff;
+}
+
+.ui-tabs.ui-tabs-vertical > .ui-tabs-nav li:last-child {
+    margin-bottom: 10px;
+}
+
+.ui-tabs.ui-tabs-vertical > .ui-tabs-panel {
+    float: left;
+    position: relative;
+    left: -1px;
+}

@@ -21,79 +21,28 @@ Summary of module goes here
 """
 
 from questionnaire.views import *
+from questionnaire.utils import get_version
 
-def error(request):
+from django.template import *
+from django.shortcuts import *
+from django.http import *
 
-    return render_to_response('questionnaire/questionnaire_error.html', {}, context_instance=RequestContext(request))
+def questionnaire_error(request,error_msg="",status_code=200):
 
-#
-#    allVersions         = MetadataVersion.objects.all()
-#    allCategorizations  = MetadataCategorization.objects.all()
-#    allVocabularies     = MetadataVocabulary.objects.all()
-#    allProjects         = MetadataProject.objects.all()
-#    allCustomizations   = MetadataModelCustomizer.objects.all()
-#
-#    allModels   = set([model.getName() for model in get_subclasses(MetadataModel) if model._is_metadata_document])
-#
-#    class _IndexForm(forms.Form):
-#        class Meta:
-#            fields  = ("versions","categorizations","vocabularies","projects","customizations","models","action")
-#
-#        versions        = ModelChoiceField(queryset=allVersions,label="Metadata Version",required=False)
-#        categorizations = ModelChoiceField(queryset=allCategorizations,label="Associated Categorization",required=False)
-#        vocabularies    = ModelMultipleChoiceField(queryset=allVocabularies,label="Associated Vocabularies",required=False)
-#        projects        = ModelChoiceField(queryset=allProjects,label="Metadata Project",required=True)
-#        customizations  = ModelChoiceField(queryset=allCustomizations,label="Form Customization",required=False)
-#
-#        models          = ChoiceField(label="Metadata Model",required=False)
-#        models.choices  = [(model_name.lower(),model_name) for model_name in allModels]
-#        action          = CharField(max_length=LIL_STRING)
-#
-#        def __init__(self,*args,**kwargs):
-#            super(_IndexForm,self).__init__(*args,**kwargs)
-#
-#            update_field_widget_attributes(self.fields["versions"],{"onchange":"reset_options(this);"})
-#            update_field_widget_attributes(self.fields["categorizations"],{"onchange":"reset_options(this);"})
-#            update_field_widget_attributes(self.fields["projects"],{"onchange":"reset_options(this);"})
-#            update_field_widget_attributes(self.fields["vocabularies"],{"onchange":"reset_options(this);"})
-#            update_field_widget_attributes(self.fields["customizations"],{"onchange":"reset_options(this);"})
-#            update_field_widget_attributes(self.fields["models"],{"onchange":"reset_options(this);"})
-#
-#    data = "{ \"versions\" : %s, \"categorizations\" : %s, \"vocabularies\" : %s, \"projects\" : %s, \"customizations\" : %s }" % ( \
-#        JSON_SERIALIZER.serialize(allVersions),
-#        JSON_SERIALIZER.serialize(allCategorizations),
-#        JSON_SERIALIZER.serialize(allVocabularies),
-#        JSON_SERIALIZER.serialize(allProjects),
-#        JSON_SERIALIZER.serialize(allCustomizations)
-#    )
-#
-#    if request.method == "POST":
-#        form = _IndexForm(request.POST)
-#        if form.is_valid():
-#            action          = form.cleaned_data["action"]
-#            version         = form.cleaned_data["versions"]
-#            categorization  = form.cleaned_data["categorizations"]
-#            vocabulary      = form.cleaned_data["vocabularies"]
-#            project         = form.cleaned_data["projects"]
-#            customization   = form.cleaned_data["customizations"]
-#            model           = form.cleaned_data["models"]
-#            parameters      = ""
-#
-#            if not action in ["customize","edit","test"]:
-#                msg = "unknown action: %s" % action
-#                return error(request,msg)
-#
-#            if version:
-#                version_number = version.version
-#            if customization and action == "customize":
-#                parameters = "?name=%s" % customization.name
-#
-#            url = "%s/%s/%s/%s/%s" % (action,project.name,model,version_number,parameters)
-#            return HttpResponseRedirect(url)
-#
-#    else:
-#        form = _IndexForm()
-#
-#    return render_to_response('dcf/dcf_index.html', {"form":form,"data":data}, context_instance=RequestContext(request))
+    print error_msg
 
+    # (note that error_msg can have embedded HTML tags)
 
+    # gather all the extra information required by the template
+    dict = {
+        "site"                  : get_current_site(request),
+        "error_msg"             : error_msg,
+        "status_code"           : status_code,
+        "questionnaire_version" : get_version(),
+    }
+
+    template    = loader.get_template('questionnaire/questionnaire_error.html')
+    context     = RequestContext(request,dict)
+    response    = HttpResponse(template.render(context),status=status_code)
+
+    return response

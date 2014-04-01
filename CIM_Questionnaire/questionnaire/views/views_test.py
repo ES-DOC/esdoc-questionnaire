@@ -20,10 +20,19 @@ Summary of module goes here
 
 """
 
-from questionnaire.views import *
+from questionnaire.utils    import *
+from questionnaire.models   import *
+from questionnaire.forms    import *
+from questionnaire.views    import *
 
 @login_required
 #@permission_required('test')
 def test(request):
-    print request.user
-    return render_to_response('questionnaire/questionnaire_test.html', {}, context_instance=RequestContext(request))
+  
+    # gather all the extra information required by the template
+    dict = {
+        "site"                  : get_current_site(request),
+        "questionnaire_version" : get_version(),
+    }
+
+    return render_to_response('questionnaire/questionnaire_test.html', dict, context_instance=RequestContext(request))

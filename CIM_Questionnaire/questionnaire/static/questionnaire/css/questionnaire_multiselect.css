@@ -1,0 +1,13 @@
+/* custom CSS for questionnaire_multiselect widget */
+
+/* some colors:
+#B9E0E3 borders (lt teal)
+#FF6666 errors  (lt red)
+#358C92 titles  (dk teal)
+*/
+
+.multiselect_header, .multiselect_content   { width: 400px; text-align: left; }
+.multiselect_content                        { min-height: 1.5em; }
+.multiselect_content .selected              { background: #B9E0E3; border-bottom: 1px solid #358C92; }
+.multiselect_content .sortable_item         { display: block; margin: 1px 0px 1px 0px; }
+

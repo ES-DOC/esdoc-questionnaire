@@ -1,0 +1,98 @@
+{% extends "questionnaire/questionnaire_base.html" %}
+
+{% load questionnaire_filters %}
+
+{% block scripts %}
+    <script language="javascript">
+
+    /* just setup a minimum of jquery-ui functionality */
+    $(document).ready(
+        function() {
+
+            render_msg($("#msg"));
+
+            var parent = document.body;
+
+            init_dialogs(parent);
+            init_errors(parent);
+
+            init_widget(users,parent);
+            init_widget(readonlies,parent);
+            init_widget(buttons,parent);
+            init_widget(fieldsets,parent);
+            init_widget(helps,parent);
+ 
+        }
+    );
+
+    </script>
+{% endblock %} {# /scripts #}
+
+{% block style %}
+    <style type="text/css">
+/*
+        #questionnaire tr.field td:first-child  { font-weight: bold; }
+        #questionnaire .form_container          { overflow: auto;  width: 1600px; }
+        #questionnaire fieldset                 { float: left; margin: 8px; }
+        #questionnaire table.project_details    { border: 0px #ffffff; padding: 2px; }
+        #questionnaire table.project_details tr { vertical-align: top; }
+        #questionnaire table.project_details tr td:first-child { font-weight: bold; width: 12em; }
+*/
+    </style>
+{% endblock %} {# / style #}
+
+{% block title %}
+
+    CIM Questionnaire
+
+{% endblock %} {# /title #}
+
+{% block user %}
+    <!-- no user content needed for login page -->
+{% endblock %} {# /user #}
+
+{% block content %}
+
+    <div class="title">
+        <b>CIM Questionnaire</b>
+    </div> <!-- /.title -->
+
+    <div class="documentation">
+        <p>
+            Please use this form to create a user account.
+        </p>
+    </div>
+      
+    <form method="POST" action=".">
+        {% csrf_token %}
+
+        <fieldset>
+            <legend title="click to toggle content">
+                <span class="title">&nbsp;User Creation&nbsp;</span>
+            </legend>
+
+            <div class="collapsible_fieldset_content">
+                <div class="documentation">
+                    <p>
+                        &nbsp;
+                    </p>
+                </div> <!-- /.documentation -->
+
+                <table width="100%">
+                    {% for field in form %}
+                        <tr class="{% cycle 'odd' 'even' %} field" name="{{field.html_name}}">
+                            {% include "questionnaire/_field.html" %}
+                        </tr>
+                    {% endfor %} {# / field in form #}
+                </table>
+
+                <div style="clear: both;">&nbsp;</div>
+                <div class="submit">
+                    <input class="button"  name="submit"  type="submit"  value="submit"/>
+                </div> <!-- /.submit -->
+            </div> <!-- /.collapsible_fieldset_content -->
+        </fieldset>
+        
+    </form>
+    
+{% endblock %} {# /content #}

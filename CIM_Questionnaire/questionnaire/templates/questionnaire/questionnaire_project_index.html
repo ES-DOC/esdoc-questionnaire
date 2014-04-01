@@ -1,0 +1,208 @@
+{% extends "questionnaire/questionnaire_base.html" %}
+
+{% load questionnaire_filters %}
+
+{% block scripts %}
+    <script language="javascript">
+
+    /* just setup a minimum of jquery-ui functionality */
+    $(document).ready(
+        function() {
+
+            render_msg($("#msg"));
+
+            var parent = document.body;
+
+            init_dialogs(parent);
+            init_errors(parent);
+
+            init_widget(users,parent);
+            init_widget(readonlies,parent);
+            init_widget(buttons,parent);
+            init_widget(fieldsets,parent);
+            init_widget(helps,parent);
+            init_widget(enablers,parent);
+
+            $(".inactive").each(function() {
+                $(this).find("fieldset").addClass("ui-state-disabled");
+                $(this).find("input,textarea,select").prop("disabled","true");
+            });
+  
+        }
+    );
+
+    </script>
+{% endblock %} {# /scripts #}
+
+{% block style %}
+    <style type="text/css">
+
+        #questionnaire tr.field td:first-child  { font-weight: bold; }
+        #questionnaire .form_container          { overflow: auto;  width: 1600px; }
+        #questionnaire fieldset                 { float: left; margin: 8px; }
+        #questionnaire table.project_details    { border: 0px #ffffff; padding: 2px; }
+        #questionnaire table.project_details tr { vertical-align: top; }
+        #questionnaire table.project_details tr td:first-child { font-weight: bold; width: 12em; }
+
+    </style>
+{% endblock %} {# / style #}
+
+{% block title %}
+
+    {{project.title|title}} CIM Questionnaire
+
+{% endblock %} {# /title #}
+
+{% block content %}
+
+    {% with user_is_default=request.user|is_member_of:project user_is_user=request.user|is_user_of:project user_is_admin=request.user|is_admin_of:project %}
+
+    <div class="title">
+        <b>{{project.title|title}}</b> CIM Questionnaire
+    </div> <!-- /.title -->
+
+    <div class="documentation">
+        <p>
+            This is the index page for {% if project.url %}<a href="{{project.url}}" title="{{project.url}}">{% endif %}{{project.title|title}}{% if project.url %}</a>{% endif %}.
+            All users will be able to view CIM Documents.  Project members will also be able to create and/or edit CIM Documents.  And project administrators will also be able to edit customizations.
+        </p>
+        {% if project.description %}
+            <table class="project_details">
+                <tr>
+                    <td>
+                        Project Description:
+                    </td>
+                    <td>
+                        {{ project.description }}
+                    </td>
+                </tr>
+            </table>
+        {% endif %} {# /project.description #}
+        {% if project.email %}
+            <table class="project_details">
+                <tr>
+                    <td>
+                        Project Contact:
+                    </td>
+                    <td>
+                        <a href="mailto:{{ project.email }}">{{ project.email }}</a>
+                    </td>
+                </tr>
+            </table>
+        {% endif %} {# /project.email #}
+    </div>
+
+    <!--
+    <div style="border: 1px solid #ff0000; width: 20em; padding: 4px;">
+        TODO: DELETE THIS SECTION<br/>
+        {{request.user}}    {% if user_is_default %}    is a    {% else %}    is not a    {% endif %}    member of {{project}}  <br/>
+        {{request.user}}    {% if user_is_user %}       is a    {% else %}    is not a    {% endif %}    user of {{project}}    <br/>
+        {{request.user}}    {% if user_is_admin %}      is a    {% else %}    is not a    {% endif %}    admin of {{project}}   <br/>
+    </div>
+    -->
+      
+    <div class="form_container">
+
+        <form method="POST" action=".">
+            {% csrf_token %}
+
+            {% if not user_is_admin %}
+                <div class="inactive">
+            {% endif %}
+            <fieldset class="collapsible_fieldset">
+                <legend title="click to toggle content">
+                    <span class="title">&nbsp;Customize&nbsp;</span>
+                </legend>
+
+                <div class="collapsible_fieldset_content">
+                    <div class="documentation">
+                        <p>
+                            Please choose a version/model combination to customize.
+                        </p>
+                    </div> <!-- /.documentation -->
+
+                    <table width="100%">
+                        {% for field in admin_form %}
+                            <tr class="{% cycle 'odd' 'even' %} field" name="{{field.html_name}}">
+                                {% include "questionnaire/_field.html" %}
+                            </tr>
+                        {% endfor %} {# / field in admin_form #}
+                    </table>
+
+                    <div style="clear: both;">&nbsp;</div>
+                    <div class="submit">
+                        <input class="button"  name="admin_customize"  type="submit"  value="customize"/>
+                    </div> <!-- /.submit -->
+                </div> <!-- /.collapsible_fieldset_content -->
+            </fieldset>
+            {% if not user_is_admin %}
+                </div> <!-- /.inactive -->
+            {% endif %}
+
+            {% if not user_is_user %}
+                <div class="inactive">
+            {% endif %}
+            <fieldset class="collapsible_fieldset">
+                <legend title="click to toggle content">
+                    <span class="title">&nbsp;Create/Edit&nbsp;</span>
+                </legend>
+
+                <div class="collapsible_fieldset_content">
+                    <div class="documentation">
+                        <p>
+                            Project members can edit and/or create CIM Documents.
+                        </p>
+                    </div> <!-- /.documentation -->
+
+                    <table width="100%">
+                        {% for field in user_form %}
+                            <tr class="{% cycle 'odd' 'even' %} field" name="{{field.html_name}}">
+                                {% include "questionnaire/_field.html" %}
+                            </tr>
+                        {% endfor %} {# / field in user_form #}
+                    </table>
+                    <div style="clear: both;">&nbsp;</div>
+                    <div class="submit">
+                        <input class="button"  name="user_create"  type="submit"  value="create"/>
+                        <input class="button"  name="user_edit"  type="submit"  value="edit"/>
+                    </div> <!-- /.submit -->
+                </div> <!-- /.collapsible_fieldset_content -->
+            </fieldset>
+            {% if not user_is_user %}
+                </div> <!-- /.inactive -->
+            {% endif %}
+        
+            <fieldset class="collapsible_fieldset">
+                <legend title="click to toggle content">
+                    <span class="title">&nbsp;View&nbsp;</span>
+                </legend>
+
+                <div class="collapsible_fieldset_content">
+                    <div class="documentation">
+                        <p>
+                            All users can view CIM Documents.
+                        </p>
+                    </div> <!-- /.documentation -->
+
+                    <table width="100%">
+                        {% for field in default_form %}
+                            <tr class="{% cycle 'odd' 'even' %} field" name="{{field.html_name}}">
+                                {% include "questionnaire/_field.html" %}
+                            </tr>
+                        {% endfor %} {# / field in default_form #}
+                    </table>
+
+                    <div style="clear: both;">&nbsp;</div>
+                    <div class="submit">
+                        <input class="button"  name="default_view"  type="submit"  value="view"/>
+                    </div> <!-- /.submit -->
+
+                </div> <!-- /.collapsible_fieldset_content -->
+            </fieldset>
+        
+        </form>
+    </div> <!-- /.form_container -->
+
+    {% endwith %} {# / user_is_default, user_is_user, user_is_admin #}
+    
+{% endblock %} {# /content #}

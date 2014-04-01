@@ -6,19 +6,19 @@
             <name>Document Properties</name>
             <description></description>
             <order>1</order>
-            <key>documentproperties</key>
+            <key>document-properties</key>
         </category>        
         <category>
             <name>Basic Properties</name>
             <description></description>
             <order>2</order>
-            <key>basicproperties</key>
+            <key>basic-properties</key>
         </category>
         <category>
             <name>Component Description</name>
             <description></description>
             <order>3</order>
-            <key>componentdescription</key>
+            <key>component-description</key>
         </category>
     </categories>
     <models>
@@ -27,102 +27,102 @@
             <fields>
                 <field>
                     <name>shortName</name>
-                    <category_key>basicproperties</category_key>
+                    <category_key>basic-properties</category_key>
                 </field>
                 <field>
                     <name>longName</name>
-                    <category_key>basicproperties</category_key>
+                    <category_key>basic-properties</category_key>
                 </field>
                 <field>
                     <name>description</name>
-                    <category_key>basicproperties</category_key>
+                    <category_key>basic-properties</category_key>
                 </field>
                 <field>
                     <name>purpose</name>
-                    <category_key>componentdescription</category_key>
+                    <category_key>component-description</category_key>
                 </field>         
                 
                 <field>
                     <name>embedded</name>
-                    <category_key>componentdescription</category_key>
+                    <category_key>component-description</category_key>
                 </field>         
                 <field>
                     <name>license</name>
-                    <category_key>componentdescription</category_key>
+                    <category_key>component-description</category_key>
                 </field>
                 
                 <field>
                     <name>timing</name>
-                    <category_key>componentdescription</category_key>
+                    <category_key>component-description</category_key>
                 </field>         
                 <field>
                     <name>grid</name>
-                    <category_key>componentdescription</category_key>
+                    <category_key>component-description</category_key>
                 </field>         
                 <field>
                     <name>componentLanguage</name>
-                    <category_key>componentdescription</category_key>
+                    <category_key>component-description</category_key>
                 </field>         
                 <field>
                     <name>couplingFramework</name>
-                    <category_key>componentdescription</category_key>
+                    <category_key>component-description</category_key>
                 </field>         
                 <field>
                     <name>citation</name>
-                    <category_key>componentdescription</category_key>
+                    <category_key>component-description</category_key>
                 </field>         
                 <field>
                     <name>releaseDate</name>
-                    <category_key>componentdescription</category_key>
+                    <category_key>component-description</category_key>
                 </field>                
                 <field>
                     <name>previousVersion</name>
-                    <category_key>componentdescription</category_key>
+                    <category_key>component-description</category_key>
                 </field>                
                 <field>
                     <name>fundingSource</name>
-                    <category_key>componentdescription</category_key>
+                    <category_key>component-description</category_key>
                 </field>                
                 <field>
                     <name>onlineResource</name>
-                    <category_key>componentdescription</category_key>
+                    <category_key>component-description</category_key>
                 </field>                
                 <field>
                     <name>responsibleParty</name>
-                    <category_key>componentdescription</category_key>
+                    <category_key>component-description</category_key>
                 </field>                
                 <field>
                     <name>type</name>
-                    <category_key>componentdescription</category_key>
+                    <category_key>component-description</category_key>
                 </field>
 
                 <field>
                     <name>documentID</name>
-                    <category_key>documentproperties</category_key>
+                    <category_key>document-properties</category_key>
                 </field>
                 <field>
                     <name>documentVersion</name>
-                    <category_key>documentproperties</category_key>
+                    <category_key>document-properties</category_key>
                 </field>
                 <field>
                     <name>metadataID</name>
-                    <category_key>documentproperties</category_key>
+                    <category_key>document-properties</category_key>
                 </field>
                 <field>
                     <name>metadataVersion</name>
-                    <category_key>documentproperties</category_key>
+                    <category_key>document-properties</category_key>
                 </field>
                 <field>
                     <name>externalID</name>
-                    <category_key>documentproperties</category_key>
+                    <category_key>document-properties</category_key>
                 </field>
                 <field>
                     <name>documentAuthor</name>
-                    <category_key>documentproperties</category_key>
+                    <category_key>document-properties</category_key>
                 </field>
                 <field>
                     <name>documentCreationDate</name>
-                    <category_key>documentproperties</category_key>
+                    <category_key>document-properties</category_key>
                 </field>                
             </fields>
         </model>
@@ -131,102 +131,102 @@
             <fields>
                 <field>
                     <name>shortName</name>
-                    <category_key>basicproperties</category_key>
+                    <category_key>basic-properties</category_key>
                 </field>
                 <field>
                     <name>longName</name>
-                    <category_key>basicproperties</category_key>
+                    <category_key>basic-properties</category_key>
                 </field>
                 <field>
                     <name>description</name>
-                    <category_key>basicproperties</category_key>
+                    <category_key>basic-properties</category_key>
                 </field>
                 <field>
                     <name>purpose</name>
-                    <category_key>componentdescription</category_key>
+                    <category_key>component-description</category_key>
                 </field>         
                 
                 <field>
                     <name>embedded</name>
-                    <category_key>componentdescription</category_key>
+                    <category_key>component-description</category_key>
                 </field>         
                 <field>
                     <name>license</name>
-                    <category_key>componentdescription</category_key>
+                    <category_key>component-description</category_key>
                 </field>
                 
                 <field>
                     <name>timing</name>
-                    <category_key>componentdescription</category_key>
+                    <category_key>component-description</category_key>
                 </field>         
                 <field>
                     <name>grid</name>
-                    <category_key>componentdescription</category_key>
+                    <category_key>component-description</category_key>
                 </field>         
                 <field>
                     <name>componentLanguage</name>
-                    <category_key>componentdescription</category_key>
+                    <category_key>component-description</category_key>
                 </field>         
                 <field>
                     <name>couplingFramework</name>
-                    <category_key>componentdescription</category_key>
+                    <category_key>component-description</category_key>
                 </field>         
                 <field>
                     <name>citation</name>
-                    <category_key>componentdescription</category_key>
+                    <category_key>component-description</category_key>
                 </field>         
                 <field>
                     <name>releaseDate</name>
-                    <category_key>componentdescription</category_key>
+                    <category_key>component-description</category_key>
                 </field>                
                 <field>
                     <name>previousVersion</name>
-                    <category_key>componentdescription</category_key>
+                    <category_key>component-description</category_key>
                 </field>                
                 <field>
                     <name>fundingSource</name>
-                    <category_key>componentdescription</category_key>
+                    <category_key>component-description</category_key>
                 </field>                
                 <field>
                     <name>onlineResource</name>
-                    <category_key>componentdescription</category_key>
+                    <category_key>component-description</category_key>
                 </field>                
                 <field>
                     <name>responsibleParty</name>
-                    <category_key>componentdescription</category_key>
+                    <category_key>component-description</category_key>
                 </field>                
                 <field>
                     <name>type</name>
-                    <category_key>componentdescription</category_key>
+                    <category_key>component-description</category_key>
                 </field>
                 
                 <field>
                     <name>documentID</name>
-                    <category_key>documentproperties</category_key>
+                    <category_key>document-properties</category_key>
                 </field>
                 <field>
                     <name>documentVersion</name>
-                    <category_key>documentproperties</category_key>
+                    <category_key>document-properties</category_key>
                 </field>
                 <field>
                     <name>metadataID</name>
-                    <category_key>documentproperties</category_key>
+                    <category_key>document-properties</category_key>
                 </field>
                 <field>
                     <name>metadataVersion</name>
-                    <category_key>documentproperties</category_key>
+                    <category_key>document-properties</category_key>
                 </field>
                 <field>
                     <name>externalID</name>
-                    <category_key>documentproperties</category_key>
+                    <category_key>document-properties</category_key>
                 </field>
                 <field>
                     <name>documentAuthor</name>
-                    <category_key>documentproperties</category_key>
+                    <category_key>document-properties</category_key>
                 </field>
                 <field>
                     <name>documentCreationDate</name>
-                    <category_key>documentproperties</category_key>
+                    <category_key>document-properties</category_key>
                 </field>                
             </fields>
         </model>

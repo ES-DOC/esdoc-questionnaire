@@ -1,13 +1,67 @@
 {% extends "questionnaire/questionnaire_base.html" %}
 
+{% load questionnaire_filters %}
+
+{% block scripts %}
+    <script language="javascript">
+
+    /* just setup the minimum of jquery-ui functionality */
+    $(document).ready(
+        function() {
+
+            init_buttons(document);
+            init_user(document);
+            init_errors(document);
+            init_fieldsets(document);
+
+        }
+    );
+
+    </script>
+
+{% endblock %} {# /scripts #}
+
 {% block title %}
 
-    CIM Questionnaire
+    CIM Questionnaire Help
 
 {% endblock %} {# /title #}
 
 {% block content %}
 
-    CIM Questionnaire; help
+    <div class="title">
+        CIM Questionnaire Help
+    </div> <!-- /.title -->
+
+    <!--
+    <div class="documentation">
+        <p>
+            
+        </p>
+
+    </div>
+    -->
+
+    <fieldset class="collapsible_fieldset">
+        <legend title="click to toggle content">
+            <span class="title">&nbsp;customization help&nbsp;</span>
+        </legend>
+
+        <div class="collapsible_fieldset_content">
+            blah
+        </div> <!-- / .collapsible_fieldset_content -->
+
+    </fieldset> <!-- / .collapsible_fieldset -->
+
+    <fieldset class="collapsible_fieldset">
+        <legend title="click to toggle content">
+            <span class="title">&nbsp;editing help&nbsp;</span>
+        </legend>
+
+        <div class="collapsible_fieldset_content">
+            blah
+        </div> <!-- / .collapsible_fieldset_content -->
+
+    </fieldset> <!-- / .collapsible_fieldset -->
 
 {% endblock %} {# /content #}
