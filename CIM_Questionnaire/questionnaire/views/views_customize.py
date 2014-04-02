@@ -448,5 +448,5 @@ def questionnaire_customize_help(request):
         "questionnaire_version"         : get_version(),
     }
 
-    return render_to_response('questionnaire/questionnaire_customize_help.html', dict, context_instance=RequestContext(request))
+    return render_to_response('questionnaire/questionnaire_customize_instructions.html', dict, context_instance=RequestContext(request))
 

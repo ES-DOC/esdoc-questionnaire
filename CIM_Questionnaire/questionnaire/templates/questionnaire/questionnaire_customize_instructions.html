@@ -1,0 +1,97 @@
+{% extends "questionnaire/questionnaire_base.html" %}
+
+
+{% block scripts %}
+
+    <script language="javascript">
+
+    /* just setup a minimum of jquery-ui functionality */
+    $(document).ready(
+        function() {
+
+            // do this first so that the dialogs appear near the top of the page
+            init_dialogs(parent);
+            
+            render_msg($("#msg"));
+
+            var parent = document.body;
+
+            init_widget(users,parent);
+            init_widget(buttons,parent);            
+            init_widget(fieldsets,parent);
+            init_widget(helps,parent);
+
+            // do this last b/c some of the xpath depends on changes made by the above fns...
+            init_errors(parent);
+
+        }
+
+
+    );
+
+    </script>
+{% endblock %} {# /scripts #}
+
+{% block style %}
+
+    <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}questionnaire/css/questionnaire_instructions.css" />
+
+{% endblock %} {# / style #}
+
+{% block title %}
+    CIM Questionnaire Customization Help
+{% endblock %} {# /title #}
+
+{% block content %}
+
+    <div class="title">
+        The CIM Questionnaire customization process
+    </div> <!-- /.title -->
+
+    <div id="instructions">
+
+        <ol>
+
+            <li><span class="title">The purpose of the form</span>
+                <p>
+                    The CIM Questionnaire customization form is provided for project administrators to customize the look-and-feel of the CIM Questionnaire editing forms used by their project members.
+                    The CIM is a highly complex metadata standard with a vast hierarchy of potential content for any given artifact.
+                    To require all users to input all CIM metadata is impractical.
+                    Similarly, the CIM is a very generic metadata standard and the metadata element names and other related information may not be suitable for all users.
+                    The customization form, therefore, provides a means to tailor metadata presentation to a given audience.
+                </p>
+            </li>
+
+            <li><span class="title">The use of the form</span>
+                <p>
+                    The customization form creates customizers for particular combinations of metadata versions, model types, and specific projects.
+                    To access a particular customizer the following syntax is expected:
+                    <blockquote class="url">
+                        http://your.domain.com/&lt;project&gt;/customize/&lt;version&gt;/&lt;model_type&gt;<br/>
+                        <!--http://your.domain.com/&lt;project&gt;/customize/&lt;version&gt;/&lt;model_type&gt;/?&lt;field_name&gt;=&lt;field_value&gt;<br/>-->
+                        http://your.domain.com/&lt;project&gt;/customize/&lt;version&gt;/&lt;model_type&gt;/&lt;existing_customization_name&gt;
+                    </blockquote>
+                    However, it is recommended to use the project's "index page" to choose from the available customizers:
+                    <blockquote class="url">
+                        http://your.domain.com/&lt;project&gt;
+                    </blockquote>
+                    Although several customizers may exist for a given project/model/version combination, only one of those - the <em>default</em> one - will be used by the CIM Questionnaire editing form.
+                </p>
+            </li>
+
+            <li><span class="title">The layout of the form</span>
+                <p>
+                    The customization form is separated into 3 top-level sections:
+                </p>
+            </li>
+
+        </ol>
+
+    </div> <!-- /#instructions -->
+
+{% endblock %} {# /content #}
+
+{% block footer %}
+    <br/>
+    {{ block.super }}
+{% endblock %} {# /footer #}
