@@ -1,0 +1,88 @@
+{% extends "questionnaire/questionnaire_base.html" %}
+
+
+{% block scripts %}
+
+    <script language="javascript">
+
+    /* just setup a minimum of jquery-ui functionality */
+    $(document).ready(
+        function() {
+
+            // do this first so that the dialogs appear near the top of the page
+            init_dialogs(parent);
+            
+            render_msg($("#msg"));
+
+            var parent = document.body;
+
+            init_widget(users,parent);
+            init_widget(buttons,parent);            
+            init_widget(fieldsets,parent);
+            init_widget(helps,parent);
+
+            // do this last b/c some of the xpath depends on changes made by the above fns...
+            init_errors(parent);
+
+        }
+
+
+    );
+
+    </script>
+{% endblock %} {# /scripts #}
+
+{% block style %}
+
+    <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}questionnaire/css/questionnaire_instructions.css" />
+
+{% endblock %} {# / style #}
+
+{% block title %}
+    CIM Questionnaire Viewing & Editing Help
+{% endblock %} {# /title #}
+
+{% block content %}
+
+    <div class="title">
+        The CIM Questionnaire editing process
+    </div> <!-- /.title -->
+
+    <div id="instructions">
+
+        <div class="documentation">
+            <p>
+                Note that the underlying form for viewing and editing are identical.  The difference is that the editor allows users to save their content.
+            </p>
+        </div>
+
+        <ol>
+
+            <li><span class="title">The purpose of the form</span>
+                <p>
+                    
+                </p>
+            </li>
+
+            <li><span class="title">The use of the form</span>
+                <p>
+                    
+                </p>
+            </li>
+
+            <li><span class="title">The layout of the form</span>
+                <p>
+                    
+                </p>
+            </li>
+
+        </ol>
+
+    </div> <!-- /#instructions -->
+
+{% endblock %} {# /content #}
+
+{% block footer %}
+    <br/>
+    {{ block.super }}
+{% endblock %} {# /footer #}

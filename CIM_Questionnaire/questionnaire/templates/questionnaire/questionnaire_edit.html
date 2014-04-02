@@ -1,0 +1,38 @@
+{% extends "questionnaire/questionnaire_view.html" %}
+
+{% load questionnaire_filters %}
+{% load mptt_tags %}
+
+{% block scripts %}
+
+    {{ block.super }}
+
+{% endblock %} {# /scripts #}
+
+    {% block content_title %}
+        <div class="title">
+            Title (editor)
+        </div> <!-- /.title -->
+    {% endblock %} {# /content_title #}
+
+    {% block content_documentation %}
+        <div class="documentation">
+            <p>
+            
+                Drag-and-drop properties, and categories to specify an order.
+                Specify customizable features for each property.
+                When you have finished, click the "submit" button at the bottom of the page.
+                Invalid entries are indicated using a <span style="color: #ff0000; font-weight: bold;">red</span> font.
+                <a href="/edit/help" target="blank"><b>More detailed instructions</b></a> are available.
+            </p>
+        </div> <!-- /.documentation -->
+    {% endblock %} {# /content_documentation #}
+
+    {% block content_submit %}
+
+        <div class="submit">
+            <input class="button"  name="save"  type="submit"   value="save""/>
+        </div> <!-- /.submit -->
+        <div style="clear: both;">&nbsp;</div>
+
+    {% endblock %} {# /content_submit #}

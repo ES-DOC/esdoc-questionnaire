@@ -1,0 +1,97 @@
+{% extends "questionnaire/questionnaire_base.html" %}
+
+{% load questionnaire_filters %}
+{% load mptt_tags %}
+
+{% block scripts %}
+
+    <script language="javascript" type="text/javascript" src="{{ STATIC_URL }}questionnaire/js/questionnaire_edit.js"></script>
+
+    <script language="javascript">
+
+    /* just setup a minimum of jquery-ui functionality */
+    $(document).ready(
+        function() {
+
+            // do this first so that the dialogs appear near the top of the page
+            init_dialogs(parent);
+            
+            render_msg($("#msg"));
+
+            var parent = document.body;
+
+            init_widget(users,parent);
+            init_widget(readonlies,parent);
+            init_widget(buttons,parent);            
+            init_widget(fieldsets,parent);
+            init_widget(tabs,parent);
+            init_widget(selects,parent);
+            init_widget(accordions,parent);
+            init_widget(helps,parent);
+            init_widget(enablers,parent);
+
+            // do this last b/c some of the xpath depends on changes made by the above fns...
+            init_errors(parent);
+
+        }
+    );
+
+    </script>
+{% endblock %} {# /scripts #}
+
+{% block style %}
+
+    <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}questionnaire/css/questionnaire_edit.css" />
+    <style type="text/css">
+        #questionniare .no_float    { float: none important! }
+    </style>
+
+{% endblock %} {# / style #}
+
+{% block title %}
+    CIM Questionnaire Viewer
+{% endblock %} {# /title #}
+
+{% block content %}
+
+    {% block content_title %}
+        <div class="title">
+            Title
+        </div> <!-- /.title -->
+    {% endblock %} {# /content_title #}
+
+    {% block content_documentation %}
+        <div class="documentation">
+            <p>
+            
+                Drag-and-drop properties, and categories to specify an order.
+                Specify customizable features for each property.
+                When you have finished, click the "submit" button at the bottom of the page.
+                Invalid entries are indicated using a <span style="color: #ff0000; font-weight: bold;">red</span> font.
+                <a href="/view/help" target="blank"><b>More detailed instructions</b></a> are available.
+            </p>
+        </div> <!-- /.documentation -->
+    {% endblock %} {# /content_documentation #}
+
+    <form method="POST" action="">
+
+        {% csrf_token %}
+
+        <div class="form"> {# wrap everything in div.form, so I can group related fields together #}
+
+        {% block content_submit %}
+
+            <!-- there is no ability to submit from a view -->
+            
+        {% endblock %} {# /content_submit #}
+
+        </div> <!-- /.form -->
+    </form>
+
+{% endblock %} {# /content #}
+
+{% block footer %}
+    {{ block.super }}
+    It is based on the CIM Version "{% if version.url %}<a target="_blank" href="{{version.url}}">{% endif %}{{ version }}{% if version.url %}</a> {% endif %}".&nbsp;
+    And it includes Controlled Vocabularies...
+{% endblock %} {# /footer #}
