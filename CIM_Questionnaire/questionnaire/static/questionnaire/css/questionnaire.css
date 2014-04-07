@@ -60,7 +60,7 @@ body {
 
 /* begin footer */
 
-#questionnaire div.footer { text-align: center; font-style: italic; margin-top: 4px; }
+#questionnaire div.footer { text-align: justify; font-style: italic; font-size: 90%; margin-top: 6px; margin-left: auto; margin-right: auto; width: 90%; }
 
 /* end footer */
 

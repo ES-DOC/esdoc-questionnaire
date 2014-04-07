@@ -1,5 +1,8 @@
 /* functions specific to the customizer */
 
+var STANDARD_TAG_TYPE   = 0;
+var SCIENTIFIC_TAG_TYPE = 1;
+
 var SAMPLE_CATEGORY = {
     "pk"        : "null",
     "model"     : "questionnaire.metadatascientificcategory.customizer", // only scientific categories can be added to
@@ -13,7 +16,7 @@ var SAMPLE_CATEGORY = {
         "order"         : 0,        // to be overwritten
         "pending_deletion"  : false
     }
-}
+};
 
 function vocabularies(parent) {
     $(parent).find("select[name='vocabularies'].multiselect").multiselect({
@@ -29,8 +32,8 @@ function vocabularies(parent) {
 function tags(parent) {
     $(parent).find(".tags").each(function() {
         var tag_widget  = $(this);
-        var tag_type    = $(tag_widget).attr("name");
-        
+        var tag_type    = $(tag_widget).attr("name").endsWith("standard_categories_tags") ? STANDARD_TAG_TYPE : SCIENTIFIC_TAG_TYPE;
+
         $(this).tagit({
             allowSpaces : true,
             singleField : true,
@@ -48,7 +51,7 @@ function tags(parent) {
                 var tag_content         = $.parseJSON($(tag_content_widget).val());
 
                 
-                if (tag_type == "standard_categories_tags") {
+                if (tag_type == STANDARD_TAG_TYPE) {
                     $(tag).find(".tagit-close").hide();
                 }
                 $(tag).find(".tagit-label").before(
@@ -70,7 +73,6 @@ function tags(parent) {
                     tag_content.push(new_category);
                     $(tag_content_widget).val(JSON.stringify(tag_content));
                     
-                    // TODO: ADD OPTION
                     $(tag_content_widget).closest(".form").find("select[name$='-category']").each(function() {
                         // add option
                         $(this).append('<option value="' + tag_key + '">' + tag_name + '</option>');
@@ -92,7 +94,7 @@ function tags(parent) {
                 var tag_content_widget  = $("textarea[id='"+tag_id.replace(/_tags$/,"_content")+"']");
                 var tag_content         = $.parseJSON($(tag_content_widget).val());
 
-                if (tag_type == "standard_categories_tags") {
+                if (tag_type == STANDARD_TAG_TYPE) {
                     alert("You shouldn't be deleting standard categories.  You're a very naughty boy.");
                 }
                 $("#confirm_dialog").html("Any properties belonging to this category will become uncategorized.  Are you sure you wish to continue?");
@@ -159,7 +161,7 @@ function tags(parent) {
         $(parent).find(".tagit-new").hide();
         // ...and add code to this dummy widget...
         var add_tag = $(this).nextAll(".add_tag:first");
-        if (tag_type == "standard_categories_tags") {
+        if (tag_type == STANDARD_TAG_TYPE) {
             $(add_tag).hide()
         }
         // ...(but only for scientific categories)...
@@ -173,11 +175,8 @@ function tags(parent) {
                     if (add_success) {
                         $(add_tag).find("input").val("");
                     }
-                    alert("one")
                     e.preventDefault();
-                    alert("two")
                     return false;
-                    alert("three")
                 }
             });
         }
@@ -193,17 +192,17 @@ function sortable_accordions(parent) {
     });
     $(parent).find(".accordion").sortable({
         axis        : "y",
-        items       : "accordion_unit",//"h3",
+        items       : "div.accordion_unit",//"h3",
         placeholder : "sortable_item",
         start : function(e,ui){
             ui.placeholder.height(ui.item.height());
             ui.placeholder.width(ui.item.width());
         },
         stop : function(e,ui) {
-            var accordion_header = ui["item"];
-            $(accordion_header).addClass("sorting");
+            var accordion_unit = ui["item"];
+            $(accordion_unit).find(".accordion_header").addClass("sorting");
             
-            $(accordion_header).closest(".accordion").find(".accordion_header").each(function(i) {
+            $(accordion_unit).closest(".accordion").find(".accordion_header").each(function(i) {
                 var accordion_order = $(this).find("input.label[id$='-order']");
                 $(accordion_order).val(i)
             });
@@ -316,29 +315,58 @@ function customize_property_subform(subform_id) {
         success : function(data) {
             $(customize_subform_dialog).html(data);
             $(customize_subform_dialog).dialog("option",{
-                height      : 800,
+                height      : 860,
                 width       : 1200,
                 dialogClass : "no_close",
                 title       : "Customize Subform",
                 open : function() {
                     // apply all of the JQuery code to _this_ dialog
                     var parent = $(customize_subform_dialog);
-                    init_widget(readonlies,parent);
-                    init_widget(buttons,parent);
-                    init_widget(fieldsets,parent);
-                    init_widget(selects,parent);
-                    init_widget(accordions,parent);
-                    init_widget(helps,parent);
-                    init_widget(enablers,parent);
+                    // the addition of the 'true' attribute forces initialization,
+                    // even if this dialog is opened multiple times
+                    init_widget(readonlies,parent,true);
+                    init_widget(buttons,parent,true);
+                    init_widget(fieldsets,parent,true);
+                    init_widget(selects,parent,true);
+                    init_widget(accordions,parent,true);
+                    init_widget(helps,parent,true);
+                    init_widget(enablers,parent,true);
+                    init_widget(tags,parent,true);
 
                 },
                 buttons     : {
-                    ok : function() {
-                        $(customize_subform_dialog).dialog("close");
+                    save : function() {
+
+                        var subform_data = $(this).find("#customize_subform_form").serialize();
+
+                        $.ajax({
+                            url     : url,
+                            type    : "POST",   // (POST mimics submit)
+                            data    : subform_data,
+                            cache   : false,
+                            success : function(data) {
+                                if (data == "success") {
+                                    $(customize_subform_dialog).html(data);
+                                    //$(customize_subform_dialog).dialog("close");
+                                }
+                                else {
+                                    $(customize_subform_dialog).html(data);
+//                                    // unlike the main forms, subforms have to explicitly call render_msg b/c they don't get re-opened on submit, the content just gets refreshed
+//                                    render_msg(customize_subform_dialog);
+                                }
+                            },
+                            error   : function(xhr,status,error) {
+                               console.log(xhr.responseText + status + error);
+                            }
+
+                        })
                     },
                     cancel : function() {
                         $(customize_subform_dialog).dialog("close");
                     }
+                },
+                close   : function() {
+                    $(this).dialog("close");
                 }
             }).dialog("open");
         }

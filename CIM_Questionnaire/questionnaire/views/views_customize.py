@@ -14,7 +14,7 @@ __author__="allyn.treshansky"
 __date__ ="Sep 30, 2013 3:04:42 PM"
 
 """
-.. module:: views_authenticate
+.. module:: views_customize
 
 Summary of module goes here
 
@@ -312,16 +312,13 @@ def questionnaire_customize_new(request,project_name="",model_name="",version_na
 
         else:
 
-            print model_customizer_form.errors
-            for form in standard_property_customizer_formset:
-                print form.errors
-
             messages.add_message(request, messages.ERROR, "Failed to save customizer.")
 
     dict = {
         "site"                                    : get_current_site(request),
         "project"                                 : project,
         "version"                                 : version,
+        "vocabularies"                            : vocabularies,
         "model_proxy"                             : model_proxy,
         "model_customizer_form"                   : model_customizer_form,
         "standard_property_customizer_formset"    : standard_property_customizer_formset,
@@ -420,16 +417,109 @@ def questionnaire_customize_existing(request,project_name="",model_name="",versi
                 )
         
     else: # request.method == "POST":
-        pass
 
-        model_customizer_form = MetadataModelCustomizerForm(instance=model_customizer)
+        validity = []
 
+        model_customizer_form = MetadataModelCustomizerForm(request.POST,instance=model_customizer)
+
+        validity += [model_customizer_form.is_valid()]
+
+        # at this point I know which vocabularies were selected
+        # and I have lists of categories to save (once the model_customizer itself has been saved)
+        active_vocabularies                 = model_customizer_form.cleaned_data["vocabularies"]
+        active_vocabulary_keys              = [slugify(vocabulary.name) for vocabulary in active_vocabularies]
+        standard_categories_to_process      = model_customizer_form.standard_categories_to_process
+        scientific_categories_to_process    = model_customizer_form.scientific_categories_to_process
+
+        standard_property_customizer_formset = MetadataStandardPropertyCustomizerInlineFormSetFactory(
+            instance    = model_customizer,
+            request     = request,
+        )
+
+        validity += [standard_property_customizer_formset.is_valid()]
+
+        scientific_property_customizer_formsets = {}
+        for (vocabulary_key,component_dictionary) in scientific_property_customizers.iteritems():
+            if not vocabulary_key in scientific_property_customizer_formsets:
+                scientific_property_customizer_formsets[vocabulary_key] = {}
+            for (component_key,property_list) in scientific_property_customizers[vocabulary_key].iteritems():
+                scientific_property_customizer_formsets[vocabulary_key][component_key] = MetadataScientificPropertyCustomizerInlineFormSetFactory(
+                    instance    = model_customizer,
+                    request     = request,
+                    prefix      = u"%s_%s" % (vocabulary_key,component_key),
+                    # TODO: IS THIS THE MOST EFFICIENT WAY TO GET THE PROPERTIES?
+                    queryset = MetadataScientificPropertyCustomizer.objects.filter(pk__in=[property.pk for property in property_list]),
+                    categories  = [(category.key,category.name) for category in scientific_property_category_customizers.filter(vocabulary_key=vocabulary_key,component_key=component_key)]
+                )
+                if vocabulary_key in active_vocabulary_keys:
+                    validity += [scientific_property_customizer_formsets[vocabulary_key][component_key].is_valid()]
+
+        if all(validity):
+
+            # save the model customizer...
+            model_customizer_instance = model_customizer_form.save(commit=False)
+            model_customizer_instance.save()
+            model_customizer_form.save_m2m()
+
+            # save (or delete) the category customizers...
+            active_standard_categories = []
+            for standard_category_to_process in standard_categories_to_process:
+                standard_category_customizer = standard_category_to_process.object
+                if standard_category_customizer.pending_deletion:
+                    standard_category_to_process.delete()
+                else:
+                    standard_category_customizer.model_customizer = model_customizer_instance
+                    standard_category_to_process.save()
+                    active_standard_categories.append(standard_category_customizer)
+
+            active_scientific_categories = {}
+            for (vocabulary_key,component_dictionary) in scientific_categories_to_process.iteritems():
+                active_scientific_categories[vocabulary_key] = {}
+                for (component_key,scientific_categories_to_process) in component_dictionary.iteritems():
+                    active_scientific_categories[vocabulary_key][component_key] = []
+                    for scientific_category_to_process in scientific_categories_to_process:
+                        scientific_category_customizer = scientific_category_to_process.object
+                        if scientific_category_customizer.pending_deletion:
+                            scientific_category_to_process.delete()
+                        else:
+                            scientific_category_customizer.model_customizer = model_customizer_instance
+                            scientific_category_customizer.component_key = component_key
+                            scientific_category_customizer.vocabulary_key = vocabulary_key
+                            scientific_category_to_process.save()
+                            active_scientific_categories[vocabulary_key][component_key].append(scientific_category_customizer)
+            
+            # save the standard property customizers...
+            standard_property_customizer_instances = standard_property_customizer_formset.save(commit=False)
+            for standard_property_customizer_instance in standard_property_customizer_instances:
+                category_key = slugify(standard_property_customizer_instance.category_name)
+                category = find_in_sequence(lambda category: category.key==category_key,active_standard_categories)
+                standard_property_customizer_instance.category = category
+                standard_property_customizer_instance.save()
+
+            # save the scientific property customizers...
+            for (vocabulary_key,component_dictionary) in scientific_property_customizer_formsets.iteritems():
+                if find_in_sequence(lambda vocabulary: slugify(vocabulary.name)==vocabulary_key,active_vocabularies):
+                    for (component_key,scientific_property_customizer_formset) in component_dictionary.iteritems():
+                        scientific_property_customizer_instances = scientific_property_customizer_formset.save(commit=False)
+                        for scientific_property_customizer_instance in scientific_property_customizer_instances:
+                            category_key = slugify(scientific_property_customizer_instance.category_name)
+                            category = find_in_sequence(lambda category: category.key==category_key,active_scientific_categories[vocabulary_key][component_key])
+                            scientific_property_customizer_instance.category = category
+                            scientific_property_customizer_instance.save()
+
+            # using Django's built-in messaging framework to pass status messages (as per https://docs.djangoproject.com/en/dev/ref/contrib/messages/)
+            messages.add_message(request, messages.SUCCESS, "Successfully saved customizer '%s'." % (model_customizer_instance.name))
+
+        else:
+
+            messages.add_message(request, messages.ERROR, "Failed to save customizer.")
 
     # gather all the extra information required by the template
     dict = {
         "site"                                    : get_current_site(request),
         "project"                                 : project,
         "version"                                 : version,
+        "vocabularies"                            : project.vocabularies.filter(document_type__iexact=model_name),
         "model_proxy"                             : model_proxy,
         "model_customizer_form"                   : model_customizer_form,
         "standard_property_customizer_formset"    : standard_property_customizer_formset,

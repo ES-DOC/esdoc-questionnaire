@@ -13,10 +13,10 @@
     <div class="title">
         Customize the CIM Questionnaire for <b>{{model_proxy.name|title}}</b> instances of the <b>{{project.title|title}}</b> Project
         <br/>
-        (in the context of the <b>{{parent_customizer.name}}</b> customization)
+        (in the context of the <b>{{parent_customizer.name|title}}</b> customization)
     </div> <!-- /.title -->
 
-    <form method="POST" action="">
+    <form method="POST" action="" id="customize_subform_form">
 
         {% csrf_token %}
 

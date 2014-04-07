@@ -34,6 +34,14 @@
                      return -1;
                  }
              }
+
+            /* check if string endswith suffix
+             *
+             */
+             String.prototype.endsWith = function(suffix) {
+                return this.indexOf(suffix, this.length - suffix.length) !== -1;
+            };
+
         </script>
 
         <!-- page js -->

@@ -97,6 +97,7 @@ class MetadataModelCustomizer(MetadataCustomizer):
 
     model_title             = models.CharField(max_length=BIG_STRING,verbose_name="Name that should appear on the Document Form",blank=False,null=True)
     model_description       = models.TextField(verbose_name="A description of the document",blank=True,null=True)
+    model_description.help_text = "This text will appear as documentation in the editing form.  Inline HTML formatting is permitted."
     model_show_all_categories = models.BooleanField(verbose_name="Display empty categories",default=False)
     model_show_all_categories.help_text = "Include categories in the editing form for which there are no attributes associated with"
     model_show_all_properties   = models.BooleanField(verbose_name="Display uncategorized fields",default=True)
@@ -132,15 +133,47 @@ class MetadataModelCustomizer(MetadataCustomizer):
 
     def save(self,*args,**kwargs):
         # only one customizer can be default at a time
+        # (this is handled via a ValidationError in the form,
+        # however, I still do the check here in-case I'm manipulating customizers outside of the form)
         if self.default:
-            try:
-                current_default_customizer = MetadataModelCustomizer.objects.get(default=True)
-                if self != temp:
-                    current_default_customizer.default = False
-                    current_default_customizer.save()
-            except MetadataModelCustomizer.DoesNotExist:
-                pass
+            other_customizer_filter_kwargs = {
+                "default"   : True,
+                "proxy"     : self.proxy,
+                "project"   : self.project,
+                "version"   : self.version,
+            }
+            other_default_customizers = MetadataModelCustomizer.objects.filter(**other_customizer_filter_kwargs)
+            if self.pk:
+                other_default_customizers.exclude(pk=self.pk)
+            if other_default_customizers.count() != 0:
+                other_default_customizers.update(default=False)
+
         super(MetadataModelCustomizer,self).save(*args,**kwargs)
+
+    def get_active_standard_categories(self):
+        if self.model_show_all_categories:
+            return self.standard_property_category_customizers.all()
+        else:
+            # exclude categories for which there are no corresponding properties
+            return self.standard_property_category_customizers.exclude(standard_property_customizers__isnull=True)
+
+    def get_active_standard_properties(self):
+        if self.model_show_all_properties:
+            return self.standard_property_customizers.all()
+        else:
+            self.standard_property_customizers.filter(displayed=True)
+
+    def get_active_standard_properties_for_category(self,category):
+        if self.model_show_all_properties:
+            return self.standard_property_customizers.filter(category=category)
+        else:
+            return self.standard_property_customizers.filter(displayed=True,category=category)
+
+    def get_active_standard_categories_and_properties(self):
+        categories_and_properties = {}
+        for category in self.get_active_standard_categories():
+            categories_and_properties[category] = self.get_active_standard_properties_for_category(category)
+        return categories_and_properties
 
 class MetadataCategoryCustomizer(MetadataCustomizer):
     class Meta:
@@ -255,7 +288,8 @@ class MetadataPropertyCustomizer(MetadataCustomizer):
     class Meta:
         app_label   = APP_LABEL
         abstract    = True
-        ordering = ['order']
+        ordering    = ['order'] # don't think this is doing anything since class is abstract
+                                # the concrete child classes repeat this line to ensure order is kept
 
     name        = models.CharField(max_length=SMALL_STRING,blank=False,null=False)
     order       = models.PositiveIntegerField(blank=True,null=True)
@@ -276,11 +310,12 @@ class MetadataStandardPropertyCustomizer(MetadataPropertyCustomizer):
     class Meta:
         app_label    = APP_LABEL
         abstract     = False
+        ordering     = ['order']
 
     proxy            = models.ForeignKey("MetadataStandardPropertyProxy",blank=True,null=True)
     model_customizer = models.ForeignKey("MetadataModelCustomizer",blank=False,null=True,related_name="standard_property_customizers")
 
-    category         = models.ForeignKey("MetadataStandardCategoryCustomizer",blank=True,null=True,related_name="standard_propery_customizers")
+    category         = models.ForeignKey("MetadataStandardCategoryCustomizer",blank=True,null=True,related_name="standard_property_customizers")
     category_name    = models.CharField(blank=True,null=True,max_length=BIG_STRING)
 
     inherited           = models.BooleanField(default=False,blank=True,verbose_name="can this property be inherited by children?")
@@ -344,7 +379,8 @@ class MetadataScientificPropertyCustomizer(MetadataPropertyCustomizer):
     class Meta:
         app_label    = APP_LABEL
         abstract     = False
-
+        ordering     = ['order']
+        
     proxy            = models.ForeignKey("MetadataScientificPropertyProxy",blank=True,null=True)
     model_customizer = models.ForeignKey("MetadataModelCustomizer",blank=False,null=True,related_name="scientific_property_customizers")
 

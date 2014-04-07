@@ -492,5 +492,8 @@
 {% block footer %}
     {{ block.super }}
     It is based on the CIM Version "{% if version.url %}<a target="_blank" href="{{version.url}}">{% endif %}{{ version }}{% if version.url %}</a> {% endif %}".&nbsp;
-    And it includes Controlled Vocabularies...
+    And it includes the Controlled Vocabularies
+    {% for vocabulary in vocabularies %}
+        {% if not forloop.first %}, {% endif %}
+            "<a target="_blank" href="{{vocabulary.file.url}}">{{vocabulary}}</a>"{% endfor %}. {# /vocabulary #}
 {% endblock %} {# /footer #}

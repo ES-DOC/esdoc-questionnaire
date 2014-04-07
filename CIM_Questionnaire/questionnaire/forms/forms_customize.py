@@ -83,8 +83,10 @@ class MetadataModelCustomizerForm(ModelForm):
         model_customizer = self.instance
         
         if is_subform:
-            update_field_widget_attributes(self.fields["name"],{"class":"readonly","readonly":"readonly"})
-            update_field_widget_attributes(self.fields["default"],{"class":"readonly","readonly":"readonly"})
+            #update_field_widget_attributes(self.fields["name"],{"class":"readonly","readonly":"readonly"})
+            #update_field_widget_attributes(self.fields["default"],{"class":"readonly","readonly":"readonly"})
+            del(self.fields["name"])
+            del(self.fields["default"])
             del(self.fields["vocabularies"])
             del(self.fields["model_show_hierarchy"])
             del(self.fields["model_root_component"])
@@ -138,6 +140,25 @@ class MetadataModelCustomizerForm(ModelForm):
                 self.fields[scientific_categories_tags_field_name].initial     = "|".join([category.name for category in scientific_category_customizers])
                 update_field_widget_attributes(self.fields[scientific_categories_tags_field_name],{"class":"tags"})
 
+    def clean_default(self):
+        cleaned_data = self.cleaned_data
+        default = cleaned_data.get("default") # using the get fn instead of directly accessing the dictionary in-case the field is missing, as w/ subform customizers
+        if default:
+            other_customizer_filter_kwargs = {
+                "default"   : True,
+                "proxy"     : cleaned_data["proxy"],
+                "project"   : cleaned_data["project"],
+                "version"   : cleaned_data["version"],
+            }
+            other_customizers = MetadataModelCustomizer.objects.filter(**other_customizer_filter_kwargs)
+            this_customizer = self.instance
+            if this_customizer.pk:
+                other_customizers = other_customizers.exclude(pk=this_customizer.pk)
+            if other_customizers.count() != 0:
+                raise ValidationError("A default customizer already exists.")
+            
+        return default
+
     def clean(self):
         # calling the parent class's clean fun automatically sets a
         # flag that forces unique (and unique_together) validation
@@ -149,27 +170,31 @@ class MetadataModelCustomizerForm(ModelForm):
         # and therefore aren't part of the form
 
         self.standard_categories_to_process[:] = [] # fancy way of clearing the list, making sure any references are also updated
-        for deserialized_standard_category_customizer in serializers.deserialize("json", self.data["standard_categories_content"],ignorenonexistent=True):
+        for deserialized_standard_category_customizer in serializers.deserialize("json", cleaned_data["standard_categories_content"],ignorenonexistent=True):
             self.standard_categories_to_process.append(deserialized_standard_category_customizer)
 #            standard_category_customizer = deserialized_standard_category_customizer.object
 #            if standard_category_customizer.pending_deletion:
 #                deserialized_standard_category_customizer.delete()
 #            else:
 #                deserialized_standard_category_customizer.save()
-        for vocabulary in self.cleaned_data["vocabularies"]:
-            vocabulary_key = slugify(vocabulary.name)
-            self.scientific_categories_to_process[vocabulary_key] = {}
-            for component_proxy in vocabulary.component_proxies.all():
-                component_key = slugify(component_proxy.name)
-                scientific_categories_content_field_name = vocabulary_key+"_"+component_key+"_scientific_categories_content"
-                self.scientific_categories_to_process[vocabulary_key][component_key] = []
-                for deserialized_scientific_category_customizer in serializers.deserialize("json", self.data[scientific_categories_content_field_name],ignorenonexistent=True):
-                    self.scientific_categories_to_process[vocabulary_key][component_key].append(deserialized_scientific_category_customizer)
-#                   scientific_category_customizer = deserialized_scientific_category_customizer.object
-#                   if scientific_category_customizer.pending_deletion:
-#                       deserialized_scientific_category_customizer.delete()
-#                   else:
-#                       deserialized_scientific_category_customizer.save()
+        try:
+            for vocabulary in self.cleaned_data["vocabularies"]:
+                vocabulary_key = slugify(vocabulary.name)
+                self.scientific_categories_to_process[vocabulary_key] = {}
+                for component_proxy in vocabulary.component_proxies.all():
+                    component_key = slugify(component_proxy.name)
+                    scientific_categories_content_field_name = vocabulary_key+"_"+component_key+"_scientific_categories_content"
+                    self.scientific_categories_to_process[vocabulary_key][component_key] = []
+                    for deserialized_scientific_category_customizer in serializers.deserialize("json", self.data[scientific_categories_content_field_name],ignorenonexistent=True):
+                        self.scientific_categories_to_process[vocabulary_key][component_key].append(deserialized_scientific_category_customizer)
+    #                   scientific_category_customizer = deserialized_scientific_category_customizer.object
+    #                   if scientific_category_customizer.pending_deletion:
+    #                       deserialized_scientific_category_customizer.delete()
+    #                   else:
+    #                       deserialized_scientific_category_customizer.save()
+        except KeyError:
+            # this takes care of the case when this being called on a subform
+            pass
 
         return cleaned_data
         
@@ -187,7 +212,7 @@ class MetadataModelCustomizerForm(ModelForm):
                     for unique_together_field in unique_together_fields:
                         self.errors[unique_together_field] = msg
 
-class MetadataPropertyInlineFormSet(BaseInlineFormSet):
+class MetadataPropertyCustomizerInlineFormSet(BaseInlineFormSet):
 
     number_of_properties = 0
     
@@ -214,7 +239,8 @@ class MetadataPropertyInlineFormSet(BaseInlineFormSet):
     # also using it to cache fk or m2m fields to avoid needless (on the order of 30K!) db hits
 
     def _construct_form(self, i, **kwargs):
-        form = super(MetadataPropertyInlineFormSet,self)._construct_form(i,**kwargs)
+
+        form = super(MetadataPropertyCustomizerInlineFormSet,self)._construct_form(i,**kwargs)
 
         for cached_field_name in form.cached_fields:
             cached_field = form.fields[cached_field_name]
@@ -235,7 +261,8 @@ class MetadataStandardPropertyCustomizerForm(ModelForm):
         model = MetadataStandardPropertyCustomizer
         fields  = [
                 # hidden fields...
-                "field_type","proxy","model_customizer","category",
+                # TODO: WHY DID I HAVE TO EXPLICITLY ADD ID HERE?!?
+                "field_type","proxy","model_customizer","category","id",
                 # header fields...
                 "name","category_name","order",
                 # common fields...
@@ -254,7 +281,7 @@ class MetadataStandardPropertyCustomizerForm(ModelForm):
     type = None # this is set in __init__ below
 
 
-    hidden_fields       = ("field_type","proxy","model_customizer","category")
+    hidden_fields       = ("field_type","proxy","model_customizer","category","id",)
     header_fields       = ("name","category_name","order")
     common_fields       = ("displayed","required","editable","unique","verbose_name","documentation","inline_help","inherited")
     atomic_fields       = ("suggestions",)
@@ -265,6 +292,11 @@ class MetadataStandardPropertyCustomizerForm(ModelForm):
     # set of fields that will be the same for all members of a formset; thus I can cache the query (for relationship fields)
     cached_fields       = ["proxy","field_type","enumeration_choices","enumeration_default"]
 
+    # TODO: IS IT FASTER TO DO THIS
+    #return [field for field in self if field.name in field_list]
+    # THAN THIS
+    # fields = list(self)
+    # ?
 
     def get_hidden_fields(self):
         fields = list(self)
@@ -330,6 +362,7 @@ class MetadataStandardPropertyCustomizerForm(ModelForm):
 
         if self.type == MetadataFieldTypes.ATOMIC:
             pass
+
         elif self.type == MetadataFieldTypes.ENUMERATION:
 
             enumeration_choices = property_customizer.get_field("enumeration_choices").get_choices()
@@ -389,11 +422,11 @@ def MetadataStandardPropertyCustomizerInlineFormSetFactory(*args,**kwargs):
     _initial     = kwargs.pop("initial",[])
     _instance    = kwargs.pop("instance")
     _categories  = kwargs.pop("categories",[])
-    _nProperties = kwargs.pop("extra",0)
+    _queryset    = kwargs.pop("queryset",None)
     new_kwargs = {
         "can_delete" : False,
-        "extra"      : _nProperties,
-        "formset"    : MetadataPropertyInlineFormSet,
+        "extra"      : kwargs.pop("extra",0),
+        "formset"    : MetadataPropertyCustomizerInlineFormSet,
         "form"       : MetadataStandardPropertyCustomizerForm,
         "fk_name"    : "model_customizer" # required in-case there are more than 1 fk's to "metadatamodelcustomizer"; this is the one that is relevant for this inline form
     }
@@ -403,7 +436,10 @@ def MetadataStandardPropertyCustomizerInlineFormSetFactory(*args,**kwargs):
     # in this case, the set of choices for scientific categories
     _formset = inlineformset_factory(MetadataModelCustomizer,MetadataStandardPropertyCustomizer,*args,**new_kwargs)
     _formset.form = staticmethod(curry(MetadataStandardPropertyCustomizerForm,category_choices=_categories))
-    _formset.number_of_properties = _nProperties
+    if _initial:
+        _formset.number_of_properties = len(_initial)
+    elif _queryset:
+        _formset.number_of_properties = len(_queryset)
     
     if _request and _request.method == "POST":
         return _formset(_request.POST,instance=_instance,prefix=_prefix)
@@ -417,7 +453,8 @@ class MetadataScientificPropertyCustomizerForm(ModelForm):
 
         fields  = [
                 # hidden fields...
-                "field_type","proxy","model_customizer","vocabulary_key","component_key",
+                # TODO: AGAIN, WHY DID I HAVE TO EXPLICITLY ADD ID HERE?!?
+                "field_type","proxy","model_customizer","vocabulary_key","component_key","id",
                 # header fields...
                 "name","category_name","order",
                 # common fields...
@@ -428,7 +465,7 @@ class MetadataScientificPropertyCustomizerForm(ModelForm):
     category      = ChoiceField(required=False) # changing from the default fk field (ModelChoiceField)
                                                 # since I'm dealing w/ _unsaved_ models
 
-    hidden_fields       = ("field_type","proxy","model_customizer","vocabulary_key","component_key")
+    hidden_fields       = ("field_type","proxy","model_customizer","vocabulary_key","component_key","id")
     header_fields       = ("name","category_name","order")
     common_fields       = ("category","displayed","required","editable","unique","verbose_name","documentation","inline_help")
 
@@ -516,7 +553,7 @@ def MetadataScientificPropertyCustomizerInlineFormSetFactory(*args,**kwargs):
     new_kwargs = {
         "can_delete" : False,
         "extra"      : kwargs.pop("extra",0),
-        "formset"    : MetadataPropertyInlineFormSet,
+        "formset"    : MetadataPropertyCustomizerInlineFormSet,
         "form"       : MetadataScientificPropertyCustomizerForm,
         "fk_name"    : "model_customizer" # required in-case there are more than 1 fk's to "metadatamodelcustomizer"; this is the one that is relevant for this inline form
     }

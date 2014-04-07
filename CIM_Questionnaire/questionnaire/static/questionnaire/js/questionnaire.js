@@ -1,9 +1,12 @@
 /* functions to initialize JQuery widgets */
 
-function init_widget(init_fn,parent) {
-    // check if we've already initialized this widget for this parent element
+function init_widget(init_fn,parent,force_init) {
+    force_init = typeof force_init !== 'undefined' ? force_init : false;
+    
     initialized_class_name = "initialized_"+init_fn.name;
-    if ($(parent).hasClass(initialized_class_name)) {
+
+    // check if we've already initialized this widget for this parent element
+    if ($(parent).hasClass(initialized_class_name) && !(force_init)) {
         // (quit if we have)
         return;
     }
@@ -142,12 +145,11 @@ function accordions(parent) {
                     // if the accordion content is being opened just b/c it was clicked during sorting,
                     // then cancel the show event and reset the relevant styles
                     $(active_content).hide();
-                    $(active_tab).removeClass("sorting ui-state-active");
+                    $(active_tab).removeClass("ui-state-active sorting");
                     $(active_tab).addClass("ui-state-default");
                     var active_tab_icon = $(active_tab).find(".ui-icon");
                     $(active_tab_icon).removeClass("ui-icon-triangle-1-s");
                     $(active_tab_icon).addClass("ui-icon-triangle-1-e");
-
                 }
                 else {
                     if (! $(active_tab).hasClass("ui-state-error")) {
