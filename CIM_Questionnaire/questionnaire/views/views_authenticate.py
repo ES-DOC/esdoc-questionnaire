@@ -83,7 +83,9 @@ def questionnaire_login(request):
         local_form  = LocalAuthenticationForm(prefix="local")
         remote_form = RemoteAuthenticationForm(prefix="remote")
 
-    forms = [remote_form,local_form]
+    # TODO: THIS HAS BEEN COMMENTED OUT UNTIL OPENID IS COMPLETELY WORKING
+    #forms = [remote_form,local_form]
+    forms = [local_form]
 
 
     # gather all the extra information required by the template

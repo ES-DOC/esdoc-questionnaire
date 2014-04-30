@@ -41,6 +41,23 @@
 
             $("#vocabularies_tabs").addClass("ui-tabs-vertical ui-helper-clearfix");
             $("#vocabularies_tabs li").removeClass("ui-corner-top" ).addClass("ui-corner-left");
+
+            $("select[name='vocabularies']").change(function(){
+                var current_order = $(this).find("option").map(function() {
+                    return parseInt($(this).val());
+                }).get();
+                $("input[name='vocabulary_order']").val(current_order);
+            });
+
+            $("button#sort_vocabulary_up").button({
+                icons: { primary : "ui-icon-arrowthick-1-n" },
+                text: false
+            });
+            $("button#sort_vocabulary_down").button({
+                icons: { primary : "ui-icon-arrowthick-1-s" },
+                text: false
+            });
+
             $("select[name='vocabularies']").multiselect("option",{            
                 sortable : true,
                 autoOpen : true,
@@ -61,7 +78,9 @@
                     });
                 }
             });
+
             $("select[name='vocabularies']").find("option").each(function(index,element) {
+                // make sure that the appropriate vocabulary tabs are active or inactive according to the selected options
                 var vocabulary_key = $(element).text().toLowerCase().replace(/[^\w]+/g,'');
                 var vocabulary_tab_content = $(vocabularies_tabs).find("div[id$='"+vocabulary_key+"']");
                 if ($(this).is(":selected")) {
@@ -74,6 +93,17 @@
                 }
             });
 
+            // make sure that the vocabulary selector is in the correct order
+            var current_order = $("input[name='vocabulary_order']").val().split(",");
+            var multiselect = $("select[name='vocabularies']").next(".ui-multiselect").find(".multiselect_content")
+            var multiselect_options = $(multiselect).children("label").get();
+            multiselect_options.sort(function(a,b) {
+               a_order = current_order.indexOf($(a).find("input").attr("value"));
+               b_order = current_order.indexOf($(b).find("input").attr("value"));
+               return a_order > b_order;
+            });
+            $(multiselect).append(multiselect_options);
+            
             // do this last b/c some of the xpath depends on changes made by the above fns...
             init_errors(parent);
 
@@ -82,10 +112,6 @@
 
     );
 
-    /*
-    var CATEGORIES_CONTENT = { }
-    */
-   
     </script>
 {% endblock %} {# /scripts #}
 
@@ -449,7 +475,46 @@
                                                                                                         <tr class="{% cycle 'odd' 'even' %} field" name="{{field.html_name}}">
                                                                                                             {% include "questionnaire/_field.html" %}
                                                                                                         </tr>
-                                                                                                    {% endfor %} {# / field in form.get_atomic_fields #}
+                                                                                                    {% endfor %} {# / field in form.get_fields #}
+                                                                                                    <tr>
+                                                                                                        <td colspan="2">
+                                                                                                            <fieldset class="collapsible_fieldset extra_attributes">
+                                                                                                                <legend title="click to toggle content">
+                                                                                                                    <span class="title">&nbsp;Extra Attributes&nbsp;</span>
+                                                                                                                </legend>
+                                                                                                                <div class="collapsible_fieldset_content">
+                                                                                                                    <div class="documentation">
+                                                                                                                        <p>
+                                                                                                                            Every scientific property can have additional information associated with it.
+                                                                                                                        </p>
+                                                                                                                    </div> <!-- /.documentation -->
+                                                                                                                    <table width="100%">
+                                                                                                                        <tr style="text-align: center; text-decoration: underline;">
+                                                                                                                            <td width="25%">extra attribute</td>
+                                                                                                                            <td style="width: 10% !important;" width="10%">display</td>
+                                                                                                                            <td width="10%">allow editing</td>
+                                                                                                                            <td width="55%">defalt value</td>
+                                                                                                                        </tr>
+                                                                                                                        {% for label,fields in form.get_extra_fieldsets.items %}
+                                                                                                                            <tr class="{% cycle 'even' 'odd' %} field">
+                                                                                                                                <td width="25%">                                                                                                                                    
+                                                                                                                                    {{label}}
+                                                                                                                                </td>
+                                                                                                                                {% for field in fields %}
+                                                                                                                                    <td width="{% cycle '10%' '10%' '55%' %}">
+                                                                                                                                        {{field}}
+                                                                                                                                        {% if field.errors %}
+                                                                                                                                            {% include "questionnaire/_error.html" %}
+                                                                                                                                        {% endif %} {# / field.errors #}
+                                                                                                                                    </td>
+                                                                                                                                {% endfor %}
+                                                                                                                            </tr>
+                                                                                                                        {% endfor %} {# / field in form.get_extra_fieldsets #}
+                                                                                                                    </table>
+                                                                                                                </div><!-- /.collapsible_fielset_content -->
+                                                                                                            </fieldset>
+                                                                                                        </td>
+                                                                                                    </tr>
                                                                                                 </table>
 
                                                                                             </div> <!-- /.form -->

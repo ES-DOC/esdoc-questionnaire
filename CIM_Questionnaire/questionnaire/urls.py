@@ -57,6 +57,16 @@ urlpatterns = patterns('',
     url(r'^(?P<project_name>[^/]+)/customize/(?P<version_name>[^/]+)/(?P<model_name>[^/]+)/$', 'questionnaire.views.customize_new', name="customize_new"),
     url(r'^(?P<project_name>[^/]+)/customize/(?P<version_name>[^/]+)/(?P<model_name>[^/]+)/(?P<customizer_name>[^/]+)/$', 'questionnaire.views.customize_existing', name="customize_existing"),
 
+    # editing...
+    url(r'^edit/help$', 'questionnaire.views.edit_help'),
+    url(r'^(?P<project_name>[^/]+)/edit/(?P<version_name>[^/]+)/(?P<model_name>[^/]+)/$', 'questionnaire.views.edit_new', name="edit_new"),
+    url(r'^(?P<project_name>[^/]+)/edit/(?P<version_name>[^/]+)/(?P<model_name>[^/]+)/(?P<document_name>[^/]+)/$', 'questionnaire.views.edit_existing', name="edit_existing"),
+
+    # viewing...
+    url(r'^view/help$', 'questionnaire.views.view_help'),
+    url(r'^(?P<project_name>[^/]+)/view/(?P<version_name>[^/]+)/(?P<model_name>[^/]+)/$', 'questionnaire.views.view_new', name="view_new"),
+    url(r'^(?P<project_name>[^/]+)/view/(?P<version_name>[^/]+)/(?P<model_name>[^/]+)/(?P<document_name>[^/]+)/$', 'questionnaire.views.view_existing', name="view_existing"),
+
     # ajax...
     url(r'^ajax/customize_subform/$', 'questionnaire.views.ajax_customize_subform'),
     url(r'^ajax/customize_category/$', 'questionnaire.views.ajax_customize_category'),

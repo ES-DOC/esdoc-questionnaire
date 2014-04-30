@@ -27,11 +27,12 @@ from django.db.models.loading   import cache
 from south.db                   import db
 
 from questionnaire.utils        import *
+from questionnaire.fields       import *
 from questionnaire.models       import *
 
 from django.db import models
 
-
+@hierarchical
 class MetadataModel(models.Model):
     # ideally, MetadataModel should be an ABC
     # but Django Models already have a metaclass: django.db.models.base.ModelBase
@@ -39,29 +40,44 @@ class MetadataModel(models.Model):
     # and http://code.activestate.com/recipes/204197-solving-the-metaclass-conflict/ for a solution that just isn't worth the hassle
     #from abc import *
     #__metaclass__ = ABCMeta
+    # ACTUALLY, I HAVE CHANGED HOW MODELS WORK;
+    # THEY ARE NO LONGER ABSTRACT AND ARE GENERATED VIA PROXIES RATHER THAN DIRECTLY IN CODE
     class Meta:
         app_label   = APP_LABEL
-        abstract    = True
+        abstract    = False
 
-    name         = models.CharField(max_length=SMALL_STRING,blank=False,null=False)
-    description  = models.CharField(max_length=HUGE_STRING,blank=True,null=True)
-    version      = models.ForeignKey("MetadataVersion",blank=False,null=True,related_name="models")
-    order        = models.PositiveIntegerField(blank=True,null=True)
+        unique_together = ("proxy","project","version","vocabulary_key","component_key")
 
-    parent_model = models.ForeignKey('self',null=True,blank=True,related_name="child_models")
-    #child_models = models.ManyToManyField('self',related_name='parent_model')
+    proxy           = models.ForeignKey("MetadataModelProxy",blank=False,null=True,related_name="models")
+    project         = models.ForeignKey("MetadataProject",blank=True,null=True,related_name="models")
+    version         = models.ForeignKey("MetadataVersion",blank=False,null=True,related_name="models")
 
-    def add_child(self,child):
-        # TODO: CHECK IT DOESN'T ALREADY EXIST
-        #self.child_models.add(child)
-        child.parent_model = self
-        
-    def get_children(self):
-        return self.child_models.all()
+    is_document     = models.BooleanField(blank=False,null=False,default=False)
 
-    def get_parent(self):
-        return self.parent_model
+    vocabulary_key  = models.CharField(max_length=BIG_STRING,blank=True,null=True)
+    component_key   = models.CharField(max_length=BIG_STRING,blank=True,null=True)
+    title           = models.CharField(max_length=BIG_STRING,blank=True,null=True)
 
+    active          = models.BooleanField(blank=False,null=False,default=True)
+    name            = models.CharField(max_length=SMALL_STRING,blank=False,null=False)
+    description     = models.CharField(max_length=HUGE_STRING,blank=True,null=True)
+    order           = models.PositiveIntegerField(blank=True,null=True)
+
+# NONE OF THIS STUFF IS EXPLICITLY NEEDED B/C OF THE "@hierarchical" DECORATOR ABOVE
+#    #parent_model = models.ForeignKey('self',null=True,blank=True,related_name="child_models")
+#    #child_models = models.ManyToManyField('self',related_name='parent_model')
+#
+#    def add_child(self,child):
+#        # TODO: CHECK IT DOESN'T ALREADY EXIST
+#        #self.child_models.add(child)
+#        child.parent_model = self
+#
+#    def get_children(self):
+#        return self.child_models.all()
+#
+#    def get_parent(self):
+#        return self.parent_model
+#
 #    def get_descendents(self,descendents=[]):
 #        children = self.get_children()
 #        for child in children:
@@ -75,76 +91,125 @@ class MetadataModel(models.Model):
 #            ancestores.append(parent)
 #            parent.get_ancestors(ancestors)
 #        return ancestors
+
+    def __unicode__(self):
+        return u'%s' % (self.name)
+
+    def reset(self,reset_properties=False):
+        # this resets values according to the proxy
+        # to reset values according to the customizer, you must go through the corresponding modelform
+        proxy = self.proxy
+
+        if not proxy:
+            msg = "Trying to reset a model w/out a proxy having been specified."
+            raise QuestionnaireError(msg)
+
+        self.active       = True
+        self.name         = proxy.name
+        self.order        = proxy.order
+        self.description  = proxy.documentation
+        self.version      = proxy.version
+
+        if proxy.stereotype == "document":
+            self.is_document = True
+        else:
+            self.is_document = False
+
+
+class MetadataProperty(models.Model):
+
+    class Meta:
+        app_label   = APP_LABEL
+        abstract    = True
+
+    name         = models.CharField(max_length=SMALL_STRING,blank=False,null=False)
+    order        = models.PositiveIntegerField(blank=True,null=True)
+    field_type   = models.CharField(max_length=64,blank=True,choices=[(ft.getType(),ft.getName()) for ft in MetadataFieldTypes])
+
+    def get_default_value(self):
+        return "DEFAULT VALUE"
     
-#    def __unicode__(self):
-#        return 'u%s::%s' % (self.version,self.name)
 
-    @classmethod
-    def factory(cls,model_name,model_fields={},overwrite_model=False,admin_access=False,*args,**kwargs):
+class MetadataStandardProperty(MetadataProperty):
 
-        print kwargs
+    class Meta:
+        app_label   = APP_LABEL
+        abstract    = False
+
+        ordering    = ['order']
+
+    model           = models.ForeignKey("MetadataModel",blank=False,null=True,related_name="standard_properties")
+    proxy           = models.ForeignKey("MetadataStandardPropertyProxy",blank=True,null=True)
+
+    atomic_value            = models.CharField(max_length=HUGE_STRING,blank=True,null=True)
+    enumeration_value       = models.CharField(max_length=HUGE_STRING,blank=True,null=True)
+    enumeration_other_value = models.CharField(max_length=HUGE_STRING,blank=True,null=True)
+    relationship_value      = models.ForeignKey("MetadataModel",blank=True,null=True)
+
+    def reset(self):
+        # this resets values according to the proxy
+        # to reset values according to the customizer, you must go through the corresponding modelform
+        proxy = self.proxy
+
+        if not proxy:
+            msg = "Trying to reset a standard property w/out a proxy having been specified."
+            raise QuestionnaireError(msg)
+
+
+        self.name         = proxy.name
+        self.order        = proxy.order
+        self.field_type   = proxy.field_type
         
-        model_name = model_name.encode("utf-8")  # just incase somebody passed in unicode instead of basic string
+        self.atomic_value             = None
+        self.enumeration_value        = None
+        self.enumeration_other_value  = "Please enter a custom value"
+        self.relationship_value       = None
 
-        model_attrs = {
-            "__module__" : APP_LABEL + ".models",
-        }
-        model_attrs.update(model_fields)
+    def save(self,*args,**kwargs):        
+        # TODO: if the customizer is required and the field is not displayed and there is no existing default value
+        # then set it to default value
+        super(self,MetadataStandardProperty).save(*args,**kwargs)
 
-        try:
-            del cache.app_models[APP_LABEL][model_name]
-        except KeyError:
-            pass
+class MetadataScientificProperty(MetadataProperty):
 
-        new_model = type(model_name, (MetadataModel,), model_attrs)
+    class Meta:
+        app_label   = APP_LABEL
+        abstract    = False
 
-        new_model_fields    = [(field.name,field) for field in new_model._meta.fields]
-        new_model_table     = new_model._meta.db_table
+        ordering    = ['order']
 
-        for new_model_field in new_model_fields:
-            try:
-                print new_model_field[1].db_constraint
-            except AttributeError:
-                print u"no constraint for %s" % new_model_field[0]
-    
-        try:
-            db.create_table(new_model_table,new_model_fields)
-            db.execute_deferred_sql()
-        except:
-            if not overwrite_model:
-                msg = "Error creating table '%s'.  Does it already exist?" % (new_model_table)
-                raise QuestionnaireError(msg)
-            
-            
-            # delete the table _completely_
-            for new_model_field in new_model_fields:
-                try:
-                    if new_model_field[1].db_constraint:
-                        try:
-                            db.delete_unique(new_model_table,new_model_field[0])
-                            print "deleted %s" % new_model_field[0]
-                        except ValueError:
-                            print "valueerror %s" % new_model_field[0]
-                except AttributeError:
-                    print "attributeerror %s" % new_model_field[0]
-            db.delete_table(new_model_table)
+    model           = models.ForeignKey("MetadataModel",blank=False,null=True,related_name="scientific_properties")
+    proxy           = models.ForeignKey("MetadataScientificPropertyProxy",blank=True,null=True)
 
+    is_enumeration  = models.BooleanField(blank=False,null=False,default=False)
 
+    category_key = models.CharField(max_length=BIG_STRING,blank=True,null=True)
 
-            db.create_table(new_model_table,new_model_fields)
-            db.execute_deferred_sql()
-                
+    atomic_value            = models.CharField(max_length=HUGE_STRING,blank=True,null=True)
+    enumeration_value       = models.CharField(max_length=HUGE_STRING,blank=True,null=True)
+    enumeration_other_value = models.CharField(max_length=HUGE_STRING,blank=True,null=True)
+
+    extra_standard_name         = models.CharField(blank=True,null=True,max_length=BIG_STRING)
+    extra_description           = models.TextField(blank=True,null=True)
+    extra_units                 = models.CharField(blank=True,null=True,max_length=BIG_STRING)
+
+    def reset(self):
+        # this resets values according to the proxy
+        # to reset values according to the customizer, you must go through the corresponding form
+        proxy = self.proxy
+
+        if not proxy:
+            msg = "Trying to reset a scientific property w/out a proxy having been specified."
+            raise QuestionnaireError(msg)
+
+        self.name         = proxy.name
+        self.order        = proxy.order
+        self.category_key = proxy.category.key
+
+        self.atomic_value             = None
+        self.enumeration_value        = None
+        self.enumeration_other_value  = "Please enter a custom value"
         
-        if admin_access:
-            for registered_model in admin.site._registry.keys():
-                if new_model_table == registered_model._meta.db_table:
-                    del admin.site._registry[registered_model]
-                    break
-                    
-
-
-            class NewModelAdmin(admin.ModelAdmin):
-                pass
-            admin.site.register(new_model,NewModelAdmin)
-
-        return new_model
+        self.field_type     = MetadataFieldTypes.PROPERTY
+        self.is_enumeration = proxy.choice in ["OR","XOR"]
+        

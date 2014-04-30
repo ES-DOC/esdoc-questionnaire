@@ -5,7 +5,7 @@ var SCIENTIFIC_TAG_TYPE = 1;
 
 var SAMPLE_CATEGORY = {
     "pk"        : "null",
-    "model"     : "questionnaire.metadatascientificcategory.customizer", // only scientific categories can be added to
+    "model"     : "questionnaire.metadatascientificcategorycustomizer", // only scientific categories can be added to
     "fields"    : {
         "name"          : "sample", // to be overwritten
         "key"           : "sample", // to be overwritten
@@ -337,7 +337,7 @@ function customize_property_subform(subform_id) {
                 buttons     : {
                     save : function() {
 
-                        var subform_data = $(this).find("#customize_subform_form").serialize();
+                        var subform_data = $(this).find("#customize_subform_form").serialize();                        
 
                         $.ajax({
                             url     : url,
@@ -347,12 +347,16 @@ function customize_property_subform(subform_id) {
                             success : function(data) {
                                 if (data == "success") {
                                     $(customize_subform_dialog).html(data);
-                                    //$(customize_subform_dialog).dialog("close");
+                                    var parent = $(customize_subform_dialog);
+                                    init_dialogs(parent);
+                                    render_msg($(parent).find("#msg"));
+                                    $(customize_subform_dialog).dialog("close");
                                 }
                                 else {
                                     $(customize_subform_dialog).html(data);
-//                                    // unlike the main forms, subforms have to explicitly call render_msg b/c they don't get re-opened on submit, the content just gets refreshed
-//                                    render_msg(customize_subform_dialog);
+                                    var parent = $(customize_subform_dialog);
+                                    init_dialogs(parent);
+                                    render_msg($(parent).find("#msg"));
                                 }
                             },
                             error   : function(xhr,status,error) {
@@ -370,6 +374,55 @@ function customize_property_subform(subform_id) {
                 }
             }).dialog("open");
         }
-    });
-  
+    });  
 };
+
+function restrict_options(source,target_names) {
+
+    restrictions = [];
+    $(source).find("option:selected").each(function() {
+        restrictions.push($(this).val());
+    });
+
+    // THIS IS HARD-CODED TO JUST WORK FOR MULTISELECT WIDGETS
+    // B/C I ONLY USE THIS FOR ENUMERATION CHOICES & DEFAULTS
+    for (var i=0; i<target_names.length; i++) {
+        var selector = "select[name$='" + target_names[i] + "']:first";
+        var target_element      = $(source).closest("div.form").find(selector);
+        var target_element_id   = $(target_element).attr("id");
+        var target_element_name = $(target_element).attr("name")
+
+        var target_widget           = $(target_element).next(".ui-multiselect");
+        var target_widget_contents  = $(target_widget).find(".multiselect_content");
+
+        alert($(target_widget).attr("class"))
+        
+        var options = [];
+        $(target_widget_contents).find("label").each(function() {
+            options.push($(this).find("input").val())
+        });
+        
+        // (this is horrible syntax; "grep" doesn't mean the same thing in JQuery)
+        var in_options_but_not_restrictions = $.grep(options,function(el){
+           return $.inArray(el,restrictions) == -1;
+        });
+        var in_restrictions_but_not_options = $.grep(restrictions,function(el){
+           return $.inArray(el,options) == -1;
+        });
+
+        // remove everything in options and not in restrictions
+        $(in_options_but_not_restrictions).each(function() {
+            $(target_widget_contents).find("input[value='"+this+"']").parent("label").remove();
+        });
+        // add everything in restrictions and not in options
+        $(in_restrictions_but_not_options).each(function() {
+            var option = $(source).find("option[value='"+this+"']");
+            var id = target_element_id + "-" + this;
+            var new_multiselect_choice = $("<label previous_value='unchecked' style='display: block;' for='"+id+"'><input id='"+id+"' name='"+target_element_name+"' typee='checkbox' value='"+this+"'>&nbsp;"+$(option).text()+"</input></label>")
+
+            $(target_widget_contents).append(new_multiselect_choice);
+            
+        });
+
+    }
+}

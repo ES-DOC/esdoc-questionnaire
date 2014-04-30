@@ -36,6 +36,7 @@
                 </xs:complexType>
             </xs:element>
         </xs:sequence>
+        <xs:attribute name="stereotype" type="xs:string" use="optional"/>
     </xs:complexType>
 
     <xs:complexType name="AttributeType">
@@ -52,12 +53,35 @@
                 </xs:simpleType>
             </xs:element>
             <xs:choice>
+                <xs:element name="atomic" type="AtomicType" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="enumeration" type="EnumerationType" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="relationship" type="RelationshipType" minOccurs="0" maxOccurs="1"/>                
             </xs:choice>
         </xs:sequence>
     </xs:complexType>
 
+    <xs:complexType name="AtomicType">
+        <xs:sequence>
+            <xs:element name="atomic_type" minOccurs="0" maxOccurs="1">
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:enumeration value=""/>                        
+                        <xs:enumeration value="BOOLEAN"/>
+                        <xs:enumeration value="DATE"/>
+                        <xs:enumeration value="DATETIME"/>
+                        <xs:enumeration value="DECIMAL"/>
+                        <xs:enumeration value="EMAIL"/>
+                        <xs:enumeration value="INTEGER"/>
+                        <xs:enumeration value="STRING"/> <!-- default -->
+                        <xs:enumeration value="TEXT"/>
+                        <xs:enumeration value="TIME"/>
+                        <xs:enumeration value="URL"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+        </xs:sequence>    
+    </xs:complexType>
+    
     <xs:complexType name="EnumerationType">
         <xs:sequence>
             <xs:element name="choice" minOccurs="0" maxOccurs="unbounded"/>

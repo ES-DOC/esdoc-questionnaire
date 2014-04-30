@@ -8,18 +8,31 @@
     /* just setup the minimum of jquery-ui functionality */
     $(document).ready(
         function() {
+            init_dialogs(parent);
 
-            init_buttons(document);
-            init_user(document);
-            init_errors(document);
-            init_fieldsets(document);
+            render_msg($("#msg"));
 
+            var parent = document.body;
+
+            init_widget(users,parent);
+            init_widget(buttons,parent);
+            init_widget(fieldsets,parent);
+            init_widget(helps,parent);
+
+            // do this last b/c some of the xpath depends on changes made by the above fns...
+            init_errors(parent);
         }
     );
 
     </script>
 
 {% endblock %} {# /scripts #}
+
+{% block style %}
+
+    <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}questionnaire/css/questionnaire_instructions.css" />
+
+{% endblock %} {# / style #}
 
 {% block title %}
 
@@ -33,35 +46,34 @@
         CIM Questionnaire Help
     </div> <!-- /.title -->
 
-    <!--
-    <div class="documentation">
-        <p>
-            
-        </p>
+   <div id="instructions">
 
-    </div>
-    -->
+       <ul>
 
-    <fieldset class="collapsible_fieldset">
-        <legend title="click to toggle content">
-            <span class="title">&nbsp;customization help&nbsp;</span>
-        </legend>
+            <li><span class="title">What is the CIM?</span>
+                <p>
+                </p>
+            </li>
 
-        <div class="collapsible_fieldset_content">
-            blah
-        </div> <!-- / .collapsible_fieldset_content -->
+            <li><span class="title">The customization form</span>
+                <p>
+                    <a href="/customize/help"><b>More detailed instructions</b></a> are available.
+                </p>
+            </li>
 
-    </fieldset> <!-- / .collapsible_fieldset -->
+            <li><span class="title">The viewing/editing form</span>
+                <p>
+                    <a href="/edit/help"><b>More detailed instructions</b></a> are available.
+                </p>
+            </li>
 
-    <fieldset class="collapsible_fieldset">
-        <legend title="click to toggle content">
-            <span class="title">&nbsp;editing help&nbsp;</span>
-        </legend>
+       </ul>
 
-        <div class="collapsible_fieldset_content">
-            blah
-        </div> <!-- / .collapsible_fieldset_content -->
-
-    </fieldset> <!-- / .collapsible_fieldset -->
+   </div>
 
 {% endblock %} {# /content #}
+
+{% block footer %}
+    <br/>
+    {{ block.super }}
+{% endblock %} {# /footer #}

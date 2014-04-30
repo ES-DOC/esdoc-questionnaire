@@ -1,3 +1,5 @@
 This directory stores (possibly customized) JQuery themes.  
 
 In order to prevent having to modify loads of application templates when changing themes, the "images" directory and "jquery-ui.min.css" file are symlinked to the actual theme currently being used.
+
+The images in this directory are associated w/ the dynatree plugin.

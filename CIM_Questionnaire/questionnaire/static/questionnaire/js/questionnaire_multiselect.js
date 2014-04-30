@@ -1,8 +1,8 @@
 /* custom JQuery widget plugin */
 
 /* adds checkboxes or radiobuttons to selects
- * (existing jquery plugins all did this via dialogs outside of the dom,
- * which screwed up my placement options)
+ * (existing jquery plugins all did this via dialogs outside of the DOM,
+ * which screwed up my placement options, so I've written my own)
  *
  */
 $.widget("questionnaire.multiselect", {
@@ -131,6 +131,7 @@ $.widget("questionnaire.multiselect", {
         else {
             
             var selected_choice = $(element).find("option:selected");
+            // a val of "" is the EMPTY_CHOICE
             if (selected_choice.length && $(selected_choice).val() != "") {
                 var new_label = "\"" + $(selected_choice).text() + "\""
             }
@@ -181,10 +182,10 @@ $.widget("questionnaire.multiselect", {
             var id      = element_id + "-" + value;
 
             if (options.multiple) {
-                var type = "checkbox"
+                var type = "checkbox";
             }
             else {
-                var type = "radio"
+                var type = "radio";
             }
             var widget_choice   = $("<label previous_value='unchecked' style='display: block;' for='"+id+"'><input id='"+id+"' name='"+element_name+"' type='"+type+"' value='"+value+"'>&nbsp;"+text+"</input></label>")
           
@@ -192,14 +193,17 @@ $.widget("questionnaire.multiselect", {
                 // this bit of code prevents responding to click events if they were triggered during sorting
                 if ($(this).hasClass("sorting")) {
                     $(this).removeClass("sorting");
+                    $(element).trigger("change");
                     event.stopPropagation();
+                    return false;
+                    /*
                     if ($(this).hasClass("selected")) {
                         $(this).find("input").prop("checked",false);
                     }
                     else {
                         $(this).find("input").prop("checked",true);
                     }
-                       
+                    */
                 }
 
                 // this clever bit of code allows you to uncheck a single option

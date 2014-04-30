@@ -24,6 +24,8 @@ from django.forms import *
 
 from django.contrib.auth.forms  import PasswordChangeForm, AdminPasswordChangeForm, AuthenticationForm, UserCreationForm
 
+from django.utils.html          import mark_safe
+
 from questionnaire.utils        import *
 from questionnaire.models       import *
 
@@ -89,7 +91,7 @@ class MetadataUserForm(ModelForm):
         self.fields["first_name"].initial = user.first_name
         self.fields["last_name"].initial  = user.last_name
         self.fields["projects"].help_text = None
-        self.fields["projects"].help_text = "Please contact the project administrator to become a project member."
+        self.fields["projects"].help_text = "Please contact the project to become a project member.  (Project contact details can be found on their landing page.)"
 
         update_field_widget_attributes(self.fields["projects"],{"readonly":"readonly"})
 
@@ -114,7 +116,7 @@ class MetadataRegistrationForm(UserCreationForm):
     pass
 
     def __init__(self,*args,**kwargs):
-        super(MetadataRegistrationForm,self).__init__(user,*args,**kwargs)
+        super(MetadataRegistrationForm,self).__init__(*args,**kwargs)
         self.fields["password1"].validators = [validate_password,]
         self.fields["password1"].help_text = "Passwords must have a minimum length of 6 and a mixture of letters and non-letters."
         

@@ -6,6 +6,8 @@
 #358C92 titles  (dk teal)
 */
 
+#questionnaire .sort_vocabularies { display: inline; padding: 4px; }
+
 .ui-tabs.ui-tabs-vertical > .ui-tabs-nav {
     float: left;
    /* width: 10em;*/

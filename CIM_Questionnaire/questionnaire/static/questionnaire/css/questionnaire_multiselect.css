@@ -11,3 +11,4 @@
 .multiselect_content .selected              { background: #B9E0E3; border-bottom: 1px solid #358C92; }
 .multiselect_content .sortable_item         { display: block; margin: 1px 0px 1px 0px; }
 
+.other  { width: 400px; text-align: left; margin-top: 2px; margin-bottom: 2px; }

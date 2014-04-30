@@ -14,6 +14,6 @@ from metadata_project          import MetadataProject
 from metadata_proxy            import MetadataModelProxy, MetadataStandardPropertyProxy, MetadataScientificPropertyProxy, MetadataStandardCategoryProxy, MetadataScientificCategoryProxy, MetadataComponentProxy
 from metadata_vocabulary       import MetadataVocabulary
 from metadata_customizer       import MetadataModelCustomizer, MetadataStandardPropertyCustomizer, MetadataScientificPropertyCustomizer, MetadataStandardCategoryCustomizer, MetadataScientificCategoryCustomizer
-from metadata_model            import MetadataModel
+from metadata_model            import MetadataModel, MetadataStandardProperty, MetadataScientificProperty
 from metadata_version          import MetadataVersion
 from metadata_categorization   import MetadataCategorization

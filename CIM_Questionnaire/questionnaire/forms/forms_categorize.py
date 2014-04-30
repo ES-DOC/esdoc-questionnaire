@@ -41,17 +41,15 @@ class MetadataStandardCategoryCustomizerForm(ModelForm):
     customizer_fields   = ("name","description","order",)
 
     def get_hidden_fields(self):
-        fields = list(self)
-        return [field for field in fields if field.name in self.hidden_fields]
+        return [field for field in self if field.name in self.hidden_fields]
 
     def get_customizer_fields(self):
-        fields = list(self)
-        return [field for field in fields if field.name in self.customizer_fields]
+        return [field for field in self if field.name in self.customizer_fields]
 
     def __init__(self,*args,**kwargs):
         super(MetadataStandardCategoryCustomizerForm,self).__init__(*args,**kwargs)
 
-        category_customizer = self.instance
+        #category_customizer = self.instance
 
         update_field_widget_attributes(self.fields["name"],{"readonly":"readonly","class":"readonly"})
 
@@ -63,7 +61,7 @@ class MetadataStandardCategoryCustomizerForm(ModelForm):
 class MetadataScientificCategoryCustomizerForm(ModelForm):
 
     class Meta:
-        model   = MetadataStandardCategoryCustomizer
+        model   = MetadataScientificCategoryCustomizer
 
         fields  = [
                     # hidden fields...
@@ -76,17 +74,15 @@ class MetadataScientificCategoryCustomizerForm(ModelForm):
     customizer_fields   = ("name","description","order",)
 
     def get_hidden_fields(self):
-        fields = list(self)
-        return [field for field in fields if field.name in self.hidden_fields]
+        return [field for field in self if field.name in self.hidden_fields]
 
-    def get_customizer_fields(self):
-        fields = list(self)
-        return [field for field in fields if field.name in self.customizer_fields]
+    def get_customizer_fields(self):        
+        return [field for field in self if field.name in self.customizer_fields]
 
     def __init__(self,*args,**kwargs):
         super(MetadataScientificCategoryCustomizerForm,self).__init__(*args,**kwargs)
 
-        category_customizer = self.instance
+        #category_customizer = self.instance
 
         set_field_widget_attributes(self.fields["description"],{"cols":"60","rows":"4"})
 

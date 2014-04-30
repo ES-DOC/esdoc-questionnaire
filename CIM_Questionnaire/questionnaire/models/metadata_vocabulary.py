@@ -98,8 +98,8 @@ class MetadataVocabulary(models.Model):
 
     def create_component_proxy(self,component_proxy_node,parent_component_proxy=None):
         new_component_proxy_kwargs = {
-            "vocabulary"   : self,
-            "order"        : self.next_component_order()
+            "vocabulary"        : self,
+            "order"             : self.next_component_order()
         }
         component_proxy_name = xpath_fix(component_proxy_node,"@name")[0]
         component_proxy_documentation = xpath_fix(component_proxy_node,"definition/text()") or None
@@ -137,10 +137,21 @@ class MetadataVocabulary(models.Model):
             }
             for j, property_proxy_node in enumerate(xpath_fix(category_proxy_node,"./parameter")):
                 property_proxy_name         = xpath_fix(property_proxy_node,"@name")[0]
+                property_proxy_choice       = xpath_fix(property_proxy_node,"@choice")[0]
                 property_proxy_description  = xpath_fix(property_proxy_node,"definition/text()") or None
-    
+                property_proxy_values       = xpath_fix(property_proxy_node,"value")
+
+                property_proxy_values = []
+                for property_proxy_value in xpath_fix(property_proxy_node,"value"):
+                    property_value_name = xpath_fix(property_proxy_value,"@name")
+                    if property_value_name:
+                        property_proxy_values.append(property_value_name[0])
+
                 new_property_proxy_kwargs["order"]  = j
                 new_property_proxy_kwargs["name"]   = property_proxy_name
+                new_property_proxy_kwargs["choice"] = property_proxy_choice
+                new_property_proxy_kwargs["values"] = "|".join(property_proxy_values)
+
                 if property_proxy_description:
                     new_property_proxy_kwargs["documentation"] = property_proxy_description[0]
 

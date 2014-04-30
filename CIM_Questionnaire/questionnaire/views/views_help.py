@@ -21,6 +21,7 @@ Summary of module goes here
 """
 
 from questionnaire.views import *
+from questionnaire.utils import get_version
 
 def questionnaire_help(request):
 

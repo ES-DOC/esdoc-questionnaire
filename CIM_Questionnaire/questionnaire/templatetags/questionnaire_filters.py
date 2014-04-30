@@ -46,20 +46,28 @@ def a_or_an(string):
         return "a"
 
 @register.filter
+def get_number_of_values(dict):
+    number_of_values = 0
+    for value in dict.values():
+        number_of_values += len(value)
+    return number_of_values
+
+@register.filter
 def get_value_from_key(dict,key):
-    if key in dict:
+    if dict and key in dict:
         return dict[key]
     return None
 
 @register.filter
-def get_value_length_from_key(dict,key):
-    if key in dict:
-        return len(dict[key])
-    return 0
+def index(sequence,index):
+    try:
+        return sequence[index]
+    except IndexError:
+        return ''
 
 @register.filter
 def get_number_of_properties_from_key(formsets,key):
-    if key in formsets:
+    if formsets and key in formsets:
         return formsets[key].number_of_properties
     return 0
 
@@ -119,3 +127,61 @@ def get_instance_pk(form):
     if instance:
         return instance.pk
     return -1
+
+@register.filter
+def analyze(formsets):
+    print "BEGIN ANALYSIS"
+#    print "these formsets are contained in a %s" % (type(formsets))
+#    print "there are %s items: %s" % (len(formsets),formsets.keys())
+#    print "and each item has the following statistics:"
+#    for (key,formset) in formsets.iteritems():
+#        print "%s has a %s with %s properties" % (key,type(formset),formset.number_of_properties)
+#        print "and they are..."
+#        for form in formset:
+#            print form.current_values["name"]
+#            try:
+#                print u"%s: %s" %(form.prefix,form.data[form.prefix+"-name"])
+#            except:
+#                print u"no data for %s" % (form.prefix)
+        
+    print "END ANALYSIS"
+    return "analyzed"
+
+@register.filter
+def get_form_by_field(formset,field_tuple):
+    # returns the 1st form in a fieldset whose specified field has the specified value
+    (field_name,field_value) = field_tuple.split('|')
+#    print ""
+#    print 'looking for %s=%s (in %s)' % (field_name,field_value,type(formset))
+    for form in formset:
+#        print form.get_field_value_by_name(field_name)
+        if form.get_field_value_by_name(field_name) == field_value:
+            return form
+    return None
+
+@register.filter
+def get_forms_by_field(formset,field_tuple):
+    # returns all forms in a fieldset whose specified field has the specified value
+    (field_name,field_value) = field_tuple.split('|')
+    forms = []
+    for form in formset:
+        if form.get_field_value_by_name(field_name) == field_value:
+            forms.append(form)
+    return forms
+
+@register.filter
+def get_active_scientific_categories_by_key(model_customizer,key):
+    return model_customizer.get_active_scientific_categories_by_key(key)
+
+@register.filter
+def get_active_scientific_properties_by_key(model_customizer,key):
+    return model_customizer.get_active_scientific_properties_by_key(key)
+
+@register.filter
+def get_active_scientific_categories_and_properties_by_key(model_customizer,key):
+    return model_customizer.get_active_scientific_categories_and_properties_by_key(key)
+
+@register.assignment_tag
+def get_default_vocabulary_key():
+    return slugify(DEFAULT_VOCABULARY)
+

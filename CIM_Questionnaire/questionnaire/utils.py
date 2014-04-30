@@ -67,12 +67,19 @@ HUGE_STRING     = 1024
 #: a serializer to use throughout the app; defined once to avoid too many fn calls
 JSON_SERIALIZER   = serializers.get_serializer("json")()
 
+CIM_STEREOTYPES = [
+    "document",
+]
+
 #: the set of document types recognized by the questionnaire
 CIM_DOCUMENT_TYPES = [
     "modelcomponent",
     "statisticalmodelcomponent",
     "experiment",
 ]
+
+#: vocabulary name to use for cases where a model has no vocabulary, or where it is the root component of several vocabularies
+DEFAULT_VOCABULARY  = "DEFAULT_VOCABULARY"
 
 ##################
 # error handling #
@@ -343,3 +350,17 @@ def find_in_sequence(fn, sequence):
     if fn(item):
       return item
   return None
+
+def interate_through_node(node,filter_parameters={}):
+    if filter_parameters:
+        sibling_qs = node.get_siblings(include_self=True).filter(**filter_parameters)
+    else:
+        sibling_qs = node.get_siblings(include_self=True)
+    for sibling in sibling_qs:
+        return sibling
+        if filter_parameters:
+            child_qs = sibling.get_children(include_self=False).filter(**filter_parameters)
+        else:
+            child_qs = sibling.get_children(include_self=False)
+        for child in child_qs:
+            iterate_through_node(child,filter_parameters)

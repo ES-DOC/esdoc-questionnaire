@@ -87,10 +87,13 @@ class MetadataVersion(models.Model):
         for i, version_model_proxy in enumerate(xpath_fix(version_content,"//classes/class")):
             version_model_proxy_name          = xpath_fix(version_model_proxy,"name/text()")
             version_model_proxy_documentation = xpath_fix(version_model_proxy,"description/text()") or None
+            version_model_proxy_stereotype    = xpath_fix(version_model_proxy,"@stereotype") or None
        
             new_model_proxy_kwargs["name"]              = re.sub(r'\.','_',str(version_model_proxy_name[0]))
             if version_model_proxy_documentation:
                 new_model_proxy_kwargs["documentation"] = version_model_proxy_documentation[0]
+            if version_model_proxy_stereotype:
+                new_model_proxy_kwargs["stereotype"]    = version_model_proxy_stereotype[0]
             new_model_proxy_kwargs["order"]             = i
 
             (new_model_proxy,created_model) = MetadataModelProxy.objects.get_or_create(**new_model_proxy_kwargs)
@@ -107,6 +110,7 @@ class MetadataVersion(models.Model):
             for j, version_property_proxy in enumerate(xpath_fix(version_model_proxy,"attributes/attribute")):
                 version_property_proxy_name     = xpath_fix(version_property_proxy,"name/text()")
                 version_property_proxy_type     = xpath_fix(version_property_proxy,"type/text()")
+                atomic_type                     = xpath_fix(version_property_proxy,"atomic/atomic_type/text()")
                 enumeration_choices = []
                 relationship_cardinality_min = xpath_fix(version_property_proxy,"relationship/cardinality/@min")
                 relationship_cardinality_max = xpath_fix(version_property_proxy,"relationship/cardinality/@max")
@@ -118,6 +122,8 @@ class MetadataVersion(models.Model):
                 new_standard_property_proxy_kwargs["field_type"]            = MetadataFieldTypes.get(version_property_proxy_type[0])
                 new_standard_property_proxy_kwargs["name"]                  = re.sub(r'\.','_',str(version_property_proxy_name[0]))
                 new_standard_property_proxy_kwargs["order"]                 = j
+                if atomic_type:
+                    new_standard_property_proxy_kwargs["atomic_type"]       = atomic_type
                 new_standard_property_proxy_kwargs["enumeration_choices"]   = "|".join(enumeration_choices)
                 if relationship_cardinality_min and relationship_cardinality_max:
                     new_standard_property_proxy_kwargs["relationship_cardinality"] = "%s|%s"%(relationship_cardinality_min[0],relationship_cardinality_max[0])
@@ -145,48 +151,6 @@ class MetadataVersion(models.Model):
 
         self.registered = True
             
-    def register2(self):
-        self.file.open()
-        version_content = et.parse(self.file)
-        self.file.close()
-
-        version_class_kwargs         = { "version" : self }
-        version_attribute_kwargs     = {  }
-
-        for i, version_class in enumerate(xpath_fix(version_content,"//classes/class")):
-            version_class_name          = xpath_fix(version_class,"name/text()")
-            version_class_description   = xpath_fix(version_class,"description/text()") or None
-
-#            version_class_kwargs["name"]          = version_class_name[0]
- #           version_class_kwargs["description"]   = version_class_description[0] if version_class_description else ""
-  #          version_class_kwargs["order"]         = i
-
-
-            new_model_name = re.sub(r'\.','_',self.name+'_'+str(version_class_name[0]))
-            new_model = QuestionnaireModel.factory(
-                new_model_name,
-                model_fields={
-                    "foobar"    : models.CharField(max_length=10),
-                },
-            )
-            print new_model
-            x=new_model()
-            print x
-            print x.foobar
-#            (new_version_class,created_version_class) = QuestionnaireModelProxy.objects.get_or_create(**version_class_filter_parameters)
-#
-#
-#            for i, version_class_attribute in enumerate(xpath_fix(version_class,"attributes/attribute")):
-#                version_class_attribute_name = xpath_fix(version_class_attribute,"name/text()")
-#
-#                (new_attribute_class,created_version_attribute) = QuestionnairePropertyProxy.objects.get_or_craete(**version_attribute_filter_parameters)
-##                print version_class_attribute_name
-##
-##
-##                I AM HERE I AM HERE; I OUGHT TO WRITE A FACTORY METHOD TO DYNAMICALLY ADD FIELDS TO MODELS
-
-        self.registered = True
-
     def unregister(self,**kwargs):
         request = kwargs.pop("request",None)
         for model in self.models.all():

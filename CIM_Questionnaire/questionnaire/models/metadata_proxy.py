@@ -41,10 +41,13 @@ class MetadataModelProxy(models.Model):
         verbose_name_plural = '(DISABLE ADMIN ACCESS SOON) Metadata Model Proxies'
 
     name                    = models.CharField(max_length=SMALL_STRING,blank=False,null=False)
-    package                 = models.CharField(max_length=SMALL_STRING,blank=True,null=True)
+    stereotype              = models.CharField(max_length=BIG_STRING,blank=False,null=True,choices=[(slugify(stereotype),stereotype) for stereotype in CIM_STEREOTYPES])    
     documentation           = models.TextField(blank=True,null=True)
+    package                 = models.CharField(max_length=SMALL_STRING,blank=True,null=True)
     order                   = models.PositiveIntegerField(blank=True,null=True)
     version                 = models.ForeignKey("MetadataVersion",blank=False,null=True,related_name="model_proxies")
+
+
 
     def __unicode__(self):
         return u'%s'%(self.name)
@@ -108,6 +111,8 @@ class MetadataStandardPropertyProxy(MetadataPropertyProxy):
 
     # attributes for ATOMIC fields
     atomic_default  = models.CharField(max_length=BIG_STRING,blank=True)
+    atomic_type     = models.CharField(max_length=64,blank=False,choices=[(ft.getType(),ft.getName()) for ft in MetadataAtomicFieldTypes],default=MetadataAtomicFieldTypes.DEFAULT.getType())
+
 
     # attributes for ENUMERATION fields
     enumeration_choices  = models.CharField(max_length=HUGE_STRING,blank=True)
@@ -143,7 +148,13 @@ class MetadataStandardPropertyProxy(MetadataPropertyProxy):
 
             self.relationship_target_model = target_proxy
 
-        
+
+SCIENTIFIC_PROPERTY_CHOICES = [
+    ("XOR","XOR"),
+    ("OR","OR"),
+    ("keyboard","keyboard"),
+]
+
 class MetadataScientificPropertyProxy(MetadataPropertyProxy):
     class Meta:
         app_label   = APP_LABEL
@@ -156,6 +167,9 @@ class MetadataScientificPropertyProxy(MetadataPropertyProxy):
 
     component     = models.ForeignKey("MetadataComponentProxy",blank=True,null=True,related_name="scientific_properties")
     category      = models.ForeignKey("MetadataScientificCategoryProxy",blank=True,null=True,related_name="scientific_properties")
+
+    choice        = models.CharField(max_length=LIL_STRING,blank=True,null=True,choices=SCIENTIFIC_PROPERTY_CHOICES)
+    values        = models.CharField(max_length=HUGE_STRING,blank=True)
 
     def __unicode__(self):
         #return u'%s::%s::%s' % (self.component,self.category,self.name)

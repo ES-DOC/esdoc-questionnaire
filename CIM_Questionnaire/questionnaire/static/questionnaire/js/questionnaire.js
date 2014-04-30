@@ -43,14 +43,19 @@ function buttons(parent) {
     }).click(function(event){
         var accordion = $(event.target).closest(".subform_toolbar").nextAll(".accordion:first");
 
-        // I have to do this manually (rather than w/ the active:all option)
-        // b/c each accordion is wrapped in 'accordion_content' (to allow sorting)
-        $(accordion).children(".accordion_unit").each(function() {
-            var header = $(this).find(".accordion_header:first");
-            if (! $(header).hasClass("open_accordion")) {
-                $(header).click();
-            }            
-        });
+        if ($(accordion).hasClass("ui-sortable")) {
+            // I have to do this manually (rather than w/ the active:all option)
+            // b/c each accordion is wrapped in 'accordion_content' (to allow sorting)
+            $(accordion).children(".accordion_unit").each(function() {
+                var header = $(this).find(".accordion_header:first");
+                if (! $(header).hasClass("open_accordion")) {
+                    $(header).click();
+                }
+            });
+        }
+        else {
+            $(accordion).multiOpenAccordion("option","active","all");
+        }
 
     });
     $(parent).find(".subform_toolbar button.collapse").button({
@@ -59,15 +64,19 @@ function buttons(parent) {
     }).click(function(event){
         var accordion = $(event.target).closest(".subform_toolbar").nextAll(".accordion:first");
 
-        // I have to do this manually (rather than w/ the active:all option)
-        // b/c each accordion is wrapped in 'accordion_content' (to allow sorting)
-        $(accordion).children(".accordion_unit").each(function() {
-            var header = $(this).find(".accordion_header:first");
-            if ($(header).hasClass("open_accordion")) {
-                $(header).click();
-            }
-        });
-
+        if ($(accordion).hasClass("ui-sortable")) {
+            // I have to do this manually (rather than w/ the active:none option)
+            // b/c each accordion is wrapped in 'accordion_content' (to allow sorting)
+            $(accordion).children(".accordion_unit").each(function() {
+                var header = $(this).find(".accordion_header:first");
+                if ($(header).hasClass("open_accordion")) {
+                    $(header).click();
+                }
+            });
+        }
+        else {
+            $(accordion).multiOpenAccordion("option","active","none");
+        }
     });
     $(parent).find(".subform_toolbar button.sort").button({
         icons : { primary : "ui-icon-arrowthick-2-n-s"},
@@ -321,20 +330,22 @@ function copy_value(source,target_name) {
     $(target).val(source_value);
 }
 
-function restrict_options(source,target_names) {
+function restrict_options_bak(source,target_names) {
+
     restrictions = [];
     $(source).find("option:selected").each(function() {
         restrictions.push($(this).val());
     });
 
     for (var i=0; i<target_names.length; i++) {
-        var selector = "*[name$='" + target_names[i] + "']";
+        // TODO: THIS SHOULD WORK FOR MORE THAN JUST SELECT FIElDS
+        var selector = "select[name$='" + target_names[i] + "']";
         var target = $(source).closest("div.form").find(selector);
         var options = [];
         $(target).find("option").each(function() {
             options.push($(this).val());
         });
-
+        
         // (this is horrible syntax; "grep" doesn't mean the same thing in JQuery)
         var in_options_but_not_restrictions = $.grep(options,function(el){
            return $.inArray(el,restrictions) == -1;
@@ -345,16 +356,17 @@ function restrict_options(source,target_names) {
 
         // remove everything in options and not in restrictions
         $(in_options_but_not_restrictions).each(function() {
-            $(target).find("option[value='"+this+"']").remove();
+            $(target).find("option[value='"+this+"']:first").remove();
         });
         // add everything in restrictions and not in options
         $(in_restrictions_but_not_options).each(function() {
-            var option = $(source).find("option[value='"+this+"']");
+            var option = $(source).find("option[value='"+this+"']:first");
             $(target).append($("<option>").attr("value",this).text($(option).text()));
         });
 
     }
 }
+
 
 function slugify(string) {
     return string.toLowerCase().replace(/[^\w ]+/g,'').replace(/ +/g,'-');

@@ -9,29 +9,35 @@
 
 {% endblock %} {# /scripts #}
 
+{% block title %}
+    CIM Questionnaire Editor
+{% endblock %} {# /title #}
+
+
     {% block content_title %}
         <div class="title">
-            Title (editor)
+            Editing a <b>{{model_customizer.model_title|title}}</b> for the <b>{{project.title|title}}</b> Project
         </div> <!-- /.title -->
     {% endblock %} {# /content_title #}
 
     {% block content_documentation %}
         <div class="documentation">
             <p>
-            
-                Drag-and-drop properties, and categories to specify an order.
-                Specify customizable features for each property.
-                When you have finished, click the "submit" button at the bottom of the page.
-                Invalid entries are indicated using a <span style="color: #ff0000; font-weight: bold;">red</span> font.
+                {{model_customizer.model_description|safe}}
                 <a href="/edit/help" target="blank"><b>More detailed instructions</b></a> are available.
             </p>
         </div> <!-- /.documentation -->
     {% endblock %} {# /content_documentation #}
 
+    {# IF YOU'RE LOOKING FOR ALL OF THE CONTENT #}
+    {# IT'S IN THE "questionnaire_view.html" TEMPLATE #}
+    {# THIS TEMPLATE BASICALLY JUST ADDS A SUBMIT/PUBLISH BUTTON TO THAT TEMPLATE #}
+
     {% block content_submit %}
 
         <div class="submit">
             <input class="button"  name="save"  type="submit"   value="save""/>
+            <input class="button"  name="publish"  type="submit"   value="publish""/>
         </div> <!-- /.submit -->
         <div style="clear: both;">&nbsp;</div>
 

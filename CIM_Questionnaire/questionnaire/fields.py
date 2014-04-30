@@ -20,6 +20,8 @@ Summary of module goes here
 
 """
 
+from django.forms import *
+
 import django.forms.models
 import django.forms.fields
 import django.forms.widgets
@@ -32,7 +34,10 @@ from south.modelsinspector import introspector, add_introspection_rules
 
 from questionnaire.utils import *
 
-EMPTY_CHOICE = [("","-----------")]
+EMPTY_CHOICE  = [("","----------")]
+NULL_CHOICE   = [("_NONE", "---NONE---")]
+OTHER_CHOICE  = [("_OTHER","---OTHER---")]
+
 
 #################################
 # fields used in the customizer #
@@ -45,13 +50,17 @@ class EnumerationFormField(django.forms.fields.MultipleChoiceField):
         # 1) specifying a value other than that provided by choices
         # 2) not specifying a value when field is required
         if value:
+            value=set(value)
             current_choices = self.widget.choices
-            if not set(value).issubset(set([choice[0] for choice in current_choices])):
+            if not value.issubset([choice[0] for choice in current_choices]):
                 msg = "Select a valid choice, '%s' is not among the available choices" % (value)
                 raise ValidationError(msg)
+            else:
+                # TODO: ALL OF THIS NONSENSE W/ LIST & SET MEANS SOMETHING SOMEWHERE IS NOT QUITE WORKING RIGHT
+                return list(value)
         elif self.required:
             raise ValidationError(self.error_messages["required"])
-        return value
+        return []
 
 class EnumerationField(models.TextField):
     enumeration = []
@@ -71,6 +80,21 @@ class EnumerationField(models.TextField):
 
     def set_choices(self,choices):
         self.enumeration = [(slugify(choice),choice) for choice in choices]
+
+    def get_db_prep_value(self, value, connection, prepared=False):
+        if isinstance(value, basestring):
+            return value
+        elif isinstance(value, list):
+            return "|".join(value)
+
+    def to_python(self, value):
+        if isinstance(value, list):
+            return value
+        else:
+            try:
+                return value.split("|")
+            except:
+                return []
 
     def south_field_triple(self):
         field_class_path = self.__class__.__module__ + "." + self.__class__.__name__
@@ -130,6 +154,22 @@ class CardinalityField(models.CharField):
         args,kwargs = introspector(self)
         return (field_class_path,args,kwargs)
 
+
+## just a one-off for vocabularies
+#class OrderedModelMultipleChoiceField(django.forms.ModelMultipleChoiceField):
+#
+#    def clean(self, value):
+#        qs = super(OrderedModelMultipleChoiceField, self).clean(value)
+#        return sorted(qs, lambda a,b: sorted(qs, key=lambda x:value.index(x.pk)))
+#
+#class OrderedManyToManyField(models.ManyToManyField):
+#    pass
+#
+#    def formfield(self,**kwargs):
+#        return OrderedModelMultipleChoiceField(kwargs)
+#
+
+
 #############################
 # fields used in the editor #
 #############################
@@ -143,6 +183,50 @@ MetadataFieldTypes = EnumeratedTypeList([
     MetadataFieldType("ENUMERATION","Enumeration"),
     MetadataFieldType("PROPERTY","Property"),
 ])
+
+class MetadataUnitType(EnumeratedType):
+    pass
+
+MetadataUnitTypes = EnumeratedTypeList([
+    MetadataUnitType("X","x"),
+])
+
+## SEE COMMENT BELOW
+
+class MetadataAtomicFieldType(EnumeratedType):
+    pass
+
+MetadataAtomicFieldTypes = EnumeratedTypeList([
+    MetadataAtomicFieldType("DEFAULT","Character Field (default)"),
+    MetadataAtomicFieldType("BOOLEAN","Boolean Field"),
+    MetadataAtomicFieldType("DATE","Date Field"),
+    MetadataAtomicFieldType("DATETIME","Date Time Field"),
+    MetadataAtomicFieldType("DECIMAL","Decimal Field"),
+    MetadataAtomicFieldType("EMAIL","Email Field"),
+    MetadataAtomicFieldType("INTEGER","Integer Field"),
+    MetadataAtomicFieldType("TEXT","Text Field (large block of text as opposed to a small string)"),
+    MetadataAtomicFieldType("TIME","Time Field"),
+    MetadataAtomicFieldType("URL","URL Field"),
+])
+
+METADATA_ATOMICFIELD_MAP = {
+    "DEFAULT"   : [ TextInput,      { } ],
+    "BOOLEAN"   : [ CheckboxInput,  { } ],
+    "DATE"      : [ DateInput,      { } ],
+    "DATETIME"  : [ DateTimeInput,  { } ],
+    "DECIMAL"   : [ NumberInput,    { } ],
+    "EMAIL"     : [ EmailInput,     { } ],
+    "INTEGER"   : [ NumberInput,    { } ],
+    "TEXT"      : [ Textarea,       { } ],
+    "TIME"      : [ TimeInput,      { } ],
+    "URL"       : [ URLInput,       { } ],
+}
+
+## NOTE THAT I AM NO LONGER USING MOST OF THIS CODE BELOW
+## HARD-CODING CIM MODEL FIELDS IS DEPRACATED
+## IN FAVOR OF REGISTERING THEM FROM A CONFIGURATION FILE
+## THE CODE ABOVE FILLS THE VOID
+
 #############################################################
 # the set of customizable atomic fields for metadata models #
 # each item consists of a name, a corresponding class,      #
