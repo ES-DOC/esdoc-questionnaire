@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<version xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <name>flarble</name>
+    <description>hello world</description>
+    <classes>
+        <class stereotype="document">
+            <name>modelcomponent</name>
+            <description>blah</description>
+            <attributes>
+                <attribute>
+                    <name>shortName</name>
+                    <type>ATOMIC</type>
+                    <atomic>
+                        <atomic_type>TEXT</atomic_type>
+                    </atomic>
+                </attribute>
+                <attribute>
+                    <name>type</name>
+                    <type>ENUMERATION</type>
+                    <enumeration>
+                        <choice>one</choice>
+                        <choice>two</choice>
+                        <choice>three</choice>
+                    </enumeration>
+                </attribute>
+                <attribute>
+                    <name>longName</name>
+                    <type>ATOMIC</type>
+                </attribute>
+                <attribute>
+                    <name>description</name>
+                    <type>ATOMIC</type>
+                </attribute>
+                <attribute>
+                    <name>purpose</name>
+                    <type>ATOMIC</type>
+                </attribute>
+                <attribute>
+                    <name>license</name>
+                    <type>ATOMIC</type>
+                </attribute>
+                <attribute>
+                    <name>timing</name>
+                    <type>ATOMIC</type>
+                </attribute>
+                <attribute>
+                    <name>grid</name>
+                    <type>RELATIONSHIP</type>
+                    <relationship>
+                        <cardinality min="0" max="*"/>
+                        <target>gridspec</target>
+                    </relationship>                    
+                </attribute>                
+            </attributes>
+        </class>
+        <class stereotype="document">
+            <name>gridspec</name>
+            <description>blah</description>
+            <attributes>
+                <attribute>
+                    <name>shortName</name>
+                    <type>ATOMIC</type>
+                </attribute>
+            </attributes>
+        </class>
+    </classes>
+</version>
+
