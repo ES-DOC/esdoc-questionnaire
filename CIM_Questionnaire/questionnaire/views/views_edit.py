@@ -57,7 +57,7 @@ def questionnaire_edit_new(request,project_name="",model_name="",version_name=""
         return error(request,msg)
 
     # check authentication...
-    # (not using @login_required b/c some projects ignore authentication)
+    # (not using "@login_required" b/c some projects ignore authentication)
     if project.authenticated:
         current_user = request.user
         if not current_user.is_authenticated():
@@ -86,15 +86,17 @@ def questionnaire_edit_new(request,project_name="",model_name="",version_name=""
     try:
         model_customizer = MetadataModelCustomizer.objects.get(project=project,version=version,proxy=model_proxy,default=True)
     except MetadataModelCustomizer.DoesNotExist:
-        msg = "There is no default customization associated with the project/model/version."
+        msg = "There is no default customization associated with this project/model/version."
         return error(request,msg)
-    #standard_property_customizers = MetadataStandardPropertyCustomizer.objects.filter(model_customizer=model_customizer)
-    standard_property_customizers = model_customizer.standard_property_customizers.all()
+    standard_property_customizers   = model_customizer.standard_property_customizers.all()
     scientific_property_customizers = {} # this is filled in below, once I've created the component tree
 
-    vocabularies = model_customizer.vocabularies.all()
+    # getting the vocabularies into the right order is a 2-step process
+    # b/c vocabularies do not have an "order" attribute (since they can be used by multiple projects/customizations),
+    # but the model_customizer does record the desired order of active vocabularies (as a comma-separated list)
+    vocabularies     = model_customizer.vocabularies.all()
     vocabulary_order = [int(order) for order in model_customizer.vocabulary_order.split(',')]
-    vocabularies = sorted(vocabularies,key=lambda vocabulary: vocabulary_order.index(vocabulary.pk))
+    vocabularies     = sorted(vocabularies,key=lambda vocabulary: vocabulary_order.index(vocabulary.pk))
 
     model_filter_parameters = {
         "project" : project,
@@ -102,11 +104,14 @@ def questionnaire_edit_new(request,project_name="",model_name="",version_name=""
         "proxy"   : model_proxy,
     }
     INITIAL_PARAMETER_LENGTH=len(model_filter_parameters)
-    # TODO: check if the user added any parameters to the request
-    # HAVE TO DO THIS DIFFERENT THAN CUSTOMIZERS, SINCE FIELDS ARE FKS TO PROPERTIES
+    # TODO: check if the user added any parameters to the request; if so, pass those parameters to "questionnaire_edit_existing()"
+    # TODO: HAVE TO DO THIS DIFFERENTLY THAN CUSTOMIZERS (see "views_customize.py"), SINCE FIELDS ARE FKS TO PROPERTIES
 
+    # here is the "root" model
     model    = MetadataModel(**model_filter_parameters)
 
+    # it has to go in a list in-case it is part of a hierarchy
+    # (the formsets assume a hierarchy; if not, it will just be a formset w/ 1 form)
     models = []
     models.append(model)
     if model_customizer.model_show_hierarchy:
@@ -118,28 +123,31 @@ def questionnaire_edit_new(request,project_name="",model_name="",version_name=""
             model_filter_parameters["vocabulary_key"] = slugify(vocabulary.name)
             components = vocabulary.component_proxies.all()
             if components:
+                # recursively go through the components of each vocabulary
+                # adding corresponding models to the list
                 root_component = components[0].get_root()
                 model_filter_parameters["parent"] = model
                 model_filter_parameters["title"] = u"%s : %s" % (vocabulary.name,root_component.name)
                 create_models_from_components(root_component,model_filter_parameters,models)
 
-    # these needs to be sorted according to the customizers
+    # these need to be sorted according to the customizers (which are ordered by default),
     # so that when I pass an iterator of customizers to the formset, they will match the underlying form that is created for each property
-    #standard_property_proxies = model.proxy.standard_properties.all()
     standard_property_proxies = sorted(model_proxy.standard_properties.all(),key=lambda proxy: standard_property_customizers.get(proxy=proxy).order)
 
     standard_properties     = {}
-    scientific_properties   = {}
     standard_property_filter_parameters = {
         # in theory, constant kwargs would go here
         # it just so happens that standardproperties don't have any
     }
+    scientific_properties   = {}
     scientific_property_filter_parameters = {
         # in theory, constant kwargs would go here
         # it just so happens that standardproperties don't have any
     }
     for model in models:
+
         model.reset(True)
+
         vocabulary_key  = model.vocabulary_key
         component_key   = model.component_key
         model_key       = u"%s_%s"%(model.vocabulary_key,model.component_key)
@@ -152,14 +160,14 @@ def questionnaire_edit_new(request,project_name="",model_name="",version_name=""
             standard_property.reset()
             standard_properties[model_key].append(standard_property)
 
-        # here's where we can finally get the scientific_customizers
+        # here's where we can _finally_ get the scientific_customizers
         scientific_property_customizers[model_key] = MetadataScientificPropertyCustomizer.objects.filter(model_customizer=model_customizer,model_key=model_key)
 
         scientific_properties[model_key] = []
         try:
             # TODO: REWORK THIS TO COPE W/ SLUGIFY
             # (RIGHT NOW IT DEPENDS ON NAMES ALREADY BEING SLUFIGIED, AS IT WERE)
-            vocabulary = MetadataVocabulary.objects.get(name__iexact=vocabulary_key)
+            vocabulary      = MetadataVocabulary.objects.get(name__iexact=vocabulary_key)
             component_proxy = MetadataComponentProxy.objects.get(vocabulary=vocabulary,name__iexact=component_key)
             # END TODO
             scientific_property_filter_parameters["model"] = model
@@ -172,13 +180,17 @@ def questionnaire_edit_new(request,project_name="",model_name="",version_name=""
                 scientific_property.reset()
                 scientific_properties[model_key].append(scientific_property)
         except ObjectDoesNotExist:
-            # there were no scientific properties associated w/ this component (or, rather, components associated w/ this vocabulary)
+            # there were no scientific properties associated w/ this component (or, rather, no components associated w/ this vocabulary)
+            # that's okay
             pass
     
-    # this final check has to be done after reset() has been called
+    # this final check has to be done after "model.reset()" has been called
     if not model.is_document:
         msg = "<u>%s</u> is not a recognized document type in the CIM." % (model_name)
         return error(request,msg)
+
+    # right, all of the models, standardproperties, scientificproperties are setup
+    # now we can setup the forms
 
     model_formset                   = None
     standard_property_formsets      = {}
@@ -205,15 +217,26 @@ def questionnaire_edit_new(request,project_name="",model_name="",version_name=""
             customizer  = model_customizer
         )
 
+        # I can use the same initial data for each set of standard properties per model
+        # since they're all the same (hence the commented-out code below)
+        # this prevents uneccesary db hits
+        initial_standard_property_formset_data = [
+            get_initial_data(standard_property,{
+                "proxy"             : standard_property.proxy,
+                "last_modified"     : time.strftime("%c"),
+            })
+            for standard_property in standard_properties[standard_properties.keys()[0]] # this gets the 1st item in a dictionary (yes, I know dicts are unordered; since the initial data will all be the same it doesn't matter)
+        ]
         for (i,model) in enumerate(models):
             model_key = u"%s_%s"%(model.vocabulary_key,model.component_key)
-            initial_standard_property_formset_data = [
-                get_initial_data(standard_property,{
-                    "proxy"         : standard_property.proxy,
-                    "last_modified" : time.strftime("%c")
-                })
-                for standard_property in standard_properties[model_key]
-            ]
+# see comment above about using the same initial data for set of standard properties
+###            initial_standard_property_formset_data = [
+###                get_initial_data(standard_property,{
+###                    "proxy"         : standard_property.proxy,
+###                    "last_modified" : time.strftime("%c")
+###                })
+###                for standard_property in standard_properties[model_key]
+###            ]
             standard_property_formsets[model_key] = MetadataStandardPropertyInlineFormSetFactory(
                 instance    = model,
                 prefix      = model_key,
@@ -222,17 +245,6 @@ def questionnaire_edit_new(request,project_name="",model_name="",version_name=""
                 extra       = len(initial_standard_property_formset_data),
                 customizers = standard_property_customizers
             )
-
-
-
-###            if i==4:
-###                print "okay, at this point I am looking at %s" % model_key
-###                print "and the standard_property_formset has the following properties: %s" % \
-###                    ([form.initial[u"name"] for form in standard_property_formsets[model_key]])
-###            if i==5:
-###                print "okay, at this point I am looking at %s" % model_key
-###                print "and the standard_property_formset has the following properties: %s" % \
-###                    ([form.initial[u"name"] for form in standard_property_formsets[model_key]])
 
             initial_scientific_property_formset_data = [
                 get_initial_data(scientific_property,{
@@ -270,16 +282,6 @@ def questionnaire_edit_new(request,project_name="",model_name="",version_name=""
                 request     = request,
                 customizers = standard_property_customizers
             )
-
-
-#            if i==4:
- #               print "okay, at this point I am looking at %s" % model_key
-  #              print "and the standard_property_formset has the following properties: %s" % \
-   #                 ([form.data[u"%s-%s-name"%(standard_property_formsets[model_key].prefix,i)] for form in standard_property_formsets[model_key]])
-    #        if i==5:
-     #           print "okay, at this point I am looking at %s" % model_key
-      #          print "and the standard_property_formset has the following properties: %s" % \
-       #             ([form.data[u"%s-%s-name"%(standard_property_formsets[model_key].prefix,i)] for form in standard_property_formsets[model_key]])
 
             validity += [standard_property_formsets[model_key].is_valid()]
 

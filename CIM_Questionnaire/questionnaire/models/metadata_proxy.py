@@ -27,6 +27,8 @@ from django.db import models
 from questionnaire.utils import *
 from questionnaire.fields import *
 
+from mptt.models import MPTTModel, TreeForeignKey
+
 ### note - following fk fields in __unicode__ method forces queries on the db
 ### only do that if it's absolutely necessary
 
@@ -227,12 +229,14 @@ class MetadataScientificCategoryProxy(MetadataCategoryProxy):
     def has_property(self,scientific_property_proxy):
         return scientific_property_proxy in self.properties.all()
 
-@hierarchical
-class MetadataComponentProxy(models.Model):
+#@hierarchical
+class MetadataComponentProxy(MPTTModel):
     name                    = models.CharField(max_length=SMALL_STRING,blank=False,null=False)
     documentation           = models.TextField(blank=True,null=True)
     order                   = models.PositiveIntegerField(blank=True,null=True)
     vocabulary              = models.ForeignKey("MetadataVocabulary",blank=False,null=True,related_name="component_proxies")
+
+    parent = TreeForeignKey('self', null=True, blank=True, related_name='children')
 
     class Meta:
         app_label   = APP_LABEL

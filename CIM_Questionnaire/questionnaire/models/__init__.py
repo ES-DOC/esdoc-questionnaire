@@ -17,3 +17,15 @@ from metadata_customizer       import MetadataModelCustomizer, MetadataStandardP
 from metadata_model            import MetadataModel, MetadataStandardProperty, MetadataScientificProperty
 from metadata_version          import MetadataVersion
 from metadata_categorization   import MetadataCategorization
+
+
+####from django.db.models.signals import post_syncdb
+#####import questionnaire.models as questionnaire_models
+####
+####
+####def update_db(app, created_models, verbosity, **kwargs):
+####    print "I AM HERE"
+####    # Do stuff...
+####
+####post_syncdb.connect(update_db, sender=[])#questionnaire_models)
+####

@@ -542,7 +542,6 @@ class MetadataScientificPropertyCustomizerForm(MetadataCustomizerForm):
         return all_fields
 
     def get_fields(self):
-        print self.current_values["is_enumeration"]
         if self.current_values["is_enumeration"]:
             return self.get_enumeration_fields()
         else:
@@ -594,7 +593,9 @@ class MetadataScientificPropertyCustomizerForm(MetadataCustomizerForm):
 
 
         all_enumeration_choices = property_customizer.get_field("enumeration_choices").get_choices()
-#        print "%s: %s" % (self.current_values["proxy"].name,all_enumeration_choices)
+
+        print "THE CHOICES FOR %s ARE %s" % (property_customizer,all_enumeration_choices)
+        
         self.fields["enumeration_choices"].widget = SelectMultiple(choices=all_enumeration_choices)
         self.fields["enumeration_default"].widget = SelectMultiple(choices=all_enumeration_choices)
         if not property_customizer.pk:

@@ -75,8 +75,10 @@ class MetadataVersion(models.Model):
         request = kwargs.pop("request",None)
 
         self.file.open()
-        version_content = et.parse(self.file)
-        self.file.close()
+        try:
+            version_content = et.parse(self.file)
+        finally:
+            self.file.close()
 
         recategorization_needed = False
 

@@ -35,16 +35,18 @@ from questionnaire.fields       import MetadataFieldTypes, MetadataAtomicFieldTy
 
 class MetadataModelFormSet(BaseFormSet):
 
-    number_of_models = 0                    # lets me keep track of the number of forms w/out having to render them
-    custom_prefix_iterator = None           # pass a list of form prefixes all at once to the formset (lets me associate forms w/ elements in the comopnent hierarchy)
+    number_of_models = 0        # lets me keep track of the number of forms w/out having to actually render them
+    prefix_iterator  = None     # pass a list of form prefixes all at once to the formset (lets me associate forms w/ elements in the comopnent hierarchy)
 
     def _construct_form(self, i, **kwargs):
 
-        if self.custom_prefix_iterator:
-            kwargs["prefix"] = next(self.custom_prefix_iterator)
+        if self.prefix_iterator:
+            kwargs["prefix"] = next(self.prefix_iterator)
 
         form = super(MetadataModelFormSet,self)._construct_form(i,**kwargs)
 
+        # this speeds up loading time
+        # (see "cached_fields" attribute in the form class below)
         for cached_field_name in form.cached_fields:
             cached_field = form.fields[cached_field_name]
             cached_field_key = u"%s_%s" % (self.prefix,cached_field_name)
@@ -73,7 +75,7 @@ class MetadataModelForm(MetadataEditingForm):
     _hidden_fields       = ["proxy", "project", "version", "is_document", "vocabulary_key", "component_key", "active", "name", "description", "order",]
     _header_fields       = ["title",]
 
-    # set of fields that will be the same for all members of a formset; thus I can cache the query (for relationship fields)
+    # set of fields that will be the same for all members of a formset; allows me to cache the query (for relationship fields)
     cached_fields       = []
 
     def get_hidden_fields(self):
@@ -88,19 +90,19 @@ class MetadataModelForm(MetadataEditingForm):
 
         super(MetadataModelForm,self).__init__(*args,**kwargs)
 
-        model = self.instance
-
         update_field_widget_attributes(self.fields["title"],{"class":"label","readonly":"readonly","size":"50%"})
         
         if customizer:
             self.customize(customizer)
 
     def customize(self,customizer):
-        # customization is done in the form and in the template
+
+        # customization is done both in the form and in the template
 
         self.customizer = customizer
         
-        # (in the case of a modelform, it's _all_ done in the template)
+        # (but in the case of a modelform, it's _all_ done in the template)
+
         pass
 
         
@@ -123,11 +125,13 @@ def MetadataModelFormSetFactory(*args,**kwargs):
     _formset.form = staticmethod(curry(MetadataModelForm,customizer=_customizer))
 
     if _prefixes:
-        _formset.custom_prefix_iterator = iter(_prefixes)
+        _formset.prefix_iterator = iter(_prefixes)
     if _initial:
-        _formset.number_of_properties = len(_initial)
+        _formset.number_of_models = len(_initial)
     elif _queryset:
-        _formset.number_of_properties = len(_queryset)
+        _formset.number_of_models = len(_queryset)
+    else: # assuming data was passed in via POST
+        _formset.number_of_models = int(_request.POST[u"form-TOTAL_FORMS"])
 
     if _request and _request.method == "POST":
         return _formset(_request.POST)
@@ -151,11 +155,10 @@ class MetadataStandardPropertyForm(MetadataEditingForm):
 
     current_values  = {}
 
-    # since I am only explicitly displaying the "value_field" I have to be sure to add any fields
-    # that the django form init/saving process depends upon to this set of hidden fields
     _hidden_fields      = ["proxy", "field_type", "name", "order", "model",]
+    _value_fields       = ["atomic_value", "enumeration_value", "enumeration_other_value", "relationship_value",]
 
-    # set of fields that will be the same for all members of a formset; thus I can cache the query (for relationship fields)
+    # set of fields that will be the same for all members of a formset; allows me to cache the query (for relationship fields)
     cached_fields       = []
 
     def get_hidden_fields(self):
@@ -168,15 +171,14 @@ class MetadataStandardPropertyForm(MetadataEditingForm):
             return value_fields[0]
         except:
             return None
-        
+
     def get_value_field_name(self):
         if self.current_values["field_type"] == MetadataFieldTypes.ATOMIC:
-            print "found atomic value for %s" % self.prefix
             return "atomic_value"
         elif self.current_values["field_type"] == MetadataFieldTypes.ENUMERATION:
             return "enumeration_value"
         elif self.current_values["field_type"] == MetadataFieldTypes.RELATIONSHIP:
-            return "relationship_value"
+            return  "relationship_value"
         else:
             msg = "unable to determine 'value' field for fieldtype '%s'" % (self.current_values["field_types"])
             raise QuestionnaireError(msg)
@@ -188,18 +190,11 @@ class MetadataStandardPropertyForm(MetadataEditingForm):
 
         super(MetadataStandardPropertyForm,self).__init__(*args,**kwargs)
 
-        print "calling init for form %s" % self.prefix
-        print "name=%s"%self.current_values["name"]
-
-        property = self.instance
-
-        # TODO: CHANGE VALUE WIDGET BASED ON PROXY FIELD_TYPE
-        update_field_widget_attributes(self.fields["enumeration_value"],{"class":"multiselect"})
-
         if customizer:
             self.customize(customizer)
 
     def customize(self,customizer):
+
         # customization is done both in the form (here) and in the template
 
         value_field_name = self.get_value_field_name()
@@ -267,13 +262,7 @@ class MetadataStandardPropertyForm(MetadataEditingForm):
 
 class MetadataStandardPropertyInlineFormSet(BaseInlineFormSet):
 
-    number_of_properties = 0
-
-    def __init__(self,*args,**kwargs):
-        super(MetadataStandardPropertyInlineFormSet,self).__init__(*args,**kwargs)
-        print "calling init for formset %s" % self.prefix
-        
-    # also using it to cache fk or m2m fields to avoid needless (on the order of 30K!) db hits
+    number_of_properties = 0       # lets me keep track of the number of forms w/out having to actually render them
 
     def _construct_form(self, i, **kwargs):
 
@@ -286,7 +275,8 @@ class MetadataStandardPropertyInlineFormSet(BaseInlineFormSet):
 
         form = super(MetadataStandardPropertyInlineFormSet,self)._construct_form(i,**kwargs)
 
-        
+        # this speeds up loading time
+        # (see "cached_fields" attribute in the form class above)
         for cached_field_name in form.cached_fields:
             cached_field = form.fields[cached_field_name]
             cached_field_key = u"%s_%s" % (self.prefix,cached_field_name)
@@ -296,10 +286,6 @@ class MetadataStandardPropertyInlineFormSet(BaseInlineFormSet):
                 choices = list(cached_field.choices)
                 setattr(self, '_cached_choices_%s'%(cached_field_key), choices)
             cached_field.choice_cache = choices
-
-
-#        print "\nI've just constructed form '%s'" % (form.prefix)
-#        print "the 'name' field's value is %s" % (form.current_values["name"])
 
         return form
 
@@ -336,65 +322,67 @@ def MetadataStandardPropertyInlineFormSetFactory(*args,**kwargs):
 
     return _formset(queryset=_queryset,initial=_initial,instance=_instance,prefix=_prefix)
 
-class MetadataStandardPropertyFormSet(BaseModelFormSet):
-
-    number_of_properties = 0
-
-    # also using it to cache fk or m2m fields to avoid needless (on the order of 30K!) db hits
-
-    def _construct_form(self, i, **kwargs):
-
-        if self.customizers:
-            try:
-                kwargs["customizer"] = next(self.customizers)
-            except StopIteration:
-                # don't worry about not having a customizer for the extra form
-                pass
-
-        form = super(MetadataStandardPropertyFormSet,self)._construct_form(i,**kwargs)
-
-        for cached_field_name in form.cached_fields:
-            cached_field = form.fields[cached_field_name]
-            cached_field_key = u"%s_%s" % (self.prefix,cached_field_name)
-            cached_field.cache_choices = True
-            choices = getattr(self, '_cached_choices_%s'%(cached_field_key), None)
-            if choices is None:
-                choices = list(cached_field.choices)
-                setattr(self, '_cached_choices_%s'%(cached_field_key), choices)
-            cached_field.choice_cache = choices
-
-        return form
-
-def MetadataStandardPropertyFormSetFactory(*args,**kwargs):
-    DEFAULT_PREFIX = "_standard_properties"
-
-    _prefix      = kwargs.pop("prefix","")+DEFAULT_PREFIX
-    _request     = kwargs.pop("request",None)
-    _initial     = kwargs.pop("initial",[])
-    _queryset    = kwargs.pop("queryset",None)
-    _customizers = kwargs.pop("customizers",None)
-    new_kwargs = {
-        "can_delete" : False,
-        "extra"      : kwargs.pop("extra",0),
-        "formset"    : MetadataStandardPropertyFormSet,
-        "form"       : MetadataStandardPropertyForm,
-    }
-    new_kwargs.update(kwargs)
-
-    _formset = modelformset_factory(MetadataStandardProperty,*args,**new_kwargs)
-    if _customizers:
-        _formset.customizers = iter(_customizers)
-    if _initial:
-        _formset.number_of_properties = len(_initial)
-    elif _queryset:
-        _formset.number_of_properties = len(_queryset)
-    else: # assuming data was passed in via POST
-        _formset.number_of_properties = int(_request.POST[u"%s-TOTAL_FORMS"%(_prefix)])
-
-    if _request and _request.method == "POST":
-        return _formset(_request.POST,prefix=_prefix)
-
-    return _formset(queryset=_queryset,initial=_initial,prefix=_prefix)
+# was testing out _not_ using an inline formset factory
+# but made little difference
+###class MetadataStandardPropertyFormSet(BaseModelFormSet):
+###
+###    number_of_properties = 0
+###
+###    # also using it to cache fk or m2m fields to avoid needless (on the order of 30K!) db hits
+###
+###    def _construct_form(self, i, **kwargs):
+###
+###        if self.customizers:
+###            try:
+###                kwargs["customizer"] = next(self.customizers)
+###            except StopIteration:
+###                # don't worry about not having a customizer for the extra form
+###                pass
+###
+###        form = super(MetadataStandardPropertyFormSet,self)._construct_form(i,**kwargs)
+###
+###        for cached_field_name in form.cached_fields:
+###            cached_field = form.fields[cached_field_name]
+###            cached_field_key = u"%s_%s" % (self.prefix,cached_field_name)
+###            cached_field.cache_choices = True
+###            choices = getattr(self, '_cached_choices_%s'%(cached_field_key), None)
+###            if choices is None:
+###                choices = list(cached_field.choices)
+###                setattr(self, '_cached_choices_%s'%(cached_field_key), choices)
+###            cached_field.choice_cache = choices
+###
+###        return form
+###
+###def MetadataStandardPropertyFormSetFactory(*args,**kwargs):
+###    DEFAULT_PREFIX = "_standard_properties"
+###
+###    _prefix      = kwargs.pop("prefix","")+DEFAULT_PREFIX
+###    _request     = kwargs.pop("request",None)
+###    _initial     = kwargs.pop("initial",[])
+###    _queryset    = kwargs.pop("queryset",None)
+###    _customizers = kwargs.pop("customizers",None)
+###    new_kwargs = {
+###        "can_delete" : False,
+###        "extra"      : kwargs.pop("extra",0),
+###        "formset"    : MetadataStandardPropertyFormSet,
+###        "form"       : MetadataStandardPropertyForm,
+###    }
+###    new_kwargs.update(kwargs)
+###
+###    _formset = modelformset_factory(MetadataStandardProperty,*args,**new_kwargs)
+###    if _customizers:
+###        _formset.customizers = iter(_customizers)
+###    if _initial:
+###        _formset.number_of_properties = len(_initial)
+###    elif _queryset:
+###        _formset.number_of_properties = len(_queryset)
+###    else: # assuming data was passed in via POST
+###        _formset.number_of_properties = int(_request.POST[u"%s-TOTAL_FORMS"%(_prefix)])
+###
+###    if _request and _request.method == "POST":
+###        return _formset(_request.POST,prefix=_prefix)
+###
+###    return _formset(queryset=_queryset,initial=_initial,prefix=_prefix)
     
 
 #########################

@@ -8,7 +8,7 @@ The system must have the following Python packages installed:
 
 o Python 2.7.2+
 
-o Django 1.5.2+
+o Django 1.6+
 
 o South
 

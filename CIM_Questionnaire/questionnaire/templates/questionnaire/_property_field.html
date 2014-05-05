@@ -16,8 +16,9 @@
 
     <td>
 
-looking for {{property_form.get_value_field_name}}
-value_field:        {{property_form.get_value_field}}
+<br/>in form:           {{property_form.prefix}}
+<br/>looking for:       {{property_form.get_value_field_name}}
+<br/>value_field:       {{property_form.get_value_field}}
 
         {% if property_customizer.inherited %}
             <div class="inheritance_options" title="This field's value can be passed onto its children.  Uncheck the box to prevent both passing on this field's value or inheriting a value from corresponding fields of a parent component.">

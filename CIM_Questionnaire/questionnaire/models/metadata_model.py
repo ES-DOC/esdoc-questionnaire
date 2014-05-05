@@ -32,8 +32,11 @@ from questionnaire.models       import *
 
 from django.db import models
 
-@hierarchical
-class MetadataModel(models.Model):
+from mptt.models import MPTTModel, TreeForeignKey
+
+
+##@hierarchical
+class MetadataModel(MPTTModel):
     # ideally, MetadataModel should be an ABC
     # but Django Models already have a metaclass: django.db.models.base.ModelBase
     # see http://stackoverflow.com/questions/8723639/a-django-model-that-subclasses-an-abc-gives-a-metaclass-conflict for a description of the problem
@@ -47,6 +50,8 @@ class MetadataModel(models.Model):
         abstract    = False
 
         unique_together = ("proxy","project","version","vocabulary_key","component_key")
+
+    parent = TreeForeignKey('self', null=True, blank=True, related_name='children')
 
     proxy           = models.ForeignKey("MetadataModelProxy",blank=False,null=True,related_name="models")
     project         = models.ForeignKey("MetadataProject",blank=True,null=True,related_name="models")

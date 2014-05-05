@@ -8,17 +8,17 @@ from questionnaire.utils import *
 
 class MetadataForm(ModelForm):
     cached_fields   = []
-    current_values  = {}
-
-    def get_fields_from_list(self,field_list):
-        return [field for field in self if field.name in field_list]
+  #  current_values  = {}
 
     def __init__(self,*args,**kwargs):
         super(MetadataForm,self).__init__(*args,**kwargs)
 
         # when initializing formsets,
-        # the fields aren't always setup in the underlying model
+        # the fields aren't always setup yet in the underlying model
         # so this gets them either from the request (in the case of POST) or initial (in the case of GET)
+
+        self.current_values = {}
+        
         if self.data:
             # POST; request was passed into constructor
             # (not sure why I can't do this in a list comprehension)
@@ -30,6 +30,9 @@ class MetadataForm(ModelForm):
         else:
             # GET; initial was passed into constructor
             self.current_values = self.initial
+
+    def get_fields_from_list(self,field_list):
+        return [field for field in self if field.name in field_list]
 
 class MetadataCustomizerForm(MetadataForm):
 
@@ -56,4 +59,4 @@ class MetadataEditingForm(MetadataForm):
 from forms_authentication   import  MetadataUserForm, MetadataPasswordForm, MetadataRegistrationForm, LocalAuthenticationForm, RemoteAuthenticationForm
 from forms_customize        import  MetadataModelCustomizerForm, MetadataStandardPropertyCustomizerInlineFormSetFactory, MetadataScientificPropertyCustomizerInlineFormSetFactory
 from forms_categorize       import  MetadataStandardCategoryCustomizerForm, MetadataScientificCategoryCustomizerForm
-from forms_edit             import  MetadataModelFormSetFactory, MetadataStandardPropertyInlineFormSetFactory, MetadataStandardPropertyFormSetFactory, MetadataScientificPropertyInlineFormSetFactory
+from forms_edit             import  MetadataModelFormSetFactory, MetadataStandardPropertyInlineFormSetFactory, MetadataScientificPropertyInlineFormSetFactory

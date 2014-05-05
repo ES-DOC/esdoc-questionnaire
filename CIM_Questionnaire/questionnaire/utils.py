@@ -325,8 +325,9 @@ import mptt
 from mptt.fields import TreeForeignKey
 
 def hierarchical(cls):
-    TreeForeignKey(cls, null=True, blank=True, related_name='children').contribute_to_class(cls,'parent')
-    mptt.register(cls)
+    TreeForeignKey(cls, null=True, blank=True, related_name='bens_children').contribute_to_class(cls,'parent')
+    #ForeignKey(cls, null=True, blank=True,related_name="children").contribute_to_class(cls,'parent')
+    #mptt.register(cls)
     return cls
 
 ######################################
@@ -364,3 +365,22 @@ def interate_through_node(node,filter_parameters={}):
             child_qs = sibling.get_children(include_self=False)
         for child in child_qs:
             iterate_through_node(child,filter_parameters)
+
+
+########################################
+# fixing known django - postgres issue #
+########################################
+
+from django.db.models.signals import post_syncdb
+from django.db import connection
+
+# before proceeding after the syncdb call
+# increase the size of the "name" field in auth_permission
+
+def update_db(sender, **kwargs):
+    if kwargs['app'].__name__ == "questionnaire.models":
+        cursor = connection.cursor()
+        cursor.execute("ALTER TABLE auth_permission DROP COLUMN name;")
+        cursor.execute("ALTER TABLE auth_permission ADD COLUMN name character varying(100);")
+
+post_syncdb.connect(update_db)

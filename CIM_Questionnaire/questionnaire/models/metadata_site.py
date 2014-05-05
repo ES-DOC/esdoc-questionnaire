@@ -70,7 +70,7 @@ def site_post_save(sender, **kwargs):
         except ProgrammingError:
             if site.pk == 1:
                 # this might fail in syncdb w/ the Django admin b/c the full set of db tables will not have been setup yet
-                print "skipped creating site profile for %s" % (site)
+                # print "skipped creating site profile for %s" % (site)
                 pass
             else:
                 msg = "Unable to create site profile for %s" % (site)

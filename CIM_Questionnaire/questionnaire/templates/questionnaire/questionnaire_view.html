@@ -196,7 +196,7 @@
 
                                             {{ standard_property_formset.management_form }}
                                             {{ standard_property_formset.non_form_errors }}
-                                            
+
                                             {% for category_customizer,property_customizers in active_standard_categories_and_properties.items %}
                                                 <div id="tab_{{form.prefix}}_{{category_customizer.key}}">
                                                     <div class="tab_content">
@@ -221,7 +221,7 @@
 
                                                                                 {% include "questionnaire/_property_field.html" %}
 
-                                                                                <td class="hidden"> <!-- seems weird to have a td I don't display, but it seemed weirder to have content outside of the table -->
+                                                                                <td class="hidden"> <!-- seems weird to have a <td> I don't display, but it seemed more weird to have content outside of the table -->
                                                                                     <div class="hidden">
                                                                                         {# the fields I explicitly set to hidden #}
                                                                                         {% for field in property_form.get_hidden_fields %}

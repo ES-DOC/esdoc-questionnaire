@@ -27,7 +27,7 @@ from django.template import *
 from django.shortcuts import *
 from django.http import *
 
-def questionnaire_error(request,error_msg="",status_code=200):
+def questionnaire_error(request,error_msg="",status_code=400):
 
     print error_msg
 
