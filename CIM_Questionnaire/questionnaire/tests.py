@@ -52,6 +52,12 @@ class MetadataTest(TestCase):
         test_version.categorization = test_categorization   # associate the "test" categorization w/ the "test" version
         test_version.save()
 
+        # create a vocabulary
+        test_vocabulary_name = "test_vocabulary.xml"
+        test_vocabulary = MetadataVocabulary(name="test",file=os.path.join(VOCABULARY_UPLOAD_PATH,test_vocabulary_name))
+        test_vocabulary.document_type = "modelcomponent"
+        test_vocabulary.save()
+
         # register a version
         self.assertEqual(test_version.registered,False)
         test_version.register()
@@ -62,9 +68,15 @@ class MetadataTest(TestCase):
         test_categorization.register()
         self.assertEqual(test_categorization.registered,True)
 
+        # register a vocabulary
+        self.assertEqual(test_vocabulary.registered,False)
+        test_vocabulary.register()
+        self.assertEqual(test_vocabulary.registered,True)
+
         self.version = test_version
         self.categorization = test_categorization
-
+        self.vocabulary = test_vocabulary
+        
     def tearDown(self):
         pass
 
@@ -155,20 +167,55 @@ class MetadataCategorizationTest(MetadataTest):
 
     def test_register_categories(self):
 
-        categories = MetadataStandardCategoryProxy.objects.filter(categorization=self.categorization)
+        categories = MetadataStandardCategoryProxy.objects.all()
 
-        serialized_categories = categories.values()
-        categories_to_test = [{'name': u'Component Description', u'id': 3, 'categorization_id': 1, 'key': u'component-description', 'order': 3, 'description': u''}, {'name': u'Basic Properties', u'id': 2, 'categorization_id': 1, 'key': u'basic-properties', 'order': 2, 'description': u''}, {'name': u'Document Properties', u'id': 1, 'categorization_id': 1, 'key': u'document-properties', 'order': 1, 'description': u''}]
-        
-#        for category,category_to_test in zip(categories,categories_to_test):
-#            serialized_category = model_to_dict(category)
-#            serialized_category.pop("properties")
+        excluded_fields = ["id","categorization","properties"]
+        serialized_categories = [model_to_dict(category,exclude=excluded_fields) for category in categories]
 
-        for serialized_category,category_to_test in zip(serialized_categories,categories_to_test):
-            self.assertDictEqual(serialized_category,serialized_category)
+        categories_to_test = [
+            {'name': u'Document Properties', 'key': u'document-properties', 'order': 1, 'description': u''},
+            {'name': u'Basic Properties', 'key': u'basic-properties', 'order': 2, 'description': u''},
+            {'name': u'Component Description', 'key': u'component-description', 'order': 3, 'description': u''},
+        ]
 
+
+        # test that the categories have the expected standard fields
+        for s,t in zip(serialized_categories,categories_to_test):
+            self.assertDictEqual(s,t)
+ 
+        # test that they have the expected foreignkeys
         for category in categories:
-            categorized_properties = category.properties.all()
-            properties_to_test = MetadataStandardPropertyProxy.objects.filter(category=category)
+            self.assertEqual(category.categorization,self.categorization)
 
+            # TODO: TEST THAT "PROPETIES" M2M FIELD IS AS EXPECTED
+
+class MetadataVocabularyTest(MetadataTest):
+
+    def test_register_components(self):
+        components = MetadataComponentProxy.objects.all()
+
+        import ipdb; ipdb.set_trace()
         
+        pass
+
+###        categories = MetadataStandardCategoryProxy.objects.all()
+###
+###        excluded_fields = ["id","categorization","properties"]
+###        serialized_categories = [model_to_dict(category,exclude=excluded_fields) for category in categories]
+###
+###        categories_to_test = [
+###            {'name': u'Document Properties', 'key': u'document-properties', 'order': 1, 'description': u''},
+###            {'name': u'Basic Properties', 'key': u'basic-properties', 'order': 2, 'description': u''},
+###            {'name': u'Component Description', 'key': u'component-description', 'order': 3, 'description': u''},
+###        ]
+###
+###
+###        # test that the categories have the expected standard fields
+###        for s,t in zip(serialized_categories,categories_to_test):
+###            self.assertDictEqual(s,t)
+###
+###        # test that they have the expected foreignkeys
+###        for category in categories:
+###            self.assertEqual(category.categorization,self.categorization)
+###
+###            # TODO: TEST THAT "PROPETIES" M2M FIELD IS AS EXPECTED
