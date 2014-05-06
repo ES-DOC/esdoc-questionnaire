@@ -18,8 +18,9 @@ o PIL
   
 o django-registration, django-authopenid (build from source)
 
-
 a PostGres database is recommended.  However, Django also supports MySQL and SQLite3.
+
+o to use PostGres, you must install psycopg2
 
 DOWNLOAD
 
@@ -44,8 +45,9 @@ o start a virtual python enviroment (recommended)
 
   pip install django
   pip install psycopg2 (may require `sudo get-apt install libq-dev`)
-  pip install lxml (may require `sudo get-apt install libxml2`)
+  pip install lxml (may require `sudo get-apt install libxml2` and/or `sudo get-apt install libxslt`)
   pip install django-openid-auth python-openid
+  pip install django_mptt
   pip install south
   pip install guppy (for profiling)
 

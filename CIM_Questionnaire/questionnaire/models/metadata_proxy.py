@@ -37,6 +37,7 @@ class MetadataModelProxy(models.Model):
         app_label   = APP_LABEL
         abstract    = False
         unique_together = ("version","name")
+        ordering = ['order']
 
         # TODO: DELETE THESE NEXT TWO LINES
         verbose_name        = '(DISABLE ADMIN ACCESS SOON) Metadata Model Proxy'
@@ -103,6 +104,7 @@ class MetadataStandardPropertyProxy(MetadataPropertyProxy):
         app_label   = APP_LABEL
         abstract    = False
         unique_together = ("model_proxy","name")
+        ordering = ['order']
 
         # TODO: DELETE THESE NEXT TWO LINES
         verbose_name        = '(DISABLE ADMIN ACCESS SOON) Metadata Standard Property Proxy'
@@ -162,6 +164,7 @@ class MetadataScientificPropertyProxy(MetadataPropertyProxy):
         app_label   = APP_LABEL
         abstract    = False
         unique_together = ("component","category","name")
+        ordering = ['order']
 
         # TODO: DELETE THESE NEXT TWO LINES
         verbose_name        = '(DISABLE ADMIN ACCESS SOON) Metadata Scientific Property Proxy'
@@ -190,6 +193,7 @@ class MetadataStandardCategoryProxy(MetadataCategoryProxy):
         app_label   = APP_LABEL
         abstract    = False
         unique_together = ("categorization","name")
+        ordering = ['order']
 
         # TODO: DELETE THESE NEXT TWO LINES
         verbose_name        = '(DISABLE ADMIN ACCESS SOON) Metadata Standard Category Proxy'
@@ -212,7 +216,7 @@ class MetadataScientificCategoryProxy(MetadataCategoryProxy):
         app_label   = APP_LABEL
         abstract    = False
         unique_together = ("component","name")
-
+        ordering = ['order']
 
         # TODO: DELETE THESE NEXT TWO LINES
         verbose_name        = '(DISABLE ADMIN ACCESS SOON) Metadata Scientific Category Proxy'

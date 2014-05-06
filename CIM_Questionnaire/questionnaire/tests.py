@@ -71,8 +71,6 @@ class MetadataTest(TestCase):
         self.version = test_version
         self.categorization = test_categorization
 
-        print "THE NUMBER OF METADATAMODELPROXIES IS %s" % (len(MetadataModelProxy.objects.all()))
-
     def tearDown(self):
         pass
     
@@ -81,73 +79,88 @@ class MetadataTest(TestCase):
         self.assertEqual(len(qs),1)
 
 
-class MetadataEditingViewTest(TestCase):
+##class MetadataEditingViewTest(TestCase):
+##
+### TODO: fixtures not currently working
+### (perhaps b/c of the order in which fixtures are loaded)
+###    fixtures = ["questionnaire_test_all.json"]
+##
+##    def setUp(self):
+##        super(MetadataEditingViewTest,self).setUp()
+##        self.factory = RequestFactory()
+##
+##    def tearDown(self):
+##        pass
+##
+##    def test_default(self):
+##        self.assertTrue(True)
+##
+##    def test_questionnaire_edit_new_get(self):
+##        project_name = "downscaling"
+##        version_name = "flarble"
+##        model_name = "modelcomponent"
+##        request_url = "/%s/edit/%s/%s" % (project_name,version_name,model_name)
+##        #import ipdb; ipdb.set_trace()
+##        request = self.factory.get(request_url)
+##        response = edit_new(request)
+##        self.assertEqual(response.status_code,200)
 
-# TODO: fixtures not currently working
-# (perhaps b/c of the order in which fixtures are loaded)
-#    fixtures = ["questionnaire_test_all.json"]
-
-    def setUp(self):
-        super(MetadataEditingViewTest,self).setUp()
-        self.factory = RequestFactory()
-
-    def tearDown(self):
-        pass
-
-    def test_default(self):
-        self.assertTrue(True)
-
-    def test_questionnaire_edit_new_get(self):
-        project_name = "downscaling"
-        version_name = "flarble"
-        model_name = "modelcomponent"
-        request_url = "/%s/edit/%s/%s" % (project_name,version_name,model_name)
-        #import ipdb; ipdb.set_trace()
-        request = self.factory.get(request_url)
-        response = edit_new(request)
-        self.assertEqual(response.status_code,200)
 
 class MetadataVersionTest(MetadataTest):
 
     def test_register_models(self):
 
-        models = MetadataModelProxy.objects.filter(version=self.version)
+        models = MetadataModelProxy.objects.all()
 
-        serialized_models = models.values()
-        to_test = [{'name': u'gridspec', 'stereotype': u'document', 'package': None, 'documentation': u'blah', 'version_id': 1, u'id': 2, 'order': 1},
-                   {'name': u'modelcomponent', 'stereotype': u'document', 'package': None, 'documentation': u'blah', 'version_id': 1, u'id': 1, 'order': 0}]
+        excluded_fields = ["id","version"]
+        serialized_models = [model_to_dict(model,exclude=excluded_fields) for model in models]
 
-        
+        to_test = [{'order': 0, 'documentation': u'blah', 'name': u'modelcomponent', 'stereotype': u'document', 'package': None}, {'order': 1, 'documentation': u'blah', 'name': u'gridspec', 'stereotype': u'document', 'package': None}]
+
+        # test that the models have the expected standard fields
         for s,t in zip(serialized_models,to_test):            
-            # don't care about db pks
-            t.pop("id")
-            s.pop("id")
-            t.pop("version_id")
-            s.pop("version_id")
             self.assertDictEqual(s,t)
+
+        # test that they have the expected foreignkeys
+        for model in models:
+            self.assertEqual(model.version,self.version)
 
     def test_register_standard_properties(self):
 
-        models = MetadataModelProxy.objects.filter(version=self.version)
-        
-        to_test = [[{'field_type': u'ATOMIC', 'atomic_default': u'', 'enumeration_nullable': False, 'name': u'shortName', 'enumeration_multi': False, 'relationship_target_name': u'', 'enumeration_choices': u'', 'documentation': u'', 'atomic_type': u'DEFAULT', u'id': 18, 'model_proxy_id': 4, 'enumeration_open': False, 'relationship_cardinality': u'', 'relationship_target_model_id': None, 'order': 0}], [{'field_type': u'RELATIONSHIP', 'atomic_default': u'', 'enumeration_nullable': False, 'name': u'grid', 'enumeration_multi': False, 'relationship_target_name': u'gridspec', 'enumeration_choices': u'', 'documentation': u'', 'atomic_type': u"['TEXT']", u'id': 17, 'model_proxy_id': 3, 'enumeration_open': False, 'relationship_cardinality': u'0|*', 'relationship_target_model_id': 4, 'order': 7}, {'field_type': u'ATOMIC', 'atomic_default': u'', 'enumeration_nullable': False, 'name': u'timing', 'enumeration_multi': False, 'relationship_target_name': u'', 'enumeration_choices': u'', 'documentation': u'', 'atomic_type': u"['TEXT']", u'id': 16, 'model_proxy_id': 3, 'enumeration_open': False, 'relationship_cardinality': u'', 'relationship_target_model_id': None, 'order': 6}, {'field_type': u'ATOMIC', 'atomic_default': u'', 'enumeration_nullable': False, 'name': u'license', 'enumeration_multi': False, 'relationship_target_name': u'', 'enumeration_choices': u'', 'documentation': u'', 'atomic_type': u"['TEXT']", u'id': 15, 'model_proxy_id': 3, 'enumeration_open': False, 'relationship_cardinality': u'', 'relationship_target_model_id': None, 'order': 5}, {'field_type': u'ATOMIC', 'atomic_default': u'', 'enumeration_nullable': False, 'name': u'purpose', 'enumeration_multi': False, 'relationship_target_name': u'', 'enumeration_choices': u'', 'documentation': u'', 'atomic_type': u"['TEXT']", u'id': 14, 'model_proxy_id': 3, 'enumeration_open': False, 'relationship_cardinality': u'', 'relationship_target_model_id': None, 'order': 4}, {'field_type': u'ATOMIC', 'atomic_default': u'', 'enumeration_nullable': False, 'name': u'description', 'enumeration_multi': False, 'relationship_target_name': u'', 'enumeration_choices': u'', 'documentation': u'', 'atomic_type': u"['TEXT']", u'id': 13, 'model_proxy_id': 3, 'enumeration_open': False, 'relationship_cardinality': u'', 'relationship_target_model_id': None, 'order': 3}, {'field_type': u'ATOMIC', 'atomic_default': u'', 'enumeration_nullable': False, 'name': u'longName', 'enumeration_multi': False, 'relationship_target_name': u'', 'enumeration_choices': u'', 'documentation': u'', 'atomic_type': u"['TEXT']", u'id': 12, 'model_proxy_id': 3, 'enumeration_open': False, 'relationship_cardinality': u'', 'relationship_target_model_id': None, 'order': 2}, {'field_type': u'ENUMERATION', 'atomic_default': u'', 'enumeration_nullable': False, 'name': u'type', 'enumeration_multi': False, 'relationship_target_name': u'', 'enumeration_choices': u'one|two|three', 'documentation': u'', 'atomic_type': u"['TEXT']", u'id': 11, 'model_proxy_id': 3, 'enumeration_open': False, 'relationship_cardinality': u'', 'relationship_target_model_id': None, 'order': 1}, {'field_type': u'ATOMIC', 'atomic_default': u'', 'enumeration_nullable': False, 'name': u'shortName', 'enumeration_multi': False, 'relationship_target_name': u'', 'enumeration_choices': u'', 'documentation': u'', 'atomic_type': u"['TEXT']", u'id': 10, 'model_proxy_id': 3, 'enumeration_open': False, 'relationship_cardinality': u'', 'relationship_target_model_id': None, 'order': 0}]]
+        models = MetadataModelProxy.objects.all()
 
-        #import ipdb; ipdb.set_trace()
+        to_test = [
+            [
+                {'field_type': u'ATOMIC', 'atomic_default': u'', 'enumeration_nullable': False, 'name': u'shortName', 'enumeration_multi': False, 'relationship_target_name': u'', 'enumeration_choices': u'', 'documentation': u'', 'order': 0, 'enumeration_open': False, 'relationship_cardinality': u'', 'atomic_type': u"['TEXT']"},
+            ],
+            [
+                {'field_type': u'ATOMIC', 'atomic_default': u'', 'enumeration_nullable': False, 'name': u'shortName', 'enumeration_multi': False, 'relationship_target_name': u'', 'enumeration_choices': u'', 'documentation': u'', 'order': 0, 'enumeration_open': False, 'relationship_cardinality': u'', 'atomic_type': u'DEFAULT'},
+                {'field_type': u'ENUMERATION', 'atomic_default': u'', 'enumeration_nullable': False, 'name': u'type', 'enumeration_multi': False, 'relationship_target_name': u'', 'enumeration_choices': u'one|two|three', 'documentation': u'', 'order': 1, 'enumeration_open': False, 'relationship_cardinality': u'', 'atomic_type': u"['TEXT']"},
+                {'field_type': u'ATOMIC', 'atomic_default': u'', 'enumeration_nullable': False, 'name': u'longName', 'enumeration_multi': False, 'relationship_target_name': u'', 'enumeration_choices': u'', 'documentation': u'', 'order': 2, 'enumeration_open': False, 'relationship_cardinality': u'', 'atomic_type': u"['TEXT']"},
+                {'field_type': u'ATOMIC', 'atomic_default': u'', 'enumeration_nullable': False, 'name': u'description', 'enumeration_multi': False, 'relationship_target_name': u'', 'enumeration_choices': u'', 'documentation': u'', 'order': 3, 'enumeration_open': False, 'relationship_cardinality': u'', 'atomic_type': u"['TEXT']"},
+                {'field_type': u'ATOMIC', 'atomic_default': u'', 'enumeration_nullable': False, 'name': u'purpose', 'enumeration_multi': False, 'relationship_target_name': u'', 'enumeration_choices': u'', 'documentation': u'', 'order': 4, 'enumeration_open': False, 'relationship_cardinality': u'', 'atomic_type': u"['TEXT']"},
+                {'field_type': u'ATOMIC', 'atomic_default': u'', 'enumeration_nullable': False, 'name': u'license', 'enumeration_multi': False, 'relationship_target_name': u'', 'enumeration_choices': u'', 'documentation': u'', 'order': 5, 'enumeration_open': False, 'relationship_cardinality': u'', 'atomic_type': u"['TEXT']"},
+                {'field_type': u'ATOMIC', 'atomic_default': u'', 'enumeration_nullable': False, 'name': u'timing', 'enumeration_multi': False, 'relationship_target_name': u'', 'enumeration_choices': u'', 'documentation': u'', 'order': 6, 'enumeration_open': False, 'relationship_cardinality': u'', 'atomic_type': u"['TEXT']"},
+                {'field_type': u'RELATIONSHIP', 'atomic_default': u'', 'enumeration_nullable': False, 'name': u'grid', 'enumeration_multi': False, 'relationship_target_name': u'gridspec', 'enumeration_choices': u'', 'documentation': u'', 'order': 7, 'enumeration_open': False, 'relationship_cardinality': u'0|*', 'atomic_type': u"['TEXT']"}
+            ]
+        ]
+
+        excluded_fields = ["id","model_proxy","relationship_target_model"]
 
         for model,standard_properties_to_test in zip(models,to_test):
-            import ipdb;ipdb.set_trace()
             standard_properties = model.standard_properties.all()
-            serialized_standard_properties = standard_properties.values()
+            serialized_standard_properties = [model_to_dict(standard_property,exclude=excluded_fields) for standard_property in standard_properties]
+
+            # test that the properties have the expected standard fields
             for serialized_standard_property,standard_property_to_test in zip(serialized_standard_properties,standard_properties_to_test):
-                # don't care about db pks
-                
-##                standard_property_to_test.pop("id")
-##                serialized_standard_property.pop("id")
-##                standard_property_to_test.pop("model_proxy_id")
-##                serialized_standard_property.pop("model_proxy_id")
-##                standard_property_to_test.pop("relationship_target_model_id")
-##                serialized_standard_property.pop("relationship_target_model_id")
                 self.assertDictEqual(serialized_standard_property,standard_property_to_test)
+
+            for standard_property in standard_properties:
+                self.assertEqual(standard_property.model_proxy,model)
+
+                if standard_property.relationship_target_model or standard_property.relationship_target_name:
+                    self.assertEqual(standard_property.relationship_target_model.name,standard_property.relationship_target_name)
+
 
 class MetadataCategorizationTest(MetadataTest):
 
