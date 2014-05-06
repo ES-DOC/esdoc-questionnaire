@@ -35,18 +35,22 @@ from questionnaire.models.metadata_vocabulary import UPLOAD_PATH as VOCABULARY_U
 
 class MetadataTest(TestCase):
 
-#import ipdb; ipdb.set_trace()
-
     def setUp(self):
         # request factory for all tests
         self.factory = RequestFactory()
 
-        #import ipdb; ipdb.set_trace()
+        # ensure that there is no categorized metadata before a new one is loaded
+        qs = MetadataCategorization.objects.all()
+        self.assertEqual(len(qs),0)
 
         # create a categorization
         test_categorization_name = "test_categorization.xml"
         test_categorization = MetadataCategorization(name="test",file=os.path.join(CATEGORIZATION_UPLOAD_PATH,test_categorization_name))
         test_categorization.save()
+        
+        # ensure the categorization is saved to the database
+        qs = MetadataCategorization.objects.all()
+        self.assertEqual(len(qs),1)
 
         # create a version
         test_version_name = "test_version.xml"
@@ -71,6 +75,11 @@ class MetadataTest(TestCase):
 
     def tearDown(self):
         pass
+    
+    def test_setUp(self):
+        qs = MetadataCategorization.objects.all()
+        self.assertEqual(len(qs),1)
+
 
 class MetadataEditingViewTest(TestCase):
 
@@ -105,7 +114,8 @@ class MetadataVersionTest(MetadataTest):
         models = MetadataModelProxy.objects.filter(version=self.version)
 
         serialized_models = models.values()
-        to_test = [{'name': u'gridspec', 'stereotype': u'document', 'package': None, 'documentation': u'blah', 'version_id': 1, u'id': 2, 'order': 1}, {'name': u'modelcomponent', 'stereotype': u'document', 'package': None, 'documentation': u'blah', 'version_id': 1, u'id': 1, 'order': 0}]
+        to_test = [{'name': u'gridspec', 'stereotype': u'document', 'package': None, 'documentation': u'blah', 'version_id': 1, u'id': 2, 'order': 1},
+                   {'name': u'modelcomponent', 'stereotype': u'document', 'package': None, 'documentation': u'blah', 'version_id': 1, u'id': 1, 'order': 0}]
 
         
         for s,t in zip(serialized_models,to_test):            
@@ -119,12 +129,13 @@ class MetadataVersionTest(MetadataTest):
     def test_register_standard_properties(self):
 
         models = MetadataModelProxy.objects.filter(version=self.version)
-
+        
         to_test = [[{'field_type': u'ATOMIC', 'atomic_default': u'', 'enumeration_nullable': False, 'name': u'shortName', 'enumeration_multi': False, 'relationship_target_name': u'', 'enumeration_choices': u'', 'documentation': u'', 'atomic_type': u'DEFAULT', u'id': 18, 'model_proxy_id': 4, 'enumeration_open': False, 'relationship_cardinality': u'', 'relationship_target_model_id': None, 'order': 0}], [{'field_type': u'RELATIONSHIP', 'atomic_default': u'', 'enumeration_nullable': False, 'name': u'grid', 'enumeration_multi': False, 'relationship_target_name': u'gridspec', 'enumeration_choices': u'', 'documentation': u'', 'atomic_type': u"['TEXT']", u'id': 17, 'model_proxy_id': 3, 'enumeration_open': False, 'relationship_cardinality': u'0|*', 'relationship_target_model_id': 4, 'order': 7}, {'field_type': u'ATOMIC', 'atomic_default': u'', 'enumeration_nullable': False, 'name': u'timing', 'enumeration_multi': False, 'relationship_target_name': u'', 'enumeration_choices': u'', 'documentation': u'', 'atomic_type': u"['TEXT']", u'id': 16, 'model_proxy_id': 3, 'enumeration_open': False, 'relationship_cardinality': u'', 'relationship_target_model_id': None, 'order': 6}, {'field_type': u'ATOMIC', 'atomic_default': u'', 'enumeration_nullable': False, 'name': u'license', 'enumeration_multi': False, 'relationship_target_name': u'', 'enumeration_choices': u'', 'documentation': u'', 'atomic_type': u"['TEXT']", u'id': 15, 'model_proxy_id': 3, 'enumeration_open': False, 'relationship_cardinality': u'', 'relationship_target_model_id': None, 'order': 5}, {'field_type': u'ATOMIC', 'atomic_default': u'', 'enumeration_nullable': False, 'name': u'purpose', 'enumeration_multi': False, 'relationship_target_name': u'', 'enumeration_choices': u'', 'documentation': u'', 'atomic_type': u"['TEXT']", u'id': 14, 'model_proxy_id': 3, 'enumeration_open': False, 'relationship_cardinality': u'', 'relationship_target_model_id': None, 'order': 4}, {'field_type': u'ATOMIC', 'atomic_default': u'', 'enumeration_nullable': False, 'name': u'description', 'enumeration_multi': False, 'relationship_target_name': u'', 'enumeration_choices': u'', 'documentation': u'', 'atomic_type': u"['TEXT']", u'id': 13, 'model_proxy_id': 3, 'enumeration_open': False, 'relationship_cardinality': u'', 'relationship_target_model_id': None, 'order': 3}, {'field_type': u'ATOMIC', 'atomic_default': u'', 'enumeration_nullable': False, 'name': u'longName', 'enumeration_multi': False, 'relationship_target_name': u'', 'enumeration_choices': u'', 'documentation': u'', 'atomic_type': u"['TEXT']", u'id': 12, 'model_proxy_id': 3, 'enumeration_open': False, 'relationship_cardinality': u'', 'relationship_target_model_id': None, 'order': 2}, {'field_type': u'ENUMERATION', 'atomic_default': u'', 'enumeration_nullable': False, 'name': u'type', 'enumeration_multi': False, 'relationship_target_name': u'', 'enumeration_choices': u'one|two|three', 'documentation': u'', 'atomic_type': u"['TEXT']", u'id': 11, 'model_proxy_id': 3, 'enumeration_open': False, 'relationship_cardinality': u'', 'relationship_target_model_id': None, 'order': 1}, {'field_type': u'ATOMIC', 'atomic_default': u'', 'enumeration_nullable': False, 'name': u'shortName', 'enumeration_multi': False, 'relationship_target_name': u'', 'enumeration_choices': u'', 'documentation': u'', 'atomic_type': u"['TEXT']", u'id': 10, 'model_proxy_id': 3, 'enumeration_open': False, 'relationship_cardinality': u'', 'relationship_target_model_id': None, 'order': 0}]]
 
         #import ipdb; ipdb.set_trace()
 
         for model,standard_properties_to_test in zip(models,to_test):
+            import ipdb;ipdb.set_trace()
             standard_properties = model.standard_properties.all()
             serialized_standard_properties = standard_properties.values()
             for serialized_standard_property,standard_property_to_test in zip(serialized_standard_properties,standard_properties_to_test):
