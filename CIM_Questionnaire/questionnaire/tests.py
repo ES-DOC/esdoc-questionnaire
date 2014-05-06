@@ -39,12 +39,18 @@ class MetadataTest(TestCase):
         # request factory for all tests
         self.factory = RequestFactory()
 
-        #import ipdb; ipdb.set_trace()
+        # ensure that there is no categorized metadata before a new one is loaded
+        qs = MetadataCategorization.objects.all()
+        self.assertEqual(len(qs),0)
 
         # create a categorization
         test_categorization_name = "test_categorization.xml"
         test_categorization = MetadataCategorization(name="test",file=os.path.join(CATEGORIZATION_UPLOAD_PATH,test_categorization_name))
         test_categorization.save()
+        
+        # ensure the categorization is saved to the database
+        qs = MetadataCategorization.objects.all()
+        self.assertEqual(len(qs),1)
 
         # create a version
         test_version_name = "test_version.xml"
@@ -79,6 +85,11 @@ class MetadataTest(TestCase):
         
     def tearDown(self):
         pass
+    
+    def test_setUp(self):
+        qs = MetadataCategorization.objects.all()
+        self.assertEqual(len(qs),1)
+
 
 ##class MetadataEditingViewTest(TestCase):
 ##
