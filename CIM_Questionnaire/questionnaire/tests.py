@@ -85,10 +85,6 @@ class MetadataTest(TestCase):
         
     def tearDown(self):
         pass
-    
-    def test_setUp(self):
-        qs = MetadataCategorization.objects.all()
-        self.assertEqual(len(qs),1)
 
 
 ##class MetadataEditingViewTest(TestCase):
@@ -119,6 +115,10 @@ class MetadataTest(TestCase):
 
 
 class MetadataVersionTest(MetadataTest):
+
+    def test_setUp(self):
+        qs = MetadataCategorization.objects.all()
+        self.assertEqual(len(qs),1)
 
     def test_register_models(self):
 
