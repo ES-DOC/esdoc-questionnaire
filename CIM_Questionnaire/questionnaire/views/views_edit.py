@@ -55,7 +55,7 @@ def questionnaire_edit_new(request,project_name="",model_name="",version_name=""
     if not project.active:
         msg = "Project '%s' is inactive." % (project_name)
         return error(request,msg)
-
+    
     # check authentication...
     # (not using "@login_required" b/c some projects ignore authentication)
     if project.authenticated:
@@ -196,6 +196,7 @@ def questionnaire_edit_new(request,project_name="",model_name="",version_name=""
     standard_property_formsets      = {}
     scientific_property_formsets    = {}
 
+    
     if request.method == "GET":
 
         initial_model_formset_data = [

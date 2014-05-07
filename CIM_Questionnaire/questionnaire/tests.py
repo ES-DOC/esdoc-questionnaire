@@ -22,6 +22,8 @@ Summary of module goes here
 
 import os
 
+from django.db import IntegrityError
+
 from django.test import TestCase
 from django.test.client import RequestFactory
 
@@ -34,6 +36,89 @@ from questionnaire.models.metadata_vocabulary import UPLOAD_PATH as VOCABULARY_U
 
 
 class MetadataTest(TestCase):
+
+    # built-in fn takes qs & list, which is confusing
+    # this is a more intuitive fn
+    # (see https://djangosnippets.org/snippets/2013/)
+    def assertQuerysetEqual(self, qs1, qs2):
+        pk = lambda o: o.pk
+        return self.assertEqual(
+            list(sorted(qs1, key=pk)),
+            list(sorted(qs2, key=pk))
+        )
+
+    def create_customizer(self,project_name,model_name,version_name,customizer_name):
+
+        project = MetadataProject.objects.get(name=project_name)
+        version = MetadataVersion.objects.get(name=version_name)
+
+        model_proxy = MetadataModelProxy.objects.get(version=version,name__iexact=model_name)
+
+        # TODO: A FUTURE VERSION OF THIS SHOULD TAKE VOCABULARY_NAMES AS AN ARGUMENT
+        # SO THAT WE CAN TEST WHEN ONLY SOME (OR NONE) OF THE VOCABS ARE USED
+        vocabularies = project.vocabularies.filter(document_type__iexact=model_name)
+
+        # setup the model customizer
+        model_customizer = MetadataModelCustomizer(name=customizer_name,project=project,version=version,proxy=model_proxy)
+        model_customizer.vocabulary_order = ",".join([str(vocabulary.pk) for vocabulary in vocabularies])
+        model_customizer.reset()
+        model_customizer.save()
+
+        # setup the standard category customizers
+        standard_category_customizers = []
+        for standard_category_proxy in version.categorization.categories.all():
+            standard_category_customizer = MetadataStandardCategoryCustomizer(
+                proxy = standard_category_proxy,
+                model_customizer = model_customizer,
+            )
+            standard_category_customizer.reset()
+            standard_category_customizer.save()
+            standard_category_customizers.append(standard_category_customizer)
+
+        # setup the standard property customizers
+        for standard_property_proxy in model_proxy.standard_properties.all():
+            standard_property_customizer = MetadataStandardPropertyCustomizer(
+                model_customizer    = model_customizer,
+                proxy               = standard_property_proxy,
+                category            = find_in_sequence(lambda category: category.proxy.has_property(standard_property_proxy),standard_category_customizers),
+            )
+
+            standard_property_customizer.reset()
+            standard_property_customizer.save()
+
+        # create scientific category & property customizers
+        for vocabulary in vocabularies:
+            vocabulary_key = slugify(vocabulary.name)
+            for component in vocabulary.component_proxies.all():
+                component_key = slugify(component.name)
+                model_key = u"%s_%s" % (vocabulary_key,component_key)
+                for property in component.scientific_properties.all():
+                    if property.category:
+                        (scientific_category_customizer,created) = MetadataScientificCategoryCustomizer.objects.get_or_create(
+                            model_customizer=model_customizer,
+                            proxy=property.category,
+                            vocabulary_key=vocabulary_key,
+                            component_key=component_key,
+                            model_key=u"%s_%s" % (vocabulary_key,component_key)
+                        )
+                        if created:
+                            scientific_category_customizer.reset()
+                            scientific_category_customizer.save()
+                    else:
+                        scientific_category_customizer = None
+
+                    scientific_property_customizer = MetadataScientificPropertyCustomizer(
+                        model_customizer    = model_customizer,
+                        proxy               = property,
+                        vocabulary_key      = vocabulary_key,
+                        component_key       = component_key,
+                        model_key           = model_key,
+                        category = scientific_category_customizer,
+                    )
+                    scientific_property_customizer.reset()
+                    scientific_property_customizer.save()
+
+        return model_customizer
 
     def setUp(self):
         # request factory for all tests
@@ -64,24 +149,42 @@ class MetadataTest(TestCase):
         test_vocabulary.document_type = "modelcomponent"
         test_vocabulary.save()
 
+        # create a project
+        test_project = MetadataProject(name="test",title="Test")
+        test_project.save()
+
         # register a version
         self.assertEqual(test_version.registered,False)
         test_version.register()
+        test_version.save()
         self.assertEqual(test_version.registered,True)
 
         # register a categorization        
         self.assertEqual(test_categorization.registered,False)
         test_categorization.register()
+        test_categorization.save()
         self.assertEqual(test_categorization.registered,True)
 
         # register a vocabulary
         self.assertEqual(test_vocabulary.registered,False)
         test_vocabulary.register()
+        test_vocabulary.save()
         self.assertEqual(test_vocabulary.registered,True)
 
+        # setup a project w/ a vocabulary
+        test_project.vocabularies.add(test_vocabulary)
+        test_project.save()
+
+        # create a default customizer
+        test_customizer = self.create_customizer("test","modelcomponent","test","test")
+        test_customizer.default = True
+        test_customizer.save()
+        
         self.version = test_version
         self.categorization = test_categorization
         self.vocabulary = test_vocabulary
+        self.project = test_project
+        self.customizer = test_customizer
         
     def tearDown(self):
         pass
@@ -89,33 +192,6 @@ class MetadataTest(TestCase):
     def test_setUp(self):
         qs = MetadataCategorization.objects.all()
         self.assertEqual(len(qs),1)
-
-
-##class MetadataEditingViewTest(TestCase):
-##
-### TODO: fixtures not currently working
-### (perhaps b/c of the order in which fixtures are loaded)
-###    fixtures = ["questionnaire_test_all.json"]
-##
-##    def setUp(self):
-##        super(MetadataEditingViewTest,self).setUp()
-##        self.factory = RequestFactory()
-##
-##    def tearDown(self):
-##        pass
-##
-##    def test_default(self):
-##        self.assertTrue(True)
-##
-##    def test_questionnaire_edit_new_get(self):
-##        project_name = "downscaling"
-##        version_name = "flarble"
-##        model_name = "modelcomponent"
-##        request_url = "/%s/edit/%s/%s" % (project_name,version_name,model_name)
-##        #import ipdb; ipdb.set_trace()
-##        request = self.factory.get(request_url)
-##        response = edit_new(request)
-##        self.assertEqual(response.status_code,200)
 
 
 class MetadataVersionTest(MetadataTest):
@@ -249,57 +325,87 @@ class MetadataVocabularyTest(MetadataTest):
 
     def test_register_scientific_categories(self):
 
-        categories = MetadataScientificCategoryProxy.objects.all()
+        categories = MetadataScientificCategoryProxy.objects.all().order_by("component__order","order")
 
         excluded_fields = ["id","vocabulary","properties","component"]
         serialized_categories = [model_to_dict(category,exclude=excluded_fields) for category in categories]
 
         categories_to_test = [
-            {'key': u'general-attributes', 'description': None, 'name': u'General Attributes', 'order': 0},
-            {'key': u'general-attributes', 'description': None, 'name': u'General Attributes', 'order': 0},
-            {'key': u'general-attributes', 'description': None, 'name': u'General Attributes', 'order': 0},
-            {'key': u'general-attributes', 'description': None, 'name': u'General Attributes', 'order': 0},
-            {'key': u'general-attributes', 'description': None, 'name': u'General Attributes', 'order': 0},
-            {'key': u'general-attributes', 'description': None, 'name': u'General Attributes', 'order': 0},
-            {'key': u'general-attributes', 'description': None, 'name': u'General Attributes', 'order': 0},
-            {'key': u'general-attributes', 'description': None, 'name': u'General Attributes', 'order': 0},
-            {'key': u'general-attributes', 'description': None, 'name': u'General Attributes', 'order': 0},
-            {'key': u'general-attributes', 'description': None, 'name': u'General Attributes', 'order': 0},
-            {'key': u'general-attributes', 'description': None, 'name': u'General Attributes', 'order': 0},
-            {'key': u'general-attributes', 'description': None, 'name': u'General Attributes', 'order': 0},
-            {'key': u'orographicgravitywaves', 'description': None, 'name': u'OrographicGravityWaves', 'order': 1},
-            {'key': u'boundarylayerturbulence', 'description': None, 'name': u'BoundaryLayerTurbulence', 'order': 1},
-            {'key': u'orography', 'description': None, 'name': u'Orography', 'order': 1},
-            {'key': u'cloudschemeattributes', 'description': None, 'name': u'CloudSchemeAttributes', 'order': 1},
-            {'key': u'grid', 'description': None, 'name': u'Grid', 'order': 1},
-            {'key': u'solarconstant', 'description': None, 'name': u'SolarConstant', 'order': 1},
-            {'key': u'cospattributes', 'description': None, 'name': u'COSPAttributes', 'order': 1},
-            {'key': u'timesteppingframework', 'description': None, 'name': u'TimeSteppingFramework', 'order': 1},
-            {'key': u'tracers', 'description': None, 'name': u'Tracers', 'order': 1},
-            {'key': u'longwave', 'description': None, 'name': u'Longwave', 'order': 1},
-            {'key': u'shortwave', 'description': None, 'name': u'Shortwave', 'order': 2},
-            {'key': u'orbitalparameters', 'description': None, 'name': u'OrbitalParameters', 'order': 2},
-            {'key': u'verticaldomain', 'description': None, 'name': u'VerticalDomain', 'order': 2},
-            {'key': u'resolution', 'description': None, 'name': u'Resolution', 'order': 2},
-            {'key': u'horizontaldiscretization', 'description': None, 'name': u'HorizontalDiscretization', 'order': 2},
-            {'key': u'momentum', 'description': None, 'name': u'Momentum', 'order': 2},
-            {'key': u'deepconvection', 'description': None, 'name': u'DeepConvection', 'order': 2},
-            {'key': u'subgridscalewaterdistribution', 'description': None, 'name': u'SubGridScaleWaterDistribution', 'order': 2},
-            {'key': u'inputsradar', 'description': None, 'name': u'InputsRadar', 'order': 2},
-            {'key': u'convectivegravitywaves', 'description': None, 'name': u'ConvectiveGravityWaves', 'order': 2},
-            {'key': u'horizontaldiffusion', 'description': None, 'name': u'HorizontalDiffusion', 'order': 3},
-            {'key': u'extent', 'description': None, 'name': u'Extent', 'order': 3},
-            {'key': u'cloudradiativeproperties', 'description': None, 'name': u'CloudRadiativeProperties', 'order': 3},
-            {'key': u'non-orographicgravitywaves', 'description': None, 'name': u'Non-OrographicGravityWaves', 'order': 3},
-            {'key': u'inputslidar', 'description': None, 'name': u'InputsLidar', 'order': 3},
-            {'key': u'shallowconvection', 'description': None, 'name': u'ShallowConvection', 'order': 3},
-            {'key': u'otherconvection', 'description': None, 'name': u'OtherConvection', 'order': 4},
-            {'key': u'isscpattributes', 'description': None, 'name': u'ISSCPAttributes', 'order': 4},
-            {'key': u'largescaleprecipitation', 'description': None, 'name': u'LargeScalePrecipitation', 'order': 5},
-            {'key': u'microphysics', 'description': None, 'name': u'Microphysics', 'order': 6}
+            {'key': u'general-attributes', 'description': None, 'name': u'General Attributes', 'order': 0}, {'key': u'general-attributes', 'description': None, 'name': u'General Attributes', 'order': 0}, {'key': u'general-attributes', 'description': None, 'name': u'General Attributes', 'order': 0}, {'key': u'solarconstant', 'description': None, 'name': u'SolarConstant', 'order': 1}, {'key': u'orbitalparameters', 'description': None, 'name': u'OrbitalParameters', 'order': 2}, {'key': u'general-attributes', 'description': None, 'name': u'General Attributes', 'order': 0}, {'key': u'orography', 'description': None, 'name': u'Orography', 'order': 1}, {'key': u'verticaldomain', 'description': None, 'name': u'VerticalDomain', 'order': 2}, {'key': u'general-attributes', 'description': None, 'name': u'General Attributes', 'order': 0}, {'key': u'grid', 'description': None, 'name': u'Grid', 'order': 1}, {'key': u'resolution', 'description': None, 'name': u'Resolution', 'order': 2}, {'key': u'extent', 'description': None, 'name': u'Extent', 'order': 3}, {'key': u'general-attributes', 'description': None, 'name': u'General Attributes', 'order': 0}, {'key': u'timesteppingframework', 'description': None, 'name': u'TimeSteppingFramework', 'order': 1}, {'key': u'horizontaldiscretization', 'description': None, 'name': u'HorizontalDiscretization', 'order': 2}, {'key': u'horizontaldiffusion', 'description': None, 'name': u'HorizontalDiffusion', 'order': 3}, {'key': u'general-attributes', 'description': None, 'name': u'General Attributes', 'order': 0}, {'key': u'tracers', 'description': None, 'name': u'Tracers', 'order': 1}, {'key': u'momentum', 'description': None, 'name': u'Momentum', 'order': 2}, {'key': u'general-attributes', 'description': None, 'name': u'General Attributes', 'order': 0}, {'key': u'longwave', 'description': None, 'name': u'Longwave', 'order': 1}, {'key': u'shortwave', 'description': None, 'name': u'Shortwave', 'order': 2}, {'key': u'cloudradiativeproperties', 'description': None, 'name': u'CloudRadiativeProperties', 'order': 3}, {'key': u'general-attributes', 'description': None, 'name': u'General Attributes', 'order': 0}, {'key': u'boundarylayerturbulence', 'description': None, 'name': u'BoundaryLayerTurbulence', 'order': 1}, {'key': u'deepconvection', 'description': None, 'name': u'DeepConvection', 'order': 2}, {'key': u'shallowconvection', 'description': None, 'name': u'ShallowConvection', 'order': 3}, {'key': u'otherconvection', 'description': None, 'name': u'OtherConvection', 'order': 4}, {'key': u'largescaleprecipitation', 'description': None, 'name': u'LargeScalePrecipitation', 'order': 5}, {'key': u'microphysics', 'description': None, 'name': u'Microphysics', 'order': 6}, {'key': u'general-attributes', 'description': None, 'name': u'General Attributes', 'order': 0}, {'key': u'cloudschemeattributes', 'description': None, 'name': u'CloudSchemeAttributes', 'order': 1}, {'key': u'subgridscalewaterdistribution', 'description': None, 'name': u'SubGridScaleWaterDistribution', 'order': 2}, {'key': u'general-attributes', 'description': None, 'name': u'General Attributes', 'order': 0}, {'key': u'cospattributes', 'description': None, 'name': u'COSPAttributes', 'order': 1}, {'key': u'inputsradar', 'description': None, 'name': u'InputsRadar', 'order': 2}, {'key': u'inputslidar', 'description': None, 'name': u'InputsLidar', 'order': 3}, {'key': u'isscpattributes', 'description': None, 'name': u'ISSCPAttributes', 'order': 4}, {'key': u'general-attributes', 'description': None, 'name': u'General Attributes', 'order': 0}, {'key': u'orographicgravitywaves', 'description': None, 'name': u'OrographicGravityWaves', 'order': 1}, {'key': u'convectivegravitywaves', 'description': None, 'name': u'ConvectiveGravityWaves', 'order': 2}, {'key': u'non-orographicgravitywaves', 'description': None, 'name': u'Non-OrographicGravityWaves', 'order': 3}
         ]
-
 
         # test that the categories have the expected standard fields
         for s,t in zip(serialized_categories,categories_to_test):
             self.assertDictEqual(s,t)
+
+
+class MetadataProjectTest(MetadataTest):
+
+    def test_create_project(self):
+
+        projects = MetadataProject.objects.all()
+
+        excluded_fields = ["id","providers","vocabularies"]
+        serialized_projects = [model_to_dict(project,exclude=excluded_fields) for project in projects]
+
+        projects_to_test = [
+            {'authenticated': False, 'description': u'', 'title': u'Test', 'url': u'', 'active': True, 'email': None, 'name': u'test'}
+        ]
+
+        # test that the projects have the expected standard fields
+        for s,t in zip(serialized_projects,projects_to_test):
+            self.assertDictEqual(s,t)
+
+        # test that they have the expected foreignkeys
+        vocabularies = MetadataVocabulary.objects.all()
+        for project in projects:
+            self.assertQuerysetEqual(project.vocabularies.all(),vocabularies)
+
+class MetadataCustomizerTest(MetadataTest):
+
+    def test_create_model_customizer(self):
+
+        model_customizers = MetadataModelCustomizer.objects.all()
+
+        excluded_fields = ["id","vocabularies","project","version","proxy"]
+        serialized_model_customizers = [model_to_dict(model_customizer,exclude=excluded_fields) for model_customizer in model_customizers]
+
+        customizers_to_test = [
+            {'model_root_component': u'RootComponent', 'description': None, 'model_show_hierarchy': True, 'default': True, 'model_title': u'modelcomponent', 'vocabulary_order': u'', 'model_show_all_properties': True, 'model_show_all_categories': False, 'model_description': u'blah', 'model_hierarchy_name': u'Component Hierarchy', 'name': u'test'}
+        ]
+
+        # test that the projects have the expected standard fields
+        for s,t in zip(serialized_model_customizers,customizers_to_test):
+            self.assertDictEqual(s,t)
+        
+
+###class MetadataCustomizeViewTest(MetadataTest):
+###
+###    def test_questionnaire_customize_new(self):
+###        project_name = "test"
+###        version_name = "test"
+###        model_name = "modelcomponent"
+###        request_url = "/%s/customize/%s/%s/" % (project_name,version_name,model_name)
+###
+###
+###
+###        request = self.factory.get(request_url)
+###        response = customize_new(request)
+###        self.assertEqual(response.status_code,200)
+###
+
+class MetadataEditingViewTest(MetadataTest):
+
+
+    def test_questionnaire_edit_new_get(self):
+        project_name = "test"
+        version_name = "test"
+        model_name = "modelcomponent"
+        #request_url = "/%s/edit/%s/%s" % (project_name,version_name,model_name)
+
+        #import ipdb; ipdb.set_trace()
+
+        request = self.factory.get("")
+
+        response = edit_new(request,project_name=project_name,version_name=version_name,model_name=model_name)
+        self.assertEqual(response.status_code,200)
