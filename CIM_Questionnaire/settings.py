@@ -1,9 +1,15 @@
 # Django settings for CIM_Questionnaire project.
-
+from ConfigParser import SafeConfigParser
 from django.conf.global_settings import TEMPLATE_CONTEXT_PROCESSORS
-
 import os
+
+
 rel = lambda *x: os.path.join(os.path.abspath(os.path.dirname(__file__)), *x)
+
+# Path to the configuration file containing secret values.
+CONF_PATH = os.path.join(os.path.expanduser('~'), '.config', 'esdoc-questionnaire.conf')
+parser = SafeConfigParser()
+parser.read(CONF_PATH)
 
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
@@ -39,17 +45,17 @@ MANAGERS = ADMINS
 ###    }
 ###}
 
-### POSTGRES SETTINGS
-#DATABASES = {
-#    'default': {
-#        'ENGINE'    : 'django.db.backends.postgresql_psycopg2', # Add 'postgresql_psycopg2', 'mysql', 'sqlite3' or 'oracle'.
-#        'NAME'      : '',                      # Or path to database file if using sqlite3.
-#        'USER'      : '',
-#        'PASSWORD'  : '!',
-#        'HOST'      : '127.0.0.1',                              # Empty for localhost through domain sockets or '127.0.0.1' for localhost through TCP.
-#        'PORT'      : '5432',                                   # Set to empty string for default.
-#    }
-#}
+## POSTGRES SETTINGS
+DATABASES = {
+    'default': {
+        'ENGINE'    : parser.get('database', 'engine'), # Add 'postgresql_psycopg2', 'mysql', 'sqlite3' or 'oracle'.
+        'NAME'      : parser.get('database', 'name'),                      # Or path to database file if using sqlite3.
+        'USER'      : parser.get('database', 'user'),
+        'PASSWORD'  : parser.get('database', 'password', raw=True),
+        'HOST'      : parser.get('database', 'host'),                              # Empty for localhost through domain sockets or '127.0.0.1' for localhost through TCP.
+        'PORT'      : parser.get('database', 'port'),                                   # Set to empty string for default.
+    }
+}
 
 # Hosts/domain names that are valid for this site; required if DEBUG is False
 # See https://docs.djangoproject.com/en/1.5/ref/settings/#allowed-hosts
@@ -92,7 +98,7 @@ MEDIA_URL = '/site_media/'
 # Don't put anything in this directory yourself; store your static files
 # in apps' "static/" subdirectories and in STATICFILES_DIRS.
 # Example: "/var/www/example.com/static/"
-STATIC_ROOT = rel('static/')
+STATIC_ROOT = rel(parser.get('settings', 'static_root', raw=True))
 
 # URL prefix for static files.
 # Example: "http://example.com/static/", "http://static.example.com/"
@@ -114,7 +120,7 @@ STATICFILES_FINDERS = (
 )
 
 # Make this unique, and don't share it with anybody.
-SECRET_KEY = 'eaosclee#2y7!)ng1vd5mmiein+0#9ouie9*-(0*sajql8%n%w'
+SECRET_KEY = parser.get('settings', 'secret_key', raw=True)
 
 # List of callables that know how to import templates from various sources.
 TEMPLATE_LOADERS = (
@@ -132,12 +138,12 @@ MIDDLEWARE_CLASSES = (
     # Uncomment the next line for simple clickjacking protection:
     # 'django.middleware.clickjacking.XFrameOptionsMiddleware',
     # openid requirement
-    'django_authopenid.middleware.OpenIDMiddleware',
+    #'django_authopenid.middleware.OpenIDMiddleware',
 )
 
 AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.ModelBackend',
-    'django_openid_auth.auth.OpenIDBackend',
+    #'django_openid_auth.auth.OpenIDBackend',
 )
 
 
@@ -148,14 +154,14 @@ TEMPLATE_DIRS = (
     # Always use forward slashes, even on Windows.
     # Don't forget to use absolute paths, not relative paths.
     rel('templates/'),
-    rel('static/'),
+    rel(parser.get('settings', 'static_root', raw=True)),
 )
 
 # makes 'request' object available in templates
 TEMPLATE_CONTEXT_PROCESSORS += (
      'django.core.context_processors.request',
      # requirement of openid
-     'django_authopenid.context_processors.authopenid',
+     #'django_authopenid.context_processors.authopenid',
 )
 
 # login page
@@ -179,13 +185,13 @@ INSTALLED_APPS = (
     'south',
     # openid authentication...
 #    'django_openid_auth',
-    'django_authopenid',
+    #'django_authopenid',
     # project-level app...
     'questionnaire',
     # old apps from DCMIP-2012...
-    'django_cim_forms', 'django_cim_forms.cim_1_5', 'dycore',
+#    'django_cim_forms', 'django_cim_forms.cim_1_5', 'dycore',
     # old apps from QED...
-    'dcf', 'dcf.cim_1_8_1',
+#    'dcf', 'dcf.cim_1_8_1',
 #    # new apps...
 #    # TODO #
 )
@@ -220,7 +226,6 @@ LOGGING = {
         },
     }
 }
-
 
 ######################################
 # tools for usage & memory profiling #
