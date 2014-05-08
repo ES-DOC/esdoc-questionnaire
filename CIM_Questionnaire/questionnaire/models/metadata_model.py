@@ -26,6 +26,8 @@ from django.db.models.loading   import cache
 
 from south.db                   import db
 
+from django.utils import timezone
+
 from questionnaire.utils        import *
 from questionnaire.fields       import *
 from questionnaire.models       import *
@@ -52,6 +54,9 @@ class MetadataModel(MPTTModel):
         unique_together = ("proxy","project","version","vocabulary_key","component_key")
 
     parent = TreeForeignKey('self', null=True, blank=True, related_name='children')
+
+    created                 = models.DateTimeField(blank=True,null=True,editable=False)
+    last_modified           = models.DateTimeField(blank=True,null=True,editable=False)
 
     proxy           = models.ForeignKey("MetadataModelProxy",blank=False,null=True,related_name="models")
     project         = models.ForeignKey("MetadataProject",blank=True,null=True,related_name="models")
@@ -120,6 +125,11 @@ class MetadataModel(MPTTModel):
         else:
             self.is_document = False
 
+    def save(self,*args,**kwargs):
+        if not self.id:
+            self.created = timezone.now()
+        self.last_modified = timezone.now()
+        super(MetadataModel,self).save(*args,**kwargs)
 
 class MetadataProperty(models.Model):
 
