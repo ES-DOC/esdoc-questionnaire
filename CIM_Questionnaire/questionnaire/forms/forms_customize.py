@@ -115,7 +115,6 @@ class MetadataModelCustomizerForm(ModelForm):
 
         set_field_widget_attributes(self.fields["model_description"],{"cols":"60","rows":"4"})
 
-
         if model_customizer.pk:
             standard_category_customizers = model_customizer.standard_property_category_customizers.all()
         else:
@@ -181,7 +180,6 @@ class MetadataModelCustomizerForm(ModelForm):
         # and therefore aren't part of the form
 
         # NOTE: MAKE SURE NOT TO ACCESS THE CATEGORY_CONTENT FIELDS BEFORE DESERIALIZING THEM, AS THIS CAUSES ERRORS LATER ON
-
         self.standard_categories_to_process[:] = [] # fancy way of clearing the list, making sure any references are also updated
         for deserialized_standard_category_customizer in serializers.deserialize("json", cleaned_data["standard_categories_content"],ignorenonexistent=True):
             self.standard_categories_to_process.append(deserialized_standard_category_customizer)

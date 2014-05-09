@@ -21,6 +21,7 @@ Summary of module goes here
 """
 
 import time
+from django.utils import timezone
 
 from django.db.models import Q
 import operator
@@ -43,6 +44,52 @@ def create_models_from_components(component_node,model_filter_parameters,models=
         for child_component in component_node.get_children():
             model_filter_parameters["parent"] = model
             create_models_from_components(child_component,model_filter_parameters,models)
+
+
+def create_model_formset(models,model_customizer,request):
+    initial_model_formset_data = [
+        get_initial_data(model,{
+            # TODO: DOUBLE CHECK IF I REALLY HAVE TO EXPLICITLY PASS THESE PARAMETERS
+            # IF NOT, I CAN REDUCE THE NUMBER OF DB HITS HERE
+            "proxy"             : model.proxy,
+            "project"           : model.project,
+            "version"           : model.version,
+            "parent"            : model.parent,
+            "last_modified"     : timezone.now(),
+        })
+        for model in models
+    ]
+    model_formset = MetadataModelFormSetFactory(
+        request     = request,
+        initial     = initial_model_formset_data,
+        prefixes    = [u"%s_%s"%(model.vocabulary_key,model.component_key) for model in models],
+        customizer  = model_customizer
+    )
+    return model_formset
+
+
+def create_standard_property_formset(standard_properties,standard_property_customizers,request):
+
+    model = standard_properties[0].model
+    model_key = u"%s_%s" % (model.vocabulary_key,model.component_key)
+
+    initial_standard_property_formset_data = [
+        get_initial_data(standard_property,{
+            "proxy"             : standard_property.proxy,
+            "last_modified"     : timezone.now(),
+            })
+        for standard_property in standard_properties
+    ]
+    
+    standard_property_formset = MetadataStandardPropertyInlineFormSetFactory(
+        instance    = model,
+        prefix      = model_key,
+        request     = request,
+        initial     = initial_standard_property_formset_data,
+        extra       = len(initial_standard_property_formset_data),
+        customizers = standard_property_customizers
+    )
+    return standard_property_formset
 
 def questionnaire_edit_new(request,project_name="",model_name="",version_name="",**kwargs):
 
@@ -129,7 +176,7 @@ def questionnaire_edit_new(request,project_name="",model_name="",version_name=""
                 model_filter_parameters["parent"] = model
                 model_filter_parameters["title"] = u"%s : %s" % (vocabulary.name,root_component.name)
                 create_models_from_components(root_component,model_filter_parameters,models)
-
+   
     # these need to be sorted according to the customizers (which are ordered by default),
     # so that when I pass an iterator of customizers to the formset, they will match the underlying form that is created for each property
     standard_property_proxies = sorted(model_proxy.standard_properties.all(),key=lambda proxy: standard_property_customizers.get(proxy=proxy).order)
@@ -142,7 +189,7 @@ def questionnaire_edit_new(request,project_name="",model_name="",version_name=""
     scientific_properties   = {}
     scientific_property_filter_parameters = {
         # in theory, constant kwargs would go here
-        # it just so happens that standardproperties don't have any
+        # it just so happens that scientificproperties don't have any
     }
     for model in models:
 
@@ -199,53 +246,15 @@ def questionnaire_edit_new(request,project_name="",model_name="",version_name=""
     
     if request.method == "GET":
 
-        initial_model_formset_data = [
-            get_initial_data(model,{
-                # TODO: DOUBLE CHECK IF I REALLY HAVE TO EXPLICITLY PASS THESE PARAMETERS
-                # IF NOT, I CAN REDUCE THE NUMBER OF DB HITS HERE
-                "proxy"             : model.proxy,
-                "project"           : model.project,
-                "version"           : model.version,
-                "parent"            : model.parent,
-                "last_modified"     : time.strftime("%c"),
-            })
-            for model in models
-        ]
-        model_formset = MetadataModelFormSetFactory(
-            request     = request,
-            initial     = initial_model_formset_data,
-            prefixes    = [u"%s_%s"%(model.vocabulary_key,model.component_key) for model in models],
-            customizer  = model_customizer
-        )
+        model_formset = create_model_formset(models,model_customizer,request)
 
-        # I can use the same initial data for each set of standard properties per model
-        # since they're all the same (hence the commented-out code below)
-        # this prevents uneccesary db hits
-        initial_standard_property_formset_data = [
-            get_initial_data(standard_property,{
-                "proxy"             : standard_property.proxy,
-                "last_modified"     : time.strftime("%c"),
-            })
-            for standard_property in standard_properties[standard_properties.keys()[0]] # this gets the 1st item in a dictionary (yes, I know dicts are unordered; since the initial data will all be the same it doesn't matter)
-        ]
+        standard_property_formsets = {}
+        for model in models:
+            model_key = u"%s_%s" % (model.vocabulary_key,model.component_key)
+            standard_property_formsets[model_key] = create_standard_property_formset(standard_properties[model_key],standard_property_customizers,request)
+
         for (i,model) in enumerate(models):
             model_key = u"%s_%s"%(model.vocabulary_key,model.component_key)
-# see comment above about using the same initial data for set of standard properties
-###            initial_standard_property_formset_data = [
-###                get_initial_data(standard_property,{
-###                    "proxy"         : standard_property.proxy,
-###                    "last_modified" : time.strftime("%c")
-###                })
-###                for standard_property in standard_properties[model_key]
-###            ]
-            standard_property_formsets[model_key] = MetadataStandardPropertyInlineFormSetFactory(
-                instance    = model,
-                prefix      = model_key,
-                request     = request,
-                initial     = initial_standard_property_formset_data,
-                extra       = len(initial_standard_property_formset_data),
-                customizers = standard_property_customizers
-            )
 
             initial_scientific_property_formset_data = [
                 get_initial_data(scientific_property,{

@@ -451,6 +451,8 @@ class MetadataScientificPropertyForm(MetadataEditingForm):
                 update_field_widget_attributes(self.fields["atomic_value"],{"class":atomic_type.lower()})
 
         else:
+            #import ipdb; ipdb.set_trace()
+    
             widget_attributes = { "class" : "multiselect"}
             choices = [(slugify(choice),choice) for choice in customizer.enumeration_choices.split('|')]
             if customizer.enumeration_nullable:

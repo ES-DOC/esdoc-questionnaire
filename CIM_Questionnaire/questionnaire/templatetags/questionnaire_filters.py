@@ -130,7 +130,6 @@ def get_instance_pk(form):
 
 @register.filter
 def analyze(formsets):
-    print "BEGIN ANALYSIS"
 #    print "these formsets are contained in a %s" % (type(formsets))
 #    print "there are %s items: %s" % (len(formsets),formsets.keys())
 #    print "and each item has the following statistics:"
@@ -143,7 +142,6 @@ def analyze(formsets):
 #                print u"%s: %s" %(form.prefix,form.data[form.prefix+"-name"])
 #            except:
 #                print u"no data for %s" % (form.prefix)        
-    print "END ANALYSIS"
     return "analyzed"
 
 @register.filter
@@ -151,9 +149,9 @@ def get_form_by_field(formset,field_tuple):
     # returns the 1st form in a fieldset whose specified field has the specified value
     (field_name,field_value) = field_tuple.split('|')
 #    print ""
-    print 'looking for %s=%s (in %s)' % (field_name,field_value,formset.prefix)
+#    print 'looking for %s=%s (in %s)' % (field_name,field_value,formset.prefix)
     for (i,form) in enumerate(formset):
-        print "%s: has %s" % (i,form.current_values)
+#        print "%s: has %s" % (i,form.current_values)
 #        print form.get_field_value_by_name(field_name)
         if form.get_field_value_by_name(field_name) == field_value:
             return form
