@@ -10,6 +10,7 @@ The system must have the following Python packages installed:
 * Django 1.6+
 * South
 * libXML
+* pytz
 * PIL
 * django-registration, django-authopenid (build from source)
 * A PostGres database is recommended.  However, Django also supports MySQL and SQLite3.
@@ -60,6 +61,7 @@ pip install psycopg2 (may require `sudo get-apt install libq-dev`)
 pip install lxml (may require `sudo get-apt install libxml2` and/or `sudo get-apt install libxslt`)
 pip install django-openid-auth python-openid
 pip install django_mptt
+pip install pytz
 pip install south
 pip install guppy (for profiling)
 ```

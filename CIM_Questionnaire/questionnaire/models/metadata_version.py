@@ -125,7 +125,7 @@ class MetadataVersion(models.Model):
                 new_standard_property_proxy_kwargs["name"]                  = re.sub(r'\.','_',str(version_property_proxy_name[0]))
                 new_standard_property_proxy_kwargs["order"]                 = j
                 if atomic_type:
-                    new_standard_property_proxy_kwargs["atomic_type"]       = atomic_type
+                    new_standard_property_proxy_kwargs["atomic_type"]       = MetadataAtomicFieldTypes.get(atomic_type[0])
                 new_standard_property_proxy_kwargs["enumeration_choices"]   = "|".join(enumeration_choices)
                 if relationship_cardinality_min and relationship_cardinality_max:
                     new_standard_property_proxy_kwargs["relationship_cardinality"] = "%s|%s"%(relationship_cardinality_min[0],relationship_cardinality_max[0])

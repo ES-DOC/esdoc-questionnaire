@@ -117,7 +117,6 @@ class MetadataStandardPropertyProxy(MetadataPropertyProxy):
     atomic_default  = models.CharField(max_length=BIG_STRING,blank=True)
     atomic_type     = models.CharField(max_length=64,blank=False,choices=[(ft.getType(),ft.getName()) for ft in MetadataAtomicFieldTypes],default=MetadataAtomicFieldTypes.DEFAULT.getType())
 
-
     # attributes for ENUMERATION fields
     enumeration_choices  = models.CharField(max_length=HUGE_STRING,blank=True)
     enumeration_open     = models.BooleanField(default=False,blank=True)

@@ -23,7 +23,8 @@ Summary of module goes here
 from django.db import models
 
 from collections import OrderedDict
-from datetime    import datetime
+#from datetime    import datetime
+from django.utils import timezone
 
 from questionnaire.utils        import *
 from questionnaire.fields       import *
@@ -39,8 +40,10 @@ class MetadataCustomizer(models.Model):
 
     def save(self,*args,**kwargs):
         if not self.id:
-            self.created = datetime.datetime.today()
-        self.last_modified = datetime.datetime.now()
+            #self.created = datetime.datetime.today()
+            self.created = timezone.now()
+        #self.last_modified = datetime.datetime.now()
+        self.last_modified = timezone.now()
         super(MetadataCustomizer,self).save(*args,**kwargs)
 
     def get_field(self,field_name):

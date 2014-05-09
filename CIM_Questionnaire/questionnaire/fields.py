@@ -149,6 +149,12 @@ class CardinalityField(models.CharField):
 
         super(CardinalityField,self).__init__(*args,**kwargs)
 
+    def get_prep_value(self, value):
+        if type(value) is list:
+            return "|".join(value)
+        else:
+            return value
+            
     def south_field_triple(self):
         field_class_path = self.__class__.__module__ + "." + self.__class__.__name__
         args,kwargs = introspector(self)
