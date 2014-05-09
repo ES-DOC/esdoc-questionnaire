@@ -30,37 +30,40 @@ from questionnaire.models   import *
 from questionnaire.forms    import *
 from questionnaire.views    import *
 
-def create_model_customizer_form(model_customizer,request=None):
+
+def create_model_customizer_form(model_customizer,standard_category_customizers,scientific_category_customizers,request=None):
     if request and request.POST:
         model_customizer_form = MetadataModelCustomizerForm(request.POST,instance=model_customizer)
     else:
-        model_customizer_form = MetadataModelCustomizerForm(instance=model_customizer)
+
+        all_vocabularies = model_customizer.project.vocabularies.filter(document_type__iexact=model_customizer.proxy.name)
+
+        initial_model_customizer_form_data = get_initial_data(model_customizer,{
+            "last_modified"                 : time.strftime("%c"),
+            "standard_categories_content"   : JSON_SERIALIZER.serialize(standard_category_customizers),
+            "standard_categories_tags"      : "|".join([standard_category.name for standard_category in standard_category_customizers]),
+        })
+
+
+        for (vocabulary_key,component_dictionary) in scientific_category_customizers.iteritems():
+            for (component_key,scientific_category_customizer_list) in component_dictionary.iteritems():
+                scientific_categories_content_field_name = u"%s_%s_scientific_categories_content" % (vocabulary_key,component_key)
+                scientific_categories_tags_field_name = u"%s_%s_scientific_categories_tags" % (vocabulary_key,component_key)
+
+                if not model_customizer.pk:
+                    initial_model_customizer_form_data[scientific_categories_content_field_name] = JSON_SERIALIZER.serialize(scientific_category_customizer_list)
+                    initial_model_customizer_form_data[scientific_categories_tags_field_name] = "|".join([scientific_category.name for scientific_category in scientific_category_customizer_list])
+
+        if not model_customizer.pk:
+            all_vocabulary_pks = [vocabulary.pk for vocabulary in all_vocabularies]
+            initial_model_customizer_form_data["vocabularies"]      = all_vocabulary_pks
+            initial_model_customizer_form_data["vocabulary_order"]  = ",".join(map(str,all_vocabulary_pks))
+
+        model_customizer_form = MetadataModelCustomizerForm(initial=initial_model_customizer_form_data)#,instance=model_customizer)
+
+
+
     return model_customizer_form
-
-
-###def create_standard_property_category_customizer_formset(model_customizer,standard_property_category_customizers,request=None):
-###    if request and request.POST:
-###        standard_property_category_customizer_formset = MetadataStandardPropertyCategoryCustomizerInlineFormSetFactory(
-###            instance  = model_customizer,
-###            request   = request,
-###        )
-###    else:
-###        initial_standard_property_category_customizer_formset_data = [
-###            get_initial_data(standard_property_category_customizer,{
-###                "proxy"             : standard_property_category_customizer.proxy,
-###                "model_customizer"  : standard_property_category_customizer.model_customizer,
-###                "last_modified"     : time.strftime("%c"),
-###            })
-###            for standard_property_category_customizer in standard_property_category_customizers
-###        ]
-###        standard_property_customizer_formset = MetadataStandardPropertyCategoryCustomizerInlineFormSetFactory(
-###            instance = model_customizer,
-###            request     = request,
-###            initial     = initial_standard_property_category_customizer_formset_data,
-###            extra       = len(initial_standard_property_category_customizer_formset_data),
-###        )
-###    return standard_property_customizer_formset
-
 
 def create_standard_property_customizer_formset(model_customizer,standard_property_customizers,request=None):
     if request and request.POST:
@@ -279,7 +282,7 @@ def questionnaire_customize_new(request,project_name="",model_name="",version_na
 
     if request.method == "GET":
 
-        model_customizer_form = create_model_customizer_form(model_customizer,request=request)
+        model_customizer_form = create_model_customizer_form(model_customizer,standard_property_category_customizers,scientific_property_category_customizers,request=request)
 
         standard_property_customizer_formset = create_standard_property_customizer_formset(model_customizer,standard_property_customizers,request=request)
 
@@ -296,7 +299,7 @@ def questionnaire_customize_new(request,project_name="",model_name="",version_na
         
         validity = []
 
-        model_customizer_form = create_model_customizer_form(model_customizer,request=request)
+        model_customizer_form = create_model_customizer_form(model_customizer,standard_property_category_customizers,request=request)
 
         validity += [model_customizer_form.is_valid()]
 

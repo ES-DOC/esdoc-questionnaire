@@ -82,8 +82,11 @@ class MetadataModelCustomizerForm(ModelForm):
         is_subform = kwargs.pop("is_subform",False)
         
         super(MetadataModelCustomizerForm,self).__init__(*args,**kwargs)
+
+        #import ipdb; ipdb.set_trace()
+###        model_customizer = self.instance
+
         
-        model_customizer = self.instance
         
         if is_subform:
             #update_field_widget_attributes(self.fields["name"],{"class":"readonly","readonly":"readonly"})
@@ -96,7 +99,9 @@ class MetadataModelCustomizerForm(ModelForm):
             del(self.fields["model_root_component"])
             all_vocabularies = []
         else:
-            all_vocabularies = model_customizer.project.vocabularies.filter(document_type__iexact=model_customizer.proxy.name)
+###            all_vocabularies = model_customizer.project.vocabularies.filter(document_type__iexact=model_customizer.proxy.name)
+            all_vocabularies = MetadataVocabulary.objects.filter(pk__in=self.data["vocabularies"])
+
 
             # doing this on document load in javascript
             #if model_customizer.pk:
@@ -104,9 +109,9 @@ class MetadataModelCustomizerForm(ModelForm):
             #    sorted(all_vocabularies, key=lambda vocabulary: vocabulary_order.index(vocabulary.pk))
             self.fields["vocabularies"].queryset = all_vocabularies
 
-            if not model_customizer.pk:
-                self.initial["vocabularies"] = [vocabulary.pk for vocabulary in all_vocabularies]
-                self.initial["vocabulary_order"] = ",".join([str(vocabulary.pk) for vocabulary in all_vocabularies])
+###            if not model_customizer.pk:
+###                self.initial["vocabularies"] = [vocabulary.pk for vocabulary in all_vocabularies]
+###                self.initial["vocabulary_order"] = ",".join([str(vocabulary.pk) for vocabulary in all_vocabularies])
             update_field_widget_attributes(self.fields["vocabularies"],{"class":"multiselect"})
             update_field_widget_attributes(self.fields["model_show_hierarchy"],{"class":"enabler"})
             set_field_widget_attributes(self.fields["model_show_hierarchy"],{"onchange":"enable(this,'true',['model_root_component','model_hierarchy_name']);",})
@@ -115,16 +120,17 @@ class MetadataModelCustomizerForm(ModelForm):
 
         set_field_widget_attributes(self.fields["model_description"],{"cols":"60","rows":"4"})
 
-        if model_customizer.pk:
-            standard_category_customizers = model_customizer.standard_property_category_customizers.all()
-        else:
-            standard_category_proxies = model_customizer.proxy.get_standard_category_proxies()
-            standard_category_customizers = [MetadataStandardCategoryCustomizer(model_customizer=model_customizer,proxy=proxy) for proxy in standard_category_proxies]
-            for standard_category_customizer in standard_category_customizers:
-                standard_category_customizer.reset()
-
-        self.fields["standard_categories_content"].initial  = JSON_SERIALIZER.serialize(standard_category_customizers)
-        self.fields["standard_categories_tags"].initial     = "|".join([category.name for category in standard_category_customizers])
+###        if model_customizer.pk:
+###            standard_category_customizers = model_customizer.standard_property_category_customizers.all()
+###        else:
+###            standard_category_proxies = model_customizer.proxy.get_standard_category_proxies()
+###            standard_category_customizers = [MetadataStandardCategoryCustomizer(model_customizer=model_customizer,proxy=proxy) for proxy in standard_category_proxies]
+###            for standard_category_customizer in standard_category_customizers:
+###                standard_category_customizer.reset()
+###
+        
+###        self.fields["standard_categories_content"].initial  = JSON_SERIALIZER.serialize(standard_category_customizers)
+###        self.fields["standard_categories_tags"].initial     = "|".join([category.name for category in standard_category_customizers])
         update_field_widget_attributes(self.fields["standard_categories_tags"],{"class":"tags"})
 
         for vocabulary in all_vocabularies:
@@ -136,20 +142,21 @@ class MetadataModelCustomizerForm(ModelForm):
                 self.fields[scientific_categories_content_field_name]   = CharField(required=False,widget=Textarea)               # the categories themselves
                 self.fields[scientific_categories_tags_field_name]      = CharField(label="Available Categories",required=False)  # the field used by the tagging widget
                 self.fields[scientific_categories_tags_field_name].help_text = "This widget contains the set of categories associated with this component of this CV.  Users can add to this set via this customization."
-
-                
-                if model_customizer.pk:
-                    scientific_category_customizers = MetadataScientificCategoryCustomizer.objects.filter(model_customizer=model_customizer,vocabulary_key=vocabulary_key,component_key=component_key)
-                else:
-                    scientific_category_proxies = component_proxy.categories.all()
-                    scientific_category_customizers = [MetadataScientificCategoryCustomizer(model_customizer=model_customizer,proxy=proxy) for proxy in scientific_category_proxies]
-                    for scientific_category_customizer in scientific_category_customizers:
-                        scientific_category_customizer.reset()
-
-                self.fields[scientific_categories_content_field_name].initial  = JSON_SERIALIZER.serialize(scientific_category_customizers)
-                self.fields[scientific_categories_tags_field_name].initial     = "|".join([category.name for category in scientific_category_customizers])
+###
+###
+###                if model_customizer.pk:
+###                    scientific_category_customizers = MetadataScientificCategoryCustomizer.objects.filter(model_customizer=model_customizer,vocabulary_key=vocabulary_key,component_key=component_key)
+###                else:
+###                    scientific_category_proxies = component_proxy.categories.all()
+###                    scientific_category_customizers = [MetadataScientificCategoryCustomizer(model_customizer=model_customizer,proxy=proxy) for proxy in scientific_category_proxies]
+###                    for scientific_category_customizer in scientific_category_customizers:
+###                        scientific_category_customizer.reset()
+###
+###                self.fields[scientific_categories_content_field_name].initial  = JSON_SERIALIZER.serialize(scientific_category_customizers)
+###                self.fields[scientific_categories_tags_field_name].initial     = "|".join([category.name for category in scientific_category_customizers])
                 update_field_widget_attributes(self.fields[scientific_categories_tags_field_name],{"class":"tags"})
-
+        
+        
     def clean_default(self):
         cleaned_data = self.cleaned_data
         default = cleaned_data.get("default") # using the get fn instead of directly accessing the dictionary in-case the field is missing, as w/ subform customizers

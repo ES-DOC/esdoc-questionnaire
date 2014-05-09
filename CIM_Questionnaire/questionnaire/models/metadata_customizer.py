@@ -88,7 +88,9 @@ class MetadataModelCustomizer(MetadataCustomizer):
 
     project                 = models.ForeignKey("MetadataProject",blank=True,null=True,related_name="model_customizers")
     version                 = models.ForeignKey("MetadataVersion",blank=True,null=True,related_name="model_customizers")
-    vocabularies            = models.ManyToManyField("MetadataVocabulary",blank=True,null=True)    # cannot set 'limit_choices_to' here, instead setting 'queryset' on form
+    vocabularies            = models.ManyToManyField("MetadataVocabulary",blank=True,null=True) # cannot set 'limit_choices_to' here, instead setting 'queryset' on form
+    vocabularies.help_text  = "Choose which Controlled Vocabularies (in which order) apply to this model."
+    vocabulary_order        = models.CommaSeparatedIntegerField(max_length=BIG_STRING)
 
     name                    = models.CharField(max_length=SMALL_STRING,blank=False,null=False)
     name.help_text          = "A unique name for this customization (ie: \"basic\" or \"advanced\")"
@@ -96,9 +98,6 @@ class MetadataModelCustomizer(MetadataCustomizer):
     description.help_text   = "An explanation of how this customization is intended to be used.  This information is for informational purposes only."
     default                 = models.BooleanField(verbose_name="Is Default Customization",blank=True,default=False)
     default.help_text       = "Defines the default customization that is used by this project/model combination if no explicit customization is provided."
-    vocabularies            = models.ManyToManyField("MetadataVocabulary",blank=True,null=True)#,through='MetadataVocabularyOrder')
-    vocabularies.help_text  = "Choose which Controlled Vocabularies (in which order) apply to this model."
-    vocabulary_order        = models.CommaSeparatedIntegerField(max_length=BIG_STRING)
 
     model_title                         = models.CharField(max_length=BIG_STRING,verbose_name="Name that should appear on the Document Form",blank=False,null=True)
     model_description                   = models.TextField(verbose_name="A description of the document",blank=True,null=True)

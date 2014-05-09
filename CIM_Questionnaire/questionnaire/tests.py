@@ -69,7 +69,6 @@ class MetadataTest(WebTest):
         # setup the model customizer
         model_customizer = MetadataModelCustomizer(name=customizer_name,project=project,version=version,proxy=model_proxy)
         model_customizer.reset()
-        model_customizer_form = create_model_customizer_form(model_customizer)
 
         # setup the standard category customizers
         standard_category_customizers = []
@@ -91,29 +90,31 @@ class MetadataTest(WebTest):
             )
             standard_property_customizer.reset()
             standard_property_customizers.append(standard_property_customizer)
-        standard_property_customizer_formset = create_standard_property_customizer_formset(model_customizer,standard_property_customizers)
 
         # create scientific category & property customizers
-        scientific_property_customizers = []
+        scientific_category_customizers = {}
+        scientific_property_customizers = {}
         for vocabulary in vocabularies:
             vocabulary_key = slugify(vocabulary.name)
-            scientific_property_customizer_formsets[vocabulary_key] = {}
+            scientific_category_customizers[vocabulary_key] = {}
+            scientific_property_customizers[vocabulary_key] = {}
             for component in vocabulary.component_proxies.all():
                 component_key = slugify(component.name)
                 model_key = u"%s_%s" % (vocabulary_key,component_key)
-                scientific_property_customizers[:] = []
+                scientific_category_customizers[vocabulary_key][component_key] = []
+                scientific_property_customizers[vocabulary_key][component_key] = []
                 for property in component.scientific_properties.all():
                     if property.category:
-                        (scientific_category_customizer,created) = MetadataScientificCategoryCustomizer.objects.get_or_create(
-                            model_customizer=model_customizer,
-                            proxy=property.category,
-                            vocabulary_key=vocabulary_key,
-                            component_key=component_key,
-                            model_key=u"%s_%s" % (vocabulary_key,component_key)
-                        )
-                        if created:
+                        if property.category.key not in [category.key for category in scientific_category_customizers[vocabulary_key][component_key]]:
+                            scientific_category_customizer = MetadataScientificCategoryCustomizer(
+                                model_customizer=model_customizer,
+                                proxy=property.category,
+                                vocabulary_key=vocabulary_key,
+                                component_key=component_key,
+                                model_key=model_key
+                            )
                             scientific_category_customizer.reset()
-                            scientific_category_customizer.save()
+                            scientific_category_customizers[vocabulary_key][component_key].append(scientific_category_customizer)
                     else:
                         scientific_category_customizer = None
 
@@ -123,14 +124,15 @@ class MetadataTest(WebTest):
                         vocabulary_key      = vocabulary_key,
                         component_key       = component_key,
                         model_key           = model_key,
-                        category = scientific_category_customizer,
+                        category            = scientific_category_customizer,
                     )
                     scientific_property_customizer.reset()
-                    scientific_property_customizers.append(scientific_property_customizer)
-                scientific_property_customizer_formsets[vocabulary_key][component_key] = create_scientific_property_customizer_formset(model_customizer,scientific_property_customizers,prefix=model_key)
+                    scientific_property_customizers[vocabulary_key][component_key].append(scientific_property_customizer)
 
         #I AM HERE; THE FORM IS INVALID BUT ERRORS & NON_FIELD_ERRORS IS BLANK
         #ALSO, I NEED TO FINISH REFACTORING THE FORM CREATION METHODS IN THE EDITING FORM
+        model_customizer_form = create_model_customizer_form(model_customizer,standard_category_customizers,scientific_category_customizers)
+
         model_customizer_form.is_valid()
 
         return model_customizer
