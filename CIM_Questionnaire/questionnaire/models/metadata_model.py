@@ -36,8 +36,30 @@ from django.db import models
 
 from mptt.models import MPTTModel, TreeForeignKey
 
+############################################
+# create a hiearchy of models based on the #
+# built-in hiearchical relationships that  #
+# mppt adds to components                  #
+############################################
 
-##@hierarchical
+
+def create_models_from_components(component_node,model_parameters,models=[]):
+        title = model_parameters["title"]
+        model_parameters["title"] = title[:title.index(" : ")] + " : " + component_node.name
+        model_parameters["component_key"] = slugify(component_node.name)
+
+        model = MetadataModel(**model_parameters)
+        models.append(model)
+        for child_component in component_node.get_children():
+            model_parameters["parent"] = model
+            create_models_from_components(child_component,model_parameters,models)
+
+
+#################
+# MetadataModel #
+#################
+
+
 class MetadataModel(MPTTModel):
     # ideally, MetadataModel should be an ABC
     # but Django Models already have a metaclass: django.db.models.base.ModelBase
@@ -63,6 +85,7 @@ class MetadataModel(MPTTModel):
     version         = models.ForeignKey("MetadataVersion",blank=False,null=True,related_name="models")
 
     is_document     = models.BooleanField(blank=False,null=False,default=False)
+    is_root         = models.BooleanField(blank=False,null=False,default=False)
 
     vocabulary_key  = models.CharField(max_length=BIG_STRING,blank=True,null=True)
     component_key   = models.CharField(max_length=BIG_STRING,blank=True,null=True)
@@ -73,7 +96,7 @@ class MetadataModel(MPTTModel):
     description     = models.CharField(max_length=HUGE_STRING,blank=True,null=True)
     order           = models.PositiveIntegerField(blank=True,null=True)
 
-# NONE OF THIS STUFF IS EXPLICITLY NEEDED B/C OF THE "@hierarchical" DECORATOR ABOVE
+# NONE OF THIS STUFF IS EXPLICITLY NEEDED B/C OF THE TreeForeignKey FIELD ABOVE
 #    #parent_model = models.ForeignKey('self',null=True,blank=True,related_name="child_models")
 #    #child_models = models.ManyToManyField('self',related_name='parent_model')
 #
@@ -183,7 +206,7 @@ class MetadataStandardProperty(MetadataProperty):
     def save(self,*args,**kwargs):        
         # TODO: if the customizer is required and the field is not displayed and there is no existing default value
         # then set it to default value
-        super(self,MetadataStandardProperty).save(*args,**kwargs)
+        super(MetadataStandardProperty,self).save(*args,**kwargs)
 
 class MetadataScientificProperty(MetadataProperty):
 
@@ -225,6 +248,6 @@ class MetadataScientificProperty(MetadataProperty):
         self.enumeration_value        = None
         self.enumeration_other_value  = "Please enter a custom value"
         
-        self.field_type     = MetadataFieldTypes.PROPERTY
+        self.field_type     = MetadataFieldTypes.PROPERTY.getType()
         self.is_enumeration = proxy.choice in ["OR","XOR"]
         

@@ -510,7 +510,7 @@ class MetadataScientificPropertyCustomizer(MetadataPropertyCustomizer):
         self.name           = proxy.name
         self.order          = proxy.order
         self.verbose_name   = proxy.name
-        self.field_type     = MetadataFieldTypes.PROPERTY
+        self.field_type     = MetadataFieldTypes.PROPERTY.getType()
 
         self.property_type      = MetadataAtomicFieldTypes.DEFAULT.getType()
         if proxy.choice=="OR":

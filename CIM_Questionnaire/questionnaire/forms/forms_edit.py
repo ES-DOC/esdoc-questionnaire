@@ -20,6 +20,9 @@ Summary of module goes here
 
 """
 
+import time
+from django.utils import timezone
+
 from django.forms import *
 
 from django.forms.models import BaseFormSet, BaseInlineFormSet, BaseModelFormSet
@@ -33,7 +36,16 @@ from questionnaire.models       import *
 from questionnaire.forms        import MetadataEditingForm
 from questionnaire.fields       import MetadataFieldTypes, MetadataAtomicFieldTypes, METADATA_ATOMICFIELD_MAP, EMPTY_CHOICE, NULL_CHOICE, OTHER_CHOICE
 
-class MetadataModelFormSet(BaseFormSet):
+def create_model_form_data(model,model_customizer):
+
+    model_form_data = get_initial_data(model,{
+        "last_modified" : time.strftime("%c"),
+        "parent"        : model.parent,
+    })
+
+    return model_form_data
+
+class MetadataModelFormSet(BaseModelFormSet):
 
     number_of_models = 0        # lets me keep track of the number of forms w/out having to actually render them
     prefix_iterator  = None     # pass a list of form prefixes all at once to the formset (lets me associate forms w/ elements in the comopnent hierarchy)
@@ -65,7 +77,7 @@ class MetadataModelForm(MetadataEditingForm):
         model   = MetadataModel
         fields  = [
             # hidden fields...
-            "proxy", "project", "version", "is_document", "vocabulary_key", "component_key", "active", "name", "description", "order",
+            "proxy", "project", "version", "is_document","is_root", "vocabulary_key", "component_key", "active", "name", "description", "order",
             # header fields...
             "title",
         ]
@@ -142,6 +154,30 @@ def MetadataModelFormSetFactory(*args,**kwargs):
 # standard properties #
 #######################
 
+def create_standard_property_form_data(model,standard_property,standard_property_customizer=None):
+
+    standard_property_form_data = get_initial_data(standard_property,{
+        "last_modified" : time.strftime("%c"),
+        # no need to pass model, since this is handled by virtue of being an "inline" formset
+    })
+
+    if standard_property_customizer:
+
+        field_type = standard_property_customizer.field_type
+
+        if field_type == MetadataFieldTypes.ATOMIC:
+            value_field_name = "atomic_value"
+
+        elif field_type == MetadataFieldTypes.ENUMERATION:
+            value_field_name = "enumeration_value"
+
+        elif field_type == MetadataFieldTypes.RELATIONSHIP:
+            value_field_name = "relationship_value"
+
+        standard_property_form_data[value_field_name] = standard_property_customizer.default_value
+
+    return standard_property_form_data
+
 class MetadataStandardPropertyForm(MetadataEditingForm):
 
     class Meta:
@@ -209,10 +245,7 @@ class MetadataStandardPropertyForm(MetadataEditingForm):
                 self.fields["atomic_value"].widget = custom_widget_class(**custom_widget_args)
                 update_field_widget_attributes(self.fields["atomic_value"],{"class":atomic_type.lower()})
 
-            if customizer.default_value:
-                self.current_values[value_field_name]   = customizer.default_value
-                self.initial[value_field_name]          = customizer.default_value
-
+   
         elif customizer.field_type == MetadataFieldTypes.ENUMERATION:
             widget_attributes = { "class" : "multiselect"}
             choices = [(slugify(choice),choice) for choice in customizer.enumeration_choices.split('|')]
@@ -224,17 +257,8 @@ class MetadataStandardPropertyForm(MetadataEditingForm):
                 widget_attributes["class"] += " open "
             if customizer.enumeration_multi:
                 self.fields["enumeration_value"].widget = SelectMultiple(choices=choices)
-
-                if customizer.default_value:
-                    self.current_values[enumeration_value]   = customizer.default_value
-                    self.initial[enumeration_value]          = [customizer.default_value]
-
             else:
                 self.fields["enumeration_value"].widget = Select(choices=EMPTY_CHOICE + choices)
-
-                if customizer.default_value:
-                    self.current_values[enumeration_value]   = customizer.default_value
-                    self.initial[enumeration_value]          = customizer.default_value
 
             update_field_widget_attributes(self.fields["enumeration_value"],widget_attributes)
             update_field_widget_attributes(self.fields["enumeration_other_value"],{"class":"other"})
@@ -264,7 +288,7 @@ class MetadataStandardPropertyInlineFormSet(BaseInlineFormSet):
 
     number_of_properties = 0       # lets me keep track of the number of forms w/out having to actually render them
 
-    def _construct_form(self, i, **kwargs):
+    def _construct_form(self, i,**kwargs):
 
         if self.customizers:
             try:
@@ -322,72 +346,23 @@ def MetadataStandardPropertyInlineFormSetFactory(*args,**kwargs):
 
     return _formset(queryset=_queryset,initial=_initial,instance=_instance,prefix=_prefix)
 
-# was testing out _not_ using an inline formset factory
-# but made little difference
-###class MetadataStandardPropertyFormSet(BaseModelFormSet):
-###
-###    number_of_properties = 0
-###
-###    # also using it to cache fk or m2m fields to avoid needless (on the order of 30K!) db hits
-###
-###    def _construct_form(self, i, **kwargs):
-###
-###        if self.customizers:
-###            try:
-###                kwargs["customizer"] = next(self.customizers)
-###            except StopIteration:
-###                # don't worry about not having a customizer for the extra form
-###                pass
-###
-###        form = super(MetadataStandardPropertyFormSet,self)._construct_form(i,**kwargs)
-###
-###        for cached_field_name in form.cached_fields:
-###            cached_field = form.fields[cached_field_name]
-###            cached_field_key = u"%s_%s" % (self.prefix,cached_field_name)
-###            cached_field.cache_choices = True
-###            choices = getattr(self, '_cached_choices_%s'%(cached_field_key), None)
-###            if choices is None:
-###                choices = list(cached_field.choices)
-###                setattr(self, '_cached_choices_%s'%(cached_field_key), choices)
-###            cached_field.choice_cache = choices
-###
-###        return form
-###
-###def MetadataStandardPropertyFormSetFactory(*args,**kwargs):
-###    DEFAULT_PREFIX = "_standard_properties"
-###
-###    _prefix      = kwargs.pop("prefix","")+DEFAULT_PREFIX
-###    _request     = kwargs.pop("request",None)
-###    _initial     = kwargs.pop("initial",[])
-###    _queryset    = kwargs.pop("queryset",None)
-###    _customizers = kwargs.pop("customizers",None)
-###    new_kwargs = {
-###        "can_delete" : False,
-###        "extra"      : kwargs.pop("extra",0),
-###        "formset"    : MetadataStandardPropertyFormSet,
-###        "form"       : MetadataStandardPropertyForm,
-###    }
-###    new_kwargs.update(kwargs)
-###
-###    _formset = modelformset_factory(MetadataStandardProperty,*args,**new_kwargs)
-###    if _customizers:
-###        _formset.customizers = iter(_customizers)
-###    if _initial:
-###        _formset.number_of_properties = len(_initial)
-###    elif _queryset:
-###        _formset.number_of_properties = len(_queryset)
-###    else: # assuming data was passed in via POST
-###        _formset.number_of_properties = int(_request.POST[u"%s-TOTAL_FORMS"%(_prefix)])
-###
-###    if _request and _request.method == "POST":
-###        return _formset(_request.POST,prefix=_prefix)
-###
-###    return _formset(queryset=_queryset,initial=_initial,prefix=_prefix)
-    
 
 #########################
 # scientific properties #
 #########################
+
+def create_scientific_property_form_data(model,scientific_property,scientific_property_customizer=None):
+
+    scientific_property_form_data = get_initial_data(scientific_property,{
+        "last_modified" : time.strftime("%c"),
+        # no need to pass model, since this is handled by virtue of being an "inline" formset
+    })
+
+    if scientific_property_customizer:
+
+        pass
+
+    return scientific_property_form_data
 
 class MetadataScientificPropertyForm(MetadataEditingForm):
 
