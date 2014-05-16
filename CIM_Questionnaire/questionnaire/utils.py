@@ -367,6 +367,7 @@ def interate_through_node(node,filter_parameters={}):
             iterate_through_node(child,filter_parameters)
 
 
+
 ########################################
 # fixing known django - postgres issue #
 ########################################

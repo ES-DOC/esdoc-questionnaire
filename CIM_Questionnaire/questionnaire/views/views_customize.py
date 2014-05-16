@@ -30,38 +30,6 @@ from questionnaire.models   import *
 from questionnaire.forms    import *
 from questionnaire.views    import *
 
-def create_model_customizer_form(model_customizer,request=None):
-    if request and request.POST:
-        model_customizer_form = MetadataModelCustomizerForm(request.POST,instance=model_customizer)
-    else:
-        model_customizer_form = MetadataModelCustomizerForm(instance=model_customizer)
-    return model_customizer_form
-
-
-###def create_standard_property_category_customizer_formset(model_customizer,standard_property_category_customizers,request=None):
-###    if request and request.POST:
-###        standard_property_category_customizer_formset = MetadataStandardPropertyCategoryCustomizerInlineFormSetFactory(
-###            instance  = model_customizer,
-###            request   = request,
-###        )
-###    else:
-###        initial_standard_property_category_customizer_formset_data = [
-###            get_initial_data(standard_property_category_customizer,{
-###                "proxy"             : standard_property_category_customizer.proxy,
-###                "model_customizer"  : standard_property_category_customizer.model_customizer,
-###                "last_modified"     : time.strftime("%c"),
-###            })
-###            for standard_property_category_customizer in standard_property_category_customizers
-###        ]
-###        standard_property_customizer_formset = MetadataStandardPropertyCategoryCustomizerInlineFormSetFactory(
-###            instance = model_customizer,
-###            request     = request,
-###            initial     = initial_standard_property_category_customizer_formset_data,
-###            extra       = len(initial_standard_property_category_customizer_formset_data),
-###        )
-###    return standard_property_customizer_formset
-
-
 def create_standard_property_customizer_formset(model_customizer,standard_property_customizers,request=None):
     if request and request.POST:
         standard_property_customizer_formset = MetadataStandardPropertyCustomizerInlineFormSetFactory(
@@ -72,8 +40,6 @@ def create_standard_property_customizer_formset(model_customizer,standard_proper
         standard_property_category_customizers = [standard_property_customizer.category for standard_property_customizer in standard_property_customizers]
         initial_standard_property_customizer_formset_data = [
             get_initial_data(standard_property_customizer,{
-                "proxy"             : standard_property_customizer.proxy,
-                "model_customizer"  : standard_property_customizer.model_customizer,
                 "category"          : standard_property_customizer.category,
                 "last_modified"     : time.strftime("%c"),
             })
@@ -279,7 +245,7 @@ def questionnaire_customize_new(request,project_name="",model_name="",version_na
 
     if request.method == "GET":
 
-        model_customizer_form = create_model_customizer_form(model_customizer,request=request)
+        model_customizer_form = create_model_customizer_form(model_customizer,standard_property_category_customizers,scientific_property_category_customizers,request=request)
 
         standard_property_customizer_formset = create_standard_property_customizer_formset(model_customizer,standard_property_customizers,request=request)
 
@@ -296,7 +262,7 @@ def questionnaire_customize_new(request,project_name="",model_name="",version_na
         
         validity = []
 
-        model_customizer_form = create_model_customizer_form(model_customizer,request=request)
+        model_customizer_form = create_model_customizer_form(model_customizer,standard_property_category_customizers,scientific_property_category_customizers,request=request)
 
         validity += [model_customizer_form.is_valid()]
 

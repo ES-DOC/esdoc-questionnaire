@@ -34,17 +34,7 @@ from questionnaire.models   import *
 from questionnaire.forms    import *
 from questionnaire.views    import *
 
-def create_models_from_components(component_node,model_filter_parameters,models=[]):
-        title = model_filter_parameters["title"]
-        model_filter_parameters["title"] = title[:title.index(" : ")] + " : " + component_node.name
-        model_filter_parameters["component_key"] = slugify(component_node.name)
-        
-        model = MetadataModel(**model_filter_parameters)
-        models.append(model)
-        for child_component in component_node.get_children():
-            model_filter_parameters["parent"] = model
-            create_models_from_components(child_component,model_filter_parameters,models)
-
+from questionnaire.models.metadata_model import create_models_from_components
 
 def create_model_formset(models,model_customizer,request):
     initial_model_formset_data = [
