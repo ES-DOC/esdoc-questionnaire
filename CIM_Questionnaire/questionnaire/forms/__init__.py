@@ -24,9 +24,9 @@ class MetadataForm(ModelForm):
             # (not sure why I can't do this in a list comprehension)
             for key,value in self.data.iteritems():
                 if key.startswith(self.prefix+"-"):
-#                    if key.endswith("-name"):
-#                        print "found data item for %s: %s=%s" %(self.prefix,key,value)
                     self.current_values[key.split(self.prefix+"-")[1]] = value
+
+
         else:
             # GET; initial was passed into constructor
             self.current_values = self.initial

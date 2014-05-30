@@ -27,3 +27,6 @@ admin.site.register(MetadataScientificPropertyCustomizer)
 admin.site.register(MetadataScientificCategoryCustomizer)
 admin.site.register(MetadataComponentProxy)
 
+admin.site.register(MetadataModel)
+admin.site.register(MetadataStandardProperty)
+admin.site.register(MetadataScientificProperty)
