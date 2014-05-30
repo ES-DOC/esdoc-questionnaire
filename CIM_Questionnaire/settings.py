@@ -202,6 +202,12 @@ INSTALLED_APPS = (
 
 SESSION_SERIALIZER = 'django.contrib.sessions.serializers.JSONSerializer'
 
+# TODO: THIS IS STORING SESSION VARIABLES VIA COOKIES
+# OTHER OPTIONS ARE FILE, DB (DEFAULT), OR CACHE
+# EVENTUALLY, I SHOULD MOVE TO CACHE: https://docs.djangoproject.com/en/dev/topics/cache/
+SESSION_ENGINE = 'django.contrib.sessions.backends.signed_cookies'
+SESSION_COOKIE_HTTPONLY = True
+
 # A sample logging configuration. The only tangible logging
 # performed by this configuration is to send an email to
 # the site admins on every HTTP 500 error when DEBUG=False.

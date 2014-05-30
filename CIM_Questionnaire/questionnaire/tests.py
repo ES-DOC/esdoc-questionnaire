@@ -36,7 +36,7 @@ from questionnaire.models.metadata_vocabulary import UPLOAD_PATH as VOCABULARY_U
 
 from questionnaire.models.metadata_model import create_models_from_components
 
-from questionnaire.forms.forms_customize import create_model_customizer_form_data, create_model_customizer_form
+from questionnaire.forms.forms_customize import create_model_customizer_form_data
 from questionnaire.forms.forms_customize import create_standard_property_customizer_form_data
 from questionnaire.forms.forms_customize import create_scientific_property_customizer_form_data
 
@@ -56,6 +56,142 @@ class MetadataTest(TestCase):
             list(sorted(qs1, key=pk)),
             list(sorted(qs2, key=pk))
         )
+
+
+    def get_questionnaire_edit_forms(self,project_name,version_name,model_name):
+
+        project = MetadataProject.objects.get(name__iexact=project_name)
+        version = MetadataVersion.objects.get(name__iexact=version_name,registered=True)
+        model_proxy = MetadataModelProxy.objects.get(version=version,name__iexact=model_name)
+
+        model_customizer = MetadataModelCustomizer.objects.get(project=project,version=version,proxy=model_proxy,default=True)
+
+        vocabularies     = model_customizer.vocabularies.all()
+        vocabulary_order = [int(order) for order in model_customizer.vocabulary_order.split(',')]
+        vocabularies     = sorted(vocabularies,key=lambda vocabulary: vocabulary_order.index(vocabulary.pk))
+
+        standard_property_customizers   = model_customizer.standard_property_customizers.all()
+        standard_property_proxies = sorted(model_proxy.standard_properties.all(),key=lambda proxy: standard_property_customizers.get(proxy=proxy).order)
+        scientific_property_customizers = {}
+        scientific_property_proxies = {}
+        for vocabulary in vocabularies:
+            vocabulary_key = slugify(vocabulary.name)
+            for component_proxy in vocabulary.component_proxies.all():
+                component_key = slugify(component_proxy.name)
+                model_key = u"%s_%s" % (vocabulary_key,component_key)
+                scientific_property_customizers[model_key] = MetadataScientificPropertyCustomizer.objects.filter(model_customizer=model_customizer,model_key=model_key)
+                scientific_property_proxies[model_key] = sorted(component_proxy.scientific_properties.all(),key=lambda proxy: scientific_property_customizers[model_key].get(proxy=proxy).order)
+
+        # setup the model(s)...
+
+        model_parameters = {
+            "project" : project,
+            "version" : version,
+            "proxy"   : model_proxy,
+        }
+
+        # here is the "root" model
+        model = MetadataModel(**model_parameters)
+        model.is_root = True
+
+        models = []
+        models.append(model)
+        if model_customizer.model_show_hierarchy:
+            model.title           = model_customizer.model_root_component
+            model.vocabulary_key  = slugify(DEFAULT_VOCABULARY)
+            model.component_key   = slugify(model_customizer.model_root_component)
+
+            for vocabulary in vocabularies:
+                model_parameters["vocabulary_key"] = slugify(vocabulary.name)
+                components = vocabulary.component_proxies.all()
+                if components:
+                    root_component = components[0].get_root()
+                    model_parameters["parent"] = model
+                    model_parameters["title"] = u"%s : %s" % (vocabulary.name,root_component.name)
+                    create_models_from_components(root_component,model_parameters,models)
+
+        standard_properties     = {}
+        standard_property_parameters = {}
+        scientific_properties   = {}
+        scientific_property_parameters = {}
+
+        for model in models:
+            model.reset(True)
+            vocabulary_key  = model.vocabulary_key
+            component_key   = model.component_key
+            model_key       = u"%s_%s"%(model.vocabulary_key,model.component_key)
+
+            # setup the standard properties...
+            standard_properties[model_key] = []
+            standard_property_parameters["model"] = model
+            for standard_property_proxy in standard_property_proxies:
+                standard_property_parameters["proxy"] = standard_property_proxy
+                standard_property = MetadataStandardProperty(**standard_property_parameters)
+                standard_property.reset()
+                standard_properties[model_key].append(standard_property)
+
+            # setup the scientific properties...
+            scientific_properties[model_key] = []
+            scientific_property_parameters["model"] = model
+            try:
+                for scientific_property_proxy in scientific_property_proxies[model_key]:
+                    scientific_property_parameters["proxy"] = scientific_property_proxy
+                    scientific_property = MetadataScientificProperty(**scientific_property_parameters)
+                    scientific_property.reset()
+                    scientific_properties[model_key].append(scientific_property)
+            except KeyError:
+                # there were no scientific properties associated w/ this component (or, rather, no components associated w/ this vocabulary)
+                # that's okay
+                # but be sure to add an empty set of customizers to pass to the create_scientific_property_form_data fn
+                scientific_property_customizers[model_key] = []
+
+        # passed to formset factories below to make sure the prefixes match up
+        model_keys = [u"%s_%s" % (model.vocabulary_key,model.component_key) for model in models]
+
+        models_data = [create_model_form_data(model,model_customizer) for model in models]
+
+        model_formset = MetadataModelFormSetFactory(
+            initial     = models_data,
+            extra       = len(models_data),
+            prefixes    = model_keys,
+            customizer  = model_customizer,
+        )
+
+        standard_properties_formsets = {}
+        scientific_properties_formsets = {}
+        for model in models:
+            model_key = u"%s_%s" % (model.vocabulary_key,model.component_key)
+
+            standard_properties_data = [
+                create_standard_property_form_data(model,standard_property,standard_property_customizer)
+                for standard_property,standard_property_customizer in zip(standard_properties[model_key],standard_property_customizers)
+                if standard_property_customizer.displayed
+            ]
+
+            standard_properties_formsets[model_key] = MetadataStandardPropertyInlineFormSetFactory(
+                instance    = model,
+                prefix      = model_key,
+                initial     = standard_properties_data,
+                extra       = len(standard_properties_data),
+                customizers = standard_property_customizers,
+            )
+
+            scientific_properties_data = [
+                create_scientific_property_form_data(model,scientific_property,scientific_property_customizer)
+                for scientific_property,scientific_property_customizer in zip(scientific_properties[model_key],scientific_property_customizers[model_key])
+                if scientific_property_customizer.displayed
+            ]
+
+            scientific_properties_formsets[model_key] = MetadataScientificPropertyInlineFormSetFactory(
+                instance    = model,
+                prefix      = model_key,
+                initial     = scientific_properties_data,
+                extra       = len(scientific_properties_data),
+                customizers = scientific_property_customizers[model_key],
+            )
+
+        return (model_formset,standard_properties_formsets,scientific_properties_formsets)
+
 
     def create_customizer_from_forms(self,project_name,model_name,version_name,customizer_name):
 
@@ -158,7 +294,7 @@ class MetadataTest(TestCase):
                 post_data[u"%s-TOTAL_FORMS"%(scientific_property_prefix)] = len(scientific_property_customizers[vocabulary_key][component_key])
                 post_data[u"%s-INITIAL_FORMS"%(scientific_property_prefix)] = 0
 
-        # setup the forms
+        # setup/save the forms
 
         request_url = u"/%s/customize/%s/%s" % (project_name,version_name,model_name)
         request = self.factory.post(request_url,post_data)
@@ -168,9 +304,19 @@ class MetadataTest(TestCase):
             if value == u"None":
                 request.POST[key] = None
 
-        model_customizer_form = create_model_customizer_form(model_customizer,request=request)
+        #model_customizer_form = create_model_customizer_form(model_customizer,request=request)
+        model_customizer_form = MetadataModelCustomizerForm(request.POST,all_vocabularies=vocabularies)
+
+        self.assertEqual(model_customizer_form.is_valid(),True)
+
+        active_vocabularies                 = model_customizer_form.cleaned_data["vocabularies"]
+        standard_categories_to_process      = model_customizer_form.standard_categories_to_process
+        scientific_categories_to_process    = model_customizer_form.scientific_categories_to_process
+
+        model_customizer_instance = model_customizer_form.save(commit=False)
+
         standard_property_customizers_formset = MetadataStandardPropertyCustomizerInlineFormSetFactory(
-            instance    = model_customizer,
+            instance    = model_customizer_instance,
             request     = request,
             categories  = [(category.key,category.name) for category in standard_category_customizers],
         )
@@ -181,18 +327,12 @@ class MetadataTest(TestCase):
                 scientific_property_prefix = u"%s_%s" % (vocabulary_key,component_key)
                 scientific_property_category_customizers = [scientific_property_customizer.category for scientific_property_customizer in scientific_property_customizer_list]
                 scientific_property_customizer_formsets[vocabulary_key][component_key] = MetadataScientificPropertyCustomizerInlineFormSetFactory(
-                    instance    = model_customizer,
+                    instance    = model_customizer_instance,
                     request     = request,
                     prefix      = scientific_property_prefix,
                     categories  = [(category.key,category.name) for category in scientific_property_category_customizers]
                 )
         
-
-        self.assertEqual(model_customizer_form.is_valid(),True)
-
-        active_vocabularies                 = model_customizer_form.cleaned_data["vocabularies"]
-        standard_categories_to_process      = model_customizer_form.standard_categories_to_process
-        scientific_categories_to_process    = model_customizer_form.scientific_categories_to_process
 
         self.assertEqual(standard_property_customizers_formset.is_valid(),True)
 
@@ -203,7 +343,6 @@ class MetadataTest(TestCase):
 
         # save the instances
 
-        model_customizer_instance = model_customizer_form.save(commit=False)
         model_customizer_instance.save()
         model_customizer_form.save_m2m()
 
@@ -250,7 +389,14 @@ class MetadataTest(TestCase):
                         category = find_in_sequence(lambda category: category.key==category_key,active_scientific_categories[vocabulary_key][component_key])
                         scientific_property_customizer_instance.category = category
                         scientific_property_customizer_instance.save()
-        
+
+        # check that the customizers are bound to the correct proxies...
+        self.assertEqual(model_customizer_instance.proxy,model_proxy)
+        for standard_property_instance in model_customizer_instance.standard_property_customizers.all():
+            self.assertEqual(standard_property_instance.name,standard_property_instance.proxy.name)
+        for scientific_property_instance in model_customizer_instance.scientific_property_customizers.all():
+            self.assertEqual(scientific_property_instance.name,scientific_property_instance.proxy.name)
+
         return model_customizer_instance
 
     def create_customizer_from_db(self,project_name,model_name,version_name,customizer_name):
@@ -582,7 +728,7 @@ class MetadataCustomizerTest(MetadataTest):
         serialized_model_customizers = [model_to_dict(model_customizer,exclude=excluded_fields) for model_customizer in model_customizers]
 
         customizers_to_test = [
-            {'model_root_component': u'RootComponent', 'description': None, 'model_show_hierarchy': True, 'default': True, 'model_title': u'modelcomponent', 'model_show_all_properties': True, 'model_show_all_categories': False, 'model_description': u'blah', 'model_hierarchy_name': u'Component Hierarchy', 'name': u'test'}
+            {'model_root_component': u'RootComponent', 'description': u'', 'model_show_hierarchy': True, 'default': True, 'model_title': u'modelcomponent', 'model_show_all_properties': True, 'model_show_all_categories': False, 'model_description': u'blah', 'model_hierarchy_name': u'Component Hierarchy', 'name': u'test'}
         ]
 
         # test that the projects have the expected standard fields
@@ -609,6 +755,7 @@ class MetadataEditingFormTest(MetadataTest):
 
     def test_questionnaire_edit_form_get(self):
         pass
+
 
     def test_questionnaire_edit_form_post(self):
         project_name = "test"
@@ -667,7 +814,6 @@ class MetadataEditingFormTest(MetadataTest):
                     model_parameters["parent"] = model
                     model_parameters["title"] = u"%s : %s" % (vocabulary.name,root_component.name)
                     create_models_from_components(root_component,model_parameters,models)
-
 
         standard_properties = {}
         standard_property_parameters = {}
@@ -821,11 +967,53 @@ class MetadataEditingViewTest(MetadataTest):
         version_name = "test"
         model_name = "modelcomponent"
 
+        (model_formset,standard_properties_formsets,scientific_properties_formsets) = self.get_questionnaire_edit_forms(project_name,version_name,model_name)
+
         post_data = {}
-        
+
+        # get data from model_formset
+        for (i,model_form) in enumerate(model_formset.forms):
+            for key,value in model_form.initial.iteritems():
+                # only use fields that would be displayed in the template...
+                if key in model_form._header_fields or key in model_form._hidden_fields:
+                    post_data[u"%s-%s" % (model_form.prefix,key)] = value
+        for key,value in model_formset.management_form.initial.iteritems():
+            post_data[u"%s-%s"%(model_formset.prefix,key)] = value
+
+        # get data from standard_properties_formsets
+        for form_prefix,standard_properties_formset in standard_properties_formsets.iteritems():
+            for (i,standard_property_form) in enumerate(standard_properties_formset):
+                customizer = standard_property_form.customizer
+                for key,value in standard_property_form.initial.iteritems():
+                    # only use fields that would be displayed in the template...
+                    if key in standard_property_form._hidden_fields or key==standard_property_form.get_value_field_name() or (customizer.enumeration_open and key=="enumeration_other_value"):
+                        post_data[u"%s-%s" % (standard_property_form.prefix,key)] = value
+            for key,value in standard_properties_formset.management_form.initial.iteritems():
+                post_data[u"%s-%s"%(standard_properties_formset.prefix,key)] = value
+
+        # get data from scientific_properties_formsets
+        for form_prefix,scientific_properties_formset in scientific_properties_formsets.iteritems():
+            for (i,scientific_property_form) in enumerate(scientific_properties_formset):
+                for key,value in scientific_property_form.initial.iteritems():
+                    # only use fields that would be displayed in the template...
+                    # TODO: DEAL W/ "property_extra_fields"
+                    if key in scientific_property_form._hidden_fields or key==scientific_property_form.get_value_field_name() or (customizer.enumeration_open and key=="enumeration_other_value"):
+                       post_data[u"%s-%s" % (scientific_property_form.prefix,key)] = value
+            for key,value in scientific_properties_formset.management_form.initial.iteritems():
+                post_data[u"%s-%s"%(scientific_properties_formset.prefix,key)] = value
+
+
         request_url = u"/%s/edit/%s/%s" % (project_name,version_name,model_name)
-        request = self.factory.post(request_url,post_data)
+        post_request = self.factory.post(request_url,post_data)
+        post_response = edit_new(post_request,project_name=project_name,version_name=version_name,model_name=model_name)
 
-        response = edit_new(request,project_name=project_name,version_name=version_name,model_name=model_name)
+        self.assertEqual(post_response.status_code,200)
+        
+        post_content = post_response.content
 
-        self.assertEqual(response.status_code,200)
+        expr = "test_atmoshorizontaldomain_scientific_properties-[0-9]-is_enumeration"        
+        fall = re.findall(expr, post_content)
+        
+        self.assertEqual(len(fall),20)
+        
+

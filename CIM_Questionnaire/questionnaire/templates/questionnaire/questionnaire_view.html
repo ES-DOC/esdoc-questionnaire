@@ -61,9 +61,7 @@
 {% endblock %} {# /title #}
 
 {% block content %}
-
-    {{ standard_property_formsets|analyze }}
-                                        
+                                       
     {% block content_title %}
         <div class="title">
             Viewing a <b>{{model_customizer.model_title|title}}</b> instance from the <b>{{project.title|title}}</b> Project
@@ -113,6 +111,7 @@
                                                         {% with nodes=vocabulary.component_proxies.all vocabulary_key=vocabulary.name|slugify %}
                                                             {# look at how cool mppt is! #}
                                                             {# this is all that's needed to re-create the component hierarchy! #}
+                                                            {# wow!! #}
                                                             {% recursetree nodes %}
                                                                 <li data="key:'{{vocabulary_key}}_{{node.name|slugify}}'">
                                                                     {{ node.name }}
@@ -135,15 +134,16 @@
                             <td width="85%">
                 {% endif %} {# /vocabularies #}
 
+                {{ model_formset.management_form }}
+                {{ model_formset.non_form_errors }}
+                
                 {# doing this here, outside of the formset loop, b/c standard categories & properties are the same for every component #}
                 {# this therefore avoids multiple queries of the db #}
                 {% with active_standard_categories_and_properties=model_customizer.get_active_standard_categories_and_properties %}
 
-                    {{ model_formset.management_form }}
-                    {{ model_formset.non_form_errors }}
-
                     {% for form in model_formset %}
-                        
+
+                        {# doing this here, inside of the formset loop, b/c scientific categories & properties vary for each component #}
                         {% with active_scientific_categories_and_properties=model_customizer|get_active_scientific_categories_and_properties_by_key:form.prefix %}
 
                             <div class="pane" id="{{form.prefix}}_pane">
@@ -192,7 +192,7 @@
                                         {# again, doing this here, outside of the categories loop, b/c I fetch all standard properties at once #}
                                         {# and then just get the ones relevant to the current category #}
                                         {# this therefore avoids multiple queries of the db #}
-                                        {% with standard_property_formset=standard_property_formsets|get_value_from_key:form.prefix %}
+                                        {% with standard_property_formset=standard_properties_formsets|get_value_from_key:form.prefix %}
 
                                             {{ standard_property_formset.management_form }}
                                             {{ standard_property_formset.non_form_errors }}
@@ -249,9 +249,9 @@
                                         <div id="tab_{{form.prefix}}_scientificproperties">
                                             <div class="tab_content">
                         
-                                                {% with scientific_property_formset=scientific_property_formsets|get_value_from_key:form.prefix %}
+                                                {% with scientific_property_formset=scientific_properties_formsets|get_value_from_key:form.prefix %}
 
-                                                    {# even if I'm not going to display the individual forms #}
+                                                    {# even if I'm not going to display the complete forms #}
                                                     {# I still need the management data #}
                                                     {{ scientific_property_formset.management_form }}
                                                     {{ scientific_property_formset.non_form_errors }}
@@ -319,8 +319,8 @@
 
                                                                                                             {% include "questionnaire/_property_field.html" %}
 
-                                                                                                            <td class="hidden"> <!-- seems weird to have a td I don't display, but it seemed weirder to have content outside of the table -->
-                                                                                                                <div class="hidden">
+                                                                                                            <td class="nothidden"> <!-- seems weird to have a td I don't display, but it seemed weirder to have content outside of the table -->
+                                                                                                                <div class="nothidden">
                                                                                                                     {# the fields I explicitly set to hidden #}
                                                                                                                     {% for field in property_form.get_hidden_fields %}
                                                                                                                         {{ field }}

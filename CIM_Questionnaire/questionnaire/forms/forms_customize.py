@@ -61,16 +61,6 @@ def create_model_customizer_form_data(model_customizer,standard_category_customi
     return model_customizer_form_data
 
 
-def create_model_customizer_form(model_customizer,initial=[],request=None):
-
-    all_vocabularies = model_customizer.project.vocabularies.filter(document_type__iexact=model_customizer.proxy.name)
-
-    if request and request.POST:
-        model_customizer_form = MetadataModelCustomizerForm(request.POST,instance=model_customizer,all_vocabularies=all_vocabularies)
-    else:
-        model_customizer_form = MetadataModelCustomizerForm(initial=initial,all_vocabularies=all_vocabularies)
-
-    return model_customizer_form
 
 class MetadataModelCustomizerForm(ModelForm):
 
@@ -482,7 +472,8 @@ def MetadataStandardPropertyCustomizerInlineFormSetFactory(*args,**kwargs):
         _formset.number_of_properties = len(_initial)
     elif _queryset:
         _formset.number_of_properties = len(_queryset)
-    else: # assuming data was passed in via POST
+    elif _request and _request.POST:
+    #else: # assuming data was passed in via POST
         _formset.number_of_properties = int(_request.POST[u"%s-TOTAL_FORMS"%(_prefix)])
     
     if _request and _request.method == "POST":
@@ -696,7 +687,8 @@ def MetadataScientificPropertyCustomizerInlineFormSetFactory(*args,**kwargs):
         _formset.number_of_properties = len(_initial)
     elif _queryset:
         _formset.number_of_properties = len(_queryset)
-    else: # assuming data was passed in via POST
+    elif _request and _request.POST:
+    #else: # assuming data was passed in via POST
         _formset.number_of_properties = int(_request.POST[u"%s-TOTAL_FORMS"%(_prefix)])
    
     if _request and _request.method == "POST":

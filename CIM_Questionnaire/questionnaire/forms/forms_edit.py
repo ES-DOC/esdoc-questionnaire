@@ -232,7 +232,7 @@ class MetadataStandardPropertyForm(MetadataEditingForm):
     def customize(self,customizer):
 
         # customization is done both in the form (here) and in the template
-
+        
         value_field_name = self.get_value_field_name()
 
         # the stuff that gets done specifically for atomic/enumeration/relationship fields can be hard-coded
@@ -372,28 +372,12 @@ class MetadataScientificPropertyForm(MetadataEditingForm):
     current_values  = {}
 
     # since I am only explicitly displaying the "value_field" I have to be sure to add any fields
-    # that the django form init/saving process depends upon to this set of hidden fields
+    # that the django form init/saving process depends upon to this list
     _hidden_fields       = ["proxy", "field_type", "is_enumeration", "category_key", "name", "order",]
 
-    # set of fields that will be the same for all members of a formset; thus I can cache the query (for relationship fields)
+    # list of fields that will be the same for all members of a formset; thus I can cache the query
     cached_fields       = []
 
-    def get_hidden_fields(self):
-        return self.get_fields_from_list(self._hidden_fields)
-
-    def get_value_field(self):
-        value_field_name = self.get_value_field_name()
-        value_fields = self.get_fields_from_list([value_field_name])
-        try:
-            return value_fields[0]
-        except:
-            return None
-
-    def get_value_field_name(self):
-        if self.current_values["is_enumeration"] == True:
-            return "enumeration_value"
-        else:
-            return "atomic_value"
 
     def __init__(self,*args,**kwargs):
 
@@ -402,21 +386,23 @@ class MetadataScientificPropertyForm(MetadataEditingForm):
 
         super(MetadataScientificPropertyForm,self).__init__(*args,**kwargs)
 
-        property = self.instance
-
-        # TODO: CHANGE VALUE WIDGET BASED ON PROXY FIELD_TYPE
         update_field_widget_attributes(self.fields["enumeration_value"],{"class":"multiselect"})
         update_field_widget_attributes(self.fields["atomic_value"],{"onchange":"copy_value(this,'%s-scientific_property_value');"%(self.prefix)})
+
         if customizer:
             self.customize(customizer)
 
+
     def customize(self,customizer):
+
+        #assert(customizer.proxy.id == self.current_values["proxy"])
+        
         # customization is done in the form and in the template
 
         value_field_name = self.get_value_field_name()
 
         self.fields[value_field_name].help_text = customizer.documentation
-        
+
         if not customizer.is_enumeration:
             atomic_type = customizer.atomic_type
             if atomic_type and atomic_type != MetadataAtomicFieldTypes.DEFAULT:
@@ -426,8 +412,6 @@ class MetadataScientificPropertyForm(MetadataEditingForm):
                 update_field_widget_attributes(self.fields["atomic_value"],{"class":atomic_type.lower()})
 
         else:
-            #import ipdb; ipdb.set_trace()
-    
             widget_attributes = { "class" : "multiselect"}
             choices = [(slugify(choice),choice) for choice in customizer.enumeration_choices.split('|')]
             if customizer.enumeration_nullable:
@@ -458,6 +442,27 @@ class MetadataScientificPropertyForm(MetadataEditingForm):
 
         self.customizer = customizer
 
+
+    def get_hidden_fields(self):
+        return self.get_fields_from_list(self._hidden_fields)
+
+
+    def get_value_field(self):
+        value_field_name = self.get_value_field_name()
+        value_fields = self.get_fields_from_list([value_field_name])
+        try:
+            return value_fields[0]
+        except:
+            return None
+
+
+    def get_value_field_name(self):
+        if self.current_values["is_enumeration"] == True:
+            return "enumeration_value"
+        else:
+            return "atomic_value"
+            
+
 class MetadataScientificPropertyInlineFormSet(BaseInlineFormSet):
 
     number_of_properties = 0
@@ -465,7 +470,7 @@ class MetadataScientificPropertyInlineFormSet(BaseInlineFormSet):
     # also using it to cache fk or m2m fields to avoid needless (on the order of 30K!) db hits
 
     def _construct_form(self, i, **kwargs):
-
+        
         if self.customizers:
             try:
                 kwargs["customizer"] = next(self.customizers)
@@ -504,10 +509,12 @@ def MetadataScientificPropertyInlineFormSetFactory(*args,**kwargs):
         "fk_name"    : "model" # required in-case there are more than 1 fk's to "metadatamodel"; this is the one that is relevant for this inline form
     }
     new_kwargs.update(kwargs)
-
+    
     _formset = inlineformset_factory(MetadataModel,MetadataScientificProperty,*args,**new_kwargs)
     if _customizers:
         _formset.customizers = iter(_customizers)
+
+
     if _initial:
         _formset.number_of_properties = len(_initial)
     elif _queryset:

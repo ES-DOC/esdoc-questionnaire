@@ -143,10 +143,7 @@ class MetadataModel(MPTTModel):
         self.description  = proxy.documentation
         self.version      = proxy.version
 
-        if proxy.stereotype == "document":
-            self.is_document = True
-        else:
-            self.is_document = False
+        self.is_document = proxy.is_document()
 
     def save(self,*args,**kwargs):
         if not self.id:

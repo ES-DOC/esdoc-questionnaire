@@ -30,62 +30,10 @@ from questionnaire.models   import *
 from questionnaire.forms    import *
 from questionnaire.views    import *
 
-def create_standard_property_customizer_formset(model_customizer,standard_property_customizers,request=None):
-    if request and request.POST:
-        standard_property_customizer_formset = MetadataStandardPropertyCustomizerInlineFormSetFactory(
-            instance    = model_customizer,
-            request     = request,
-        )
-    else:
-        standard_property_category_customizers = [standard_property_customizer.category for standard_property_customizer in standard_property_customizers]
-        initial_standard_property_customizer_formset_data = [
-            get_initial_data(standard_property_customizer,{
-                "category"          : standard_property_customizer.category,
-                "last_modified"     : time.strftime("%c"),
-            })
-            for standard_property_customizer in standard_property_customizers
-        ]
-        standard_property_customizer_formset = MetadataStandardPropertyCustomizerInlineFormSetFactory(
-            instance    = model_customizer,
-            request     = request,
-            initial     = initial_standard_property_customizer_formset_data,
-            extra       = len(initial_standard_property_customizer_formset_data),
-            categories  = [(category.key,category.name) for category in standard_property_category_customizers]
-        )
-    return standard_property_customizer_formset
+from questionnaire.forms.forms_customize import create_model_customizer_form_data
+from questionnaire.forms.forms_customize import create_standard_property_customizer_form_data
+from questionnaire.forms.forms_customize import create_scientific_property_customizer_form_data
 
-
-def create_scientific_property_customizer_formset(model_customizer,scientific_property_customizers,request=None,prefix=None):
-
-    scientific_property_category_customizers = [scientific_property_customizer.category for scientific_property_customizer in scientific_property_customizers]
-
-    if request and request.POST:
-        scientific_property_customizer_formset = MetadataScientificPropertyCustomizerInlineFormSetFactory(
-            instance    = model_customizer,
-            request     = request,
-            prefix      = prefix,
-            # TODO: UPDATE THIS W/ FORM CONTENT
-            categories  = [(category.key,category.name) for category in scientific_property_category_customizers]
-        )
-    else:
-        initial_scientific_property_customizer_formset_data = [
-            get_initial_data(scientific_property_customizer,{
-                "proxy"             : scientific_property_customizer.proxy,
-                "model_customizer"  : scientific_property_customizer.model_customizer,
-                "category"          : scientific_property_customizer.category,
-                "last_modified"     : time.strftime("%c"),
-            })
-            for scientific_property_customizer in scientific_property_customizers
-        ]
-        scientific_property_customizer_formset = MetadataScientificPropertyCustomizerInlineFormSetFactory(
-            instance    = model_customizer,
-            request     = request,
-            prefix      = prefix,
-            initial     = initial_scientific_property_customizer_formset_data,
-            extra       = len(initial_scientific_property_customizer_formset_data),
-            categories  = [(category.key,category.name) for category in scientific_property_category_customizers]
-        )
-    return scientific_property_customizer_formset
 
 def questionnaire_customize_new(request,project_name="",model_name="",version_name="",**kwargs):
 
@@ -129,12 +77,12 @@ def questionnaire_customize_new(request,project_name="",model_name="",version_na
     # try to get relevant vocabularies...
     vocabularies = project.vocabularies.filter(document_type__iexact=model_name)
 
-    customizer_filter_parameters = {
+    customizer_parameters = {
         "project" : project,
         "version" : version,
         "proxy"   : model_proxy,
     }
-    INITIAL_PARAMETER_LENGTH=len(customizer_filter_parameters)
+    INITIAL_PARAMETER_LENGTH=len(customizer_parameters)
 
     # check if the user added any parameters to the request
     for (key,value) in request.GET.iteritems():
@@ -143,23 +91,23 @@ def questionnaire_customize_new(request,project_name="",model_name="",version_na
         if field_type == BooleanField:
             # special case for boolean fields
             if value.lower()=="true" or value=="1":
-                customizer_filter_parameters[key] = True
+                customizer_parameters[key] = True
             elif value.lower()=="false" or value=="0":
-                customizer_filter_parameters[key] = False
+                customizer_parameters[key] = False
             else:
-                customizer_filter_parameters[key] = value
+                customizer_parameters[key] = value
         elif field_type == CharField or field_type == TextField:
             # this ensures that the filter is case-insenstive for strings            
             # bear in mind that if I ever change to using get_or_create, the filter will have to be case-sensitive
             # see https://code.djangoproject.com/ticket/7789 for more info
-            customizer_filter_parameters[key+"__iexact"] = value
+            customizer_parameters[key+"__iexact"] = value
         else:
-            customizer_filter_parameters[key] = value        
-    if len(customizer_filter_parameters) > INITIAL_PARAMETER_LENGTH:
+            customizer_parameters[key] = value
+    if len(customizer_parameters) > INITIAL_PARAMETER_LENGTH:
         # if there were (extra) filter parameters passed
         # then try to get the customizer w/ those parameters
         try:
-            existing_model_customizer_instance = MetadataModelCustomizer.objects.get(**customizer_filter_parameters)
+            existing_model_customizer_instance = MetadataModelCustomizer.objects.get(**customizer_parameters)
             customize_existing_url = reverse("customize_existing",kwargs={
                 "project_name"      : project_name,
                 "model_name"        : model_name,
@@ -169,30 +117,30 @@ def questionnaire_customize_new(request,project_name="",model_name="",version_na
             return HttpResponseRedirect(customize_existing_url)
         except FieldError:
             # raise an error if some of the filter parameters were invalid
-            msg = "Unable to find a MetadataModelCustomizer with the following parameters: %s" % (", ").join([u'%s=%s'%(key,value) for (key,value) in customizer_filter_parameters.iteritems()])
+            msg = "Unable to find a MetadataModelCustomizer with the following parameters: %s" % (", ").join([u'%s=%s'%(key,value) for (key,value) in customizer_parameters.iteritems()])
             return error(request,msg)
         except MultipleObjectsReturned:
             # raise an error if those filter params weren't enough to uniquely identify a customizer
-            msg = "Unable to find a <i>single</i> MetadataModelCustomizer with the following parameters: %s" % (", ").join([u'%s=%s'%(key,value) for (key,value) in customizer_filter_parameters.iteritems()])
+            msg = "Unable to find a <i>single</i> MetadataModelCustomizer with the following parameters: %s" % (", ").join([u'%s=%s'%(key,value) for (key,value) in customizer_parameters.iteritems()])
             return error(request,msg)
         except MetadataModelCustomizer.DoesNotExist:
             # raise an error if there was no matching query
-            msg = "Unable to find any MetadataModelCustomizer with the following parameters: %s" % (", ").join([u'%s=%s'%(key,value) for (key,value) in customizer_filter_parameters.iteritems()])
+            msg = "Unable to find any MetadataModelCustomizer with the following parameters: %s" % (", ").join([u'%s=%s'%(key,value) for (key,value) in customizer_parameters.iteritems()])
             return error(request,msg)
 
     # create the model_customizer
-    model_customizer = MetadataModelCustomizer(**customizer_filter_parameters)
+    model_customizer = MetadataModelCustomizer(**customizer_parameters)
     model_customizer.reset()
 
-    # create the standard property category customizers
-    standard_property_category_customizers = []
+    # create the standard category customizers
+    standard_category_customizers = []
     for standard_category_proxy in version.categorization.categories.all():
-        standard_property_category_customizer = MetadataStandardCategoryCustomizer(
+        standard_category_customizer = MetadataStandardCategoryCustomizer(
             model_customizer=model_customizer,
             proxy=standard_category_proxy,
         )
-        standard_property_category_customizer.reset()
-        standard_property_category_customizers.append(standard_property_category_customizer)
+        standard_category_customizer.reset()
+        standard_category_customizers.append(standard_category_customizer)
 
     # create the standard property customizers
     standard_property_customizers = []
@@ -200,101 +148,132 @@ def questionnaire_customize_new(request,project_name="",model_name="",version_na
         standard_property_customizer = MetadataStandardPropertyCustomizer(
             model_customizer    = model_customizer,
             proxy               = standard_property_proxy,
-            category            = find_in_sequence(lambda category: category.proxy.has_property(standard_property_proxy),standard_property_category_customizers),
+            category            = find_in_sequence(lambda category: category.proxy.has_property(standard_property_proxy),standard_category_customizers),
         )
         standard_property_customizer.reset()
         standard_property_customizers.append(standard_property_customizer)
 
     # create the scientific property category customizers & scientific property customizers
-    scientific_property_category_customizers = {}
+    scientific_category_customizers = {}
     scientific_property_customizers = {}
 
     for vocabulary in vocabularies:
         vocabulary_key = slugify(vocabulary.name)
-        scientific_property_category_customizers[vocabulary] = {}
-        scientific_property_customizers[vocabulary] = {}
+        scientific_category_customizers[vocabulary_key] = {}
+        scientific_property_customizers[vocabulary_key] = {}
         for component_proxy in vocabulary.component_proxies.all():
             component_key = slugify(component_proxy.name)
             model_key = u"%s_%s" % (vocabulary_key,component_key)
-            scientific_property_category_customizers[vocabulary][component_proxy] = []
-            scientific_property_customizers[vocabulary][component_proxy] = []
-            for scientific_property_proxy in component_proxy.scientific_properties.all():
+            scientific_category_customizers[vocabulary_key][component_key] = []
+            scientific_property_customizers[vocabulary_key][component_key] = []
+            for property in component_proxy.scientific_properties.all():
+                if property.category:
+                    if property.category.key not in [category.key for category in scientific_category_customizers[vocabulary_key][component_key]]:
+                        scientific_category_customizer = MetadataScientificCategoryCustomizer(
+                            model_customizer=model_customizer,
+                            proxy=property.category,
+                            vocabulary_key=vocabulary_key,
+                            component_key=component_key,
+                            model_key=model_key
+                        )
+                        scientific_category_customizer.reset()
+                        scientific_category_customizers[vocabulary_key][component_key].append(scientific_category_customizer)
+                else:
+                    scientific_category_customizer = None
+
                 scientific_property_customizer = MetadataScientificPropertyCustomizer(
                     model_customizer    = model_customizer,
-                    proxy               = scientific_property_proxy,
+                    proxy               = property,
                     vocabulary_key      = vocabulary_key,
                     component_key       = component_key,
                     model_key           = model_key,
+                    category            = scientific_category_customizer,
                 )
-
-                scientific_property_category_proxy = scientific_property_proxy.category
-                if scientific_property_category_proxy:
-                    scientific_property_category_customizer = MetadataScientificCategoryCustomizer(
-                        model_customizer    = model_customizer,
-                        proxy               = scientific_property_category_proxy,
-                        vocabulary_key      = vocabulary_key,
-                        component_key       = component_key,
-                        model_key           = model_key
-                    )
-                    scientific_property_category_customizer.reset()
-                    scientific_property_category_customizers[vocabulary][component_proxy].append(scientific_property_category_customizer)
-                    scientific_property_customizer.category = scientific_property_category_customizer
-
                 scientific_property_customizer.reset()
-                scientific_property_customizers[vocabulary][component_proxy].append(scientific_property_customizer)
+                scientific_property_customizers[vocabulary_key][component_key].append(scientific_property_customizer)
 
     if request.method == "GET":
 
-        model_customizer_form = create_model_customizer_form(model_customizer,standard_property_category_customizers,scientific_property_category_customizers,request=request)
+        model_customizer_data = create_model_customizer_form_data(model_customizer,standard_category_customizers,scientific_category_customizers,vocabularies=vocabularies)
+        model_customizer_form = MetadataModelCustomizerForm(initial=model_customizer_data,all_vocabularies=vocabularies)
 
-        standard_property_customizer_formset = create_standard_property_customizer_formset(model_customizer,standard_property_customizers,request=request)
+        standard_property_customizers_data = [create_standard_property_customizer_form_data(model_customizer,standard_property_customizer) for standard_property_customizer in standard_property_customizers]
+        standard_property_customizer_formset = MetadataStandardPropertyCustomizerInlineFormSetFactory(
+            instance    = model_customizer,
+            initial     = standard_property_customizers_data,
+            extra       = len(standard_property_customizers_data),
+            categories  = [(category.key,category.name) for category in standard_category_customizers],
+        )
 
+        scientific_property_customizers_data = {}
         scientific_property_customizer_formsets = {}
-        for (vocabulary,component_dictionary) in scientific_property_customizers.iteritems():
-            vocabulary_key = slugify(vocabulary.name)
+        for vocabulary_key,component_dictionary in scientific_property_customizers.iteritems():
+            scientific_property_customizers_data[vocabulary_key] = {}
             scientific_property_customizer_formsets[vocabulary_key] = {}
-            for (component,scientific_property_customizer_list) in component_dictionary.iteritems():
-                component_key = slugify(component.name)
+            for component_key,scientific_property_list in component_dictionary.iteritems():
                 model_key = u"%s_%s" % (vocabulary_key,component_key)
-                scientific_property_customizer_formsets[vocabulary_key][component_key] = create_scientific_property_customizer_formset(model_customizer,scientific_property_customizer_list,request=request,prefix=model_key)
+                scientific_property_customizers_data[vocabulary_key][component_key] = [
+                    create_scientific_property_customizer_form_data(model_customizer,scientific_property_customizer)
+                    for scientific_property_customizer in scientific_property_customizers[vocabulary_key][component_key]
+                ]
+                scientific_property_customizer_formsets[vocabulary_key][component_key] = MetadataScientificPropertyCustomizerInlineFormSetFactory(
+                    instance    = model_customizer,
+                    initial     = scientific_property_customizers_data[vocabulary_key][component_key],
+                    extra       = len(scientific_property_customizers_data[vocabulary_key][component_key]),
+                    prefix      = model_key,
+                    categories  = [(category.key,category.name) for category in scientific_category_customizers[vocabulary_key][component_key]]
+                )
+
+        request.session["checked_arguments"] = False
 
     else: # request.method == "POST"
         
         validity = []
 
-        model_customizer_form = create_model_customizer_form(model_customizer,standard_property_category_customizers,scientific_property_category_customizers,request=request)
+        model_customizer_form = MetadataModelCustomizerForm(request.POST,all_vocabularies=vocabularies)
 
-        validity += [model_customizer_form.is_valid()]
+        model_customizer_form_validity = model_customizer_form.is_valid()
+        if model_customizer_form_validity:
+            model_customizer_instance = model_customizer_form.save(commit=False)
 
+        validity += [model_customizer_form_validity]
+        
         # at this point I know which vocabularies were selected
         # and I have lists of categories to save (once the model_customizer itself has been saved)
         active_vocabularies                 = model_customizer_form.cleaned_data["vocabularies"]
         standard_categories_to_process      = model_customizer_form.standard_categories_to_process
         scientific_categories_to_process    = model_customizer_form.scientific_categories_to_process
 
-        standard_property_customizer_formset = create_standard_property_customizer_formset(model_customizer,standard_property_customizers,request=request)
+        standard_property_customizer_formset = MetadataStandardPropertyCustomizerInlineFormSetFactory(
+            instance    = model_customizer_instance if model_customizer_form_validity else model_customizer,
+            request     = request,
+            categories  = [(category.key,category.name) for category in standard_category_customizers],
+        )
 
         validity += [standard_property_customizer_formset.is_valid()]
-
+        
         scientific_property_customizer_formsets = {}
-        for (vocabulary,component_dictionary) in scientific_property_customizers.iteritems():
-            vocabulary_key = slugify(vocabulary.name)
+        for (vocabulary_key,component_dictionary) in scientific_property_customizers.iteritems():
             scientific_property_customizer_formsets[vocabulary_key] = {}
-            for (component_proxy,scientific_property_customizer_list) in component_dictionary.iteritems():
-                component_key = slugify(component_proxy.name)
+            for (component_key,scientific_property_customizer_list) in component_dictionary.iteritems():
                 model_key = u"%s_%s" % (vocabulary_key,component_key)
-                scientific_property_customizer_formsets[vocabulary_key][component_key] = create_scientific_property_customizer_formset(model_customizer,scientific_property_customizer_list,request=request,prefix=model_key)
-
+                scientific_property_customizer_formsets[vocabulary_key][component_key] = MetadataScientificPropertyCustomizerInlineFormSetFactory(
+                    instance    = model_customizer_instance if model_customizer_form_validity else model_customizer,
+                    request     = request,
+                    prefix      = model_key,
+                    categories  = [(category.key,category.name) for category in scientific_category_customizers[vocabulary_key][component_key]]
+                )
                 if vocabulary in active_vocabularies:
                     validity += [scientific_property_customizer_formsets[vocabulary_key][component_key].is_valid()]
+
+        request.session["checked_arguments"] = True
 
         if all(validity):
             
             # save the model customizer...
-            model_customizer_instance = model_customizer_form.save(commit=False)
             model_customizer_instance.save()
             model_customizer_form.save_m2m()
-
+            
             # save (or delete) the category customizers...
             active_standard_categories = []
             for standard_category_to_process in standard_categories_to_process:
@@ -331,6 +310,7 @@ def questionnaire_customize_new(request,project_name="",model_name="",version_na
                 standard_property_customizer_instance.category = category
                 standard_property_customizer_instance.save()
 
+            
             # save the scientific property customizers...
             for (vocabulary_key,component_dictionary) in scientific_property_customizer_formsets.iteritems():
                 if find_in_sequence(lambda vocabulary: slugify(vocabulary.name)==vocabulary_key,active_vocabularies):
@@ -353,11 +333,6 @@ def questionnaire_customize_new(request,project_name="",model_name="",version_na
             return HttpResponseRedirect(customize_existing_url)
 
         else:
-
-            print "model_customizer_form.errors: %s" % (model_customizer_form.errors)
-            print "standard_property_customizer_formset.non_form_errors: %s" % (standard_property_customizer_formset.non_form_errors())
-            for form in standard_property_customizer_formset:
-                print "standard_property_customizer_form.errors: (%s:%s) %s" % (form.instance.name,form.type,form.errors)
                 
             messages.add_message(request, messages.ERROR, "Failed to save customizer.")
 
@@ -377,6 +352,7 @@ def questionnaire_customize_new(request,project_name="",model_name="",version_na
 
 
 def questionnaire_customize_existing(request,project_name="",model_name="",version_name="",customizer_name="",**kwargs):
+
 
     # try to get the project...
     try:
@@ -415,6 +391,9 @@ def questionnaire_customize_existing(request,project_name="",model_name="",versi
         msg = "Cannot find the <u>model</u> '%s' in the <u>version</u> '%s'." % (model_name,version_name)
         return error(request,msg)
 
+    # try to get relevant vocabularies...
+    vocabularies = project.vocabularies.filter(document_type__iexact=model_name)
+
     # try to get the customizer...
     try:
         model_customizer = MetadataModelCustomizer.objects.get(name__iexact=customizer_name,proxy=model_proxy,project=project,version=version)
@@ -422,11 +401,12 @@ def questionnaire_customize_existing(request,project_name="",model_name="",versi
         msg = "Cannot find the <u>customizer</u> '%s' for that project/version/model combination" % (customizer_name)
         return error(request,msg)
 
-    # and the associated standard properties & categories...
+    # and the associated standard properties & categories...    
+    standard_category_customizers = model_customizer.standard_property_category_customizers.all()
     standard_property_customizers = model_customizer.standard_property_customizers.all()
-    standard_property_category_customizers = model_customizer.standard_property_category_customizers.all()
 
     # and the associated scientific properties & categories...
+    scientific_category_customizers = model_customizer.scientific_property_category_customizers.all()
     scientific_property_customizers = {}
     for scientific_property_customizer in model_customizer.scientific_property_customizers.all():
         vocabulary_key = scientific_property_customizer.vocabulary_key
@@ -436,18 +416,28 @@ def questionnaire_customize_existing(request,project_name="",model_name="",versi
         if not component_key in scientific_property_customizers[vocabulary_key]:
             scientific_property_customizers[vocabulary_key][component_key] = []
         scientific_property_customizers[vocabulary_key][component_key].append(scientific_property_customizer)
-    scientific_property_category_customizers = model_customizer.scientific_property_category_customizers.all()
 
+    # check that the customizers are bound to the correct proxies...
+    # TODO: THESE ASSERTS WERE IN RESPONSE TO AN OLD ERROR; MOVE THEM TO THE TESTS
+    assert(model_customizer.proxy==model_proxy)
+    for standard_property in model_customizer.standard_property_customizers.all():
+        assert(standard_property.name,standard_property.proxy.name)
+    for scientific_property in model_customizer.scientific_property_customizers.all():
+        assert(scientific_property.name,scientific_property.proxy.name)
 
+    
     if request.method == "GET":
 
-        model_customizer_form = MetadataModelCustomizerForm(instance=model_customizer)
+
+        model_customizer_data = create_model_customizer_form_data(model_customizer,standard_category_customizers,scientific_category_customizers,vocabularies=vocabularies)
+        model_customizer_form = MetadataModelCustomizerForm(instance=model_customizer,initial=model_customizer_data,all_vocabularies=vocabularies)
 
         standard_property_customizer_formset = MetadataStandardPropertyCustomizerInlineFormSetFactory(
             instance    = model_customizer,
-            request     = request,
-            categories  = [(category.key,category.name) for category in standard_property_category_customizers]
+            queryset    = standard_property_customizers,
+            categories  = [(category.key,category.name) for category in standard_category_customizers],
         )
+
 
         scientific_property_customizer_formsets = {}
         for (vocabulary_key,component_dictionary) in scientific_property_customizers.iteritems():            
@@ -460,16 +450,23 @@ def questionnaire_customize_existing(request,project_name="",model_name="",versi
                     prefix   = u"%s_%s" % (vocabulary_key,component_key),
                     # TODO: IS THIS THE MOST EFFICIENT WAY TO GET THE PROPERTIES?
                     queryset = MetadataScientificPropertyCustomizer.objects.filter(pk__in=[property.pk for property in property_list]),
-                    categories = [(category.key,category.name) for category in scientific_property_category_customizers.filter(vocabulary_key=vocabulary_key,component_key=component_key)]
+                    categories = [(category.key,category.name) for category in scientific_category_customizers.filter(vocabulary_key=vocabulary_key,component_key=component_key)]
                 )
         
     else: # request.method == "POST":
 
+        
         validity = []
+        
+        model_customizer_form = MetadataModelCustomizerForm(request.POST,instance=model_customizer,all_vocabularies=vocabularies)
 
-        model_customizer_form = MetadataModelCustomizerForm(request.POST,instance=model_customizer)
+        model_customizer_form_validity = model_customizer_form.is_valid()
+        if model_customizer_form_validity:
+            model_customizer_instance = model_customizer_form.save(commit=False)
 
-        validity += [model_customizer_form.is_valid()]
+        validity += [model_customizer_form_validity]
+
+# I AM HERE
 
         # at this point I know which vocabularies were selected
         # and I have lists of categories to save (once the model_customizer itself has been saved)
