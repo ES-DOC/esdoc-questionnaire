@@ -1,4 +1,3 @@
-
 ####################
 #   CIM_Questionnaire
 #   Copyright (c) 2013 CoG. All rights reserved.
@@ -9,44 +8,38 @@
 #
 #   This project is distributed according to the terms of the MIT license [http://www.opensource.org/licenses/MIT].
 ####################
+import os
+import re
+from django.forms import model_to_dict
+from django.template.defaultfilters import slugify
+from CIM_Questionnaire.questionnaire.forms import MetadataModelFormSetFactory, \
+    MetadataStandardPropertyInlineFormSetFactory, MetadataScientificPropertyInlineFormSetFactory, \
+    MetadataScientificPropertyCustomizerInlineFormSetFactory, MetadataStandardPropertyCustomizerInlineFormSetFactory, \
+    MetadataModelCustomizerForm
+from CIM_Questionnaire.questionnaire.forms.forms_customize import create_standard_property_customizer_form_data, \
+    create_scientific_property_customizer_form_data, create_model_customizer_form_data
+from CIM_Questionnaire.questionnaire.forms.forms_edit import create_model_form_data, create_standard_property_form_data, \
+    create_scientific_property_form_data
+from CIM_Questionnaire.questionnaire.models import MetadataProject, MetadataVersion, MetadataModelProxy, \
+    MetadataModelCustomizer, MetadataScientificPropertyCustomizer, MetadataModel, MetadataStandardProperty, \
+    MetadataScientificProperty, MetadataVocabulary, MetadataScientificCategoryProxy, MetadataScientificPropertyProxy, \
+    MetadataComponentProxy, MetadataStandardCategoryProxy, MetadataCategorization, MetadataScientificCategoryCustomizer, \
+    MetadataStandardPropertyCustomizer, MetadataStandardCategoryCustomizer
+from CIM_Questionnaire.questionnaire.models.metadata_model import create_models_from_components
+from CIM_Questionnaire.questionnaire.models.metadata_version import UPLOAD_PATH as VERSION_UPLOAD_PATH
+from CIM_Questionnaire.questionnaire.models.metadata_categorization import UPLOAD_PATH as CATEGORIZATION_UPLOAD_PATH
+from CIM_Questionnaire.questionnaire.models.metadata_vocabulary import UPLOAD_PATH as VOCABULARY_UPLOAD_PATH
+from django.test import TestCase, Client
+from django.test.client import RequestFactory
+from CIM_Questionnaire.questionnaire.utils import DEFAULT_VOCABULARY, find_in_sequence
+from CIM_Questionnaire.questionnaire.views.views_edit import questionnaire_edit_new
 
 __author__="allyn.treshansky"
 __date__ ="Dec 9, 2013 4:33:11 PM"
 
-"""
-.. module:: tests
-
-Summary of module goes here
-
-"""
-
-import os
-import time
-
-from django.test import TestCase, Client
-from django.test.client import RequestFactory
-
-from questionnaire.models import *
-from questionnaire.forms import *
-from questionnaire.views import *
-
-from questionnaire.models.metadata_version import UPLOAD_PATH as VERSION_UPLOAD_PATH
-from questionnaire.models.metadata_categorization import UPLOAD_PATH as CATEGORIZATION_UPLOAD_PATH
-from questionnaire.models.metadata_vocabulary import UPLOAD_PATH as VOCABULARY_UPLOAD_PATH
-
-from questionnaire.models.metadata_model import create_models_from_components
-
-from questionnaire.forms.forms_customize import create_model_customizer_form_data
-from questionnaire.forms.forms_customize import create_standard_property_customizer_form_data
-from questionnaire.forms.forms_customize import create_scientific_property_customizer_form_data
-
-from questionnaire.forms.forms_edit import create_model_form_data
-from questionnaire.forms.forms_edit import create_standard_property_form_data
-from questionnaire.forms.forms_edit import create_scientific_property_form_data
-
 
 class MetadataTest(TestCase):
-    
+
     # built-in fn takes qs & list, which is confusing
     # this is a more intuitive fn
     # (see https://djangosnippets.org/snippets/2013/)
@@ -278,7 +271,7 @@ class MetadataTest(TestCase):
         standard_property_customizers_data = [create_standard_property_customizer_form_data(model_customizer,standard_property_customizer) for standard_property_customizer in standard_property_customizers]
         for (i,standard_property_customizer_data) in enumerate(standard_property_customizers_data):
             for key in standard_property_customizer_data.keys():
-                standard_property_customizer_data[u"%s-%s-%s"%(standard_property_prefix,i,key)] = standard_property_customizer_data.pop(key)        
+                standard_property_customizer_data[u"%s-%s-%s"%(standard_property_prefix,i,key)] = standard_property_customizer_data.pop(key)
         map(lambda standard_property_customizer_data: post_data.update(standard_property_customizer_data),standard_property_customizers_data)
         post_data[u"%s-TOTAL_FORMS"%(standard_property_prefix)] = len(standard_property_customizers)
         post_data[u"%s-INITIAL_FORMS"%(standard_property_prefix)] = 0
@@ -332,7 +325,7 @@ class MetadataTest(TestCase):
                     prefix      = scientific_property_prefix,
                     categories  = [(category.key,category.name) for category in scientific_property_category_customizers]
                 )
-        
+
 
         self.assertEqual(standard_property_customizers_formset.is_valid(),True)
 
@@ -489,7 +482,7 @@ class MetadataTest(TestCase):
         test_categorization_name = "test_categorization.xml"
         test_categorization = MetadataCategorization(name="test",file=os.path.join(CATEGORIZATION_UPLOAD_PATH,test_categorization_name))
         test_categorization.save()
-        
+
         # ensure the categorization is saved to the database
         qs = MetadataCategorization.objects.all()
         self.assertEqual(len(qs),1)
@@ -536,13 +529,13 @@ class MetadataTest(TestCase):
         test_customizer = self.create_customizer_from_forms("test","modelcomponent","test","test")
         test_customizer.default = True
         test_customizer.save()
-        
+
         self.version = test_version
         self.categorization = test_categorization
         self.vocabulary = test_vocabulary
         self.project = test_project
         self.customizer = test_customizer
-        
+
     def tearDown(self):
         pass
 
@@ -563,7 +556,7 @@ class MetadataVersionTest(MetadataTest):
         to_test = [{'order': 0, 'documentation': u'blah', 'name': u'modelcomponent', 'stereotype': u'document', 'package': None}, {'order': 1, 'documentation': u'blah', 'name': u'gridspec', 'stereotype': u'document', 'package': None}]
 
         # test that the models have the expected standard fields
-        for s,t in zip(serialized_models,to_test):            
+        for s,t in zip(serialized_models,to_test):
             self.assertDictEqual(s,t)
 
         # test that they have the expected foreignkeys
@@ -626,7 +619,7 @@ class MetadataCategorizationTest(MetadataTest):
         # test that the categories have the expected standard fields
         for s,t in zip(serialized_categories,categories_to_test):
             self.assertDictEqual(s,t)
- 
+
         # test that they have the expected foreignkeys
         for category in categories:
             self.assertEqual(category.categorization,self.categorization)
@@ -647,14 +640,14 @@ class MetadataVocabularyTest(MetadataTest):
             {'order': 4, 'documentation': u'Definition of component type AtmosSpaceConfiguration required', 'name': u'atmosspaceconfiguration'},
             {'order': 5, 'documentation': u'Definition of component type AtmosHorizontalDomain required', 'name': u'atmoshorizontaldomain'},
             {'order': 6, 'documentation': u'Definition of component type AtmosDynamicalCore required', 'name': u'atmosdynamicalcore'},
-            {'order': 7, 'documentation': u'Definition of component type AtmosAdvection required', 'name': u'atmosadvection'}, 
-            {'order': 8, 'documentation': u'Definition of component type AtmosRadiation required', 'name': u'atmosradiation'}, 
+            {'order': 7, 'documentation': u'Definition of component type AtmosAdvection required', 'name': u'atmosadvection'},
+            {'order': 8, 'documentation': u'Definition of component type AtmosRadiation required', 'name': u'atmosradiation'},
             {'order': 9, 'documentation': u'Definition of component type AtmosConvectTurbulCloud required', 'name': u'atmosconvectturbulcloud'},
             {'order': 10, 'documentation': u'Definition of component type AtmosCloudScheme required', 'name': u'atmoscloudscheme'},
             {'order': 11, 'documentation': u'Definition of component type CloudSimulator required', 'name': u'cloudsimulator'},
             {'order': 12, 'documentation': u'Definition of component type AtmosOrographyAndWaves required', 'name': u'atmosorographyandwaves'}
         ]
-        
+
         # test that the components have the expected standard fields
         for s,t in zip(serialized_components,components_to_test):
             self.assertDictEqual(s,t)
@@ -669,11 +662,11 @@ class MetadataVocabularyTest(MetadataTest):
 
         excluded_fields = ["id","category","component"]
         serialized_properties = [model_to_dict(property,exclude=excluded_fields) for property in properties]
-        
+
         properties_to_test = [
             {'field_type': None, 'name': u'ModelFamily', 'documentation': u'Type of atmospheric model.', 'choice': u'XOR', 'values': u'AGCM|ARCM|other|N/A', 'order': 0}, {'field_type': None, 'name': u'BasicApproximations', 'documentation': u'Basic fluid dynamics approximations made in the atmospheric model.', 'choice': u'OR', 'values': u'primitive equations|non-hydrostatic|anelastic|Boussinesq|hydrostatic|quasi-hydrostatic|other|N/A', 'order': 1}, {'field_type': None, 'name': u'VolcanoesImplementation', 'documentation': u'How the volcanoes effect is modeled in the atmophere.', 'choice': u'XOR', 'values': u'none|via high frequency solar contant anomaly|via stratospheric aerosols optical thickness|other|N/A', 'order': 2}, {'field_type': None, 'name': u'ImpactOnOzone', 'documentation': u'Impact of TOA radiation on stratospheric ozone.', 'choice': u'XOR', 'values': u'yes|no', 'order': 0}, {'field_type': None, 'name': u'Type', 'documentation': u'Time adaptation of the solar constant.', 'choice': u'XOR', 'values': u'fixed|transient|other|N/A', 'order': 0}, {'field_type': None, 'name': u'Type', 'documentation': u'Time adaptation of the orbital parameters.', 'choice': u'XOR', 'values': u'fixed|transient|other|N/A', 'order': 0}, {'field_type': None, 'name': u'ComputationMethod', 'documentation': u'Method for computing orbital parameters.', 'choice': u'XOR', 'values': u'Berger 1978|Laskar 2004|other|N/A', 'order': 1}, {'field_type': None, 'name': u'OrographyType', 'documentation': u'Time adaptation of the orography.', 'choice': u'XOR', 'values': u'present-day|modified|other|N/A', 'order': 0}, {'field_type': None, 'name': u'VerticalCoordinateSystem', 'documentation': u'vertical coordinate system.', 'choice': u'XOR', 'values': u'fixed pressure surfaces|pressure height|geometric height|hybrid sigma-pressure layers|hybrid floating Lagrangian|isentropic|sigma|other|N/A', 'order': 0}, {'field_type': None, 'name': u'TopModelLevel', 'documentation': u'Level at top of the atmosphere.', 'choice': u'keyboard', 'values': u'', 'order': 1}, {'field_type': None, 'name': u'NumberOfLevels', 'documentation': u'Total number of vertical levels.', 'choice': u'keyboard', 'values': u'', 'order': 2}, {'field_type': None, 'name': u'NumberOfLevelsBellow850hPa', 'documentation': u'Number of vertical levels bellow 850 hPa.', 'choice': u'keyboard', 'values': u'', 'order': 3}, {'field_type': None, 'name': u'NumberOfLevelsAbove200hPa', 'documentation': u'Number of vertical levels above 200 hPa.', 'choice': u'keyboard', 'values': u'', 'order': 4}, {'field_type': None, 'name': u'GridType', 'documentation': u'Geometry type of the horizontal grid.', 'choice': u'XOR', 'values': u'latitude-longitude retangular|latitude-longitude|reduced gaussian|other|N/A', 'order': 0}, {'field_type': None, 'name': u'PoleSingularityTreatment', 'documentation': u'Method used to deal with the pole singularities.', 'choice': u'XOR', 'values': u'filter|pole rotation|artificial island|none|other|N/A', 'order': 1}, {'field_type': None, 'name': u'MeanZonalResolution', 'documentation': u'Mean zonal resolution.', 'choice': u'keyboard', 'values': u'', 'order': 0}, {'field_type': None, 'name': u'MeanMeridionalResolution', 'documentation': u'Mean meridional resolution.', 'choice': u'keyboard', 'values': u'', 'order': 1}, {'field_type': None, 'name': u'EquatorMeridionalRefinement', 'documentation': u'Resolution at equator.', 'choice': u'keyboard', 'values': u'', 'order': 2}, {'field_type': None, 'name': u'SpecialRefinement', 'documentation': u'Description of any other special gid refinement (location, resolution).', 'choice': u'keyboard', 'values': u'', 'order': 3}, {'field_type': None, 'name': u'LatMin', 'documentation': u'Southern boundary of the geographical domain.', 'choice': u'keyboard', 'values': u'', 'order': 0}, {'field_type': None, 'name': u'LatMax', 'documentation': u'Northern boundary of the geographical domain.', 'choice': u'keyboard', 'values': u'', 'order': 1}, {'field_type': None, 'name': u'LonMin', 'documentation': u'Western boundary of the geographical domain.', 'choice': u'keyboard', 'values': u'', 'order': 2}, {'field_type': None, 'name': u'LonMax', 'documentation': u'Eastern boundary of the geographical domain.', 'choice': u'keyboard', 'values': u'', 'order': 3}, {'field_type': None, 'name': u'ListOfPrognosticVariables', 'documentation': u'List of the prognostic variables of the model.', 'choice': u'OR', 'values': u'surface pressure|wind components|divergence/curl|temperature|potential temperature|total water|vapour/solid/liquid|total water moments|clouds|radiation|other|N/A', 'order': 0}, {'field_type': None, 'name': u'TopBoundaryCondition', 'documentation': u'Type of boundary layer at top of the model.', 'choice': u'XOR', 'values': u'sponge layer|radiation boundary condition|other|N/A', 'order': 1}, {'field_type': None, 'name': u'HeatTreatmentAtTop', 'documentation': u'Description of any specific treatment of heat at top of the model.', 'choice': u'keyboard', 'values': u'', 'order': 2}, {'field_type': None, 'name': u'WindTreatmentAtTop', 'documentation': u'Description of any specific treatment of wind at top of the model.', 'choice': u'keyboard', 'values': u'', 'order': 3}, {'field_type': None, 'name': u'LateralBoundaryCondition', 'documentation': u'Type of lateral boundary condition (only if the model is a RCM).', 'choice': u'XOR', 'values': u'sponge layer|radiation boundary condition|none|other|N/A', 'order': 4}, {'field_type': None, 'name': u'SchemeType', 'documentation': u'Type of time stepping scheme.', 'choice': u'XOR', 'values': u'Adam Bashford|Explicit|Implicit|Semi-Implicit|LeapFrog|Multi-step|Runge Kutta fifth order|Runge Kutta second order|Runge Kutta third order|other|N/A', 'order': 0}, {'field_type': None, 'name': u'TimeStep', 'documentation': u'Time step of the model.', 'choice': u'keyboard', 'values': u'', 'order': 1}, {'field_type': None, 'name': u'SchemeType', 'documentation': u'Type of horizontal discretization scheme.', 'choice': u'XOR', 'values': u'spectral|fixed grid|other|N/A', 'order': 0}, {'field_type': None, 'name': u'SchemeName', 'documentation': u'commonly used name of the horizontal diffusion scheme.', 'choice': u'keyboard', 'values': u'', 'order': 0}, {'field_type': None, 'name': u'SchemeMethod', 'documentation': u'Numerical method used by horizontal diffusion scheme.', 'choice': u'XOR', 'values': u'iterated Laplacian|other|N/A', 'order': 1}, {'field_type': None, 'name': u'SchemeName', 'documentation': u'Commonly used name for tracers advection scheme.', 'choice': u'XOR', 'values': u'Prather|other|N/A', 'order': 0}, {'field_type': None, 'name': u'SchemeType', 'documentation': u'Type of numerical scheme used for advection of tracers.', 'choice': u'XOR', 'values': u'Eulerian|Lagrangian|semi-Lagrangian|mass-conserving|mass-conserving / finite volume (Lin-Rood)|other|N/A', 'order': 1}, {'field_type': None, 'name': u'ConservedQuantities', 'documentation': u'Quantities conserved trought tracers advection scheme.', 'choice': u'keyboard', 'values': u'', 'order': 2}, {'field_type': None, 'name': u'ConservationMethod', 'documentation': u'Method used to ensure conservation in tracers advection scheme.', 'choice': u'OR', 'values': u'conservation fixer|other|N/A', 'order': 3}, {'field_type': None, 'name': u'SchemeName', 'documentation': u'Commonly used name for momentum advection scheme.', 'choice': u'keyboard', 'values': u'', 'order': 0}, {'field_type': None, 'name': u'SchemeType', 'documentation': u'Type of numerical scheme used for advection of momentum.', 'choice': u'XOR', 'values': u'Eulerian|Lagrangian|Semi-Lagrangian|Mass-conserving|Mass-conserving / Finite volume (Lin-Rood)|other|N/A', 'order': 1}, {'field_type': None, 'name': u'ConservedQuantities', 'documentation': u'Quantities conserved trought momentum advection scheme.', 'choice': u'keyboard', 'values': u'', 'order': 2}, {'field_type': None, 'name': u'ConservationMethod', 'documentation': u'Method used to ensure conservation in momentum advection scheme.', 'choice': u'OR', 'values': u'conservation fixer|other|N/A', 'order': 3}, {'field_type': None, 'name': u'TimeStep', 'documentation': u'Time step of the radiative scheme.', 'choice': u'keyboard', 'values': u'', 'order': 0}, {'field_type': None, 'name': u'AerosolTypes', 'documentation': u'Types of aerosols whose radiative effect is taken into account in the atmospheric model.', 'choice': u'OR', 'values': u'sulphate|nitrate|sea salt|dust|ice|organic|BC (black carbon / soot)|SOA (secondary organic aerosols)|POM (particulate organic matter)|polar stratospheric ice|NAT (nitric acid trihydrate)|NAD (nitric acid dihydrate)|STS (supercooled ternary solution aerosol particule)|other|N/A', 'order': 1}, {'field_type': None, 'name': u'GHG-Types', 'documentation': u'GHG whose radiative effect is taken into account in the atmospheric model.', 'choice': u'OR', 'values': u'CO2|CH4|N2O|CFC|H2O|O3|other|N/A', 'order': 2}, {'field_type': None, 'name': u'SchemeType', 'documentation': u'Type of scheme used for longwave radiation parametrisation.', 'choice': u'XOR', 'values': u'Wide-band model|Wide-band (Morcrette)|K-correlated|K-correlated (RRTM)|other|N/A', 'order': 0}, {'field_type': None, 'name': u'SchemeMethod', 'documentation': u'Method for the radiative transfert calculations used in the longwave scheme.', 'choice': u'XOR', 'values': u'Two-stream|Layer interaction|other|N/A', 'order': 1}, {'field_type': None, 'name': u'NumberOfSpectralIntervals', 'documentation': u'Number of spectral interval of the longwave radiation scheme.', 'choice': u'keyboard', 'values': u'', 'order': 2}, {'field_type': None, 'name': u'SchemeType', 'documentation': u'Type of scheme used for shortwave radiation parametrization.', 'choice': u'XOR', 'values': u'Wide-band model|Wide-band model (Fouquart)|other|N/A', 'order': 0}, {'field_type': None, 'name': u'NumberOfSpectralIntervals', 'documentation': u'Number of spectral intervals of the short radiation scheme.', 'choice': u'keyboard', 'values': u'', 'order': 1}, {'field_type': None, 'name': u'ice', 'documentation': u'Radiative properties of ice cristals in clouds.', 'choice': u'keyboard', 'values': u'', 'order': 0}, {'field_type': None, 'name': u'liquid', 'documentation': u'Radiative properties of cloud droplets.', 'choice': u'keyboard', 'values': u'', 'order': 1}, {'field_type': None, 'name': u'SchemeName', 'documentation': u'Commonly used name for boundary layer tubulence scheme.', 'choice': u'XOR', 'values': u'Mellor-Yamada|other|N/A', 'order': 0}, {'field_type': None, 'name': u'SchemeType', 'documentation': u'Type of scheme used for parametrization of turbulence in the boundary layer.', 'choice': u'XOR', 'values': u'TKE prognostic|TKE diagnostic|TKE coupled with water|Vertical profile of Kz|other|N/A', 'order': 1}, {'field_type': None, 'name': u'CounterGradient', 'documentation': u'Application of a counter-gradient term for calculation of the vertical turbulent heat fluxes in case of slighlty stable layer.', 'choice': u'XOR', 'values': u'yes|no', 'order': 2}, {'field_type': None, 'name': u'SchemeName', 'documentation': u'Commonly used name for deep convection scheme.', 'choice': u'keyboard', 'values': u'', 'order': 0}, {'field_type': None, 'name': u'SchemeType', 'documentation': u'Type of scheme used for parametrization of deep convection.', 'choice': u'XOR', 'values': u'Mass-flux|Adjustment|other|N/A', 'order': 1}, {'field_type': None, 'name': u'Processes', 'documentation': u'Physical processes taken into account in the parametrization of the deep convection.', 'choice': u'OR', 'values': u'vertical momentum transport|convective momentum transport (CMT)|penetrative convection effects included|representation of updrafts and downdrafts|radiative effects of anvils|entrainment|detrainment|other|N/A', 'order': 2}, {'field_type': None, 'name': u'Method', 'documentation': u'Method used for parametrization of shallow convection.', 'choice': u'XOR', 'values': u'same as deep (unified)|included in Boundary Layer Turbulence|separated|other|N/A', 'order': 0}, {'field_type': None, 'name': u'SchemeName', 'documentation': u'Commonly used name for mid-level convection scheme.', 'choice': u'keyboard', 'values': u'', 'order': 0}, {'field_type': None, 'name': u'SchemeType', 'documentation': u'Type of scheme used for parametrization of mid-level convection.', 'choice': u'XOR', 'values': u'mass-flux|other|N/A', 'order': 1}, {'field_type': None, 'name': u'SchemeName', 'documentation': u'Commonly used name of the large scale precipitation parametrization scheme.', 'choice': u'keyboard', 'values': u'', 'order': 0}, {'field_type': None, 'name': u'PrecipitatingHydrometeors', 'documentation': u'Precipitating hydrometeors in the large scale precipitation scheme.', 'choice': u'OR', 'values': u'liquid rain|snow|hail|graupel|cats & dogs|other|N/A', 'order': 1}, {'field_type': None, 'name': u'SchemeName', 'documentation': u'Commonly used name of the microphysics parametrization scheme.', 'choice': u'keyboard', 'values': u'', 'order': 0}, {'field_type': None, 'name': u'Processes', 'documentation': u'Description of the microphysics processes that are taken into account in the microphysics scheme.', 'choice': u'OR', 'values': u'mixed phase|cloud droplets|cloud ice|ice nucleation|water vapour deposition|effect of raindrops|effect of snow|effect of graupel|other|N/A', 'order': 1}, {'field_type': None, 'name': u'SeparatedCloudTreatment', 'documentation': u'Different cloud schemes for the different types of clouds (convective, stratiform and bondary layer clouds).', 'choice': u'XOR', 'values': u'yes|no', 'order': 0}, {'field_type': None, 'name': u'CloudOverlap', 'documentation': u'Method for taking into account overlapping of cloud layers.', 'choice': u'XOR', 'values': u'random|none|other|N/A', 'order': 1}, {'field_type': None, 'name': u'Processes', 'documentation': u'Cloud processes included in the cloud scheme (e.g. entrainment, detrainment, bulk cloud, etc.).', 'choice': u'keyboard', 'values': u'', 'order': 2}, {'field_type': None, 'name': u'Type', 'documentation': u'Approach used for cloud water content and fractional cloud cover.', 'choice': u'XOR', 'values': u'prognostic|diagnostic|other|N/A', 'order': 0}, {'field_type': None, 'name': u'FunctionName', 'documentation': u'Commonly used name of the probability density function (PDF) representing distribution of water vapor within a grid box.', 'choice': u'keyboard', 'values': u'', 'order': 1}, {'field_type': None, 'name': u'FunctionOrder', 'documentation': u'Order of the function (PDF) used to represent subgrid scale water vapor distribution.', 'choice': u'keyboard', 'values': u'', 'order': 2}, {'field_type': None, 'name': u'CouplingWithConvection', 'documentation': u'Cloud formation coupled with convection. ', 'choice': u'XOR', 'values': u'coupled with deep|coupled with shallow|coupled with deep and shallow|not coupled with convection|other|N/A', 'order': 3}, {'field_type': None, 'name': u'COSPRunConfiguration', 'documentation': u'Method used to run the CFMIP Observational Simulator Package.', 'choice': u'XOR', 'values': u'inline|offline|none|other|N/A', 'order': 0}, {'field_type': None, 'name': u'NumberOfGridpoints', 'documentation': u'Number of gridpoints used. ', 'choice': u'keyboard', 'values': u'', 'order': 1}, {'field_type': None, 'name': u'NumberOfColumns', 'documentation': u'Number of subcolumns used. ', 'choice': u'keyboard', 'values': u'', 'order': 2}, {'field_type': None, 'name': u'NumberOfLevels', 'documentation': u'Number of model levels used. ', 'choice': u'keyboard', 'values': u'', 'order': 3}, {'field_type': None, 'name': u'RadarFrequency', 'documentation': u'CloudSat radar frequency.', 'choice': u'keyboard', 'values': u'', 'order': 0}, {'field_type': None, 'name': u'RadarType', 'documentation': u'Type of radar - surface or spaceborne?', 'choice': u'XOR', 'values': u'surface|spaceborne|other|N/A', 'order': 1}, {'field_type': None, 'name': u'UseGasAbsorption', 'documentation': u'Include gaseous absorption?', 'choice': u'XOR', 'values': u'yes|no', 'order': 2}, {'field_type': None, 'name': u'UseEffectiveRadius', 'documentation': u'Is effective radius used by the radar simulator?', 'choice': u'XOR', 'values': u'yes|no', 'order': 3}, {'field_type': None, 'name': u'LidarIceType', 'documentation': u'Ice particle shape in lidar calculations.', 'choice': u'XOR', 'values': u'Ice spheres|Ice non-spherical|other|N/A', 'order': 0}, {'field_type': None, 'name': u'Overlap', 'documentation': u'Overlap type.', 'choice': u'XOR', 'values': u'max|random|max / random|other|N/A', 'order': 1}, {'field_type': None, 'name': u'TopHeight', 'documentation': u'Cloud top height management. e.g. adjusted using both a computed infrared brightness temperature and visible optical depth to adjust cloud top pressure. ', 'choice': u'XOR', 'values': u'no adjustment|IR brightness|IR brightness and visible optical depth|other|N/A', 'order': 0}, {'field_type': None, 'name': u'TopHeightDirection', 'documentation': u'\nDirection for finding the radiance determined cloud-top pressure.  \nAtmosphere pressure level with interpolated temperature equal to the radiance determined cloud-top pressure.', 'choice': u'XOR', 'values': u'lowest altitude level|highest altitude level|other|N/A', 'order': 1}, {'field_type': None, 'name': u'SpongeLayer', 'documentation': u'Sponge layer in the upper layers in order to avoid gravitywaves reflection at top.', 'choice': u'XOR', 'values': u'none|other|N/A', 'order': 0}, {'field_type': None, 'name': u'Background', 'documentation': u'Background distribution of waves (???).', 'choice': u'XOR', 'values': u'none|other|N/A', 'order': 1}, {'field_type': None, 'name': u'SubGridScaleOrography', 'documentation': u'Subgrid scale orography effects taken into account.', 'choice': u'OR', 'values': u'effect on drag|effect on lifting|other|N/A', 'order': 2}, {'field_type': None, 'name': u'SourceMechanisms', 'documentation': u'Physical mechanisms generating orographic gravity waves.', 'choice': u'OR', 'values': u'linear mountain waves|hydraulic jump|envelope orography|statistical sub-grid scale variance|other|N/A', 'order': 0}, {'field_type': None, 'name': u'CalculationMethod', 'documentation': u'Calculation method for orographic gravity waves.', 'choice': u'OR', 'values': u'non-linear calculation|more than two cardinal directions|other|N/A', 'order': 1}, {'field_type': None, 'name': u'PropagationScheme', 'documentation': u'Type of propagation scheme for orographic gravity waves.', 'choice': u'XOR', 'values': u'linear theory|non-linear theory|other|N/A', 'order': 2}, {'field_type': None, 'name': u'DissipationScheme', 'documentation': u'Type of dissipation scheme for orographic gravity waves.', 'choice': u'XOR', 'values': u'total wave|single wave|spectral|linear|other|N/A', 'order': 3}, {'field_type': None, 'name': u'PropagationScheme', 'documentation': u'Type of propagation scheme for convective gravity waves.', 'choice': u'XOR', 'values': u'linear theory|non-linear theory|other|N/A', 'order': 0}, {'field_type': None, 'name': u'DissipationScheme', 'documentation': u'Type of dissipation scheme for convective gravity waves.', 'choice': u'XOR', 'values': u'total Wave|single wave|spectral|linear|other|N/A', 'order': 1}, {'field_type': None, 'name': u'SourceMechanisms', 'documentation': u'Physical mechanisms generating non-orographic gravity waves.', 'choice': u'OR', 'values': u'convection|precipitation|background spectrum|other|N/A', 'order': 0}, {'field_type': None, 'name': u'CalculationMethod', 'documentation': u'Calculation method for non-orographic gravity waves.', 'choice': u'OR', 'values': u'spatially dependent|temporally dependent|other|N/A', 'order': 1}, {'field_type': None, 'name': u'PropagationScheme', 'documentation': u'Type of propagation scheme for non-orographic gravity waves.', 'choice': u'XOR', 'values': u'linear theory|non-linear theory|other|N/A', 'order': 2}, {'field_type': None, 'name': u'DissipationScheme', 'documentation': u'Type of dissipation scheme for non-orographic gravity waves.', 'choice': u'XOR', 'values': u'total wave|single wave|spectral|linear|other|N/A', 'order': 3}
         ]
-        
+
         # test that the components have the expected standard fields
         for s,t in zip(serialized_properties,properties_to_test):
             self.assertDictEqual(s,t)
@@ -734,7 +727,7 @@ class MetadataCustomizerTest(MetadataTest):
         # test that the projects have the expected standard fields
         for s,t in zip(serialized_model_customizers,customizers_to_test):
             self.assertDictEqual(s,t)
-        
+
 
 ###class MetadataCustomizeViewTest(MetadataTest):
 ###
@@ -785,7 +778,7 @@ class MetadataEditingFormTest(MetadataTest):
                 model_key = u"%s_%s" % (vocabulary_key,component_key)
                 scientific_property_customizers[model_key] = MetadataScientificPropertyCustomizer.objects.filter(model_customizer=model_customizer,model_key=model_key)
                 scientific_property_proxies[model_key] = sorted(component_proxy.scientific_properties.all(),key=lambda proxy: scientific_property_customizers[model_key].get(proxy=proxy).order)
-        
+
         # setup the models
 
         model_parameters = {
@@ -833,7 +826,7 @@ class MetadataEditingFormTest(MetadataTest):
                 standard_property = MetadataStandardProperty(**standard_property_parameters)
                 standard_property.reset()
                 standard_properties[model_key].append(standard_property)
-                
+
             # setup the scientific properties
             scientific_properties[model_key] = []
             scientific_property_parameters["model"] = model
@@ -853,7 +846,7 @@ class MetadataEditingFormTest(MetadataTest):
         # setup the forms data
 
         post_data = {}
-        
+
         models_data = [create_model_form_data(model,model_customizer) for model in models]
         model_formset_prefix = "form"
         for (i,model_data) in enumerate(models_data):
@@ -867,7 +860,7 @@ class MetadataEditingFormTest(MetadataTest):
         map(lambda model_data: post_data.update(model_data),models_data)
         post_data[u"%s-TOTAL_FORMS"%(model_formset_prefix)] = len(models)
         post_data[u"%s-INITIAL_FORMS"%(model_formset_prefix)] = 0
-        
+
         for model in models:
             model_key = u"%s_%s" % (model.vocabulary_key,model.component_key)
 
@@ -892,7 +885,7 @@ class MetadataEditingFormTest(MetadataTest):
             map(lambda scientific_property_data: post_data.update(scientific_property_data),scientific_properties_data)
             post_data[u"%s_scientific_properties-TOTAL_FORMS"%(model_key)] = len(scientific_properties[model_key])
             post_data[u"%s_scientific_properties-INITIAL_FORMS"%(model_key)] = 0
-        
+
         # setup the forms
 
         request_url = u"/%s/customize/%s/%s" % (project_name,version_name,model_name)
@@ -946,8 +939,6 @@ class MetadataEditingFormTest(MetadataTest):
             for scientific_property_instance in scientific_property_instances:
                 scientific_property_instance.save()
 
-        
-
 
 class MetadataEditingViewTest(MetadataTest):
 
@@ -959,7 +950,7 @@ class MetadataEditingViewTest(MetadataTest):
         request_url = u"/%s/edit/%s/%s" % (project_name,version_name,model_name)
         request = self.factory.get(request_url)
 
-        response = edit_new(request,project_name=project_name,version_name=version_name,model_name=model_name)
+        response = questionnaire_edit_new(request,project_name=project_name,version_name=version_name,model_name=model_name)
         self.assertEqual(response.status_code,200)
 
     def test_questionnaire_edit_new_post(self):
@@ -967,7 +958,8 @@ class MetadataEditingViewTest(MetadataTest):
         version_name = "test"
         model_name = "modelcomponent"
 
-        (model_formset,standard_properties_formsets,scientific_properties_formsets) = self.get_questionnaire_edit_forms(project_name,version_name,model_name)
+        (model_formset, standard_properties_formsets, scientific_properties_formsets) = \
+            self.get_questionnaire_edit_forms(project_name, version_name, model_name)
 
         post_data = {}
 
@@ -1005,15 +997,13 @@ class MetadataEditingViewTest(MetadataTest):
 
         request_url = u"/%s/edit/%s/%s" % (project_name,version_name,model_name)
         post_request = self.factory.post(request_url,post_data)
-        post_response = edit_new(post_request,project_name=project_name,version_name=version_name,model_name=model_name)
+        post_response = questionnaire_edit_new(post_request,project_name=project_name,version_name=version_name,model_name=model_name)
 
         self.assertEqual(post_response.status_code,200)
-        
+
         post_content = post_response.content
 
-        expr = "test_atmoshorizontaldomain_scientific_properties-[0-9]-is_enumeration"        
+        expr = "test_atmoshorizontaldomain_scientific_properties-[0-9]-is_enumeration"
         fall = re.findall(expr, post_content)
-        
-        self.assertEqual(len(fall),20)
-        
 
+        self.assertEqual(len(fall),20)
