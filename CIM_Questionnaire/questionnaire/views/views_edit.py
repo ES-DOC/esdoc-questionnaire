@@ -1,4 +1,3 @@
-
 ####################
 #   CIM_Questionnaire
 #   Copyright (c) 2013 CoG. All rights reserved.
@@ -9,90 +8,96 @@
 #
 #   This project is distributed according to the terms of the MIT license [http://www.opensource.org/licenses/MIT].
 ####################
+from django.contrib import messages
 
-__author__="allyn.treshansky"
-__date__ ="Sep 30, 2013 3:04:42 PM"
+from django.contrib.sites.models import get_current_site
+from django.core.urlresolvers import reverse
+from django.http import HttpResponseRedirect
+from django.shortcuts import redirect, render_to_response
+from django.template import RequestContext
+from django.template.defaultfilters import slugify
 
-"""
-.. module:: views_edit
+from CIM_Questionnaire.questionnaire import get_version
+from CIM_Questionnaire.questionnaire.models import MetadataProject, MetadataVersion, MetadataModelProxy, \
+    MetadataModelCustomizer, MetadataScientificPropertyCustomizer, MetadataModel, MetadataStandardProperty, \
+    MetadataScientificProperty
+from CIM_Questionnaire.questionnaire.utils import DEFAULT_VOCABULARY
+from CIM_Questionnaire.questionnaire.models.metadata_model import create_models_from_components
+from CIM_Questionnaire.questionnaire.forms.forms_edit import create_model_form_data, create_standard_property_form_data, \
+    create_scientific_property_form_data, \
+    MetadataModelFormSetFactory, MetadataStandardPropertyInlineFormSetFactory, \
+    MetadataScientificPropertyInlineFormSetFactory
 
-Summary of module goes here
-
-"""
-
-from django.core.exceptions  import ObjectDoesNotExist, FieldError, MultipleObjectsReturned
-from django.db.models.fields import *
-
-from questionnaire.utils    import *
-from questionnaire.models   import *
-from questionnaire.forms    import *
-from questionnaire.views    import *
-
-from questionnaire.models.metadata_model import create_models_from_components
-from questionnaire.forms.forms_edit import create_model_form_data, create_standard_property_form_data, create_scientific_property_form_data
+__author__ = "allyn.treshansky"
+__date__ = "Sep 30, 2013 3:04:42 PM"
 
 
-def questionnaire_edit_new(request,project_name="",model_name="",version_name="",**kwargs):
+def questionnaire_edit_new(request, project_name="", model_name="", version_name="", **kwargs):
+    ##todo: remove local import statement
+    from CIM_Questionnaire.questionnaire.views.views_error import questionnaire_error
 
     # try to get the project...
     try:
         project = MetadataProject.objects.get(name__iexact=project_name)
     except MetadataProject.DoesNotExist:
-        msg = "Cannot find the <u>project</u> '%s'.  Has it been registered?" % (project_name)
-        return error(request,msg)
+        msg = "Cannot find the <u>project</u> '%s'.  Has it been registered?" % project_name
+        return questionnaire_error(request, msg)
     if not project.active:
-        msg = "Project '%s' is inactive." % (project_name)
-        return error(request,msg)
-    
+        msg = "Project '%s' is inactive." % project_name
+        return questionnaire_error(request, msg)
+
     # check authentication...
     # (not using "@login_required" b/c some projects ignore authentication)
     if project.authenticated:
         current_user = request.user
         if not current_user.is_authenticated():
-            return redirect('/login/?next=%s'%(request.path))
+            return redirect('/login/?next=%s' % (request.path))
         if not (request.user.is_superuser or request.user.metadata_user.is_user_of(project)):
-            msg = "User '%s' does not have editing permission for project '%s'." % (request.user,project_name)
+            msg = "User '%s' does not have editing permission for project '%s'." % (request.user, project_name)
             if project.email:
                 msg += "<br/>Please <a href='mailto:%s'>contact</a> the project for support." % (project.email)
-            return error(request,msg)
+            return questionnaire_error(request, msg)
 
     # try to get the version...
     try:
-        version = MetadataVersion.objects.get(name__iexact=version_name,registered=True)
+        version = MetadataVersion.objects.get(name__iexact=version_name, registered=True)
     except MetadataVersion.DoesNotExist:
-        msg = "Cannot find the <u>version</u> '%s'.  Has it been registered?" % (version_name)
-        return error(request,msg)
+        msg = "Cannot find the <u>version</u> '%s'.  Has it been registered?" % version_name
+        return questionnaire_error(request, msg)
 
     # try to get the model (proxy)...
     try:
-        model_proxy = MetadataModelProxy.objects.get(version=version,name__iexact=model_name)
+        model_proxy = MetadataModelProxy.objects.get(version=version, name__iexact=model_name)
     except MetadataModelProxy.DoesNotExist:
-        msg = "Cannot find the <u>model</u> '%s' in the <u>version</u> '%s'." % (model_name,version_name)
-        return error(request,msg)
+        msg = "Cannot find the <u>model</u> '%s' in the <u>version</u> '%s'." % (model_name, version_name)
+        return questionnaire_error(request, msg)
     if not model_proxy.is_document():
-        msg = "<u>%s</u> is not a recognized document type in the CIM." % (model_name)
-        return error(request,msg)
+        msg = "<u>%s</u> is not a recognized document type in the CIM." % model_name
+        return questionnaire_error(request, msg)
 
     # try to get the default model customizer for this project/version/proxy combination...
     try:
-        model_customizer = MetadataModelCustomizer.objects.get(project=project,version=version,proxy=model_proxy,default=True)
+        model_customizer = MetadataModelCustomizer.objects.get(project=project, version=version, proxy=model_proxy,
+                                                               default=True)
     except MetadataModelCustomizer.DoesNotExist:
         msg = "There is no default customization associated with this project/model/version."
-        return error(request,msg)
+        return questionnaire_error(request, msg)
 
     # getting the vocabularies into the right order is a 2-step process
     # b/c vocabularies do not have an "order" attribute (since they can be used by multiple projects/customizations),
     # but the model_customizer does record the desired order of active vocabularies (as a comma-separated list)
-    vocabularies     = model_customizer.vocabularies.all()
+    vocabularies = model_customizer.vocabularies.all()
     vocabulary_order = [int(order) for order in model_customizer.vocabulary_order.split(',')]
-    vocabularies     = sorted(vocabularies,key=lambda vocabulary: vocabulary_order.index(vocabulary.pk))
+    vocabularies = sorted(vocabularies, key=lambda vocabulary: vocabulary_order.index(vocabulary.pk))
 
     # now try to get the default property customizers for this project/version/proxy combination...
     # (also get the proxies b/c I'll need them when setting up properties below)
 
-    standard_property_customizers   = model_customizer.standard_property_customizers.all().order_by("category__order","order")
+    standard_property_customizers = model_customizer.standard_property_customizers.all().order_by("category__order",
+                                                                                                  "order")
     ###standard_property_proxies = sorted(model_proxy.standard_properties.all(),key=lambda proxy: standard_property_customizers.get(proxy=proxy).order)
-    standard_property_proxies = [standard_property_customizer.proxy for standard_property_customizer in standard_property_customizers]
+    standard_property_proxies = [standard_property_customizer.proxy for standard_property_customizer in
+                                 standard_property_customizers]
 
     ##TODO: remove assert statement
     pc_standard = model_customizer.standard_property_customizers.all()
@@ -107,10 +112,13 @@ def questionnaire_edit_new(request,project_name="",model_name="",version_name=""
         vocabulary_key = slugify(vocabulary.name)
         for component_proxy in vocabulary.component_proxies.all():
             component_key = slugify(component_proxy.name)
-            model_key = u"%s_%s" % (vocabulary_key,component_key)
-            scientific_property_customizers[model_key] = MetadataScientificPropertyCustomizer.objects.filter(model_customizer=model_customizer,model_key=model_key).order_by("category__order","order")
+            model_key = u"%s_%s" % (vocabulary_key, component_key)
+            scientific_property_customizers[model_key] = MetadataScientificPropertyCustomizer.objects.filter(
+                model_customizer=model_customizer, model_key=model_key).order_by("category__order", "order")
             ###scientific_property_proxies[model_key] = sorted(component_proxy.scientific_properties.all(),key=lambda proxy: scientific_property_customizers[model_key].get(proxy=proxy).order)
-            scientific_property_proxies[model_key] = [scientific_property_customizer.proxy for scientific_property_customizer in scientific_property_customizers[model_key]]
+            scientific_property_proxies[model_key] = [scientific_property_customizer.proxy for
+                                                      scientific_property_customizer in
+                                                      scientific_property_customizers[model_key]]
             # TODO: AT THIS POINT I HAVE DISCOVERED THAT THE CUSTOMIZERS ARE NOT ASSOCIATED W/ THE CORRECT PROXIES
             # THIS IS AN ISSUE W/ THE CUSTOMIZE VIEW
 
@@ -118,15 +126,15 @@ def questionnaire_edit_new(request,project_name="",model_name="",version_name=""
     # so that when I pass an iterator of customizers to the formsets, they will match the underlying form that is created for each property
 
     model_parameters = {
-        "project" : project,
-        "version" : version,
-        "proxy"   : model_proxy,
+        "project": project,
+        "version": version,
+        "proxy": model_proxy,
     }
-    INITIAL_PARAMETER_LENGTH=len(model_parameters)
+    INITIAL_PARAMETER_LENGTH = len(model_parameters)
     # TODO: check if the user added any parameters to the request; if so, pass those parameters to "questionnaire_edit_existing()"
     # TODO: HAVE TO DO THIS DIFFERENTLY THAN CUSTOMIZERS (see "views_customize.py"), SINCE FIELDS ARE FKS TO PROPERTIES
 
-        
+
     # setup the model(s)...
 
     # here is the "root" model
@@ -138,9 +146,9 @@ def questionnaire_edit_new(request,project_name="",model_name="",version_name=""
     models = []
     models.append(model)
     if model_customizer.model_show_hierarchy:
-        model.title           = model_customizer.model_root_component
-        model.vocabulary_key  = slugify(DEFAULT_VOCABULARY)
-        model.component_key   = slugify(model_customizer.model_root_component)
+        model.title = model_customizer.model_root_component
+        model.vocabulary_key = slugify(DEFAULT_VOCABULARY)
+        model.component_key = slugify(model_customizer.model_root_component)
 
         for vocabulary in vocabularies:
             model_parameters["vocabulary_key"] = slugify(vocabulary.name)
@@ -150,24 +158,22 @@ def questionnaire_edit_new(request,project_name="",model_name="",version_name=""
                 # adding corresponding models to the list
                 root_component = components[0].get_root()
                 model_parameters["parent"] = model
-                model_parameters["title"] = u"%s : %s" % (vocabulary.name,root_component.name)
-                create_models_from_components(root_component,model_parameters,models)
+                model_parameters["title"] = u"%s : %s" % (vocabulary.name, root_component.name)
+                create_models_from_components(root_component, model_parameters, models)
 
-    standard_properties     = {}
+    standard_properties = {}
     standard_property_parameters = {
         # in theory, constant kwargs would go here
         # it just so happens that standardproperties don't have any
     }
-    scientific_properties   = {}
+    scientific_properties = {}
     scientific_property_parameters = {
         # in theory, constant kwargs would go here
         # it just so happens that scientificproperties don't have any
     }
     for model in models:
         model.reset(True)
-        vocabulary_key  = model.vocabulary_key
-        component_key   = model.component_key
-        model_key       = u"%s_%s"%(model.vocabulary_key,model.component_key)
+        model_key = u"%s_%s" % (model.vocabulary_key, model.component_key)
 
         # setup the standard properties...
         standard_properties[model_key] = []
@@ -195,53 +201,55 @@ def questionnaire_edit_new(request,project_name="",model_name="",version_name=""
             pass
 
     # passed to formset factories below to make sure the prefixes match up
-    model_keys = [u"%s_%s" % (model.vocabulary_key,model.component_key) for model in models]
+    model_keys = [u"%s_%s" % (model.vocabulary_key, model.component_key) for model in models]
 
     if request.method == "GET":
 
-        models_data = [create_model_form_data(model,model_customizer) for model in models]
+        models_data = [create_model_form_data(model, model_customizer) for model in models]
 
         model_formset = MetadataModelFormSetFactory(
-            request     = request,
-            initial     = models_data,
-            extra       = len(models_data),
-            prefixes    = model_keys,
-            customizer  = model_customizer,
+            request=request,
+            initial=models_data,
+            extra=len(models_data),
+            prefixes=model_keys,
+            customizer=model_customizer,
         )
 
         standard_properties_formsets = {}
         scientific_properties_formsets = {}
         for model in models:
-            model_key = u"%s_%s" % (model.vocabulary_key,model.component_key)
+            model_key = u"%s_%s" % (model.vocabulary_key, model.component_key)
 
             standard_properties_data = [
-                create_standard_property_form_data(model,standard_property,standard_property_customizer)
-                for standard_property,standard_property_customizer in zip(standard_properties[model_key],standard_property_customizers)
+                create_standard_property_form_data(model, standard_property, standard_property_customizer)
+                for standard_property, standard_property_customizer in
+                zip(standard_properties[model_key], standard_property_customizers)
                 if standard_property_customizer.displayed
             ]
 
             standard_properties_formsets[model_key] = MetadataStandardPropertyInlineFormSetFactory(
-                instance    = model,
-                prefix      = model_key,
-                request     = request,
-                initial     = standard_properties_data,
-                extra       = len(standard_properties_data),
-                customizers = standard_property_customizers,
+                instance=model,
+                prefix=model_key,
+                request=request,
+                initial=standard_properties_data,
+                extra=len(standard_properties_data),
+                customizers=standard_property_customizers,
             )
 
             scientific_properties_data = [
-                create_scientific_property_form_data(model,scientific_property,scientific_property_customizer)
-                for scientific_property,scientific_property_customizer in zip(scientific_properties[model_key],scientific_property_customizers[model_key])
+                create_scientific_property_form_data(model, scientific_property, scientific_property_customizer)
+                for scientific_property, scientific_property_customizer in
+                zip(scientific_properties[model_key], scientific_property_customizers[model_key])
                 if scientific_property_customizer.displayed
             ]
 
             scientific_properties_formsets[model_key] = MetadataScientificPropertyInlineFormSetFactory(
-                instance    = model,
-                prefix      = model_key,
-                request     = request,
-                initial     = scientific_properties_data,
-                extra       = len(scientific_properties_data),
-                customizers = scientific_property_customizers[model_key],
+                instance=model,
+                prefix=model_key,
+                request=request,
+                initial=scientific_properties_data,
+                extra=len(scientific_properties_data),
+                customizers=scientific_property_customizers[model_key],
             )
 
         request.session["checked_arguments"] = False
@@ -254,9 +262,9 @@ def questionnaire_edit_new(request,project_name="",model_name="",version_name=""
         # I can go directly to creating the forms based on teh request data
 
         model_formset = MetadataModelFormSetFactory(
-            request     = request,
-            prefixes    = model_keys,
-            customizer  = model_customizer,
+            request=request,
+            prefixes=model_keys,
+            customizer=model_customizer,
         )
 
         model_formset_validity = model_formset.is_valid()
@@ -264,24 +272,24 @@ def questionnaire_edit_new(request,project_name="",model_name="",version_name=""
             model_instances = model_formset.save(commit=False)
 
         validity += [model_formset_validity]
-        
+
         standard_properties_formsets = {}
         scientific_properties_formsets = {}
-        for (i,model_key) in enumerate(model_keys):
+        for (i, model_key) in enumerate(model_keys):
             standard_properties_formsets[model_key] = MetadataStandardPropertyInlineFormSetFactory(
-                instance    = model_instances[i] if model_formset_validity else models[i],
-                prefix      = model_key,
-                request     = request,
-                customizers = standard_property_customizers,
+                instance=model_instances[i] if model_formset_validity else models[i],
+                prefix=model_key,
+                request=request,
+                customizers=standard_property_customizers,
             )
 
             validity += [standard_properties_formsets[model_key].is_valid()]
 
             scientific_properties_formsets[model_key] = MetadataScientificPropertyInlineFormSetFactory(
-                instance    = model_instances[i] if model_formset_validity else models[i],
-                prefix      = model_key,
-                request     = request,
-                customizers = scientific_property_customizers[model_key],
+                instance=model_instances[i] if model_formset_validity else models[i],
+                prefix=model_key,
+                request=request,
+                customizers=scientific_property_customizers[model_key],
             )
 
             validity += [scientific_properties_formsets[model_key].is_valid()]
@@ -313,7 +321,7 @@ def questionnaire_edit_new(request,project_name="",model_name="",version_name=""
             })
             # I AM HERE; ADD ?id=model_instances[0].pk to the URL
 
-            return HttpResponseRedirect(customize_existing_url)
+            return HttpResponseRedirect(edit_existing_url)
 
         else:
 
@@ -329,22 +337,24 @@ def questionnaire_edit_new(request,project_name="",model_name="",version_name=""
             if not model_form_errors:
                 print "no form_errors in model_formset"
             for model in models:
-                model_key = u"%s_%s" % (model.vocabulary_key,model.component_key)
+                model_key = u"%s_%s" % (model.vocabulary_key, model.component_key)
                 if standard_properties_formsets[model_key].non_form_errors():
-                    print "standard_property_formsets[%s].non_form_errors: %s" % (model_key,standard_property_formsets[model_key].non_form_errors())
+                    print "standard_property_formsets[%s].non_form_errors: %s" % (
+                        model_key, standard_properties_formsets[model_key].non_form_errors())
                 else:
                     print "no non_form_errors in standard_property_formsets[%s]" % (model_key)
                 standard_property_form_errors = False
                 for standard_property_form in standard_properties_formsets[model_key]:
                     if standard_property_form.errors:
                         standard_property_form_errors = True
-                        print "standard_property_formsets[%s].errors: %s" % (model_key,standard_property_form.errors)
+                        print "standard_property_formsets[%s].errors: %s" % (model_key, standard_property_form.errors)
                 if not standard_property_form_errors:
                     print "no form_errors in standard_property_formsets[%s]" % (model_key)
             for model in models:
-                model_key = u"%s_%s" % (model.vocabulary_key,model.component_key)
+                model_key = u"%s_%s" % (model.vocabulary_key, model.component_key)
                 if scientific_properties_formsets[model_key].non_form_errors():
-                    print "scientific_property_formsets[%s].non_form_errors: %s" % (model_key,scientific_property_formsets[model_key].non_form_errors())
+                    print "scientific_property_formsets[%s].non_form_errors: %s" % (
+                        model_key, scientific_properties_formsets[model_key].non_form_errors())
                 else:
                     print "no non_form_errors in scientific_property_formsets[%s]" % (model_key)
                 scientific_property_form_errors = False
@@ -355,79 +365,80 @@ def questionnaire_edit_new(request,project_name="",model_name="",version_name=""
                 if not scientific_property_form_errors:
                     print "no form_errors in scientific_property_formsets[%s]" % (model_key)
 
-    
     dict = {
-        "site"                                    : get_current_site(request),          # provide a special message if this is not the production site
-        "project"                                 : project,                            # used for generating URLs in the footer, and in the title
-        "version"                                 : version,                            # used for generating URLs in the footer
-        "model_proxy"                             : model_proxy,                        # used for generating URLs in the footer
-        "vocabularies"                            : vocabularies,
-        "model_customizer"                        : model_customizer,                   
-        "model_formset"                           : model_formset,
-        "standard_properties_formsets"            : standard_properties_formsets,
-        "scientific_properties_formsets"          : scientific_properties_formsets,
-        "questionnaire_version"                   : get_version(),                      # used in the footer
-        "can_publish"                             : False,                              # only models that have already been saved can be published
+        "site": get_current_site(request),  # provide a special message if this is not the production site
+        "project": project,  # used for generating URLs in the footer, and in the title
+        "version": version,  # used for generating URLs in the footer
+        "model_proxy": model_proxy,  # used for generating URLs in the footer
+        "vocabularies": vocabularies,
+        "model_customizer": model_customizer,
+        "model_formset": model_formset,
+        "standard_properties_formsets": standard_properties_formsets,
+        "scientific_properties_formsets": scientific_properties_formsets,
+        "questionnaire_version": get_version(),  # used in the footer
+        "can_publish": False,  # only models that have already been saved can be published
     }
 
-    response = render_to_response('questionnaire/questionnaire_edit.html', dict, context_instance=RequestContext(request))
+    response = render_to_response('questionnaire/questionnaire_edit.html', dict,
+                                  context_instance=RequestContext(request))
 
     return response
 
 
-
-def questionnaire_edit_existing(request,project_name="",model_name="",version_name="",document_name="",**kwargs):
+def questionnaire_edit_existing(request, project_name="", model_name="", version_name="", document_name="", **kwargs):
+    ##todo: remove local import statement
+    from CIM_Questionnaire.questionnaire.views.views_error import questionnaire_error
 
     # try to get the project...
     try:
         project = MetadataProject.objects.get(name__iexact=project_name)
     except MetadataProject.DoesNotExist:
         msg = "Cannot find the <u>project</u> '%s'.  Has it been registered?" % (project_name)
-        return error(request,msg)
+        return questionnaire_error(request, msg)
 
     if not project.active:
         msg = "Project '%s' is inactive." % (project_name)
-        return error(request,msg)
+        return questionnaire_error(request, msg)
 
     # check authentication...
     # (not using @login_required b/c some projects ignore authentication)
     if project.authenticated:
         current_user = request.user
         if not current_user.is_authenticated():
-            return redirect('/login/?next=%s'%(request.path))
+            return redirect('/login/?next=%s' % (request.path))
         if not (request.user.is_superuser or request.user.metadata_user.is_user_of(project)):
-            msg = "User '%s' does not have editing permission for project '%s'." % (request.user,project_name)
+            msg = "User '%s' does not have editing permission for project '%s'." % (request.user, project_name)
             if project.email:
                 msg += "<br/>Please <a href='mailto:%s'>contact</a> the project for support." % (project.email)
-            return error(request,msg)
+            return questionnaire_error(request, msg)
 
     # try to get the version...
     try:
-        version = MetadataVersion.objects.get(name__iexact=version_name,registered=True)
+        version = MetadataVersion.objects.get(name__iexact=version_name, registered=True)
     except MetadataVersion.DoesNotExist:
         msg = "Cannot find the <u>version</u> '%s'.  Has it been registered?" % (version_name)
-        return error(request,msg)
+        return questionnaire_error(request, msg)
 
 
     # gather all the extra information required by the template
     dict = {
-        "site"                                    : get_current_site(request),
-        "project"                                 : project,
-        "version"                                 : version,
-        "questionnaire_version"                   : get_version(),
-        "can_publish"                             : False,                              # only models that have already been saved can be published
+        "site": get_current_site(request),
+        "project": project,
+        "version": version,
+        "questionnaire_version": get_version(),
+        "can_publish": False,  # only models that have already been saved can be published
     }
 
     return render_to_response('questionnaire/questionnaire_edit.html', dict, context_instance=RequestContext(request))
 
 
 def questionnaire_edit_help(request):
-
     # gather all the extra information required by the template
     dict = {
-        "site"                          : get_current_site(request),
-        "questionnaire_version"         : get_version(),
+        "site": get_current_site(request),
+        "questionnaire_version": get_version(),
     }
 
-    return render_to_response('questionnaire/questionnaire_edit_instructions.html', dict, context_instance=RequestContext(request))
+    return render_to_response('questionnaire/questionnaire_edit_instructions.html', dict,
+                              context_instance=RequestContext(request))
 
