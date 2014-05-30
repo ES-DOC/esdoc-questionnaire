@@ -51,7 +51,12 @@ class MetadataModelProxy(models.Model):
     version                 = models.ForeignKey("MetadataVersion",blank=False,null=True,related_name="model_proxies")
 
 
-
+    def is_document(self):
+        is_document = False
+        if self.stereotype.lower() == "document":
+            is_document = True
+        return is_document
+    
     def __unicode__(self):
         return u'%s'%(self.name)
         #return u'%s::%s' % (self.version,self.name)
