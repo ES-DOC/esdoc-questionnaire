@@ -94,6 +94,13 @@ def questionnaire_edit_new(request,project_name="",model_name="",version_name=""
     ###standard_property_proxies = sorted(model_proxy.standard_properties.all(),key=lambda proxy: standard_property_customizers.get(proxy=proxy).order)
     standard_property_proxies = [standard_property_customizer.proxy for standard_property_customizer in standard_property_customizers]
 
+    ##TODO: remove assert statement
+    pc_standard = model_customizer.standard_property_customizers.all()
+    pc_scientific = model_customizer.scientific_property_customizers.all()
+    for pc in [pc_standard, pc_scientific]:
+        for row in pc:
+            assert row.name == row.proxy.name
+
     scientific_property_customizers = {}
     scientific_property_proxies = {}
     for vocabulary in vocabularies:
@@ -106,7 +113,6 @@ def questionnaire_edit_new(request,project_name="",model_name="",version_name=""
             scientific_property_proxies[model_key] = [scientific_property_customizer.proxy for scientific_property_customizer in scientific_property_customizers[model_key]]
             # TODO: AT THIS POINT I HAVE DISCOVERED THAT THE CUSTOMIZERS ARE NOT ASSOCIATED W/ THE CORRECT PROXIES
             # THIS IS AN ISSUE W/ THE CUSTOMIZE VIEW
-
 
     # note that the proxies need to be sorted according to the customizers (which are ordered by default),
     # so that when I pass an iterator of customizers to the formsets, they will match the underlying form that is created for each property
