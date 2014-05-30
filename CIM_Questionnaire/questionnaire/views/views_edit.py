@@ -369,7 +369,7 @@ def questionnaire_edit_new(request, project_name="", model_name="", version_name
 def questionnaire_edit_existing(request, project_name="", model_name="", version_name="", document_name="", **kwargs):
     ##todo: remove local import statement
     from CIM_Questionnaire.questionnaire.views.views_error import questionnaire_error
-    
+
     # try to get the project...
     try:
         project = MetadataProject.objects.get(name__iexact=project_name)
