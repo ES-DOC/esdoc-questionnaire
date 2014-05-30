@@ -73,7 +73,7 @@ class MetadataModel(MPTTModel):
         app_label   = APP_LABEL
         abstract    = False
 
-        unique_together = ("proxy","project","version","vocabulary_key","component_key")
+#        unique_together = ("proxy","project","version","vocabulary_key","component_key")
 
     parent = TreeForeignKey('self', null=True, blank=True, related_name='children')
 

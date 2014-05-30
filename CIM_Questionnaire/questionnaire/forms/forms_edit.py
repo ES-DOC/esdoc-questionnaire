@@ -442,7 +442,6 @@ class MetadataScientificPropertyForm(MetadataEditingForm):
 
         self.customizer = customizer
 
-
     def get_hidden_fields(self):
         return self.get_fields_from_list(self._hidden_fields)
 
@@ -457,11 +456,17 @@ class MetadataScientificPropertyForm(MetadataEditingForm):
 
 
     def get_value_field_name(self):
-        if self.current_values["is_enumeration"] == True:
-            return "enumeration_value"
-        else:
+        is_enumeration = self.current_values.get("is_enumeration",False)
+        if not is_enumeration:
             return "atomic_value"
-            
+        else:
+            return "enumeration_value"
+
+###        if self.current_values["is_enumeration"] == True:
+###            return "enumeration_value"
+###        else:
+###            return "atomic_value"
+
 
 class MetadataScientificPropertyInlineFormSet(BaseInlineFormSet):
 

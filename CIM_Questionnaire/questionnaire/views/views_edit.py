@@ -8,8 +8,11 @@
 #
 #   This project is distributed according to the terms of the MIT license [http://www.opensource.org/licenses/MIT].
 ####################
+from django.contrib import messages
 
 from django.contrib.sites.models import get_current_site
+from django.core.urlresolvers import reverse
+from django.http import HttpResponseRedirect
 from django.shortcuts import redirect, render_to_response
 from django.template import RequestContext
 from django.template.defaultfilters import slugify
@@ -249,7 +252,9 @@ def questionnaire_edit_new(request, project_name="", model_name="", version_name
                 customizers=scientific_property_customizers[model_key],
             )
 
-    else:  # request.method == "POST":
+        request.session["checked_arguments"] = False
+
+    else: # request.method == "POST":
 
         validity = []
 
@@ -289,6 +294,8 @@ def questionnaire_edit_new(request, project_name="", model_name="", version_name
 
             validity += [scientific_properties_formsets[model_key].is_valid()]
 
+        request.session["checked_arguments"] = True
+        
         if all(validity):
 
             for model_instance in model_instances:
@@ -303,6 +310,18 @@ def questionnaire_edit_new(request, project_name="", model_name="", version_name
                 scientific_property_instances = scientific_property_formset.save(commit=False)
                 for scientific_property_instance in scientific_property_instances:
                     scientific_property_instance.save()
+
+            # using Django's built-in messaging framework to pass status messages (as per https://docs.djangoproject.com/en/dev/ref/contrib/messages/)
+            messages.add_message(request, messages.SUCCESS, "Successfully saved model instances")
+            edit_existing_url = reverse("edit_existing",kwargs={
+                "project_name"      : project_name,
+                "model_name"        : model_name,
+                "version_name"      : version_name,
+                "document_name"     : model_instances[0].shortName
+            })
+            # I AM HERE; ADD ?id=model_instances[0].pk to the URL
+
+            return HttpResponseRedirect(edit_existing_url)
 
         else:
 
