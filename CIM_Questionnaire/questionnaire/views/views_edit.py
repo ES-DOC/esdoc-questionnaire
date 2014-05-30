@@ -283,12 +283,12 @@ def questionnaire_edit_new(request,project_name="",model_name="",version_name=""
             for model_instance in model_instances:
                 model_instance.save()
 
-            for standard_property_formset in standard_property_formsets.values():
+            for standard_property_formset in standard_properties_formsets.values():
                 standard_property_instances = standard_property_formset.save(commit=False)
                 for standard_property_instance in standard_property_instances:
                     standard_property_instance.save()
 
-            for scientific_property_formset in scientific_property_formsets.values():
+            for scientific_property_formset in scientific_properties_formsets.values():
                 scientific_property_instances = scientific_property_formset.save(commit=False)
                 for scientific_property_instance in scientific_property_instances:
                     scientific_property_instance.save()
