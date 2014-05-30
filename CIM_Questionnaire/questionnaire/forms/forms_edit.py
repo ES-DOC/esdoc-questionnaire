@@ -369,7 +369,7 @@ class MetadataScientificPropertyForm(MetadataEditingForm):
     class Meta:
         model   = MetadataScientificProperty
 
-    current_values  = {}
+    # current_values  = {}
 
     # since I am only explicitly displaying the "value_field" I have to be sure to add any fields
     # that the django form init/saving process depends upon to this list

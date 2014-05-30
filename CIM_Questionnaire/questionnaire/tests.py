@@ -953,6 +953,16 @@ class MetadataEditingFormTest(MetadataTest):
 
 class MetadataEditingViewTest(MetadataTest):
 
+    def get_request_url(self):
+        """Return a URL suitable for client and factory testing."""
+
+        project_name = "test"
+        version_name = "test"
+        model_name = "modelcomponent"
+
+        request_url = u"/%s/edit/%s/%s/" % (project_name,version_name,model_name)
+        return request_url
+
     def test_questionnaire_edit_new_get(self):
         project_name = "test"
         version_name = "test"
