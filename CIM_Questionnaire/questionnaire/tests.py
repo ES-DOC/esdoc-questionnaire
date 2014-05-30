@@ -713,6 +713,17 @@ class MetadataProjectTest(MetadataTest):
 
 class MetadataCustomizerTest(MetadataTest):
 
+    def test_customizer_proxy_join_from_database(self):
+        """Test customizers and proxies are properly joined."""
+
+        model_customizers = MetadataModelCustomizer.objects.all()
+        for mc in model_customizers:
+            pc_standard = mc.standard_property_customizers.all()
+            pc_scientific = mc.scientific_property_customizers.all()
+            for pc in [pc_standard, pc_scientific]:
+                for row in pc:
+                    self.assertEqual(row.name, row.proxy.name)
+
     def test_create_model_customizer(self):
 
         model_customizers = MetadataModelCustomizer.objects.all()
@@ -746,8 +757,8 @@ class MetadataCustomizerTest(MetadataTest):
 
 class MetadataEditingFormTest(MetadataTest):
 
-    def test_questionnaire_edit_form_get(self):
-        pass
+    # def test_questionnaire_edit_form_get(self):
+    #     pass
 
 
     def test_questionnaire_edit_form_post(self):
