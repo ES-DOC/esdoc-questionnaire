@@ -1018,3 +1018,17 @@ class MetadataEditingViewTest(MetadataTest):
         fall = re.findall(expr, post_content)
 
         self.assertEqual(len(fall),20)
+
+        ## ensure data is actually saved to the database
+        mm = MetadataModel.objects.all()
+        ## the test controlled vocabulary has 12 components plus the parent component
+        self.assertEqual(len(mm), 13)
+        ## the test version of the CIM has defined 8 standard properties
+        for obj in mm:
+            self.assertEqual(len(obj.standard_properties.all()), 8)
+        self.assertEqual(mm[7].standard_properties.all()[3].name, u'description')
+        ## these are the counts of scientific properties associated with each component of the metadata models
+        self.assertEqual([len(m.scientific_properties.all()) for m in mm],
+                         [0, 0, 3, 4, 6, 10, 10, 8, 10, 13, 7, 12, 13])
+        self.assertEqual([m.component_key for m in mm], [u'rootcomponent', u'atmosphere', u'atmoskeyproperties', u'topofatmosinsolation', u'atmosspaceconfiguration', u'atmoshorizontaldomain', u'atmosdynamicalcore', u'atmosadvection', u'atmosradiation', u'atmosconvectturbulcloud', u'atmoscloudscheme', u'cloudsimulator', u'atmosorographyandwaves'])
+        self.assertEqual(mm[8].scientific_properties.all()[5].name, u'AerosolTypes')
