@@ -21,11 +21,9 @@ class MetadataForm(ModelForm):
         
         if self.data:
             # POST; request was passed into constructor
-            # (not sure why I can't do this in a list comprehension)
             for key,value in self.data.iteritems():
                 if key.startswith(self.prefix+"-"):
                     self.current_values[key.split(self.prefix+"-")[1]] = value
-
 
         else:
             # GET; initial was passed into constructor

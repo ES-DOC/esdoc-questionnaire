@@ -135,7 +135,7 @@ def MetadataModelFormSetFactory(*args,**kwargs):
     # using curry() to pass arguments to the individual formsets
     _formset = modelformset_factory(MetadataModel,*args,**new_kwargs)
     _formset.form = staticmethod(curry(MetadataModelForm,customizer=_customizer))
-
+    
     if _prefixes:
         _formset.prefix_iterator = iter(_prefixes)
     if _initial:
@@ -189,13 +189,21 @@ class MetadataStandardPropertyForm(MetadataEditingForm):
             "atomic_value", "enumeration_value", "enumeration_other_value", "relationship_value",
         ]
 
-    current_values  = {}
-
     _hidden_fields      = ["proxy", "field_type", "name", "order", "model",]
     _value_fields       = ["atomic_value", "enumeration_value", "enumeration_other_value", "relationship_value",]
 
     # set of fields that will be the same for all members of a formset; allows me to cache the query (for relationship fields)
     cached_fields       = []
+
+    def __init__(self,*args,**kwargs):
+
+        # customizer was passed in via curry() in the factory function below
+        customizer = kwargs.pop("customizer",None)
+
+        super(MetadataStandardPropertyForm,self).__init__(*args,**kwargs)
+
+        if customizer:
+            self.customize(customizer)
 
     def get_hidden_fields(self):
         return self.get_fields_from_list(self._hidden_fields)
@@ -218,16 +226,6 @@ class MetadataStandardPropertyForm(MetadataEditingForm):
         else:
             msg = "unable to determine 'value' field for fieldtype '%s'" % (self.current_values["field_types"])
             raise QuestionnaireError(msg)
-
-    def __init__(self,*args,**kwargs):
-
-        # customizer was passed in via curry() in the factory function below
-        customizer = kwargs.pop("customizer",None)
-
-        super(MetadataStandardPropertyForm,self).__init__(*args,**kwargs)
-
-        if customizer:
-            self.customize(customizer)
 
     def customize(self,customizer):
 

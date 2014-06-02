@@ -17,13 +17,13 @@ from django.shortcuts import redirect, render_to_response
 from django.template import RequestContext
 from django.template.defaultfilters import slugify
 
-from CIM_Questionnaire.questionnaire import get_version
-from CIM_Questionnaire.questionnaire.models import MetadataProject, MetadataVersion, MetadataModelProxy, \
+from questionnaire import get_version
+from questionnaire.models import MetadataProject, MetadataVersion, MetadataModelProxy, \
     MetadataModelCustomizer, MetadataScientificPropertyCustomizer, MetadataModel, MetadataStandardProperty, \
     MetadataScientificProperty
-from CIM_Questionnaire.questionnaire.utils import DEFAULT_VOCABULARY
-from CIM_Questionnaire.questionnaire.models.metadata_model import create_models_from_components
-from CIM_Questionnaire.questionnaire.forms.forms_edit import create_model_form_data, create_standard_property_form_data, \
+from questionnaire.utils import DEFAULT_VOCABULARY
+from questionnaire.models.metadata_model import create_models_from_components
+from questionnaire.forms.forms_edit import create_model_form_data, create_standard_property_form_data, \
     create_scientific_property_form_data, \
     MetadataModelFormSetFactory, MetadataStandardPropertyInlineFormSetFactory, \
     MetadataScientificPropertyInlineFormSetFactory
@@ -34,7 +34,7 @@ __date__ = "Sep 30, 2013 3:04:42 PM"
 
 def questionnaire_edit_new(request, project_name="", model_name="", version_name="", **kwargs):
     ##todo: remove local import statement
-    from CIM_Questionnaire.questionnaire.views.views_error import questionnaire_error
+    from questionnaire.views.views_error import questionnaire_error
 
     # try to get the project...
     try:
@@ -387,7 +387,7 @@ def questionnaire_edit_new(request, project_name="", model_name="", version_name
 
 def questionnaire_edit_existing(request, project_name="", model_name="", version_name="", document_name="", **kwargs):
     ##todo: remove local import statement
-    from CIM_Questionnaire.questionnaire.views.views_error import questionnaire_error
+    from questionnaire.views.views_error import questionnaire_error
 
     # try to get the project...
     try:
