@@ -425,9 +425,9 @@ def questionnaire_customize_existing(request,project_name="",model_name="",versi
     # TODO: THESE ASSERTS WERE IN RESPONSE TO AN OLD ERROR; MOVE THEM TO THE TESTS
     assert(model_customizer.proxy==model_proxy)
     for standard_property in model_customizer.standard_property_customizers.all():
-        assert(standard_property.name,standard_property.proxy.name)
+        assert(standard_property.name == standard_property.proxy.name)
     for scientific_property in model_customizer.scientific_property_customizers.all():
-        assert(scientific_property.name,scientific_property.proxy.name)
+        assert(scientific_property.name == scientific_property.proxy.name)
 
     
     if request.method == "GET":
