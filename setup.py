@@ -22,5 +22,8 @@ setup(
         "distribute",
         "south>=0.8.2", # v0.8.2 fails w/ DateTimeFields (see https://code.djangoproject.com/ticket/21312) 
         "lxml",
+        "pillow",
+	"pytz",
+	"django-mptt",
     ],
 )
