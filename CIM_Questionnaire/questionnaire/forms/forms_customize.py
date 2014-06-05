@@ -176,11 +176,6 @@ class MetadataModelCustomizerForm(ModelForm):
         self.standard_categories_to_process[:] = [] # fancy way of clearing the list, making sure any references are also updated
         for deserialized_standard_category_customizer in serializers.deserialize("json", cleaned_data["standard_categories_content"],ignorenonexistent=True):
             self.standard_categories_to_process.append(deserialized_standard_category_customizer)
-#            standard_category_customizer = deserialized_standard_category_customizer.object
-#            if standard_category_customizer.pending_deletion:
-#                deserialized_standard_category_customizer.delete()
-#            else:
-#                deserialized_standard_category_customizer.save()
         try:
             for vocabulary in self.cleaned_data["vocabularies"]:
                 vocabulary_key = slugify(vocabulary.name)
@@ -191,14 +186,11 @@ class MetadataModelCustomizerForm(ModelForm):
                     self.scientific_categories_to_process[vocabulary_key][component_key] = []
                     for deserialized_scientific_category_customizer in serializers.deserialize("json", self.data[scientific_categories_content_field_name],ignorenonexistent=True):
                         self.scientific_categories_to_process[vocabulary_key][component_key].append(deserialized_scientific_category_customizer)
-    #                   scientific_category_customizer = deserialized_scientific_category_customizer.object
-    #                   if scientific_category_customizer.pending_deletion:
-    #                       deserialized_scientific_category_customizer.delete()
-    #                   else:
-    #                       deserialized_scientific_category_customizer.save()
         except KeyError:
             # this takes care of the case when this being called on a subform
             pass
+        except:
+            import ipdb; ipdb.set_trace()
 
         return cleaned_data
         
@@ -578,7 +570,8 @@ class MetadataScientificPropertyCustomizerForm(MetadataCustomizerForm):
         return all_fields
 
     def get_fields(self):
-        if self.current_values["is_enumeration"]:
+        is_enumeration = self.get_current_field_value("is_enumeration",False)
+        if is_enumeration:
             return self.get_enumeration_fields()
         else:
             return self.get_keyboard_fields()

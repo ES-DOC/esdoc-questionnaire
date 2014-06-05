@@ -40,7 +40,7 @@ def create_model_form_data(model,model_customizer):
 
     model_form_data = get_initial_data(model,{
         "last_modified" : time.strftime("%c"),
-        "parent"        : model.parent,
+#        "parent"        : model.parent,
     })
 
     return model_form_data
@@ -77,14 +77,12 @@ class MetadataModelForm(MetadataEditingForm):
         model   = MetadataModel
         fields  = [
             # hidden fields...
-            "proxy", "project", "version", "is_document","is_root", "vocabulary_key", "component_key", "active", "name", "description", "order",
+            "proxy", "project", "version", "is_document","is_root", "vocabulary_key", "component_key", "active", "name", "description", "order", 
             # header fields...
             "title",
         ]
 
-    current_values  = {}
-
-    _hidden_fields       = ["proxy", "project", "version", "is_document", "vocabulary_key", "component_key", "active", "name", "description", "order",]
+    _hidden_fields       = ["proxy", "project", "version", "is_document", "vocabulary_key", "component_key", "active", "name", "description", "order", ]
     _header_fields       = ["title",]
 
     # set of fields that will be the same for all members of a formset; allows me to cache the query (for relationship fields)
@@ -116,13 +114,12 @@ class MetadataModelForm(MetadataEditingForm):
         # (but in the case of a modelform, it's _all_ done in the template)
 
         pass
-
         
 def MetadataModelFormSetFactory(*args,**kwargs):
     _prefixes    = kwargs.pop("prefixes",[])
     _request     = kwargs.pop("request",None)
     _initial     = kwargs.pop("initial",[])
-    _queryset    = kwargs.pop("queryset",None)
+    _queryset    = kwargs.pop("queryset",MetadataModel.objects.none())
     _customizer  = kwargs.pop("customizer",None)
     new_kwargs = {
         "can_delete" : False,
@@ -148,7 +145,12 @@ def MetadataModelFormSetFactory(*args,**kwargs):
     if _request and _request.method == "POST":
         return _formset(_request.POST)
     else:
-        return _formset(initial=_initial)
+        # notice how both "queryset" and "initial" are passed
+        # this handles both existing and new models
+        # (in the case of existing models, "queryset" is used)
+        # (in the case of new models, "initial" is used)
+        # but both arguments are needed so that "extra" is used properly
+        return _formset(initial=_initial,queryset=_queryset)
 
 #######################
 # standard properties #
@@ -196,7 +198,7 @@ class MetadataStandardPropertyForm(MetadataEditingForm):
     cached_fields       = []
 
     def __init__(self,*args,**kwargs):
-
+        
         # customizer was passed in via curry() in the factory function below
         customizer = kwargs.pop("customizer",None)
 
@@ -217,14 +219,17 @@ class MetadataStandardPropertyForm(MetadataEditingForm):
             return None
 
     def get_value_field_name(self):
-        if self.current_values["field_type"] == MetadataFieldTypes.ATOMIC:
+
+        field_type = self.get_current_field_value("field_type")
+
+        if field_type == MetadataFieldTypes.ATOMIC:
             return "atomic_value"
-        elif self.current_values["field_type"] == MetadataFieldTypes.ENUMERATION:
+        elif field_type == MetadataFieldTypes.ENUMERATION:
             return "enumeration_value"
-        elif self.current_values["field_type"] == MetadataFieldTypes.RELATIONSHIP:
+        elif field_type == MetadataFieldTypes.RELATIONSHIP:
             return  "relationship_value"
         else:
-            msg = "unable to determine 'value' field for fieldtype '%s'" % (self.current_values["field_types"])
+            msg = "unable to determine 'value' field for fieldtype '%s'" % (field_type)
             raise QuestionnaireError(msg)
 
     def customize(self,customizer):
@@ -317,7 +322,7 @@ def MetadataStandardPropertyInlineFormSetFactory(*args,**kwargs):
     _prefix      = kwargs.pop("prefix","")+DEFAULT_PREFIX
     _request     = kwargs.pop("request",None)
     _initial     = kwargs.pop("initial",[])
-    _queryset    = kwargs.pop("queryset",None)
+    _queryset    = kwargs.pop("queryset",MetadataStandardProperty.objects.none())
     _instance    = kwargs.pop("instance")
     _customizers = kwargs.pop("customizers",None)
     new_kwargs = {
@@ -339,10 +344,18 @@ def MetadataStandardPropertyInlineFormSetFactory(*args,**kwargs):
     else: # assuming data was passed in via POST
         _formset.number_of_properties = int(_request.POST[u"%s-TOTAL_FORMS"%(_prefix)])
 
+
+
+
     if _request and _request.method == "POST":
         return _formset(_request.POST,instance=_instance,prefix=_prefix)
-
-    return _formset(queryset=_queryset,initial=_initial,instance=_instance,prefix=_prefix)
+    else:
+        # notice how both "queryset" and "initial" are passed
+        # this handles both existing and new models
+        # (in the case of existing models, "queryset" is used)
+        # (in the case of new models, "initial" is used)
+        # but both arguments are needed so that "extra" is used properly
+        return _formset(initial=_initial,queryset=_queryset,instance=_instance,prefix=_prefix)
 
 
 #########################
@@ -350,6 +363,14 @@ def MetadataStandardPropertyInlineFormSetFactory(*args,**kwargs):
 #########################
 
 def create_scientific_property_form_data(model,scientific_property,scientific_property_customizer=None):
+
+
+    if scientific_property_customizer:
+        if model.get_model_key() ==  "atmos_atmosdynamicalcore":
+            if scientific_property.category_key != scientific_property_customizer.category.key:
+                import ipdb; ipdb.set_trace()
+
+        #assert(scientific_property.category_key == scientific_property_customizer.category.key)
 
     scientific_property_form_data = get_initial_data(scientific_property,{
         "last_modified" : time.strftime("%c"),
@@ -366,8 +387,6 @@ class MetadataScientificPropertyForm(MetadataEditingForm):
 
     class Meta:
         model   = MetadataScientificProperty
-
-    # current_values  = {}
 
     # since I am only explicitly displaying the "value_field" I have to be sure to add any fields
     # that the django form init/saving process depends upon to this list
@@ -392,9 +411,7 @@ class MetadataScientificPropertyForm(MetadataEditingForm):
 
 
     def customize(self,customizer):
-
-        #assert(customizer.proxy.id == self.current_values["proxy"])
-        
+      
         # customization is done in the form and in the template
 
         value_field_name = self.get_value_field_name()
@@ -454,16 +471,13 @@ class MetadataScientificPropertyForm(MetadataEditingForm):
 
 
     def get_value_field_name(self):
-        is_enumeration = self.current_values.get("is_enumeration",False)
+
+        is_enumeration = self.get_current_field_value("is_enumeration",False) # TODO: PREVIOUSLY IF "is_enumeration" WAS NOT FOUND I RETURNED FALSE
+
         if not is_enumeration:
             return "atomic_value"
         else:
             return "enumeration_value"
-
-###        if self.current_values["is_enumeration"] == True:
-###            return "enumeration_value"
-###        else:
-###            return "atomic_value"
 
 
 class MetadataScientificPropertyInlineFormSet(BaseInlineFormSet):
@@ -501,7 +515,7 @@ def MetadataScientificPropertyInlineFormSetFactory(*args,**kwargs):
     _prefix      = kwargs.pop("prefix","")+DEFAULT_PREFIX
     _request     = kwargs.pop("request",None)
     _initial     = kwargs.pop("initial",[])
-    _queryset    = kwargs.pop("queryset",None)
+    _queryset    = kwargs.pop("queryset",MetadataScientificProperty.objects.none())
     _instance    = kwargs.pop("instance")
     _customizers = kwargs.pop("customizers",None)
     new_kwargs = {
@@ -512,7 +526,12 @@ def MetadataScientificPropertyInlineFormSetFactory(*args,**kwargs):
         "fk_name"    : "model" # required in-case there are more than 1 fk's to "metadatamodel"; this is the one that is relevant for this inline form
     }
     new_kwargs.update(kwargs)
-    
+
+    if _prefix ==  "atmos_atmosdynamicalcore"+DEFAULT_PREFIX:
+        import ipdb; ipdb.set_trace()
+
+    assert(len(_initial)==new_kwargs["extra"])
+
     _formset = inlineformset_factory(MetadataModel,MetadataScientificProperty,*args,**new_kwargs)
     if _customizers:
         _formset.customizers = iter(_customizers)
@@ -525,5 +544,10 @@ def MetadataScientificPropertyInlineFormSetFactory(*args,**kwargs):
 
     if _request and _request.method == "POST":
         return _formset(_request.POST,instance=_instance,prefix=_prefix)
-
-    return _formset(queryset=_queryset,initial=_initial,instance=_instance,prefix=_prefix)
+    else:
+        # notice how both "queryset" and "initial" are passed
+        # this handles both existing and new models
+        # (in the case of existing models, "queryset" is used)
+        # (in the case of new models, "initial" is used)
+        # but both arguments are needed so that "extra" is used properly
+        return _formset(initial=_initial,queryset=_queryset,instance=_instance,prefix=_prefix)

@@ -36,6 +36,7 @@ from django.template.defaultfilters import slugify
 
 from questionnaire  import get_version
 
+
 def xpath_fix(node, xpath):
     """Helper function to address lxml smart strings memory leakage issue.
 
@@ -80,6 +81,23 @@ CIM_DOCUMENT_TYPES = [
 
 #: vocabulary name to use for cases where a model has no vocabulary, or where it is the root component of several vocabularies
 DEFAULT_VOCABULARY  = "DEFAULT_VOCABULARY"
+
+
+##############
+# assertions #
+##############
+
+def assert_no_string_nones(dct):
+    """
+    Asserts no string representations of NoneType (i.e. ``'None'``) are present in the dictionary.
+
+    :param dict dct:
+    """
+    for k, v in dct.iteritems():
+        if v == 'None':
+            msg = 'The key "{0}" has value equal to "None" string.'.format(k)
+            raise AssertionError(msg)
+
 
 ##################
 # error handling #
@@ -351,6 +369,7 @@ def find_in_sequence(fn, sequence):
     if fn(item):
       return item
   return None
+
 
 def interate_through_node(node,filter_parameters={}):
     if filter_parameters:

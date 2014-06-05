@@ -59,6 +59,11 @@ def create_models_from_components(component_node,model_parameters,models=[]):
 # MetadataModel #
 #################
 
+def find_model_by_key(key,sequence):
+    for model in sequence:
+        if model.get_model_key() == key:
+            return model
+    return None
 
 class MetadataModel(MPTTModel):
     # ideally, MetadataModel should be an ABC
@@ -96,38 +101,12 @@ class MetadataModel(MPTTModel):
     description     = models.CharField(max_length=HUGE_STRING,blank=True,null=True)
     order           = models.PositiveIntegerField(blank=True,null=True)
 
-# NONE OF THIS STUFF IS EXPLICITLY NEEDED B/C OF THE TreeForeignKey FIELD ABOVE
-#    #parent_model = models.ForeignKey('self',null=True,blank=True,related_name="child_models")
-#    #child_models = models.ManyToManyField('self',related_name='parent_model')
-#
-#    def add_child(self,child):
-#        # TODO: CHECK IT DOESN'T ALREADY EXIST
-#        #self.child_models.add(child)
-#        child.parent_model = self
-#
-#    def get_children(self):
-#        return self.child_models.all()
-#
-#    def get_parent(self):
-#        return self.parent_model
-#
-#    def get_descendents(self,descendents=[]):
-#        children = self.get_children()
-#        for child in children:
-#            descendents.append(child)
-#            child.get_descendents(descendents)
-#        return descendents
-#
-#    def get_ancestors(self,ancestors=[]):
-#        parent = self.get_parent()
-#        if parent:
-#            ancestores.append(parent)
-#            parent.get_ancestors(ancestors)
-#        return ancestors
-
     def __unicode__(self):
         return u'%s' % (self.name)
 
+    def get_model_key(self):
+        return u"%s_%s" % (self.vocabulary_key,self.component_key)
+    
     def reset(self,reset_properties=False):
         # this resets values according to the proxy
         # to reset values according to the customizer, you must go through the corresponding modelform

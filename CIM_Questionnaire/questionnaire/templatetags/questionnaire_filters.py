@@ -106,17 +106,6 @@ def is_admin_of(user, project):
     return False
 
 
-###@register.filter
-###def get_property_type(form):
-###
-###    try:
-###        property = form.instance
-###        return property.field_type
-###    except AttributeError:
-###        msg = "form instance has no field_type attribute; is it a property form?"
-###        print msg
-###        return None
-
 @register.filter
 def get_field_by_name(form,field_name):
     return form[field_name]
@@ -148,30 +137,20 @@ def analyze(formsets):
 def get_form_by_field(formset,field_tuple):
     # returns the 1st form in a fieldset whose specified field has the specified value
     (field_name,field_value) = field_tuple.split('|')
-#    print ""
-#    print 'looking for %s=%s (in %s)' % (field_name,field_value,formset.prefix)
     for (i,form) in enumerate(formset):
-#        print "%s: has %s" % (i,form.current_values)
-#        print form.get_field_value_by_name(field_name)
-        if form.get_field_value_by_name(field_name) == field_value:
+        if form.get_current_field_value(field_name) == field_value:
             return form
     return None
-
-####def get_field_value_by_name(self,field_name):
-####        try:
-####            return self.current_values[field_name]
-####        except KeyError:
-####            msg = "Unable to locate field '%s' in form." % (field_name)
-####            raise QuestionnaireError(msg)
-
 
 @register.filter
 def get_forms_by_field(formset,field_tuple):
     # returns all forms in a fieldset whose specified field has the specified value
     (field_name,field_value) = field_tuple.split('|')
+    if field_value.lower() == "timesteppingframework":
+        import ipdb; ipdb.set_trace()
     forms = []
     for form in formset:
-        if form.get_field_value_by_name(field_name) == field_value:
+        if form.get_current_field_value(field_name) == field_value:
             forms.append(form)
     return forms
 

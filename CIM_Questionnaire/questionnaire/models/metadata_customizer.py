@@ -207,6 +207,12 @@ class MetadataModelCustomizer(MetadataCustomizer):
         #return sorted(categories_and_properties.iteritems(),key=lambda category_and_properties_pair: category_and_properties_pair[0].order)
         return categories_and_properties
 
+def find_category_by_key(key,sequence):
+    for category in sequence:
+        if category.key == key:
+            return category
+    return None
+
 class MetadataCategoryCustomizer(MetadataCustomizer):
     class Meta:
         app_label   = APP_LABEL

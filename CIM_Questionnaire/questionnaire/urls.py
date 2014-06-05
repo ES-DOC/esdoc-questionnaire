@@ -60,7 +60,7 @@ urlpatterns = patterns('',
     # editing...
     url(r'^edit/help$', 'questionnaire.views.edit_help'),
     url(r'^(?P<project_name>[^/]+)/edit/(?P<version_name>[^/]+)/(?P<model_name>[^/]+)/$', 'questionnaire.views.edit_new', name="edit_new"),
-    url(r'^(?P<project_name>[^/]+)/edit/(?P<version_name>[^/]+)/(?P<model_name>[^/]+)/(?P<document_name>[^/]+)/$', 'questionnaire.views.edit_existing', name="edit_existing"),
+    url(r'^(?P<project_name>[^/]+)/edit/(?P<version_name>[^/]+)/(?P<model_name>[^/]+)/(?P<model_id>[^/]+)/$', 'questionnaire.views.edit_existing', name="edit_existing"),
 
     # viewing...
     url(r'^view/help$', 'questionnaire.views.view_help'),

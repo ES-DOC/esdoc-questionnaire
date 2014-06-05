@@ -34,6 +34,7 @@ from questionnaire.forms.forms_customize import create_model_customizer_form_dat
 from questionnaire.forms.forms_customize import create_standard_property_customizer_form_data
 from questionnaire.forms.forms_customize import create_scientific_property_customizer_form_data
 
+from questionnaire.models.metadata_customizer import find_category_by_key
 
 def questionnaire_customize_new(request,project_name="",model_name="",version_name="",**kwargs):
 
@@ -168,7 +169,10 @@ def questionnaire_customize_new(request,project_name="",model_name="",version_na
             scientific_property_customizers[vocabulary_key][component_key] = []
             for property in component_proxy.scientific_properties.all():
                 if property.category:
-                    if property.category.key not in [category.key for category in scientific_category_customizers[vocabulary_key][component_key]]:
+                    category_key = property.category.key
+                    if category_key in [category.key for category in scientific_category_customizers[vocabulary_key][component_key]]:
+                        scientific_category_customizer = find_category_by_key(category_key,scientific_category_customizers[vocabulary_key][component_key])
+                    else:
                         scientific_category_customizer = MetadataScientificCategoryCustomizer(
                             model_customizer=model_customizer,
                             proxy=property.category,
