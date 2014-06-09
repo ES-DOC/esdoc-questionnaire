@@ -20,32 +20,7 @@ ADMINS = (
 
 MANAGERS = ADMINS
 
-### SQLITE3 SETTINGS
-###DATABASES = {
-###    'default': {
-###        'ENGINE'    : 'django.db.backends.sqlite3',               # Add 'postgresql_psycopg2', 'mysql', 'sqlite3' or 'oracle'.
-###        'NAME'      : rel('./database/cim_questionnaire_db_sqlite_webfaction_prod'),                      # Or path to database file if using sqlite3.
-###        # The following settings are not used with sqlite3:
-###        'USER'      : '',
-###        'PASSWORD'  : '',
-###        'HOST'      : '',                              # Empty for localhost through domain sockets or '127.0.0.1' for localhost through TCP.
-###        'PORT'      : '',                                   # Set to empty string for default.
-###    }
-###}
-
-### MYSQL SETTINGS
-###DATABASES = {
-###    'default': {
-###        'ENGINE'    : 'django.db.backends.mysql',               # Add 'postgresql_psycopg2', 'mysql', 'sqlite3' or 'oracle'.
-###        'NAME'      : 'cim_questionnaire',                      # Or path to database file if using sqlite3.
-###        'USER'      : '',
-###        'PASSWORD'  : '',
-###        'HOST'      : '127.0.0.1',                              # Empty for localhost through domain sockets or '127.0.0.1' for localhost through TCP.
-###        'PORT'      : '3306',                                   # Set to empty string for default.
-###    }
-###}
-
-## POSTGRES SETTINGS
+# DB SETTINGS
 DATABASES = {
     'default': {
         'ENGINE'    : parser.get('database', 'engine'), # Add 'postgresql_psycopg2', 'mysql', 'sqlite3' or 'oracle'.
@@ -181,8 +156,8 @@ INSTALLED_APPS = (
     'django.contrib.staticfiles',
     'django.contrib.admin',    
     'django.contrib.admindocs',
-    # testing...
-    'django_nose',
+#    # testing...
+#    'django_nose',
     # db migration...
     'south',
 #    # openid authentication...
@@ -202,7 +177,7 @@ INSTALLED_APPS = (
 #    # TODO #
 )
 
-TEST_RUNNER = "django_nose.NoseTestSuiteRunner"
+#TEST_RUNNER = "django_nose.NoseTestSuiteRunner"
 
 SESSION_SERIALIZER = 'django.contrib.sessions.serializers.JSONSerializer'
 
