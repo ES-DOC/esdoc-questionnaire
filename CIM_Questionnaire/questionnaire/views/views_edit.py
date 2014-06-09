@@ -119,7 +119,7 @@ def questionnaire_edit_new(request, project_name="", model_name="", version_name
     for scientific_property_customizers_qs in scientific_property_customizers.values():
         for spc in scientific_property_customizers_qs:
             assert spc.name == spc.proxy.name
-            
+
 #TODO: assert statment to make sure customizers / proxies / realizations all match up w/ one another
 #TODO: will have to include _all_ properties in the forms (and just hide them in the template) so that they are there when I save things
 
