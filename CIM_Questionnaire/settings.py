@@ -181,11 +181,13 @@ INSTALLED_APPS = (
     'django.contrib.staticfiles',
     'django.contrib.admin',    
     'django.contrib.admindocs',
+    # testing...
+    'django_nose',
     # db migration...
     'south',
-    # openid authentication...
-    #'django_openid_auth',
-    #'django_authopenid',
+#    # openid authentication...
+#    #'django_openid_auth',
+#    #'django_authopenid',
     # time-zone aware stuff...
     'pytz',
     # efficient hierarchies of models...
@@ -199,6 +201,8 @@ INSTALLED_APPS = (
 #    # new apps...
 #    # TODO #
 )
+
+TEST_RUNNER = "django_nose.NoseTestSuiteRunner"
 
 SESSION_SERIALIZER = 'django.contrib.sessions.serializers.JSONSerializer'
 

@@ -146,8 +146,6 @@ def get_form_by_field(formset,field_tuple):
 def get_forms_by_field(formset,field_tuple):
     # returns all forms in a fieldset whose specified field has the specified value
     (field_name,field_value) = field_tuple.split('|')
-    if field_value.lower() == "timesteppingframework":
-        import ipdb; ipdb.set_trace()
     forms = []
     for form in formset:
         if form.get_current_field_value(field_name) == field_value:

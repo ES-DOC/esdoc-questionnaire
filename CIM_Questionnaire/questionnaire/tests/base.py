@@ -13,7 +13,7 @@ from CIM_Questionnaire.questionnaire.models import MetadataProject, MetadataVers
     MetadataScientificProperty, MetadataStandardCategoryCustomizer, MetadataStandardPropertyCustomizer, \
     MetadataScientificCategoryCustomizer, MetadataCategorization, MetadataVocabulary
 from CIM_Questionnaire.questionnaire.models.metadata_model import create_models_from_components
-from CIM_Questionnaire.questionnaire.utils import DEFAULT_VOCABULARY, find_in_sequence
+from CIM_Questionnaire.questionnaire.utils import DEFAULT_VOCABULARY, find_in_sequence, assert_no_string_nones
 from CIM_Questionnaire.questionnaire.models.metadata_vocabulary import UPLOAD_PATH as VOCABULARY_UPLOAD_PATH
 from CIM_Questionnaire.questionnaire.models.metadata_version import UPLOAD_PATH as VERSION_UPLOAD_PATH
 from CIM_Questionnaire.questionnaire.models.metadata_categorization import UPLOAD_PATH as CATEGORIZATION_UPLOAD_PATH
@@ -24,7 +24,7 @@ class TestQuestionnaireBase(TestCase):
     def setUp(self):
         # request factory for all tests
         self.factory = RequestFactory()
-        # client for all test
+        # client for all tests (this is better-suited for testing views b/c, among other things, it has sessions, cookies, etc.)
         self.client = Client()
 
         # ensure that there is no categorized metadata before a new one is loaded
@@ -709,6 +709,86 @@ class TestQuestionnaireBase(TestCase):
             scientific_properties_formset.save(commit=True)
 
         return model_instances[0]
+
+    def create_model_realization_from_view(self,project_name,version_name,model_name):
+
+        project = MetadataProject.objects.get(name__iexact=project_name,active=True)
+        version = MetadataVersion.objects.get(name__iexact=version_name,registered=True)
+        model_proxy = MetadataModelProxy.objects.get(version=version,name__iexact=model_name)
+
+        (models,standard_properties,scientific_properties) = self.create_model_realization(project_name, version_name, model_name)
+
+        model_keys = [u"%s_%s" % (model.vocabulary_key, model.component_key) for model in models]
+
+        model_customizer = MetadataModelCustomizer.objects.get(project=project,version=version,proxy=model_proxy,default=True)
+        standard_property_customizers = model_customizer.standard_property_customizers.all().order_by("category__order","order")
+        scientific_property_customizers = {}
+
+        for model in models:
+            model_key = u"%s_%s" % (model.vocabulary_key, model.component_key)
+            scientific_property_customizers[model_key] = MetadataScientificPropertyCustomizer.objects.filter(model_customizer=model_customizer, model_key=model_key).order_by("category__order","order")
+
+        post_data = {}
+
+        models_data = [create_model_form_data(model, model_customizer) for model in models]
+        model_formset_prefix = "form"
+        for (i,model_data) in enumerate(models_data):
+            model_form_prefix = u"%s_%s" % (model_data["vocabulary_key"],model_data["component_key"])
+            for key in model_data.keys():
+                # EACH FORM IN THE FOMRSET IS GIVEN A DIFFERENT EXPLICIT PREFIX
+                # (IN THE _construct_form FN of MetadataModelFormSet)
+                # THEREFORE, I DON'T NEED TO INCLUDE THE NUMBER OF THE FORM (i) IN THE KEY
+                #model_data[u"%s-%s-%s"%(model_form_prefix,i,key)] = model_data.pop(key)
+                model_data[u"%s-%s"%(model_form_prefix,key)] = model_data.pop(key)
+        map(lambda model_data: post_data.update(model_data),models_data)
+        post_data[u"%s-TOTAL_FORMS"%(model_formset_prefix)] = len(models)
+        post_data[u"%s-INITIAL_FORMS"%(model_formset_prefix)] = 0
+
+        for i, model in enumerate(models):
+
+            model_key = u"%s_%s" % (model.vocabulary_key, model.component_key)
+
+            standard_properties_data = [
+                create_standard_property_form_data(model, standard_property, standard_property_customizer)
+                for standard_property, standard_property_customizer in
+                zip(standard_properties[model_key], standard_property_customizers)
+                if standard_property_customizer.displayed
+            ]
+            for (i,standard_property_data) in enumerate(standard_properties_data):
+                for key in standard_property_data.keys():
+                    standard_property_data[u"%s_standard_properties-%s-%s" % (model_key,i,key)] = standard_property_data.pop(key)
+            map(lambda standard_property_data: post_data.update(standard_property_data),standard_properties_data)
+            post_data[u"%s_standard_properties-TOTAL_FORMS"%(model_key)] = len(standard_properties[model_key])
+            post_data[u"%s_standard_properties-INITIAL_FORMS"%(model_key)] = 0
+
+            scientific_properties_data = [
+                create_scientific_property_form_data(model, scientific_property, scientific_property_customizer)
+                for scientific_property, scientific_property_customizer in
+                zip(scientific_properties[model_key], scientific_property_customizers[model_key])
+                if scientific_property_customizer.displayed
+            ]
+            for (i,scientific_property_data) in enumerate(scientific_properties_data):
+                for key in scientific_property_data.keys():
+                    scientific_property_data[u"%s_scientific_properties-%s-%s" % (model_key,i,key)] = scientific_property_data.pop(key)
+            map(lambda scientific_property_data: post_data.update(scientific_property_data),scientific_properties_data)
+            post_data[u"%s_scientific_properties-TOTAL_FORMS"%(model_key)] = len(scientific_properties[model_key])
+            post_data[u"%s_scientific_properties-INITIAL_FORMS"%(model_key)] = 0
+
+        assert_no_string_nones(post_data)
+        request_url = u"/%s/edit/%s/%s/" % (project_name,version_name,model_name)
+        response = self.client.post(request_url,post_data)
+
+        self.assertEqual(response.status_code,302)
+        self.assertNotEqual(len(MetadataModel.objects.all()),0)
+
+        session_variables = response.client.session
+        root_model_id = session_variables["root_model_id"]
+        self.assertNotEqual(root_model_id,None)
+
+        root_model = MetadataModel.objects.get(pk=root_model_id)
+
+        return root_model
+
 
     def create_model_realization_from_db(self,project_name,version_name,model_name):
 

@@ -116,6 +116,8 @@ class MetadataModelForm(MetadataEditingForm):
         pass
         
 def MetadataModelFormSetFactory(*args,**kwargs):
+    DEFAULT_PREFIX = "form"
+
     _prefixes    = kwargs.pop("prefixes",[])
     _request     = kwargs.pop("request",None)
     _initial     = kwargs.pop("initial",[])
@@ -132,7 +134,8 @@ def MetadataModelFormSetFactory(*args,**kwargs):
     # using curry() to pass arguments to the individual formsets
     _formset = modelformset_factory(MetadataModel,*args,**new_kwargs)
     _formset.form = staticmethod(curry(MetadataModelForm,customizer=_customizer))
-    
+    _formset.prefix = DEFAULT_PREFIX
+
     if _prefixes:
         _formset.prefix_iterator = iter(_prefixes)
     if _initial:
@@ -472,7 +475,7 @@ class MetadataScientificPropertyForm(MetadataEditingForm):
 
     def get_value_field_name(self):
 
-        is_enumeration = self.get_current_field_value("is_enumeration",False) # TODO: PREVIOUSLY IF "is_enumeration" WAS NOT FOUND I RETURNED FALSE
+        is_enumeration = self.get_current_field_value("is_enumeration",False)
 
         if not is_enumeration:
             return "atomic_value"
@@ -526,9 +529,6 @@ def MetadataScientificPropertyInlineFormSetFactory(*args,**kwargs):
         "fk_name"    : "model" # required in-case there are more than 1 fk's to "metadatamodel"; this is the one that is relevant for this inline form
     }
     new_kwargs.update(kwargs)
-
-    if _prefix ==  "atmos_atmosdynamicalcore"+DEFAULT_PREFIX:
-        import ipdb; ipdb.set_trace()
 
     assert(len(_initial)==new_kwargs["extra"])
 

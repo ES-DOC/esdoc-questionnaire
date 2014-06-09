@@ -21,10 +21,9 @@ class Test(TestQuestionnaireBase):
         version_name = "test"
         model_name = "modelcomponent"
 
-        request_url = u"/%s/edit/%s/%s" % (project_name,version_name,model_name)
-        request = self.factory.get(request_url)
+        request_url = u"/%s/edit/%s/%s/" % (project_name,version_name,model_name)
+        response = self.client.post(request_url)
 
-        response = questionnaire_edit_new(request,project_name=project_name,version_name=version_name,model_name=model_name)
         self.assertEqual(response.status_code,200)
 
     def test_questionnaire_edit_new_post(self):
@@ -69,18 +68,14 @@ class Test(TestQuestionnaireBase):
                 post_data[u"%s-%s"%(scientific_properties_formset.prefix,key)] = value
 
 
-        request_url = u"/%s/edit/%s/%s" % (project_name,version_name,model_name)
-        post_request = self.factory.post(request_url,post_data)
-        post_response = questionnaire_edit_new(post_request,project_name=project_name,version_name=version_name,model_name=model_name)
+        request_url = u"/%s/edit/%s/%s/" % (project_name,version_name,model_name)
+        response = self.client.post(request_url,post_data)
 
-        self.assertEqual(post_response.status_code,200)
+        self.assertEqual(response.status_code,302)
 
-        post_content = post_response.content
+        post_content = response.content
 
         expr = "test_atmoshorizontaldomain_scientific_properties-[0-9]-is_enumeration"
-        fall = re.findall(expr, post_content)
-
-        self.assertEqual(len(fall),20)
 
         ## ensure data is actually saved to the database
         mm = MetadataModel.objects.all()
@@ -104,9 +99,13 @@ class Test(TestQuestionnaireBase):
 
         model_realization1 = self.create_model_realization_from_db(project_name,version_name,model_name)
         self.assertEqual(len(MetadataModel.objects.all()),13)
+        model_realizations1 = model_realization1.get_descendants(include_self=True)
+        self.assertEqual(len(model_realizations1),13)
 
         model_realization2 = self.create_model_realization_from_db(project_name,version_name,model_name)
         self.assertEqual(len(MetadataModel.objects.all()),26)
+        model_realizations2 = model_realization2.get_descendants(include_self=True)
+        self.assertEqual(len(model_realizations2),13)
 
     def test_questionnaire_edit_new_with_existing_realizations_from_forms(self):
 
@@ -116,6 +115,26 @@ class Test(TestQuestionnaireBase):
 
         model_realization1 = self.create_model_realization_from_forms(project_name,version_name,model_name)
         self.assertEqual(len(MetadataModel.objects.all()),13)
+        model_realizations1 = model_realization1.get_descendants(include_self=True)
+        self.assertEqual(len(model_realizations1),13)
 
         model_realization2 = self.create_model_realization_from_forms(project_name,version_name,model_name)
         self.assertEqual(len(MetadataModel.objects.all()),26)
+        model_realizations2 = model_realization2.get_descendants(include_self=True)
+        self.assertEqual(len(model_realizations2),13)
+
+    def test_questionnaire_edit_new_with_existing_realizations_from_view(self):
+
+        project_name = "test"
+        version_name = "test"
+        model_name = "modelcomponent"
+
+        model_realization1 = self.create_model_realization_from_view(project_name,version_name,model_name)
+        self.assertEqual(len(MetadataModel.objects.all()),13)
+        model_realizations1 = model_realization1.get_descendants(include_self=True)
+        self.assertEqual(len(model_realizations1),13)
+
+        model_realization2 = self.create_model_realization_from_view(project_name,version_name,model_name)
+        self.assertEqual(len(MetadataModel.objects.all()),26)
+        model_realizations2 = model_realization2.get_descendants(include_self=True)
+        self.assertEqual(len(model_realizations2),13)

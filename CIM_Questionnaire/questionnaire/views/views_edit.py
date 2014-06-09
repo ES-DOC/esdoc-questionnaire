@@ -115,6 +115,11 @@ def questionnaire_edit_new(request, project_name="", model_name="", version_name
             # TODO: AT THIS POINT I HAVE DISCOVERED THAT THE CUSTOMIZERS ARE NOT ASSOCIATED W/ THE CORRECT PROXIES
             # THIS IS AN ISSUE W/ THE CUSTOMIZE VIEW
 
+    # TODO: move this assert logic to the customize view (and to a test)
+    for scientific_property_customizers_qs in scientific_property_customizers.values():
+        for spc in scientific_property_customizers_qs:
+            assert spc.name == spc.proxy.name
+            
 #TODO: assert statment to make sure customizers / proxies / realizations all match up w/ one another
 #TODO: will have to include _all_ properties in the forms (and just hide them in the template) so that they are there when I save things
 
@@ -208,7 +213,6 @@ def questionnaire_edit_new(request, project_name="", model_name="", version_name
     if request.method == "GET":
 
         models_data = [create_model_form_data(model, model_customizer) for model in models]
-
         model_formset = MetadataModelFormSetFactory(
             request=request,
             initial=models_data,
@@ -246,9 +250,6 @@ def questionnaire_edit_new(request, project_name="", model_name="", version_name
             ]
 
             assert(len(scientific_properties_data)==len(scientific_properties[model_key]))
-
-            if model_key ==  "atmos_atmosdynamicalcore":
-                import ipdb; ipdb.set_trace()
 
             scientific_properties_formsets[model_key] = MetadataScientificPropertyInlineFormSetFactory(
                 instance=model,
