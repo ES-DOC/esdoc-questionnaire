@@ -33,6 +33,7 @@ from questionnaire.views    import *
 from questionnaire.forms.forms_customize import create_model_customizer_form_data
 from questionnaire.forms.forms_customize import create_standard_property_customizer_form_data
 from questionnaire.forms.forms_customize import create_scientific_property_customizer_form_data
+from questionnaire.forms.forms_customize import save_valid_forms
 
 from questionnaire.models.metadata_customizer import find_category_by_key
 
@@ -192,8 +193,6 @@ def questionnaire_customize_new(request,project_name="",model_name="",version_na
         # and I have lists of categories to save or delete
         active_vocabularies                 = model_customizer_form.cleaned_data["vocabularies"]
         active_vocabulary_keys              = [slugify(vocabulary.name) for vocabulary in active_vocabularies]
-        standard_categories_to_process      = model_customizer_form.standard_categories_to_process
-        scientific_categories_to_process    = model_customizer_form.scientific_categories_to_process
 
         standard_property_customizer_formset = MetadataStandardPropertyCustomizerInlineFormSetFactory(
             instance    = model_customizer_instance if model_customizer_form_validity else model_customizer,
@@ -218,58 +217,8 @@ def questionnaire_customize_new(request,project_name="",model_name="",version_na
                     validity += [scientific_property_customizer_formsets[vocabulary_key][component_key].is_valid()]
 
         if all(validity):
-            
-            # save the model customizer...
-            model_customizer_instance.save()
-            model_customizer_form.save_m2m()
-            
-            # save (or delete) the standard category customizers...
-            active_standard_categories = []
-            for standard_category_to_process in standard_categories_to_process:
-                standard_category_customizer = standard_category_to_process.object
-                if standard_category_customizer.pending_deletion:
-                    standard_category_to_process.delete()
-                else:
-                    standard_category_customizer.model_customizer = model_customizer_instance
-                    standard_category_to_process.save()
-                    active_standard_categories.append(standard_category_customizer)
 
-            # save (or delete) the scientific category customizers...
-            active_scientific_categories = {}
-            for vocabulary_key,scientific_categories_to_process_dict in scientific_categories_to_process.iteritems():
-                active_scientific_categories[vocabulary_key] = {}
-                for component_key,scientific_categories_to_process_list in scientific_categories_to_process_dict.iteritems():
-                    active_scientific_categories[vocabulary_key][component_key] = []
-                    for scientific_category_to_process in scientific_categories_to_process_list:
-                        scientific_category_customizer = scientific_category_to_process.object
-                        if scientific_category_customizer.pending_deletion:
-                            scientific_category_customizer.delete()
-                        else:
-                            scientific_category_customizer.model_customizer = model_customizer_instance
-                            scientific_category_customizer.vocabulary_key = vocabulary_key
-                            scientific_category_customizer.component_key = component_key
-                            scientific_category_customizer.model_key = u"%s_%s" % (vocabulary_key,component_key)
-                            scientific_category_customizer.save()
-                            active_scientific_categories[vocabulary_key][component_key].append(scientific_category_customizer)
-
-            # save the standard property customizers...
-            standard_property_customizer_instances = standard_property_customizer_formset.save(commit=False)
-            for standard_property_customizer_instance in standard_property_customizer_instances:
-                category_key = slugify(standard_property_customizer_instance.category_name)
-                category = find_in_sequence(lambda category: category.key==category_key,active_standard_categories)
-                standard_property_customizer_instance.category = category
-                standard_property_customizer_instance.save()
-
-            # save the scientific property customizers...
-            for (vocabulary_key,formset_dictionary) in scientific_property_customizer_formsets.iteritems():
-                if find_in_sequence(lambda vocabulary: slugify(vocabulary.name)==vocabulary_key,active_vocabularies):
-                    for (component_key,scientific_property_customizer_formset) in formset_dictionary.iteritems():
-                        scientific_property_customizer_instances = scientific_property_customizer_formset.save(commit=False)
-                        for scientific_property_customizer_instance in scientific_property_customizer_instances:
-                            category_key = slugify(scientific_property_customizer_instance.category_name)
-                            category = find_in_sequence(lambda category: category.key==category_key,active_scientific_categories[vocabulary_key][component_key])
-                            scientific_property_customizer_instance.category = category
-                            scientific_property_customizer_instance.save()
+            save_valid_forms(model_customizer_form,standard_property_customizer_formset,scientific_property_customizer_formsets)
 
             # using Django's built-in messaging framework to pass status messages (as per https://docs.djangoproject.com/en/dev/ref/contrib/messages/)
             messages.add_message(request, messages.SUCCESS, "Successfully saved customizer '%s'." % (model_customizer_instance.name))
@@ -282,7 +231,6 @@ def questionnaire_customize_new(request,project_name="",model_name="",version_na
             return HttpResponseRedirect(customize_existing_url)
 
         else:
-                
             messages.add_message(request, messages.ERROR, "Failed to save customizer.")
 
     dict = {
@@ -359,9 +307,8 @@ def questionnaire_customize_existing(request,project_name="",model_name="",versi
 
     else: # request.method == "POST":
 
-        
         validity = []
-        
+
         model_customizer_form = MetadataModelCustomizerForm(request.POST,instance=model_customizer,all_vocabularies=vocabularies)
 
         model_customizer_form_validity = model_customizer_form.is_valid()
@@ -370,91 +317,35 @@ def questionnaire_customize_existing(request,project_name="",model_name="",versi
 
         validity += [model_customizer_form_validity]
 
-# I AM HERE
-
         # at this point I know which vocabularies were selected
-        # and I have lists of categories to save (once the model_customizer itself has been saved)
+        # and I have lists of categories to save or delete
         active_vocabularies                 = model_customizer_form.cleaned_data["vocabularies"]
         active_vocabulary_keys              = [slugify(vocabulary.name) for vocabulary in active_vocabularies]
-        standard_categories_to_process      = model_customizer_form.standard_categories_to_process
-        scientific_categories_to_process    = model_customizer_form.scientific_categories_to_process
-        
+
         standard_property_customizer_formset = MetadataStandardPropertyCustomizerInlineFormSetFactory(
-            instance    = model_customizer,
+            instance    = model_customizer_instance if model_customizer_form_validity else model_customizer,
             request     = request,
-            categories  = [(category.key,category.name) for category in standard_property_category_customizers]
+            categories  = [(category.key,category.name) for category in standard_category_customizers],
         )
 
         validity += [standard_property_customizer_formset.is_valid()]
 
         scientific_property_customizer_formsets = {}
-        for (vocabulary_key,component_dictionary) in scientific_property_customizers.iteritems():
-            if not vocabulary_key in scientific_property_customizer_formsets:
-                scientific_property_customizer_formsets[vocabulary_key] = {}
-            for (component_key,property_list) in scientific_property_customizers[vocabulary_key].iteritems():
+        for vocabulary_key,scientific_property_customizer_dict in scientific_property_customizers.iteritems():
+            scientific_property_customizer_formsets[vocabulary_key] = {}
+            for component_key,scientific_property_customizer_list in scientific_property_customizer_dict.iteritems():
                 scientific_property_customizer_formsets[vocabulary_key][component_key] = MetadataScientificPropertyCustomizerInlineFormSetFactory(
-                    instance    = model_customizer,
+                    instance    = model_customizer_instance if model_customizer_form_validity else model_customizer,
                     request     = request,
                     prefix      = u"%s_%s" % (vocabulary_key,component_key),
-                    # TODO: IS THIS THE MOST EFFICIENT WAY TO GET THE PROPERTIES?
-                    queryset = MetadataScientificPropertyCustomizer.objects.filter(pk__in=[property.pk for property in property_list]),
-                    categories  = [(category.key,category.name) for category in scientific_property_category_customizers.filter(vocabulary_key=vocabulary_key,component_key=component_key)]
+                    categories  = [(category.key,category.name) for category in scientific_category_customizers[vocabulary_key][component_key]]
                 )
                 if vocabulary_key in active_vocabulary_keys:
                     validity += [scientific_property_customizer_formsets[vocabulary_key][component_key].is_valid()]
 
         if all(validity):
 
-            # save the model customizer...
-            model_customizer_instance = model_customizer_form.save(commit=False)
-            model_customizer_instance.save()
-            model_customizer_form.save_m2m()
-
-            # save (or delete) the category customizers...
-            active_standard_categories = []
-            for standard_category_to_process in standard_categories_to_process:
-                standard_category_customizer = standard_category_to_process.object
-                if standard_category_customizer.pending_deletion:
-                    standard_category_to_process.delete()
-                else:
-                    standard_category_customizer.model_customizer = model_customizer_instance
-                    standard_category_to_process.save()
-                    active_standard_categories.append(standard_category_customizer)
-
-            active_scientific_categories = {}
-            for (vocabulary_key,component_dictionary) in scientific_categories_to_process.iteritems():
-                active_scientific_categories[vocabulary_key] = {}
-                for (component_key,scientific_categories_to_process) in component_dictionary.iteritems():
-                    active_scientific_categories[vocabulary_key][component_key] = []
-                    for scientific_category_to_process in scientific_categories_to_process:
-                        scientific_category_customizer = scientific_category_to_process.object
-                        if scientific_category_customizer.pending_deletion:
-                            scientific_category_to_process.delete()
-                        else:
-                            scientific_category_customizer.model_customizer = model_customizer_instance
-                            scientific_category_customizer.component_key = component_key
-                            scientific_category_customizer.vocabulary_key = vocabulary_key
-                            scientific_category_to_process.save()
-                            active_scientific_categories[vocabulary_key][component_key].append(scientific_category_customizer)
-            
-            # save the standard property customizers...
-            standard_property_customizer_instances = standard_property_customizer_formset.save(commit=False)
-            for standard_property_customizer_instance in standard_property_customizer_instances:
-                category_key = slugify(standard_property_customizer_instance.category_name)
-                category = find_in_sequence(lambda category: category.key==category_key,active_standard_categories)
-                standard_property_customizer_instance.category = category
-                standard_property_customizer_instance.save()
-
-            # save the scientific property customizers...
-            for (vocabulary_key,component_dictionary) in scientific_property_customizer_formsets.iteritems():
-                if find_in_sequence(lambda vocabulary: slugify(vocabulary.name)==vocabulary_key,active_vocabularies):
-                    for (component_key,scientific_property_customizer_formset) in component_dictionary.iteritems():
-                        scientific_property_customizer_instances = scientific_property_customizer_formset.save(commit=False)
-                        for scientific_property_customizer_instance in scientific_property_customizer_instances:
-                            category_key = slugify(scientific_property_customizer_instance.category_name)
-                            category = find_in_sequence(lambda category: category.key==category_key,active_scientific_categories[vocabulary_key][component_key])
-                            scientific_property_customizer_instance.category = category
-                            scientific_property_customizer_instance.save()
+            save_valid_forms(model_customizer_form,standard_property_customizer_formset,scientific_property_customizer_formsets)
 
             # using Django's built-in messaging framework to pass status messages (as per https://docs.djangoproject.com/en/dev/ref/contrib/messages/)
             messages.add_message(request, messages.SUCCESS, "Successfully saved customizer '%s'." % (model_customizer_instance.name))

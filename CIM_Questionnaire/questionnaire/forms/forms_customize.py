@@ -39,6 +39,62 @@ from questionnaire.models       import *
 from questionnaire.fields       import MetadataFieldTypes, EMPTY_CHOICE
 from questionnaire.forms        import MetadataCustomizerForm
 
+def save_valid_forms(model_customizer_form,standard_property_customizer_formset,scientific_property_customizer_formsets):
+
+    model_customizer_instance = model_customizer_form.save()
+
+    active_vocabularies                 = model_customizer_form.cleaned_data["vocabularies"]
+    standard_categories_to_process      = model_customizer_form.standard_categories_to_process
+    scientific_categories_to_process    = model_customizer_form.scientific_categories_to_process
+
+    # save (or delete) the standard category customizers...
+    active_standard_categories = []
+    for standard_category_to_process in standard_categories_to_process:
+        standard_category_customizer = standard_category_to_process.object
+        if standard_category_customizer.pending_deletion:
+            standard_category_to_process.delete()
+        else:
+            standard_category_customizer.model_customizer = model_customizer_instance
+            standard_category_to_process.save()
+            active_standard_categories.append(standard_category_customizer)
+
+    # save (or delete) the scientific category customizers...
+    active_scientific_categories = {}
+    for vocabulary_key,scientific_categories_to_process_dict in scientific_categories_to_process.iteritems():
+        active_scientific_categories[vocabulary_key] = {}
+        for component_key,scientific_categories_to_process_list in scientific_categories_to_process_dict.iteritems():
+            active_scientific_categories[vocabulary_key][component_key] = []
+            for scientific_category_to_process in scientific_categories_to_process_list:
+                scientific_category_customizer = scientific_category_to_process.object
+                if scientific_category_customizer.pending_deletion:
+                    scientific_category_customizer.delete()
+                else:
+                    scientific_category_customizer.model_customizer = model_customizer_instance
+                    scientific_category_customizer.vocabulary_key = vocabulary_key
+                    scientific_category_customizer.component_key = component_key
+                    scientific_category_customizer.model_key = u"%s_%s" % (vocabulary_key,component_key)
+                    scientific_category_customizer.save()
+                    active_scientific_categories[vocabulary_key][component_key].append(scientific_category_customizer)
+
+    # save the standard property customizers...
+    standard_property_customizer_instances = standard_property_customizer_formset.save(commit=False)
+    for standard_property_customizer_instance in standard_property_customizer_instances:
+        category_key = slugify(standard_property_customizer_instance.category_name)
+        category = find_in_sequence(lambda category: category.key==category_key,active_standard_categories)
+        standard_property_customizer_instance.category = category
+        standard_property_customizer_instance.save()
+
+    # save the scientific property customizers...
+    for (vocabulary_key,formset_dictionary) in scientific_property_customizer_formsets.iteritems():
+        if find_in_sequence(lambda vocabulary: slugify(vocabulary.name)==vocabulary_key,active_vocabularies):
+            for (component_key,scientific_property_customizer_formset) in formset_dictionary.iteritems():
+                scientific_property_customizer_instances = scientific_property_customizer_formset.save(commit=False)
+                for scientific_property_customizer_instance in scientific_property_customizer_instances:
+                    category_key = slugify(scientific_property_customizer_instance.category_name)
+                    category = find_in_sequence(lambda category: category.key==category_key,active_scientific_categories[vocabulary_key][component_key])
+                    scientific_property_customizer_instance.category = category
+                    scientific_property_customizer_instance.save()
+
 def create_model_customizer_form_data(model_customizer,standard_category_customizers,scientific_category_customizers,vocabularies=[]):
 
     model_customizer_form_data = get_initial_data(model_customizer,{
