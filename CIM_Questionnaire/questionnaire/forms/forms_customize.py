@@ -45,21 +45,22 @@ def create_model_customizer_form_data(model_customizer,standard_category_customi
         "last_modified"                 : time.strftime("%c"),
         "standard_categories_content"   : JSON_SERIALIZER.serialize(standard_category_customizers),
         "standard_categories_tags"      : "|".join([standard_category.name for standard_category in standard_category_customizers]),
+        "vocabularies"                  : vocabularies,
     })
 
-    if not model_customizer.pk:
-        model_customizer_form_data["vocabularies"]      = [vocabulary.pk for vocabulary in vocabularies]
-        model_customizer_form_data["vocabulary_order"]  = ",".join(map(str,[vocabulary.pk for vocabulary in vocabularies]))
+    # if not model_customizer.pk:
+    #     # if this is a new customizer, by default all of the vocabularies should be active
+    #     # if this is not a new customizer, then the vocabulary order will have been set previously
+    #     model_customizer_form_data["vocabulary_order"]  = ",".join(map(str,[vocabulary.pk for vocabulary in vocabularies]))
 
-        for (vocabulary_key,component_dictionary) in scientific_category_customizers.iteritems():
-            for (component_key,scientific_category_customizer_list) in component_dictionary.iteritems():
-                scientific_categories_content_field_name = u"%s_%s_scientific_categories_content" % (vocabulary_key,component_key)
-                scientific_categories_tags_field_name = u"%s_%s_scientific_categories_tags" % (vocabulary_key,component_key)
-                model_customizer_form_data[scientific_categories_content_field_name] = JSON_SERIALIZER.serialize(scientific_category_customizer_list)
-                model_customizer_form_data[scientific_categories_tags_field_name] = "|".join([scientific_category.name for scientific_category in scientific_category_customizer_list])
+    for vocabulary_key,scientific_category_customizer_dict in scientific_category_customizers.iteritems():
+        for component_key,scientific_category_customizer_list in scientific_category_customizer_dict.iteritems():
+            scientific_categories_content_field_name = u"%s_%s_scientific_categories_content" % (vocabulary_key,component_key)
+            scientific_categories_tags_field_name = u"%s_%s_scientific_categories_tags" % (vocabulary_key,component_key)
+            model_customizer_form_data[scientific_categories_content_field_name] = JSON_SERIALIZER.serialize(scientific_category_customizer_list)
+            model_customizer_form_data[scientific_categories_tags_field_name] = "|".join([scientific_category.name for scientific_category in scientific_category_customizer_list])
 
     return model_customizer_form_data
-
 
 
 class MetadataModelCustomizerForm(ModelForm):

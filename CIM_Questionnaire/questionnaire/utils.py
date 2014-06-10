@@ -366,7 +366,7 @@ def ordered_set(sequence):
 
 def find_in_sequence(fn, sequence):
   for item in sequence:
-    if fn(item):
+    if fn(item)==True:
       return item
   return None
 

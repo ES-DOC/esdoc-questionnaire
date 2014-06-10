@@ -23,12 +23,13 @@ Summary of module goes here
 from django.db import models
 
 from collections import OrderedDict
-#from datetime    import datetime
 from django.utils import timezone
 
 from questionnaire.utils        import *
 from questionnaire.fields       import *
 from questionnaire.models.metadata_proxy    import *
+
+
 
 class MetadataCustomizer(models.Model):
     class Meta:
@@ -38,6 +39,12 @@ class MetadataCustomizer(models.Model):
     created                 = models.DateTimeField(blank=True,null=True,editable=False)
     last_modified           = models.DateTimeField(blank=True,null=True,editable=False)
 
+    def refresh(self):
+        """re-gets the model from the db"""
+        if not self.pk:
+            return self
+        return self.__class__.objects.get(pk=self.pk)
+
     def save(self,*args,**kwargs):
         if not self.id:
             #self.created = datetime.datetime.today()
@@ -46,13 +53,174 @@ class MetadataCustomizer(models.Model):
         self.last_modified = timezone.now()
         super(MetadataCustomizer,self).save(*args,**kwargs)
 
+    @classmethod
+    def get_new_customizer_set(cls,project,version,model_proxy,vocabularies):
+        """creates the full set of (default) customizations required for a particular project/version/proxy combination w/ a specified list of vocabs"""
+
+        # setup the model customizer...
+        model_customizer = MetadataModelCustomizer(
+            project=project,
+            version=version,
+            proxy=model_proxy,
+            # vocabularies=vocabularies,
+            vocabulary_order=",".join(map(str,[vocabulary.pk for vocabulary in vocabularies])),
+        )
+        model_customizer.reset()
+
+        # setup the standard category customizers...
+        standard_category_customizers = [
+            MetadataStandardCategoryCustomizer(
+                model_customizer=model_customizer,
+                proxy=standard_category_proxy,
+            )
+            for standard_category_proxy in version.categorization.categories.all()
+        ]
+        for standard_category_customizer in standard_category_customizers:
+            standard_category_customizer.reset()
+
+        # setup the standard property customizers...
+        standard_property_customizers = [
+            MetadataStandardPropertyCustomizer(
+                model_customizer=model_customizer,
+                proxy=standard_property_proxy,
+                category=find_in_sequence(lambda category: category.proxy.has_property(standard_property_proxy),standard_category_customizers)
+            )
+            for standard_property_proxy in model_proxy.standard_properties.all()
+        ]
+        for standard_property_customizer in standard_property_customizers:
+            standard_property_customizer.reset()
+
+        # setup the scientific category & property customizers
+        scientific_category_customizers = {}
+        scientific_property_customizers = {}
+        for vocabulary in vocabularies:
+            vocabulary_key = slugify(vocabulary.name)
+            scientific_category_customizers[vocabulary_key] = {}
+            scientific_property_customizers[vocabulary_key] = {}
+            for component in vocabulary.component_proxies.all():
+                component_key = slugify(component.name)
+                model_key = u"%s_%s" % (vocabulary_key,component_key)
+                scientific_category_customizers[vocabulary_key][component_key] = []
+                scientific_property_customizers[vocabulary_key][component_key] = []
+                for scientific_property_proxy in component.scientific_properties.all():
+                    scientific_category_proxy = scientific_property_proxy.category
+                    if scientific_category_proxy:
+                        scientific_category_key = scientific_category_proxy.key
+                        if scientific_category_key in [scientific_category.key for scientific_category in scientific_category_customizers[vocabulary_key][component_key]]:
+                            scientific_category_customizer = find_category_by_key(scientific_category_key,scientific_category_customizers[vocabulary_key][component_key])
+                        else:
+                            scientific_category_customizer = MetadataScientificCategoryCustomizer(
+                                model_customizer=model_customizer,
+                                proxy=scientific_category_proxy,
+                                vocabulary_key=vocabulary_key,
+                                component_key=component_key,
+                                model_key=model_key
+                            )
+                            scientific_category_customizer.reset()
+                            scientific_category_customizers[vocabulary_key][component_key].append(scientific_category_customizer)
+                    else:
+                        scientific_category_customizer = None
+
+                    scientific_property_customizer = MetadataScientificPropertyCustomizer(
+                        model_customizer    = model_customizer,
+                        proxy               = scientific_property_proxy,
+                        vocabulary_key      = vocabulary_key,
+                        component_key       = component_key,
+                        model_key           = model_key,
+                        category            = scientific_category_customizer
+                    )
+                    scientific_property_customizer.reset()
+                    scientific_property_customizers[vocabulary_key][component_key].append(scientific_property_customizer)
+
+        return (model_customizer,standard_category_customizers,standard_property_customizers,scientific_category_customizers,scientific_property_customizers)
+
+    @classmethod
+    def get_existing_customizer_set(cls,model_customizer,vocabularies):
+        """retrieves the full set of customizations used by a particular model_customizer w/ a specified list of vocabs"""
+
+        standard_category_customizers = model_customizer.standard_property_category_customizers.all()
+        standard_property_customizers = model_customizer.standard_property_customizers.all()
+
+        # don't get _all_ of the scientific customizers
+        # just get the ones associated w/ the vocabularies that were passed in
+        # (see below)
+        #
+        # scientific_category_customizers = {}
+        # for scientific_category_customizer in model_customizer.scientific_property_category_customizers.all():
+        #     vocabulary_key = scientific_category_customizer.vocabulary_key
+        #     component_key = scientific_category_customizer.component_key
+        #     if not vocabulary_key in scientific_category_customizers:
+        #         scientific_category_customizers[vocabulary_key] = {}
+        #     if not component_key in scientific_category_customizers[vocabulary_key]:
+        #         scientific_category_customizers[vocabulary_key][component_key] = []
+        #     scientific_category_customizers[vocabulary_key][component_key].append(scientific_category_customizer)
+        #
+        # scientific_property_customizers = {}
+        # for scientific_property_customizer in model_customizer.scientific_property_customizers.all():
+        #     vocabulary_key = scientific_property_customizer.vocabulary_key
+        #     component_key = scientific_property_customizer.component_key
+        #     if not vocabulary_key in scientific_property_customizers:
+        #         scientific_property_customizers[vocabulary_key] = {}
+        #     if not component_key in scientific_property_customizers[vocabulary_key]:
+        #         scientific_property_customizers[vocabulary_key][component_key] = []
+        #     scientific_property_customizers[vocabulary_key][component_key].append(scientific_property_customizer)
+
+        scientific_category_customizers = {}
+        scientific_property_customizers = {}
+        for vocabulary in vocabularies:
+            vocabulary_key = slugify(vocabulary.name)
+            scientific_category_customizers[vocabulary_key] = {}
+            scientific_property_customizers[vocabulary_key] = {}
+            for component in vocabulary.component_proxies.all():
+                component_key = slugify(component.name)
+                scientific_category_customizers[vocabulary_key][component_key] = model_customizer.scientific_property_category_customizers.filter(vocabulary_key=vocabulary_key,component_key=component_key)
+                scientific_property_customizers[vocabulary_key][component_key] = model_customizer.scientific_property_customizers.filter(vocabulary_key=vocabulary_key,component_key=component_key)
+
+        return (model_customizer,standard_category_customizers,standard_property_customizers,scientific_category_customizers,scientific_property_customizers)
+
+    @classmethod
+    def save_customizer_set(cls,model_customizer,standard_category_customizers,standard_property_customizers,scientific_category_customizers,scientific_property_customizers):
+
+        model_customizer.save()
+
+        for standard_category_customizer in standard_category_customizers:
+            standard_category_customizer.model_customizer = model_customizer
+            standard_category_customizer.save()
+
+        for standard_property_customizer in standard_property_customizers:
+            category_customizer_key = slugify(standard_property_customizer.category_name)
+            category = find_in_sequence(lambda category_customizer: category_customizer.key==category_customizer_key,standard_category_customizers)
+            standard_property_customizer.category = category
+            standard_property_customizer.model_customizer = model_customizer
+            standard_property_customizer.save()
+
+        for vocabulary_key,scientific_category_customizer_dict in scientific_category_customizers.iteritems():
+            for component_key,scientific_category_customizer_list in scientific_category_customizer_dict.iteritems():
+                for scientific_category_customizer in scientific_category_customizer_list:
+                    scientific_category_customizer.model_customizer = model_customizer
+                    scientific_category_customizer.save()
+
+        for vocabulary_key,scientific_property_customizer_dict in scientific_property_customizers.iteritems():
+            for component_key,scientific_property_customizer_list in scientific_property_customizer_dict.iteritems():
+                for scientific_property_customizer in scientific_property_customizer_list:
+                    category_customizer_key = slugify(scientific_property_customizer.category_name)
+                    category = find_in_sequence(lambda category_customizer: category_customizer.key==category_customizer_key,scientific_category_customizers[vocabulary_key][component_key])
+                    scientific_property_customizer.category = category
+                    scientific_property_customizer.model_customizer = model_customizer
+                    scientific_property_customizer.save()
+
+    def get_unique_together(self):
+        # This fn is required because 'unique_together' validation is only enforced at the modelform
+        # if all unique_together fields appear in the modelform; If not, I have to manually validate
+        unique_together = self._meta.unique_together
+        return list(unique_together)
+
     def get_field(self,field_name):
         try:
             field = self._meta.get_field_by_name(field_name)
         except FieldDoesNotExist:
             msg = "Could not find a field called '%s'" % (field_name)
             #raise QuestionnaireError(msg)
-            print msg
             return None
         return field[0]
 
@@ -63,15 +231,8 @@ class MetadataCustomizer(models.Model):
         except FieldDoesNotExist:
             msg = "Could not find a field called '%s'" % (field_name)
             #raise QuestionnaireError(msg)
-            print msg
             return None
         return field[0]
-
-    def get_unique_together(self):
-        # this fn is required because 'unique_together' validation is only enforced at the modelform
-        # if all unique_together fields appear in the modelform; if not, I have to manually validate
-        unique_together = self._meta.unique_together
-        return list(unique_together)
 
 class MetadataModelCustomizer(MetadataCustomizer):
     class Meta:
@@ -452,8 +613,9 @@ class MetadataStandardPropertyCustomizer(MetadataPropertyCustomizer):
             self.relationship_cardinality = proxy.relationship_cardinality.split("|")
             self.relationship_show_subform = False
 
-        if reset_category:
-            if self.category:
+        if self.category:
+            self.category_name = self.category.name
+            if reset_category:
                 self.category.reset()
         
 class MetadataScientificPropertyCustomizer(MetadataPropertyCustomizer):
@@ -544,9 +706,9 @@ class MetadataScientificPropertyCustomizer(MetadataPropertyCustomizer):
         self.edit_extra_description      = True
         self.edit_extra_units            = True
 
-
-        if reset_category:
-            if self.category:
+        if self.category:
+            self.category_name = self.category.name
+            if reset_category:
                 self.category.reset()
 
     def display_extra_attributes(self):

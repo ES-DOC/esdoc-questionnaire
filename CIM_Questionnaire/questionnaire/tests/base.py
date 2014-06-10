@@ -9,15 +9,15 @@ from CIM_Questionnaire.questionnaire.forms.forms_edit import create_model_form_d
     create_standard_property_form_data, MetadataStandardPropertyInlineFormSetFactory, \
     create_scientific_property_form_data, MetadataScientificPropertyInlineFormSetFactory
 from CIM_Questionnaire.questionnaire.models import MetadataProject, MetadataVersion, MetadataModelProxy, \
-    MetadataModelCustomizer, MetadataScientificPropertyCustomizer, MetadataModel, MetadataStandardProperty, \
-    MetadataScientificProperty, MetadataStandardCategoryCustomizer, MetadataStandardPropertyCustomizer, \
-    MetadataScientificCategoryCustomizer, MetadataCategorization, MetadataVocabulary
+    MetadataCustomizer, MetadataModelCustomizer, MetadataScientificPropertyCustomizer, MetadataModel, \
+    MetadataStandardProperty, MetadataScientificProperty, MetadataStandardCategoryCustomizer, \
+    MetadataStandardPropertyCustomizer, MetadataScientificCategoryCustomizer, MetadataCategorization, MetadataVocabulary
+
 from CIM_Questionnaire.questionnaire.models.metadata_model import create_models_from_components
 from CIM_Questionnaire.questionnaire.utils import DEFAULT_VOCABULARY, find_in_sequence, assert_no_string_nones
 from CIM_Questionnaire.questionnaire.models.metadata_vocabulary import UPLOAD_PATH as VOCABULARY_UPLOAD_PATH
 from CIM_Questionnaire.questionnaire.models.metadata_version import UPLOAD_PATH as VERSION_UPLOAD_PATH
 from CIM_Questionnaire.questionnaire.models.metadata_categorization import UPLOAD_PATH as CATEGORIZATION_UPLOAD_PATH
-
 
 class TestQuestionnaireBase(TestCase):
 
@@ -27,7 +27,7 @@ class TestQuestionnaireBase(TestCase):
         # client for all tests (this is better-suited for testing views b/c, among other things, it has sessions, cookies, etc.)
         self.client = Client()
 
-        # ensure that there is no categorized metadata before a new one is loaded
+        # ensure that there are no categorizations before a new one is loaded
         qs = MetadataCategorization.objects.all()
         self.assertEqual(len(qs),0)
 
@@ -40,11 +40,23 @@ class TestQuestionnaireBase(TestCase):
         qs = MetadataCategorization.objects.all()
         self.assertEqual(len(qs),1)
 
+        # ensure that there are no versions before a new one is loaded
+        qs = MetadataVersion.objects.all()
+        self.assertEqual(len(qs),0)
+
         # create a version
         test_version_name = "test_version.xml"
         test_version = MetadataVersion(name="test",file=os.path.join(VERSION_UPLOAD_PATH,test_version_name))
         test_version.categorization = test_categorization   # associate the "test" categorization w/ the "test" version
         test_version.save()
+
+        # ensure the version is saved to the database
+        qs = MetadataVersion.objects.all()
+        self.assertEqual(len(qs),1)
+
+        # ensure that there are no categorizations before a new one is loaded
+        qs = MetadataVocabulary.objects.all()
+        self.assertEqual(len(qs),0)
 
         # create a vocabulary
         test_vocabulary_name = "test_vocabulary.xml"
@@ -52,9 +64,21 @@ class TestQuestionnaireBase(TestCase):
         test_vocabulary.document_type = "modelcomponent"
         test_vocabulary.save()
 
+        # ensure the version is saved to the database
+        qs = MetadataVocabulary.objects.all()
+        self.assertEqual(len(qs),1)
+
+        # ensure that there are no projects before a new one is loaded
+        qs = MetadataProject.objects.all()
+        self.assertEqual(len(qs),0)
+
         # create a project
         test_project = MetadataProject(name="test",title="Test")
         test_project.save()
+
+        # ensure the project is saved to the database
+        qs = MetadataProject.objects.all()
+        self.assertEqual(len(qs),1)
 
         # register a version
         self.assertEqual(test_version.registered,False)
@@ -78,21 +102,37 @@ class TestQuestionnaireBase(TestCase):
         test_project.vocabularies.add(test_vocabulary)
         test_project.save()
 
-        # create a default customizer
-        test_customizer = self.create_customizer_from_forms("test","modelcomponent","test","test")
-        test_customizer.default = True
-        test_customizer.save()
+        # ensure that there are no customizers before a new one is loaded
+        qs = MetadataModelCustomizer.objects.all()
+        self.assertEqual(len(qs),0)
 
-        self.version = test_version
+        # create a default customizer set
+        # (note, other customizers w/ other features will be used throughout the testing suite;
+        # this is just the default one where customizers need to exist for other functionallity to be tested)
+        test_model_name = "modelcomponent"
+        model_proxy_to_be_customized = MetadataModelProxy.objects.get(version=test_version,name__iexact=test_model_name)
+        vocabularies_to_be_customized = test_project.vocabularies.filter(document_type__iexact=test_model_name)
+        (test_model_customizer,test_standard_category_customizers,test_standard_property_customizers,test_scientific_category_customizers,test_scientific_property_customizers) = \
+            MetadataCustomizer.get_new_customizer_set(test_project, test_version, model_proxy_to_be_customized, vocabularies_to_be_customized)
+        test_model_customizer.name = "test"
+        test_model_customizer.default = True
+        MetadataCustomizer.save_customizer_set(test_model_customizer,test_standard_category_customizers,test_standard_property_customizers,test_scientific_category_customizers,test_scientific_property_customizers)
+
+        # ensure the customizer set is saved to the database
+        qs = MetadataModelCustomizer.objects.all()
+        self.assertEqual(len(qs),1)
+
+        self.version        = test_version
         self.categorization = test_categorization
-        self.vocabulary = test_vocabulary
-        self.project = test_project
-        self.customizer = test_customizer
-    # built-in fn takes qs & list, which is confusing
-    # this is a more intuitive fn
-    # (see https://djangosnippets.org/snippets/2013/)
+        self.vocabulary     = test_vocabulary
+        self.project        = test_project
+        self.customizer     = test_model_customizer
 
     def assertQuerysetEqual(self, qs1, qs2):
+        """Tests that two django querysets are equal"""
+        # the built-in TestCase method takes a qs and a list, which is confusing
+        # this is more intuitive (see https://djangosnippets.org/snippets/2013/)
+
         pk = lambda o: o.pk
         return self.assertEqual(
             list(sorted(qs1, key=pk)),
@@ -281,12 +321,16 @@ class TestQuestionnaireBase(TestCase):
                 model_key = u"%s_%s" % (vocabulary_key,component_key)
                 scientific_category_customizers[vocabulary_key][component_key] = []
                 scientific_property_customizers[vocabulary_key][component_key] = []
-                for property in component.scientific_properties.all():
-                    if property.category:
-                        if property.category.key not in [category.key for category in scientific_category_customizers[vocabulary_key][component_key]]:
+                for scientific_property_proxy in component.scientific_properties.all():
+                    scientific_category_proxy = scientific_property_proxy.category
+                    if scientific_category_proxy:
+                        scientific_category_key = scientific_category_proxy.key
+                        if scientific_category_key in [scientific_category.key for scientific_category in scientific_category_customizers[vocabulary_key][model_key]]:
+                            scientific_category_customizer = find_category_by_key(category_key,scientific_category_customizers[vocabulary_key][component_key])
+                        else:
                             scientific_category_customizer = MetadataScientificCategoryCustomizer(
                                 model_customizer=model_customizer,
-                                proxy=property.category,
+                                proxy=scientific_category_proxy,
                                 vocabulary_key=vocabulary_key,
                                 component_key=component_key,
                                 model_key=model_key
