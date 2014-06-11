@@ -319,18 +319,16 @@ def create_standard_property_customizer_form_data(model_customizer,standard_prop
         pass
 
     elif field_type == MetadataFieldTypes.ENUMERATION:
-        all_enumeration_choices = standard_property_customizer.get_field("enumeration_choices").get_choices()
+        current_enumeration_choices = standard_property_customizer_form_data["enumeration_choices"]
+        current_enumeration_default = standard_property_customizer_form_data["enumeration_default"]
+        if current_enumeration_choices:
+            standard_property_customizer_form_data["enumeration_choices"] = current_enumeration_choices.split("|")
+        if current_enumeration_default:
+            standard_property_customizer_form_data["enumeration_default"] = current_enumeration_default.split("|")
 
-        if not standard_property_customizer.pk:
-            standard_property_customizer_form_data["enumeration_choices"] = [choice[0] for choice in all_enumeration_choices]
-            standard_property_customizer_form_data["enumeration_default"] = []
-        else:
-            standard_property_customizer_form_data["enumeration_choices"] = standard_property_customizer_form_data["enumeration_choices"].split("|")
-            standard_property_customizer_form_data["enumeration_default"] = standard_property_customizer_form_data["enumeration_default"].split("|")
-        
         # BE AWARE THAT CHECKING THIS DICT ITEM (WHOSE VALUE AS A LIST) WON'T GIVE THE FULL LIST
         # APPARENTLY, THIS IS A "FEATURE" AND NOT A "BUG" [https://code.djangoproject.com/ticket/1130]
-        
+
     elif field_type == MetadataFieldTypes.RELATIONSHIP:
         pass
 
@@ -542,17 +540,22 @@ def create_scientific_property_customizer_form_data(model_customizer,scientific_
         "last_modified"     : time.strftime("%c"),
     })
 
-    all_enumeration_choices = scientific_property_customizer.get_field("enumeration_choices").get_choices()
+    if scientific_property_customizer.is_enumeration:
+        # enumeration fields
+        current_enumeration_choices = scientific_property_customizer_form_data["enumeration_choices"]
+        current_enumeration_default = scientific_property_customizer_form_data["enumeration_default"]
+        if current_enumeration_choices:
+            scientific_property_customizer_form_data["enumeration_choices"] = current_enumeration_choices.split("|")
+        if current_enumeration_default:
+            scientific_property_customizer_form_data["enumeration_default"] = current_enumeration_default.split("|")
 
-    if not scientific_property_customizer.pk:
-        scientific_property_customizer_form_data["enumeration_choices"] = [choice[0] for choice in all_enumeration_choices]
-        scientific_property_customizer_form_data["enumeration_default"] = []
-    else:
-        scientific_property_customizer_form_data["enumeration_choices"] = scientific_property_customizer_form_data["enumeration_choices"].split("|")
-        scientific_property_customizer_form_data["enumeration_default"] = scientific_property_customizer_form_data["enumeration_default"].split("|")
 
     # BE AWARE THAT CHECKING THIS DICT ITEM (WHOSE VALUE AS A LIST) WON'T GIVE THE FULL LIST
     # APPARENTLY, THIS IS A "FEATURE" AND NOT A "BUG" [https://code.djangoproject.com/ticket/1130]
+
+    else:
+        # atomic fields...
+        pass
 
     scientific_category = scientific_property_customizer.category
     if scientific_category:
@@ -560,6 +563,14 @@ def create_scientific_property_customizer_form_data(model_customizer,scientific_
         scientific_property_customizer_form_data["category_name"] = scientific_category.name
 
     return scientific_property_customizer_form_data
+
+
+
+
+
+
+
+
 
 class MetadataScientificPropertyCustomizerForm(MetadataCustomizerForm):
 

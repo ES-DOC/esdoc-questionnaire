@@ -605,8 +605,10 @@ class MetadataStandardPropertyCustomizer(MetadataPropertyCustomizer):
         
         # enumeration fields...
         if self.field_type == MetadataFieldTypes.ENUMERATION:
-            enumeration_choices_field = self.get_field("enumeration_choices")
-            enumeration_choices_field.set_choices(proxy.enumeration_choices.split("|"))
+# this has been moved to the __init__ fn above
+#            enumeration_choices_field = self.get_field("enumeration_choices")
+#            enumeration_choices_field.set_choices(proxy.enumeration_choices.split("|"))
+            self.enumeration_choices = proxy.enumeration_choices
 
         # relationship fields...
         if self.field_type == MetadataFieldTypes.RELATIONSHIP:
@@ -665,46 +667,64 @@ class MetadataScientificPropertyCustomizer(MetadataPropertyCustomizer):
 #    def __unicode__(self):
 #        return u'%s::%s' % (self.model_customizer,self.proxy.name)
 
+    def __init__(self,*args,**kwargs):
+        super(MetadataScientificPropertyCustomizer,self).__init__(*args,**kwargs)
+
+        proxy = self.proxy
+
+        # enumeration fields...
+        if self.is_enumeration:
+            enumeration_choices_field = self.get_field("enumeration_choices")
+            enumeration_choices_field.set_choices(proxy.values.split("|"))
+
+        # atomic fields...
+        else:
+            pass
+
+
     def reset(self,reset_category=False):
         proxy = self.proxy
-        
+
         if not proxy:
             msg = "Trying to reset a MetadataScientificPropertyCustomizer w/out a proxy having been specified."
             raise QuestionnaireError(msg)
-        
+
         if not self.model_key:
             self.model_key      = u"%s_%s" % (self.vocabulary_key,self.component_key)
 
         self.name           = proxy.name
         self.order          = proxy.order
         self.verbose_name   = proxy.name
+        self.verbose_name   = proxy.name
+        self.documentation  = proxy.documentation
+        self.inline_help    = False
         self.field_type     = MetadataFieldTypes.PROPERTY.getType()
 
-        self.property_type      = MetadataAtomicFieldTypes.DEFAULT.getType()
-        if proxy.choice=="OR":
-            self.is_enumeration = True
-            self.property_enumeration_multi = True
-        elif proxy.choice=="XOR":
-            self.is_enumeration = True
-            self.property_enumeration_multi = False
-        elif proxy.choice=="keyboard":
-            self.is_enumeration = False
-        else:
-            msg = "invalid choice specified: '%s'" % (proxy.choice)
-            raise QuestionnaireError(msg)
-
-        enumeration_choices_field = self.get_field("enumeration_choices")
-        enumeration_choices_field.set_choices(proxy.values.split("|"))
-
-        self.property_nullable  = False
-
-        self.inline_help                 = False
         self.display_extra_standard_name = False
         self.display_extra_description   = False
         self.display_extra_units         = False
         self.edit_extra_standard_name    = True
         self.edit_extra_description      = True
         self.edit_extra_units            = True
+
+
+        if proxy.choice=="OR":
+            self.is_enumeration = True
+            self.enumeration_multi = True
+            self.enumeration_open = False
+            self.enumeration_nullable = False
+            self.enumeration_choices = proxy.values
+        elif proxy.choice=="XOR":
+            self.is_enumeration = True
+            self.enumeration_multi = False
+            self.enumeration_open = False
+            self.enumeration_nullable = False
+            self.enumeration_choices = proxy.values
+        elif proxy.choice=="keyboard":
+            self.is_enumeration = False
+        else:
+            msg = "invalid choice specified: '%s'" % (proxy.choice)
+            raise QuestionnaireError(msg)
 
         if self.category:
             self.category_name = self.category.name
