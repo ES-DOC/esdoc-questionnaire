@@ -337,8 +337,9 @@ def create_standard_property_customizer_form_data(model_customizer,standard_prop
         raise QuestionnaireError(msg)
 
     standard_category = standard_property_customizer.category
-    standard_property_customizer_form_data["category"] = standard_category
-    standard_property_customizer_form_data["category_name"] = standard_category.name
+    if standard_category:
+        standard_property_customizer_form_data["category"] = standard_category.key
+        standard_property_customizer_form_data["category_name"] = standard_category.name
 
     return standard_property_customizer_form_data
 
@@ -377,13 +378,7 @@ class MetadataStandardPropertyCustomizerForm(ModelForm):
 
 
     # set of fields that will be the same for all members of a formset; thus I can cache the query (for relationship fields)
-    cached_fields       = []#"proxy","field_type","enumeration_choices","enumeration_default"]
-
-    # TODO: IS IT FASTER TO DO THIS
-    #return [field for field in self if field.name in field_list]
-    # THAN THIS
-    # fields = list(self)
-    # ?
+    cached_fields       = []
 
     def get_hidden_fields(self):
         fields = list(self)
@@ -431,6 +426,9 @@ class MetadataStandardPropertyCustomizerForm(ModelForm):
         
         property_customizer = self.instance
 
+        # not displaying category field for standard_properties (can I get away w/ not doing this?)
+        self.fields["category"].choices = EMPTY_CHOICE + [(category.key,category.name) for category in category_choices]
+
         # when initializing formsets,
         # the fields aren't always setup in the underlying model
         # so this gets them either from the request (in the case of POST) or initial (in the case of GET)
@@ -468,8 +466,6 @@ class MetadataStandardPropertyCustomizerForm(ModelForm):
         else:
             msg = "invalid field type for standard property: '%s'" % (self.type)
             raise QuestionnaireError(msg)
-
-        self.fields["category"].choices = category_choices
 
         update_field_widget_attributes(self.fields["name"],{"class":"label","readonly":"readonly"})
         update_field_widget_attributes(self.fields["category_name"],{"class":"label","readonly":"readonly"})
@@ -520,7 +516,6 @@ def MetadataStandardPropertyCustomizerInlineFormSetFactory(*args,**kwargs):
     elif _queryset:
         _formset.number_of_properties = len(_queryset)
     elif _request and _request.POST:
-    #else: # assuming data was passed in via POST
         _formset.number_of_properties = int(_request.POST[u"%s-TOTAL_FORMS"%(_prefix)])
     
     if _request and _request.method == "POST":
@@ -559,17 +554,10 @@ def create_scientific_property_customizer_form_data(model_customizer,scientific_
 
     scientific_category = scientific_property_customizer.category
     if scientific_category:
-        scientific_property_customizer_form_data["category"] = scientific_category
+        scientific_property_customizer_form_data["category"] = scientific_category.key
         scientific_property_customizer_form_data["category_name"] = scientific_category.name
 
     return scientific_property_customizer_form_data
-
-
-
-
-
-
-
 
 
 class MetadataScientificPropertyCustomizerForm(MetadataCustomizerForm):
@@ -597,7 +585,7 @@ class MetadataScientificPropertyCustomizerForm(MetadataCustomizerForm):
 
     category_name = CharField(label="Category",required=False)
     category      = ChoiceField(required=False) # changing from the default fk field (ModelChoiceField)
-                                                # since I'm dealing w/ _unsaved_ models
+                                                # since I'm potentially dealing w/ _unsaved_ category_customizers
 
     hidden_fields       = ("field_type","proxy","model_customizer","is_enumeration","vocabulary_key","component_key","model_key","id")
     header_fields       = ("name","category_name","order")
@@ -608,8 +596,8 @@ class MetadataScientificPropertyCustomizerForm(MetadataCustomizerForm):
     extra_fields        = ("display_extra_standard_name","edit_extra_standard_name","extra_standard_name","display_extra_description","edit_extra_description","extra_description","display_extra_units","edit_extra_units","extra_units")
 
 
-    # set of fields that will be the same for all members of a formset; thus I can cache the query (for relationship fields)
-    cached_fields       = ["field_type"]#proxy","category"]
+    # set of fields that will be the same for all members of a formset; thus I can cache the query (mostly for relationship fields)
+    cached_fields       = ["field_type"]
 
     def get_hidden_fields(self):
         return self.get_fields_from_list(self.hidden_fields)
@@ -663,19 +651,7 @@ class MetadataScientificPropertyCustomizerForm(MetadataCustomizerForm):
 
         property_customizer = self.instance
 
-        self.fields["category"].choices = EMPTY_CHOICE + category_choices
-
-###        category = self.current_values["category"]
-###        if isinstance(category,MetadataScientificCategoryCustomizer):
-###            self.initial["category"] = category.key
-###            self.initial["category_name"] = category.name
-###        elif isinstance(category,int):
-###            category_instance = property_customizer.category #MetadataScientificCategoryCustomizer.objects.get(pk=category)
-###            self.initial["category"] = category_instance.key
-###            self.initial["category_name"] = category_instance.name
-###        else: # string
-###            self.initial["category"] = slugify(category)
-###            self.initial["category_name"] = category
+        self.fields["category"].choices = EMPTY_CHOICE + [(category.key,category.name) for category in category_choices]
 
         update_field_widget_attributes(self.fields["name"],{"class":"label","readonly":"readonly"})
         update_field_widget_attributes(self.fields["category_name"],{"class":"label","readonly":"readonly"})
@@ -692,20 +668,6 @@ class MetadataScientificPropertyCustomizerForm(MetadataCustomizerForm):
 
         self.fields["enumeration_choices"].widget = SelectMultiple(choices=all_enumeration_choices)
         self.fields["enumeration_default"].widget = SelectMultiple(choices=all_enumeration_choices)
-###        if not property_customizer.pk:
-###            enumeration_choices = [choice[0] for choice in all_enumeration_choices]
-###            enumeration_default = []
-###        else:
-###            if "enumeration_choices" in self.current_values:
-###                enumeration_choices = self.current_values["enumeration_choices"].split("|")
-###            else:
-###                enumeration_choices = []
-###            if "enumeration_default" in self.current_values:
-###                enumeration_default = self.current_values["enumeration_default"].split("|")
-###            else:
-###                enumeration_default = []
-###        self.initial["enumeration_choices"] = enumeration_choices
-###        self.initial["enumeration_default"] = enumeration_default
         update_field_widget_attributes(self.fields["enumeration_choices"],{"class":"multiselect"})
         update_field_widget_attributes(self.fields["enumeration_default"],{"class":"multiselect"})
         
@@ -743,13 +705,14 @@ def MetadataScientificPropertyCustomizerInlineFormSetFactory(*args,**kwargs):
 
     # using curry() to pass arguments to the individual formsets
     _formset = inlineformset_factory(MetadataModelCustomizer,MetadataScientificPropertyCustomizer,*args,**new_kwargs)
+#    _formset.form = staticmethod(curry(MetadataScientificPropertyCustomizerForm,category_choices=_categories))
     _formset.form = staticmethod(curry(MetadataScientificPropertyCustomizerForm,category_choices=_categories))
+
     if _initial:
         _formset.number_of_properties = len(_initial)
     elif _queryset:
         _formset.number_of_properties = len(_queryset)
     elif _request and _request.POST:
-    #else: # assuming data was passed in via POST
         _formset.number_of_properties = int(_request.POST[u"%s-TOTAL_FORMS"%(_prefix)])
    
     if _request and _request.method == "POST":

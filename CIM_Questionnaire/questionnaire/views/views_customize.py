@@ -155,7 +155,7 @@ def questionnaire_customize_new(request,project_name="",model_name="",version_na
             instance    = model_customizer,
             initial     = standard_property_customizers_data,
             extra       = len(standard_property_customizers_data),
-            categories  = [(category.key,category.name) for category in standard_category_customizers],
+            categories  = standard_category_customizers,
         )
 
         scientific_property_customizers_data = {}
@@ -174,7 +174,7 @@ def questionnaire_customize_new(request,project_name="",model_name="",version_na
                     initial     = scientific_property_customizers_data[vocabulary_key][component_key],
                     extra       = len(scientific_property_customizers_data[vocabulary_key][component_key]),
                     prefix      = model_key,
-                    categories  = [(category.key,category.name) for category in scientific_category_customizers[vocabulary_key][component_key]]
+                    categories  = scientific_category_customizers[vocabulary_key][component_key]
                 )
 
     else: # request.method == "POST"
@@ -197,7 +197,7 @@ def questionnaire_customize_new(request,project_name="",model_name="",version_na
         standard_property_customizer_formset = MetadataStandardPropertyCustomizerInlineFormSetFactory(
             instance    = model_customizer_instance if model_customizer_form_validity else model_customizer,
             request     = request,
-            categories  = [(category.key,category.name) for category in standard_category_customizers],
+            categories  = standard_category_customizers,
         )
 
         validity += [standard_property_customizer_formset.is_valid()]
@@ -211,7 +211,7 @@ def questionnaire_customize_new(request,project_name="",model_name="",version_na
                     instance    = model_customizer_instance if model_customizer_form_validity else model_customizer,
                     request     = request,
                     prefix      = model_key,
-                    categories  = [(category.key,category.name) for category in scientific_category_customizers[vocabulary_key][component_key]]
+                    categories  = scientific_category_customizers[vocabulary_key][component_key]
                 )
                 if vocabulary_key in active_vocabulary_keys:
                     validity += [scientific_property_customizer_formsets[vocabulary_key][component_key].is_valid()]
@@ -288,7 +288,7 @@ def questionnaire_customize_existing(request,project_name="",model_name="",versi
             queryset    = standard_property_customizers,
             # don't pass extra; w/ existing (queryset) models, extra ought to be 0
             #extra       = len(standard_property_customizers),
-            categories  = [(category.key,category.name) for category in standard_category_customizers],
+            categories  = standard_category_customizers,
         )
 
         scientific_property_customizer_formsets = {}
@@ -301,7 +301,7 @@ def questionnaire_customize_existing(request,project_name="",model_name="",versi
                     # don't pass extra; w/ existing (queryset) models, extra ought to be 0
                     #extra       = len(scientific_property_customizer_list),
                     prefix      = u"%s_%s" % (vocabulary_key,component_key),
-                    categories  = [(category.key,category.name) for category in scientific_category_customizers[vocabulary_key][component_key]]
+                    categories  = scientific_category_customizers[vocabulary_key][component_key],
                 )
 
     else: # request.method == "POST":
@@ -324,7 +324,7 @@ def questionnaire_customize_existing(request,project_name="",model_name="",versi
         standard_property_customizer_formset = MetadataStandardPropertyCustomizerInlineFormSetFactory(
             instance    = model_customizer_instance if model_customizer_form_validity else model_customizer,
             request     = request,
-            categories  = [(category.key,category.name) for category in standard_category_customizers],
+            categories  = standard_category_customizers,
         )
 
         validity += [standard_property_customizer_formset.is_valid()]
@@ -337,7 +337,7 @@ def questionnaire_customize_existing(request,project_name="",model_name="",versi
                     instance    = model_customizer_instance if model_customizer_form_validity else model_customizer,
                     request     = request,
                     prefix      = u"%s_%s" % (vocabulary_key,component_key),
-                    categories  = [(category.key,category.name) for category in scientific_category_customizers[vocabulary_key][component_key]]
+                    categories  = scientific_category_customizers[vocabulary_key][component_key],
                 )
                 if vocabulary_key in active_vocabulary_keys:
                     validity += [scientific_property_customizer_formsets[vocabulary_key][component_key].is_valid()]
