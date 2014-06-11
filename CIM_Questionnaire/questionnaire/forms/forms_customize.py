@@ -119,7 +119,7 @@ def create_model_customizer_form_data(model_customizer,standard_category_customi
     return model_customizer_form_data
 
 
-class MetadataModelCustomizerForm(ModelForm):
+class MetadataModelCustomizerForm(MetadataCustomizerForm):
 
     class Meta:
         model   = MetadataModelCustomizer
@@ -135,9 +135,9 @@ class MetadataModelCustomizerForm(ModelForm):
                     "standard_categories_content","standard_categories_tags",
                   ]
 
-    hidden_fields       = ("proxy","project","version","vocabulary_order",)
-    customizer_fields   = ("name","description","default","vocabularies",)
-    document_fields     = ("model_title","model_description","model_show_all_categories","model_show_all_properties","model_show_hierarchy","model_hierarchy_name","model_root_component",)
+    _hidden_fields       = ("proxy","project","version","vocabulary_order",)
+    _customizer_fields   = ("name","description","default","vocabularies",)
+    _document_fields     = ("model_title","model_description","model_show_all_categories","model_show_all_properties","model_show_hierarchy","model_hierarchy_name","model_root_component",)
     
     standard_categories_content = CharField(required=False,widget=Textarea)                 # the categories themselves
     standard_categories_tags    = CharField(label="Available Categories",required=False)    # the field used by the tagging widget
@@ -149,17 +149,14 @@ class MetadataModelCustomizerForm(ModelForm):
     scientific_categories_to_process = {}
     
     def get_hidden_fields(self):
-        fields = list(self)
-        return [field for field in fields if field.name in self.hidden_fields]
-    
+        return self.get_fields_from_list(self._hidden_fields)
+
     def get_customizer_fields(self):
-        fields = list(self)
-        return [field for field in fields if field.name in self.customizer_fields]
+        return self.get_fields_from_list(self._customizer_fields)
 
     def get_document_fields(self):
-        fields = list(self)
-        return [field for field in fields if field.name in self.document_fields]
-   
+        return self.get_fields_from_list(self._document_fields)
+
     def __init__(self,*args,**kwargs):
         is_subform = kwargs.pop("is_subform",False)
         all_vocabularies = kwargs.pop("all_vocabularies",[])
@@ -343,14 +340,13 @@ def create_standard_property_customizer_form_data(model_customizer,standard_prop
 
     return standard_property_customizer_form_data
 
-class MetadataStandardPropertyCustomizerForm(ModelForm):
+class MetadataStandardPropertyCustomizerForm(MetadataCustomizerForm):
 
     class Meta:
         model = MetadataStandardPropertyCustomizer
         fields  = [
                 # hidden fields...
-                # TODO: WHY DID I HAVE TO EXPLICITLY ADD ID HERE?!?
-                "field_type","proxy","category","id",
+                "field_type","proxy","category",
                 # header fields...
                 "name","category_name","order",
                 # common fields...
@@ -369,30 +365,28 @@ class MetadataStandardPropertyCustomizerForm(ModelForm):
     type = None # this is set in __init__ below
 
 
-    hidden_fields       = ("field_type","proxy","category","id",)
-    header_fields       = ("name","category_name","order")
-    common_fields       = ("displayed","required","editable","unique","verbose_name","documentation","inline_help","default_value","inherited")
-    atomic_fields       = ("atomic_type","suggestions",)
-    enumeration_fields  = ("enumeration_choices","enumeration_default","enumeration_open","enumeration_multi","enumeration_nullable",)
-    relationship_fields = ("relationship_cardinality","relationship_show_subform",)
+    _hidden_fields       = ("field_type","proxy","category",)
+    _header_fields       = ("name","category_name","order")
+    _common_fields       = ("displayed","required","editable","unique","verbose_name","documentation","inline_help","default_value","inherited")
+    _atomic_fields       = ("atomic_type","suggestions",)
+    _enumeration_fields  = ("enumeration_choices","enumeration_default","enumeration_open","enumeration_multi","enumeration_nullable",)
+    _relationship_fields = ("relationship_cardinality","relationship_show_subform",)
 
 
     # set of fields that will be the same for all members of a formset; thus I can cache the query (for relationship fields)
     cached_fields       = []
 
     def get_hidden_fields(self):
-        fields = list(self)
-        return [field for field in fields if field.name in self.hidden_fields]
+        return self.get_fields_from_list(self._hidden_fields)
 
     def get_header_fields(self):
-        fields = list(self)
-        return [field for field in fields if field.name in self.header_fields]
+        return self.get_fields_from_list(self._header_fields)
 
     def get_atomic_fields(self):
         fields = list(self)
 
-        common_fields = [field for field in fields if field.name in self.common_fields]
-        atomic_fields = [field for field in fields if field.name in self.atomic_fields]
+        common_fields = [field for field in fields if field.name in self._common_fields]
+        atomic_fields = [field for field in fields if field.name in self._atomic_fields]
 
         all_fields = common_fields + atomic_fields
         all_fields.sort(key=lambda field: fields.index(field))
@@ -401,8 +395,8 @@ class MetadataStandardPropertyCustomizerForm(ModelForm):
     def get_enumeration_fields(self):
         fields = list(self)
 
-        common_fields = [field for field in fields if field.name in self.common_fields]
-        atomic_fields = [field for field in fields if field.name in self.enumeration_fields]
+        common_fields = [field for field in fields if field.name in self._common_fields]
+        atomic_fields = [field for field in fields if field.name in self._enumeration_fields]
 
         all_fields = common_fields + atomic_fields
         all_fields.sort(key=lambda field: fields.index(field))
@@ -411,8 +405,8 @@ class MetadataStandardPropertyCustomizerForm(ModelForm):
     def get_relationship_fields(self):
         fields = list(self)
 
-        common_fields = [field for field in fields if field.name in self.common_fields]
-        atomic_fields = [field for field in fields if field.name in self.relationship_fields]
+        common_fields = [field for field in fields if field.name in self._common_fields]
+        atomic_fields = [field for field in fields if field.name in self._relationship_fields]
 
         all_fields = common_fields + atomic_fields
         all_fields.sort(key=lambda field: fields.index(field))
@@ -426,8 +420,10 @@ class MetadataStandardPropertyCustomizerForm(ModelForm):
         
         property_customizer = self.instance
 
-        # not displaying category field for standard_properties (can I get away w/ not doing this?)
-        self.fields["category"].choices = EMPTY_CHOICE + [(category.key,category.name) for category in category_choices]
+        # not displaying category field for standard_properties (so I should be able to get away w/ not doing this)
+        #self.fields["category"].choices = EMPTY_CHOICE + [(category.key,category.name) for category in category_choices]
+        #if property_customizer.pk:
+        #    self.initial["category"] = property_customizer.category.key
 
         # when initializing formsets,
         # the fields aren't always setup in the underlying model
@@ -567,9 +563,7 @@ class MetadataScientificPropertyCustomizerForm(MetadataCustomizerForm):
 
         fields  = [
                 # hidden fields...
-                # TODO: AGAIN, WHY DID I HAVE TO EXPLICITLY ADD ID HERE?!?
-                # TODO: SHOULD I GET RID OF "model_customizer" SINCE THIS IS DISPLAYED VIA AN INLINE_FORMSET? (I MIGHT HAVE TO IF I START INCLUDING SCIENTIFIC PROPERTIES IN THE SUBFORMS)
-                "field_type","proxy","model_customizer","is_enumeration","vocabulary_key","component_key","model_key","id",
+                "field_type","proxy","is_enumeration","vocabulary_key","component_key","model_key",
                 # header fields...
                 "name","category_name","order",
                 # common fields...
@@ -587,29 +581,29 @@ class MetadataScientificPropertyCustomizerForm(MetadataCustomizerForm):
     category      = ChoiceField(required=False) # changing from the default fk field (ModelChoiceField)
                                                 # since I'm potentially dealing w/ _unsaved_ category_customizers
 
-    hidden_fields       = ("field_type","proxy","model_customizer","is_enumeration","vocabulary_key","component_key","model_key","id")
-    header_fields       = ("name","category_name","order")
-    common_fields       = ("category","displayed","required","editable","unique","verbose_name","documentation","inline_help","suggestions")
-    keyboard_fields     = ("atomic_type","atomic_default")
-    enumeration_fields  = ("enumeration_choices","enumeration_default","enumeration_open","enumeration_multi","enumeration_nullable")
+    _hidden_fields       = ("field_type","proxy","is_enumeration","vocabulary_key","component_key","model_key",)
+    _header_fields       = ("name","category_name","order")
+    _common_fields       = ("category","displayed","required","editable","unique","verbose_name","documentation","inline_help","suggestions")
+    _keyboard_fields     = ("atomic_type","atomic_default")
+    _enumeration_fields  = ("enumeration_choices","enumeration_default","enumeration_open","enumeration_multi","enumeration_nullable")
 
-    extra_fields        = ("display_extra_standard_name","edit_extra_standard_name","extra_standard_name","display_extra_description","edit_extra_description","extra_description","display_extra_units","edit_extra_units","extra_units")
+    _extra_fields        = ("display_extra_standard_name","edit_extra_standard_name","extra_standard_name","display_extra_description","edit_extra_description","extra_description","display_extra_units","edit_extra_units","extra_units")
 
 
     # set of fields that will be the same for all members of a formset; thus I can cache the query (mostly for relationship fields)
     cached_fields       = ["field_type"]
 
     def get_hidden_fields(self):
-        return self.get_fields_from_list(self.hidden_fields)
+        return self.get_fields_from_list(self._hidden_fields)
 
     def get_header_fields(self):
-        return self.get_fields_from_list(self.header_fields)
+        return self.get_fields_from_list(self._header_fields)
 
     def get_keyboard_fields(self):
         fields = list(self)
 
-        common_fields   = [field for field in fields if field.name in self.common_fields]
-        keyboard_fields = [field for field in fields if field.name in self.keyboard_fields]
+        common_fields   = [field for field in fields if field.name in self._common_fields]
+        keyboard_fields = [field for field in fields if field.name in self._keyboard_fields]
 
         all_fields = common_fields + keyboard_fields
         all_fields.sort(key=lambda field: fields.index(field))
@@ -618,8 +612,8 @@ class MetadataScientificPropertyCustomizerForm(MetadataCustomizerForm):
     def get_enumeration_fields(self):
         fields = list(self)
 
-        common_fields      = [field for field in fields if field.name in self.common_fields]
-        enumeration_fields = [field for field in fields if field.name in self.enumeration_fields]
+        common_fields      = [field for field in fields if field.name in self._common_fields]
+        enumeration_fields = [field for field in fields if field.name in self._enumeration_fields]
 
         all_fields = common_fields + enumeration_fields
         all_fields.sort(key=lambda field: fields.index(field))
@@ -633,7 +627,7 @@ class MetadataScientificPropertyCustomizerForm(MetadataCustomizerForm):
             return self.get_keyboard_fields()
         
     def get_extra_fields(self):
-        return self.get_fields_from_list(self.extra_fields)
+        return self.get_fields_from_list(self._extra_fields)
 
     def get_extra_fieldsets(self):
         fields = self.get_extra_fields()
@@ -652,6 +646,10 @@ class MetadataScientificPropertyCustomizerForm(MetadataCustomizerForm):
         property_customizer = self.instance
 
         self.fields["category"].choices = EMPTY_CHOICE + [(category.key,category.name) for category in category_choices]
+        if property_customizer.pk:
+            # ordinarily, this is done in create_scientific_property_customizer_form_data above
+            # but if this is the (successful) result of a POST I still need to do this jiggery-pokery someplace
+            self.initial["category"] = property_customizer.category.key
 
         update_field_widget_attributes(self.fields["name"],{"class":"label","readonly":"readonly"})
         update_field_widget_attributes(self.fields["category_name"],{"class":"label","readonly":"readonly"})
@@ -705,7 +703,6 @@ def MetadataScientificPropertyCustomizerInlineFormSetFactory(*args,**kwargs):
 
     # using curry() to pass arguments to the individual formsets
     _formset = inlineformset_factory(MetadataModelCustomizer,MetadataScientificPropertyCustomizer,*args,**new_kwargs)
-#    _formset.form = staticmethod(curry(MetadataScientificPropertyCustomizerForm,category_choices=_categories))
     _formset.form = staticmethod(curry(MetadataScientificPropertyCustomizerForm,category_choices=_categories))
 
     if _initial:
