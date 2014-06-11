@@ -44,8 +44,13 @@ class MetadataForm(ModelForm):
 #             # GET; initial was passed into constructor
 #             self.current_values = self.initial
 
-    def get_fields_from_list(self,field_list):
-        return [field for field in self if field.name in field_list]
+
+    def get_fields_from_list(self,field_names_list):
+        # I _think_ that iterating over self causes _all_ fields to be evaluated
+        # which is expensive (especially w/ relationship fields)
+        #fields = [field for field in self if field.name in field_list]
+        fields = [self[field_name] for field_name in field_names_list]
+        return fields
 
     def get_current_field_value(self, *args):
         """
