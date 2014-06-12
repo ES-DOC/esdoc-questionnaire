@@ -82,7 +82,7 @@ class MetadataModelForm(MetadataEditingForm):
             "title",
         ]
 
-    _hidden_fields       = ["proxy", "project", "version", "is_document", "vocabulary_key", "component_key", "active", "name", "description", "order", ]
+    _hidden_fields       = ["proxy", "project", "version", "is_document", "is_root", "vocabulary_key", "component_key", "active", "name", "description", "order", ]
     _header_fields       = ["title",]
 
     # set of fields that will be the same for all members of a formset; allows me to cache the query (for relationship fields)
@@ -189,12 +189,12 @@ class MetadataStandardPropertyForm(MetadataEditingForm):
         model   = MetadataStandardProperty
         fields = [
             # hidden fields...
-            "proxy", "field_type", "name", "order", "model",
+            "proxy", "field_type", "name", "order", "model", "is_label",
             # value fields...
             "atomic_value", "enumeration_value", "enumeration_other_value", "relationship_value",
         ]
 
-    _hidden_fields      = ["proxy", "field_type", "name", "order", "model",]
+    _hidden_fields      = ["proxy", "field_type", "name", "order", "model", "is_label"]
     _value_fields       = ["atomic_value", "enumeration_value", "enumeration_other_value", "relationship_value",]
 
     # set of fields that will be the same for all members of a formset; allows me to cache the query (for relationship fields)

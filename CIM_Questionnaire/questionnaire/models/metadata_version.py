@@ -112,7 +112,8 @@ class MetadataVersion(models.Model):
             for j, version_property_proxy in enumerate(xpath_fix(version_model_proxy,"attributes/attribute")):
                 version_property_proxy_name     = xpath_fix(version_property_proxy,"name/text()")
                 version_property_proxy_type     = xpath_fix(version_property_proxy,"type/text()")
-                atomic_type                     = xpath_fix(version_property_proxy,"atomic/atomic_type/text()")
+                version_property_proxy_is_label = xpath_fix(version_property_proxy,"@is_label") or ["false"]
+                atomic_type                     = xpath_fix(version_property_proxy,"atomic/atomic_type/text()") or None
                 enumeration_choices = []
                 relationship_cardinality_min = xpath_fix(version_property_proxy,"relationship/cardinality/@min")
                 relationship_cardinality_max = xpath_fix(version_property_proxy,"relationship/cardinality/@max")
@@ -120,19 +121,22 @@ class MetadataVersion(models.Model):
                 for version_property_proxy_enumeration_choice in xpath_fix(version_property_proxy,"enumeration/choice"):
                     enumeration_choices.append(xpath_fix(version_property_proxy_enumeration_choice,"text()")[0])
                 # TODO: ADD MORE FIELDS
-               
+
                 new_standard_property_proxy_kwargs["field_type"]            = MetadataFieldTypes.get(version_property_proxy_type[0])
                 new_standard_property_proxy_kwargs["name"]                  = re.sub(r'\.','_',str(version_property_proxy_name[0]))
                 new_standard_property_proxy_kwargs["order"]                 = j
+                new_standard_property_proxy_kwargs["is_label"]              = bool(version_property_proxy_is_label[0].lower()=="true")
                 if atomic_type:
                     new_standard_property_proxy_kwargs["atomic_type"]       = MetadataAtomicFieldTypes.get(atomic_type[0])
+                else:
+                    new_standard_property_proxy_kwargs.pop("atomic_type",None)
                 new_standard_property_proxy_kwargs["enumeration_choices"]   = "|".join(enumeration_choices)
                 if relationship_cardinality_min and relationship_cardinality_max:
                     new_standard_property_proxy_kwargs["relationship_cardinality"] = "%s|%s"%(relationship_cardinality_min[0],relationship_cardinality_max[0])
                 if relationship_target_name:
                     new_standard_property_proxy_kwargs["relationship_target_name"] = relationship_target_name[0]
-                
-                (new_standard_property_proxy,created_property) = MetadataStandardPropertyProxy.objects.get_or_create(**new_standard_property_proxy_kwargs)                
+
+                (new_standard_property_proxy,created_property) = MetadataStandardPropertyProxy.objects.get_or_create(**new_standard_property_proxy_kwargs)
                 new_standard_property_proxy.save()
                                 
             new_model_proxy.save()

@@ -7,7 +7,7 @@
             <name>modelcomponent</name>
             <description>blah</description>
             <attributes>
-                <attribute>
+                <attribute is_label="true">
                     <name>shortName</name>
                     <type>ATOMIC</type>
                     <atomic>

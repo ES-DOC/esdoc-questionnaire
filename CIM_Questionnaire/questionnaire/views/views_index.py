@@ -29,18 +29,18 @@ from questionnaire.models import *
 from questionnaire.utils  import get_version
 
 def questionnaire_index(request):
-
+    """The default view for the CIM Questionnaire.  Provides a choice of active projects to visit."""
     active_projects = MetadataProject.objects.filter(active=True)
 
     class _IndexForm(forms.Form):
         class Meta:
             fields  = ("projects",)
 
-        projects        = ModelChoiceField(queryset=active_projects,label="Active Metadata Projects",required=True)
+        projects = ModelChoiceField(queryset=active_projects,label="Active Metadata Projects",required=True)
         projects.help_text = "This is a list of all projects that have registered as 'active' with the CIM Questionnaire."
 
-        def __init__(self,*args,**kwargs):
-            super(_IndexForm,self).__init__(*args,**kwargs)
+        #def __init__(self,*args,**kwargs):
+        #    super(_IndexForm,self).__init__(*args,**kwargs)
 
     if request.method == "POST":
         form = _IndexForm(request.POST)
@@ -144,76 +144,89 @@ def questionnaire_project_index(request,project_name=""):
         msg = "Could not find an active project named '%s'." % (project_name)
         return error(request,msg)
 
-    customizers = MetadataModelCustomizer.objects.filter(project=project)
+
+    all_versions = MetadataVersion.objects.filter(registered=True)
+    all_proxies = MetadataModelProxy.objects.filter(stereotype__iexact="document",version__in=all_versions)
+    all_customizers = MetadataModelCustomizer.objects.filter(project=project,proxy__in=all_proxies)
+    all_models = MetadataModel.objects.filter(project=project,is_root=True,proxy__in=all_proxies)
 
    # I AM HERE
     
     class _AdminIndexForm(forms.Form):
-        class Meta:
-            pass
 
-        versions        = ModelChoiceField(queryset=MetadataVersion.objects.filter(registered=True),label="Metadata Version",required=True)
-        models          = ModelChoiceField(queryset=MetadataModelProxy.objects.all(),label="Metadata Model",required=True)
-        customizations  = ModelChoiceField(queryset=MetadataModelCustomizer.objects.filter(project=project),label="Form Customization",required=False)
+        versions        = ModelChoiceField(queryset=all_versions,label="Metadata Version",required=True)
+        proxies         = ModelChoiceField(queryset=all_proxies,label="Metadata Model Type",required=True)
+        customizations  = ModelChoiceField(queryset=all_customizers,label="Form Customization",required=False)
         customizations.help_text = "If this field is left blank, a <i>new</i> customization will be created."
 
     class _UserIndexForm(forms.Form):
-        class Meta:
-            pass
 
-        versions        = ModelChoiceField(queryset=MetadataVersion.objects.filter(registered=True),label="Metadata Version",required=True)
-        models          = ModelChoiceField(queryset=MetadataModelProxy.objects.all(),label="Metadata Model",required=True)
+        versions        = ModelChoiceField(queryset=all_versions,label="Metadata Version",required=True)
+        proxies         = ModelChoiceField(queryset=all_proxies,label="Metadata Model Type",required=True)
+        models          = ModelChoiceField(queryset=all_models,label="Metadata Model",required=False)
+        models.help_text = "If this field is left blank, a <i>new</i> model will be created."
 
     class _DefaultIndexForm(forms.Form):
-        class Meta:
-            pass
 
-        versions        = ModelChoiceField(queryset=MetadataVersion.objects.filter(registered=True),label="Metadata Version",required=True)
-        models          = ModelChoiceField(queryset=MetadataModelProxy.objects.all(),label="Metadata Model",required=True)
+        versions        = ModelChoiceField(queryset=all_versions,label="Metadata Version",required=True)
+        proxies         = ModelChoiceField(queryset=all_proxies,label="Metadata Model Type",required=True)
+        models          = ModelChoiceField(queryset=all_models,label="Metadata Model",required=True)
 
-    if request.method == "POST":
-        admin_form   = _AdminIndexForm(request.POST,prefix="admin")
-        user_form    = _UserIndexForm(request.POST,prefix="user")
-        default_form = _DefaultIndexForm(request.POST,prefix="default")
-        if "admin_customize" in request.POST:
-            remove_form_errors(user_form)
-            remove_form_errors(default_form)
-            if admin_form.is_valid():
-                version = admin_form.cleaned_data["versions"]
-                model = admin_form.cleaned_data["models"]
-                customization = admin_form.cleaned_data["customizations"]
-                if customization:
-                    url = "/%s/customize/%s/%s?name=%s" % (project_name,version.name,model.name,customization.name)
-                else:
-                    url = "/%s/customize/%s/%s" % (project_name,version.name,model.name)
-                return redirect(url)
-            
-        elif "user_edit" in request.POST:
-            remove_form_errors(admin_form)
-            remove_form_errors(default_form)
-            if user_form.is_valid():
-                print "user_edit"
-        elif "user_create" in request.POST:
-            remove_form_errors(admin_form)
-            remove_form_errors(default_form)
-            if user_form.is_valid():
-                print "user_create"
-        elif "default_view" in request.POST:
-            remove_form_errors(admin_form)
-            remove_form_errors(user_form)
-            if default_form.is_valid():
-                print "default_view"
-        else:
-            msg = "unknown action recieved."
-            messages.add_message(request, messages.ERROR, msg)
-        
+    if request.method == "GET":
 
-    else: # request.method == "GET":
         admin_form   = _AdminIndexForm(prefix="admin")
         user_form    = _UserIndexForm(prefix="user")
         default_form = _DefaultIndexForm(prefix="default")
 
-        pass
+    else: # requst.method == "POST"
+
+        admin_form   = _AdminIndexForm(request.POST,prefix="admin")
+        user_form    = _UserIndexForm(request.POST,prefix="user")
+        default_form = _DefaultIndexForm(request.POST,prefix="default")
+
+        if "admin_submit" in request.POST:
+            # TODO: WHY ARE THESE LINES NEEDED IF THE CORRESPONDING "is_valid()" FN NEVER GETS CALLED?
+            remove_form_errors(user_form)
+            remove_form_errors(default_form)
+            if admin_form.is_valid():
+                version = admin_form.cleaned_data["versions"]
+                proxy = admin_form.cleaned_data["proxies"]
+                customization = admin_form.cleaned_data["customizations"]
+                if customization:
+                    url = "/%s/customize/%s/%s?name=%s" % (project_name,version.name,proxy.name,customization.name)
+                else:
+                    url = "/%s/customize/%s/%s" % (project_name,version.name,proxy.name)
+                return redirect(url)
+            
+        elif "user_submit" in request.POST:
+            # TODO: WHY ARE THESE LINES NEEDED IF THE CORRESPONDING "is_valid()" FN NEVER GETS CALLED?
+            remove_form_errors(admin_form)
+            remove_form_errors(default_form)
+            if user_form.is_valid():
+                version = user_form.cleaned_data["versions"]
+                proxy = user_form.cleaned_data["proxies"]
+                model = user_form.cleaned_data["models"]
+                if model:
+                    url = "/%s/edit/%s/%s/%s" % (project_name,version.name,proxy.name,model.pk)
+                else:
+                    url = "/%s/edit/%s/%s" % (project_name,version.name,proxy.name)
+                return redirect(url)
+
+        elif "default_submit" in request.POST:
+            # TODO: WHY ARE THESE LINES NEEDED IF THE CORRESPONDING "is_valid()" FN NEVER GETS CALLED?
+            remove_form_errors(admin_form)
+            remove_form_errors(user_form)
+            if default_form.is_valid():
+                version = default_form.cleaned_data["versions"]
+                proxy = default_form.cleaned_data["proxies"]
+                model = default_form.cleaned_data["models"]
+                url = "/%s/view/%s/%s/%s" % (project_name,version.name,proxy.name,model.pk)
+                return redirect(url)
+
+        else:
+            msg = "unknown action recieved."
+            messages.add_message(request, messages.ERROR, msg)
+        
 
     # gather all the extra information required by the template
     dict = {

@@ -104,6 +104,8 @@ class MetadataPropertyProxy(models.Model):
     field_type          = models.CharField(max_length=SMALL_STRING,blank=False,null=True,choices=[(ft.getType(),ft.getName()) for ft in MetadataFieldTypes])
     order               = models.PositiveIntegerField(blank=True,null=True)
 
+    is_label            = models.BooleanField(blank=False,default=False)
+
 class MetadataStandardPropertyProxy(MetadataPropertyProxy):
     class Meta:
         app_label   = APP_LABEL
