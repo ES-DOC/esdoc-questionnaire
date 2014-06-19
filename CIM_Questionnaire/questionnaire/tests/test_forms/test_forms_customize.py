@@ -1,3 +1,5 @@
+from django.template.defaultfilters import slugify
+
 from CIM_Questionnaire.questionnaire.tests.base import TestQuestionnaireBase
 from CIM_Questionnaire.questionnaire.models import MetadataModelProxy
 from CIM_Questionnaire.questionnaire.models.metadata_customizer import MetadataCustomizer
@@ -309,6 +311,7 @@ class Test(TestQuestionnaireBase):
                         current_enumeration_default = scientific_property_customizer.enumeration_default
                         if current_enumeration_default:
                             current_enumeration_default = current_enumeration_default.split("|")
+
                         self.assertEqual(current_enumeration_choices,scientific_property_customizer_form.get_current_field_value("enumeration_choices"))
                         self.assertEqual(current_enumeration_default,scientific_property_customizer_form.get_current_field_value("enumeration_default"))
                         self.assertEqual(scientific_property_customizer.enumeration_open,scientific_property_customizer_form.get_current_field_value("enumeration_open"))
