@@ -102,7 +102,11 @@ class MetadataModel(MPTTModel):
     order           = models.PositiveIntegerField(blank=True,null=True)
 
     def __unicode__(self):
-        return u'%s' % (self.name)
+        label_property = find_in_sequence(lambda property: property.is_label==True,self.standard_properties.all())
+        if label_property:
+            return u"%s : %s" % (self.name,label_property.get_value())
+        else:
+            return u'%s' % (self.name)
 
     def get_model_key(self):
         return u"%s_%s" % (self.vocabulary_key,self.component_key)
@@ -140,6 +144,8 @@ class MetadataProperty(models.Model):
     order        = models.PositiveIntegerField(blank=True,null=True)
     field_type   = models.CharField(max_length=64,blank=True,choices=[(ft.getType(),ft.getName()) for ft in MetadataFieldTypes])
 
+    is_label     = models.BooleanField(blank=False,default=False)
+
     def get_default_value(self):
         return "DEFAULT VALUE"
     
@@ -172,6 +178,7 @@ class MetadataStandardProperty(MetadataProperty):
 
         self.name         = proxy.name
         self.order        = proxy.order
+        self.is_label     = proxy.is_label
         self.field_type   = proxy.field_type
         
         self.atomic_value             = None
@@ -183,6 +190,16 @@ class MetadataStandardProperty(MetadataProperty):
         # TODO: if the customizer is required and the field is not displayed and there is no existing default value
         # then set it to default value
         super(MetadataStandardProperty,self).save(*args,**kwargs)
+
+    def get_value(self):
+        field_type = self.field_type
+        if field_type == MetadataFieldTypes.ATOMIC:
+            return self.atomic_value
+        elif field_type == MetadaFieldTypes.ENUMERATION:
+            # TODO
+            pass
+        else: # MetadataFieldTypes.RELATIONSHIP
+            return u"%s" % self.relationship_value
 
 class MetadataScientificProperty(MetadataProperty):
 
@@ -218,6 +235,7 @@ class MetadataScientificProperty(MetadataProperty):
 
         self.name         = proxy.name
         self.order        = proxy.order
+        self.is_label     = proxy.is_label
         self.category_key = proxy.category.key
 
         self.atomic_value             = None
@@ -227,3 +245,10 @@ class MetadataScientificProperty(MetadataProperty):
         self.field_type     = MetadataFieldTypes.PROPERTY.getType()
         self.is_enumeration = proxy.choice in ["OR","XOR"]
         
+
+    def get_value(self):
+        if not self.is_enumeration:
+            return self.atomic_value
+        else: # is_enumeration
+            # TODO
+            pass

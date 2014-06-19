@@ -20,11 +20,14 @@ Summary of module goes here
 
 """
 
-from django.forms import *
+from django.forms import ModelForm
+
 from django.db.models import Q
 
 from django.contrib import admin
 from django.contrib.sites.models import Site
+
+from django.contrib.admin.sites import AlreadyRegistered
 
 from questionnaire.models import MetadataSite
 
@@ -50,5 +53,8 @@ class MetadataSiteAdmin(admin.ModelAdmin):
     inlines = (MetadataSiteInline, )
     form    = MetadataSiteAdminForm
 
-admin.site.unregister(Site)
-admin.site.register(Site, MetadataSiteAdmin)
+try:
+    admin.site.register(Site,MetadataSiteAdmin)
+except AlreadyRegistered:
+    admin.site.unregister(Site)
+    admin.site.register(Site,MetadataSiteAdmin)

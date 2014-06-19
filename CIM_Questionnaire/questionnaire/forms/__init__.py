@@ -7,7 +7,9 @@ from questionnaire.utils import *
 
 
 class MetadataForm(ModelForm):
+
     cached_fields   = []
+
     ## these fields raise form validation errors with string Nones
     _fields_none_string_overload = ('id', 'enumeration_value', 'relationship_value')
 
@@ -20,8 +22,6 @@ class MetadataForm(ModelForm):
                 for f in self._fields_none_string_overload:
                     if k.endswith('-'+f) and v == 'None':
                         self.data[k] = None
-
-  #  current_values  = {}
 
 #     def __init__(self,*args,**kwargs):
 #         super(MetadataForm,self).__init__(*args,**kwargs)
@@ -44,8 +44,13 @@ class MetadataForm(ModelForm):
 #             # GET; initial was passed into constructor
 #             self.current_values = self.initial
 
-    def get_fields_from_list(self,field_list):
-        return [field for field in self if field.name in field_list]
+
+    def get_fields_from_list(self,field_names_list):
+        # I _think_ that iterating over self causes _all_ fields to be evaluated
+        # which is expensive (especially w/ relationship fields)
+        #fields = [field for field in self if field.name in field_list]
+        fields = [self[field_name] for field_name in field_names_list]
+        return fields
 
     def get_current_field_value(self, *args):
         """
@@ -85,8 +90,8 @@ class MetadataForm(ModelForm):
         """
         Ensure that there are no id="None" in the data to be validated
         """
-        
-        id_key = self.prefix + "-id"
+
+        id_key = self.prefix + "-id" if self.prefix else "id"
         if id_key in self.data:
             if self.data[id_key] == "None":
                 self.data[id_key] = None
@@ -96,13 +101,9 @@ class MetadataForm(ModelForm):
 
 class MetadataCustomizerForm(MetadataForm):
 
-#    current_values  = {}
-
     pass
 
 class MetadataEditingForm(MetadataForm):
-
-#    current_values  = {}
 
     customizer      = None
 

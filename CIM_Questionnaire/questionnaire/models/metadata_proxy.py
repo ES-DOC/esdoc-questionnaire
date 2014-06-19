@@ -104,6 +104,8 @@ class MetadataPropertyProxy(models.Model):
     field_type          = models.CharField(max_length=SMALL_STRING,blank=False,null=True,choices=[(ft.getType(),ft.getName()) for ft in MetadataFieldTypes])
     order               = models.PositiveIntegerField(blank=True,null=True)
 
+    is_label            = models.BooleanField(blank=False,default=False)
+
 class MetadataStandardPropertyProxy(MetadataPropertyProxy):
     class Meta:
         app_label   = APP_LABEL
@@ -156,6 +158,8 @@ class MetadataStandardPropertyProxy(MetadataPropertyProxy):
 
             self.relationship_target_model = target_proxy
 
+    def enumerate_choices(self):
+        return [(choice,choice) for choice in self.enumeration_choices.split("|")]
 
 SCIENTIFIC_PROPERTY_CHOICES = [
     ("XOR","XOR"),
@@ -179,6 +183,9 @@ class MetadataScientificPropertyProxy(MetadataPropertyProxy):
 
     choice        = models.CharField(max_length=LIL_STRING,blank=True,null=True,choices=SCIENTIFIC_PROPERTY_CHOICES)
     values        = models.CharField(max_length=HUGE_STRING,blank=True)
+
+    def enumerate_choices(self):
+        return [(choice,choice) for choice in self.values.split("|")]
 
     def __unicode__(self):
         #return u'%s::%s::%s' % (self.component,self.category,self.name)

@@ -21,9 +21,9 @@ Summary of module goes here
 """
 
 from django.db import models
+from django.utils.functional import lazy
 
 from collections import OrderedDict
-#from datetime    import datetime
 from django.utils import timezone
 
 from questionnaire.utils        import *
@@ -38,6 +38,12 @@ class MetadataCustomizer(models.Model):
     created                 = models.DateTimeField(blank=True,null=True,editable=False)
     last_modified           = models.DateTimeField(blank=True,null=True,editable=False)
 
+    def refresh(self):
+        """re-gets the model from the db"""
+        if not self.pk:
+            return self
+        return self.__class__.objects.get(pk=self.pk)
+
     def save(self,*args,**kwargs):
         if not self.id:
             #self.created = datetime.datetime.today()
@@ -46,32 +52,185 @@ class MetadataCustomizer(models.Model):
         self.last_modified = timezone.now()
         super(MetadataCustomizer,self).save(*args,**kwargs)
 
+    @classmethod
+    def get_new_customizer_set(cls,project,version,model_proxy,vocabularies):
+        """creates the full set of (default) customizations required for a particular project/version/proxy combination w/ a specified list of vocabs"""
+
+        # setup the model customizer...
+        model_customizer = MetadataModelCustomizer(
+            project=project,
+            version=version,
+            proxy=model_proxy,
+            # vocabularies=vocabularies,
+            vocabulary_order=",".join(map(str,[vocabulary.pk for vocabulary in vocabularies])),
+        )
+        model_customizer.reset()
+
+        # setup the standard category customizers...
+        standard_category_customizers = [
+            MetadataStandardCategoryCustomizer(
+                model_customizer=model_customizer,
+                proxy=standard_category_proxy,
+            )
+            for standard_category_proxy in version.categorization.categories.all()
+        ]
+        for standard_category_customizer in standard_category_customizers:
+            standard_category_customizer.reset()
+
+        # setup the standard property customizers...
+        standard_property_customizers = [
+            MetadataStandardPropertyCustomizer(
+                model_customizer=model_customizer,
+                proxy=standard_property_proxy,
+                category=find_in_sequence(lambda category: category.proxy.has_property(standard_property_proxy),standard_category_customizers),
+                reset=True,
+            )
+            for standard_property_proxy in model_proxy.standard_properties.all()
+        ]
+
+        # setup the scientific category & property customizers
+        scientific_category_customizers = {}
+        scientific_property_customizers = {}
+        for vocabulary in vocabularies:
+            vocabulary_key = slugify(vocabulary.name)
+            scientific_category_customizers[vocabulary_key] = {}
+            scientific_property_customizers[vocabulary_key] = {}
+            for component in vocabulary.component_proxies.all():
+                component_key = slugify(component.name)
+                model_key = u"%s_%s" % (vocabulary_key,component_key)
+                scientific_category_customizers[vocabulary_key][component_key] = []
+                scientific_property_customizers[vocabulary_key][component_key] = []
+                for scientific_property_proxy in component.scientific_properties.all():
+                    scientific_category_proxy = scientific_property_proxy.category
+                    if scientific_category_proxy:
+                        scientific_category_key = scientific_category_proxy.key
+                        if scientific_category_key in [scientific_category.key for scientific_category in scientific_category_customizers[vocabulary_key][component_key]]:
+                            scientific_category_customizer = find_category_by_key(scientific_category_key,scientific_category_customizers[vocabulary_key][component_key])
+                        else:
+                            scientific_category_customizer = MetadataScientificCategoryCustomizer(
+                                model_customizer=model_customizer,
+                                proxy=scientific_category_proxy,
+                                vocabulary_key=vocabulary_key,
+                                component_key=component_key,
+                                model_key=model_key
+                            )
+                            scientific_category_customizer.reset()
+                            scientific_category_customizers[vocabulary_key][component_key].append(scientific_category_customizer)
+                    else:
+                        scientific_category_customizer = None
+
+                    scientific_property_customizer = MetadataScientificPropertyCustomizer(
+                        model_customizer    = model_customizer,
+                        proxy               = scientific_property_proxy,
+                        vocabulary_key      = vocabulary_key,
+                        component_key       = component_key,
+                        model_key           = model_key,
+                        category            = scientific_category_customizer,
+                        reset               = True,
+                    )
+                    scientific_property_customizers[vocabulary_key][component_key].append(scientific_property_customizer)
+
+        return (model_customizer,standard_category_customizers,standard_property_customizers,scientific_category_customizers,scientific_property_customizers)
+
+    @classmethod
+    def get_existing_customizer_set(cls,model_customizer,vocabularies):
+        """retrieves the full set of customizations used by a particular model_customizer w/ a specified list of vocabs"""
+
+        standard_category_customizers = model_customizer.standard_property_category_customizers.all()
+        standard_property_customizers = model_customizer.standard_property_customizers.all()
+
+        # don't get _all_ of the scientific customizers
+        # just get the ones associated w/ the vocabularies that were passed in
+        # (see below)
+        #
+        # scientific_category_customizers = {}
+        # for scientific_category_customizer in model_customizer.scientific_property_category_customizers.all():
+        #     vocabulary_key = scientific_category_customizer.vocabulary_key
+        #     component_key = scientific_category_customizer.component_key
+        #     if not vocabulary_key in scientific_category_customizers:
+        #         scientific_category_customizers[vocabulary_key] = {}
+        #     if not component_key in scientific_category_customizers[vocabulary_key]:
+        #         scientific_category_customizers[vocabulary_key][component_key] = []
+        #     scientific_category_customizers[vocabulary_key][component_key].append(scientific_category_customizer)
+        #
+        # scientific_property_customizers = {}
+        # for scientific_property_customizer in model_customizer.scientific_property_customizers.all():
+        #     vocabulary_key = scientific_property_customizer.vocabulary_key
+        #     component_key = scientific_property_customizer.component_key
+        #     if not vocabulary_key in scientific_property_customizers:
+        #         scientific_property_customizers[vocabulary_key] = {}
+        #     if not component_key in scientific_property_customizers[vocabulary_key]:
+        #         scientific_property_customizers[vocabulary_key][component_key] = []
+        #     scientific_property_customizers[vocabulary_key][component_key].append(scientific_property_customizer)
+
+        scientific_category_customizers = {}
+        scientific_property_customizers = {}
+        for vocabulary in vocabularies:
+            vocabulary_key = slugify(vocabulary.name)
+            scientific_category_customizers[vocabulary_key] = {}
+            scientific_property_customizers[vocabulary_key] = {}
+            for component in vocabulary.component_proxies.all():
+                component_key = slugify(component.name)
+                scientific_category_customizers[vocabulary_key][component_key] = model_customizer.scientific_property_category_customizers.filter(vocabulary_key=vocabulary_key,component_key=component_key)
+                scientific_property_customizers[vocabulary_key][component_key] = model_customizer.scientific_property_customizers.filter(vocabulary_key=vocabulary_key,component_key=component_key)
+
+        return (model_customizer,standard_category_customizers,standard_property_customizers,scientific_category_customizers,scientific_property_customizers)
+
+    @classmethod
+    def save_customizer_set(cls,model_customizer,standard_category_customizers,standard_property_customizers,scientific_category_customizers,scientific_property_customizers):
+
+        model_customizer.save()
+
+        for standard_category_customizer in standard_category_customizers:
+            standard_category_customizer.model_customizer = model_customizer
+            standard_category_customizer.save()
+
+        for standard_property_customizer in standard_property_customizers:
+            category_customizer_key = slugify(standard_property_customizer.category_name)
+            category = find_in_sequence(lambda category_customizer: category_customizer.key==category_customizer_key,standard_category_customizers)
+            standard_property_customizer.category = category
+            standard_property_customizer.model_customizer = model_customizer
+            standard_property_customizer.save()
+
+        for vocabulary_key,scientific_category_customizer_dict in scientific_category_customizers.iteritems():
+            for component_key,scientific_category_customizer_list in scientific_category_customizer_dict.iteritems():
+                for scientific_category_customizer in scientific_category_customizer_list:
+                    scientific_category_customizer.model_customizer = model_customizer
+                    scientific_category_customizer.save()
+
+        for vocabulary_key,scientific_property_customizer_dict in scientific_property_customizers.iteritems():
+            for component_key,scientific_property_customizer_list in scientific_property_customizer_dict.iteritems():
+                for scientific_property_customizer in scientific_property_customizer_list:
+                    category_customizer_key = slugify(scientific_property_customizer.category_name)
+                    category = find_in_sequence(lambda category_customizer: category_customizer.key==category_customizer_key,scientific_category_customizers[vocabulary_key][component_key])
+                    scientific_property_customizer.category = category
+                    scientific_property_customizer.model_customizer = model_customizer
+                    scientific_property_customizer.save()
+
+    def get_unique_together(self):
+        # This fn is required because 'unique_together' validation is only enforced at the modelform
+        # if all unique_together fields appear in the modelform; If not, I have to manually validate
+        unique_together = self._meta.unique_together
+        return list(unique_together)
+
     def get_field(self,field_name):
         try:
             field = self._meta.get_field_by_name(field_name)
         except FieldDoesNotExist:
             msg = "Could not find a field called '%s'" % (field_name)
             #raise QuestionnaireError(msg)
-            print msg
             return None
         return field[0]
 
-    @classmethod
-    def get_field(cls,field_name):
-        try:
-            field = cls._meta.get_field_by_name(field_name)
-        except FieldDoesNotExist:
-            msg = "Could not find a field called '%s'" % (field_name)
-            #raise QuestionnaireError(msg)
-            print msg
-            return None
-        return field[0]
-
-    def get_unique_together(self):
-        # this fn is required because 'unique_together' validation is only enforced at the modelform
-        # if all unique_together fields appear in the modelform; if not, I have to manually validate
-        unique_together = self._meta.unique_together
-        return list(unique_together)
+#    @classmethod
+#    def get_field(cls,field_name):
+#        try:
+#            field = cls._meta.get_field_by_name(field_name)
+#        except FieldDoesNotExist:
+#            msg = "Could not find a field called '%s'" % (field_name)
+#            #raise QuestionnaireError(msg)
+#            return None
+#        return field[0]
 
 class MetadataModelCustomizer(MetadataCustomizer):
     class Meta:
@@ -90,7 +249,7 @@ class MetadataModelCustomizer(MetadataCustomizer):
     version                 = models.ForeignKey("MetadataVersion",blank=True,null=True,related_name="model_customizers")
     vocabularies            = models.ManyToManyField("MetadataVocabulary",blank=True,null=True) # cannot set 'limit_choices_to' here, instead setting 'queryset' on form
     vocabularies.help_text  = "Choose which Controlled Vocabularies (in which order) apply to this model."
-    vocabulary_order        = models.CommaSeparatedIntegerField(max_length=BIG_STRING)
+    vocabulary_order        = models.CommaSeparatedIntegerField(max_length=BIG_STRING,blank=True,null=True)
 
     name                    = models.CharField(max_length=SMALL_STRING,blank=False,null=False)
     name.help_text          = "A unique name for this customization (ie: \"basic\" or \"advanced\")"
@@ -407,10 +566,15 @@ class MetadataStandardPropertyCustomizer(MetadataPropertyCustomizer):
         return u'%s' % (self.proxy.name)
 
     def __init__(self,*args,**kwargs):
+
+        reset = kwargs.pop("reset",False)
+
         super(MetadataStandardPropertyCustomizer,self).__init__(*args,**kwargs)
 
         proxy = self.proxy
-        
+        if reset:
+            self.reset()
+
         # atomic fields...
         if self.field_type == MetadataFieldTypes.ATOMIC:
             pass
@@ -418,7 +582,8 @@ class MetadataStandardPropertyCustomizer(MetadataPropertyCustomizer):
         # enumeration fields...
         elif self.field_type == MetadataFieldTypes.ENUMERATION:
             enumeration_choices_field = self.get_field("enumeration_choices")
-            enumeration_choices_field.set_choices(proxy.enumeration_choices.split("|"))
+            #enumeration_choices_field.set_choices(proxy.enumeration_choices.split("|"))
+  #          enumeration_choices_field.set_enumeration(proxy.enumeration_choices.split("|"))
 
         # relationship fields...
         elif self.field_type == MetadataFieldTypes.RELATIONSHIP:
@@ -444,16 +609,19 @@ class MetadataStandardPropertyCustomizer(MetadataPropertyCustomizer):
         
         # enumeration fields...
         if self.field_type == MetadataFieldTypes.ENUMERATION:
-            enumeration_choices_field = self.get_field("enumeration_choices")
-            enumeration_choices_field.set_choices(proxy.enumeration_choices.split("|"))
+# this has been moved to the __init__ fn above
+#            enumeration_choices_field = self.get_field("enumeration_choices")
+#            enumeration_choices_field.set_choices(proxy.enumeration_choices.split("|"))
+            self.enumeration_choices = proxy.enumeration_choices
 
         # relationship fields...
         if self.field_type == MetadataFieldTypes.RELATIONSHIP:
             self.relationship_cardinality = proxy.relationship_cardinality.split("|")
             self.relationship_show_subform = False
 
-        if reset_category:
-            if self.category:
+        if self.category:
+            self.category_name = self.category.name
+            if reset_category:
                 self.category.reset()
         
 class MetadataScientificPropertyCustomizer(MetadataPropertyCustomizer):
@@ -503,40 +671,50 @@ class MetadataScientificPropertyCustomizer(MetadataPropertyCustomizer):
 #    def __unicode__(self):
 #        return u'%s::%s' % (self.model_customizer,self.proxy.name)
 
-    def reset(self,reset_category=False):
+    def __init__(self,*args,**kwargs):
+
+        reset = kwargs.pop("reset",False)
+
+        super(MetadataScientificPropertyCustomizer,self).__init__(*args,**kwargs)
+
         proxy = self.proxy
-        
+        if reset:
+            self.reset()
+
+        # enumeration fields...
+        if self.is_enumeration:
+            #enumeration_choices_field = self.get_field("enumeration_choices")
+            #enumeration_choices_field.set_enumeration(self.proxy.values.split("|"))
+            #self._meta.get_field_by_name("enumeration_choices")[0]._choices = [(slugify(choice),choice) for choice in proxy.values.split("|")
+            #    lazy(proxy.get_values_as_enumeration,list)()
+
+            # TODO THE ERROR WAS THAT THIS IS OVERWRITING THE CHOICES FOR _ALL_ ENUMERATIONFIELDS IN THIS FORMSET
+            pass
+
+        # atomic fields...
+        else:
+            pass
+
+
+    def reset(self,reset_category=False):
+
+        proxy = self.proxy
+
         if not proxy:
             msg = "Trying to reset a MetadataScientificPropertyCustomizer w/out a proxy having been specified."
             raise QuestionnaireError(msg)
-        
+
         if not self.model_key:
             self.model_key      = u"%s_%s" % (self.vocabulary_key,self.component_key)
 
         self.name           = proxy.name
         self.order          = proxy.order
         self.verbose_name   = proxy.name
+        self.verbose_name   = proxy.name
+        self.documentation  = proxy.documentation
+        self.inline_help    = False
         self.field_type     = MetadataFieldTypes.PROPERTY.getType()
 
-        self.property_type      = MetadataAtomicFieldTypes.DEFAULT.getType()
-        if proxy.choice=="OR":
-            self.is_enumeration = True
-            self.property_enumeration_multi = True
-        elif proxy.choice=="XOR":
-            self.is_enumeration = True
-            self.property_enumeration_multi = False
-        elif proxy.choice=="keyboard":
-            self.is_enumeration = False
-        else:
-            msg = "invalid choice specified: '%s'" % (proxy.choice)
-            raise QuestionnaireError(msg)
-
-        enumeration_choices_field = self.get_field("enumeration_choices")
-        enumeration_choices_field.set_choices(proxy.values.split("|"))
-
-        self.property_nullable  = False
-
-        self.inline_help                 = False
         self.display_extra_standard_name = False
         self.display_extra_description   = False
         self.display_extra_units         = False
@@ -545,8 +723,27 @@ class MetadataScientificPropertyCustomizer(MetadataPropertyCustomizer):
         self.edit_extra_units            = True
 
 
-        if reset_category:
-            if self.category:
+        if proxy.choice=="OR":
+            self.is_enumeration = True
+            self.enumeration_multi = True
+            self.enumeration_open = False
+            self.enumeration_nullable = False
+            self.enumeration_choices = proxy.values
+        elif proxy.choice=="XOR":
+            self.is_enumeration = True
+            self.enumeration_multi = False
+            self.enumeration_open = False
+            self.enumeration_nullable = False
+            self.enumeration_choices = proxy.values
+        elif proxy.choice=="keyboard":
+            self.is_enumeration = False
+        else:
+            msg = "invalid choice specified: '%s'" % (proxy.choice)
+            raise QuestionnaireError(msg)
+
+        if self.category:
+            self.category_name = self.category.name
+            if reset_category:
                 self.category.reset()
 
     def display_extra_attributes(self):
