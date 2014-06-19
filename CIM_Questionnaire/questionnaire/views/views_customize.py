@@ -176,7 +176,6 @@ def questionnaire_customize_new(request,project_name="",model_name="",version_na
                     prefix      = model_key,
                     categories  = scientific_category_customizers[vocabulary_key][component_key]
                 )
-
     else: # request.method == "POST"
         
         validity = []

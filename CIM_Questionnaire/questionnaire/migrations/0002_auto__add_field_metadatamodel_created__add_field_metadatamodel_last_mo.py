@@ -8,6 +8,9 @@ from django.db import models
 class Migration(SchemaMigration):
 
     def forwards(self, orm):
+        # Removing unique constraint on 'MetadataModel', fields ['proxy', 'project', 'version', 'vocabulary_key', 'component_key']
+        db.delete_unique(u'questionnaire_metadatamodel', ['proxy_id', 'project_id', 'version_id', 'vocabulary_key', 'component_key'])
+
         # Adding field 'MetadataModel.created'
         db.add_column(u'questionnaire_metadatamodel', 'created',
                       self.gf('django.db.models.fields.DateTimeField')(null=True, blank=True),
@@ -18,6 +21,34 @@ class Migration(SchemaMigration):
                       self.gf('django.db.models.fields.DateTimeField')(null=True, blank=True),
                       keep_default=False)
 
+        # Adding field 'MetadataModel.is_root'
+        db.add_column(u'questionnaire_metadatamodel', 'is_root',
+                      self.gf('django.db.models.fields.BooleanField')(default=False),
+                      keep_default=False)
+
+
+        # Changing field 'MetadataModelCustomizer.vocabulary_order'
+        db.alter_column(u'questionnaire_metadatamodelcustomizer', 'vocabulary_order', self.gf('django.db.models.fields.CommaSeparatedIntegerField')(max_length=512, null=True))
+        # Adding field 'MetadataStandardPropertyProxy.is_label'
+        db.add_column(u'questionnaire_metadatastandardpropertyproxy', 'is_label',
+                      self.gf('django.db.models.fields.BooleanField')(default=False),
+                      keep_default=False)
+
+        # Adding field 'MetadataScientificProperty.is_label'
+        db.add_column(u'questionnaire_metadatascientificproperty', 'is_label',
+                      self.gf('django.db.models.fields.BooleanField')(default=False),
+                      keep_default=False)
+
+        # Adding field 'MetadataScientificPropertyProxy.is_label'
+        db.add_column(u'questionnaire_metadatascientificpropertyproxy', 'is_label',
+                      self.gf('django.db.models.fields.BooleanField')(default=False),
+                      keep_default=False)
+
+        # Adding field 'MetadataStandardProperty.is_label'
+        db.add_column(u'questionnaire_metadatastandardproperty', 'is_label',
+                      self.gf('django.db.models.fields.BooleanField')(default=False),
+                      keep_default=False)
+
 
     def backwards(self, orm):
         # Deleting field 'MetadataModel.created'
@@ -25,6 +56,27 @@ class Migration(SchemaMigration):
 
         # Deleting field 'MetadataModel.last_modified'
         db.delete_column(u'questionnaire_metadatamodel', 'last_modified')
+
+        # Deleting field 'MetadataModel.is_root'
+        db.delete_column(u'questionnaire_metadatamodel', 'is_root')
+
+        # Adding unique constraint on 'MetadataModel', fields ['proxy', 'project', 'version', 'vocabulary_key', 'component_key']
+        db.create_unique(u'questionnaire_metadatamodel', ['proxy_id', 'project_id', 'version_id', 'vocabulary_key', 'component_key'])
+
+
+        # Changing field 'MetadataModelCustomizer.vocabulary_order'
+        db.alter_column(u'questionnaire_metadatamodelcustomizer', 'vocabulary_order', self.gf('django.db.models.fields.CommaSeparatedIntegerField')(default='', max_length=512))
+        # Deleting field 'MetadataStandardPropertyProxy.is_label'
+        db.delete_column(u'questionnaire_metadatastandardpropertyproxy', 'is_label')
+
+        # Deleting field 'MetadataScientificProperty.is_label'
+        db.delete_column(u'questionnaire_metadatascientificproperty', 'is_label')
+
+        # Deleting field 'MetadataScientificPropertyProxy.is_label'
+        db.delete_column(u'questionnaire_metadatascientificpropertyproxy', 'is_label')
+
+        # Deleting field 'MetadataStandardProperty.is_label'
+        db.delete_column(u'questionnaire_metadatastandardproperty', 'is_label')
 
 
     models = {
@@ -85,13 +137,14 @@ class Migration(SchemaMigration):
             'vocabulary': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'component_proxies'", 'null': 'True', 'to': "orm['questionnaire.MetadataVocabulary']"})
         },
         'questionnaire.metadatamodel': {
-            'Meta': {'unique_together': "(('proxy', 'project', 'version', 'vocabulary_key', 'component_key'),)", 'object_name': 'MetadataModel'},
+            'Meta': {'object_name': 'MetadataModel'},
             'active': ('django.db.models.fields.BooleanField', [], {'default': 'True'}),
             'component_key': ('django.db.models.fields.CharField', [], {'max_length': '512', 'null': 'True', 'blank': 'True'}),
             'created': ('django.db.models.fields.DateTimeField', [], {'null': 'True', 'blank': 'True'}),
             'description': ('django.db.models.fields.CharField', [], {'max_length': '1024', 'null': 'True', 'blank': 'True'}),
             u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'is_document': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
+            'is_root': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
             'last_modified': ('django.db.models.fields.DateTimeField', [], {'null': 'True', 'blank': 'True'}),
             u'level': ('django.db.models.fields.PositiveIntegerField', [], {'db_index': 'True'}),
             u'lft': ('django.db.models.fields.PositiveIntegerField', [], {'db_index': 'True'}),
@@ -125,7 +178,7 @@ class Migration(SchemaMigration):
             'proxy': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['questionnaire.MetadataModelProxy']", 'null': 'True', 'blank': 'True'}),
             'version': ('django.db.models.fields.related.ForeignKey', [], {'blank': 'True', 'related_name': "'model_customizers'", 'null': 'True', 'to': "orm['questionnaire.MetadataVersion']"}),
             'vocabularies': ('django.db.models.fields.related.ManyToManyField', [], {'symmetrical': 'False', 'to': "orm['questionnaire.MetadataVocabulary']", 'null': 'True', 'blank': 'True'}),
-            'vocabulary_order': ('django.db.models.fields.CommaSeparatedIntegerField', [], {'max_length': '512'})
+            'vocabulary_order': ('django.db.models.fields.CommaSeparatedIntegerField', [], {'max_length': '512', 'null': 'True', 'blank': 'True'})
         },
         'questionnaire.metadatamodelproxy': {
             'Meta': {'ordering': "['order']", 'unique_together': "(('version', 'name'),)", 'object_name': 'MetadataModelProxy'},
@@ -197,6 +250,7 @@ class Migration(SchemaMigration):
             'field_type': ('django.db.models.fields.CharField', [], {'max_length': '64', 'blank': 'True'}),
             u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'is_enumeration': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
+            'is_label': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
             'model': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'scientific_properties'", 'null': 'True', 'to': "orm['questionnaire.MetadataModel']"}),
             'name': ('django.db.models.fields.CharField', [], {'max_length': '256'}),
             'order': ('django.db.models.fields.PositiveIntegerField', [], {'null': 'True', 'blank': 'True'}),
@@ -251,6 +305,7 @@ class Migration(SchemaMigration):
             'documentation': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
             'field_type': ('django.db.models.fields.CharField', [], {'max_length': '256', 'null': 'True'}),
             u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'is_label': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
             'name': ('django.db.models.fields.CharField', [], {'max_length': '512'}),
             'order': ('django.db.models.fields.PositiveIntegerField', [], {'null': 'True', 'blank': 'True'}),
             'values': ('django.db.models.fields.CharField', [], {'max_length': '1024', 'blank': 'True'})
@@ -293,6 +348,7 @@ class Migration(SchemaMigration):
             'enumeration_value': ('django.db.models.fields.CharField', [], {'max_length': '1024', 'null': 'True', 'blank': 'True'}),
             'field_type': ('django.db.models.fields.CharField', [], {'max_length': '64', 'blank': 'True'}),
             u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'is_label': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
             'model': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'standard_properties'", 'null': 'True', 'to': "orm['questionnaire.MetadataModel']"}),
             'name': ('django.db.models.fields.CharField', [], {'max_length': '256'}),
             'order': ('django.db.models.fields.PositiveIntegerField', [], {'null': 'True', 'blank': 'True'}),
@@ -342,6 +398,7 @@ class Migration(SchemaMigration):
             'enumeration_open': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
             'field_type': ('django.db.models.fields.CharField', [], {'max_length': '256', 'null': 'True'}),
             u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'is_label': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
             'model_proxy': ('django.db.models.fields.related.ForeignKey', [], {'blank': 'True', 'related_name': "'standard_properties'", 'null': 'True', 'to': "orm['questionnaire.MetadataModelProxy']"}),
             'name': ('django.db.models.fields.CharField', [], {'max_length': '512'}),
             'order': ('django.db.models.fields.PositiveIntegerField', [], {'null': 'True', 'blank': 'True'}),

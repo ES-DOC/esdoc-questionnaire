@@ -21,6 +21,7 @@ Summary of module goes here
 """
 
 from django.db import models
+from django.utils.functional import lazy
 
 from collections import OrderedDict
 from django.utils import timezone
@@ -28,8 +29,6 @@ from django.utils import timezone
 from questionnaire.utils        import *
 from questionnaire.fields       import *
 from questionnaire.models.metadata_proxy    import *
-
-
 
 class MetadataCustomizer(models.Model):
     class Meta:
@@ -83,12 +82,11 @@ class MetadataCustomizer(models.Model):
             MetadataStandardPropertyCustomizer(
                 model_customizer=model_customizer,
                 proxy=standard_property_proxy,
-                category=find_in_sequence(lambda category: category.proxy.has_property(standard_property_proxy),standard_category_customizers)
+                category=find_in_sequence(lambda category: category.proxy.has_property(standard_property_proxy),standard_category_customizers),
+                reset=True,
             )
             for standard_property_proxy in model_proxy.standard_properties.all()
         ]
-        for standard_property_customizer in standard_property_customizers:
-            standard_property_customizer.reset()
 
         # setup the scientific category & property customizers
         scientific_category_customizers = {}
@@ -127,9 +125,9 @@ class MetadataCustomizer(models.Model):
                         vocabulary_key      = vocabulary_key,
                         component_key       = component_key,
                         model_key           = model_key,
-                        category            = scientific_category_customizer
+                        category            = scientific_category_customizer,
+                        reset               = True,
                     )
-                    scientific_property_customizer.reset()
                     scientific_property_customizers[vocabulary_key][component_key].append(scientific_property_customizer)
 
         return (model_customizer,standard_category_customizers,standard_property_customizers,scientific_category_customizers,scientific_property_customizers)
@@ -224,15 +222,15 @@ class MetadataCustomizer(models.Model):
             return None
         return field[0]
 
-    @classmethod
-    def get_field(cls,field_name):
-        try:
-            field = cls._meta.get_field_by_name(field_name)
-        except FieldDoesNotExist:
-            msg = "Could not find a field called '%s'" % (field_name)
-            #raise QuestionnaireError(msg)
-            return None
-        return field[0]
+#    @classmethod
+#    def get_field(cls,field_name):
+#        try:
+#            field = cls._meta.get_field_by_name(field_name)
+#        except FieldDoesNotExist:
+#            msg = "Could not find a field called '%s'" % (field_name)
+#            #raise QuestionnaireError(msg)
+#            return None
+#        return field[0]
 
 class MetadataModelCustomizer(MetadataCustomizer):
     class Meta:
@@ -251,7 +249,7 @@ class MetadataModelCustomizer(MetadataCustomizer):
     version                 = models.ForeignKey("MetadataVersion",blank=True,null=True,related_name="model_customizers")
     vocabularies            = models.ManyToManyField("MetadataVocabulary",blank=True,null=True) # cannot set 'limit_choices_to' here, instead setting 'queryset' on form
     vocabularies.help_text  = "Choose which Controlled Vocabularies (in which order) apply to this model."
-    vocabulary_order        = models.CommaSeparatedIntegerField(max_length=BIG_STRING)
+    vocabulary_order        = models.CommaSeparatedIntegerField(max_length=BIG_STRING,blank=True,null=True)
 
     name                    = models.CharField(max_length=SMALL_STRING,blank=False,null=False)
     name.help_text          = "A unique name for this customization (ie: \"basic\" or \"advanced\")"
@@ -568,10 +566,15 @@ class MetadataStandardPropertyCustomizer(MetadataPropertyCustomizer):
         return u'%s' % (self.proxy.name)
 
     def __init__(self,*args,**kwargs):
+
+        reset = kwargs.pop("reset",False)
+
         super(MetadataStandardPropertyCustomizer,self).__init__(*args,**kwargs)
 
         proxy = self.proxy
-        
+        if reset:
+            self.reset()
+
         # atomic fields...
         if self.field_type == MetadataFieldTypes.ATOMIC:
             pass
@@ -579,7 +582,8 @@ class MetadataStandardPropertyCustomizer(MetadataPropertyCustomizer):
         # enumeration fields...
         elif self.field_type == MetadataFieldTypes.ENUMERATION:
             enumeration_choices_field = self.get_field("enumeration_choices")
-            enumeration_choices_field.set_choices(proxy.enumeration_choices.split("|"))
+            #enumeration_choices_field.set_choices(proxy.enumeration_choices.split("|"))
+  #          enumeration_choices_field.set_enumeration(proxy.enumeration_choices.split("|"))
 
         # relationship fields...
         elif self.field_type == MetadataFieldTypes.RELATIONSHIP:
@@ -668,14 +672,24 @@ class MetadataScientificPropertyCustomizer(MetadataPropertyCustomizer):
 #        return u'%s::%s' % (self.model_customizer,self.proxy.name)
 
     def __init__(self,*args,**kwargs):
+
+        reset = kwargs.pop("reset",False)
+
         super(MetadataScientificPropertyCustomizer,self).__init__(*args,**kwargs)
 
         proxy = self.proxy
+        if reset:
+            self.reset()
 
         # enumeration fields...
         if self.is_enumeration:
-            enumeration_choices_field = self.get_field("enumeration_choices")
-            enumeration_choices_field.set_choices(proxy.values.split("|"))
+            #enumeration_choices_field = self.get_field("enumeration_choices")
+            #enumeration_choices_field.set_enumeration(self.proxy.values.split("|"))
+            #self._meta.get_field_by_name("enumeration_choices")[0]._choices = [(slugify(choice),choice) for choice in proxy.values.split("|")
+            #    lazy(proxy.get_values_as_enumeration,list)()
+
+            # TODO THE ERROR WAS THAT THIS IS OVERWRITING THE CHOICES FOR _ALL_ ENUMERATIONFIELDS IN THIS FORMSET
+            pass
 
         # atomic fields...
         else:
@@ -683,6 +697,7 @@ class MetadataScientificPropertyCustomizer(MetadataPropertyCustomizer):
 
 
     def reset(self,reset_category=False):
+
         proxy = self.proxy
 
         if not proxy:

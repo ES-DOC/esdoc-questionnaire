@@ -21,23 +21,27 @@ Summary of module goes here
 """
 
 import time
-from django.utils import timezone
+from collections        import OrderedDict
 
-from django.forms import *
+from django.core    import serializers
 
 from django.forms.models import BaseInlineFormSet
 from django.forms.models import inlineformset_factory
 
-from django.template.defaultfilters import slugify
+from django.utils import timezone
 from django.utils.functional        import curry
-
+from django.template.defaultfilters import slugify
 from django.forms.util  import ErrorList
-from collections        import OrderedDict
 
-from questionnaire.utils        import *
-from questionnaire.models       import *
-from questionnaire.fields       import MetadataFieldTypes, EMPTY_CHOICE
-from questionnaire.forms        import MetadataCustomizerForm
+from django.forms import *
+
+from CIM_Questionnaire.questionnaire.utils import find_in_sequence, get_initial_data, JSON_SERIALIZER, QuestionnaireError
+from CIM_Questionnaire.questionnaire.models.metadata_customizer import MetadataModelCustomizer, MetadataStandardCategoryCustomizer, MetadataStandardPropertyCustomizer, MetadataScientificCategoryCustomizer, MetadataScientificPropertyCustomizer
+from CIM_Questionnaire.questionnaire.models.metadata_proxy import MetadataModelProxy, MetadataStandardPropertyProxy, MetadataScientificPropertyProxy
+from CIM_Questionnaire.questionnaire.fields import MetadataFieldTypes, EMPTY_CHOICE
+from CIM_Questionnaire.questionnaire.utils import set_field_widget_attributes, update_field_widget_attributes
+
+from CIM_Questionnaire.questionnaire.forms import MetadataCustomizerForm
 
 def save_valid_forms(model_customizer_form,standard_property_customizer_formset,scientific_property_customizer_formsets):
 
@@ -330,7 +334,7 @@ def create_standard_property_customizer_form_data(model_customizer,standard_prop
         pass
 
     else:
-        msg = "invalid field type for standard property: '%s'" % (self.type)
+        msg = "invalid field type for standard property: '%s'" % (field_type)
         raise QuestionnaireError(msg)
 
     standard_category = standard_property_customizer.category
@@ -361,9 +365,6 @@ class MetadataStandardPropertyCustomizerForm(MetadataCustomizerForm):
 
     category_name = CharField(label="Category",required=False)
     category      = ChoiceField(required=False)
-
-    type = None # this is set in __init__ below
-
 
     _hidden_fields       = ("field_type","proxy","category",)
     _header_fields       = ("name","category_name","order")
@@ -419,56 +420,52 @@ class MetadataStandardPropertyCustomizerForm(MetadataCustomizerForm):
         super(MetadataStandardPropertyCustomizerForm,self).__init__(*args,**kwargs)
         
         property_customizer = self.instance
+        # this attribute is needed b/c I access it in the customize_template to decide which other templates to include
+        self.type = self.get_current_field_value("field_type")
 
-        # not displaying category field for standard_properties (so I should be able to get away w/ not doing this)
-        #self.fields["category"].choices = EMPTY_CHOICE + [(category.key,category.name) for category in category_choices]
-        #if property_customizer.pk:
-        #    self.initial["category"] = property_customizer.category.key
-
-        # when initializing formsets,
-        # the fields aren't always setup in the underlying model
-        # so this gets them either from the request (in the case of POST) or initial (in the case of GET)
-        property_data = {}
-        if self.data:
-            # POST; (form already had data) request was passed into constructor
-            # (not sure why I can't do this in a list comprehension)
-            for key,value in self.data.iteritems():
-                if key.startswith(self.prefix+"-"):
-                    property_data[key.split(self.prefix+"-")[1]] = value
-        else:
-            # GET; initial was passed into constructor
-            property_data = self.initial
-
-        self.type = property_data["field_type"]
+        if property_customizer.pk:
+            # ordinarily, this is done in create_scientific_property_customizer_form_data above
+            # but if this is an existing model, I still need to do this jiggery-pokery someplace
+            # not displaying category field for standard_properties (so I should be able to get away w/ not doing this)
+            #self.initial["category"] = property_customizer.category.key
+            if self.type == MetadataFieldTypes.ENUMERATION:
+                current_enumeration_choices = self.get_current_field_value("enumeration_choices")
+                current_enumeration_default = self.get_current_field_value("enumeration_default")
+                if current_enumeration_choices:
+                    self.initial["enumeration_choices"] = current_enumeration_choices.split("|")
+                if current_enumeration_default:
+                    self.initial["enumeration_default"] = current_enumeration_default.split("|")
 
         if self.type == MetadataFieldTypes.ATOMIC:
-            update_field_widget_attributes(self.fields["atomic_type"],{"class":"multiselect"})
+            update_field_widget_attributes(self.fields["atomic_type"], {"class": "multiselect"})
 
         elif self.type == MetadataFieldTypes.ENUMERATION:
-
-            all_enumeration_choices = property_customizer.get_field("enumeration_choices").get_choices()
-            self.fields["enumeration_choices"].widget = SelectMultiple(choices=all_enumeration_choices)
-            self.fields["enumeration_default"].widget = SelectMultiple(choices=all_enumeration_choices)
+            proxy = MetadataStandardPropertyProxy.objects.get(pk=self.get_current_field_value("proxy"))
+            all_enumeration_choices = proxy.enumerate_choices()
+            self.fields["enumeration_choices"].set_choices(all_enumeration_choices)
+            self.fields["enumeration_default"].set_choices(all_enumeration_choices)
+#            self.fields["enumeration_choices"].widget = SelectMultiple(choices=all_enumeration_choices)
+#            self.fields["enumeration_default"].widget = SelectMultiple(choices=all_enumeration_choices)
             # TODO: I CANNOT GET THE MULTISELECT PLUGIN TO WORK W/ THE RESTRICT_OPTIONS FN
             #update_field_widget_attributes(self.fields["enumeration_choices"],{"class":"multiselect","onchange":"restrict_options(this,['%s-enumeration_default']);"%(self.prefix)})
-            update_field_widget_attributes(self.fields["enumeration_choices"],{"class":"multiselect"})
-            update_field_widget_attributes(self.fields["enumeration_default"],{"class":"multiselect"})
+            update_field_widget_attributes(self.fields["enumeration_choices"], {"class": "multiselect"})
+            update_field_widget_attributes(self.fields["enumeration_default"], {"class": "multiselect"})
 
         elif self.type == MetadataFieldTypes.RELATIONSHIP:
-            update_field_widget_attributes(self.fields["relationship_show_subform"],{"class":"enabler","onchange":"enable_customize_subform_button(this);"})
+            update_field_widget_attributes(self.fields["relationship_show_subform"], {"class": "enabler", "onchange": "enable_customize_subform_button(this);"})
             if not property_customizer.pk:
-                update_field_widget_attributes(self.fields["relationship_show_subform"],{"class":"readonly","readonly":"readonly"})
+                update_field_widget_attributes(self.fields["relationship_show_subform"], {"class": "readonly", "readonly": "readonly"})
 
         else:
             msg = "invalid field type for standard property: '%s'" % (self.type)
             raise QuestionnaireError(msg)
 
-        update_field_widget_attributes(self.fields["name"],{"class":"label","readonly":"readonly"})
-        update_field_widget_attributes(self.fields["category_name"],{"class":"label","readonly":"readonly"})
-        update_field_widget_attributes(self.fields["order"],{"class":"label","readonly":"readonly"})
+        update_field_widget_attributes(self.fields["name"], {"class": "label", "readonly": "readonly"})
+        update_field_widget_attributes(self.fields["category_name"], {"class": "label", "readonly": "readonly"})
+        update_field_widget_attributes(self.fields["order"], {"class": "label", "readonly": "readonly"})
 
-        set_field_widget_attributes(self.fields["documentation"],{"cols":"60","rows":"4"})
-        set_field_widget_attributes(self.fields["suggestions"],{"cols":"60","rows":"4"})
+        set_field_widget_attributes(self.fields["documentation"], {"cols": "60", "rows": "4" })
+        set_field_widget_attributes(self.fields["suggestions"], {"cols": "60", "rows": "4" })
     
     def clean(self):
         cleaned_data = self.cleaned_data
@@ -476,7 +473,7 @@ class MetadataStandardPropertyCustomizerForm(MetadataCustomizerForm):
         # the "category" field is a special case
         # it was working off of _unsaved_ models
         # so there is no pk associated w/ it
-        # the form will, however, haved stored the name in the "category_name" field
+        # the form will, however, have stored the name in the "category_name" field
         # I will use that to find the appropriate category to map to in the view
         self.cleaned_data["category"] = None
         try:
@@ -493,7 +490,7 @@ def MetadataStandardPropertyCustomizerInlineFormSetFactory(*args,**kwargs):
     _initial     = kwargs.pop("initial",[])
     _instance    = kwargs.pop("instance")
     _categories  = kwargs.pop("categories",[])
-    _queryset    = kwargs.pop("queryset",None)
+    _queryset    = kwargs.pop("queryset",MetadataStandardPropertyCustomizer.objects.none())
     new_kwargs = {
         "can_delete" : False,
         "extra"      : kwargs.pop("extra",0),
@@ -517,7 +514,7 @@ def MetadataStandardPropertyCustomizerInlineFormSetFactory(*args,**kwargs):
     if _request and _request.method == "POST":
         return _formset(_request.POST,instance=_instance,prefix=_prefix)
 
-    return _formset(initial=_initial,instance=_instance,prefix=_prefix)
+    return _formset(queryset=_queryset,initial=_initial,instance=_instance,prefix=_prefix)
 
 
 #########################
@@ -643,39 +640,56 @@ class MetadataScientificPropertyCustomizerForm(MetadataCustomizerForm):
 
         super(MetadataScientificPropertyCustomizerForm,self).__init__(*args,**kwargs)
 
-        property_customizer = self.instance
 
+        property_customizer = self.instance
+        is_enumeration = self.get_current_field_value("is_enumeration")
+
+        update_field_widget_attributes(self.fields["category"],{"class":"multiselect","onchange":"copy_value(this,'%s-category_name');"%(self.prefix)})
         self.fields["category"].choices = EMPTY_CHOICE + [(category.key,category.name) for category in category_choices]
         if property_customizer.pk:
             # ordinarily, this is done in create_scientific_property_customizer_form_data above
-            # but if this is the (successful) result of a POST I still need to do this jiggery-pokery someplace
+            # but if this is an existing model, I still need to do this jiggery-pokery someplace
             self.initial["category"] = property_customizer.category.key
+            if is_enumeration:
+                current_enumeration_choices = self.get_current_field_value("enumeration_choices")
+                current_enumeration_default = self.get_current_field_value("enumeration_default")
+                if current_enumeration_choices:
+                    self.initial["enumeration_choices"] = current_enumeration_choices.split("|")
+                if current_enumeration_default:
+                    self.initial["enumeration_default"] = current_enumeration_default.split("|")
+
+        # this attribute ("type") is needed b/c I can access it in the customize template
+        if not is_enumeration:
+            self.type = MetadataFieldTypes.ATOMIC
+            update_field_widget_attributes(self.fields["atomic_type"],{"class":"multiselect"})
+
+        else:
+            self.type = MetadataFieldTypes.ENUMERATION
+            proxy = MetadataScientificPropertyProxy.objects.get(pk=self.get_current_field_value("proxy"))
+            all_enumeration_choices = proxy.enumerate_choices()
+            self.fields["enumeration_choices"].set_choices(all_enumeration_choices)
+            self.fields["enumeration_default"].set_choices(all_enumeration_choices)
+#            self.fields["enumeration_choices"].widget = SelectMultiple(choices=all_enumeration_choices)
+#            self.fields["enumeration_default"].widget = SelectMultiple(choices=all_enumeration_choices)
+            # TODO: I CANNOT GET THE MULTISELECT PLUGIN TO WORK W/ THE RESTRICT_OPTIONS FN
+            #update_field_widget_attributes(self.fields["enumeration_choices"],{"class":"multiselect","onchange":"restrict_options(this,['%s-enumeration_default']);"%(self.prefix)})
+            update_field_widget_attributes(self.fields["enumeration_choices"],{"class":"multiselect"})
+            update_field_widget_attributes(self.fields["enumeration_default"],{"class":"multiselect"})
 
         update_field_widget_attributes(self.fields["name"],{"class":"label","readonly":"readonly"})
         update_field_widget_attributes(self.fields["category_name"],{"class":"label","readonly":"readonly"})
         update_field_widget_attributes(self.fields["order"],{"class":"label","readonly":"readonly"})
 
         set_field_widget_attributes(self.fields["documentation"],{"cols":"60","rows":"4"})
-        update_field_widget_attributes(self.fields["category"],{"class":"multiselect","onchange":"copy_value(this,'%s-category_name');"%(self.prefix)})
-
-        update_field_widget_attributes(self.fields["atomic_type"],{"class":"multiselect"})
-
         set_field_widget_attributes(self.fields["extra_description"],{"rows":"4"})
 
-        all_enumeration_choices = property_customizer.get_field("enumeration_choices").get_choices()
-
-        self.fields["enumeration_choices"].widget = SelectMultiple(choices=all_enumeration_choices)
-        self.fields["enumeration_default"].widget = SelectMultiple(choices=all_enumeration_choices)
-        update_field_widget_attributes(self.fields["enumeration_choices"],{"class":"multiselect"})
-        update_field_widget_attributes(self.fields["enumeration_default"],{"class":"multiselect"})
-        
     def clean(self):
         cleaned_data = self.cleaned_data
 
         # the "category" field is a special case
         # it was working off of _unsaved_ models
         # so there is no pk associated w/ it
-        # the form will, however, haved stored the name in the "category_name" field
+        # the form will, however, have stored the name in the "category_name" field
         # I will use that to find the appropriate category to map to in the view
         try:
             self.cleaned_data["category"] = None
@@ -691,7 +705,7 @@ def MetadataScientificPropertyCustomizerInlineFormSetFactory(*args,**kwargs):
     _initial     = kwargs.pop("initial",[])
     _instance    = kwargs.pop("instance")
     _categories  = kwargs.pop("categories",[])
-    _queryset    = kwargs.pop("queryset",None)
+    _queryset    = kwargs.pop("queryset",MetadataScientificPropertyCustomizer.objects.none())
     new_kwargs = {
         "can_delete" : False,
         "extra"      : kwargs.pop("extra",0),

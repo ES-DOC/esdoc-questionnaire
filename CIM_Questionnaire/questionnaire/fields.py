@@ -45,12 +45,17 @@ OTHER_CHOICE  = [("_OTHER","---OTHER---")]
 
 class EnumerationFormField(django.forms.fields.MultipleChoiceField):
 
+    def set_choices(self,choices):
+        self._choices = choices
+        self.widget = SelectMultiple(choices=choices)
+
     def clean(self,value):
         # an enumeration can be invalid in 2 ways:
         # 1) specifying a value other than that provided by choices
         # 2) not specifying a value when field is required
         if value:
-            current_choices = [choice[0] for choice in self.widget.choices]
+#            current_choices = [choice[0] for choice in self.widget.choices]
+            current_choices = self._choices
             if not set(value).issubset(current_choices):
                 msg = "Select a valid choice, '%s' is not among the available choices" % (value)
                 raise ValidationError(msg)
@@ -61,42 +66,26 @@ class EnumerationFormField(django.forms.fields.MultipleChoiceField):
             
         return value
 
-#    def clean(self,value):
-#        # an enumeration can be invalid in 2 ways:
-#        # 1) specifying a value other than that provided by choices
-#        # 2) not specifying a value when field is required
-#        import ipdb; ipdb.set_trace()
-#        if value:
-#            value=set(value)
-#            current_choices = self.widget.choices
-#            if not value.issubset([choice[0] for choice in current_choices]):
-#                msg = "Select a valid choice, '%s' is not among the available choices" % (value)
-#                raise ValidationError(msg)
-#            else:
-#                # TODO: ALL OF THIS NONSENSE W/ LIST & SET MEANS SOMETHING SOMEWHERE IS NOT QUITE WORKING RIGHT
-#                return list(value)
-#        elif self.required:
-#            raise ValidationError(self.error_messages["required"])
-#        return []
+
 
 class EnumerationField(models.TextField):
-    enumeration = []
 
     def formfield(self,**kwargs):
         new_kwargs = {
             "label"       : self.verbose_name.capitalize(),
             "required"    : not self.blank,
-            "choices"     : self.get_choices(),
+#            "choices"     : self.get_enumeration(),
             "form_class"  : EnumerationFormField,
         }
         new_kwargs.update(kwargs)
         return super(EnumerationField,self).formfield(**new_kwargs)
 
-    def get_choices(self):
-        return self.enumeration
 
-    def set_choices(self,choices):
-        self.enumeration = [(slugify(choice),choice) for choice in choices]
+#    def get_enumeration(self):
+#        return self.enumeration
+#
+#    def set_enumeration(self,choices):
+#        self.enumeration = [(slugify(choice),choice) for choice in choices]
 
     def get_db_prep_value(self, value, connection, prepared=False):
         if isinstance(value, basestring):
