@@ -266,6 +266,7 @@ class MetadataModelCustomizerForm(MetadataCustomizerForm):
                     for unique_together_field in unique_together_fields:
                         self.errors[unique_together_field] = msg
 
+
 class MetadataPropertyCustomizerInlineFormSet(BaseInlineFormSet):
 
     number_of_properties = 0
@@ -730,3 +731,64 @@ def MetadataScientificPropertyCustomizerInlineFormSetFactory(*args,**kwargs):
         return _formset(_request.POST,instance=_instance,prefix=_prefix)
 
     return _formset(queryset=_queryset,initial=_initial,instance=_instance,prefix=_prefix)
+
+
+def create_new_customizer_forms_from_models(model_customizer,standard_category_customizers,standard_property_customizers,scientific_category_customizers,scientific_property_customizers,vocabularies_to_customize=MetadataScientificPropertyCustomizer.objects.none(),is_subform=False):
+
+    model_customizer_data = create_model_customizer_form_data(model_customizer,standard_category_customizers,scientific_category_customizers,vocabularies=vocabularies_to_customize)
+    model_customizer_form = MetadataModelCustomizerForm(initial=model_customizer_data,all_vocabularies=vocabularies_to_customize,is_subform=is_subform)
+
+    standard_property_customizers_data = [create_standard_property_customizer_form_data(model_customizer,standard_property_customizer) for standard_property_customizer in standard_property_customizers]
+    standard_property_customizer_formset = MetadataStandardPropertyCustomizerInlineFormSetFactory(
+        instance    = model_customizer,
+        initial     = standard_property_customizers_data,
+        extra       = len(standard_property_customizers_data),
+        categories  = standard_category_customizers,
+    )
+
+    scientific_property_customizer_formsets = {}
+    for vocabulary_key,scientific_property_customizer_dict in scientific_property_customizers.iteritems():
+        scientific_property_customizer_formsets[vocabulary_key] = {}
+        for component_key,scientific_property_customizer_list in scientific_property_customizer_dict.iteritems():
+            model_key = u"%s_%s" % (vocabulary_key,component_key)
+            scientific_property_customizers_data = [
+                create_scientific_property_customizer_form_data(model_customizer,scientific_property_customizer)
+                for scientific_property_customizer in scientific_property_customizers[vocabulary_key][component_key]
+            ]
+            scientific_property_customizer_formsets[vocabulary_key][component_key] = MetadataScientificPropertyCustomizerInlineFormSetFactory(
+                instance    = model_customizer,
+                initial     = scientific_property_customizers_data,
+                extra       = len(scientific_property_customizers_data),
+                prefix      = model_key,
+                categories  = scientific_category_customizers[vocabulary_key][component_key]
+            )
+
+    return (model_customizer_form,standard_property_customizer_formset,scientific_property_customizer_formsets)
+
+def create_existing_customizer_forms_from_models(model_customizer,standard_category_customizers,standard_property_customizers,scientific_category_customizers,scientific_property_customizers,vocabularies_to_customize=MetadataScientificPropertyCustomizer.objects.none(),is_subform=False):
+
+    model_customizer_data = create_model_customizer_form_data(model_customizer,standard_category_customizers,scientific_category_customizers,vocabularies=vocabularies_to_customize)
+    model_customizer_form = MetadataModelCustomizerForm(instance=model_customizer,initial=model_customizer_data,all_vocabularies=vocabularies_to_customize,is_subform=is_subform)
+
+    standard_property_customizer_formset = MetadataStandardPropertyCustomizerInlineFormSetFactory(
+        instance    = model_customizer,
+        queryset    = standard_property_customizers,
+        # don't pass extra; w/ existing (queryset) models, extra ought to be 0
+        #extra       = len(standard_property_customizers),
+        categories  = standard_category_customizers,
+    )
+
+    scientific_property_customizer_formsets = {}
+    for vocabulary_key,scientific_property_customizer_dict in scientific_property_customizers.iteritems():
+        scientific_property_customizer_formsets[vocabulary_key] = {}
+        for component_key,scientific_property_customizer_list in scientific_property_customizer_dict.iteritems():
+            scientific_property_customizer_formsets[vocabulary_key][component_key] = MetadataScientificPropertyCustomizerInlineFormSetFactory(
+                instance    = model_customizer,
+                queryset    = scientific_property_customizer_list,
+                # don't pass extra; w/ existing (queryset) models, extra ought to be 0
+                #extra       = len(scientific_property_customizer_list),
+                prefix      = u"%s_%s" % (vocabulary_key,component_key),
+                categories  = scientific_category_customizers[vocabulary_key][component_key],
+            )
+
+    return (model_customizer_form,standard_property_customizer_formset,scientific_property_customizer_formsets)

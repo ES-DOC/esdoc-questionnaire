@@ -72,8 +72,11 @@ class MetadataForm(ModelForm):
             has_default = True
 
         try:
-            key_prefix = '{0}-{1}'.format(self.prefix, key)
-            ret = self.data[key_prefix]
+            if self.prefix:
+                key_prefix = '{0}-{1}'.format(self.prefix, key)
+                ret = self.data[key_prefix]
+            else:  # (the model_customizer_form does not have a prefix)
+                ret = self.data[key]
         except KeyError:
             try:
                 ret = self.initial[key]

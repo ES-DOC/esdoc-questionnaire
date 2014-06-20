@@ -29,7 +29,7 @@ from django.http import *
 
 def questionnaire_error(request,error_msg="",status_code=400):
 
-    print error_msg
+    #print error_msg
 
     # (note that error_msg can have embedded HTML tags)
 

@@ -1,11 +1,14 @@
 from django.template.defaultfilters import slugify
 
 from CIM_Questionnaire.questionnaire.tests.base import TestQuestionnaireBase
+
 from CIM_Questionnaire.questionnaire.models import MetadataModelProxy
 from CIM_Questionnaire.questionnaire.models.metadata_customizer import MetadataCustomizer
 from CIM_Questionnaire.questionnaire.forms.forms_customize import create_model_customizer_form_data, create_standard_property_customizer_form_data, create_scientific_property_customizer_form_data
 from CIM_Questionnaire.questionnaire.forms.forms_customize import MetadataModelCustomizerForm, MetadataStandardPropertyCustomizerInlineFormSetFactory, MetadataScientificPropertyCustomizerInlineFormSetFactory
+
 from CIM_Questionnaire.questionnaire.fields import MetadataFieldTypes
+from CIM_Questionnaire.questionnaire.utils import JSON_SERIALIZER
 
 class Test(TestQuestionnaireBase):
 
@@ -52,7 +55,8 @@ class Test(TestQuestionnaireBase):
 
         # TODO: ENSURE scientific_property_customizers_data CORRESPONDS TO EXPECTED VALUES
 
-    def test_new_model_customizer_forms(self):
+
+    def test_new_model_customizer_form(self):
         """Test creation of model customizer form (using new customizers)"""
 
         test_model_name = "modelcomponent"
@@ -63,13 +67,92 @@ class Test(TestQuestionnaireBase):
 
         self.assertEqual(model_customizer.proxy,model_proxy_to_be_customized)
 
-
         model_customizer_data = create_model_customizer_form_data(model_customizer,standard_category_customizers,scientific_category_customizers,vocabularies=vocabularies_to_be_customized)
         model_customizer_form = MetadataModelCustomizerForm(initial=model_customizer_data,all_vocabularies=vocabularies_to_be_customized)
 
         # now the form is created; test away...
 
-        # I AM HERE
+        self.assertEqual(model_customizer.name,model_customizer_form.get_current_field_value("name"))
+        self.assertEqual(model_customizer.description,model_customizer_form.get_current_field_value("description"))
+        self.assertEqual(model_customizer.default,model_customizer_form.get_current_field_value("default"))
+        self.assertEqual(model_customizer.model_title,model_customizer_form.get_current_field_value("model_title"))
+        self.assertEqual(model_customizer.model_description,model_customizer_form.get_current_field_value("model_description"))
+        self.assertEqual(model_customizer.model_show_all_categories,model_customizer_form.get_current_field_value("model_show_all_categories"))
+        self.assertEqual(model_customizer.model_show_all_properties,model_customizer_form.get_current_field_value("model_show_all_properties"))
+        self.assertEqual(model_customizer.model_show_hierarchy,model_customizer_form.get_current_field_value("model_show_hierarchy"))
+        self.assertEqual(model_customizer.model_hierarchy_name,model_customizer_form.get_current_field_value("model_hierarchy_name"))
+        self.assertEqual(model_customizer.model_root_component,model_customizer_form.get_current_field_value("model_root_component"))
+
+        # fk fields are compared via primary keys
+        self.assertEqual(model_customizer.proxy.pk,model_customizer_form.get_current_field_value("proxy"))
+        self.assertEqual(model_customizer.project.pk,model_customizer_form.get_current_field_value("project"))
+        self.assertEqual(model_customizer.version.pk,model_customizer_form.get_current_field_value("version"))
+
+        # m2m fields do not yet exist on the instance
+        self.assertItemsEqual(vocabularies_to_be_customized,model_customizer_form.get_current_field_value("vocabularies"))
+        self.assertEqual(",".join(map(str,[vocabulary.pk for vocabulary in vocabularies_to_be_customized])),model_customizer_form.get_current_field_value("vocabulary_order")) # (and this is set in the get_new_customizer fn above)
+        self.assertEqual(vocabularies_to_be_customized,model_customizer_form.fields["vocabularies"].queryset)
+
+        # these fields are added in the forms...
+        self.assertEqual(JSON_SERIALIZER.serialize(standard_category_customizers),model_customizer_form.get_current_field_value("standard_categories_content"))
+        self.assertEqual("|".join([standard_category.name for standard_category in standard_category_customizers]),model_customizer_form.get_current_field_value("standard_categories_tags"))
+        for vocabulary_key,scientific_category_customizer_dict in scientific_category_customizers.iteritems():
+            for component_key,scientific_category_customizer_list in scientific_category_customizer_dict.iteritems():
+                scientific_categories_content_field_name = u"%s_%s_scientific_categories_content" % (vocabulary_key,component_key)
+                scientific_categories_tags_field_name = u"%s_%s_scientific_categories_tags" % (vocabulary_key,component_key)
+                self.assertEqual(JSON_SERIALIZER.serialize(scientific_category_customizer_list),model_customizer_form.get_current_field_value(scientific_categories_content_field_name))
+                self.assertEqual("|".join([scientific_category.name for scientific_category in scientific_category_customizer_list]),model_customizer_form.get_current_field_value(scientific_categories_tags_field_name))
+
+
+    def test_existing_model_customizer_form(self):
+        """Test creation of model customizer form (using existing customizers)"""
+
+        test_model_name = "modelcomponent"
+        model_proxy_to_be_customized = MetadataModelProxy.objects.get(version=self.version,name__iexact=test_model_name)
+        vocabularies_to_be_customized = self.project.vocabularies.filter(document_type__iexact=self.customizer.proxy.name)
+        (model_customizer,standard_category_customizers,standard_property_customizers,scientific_category_customizers,scientific_property_customizers) = \
+            MetadataCustomizer.get_existing_customizer_set(self.customizer,vocabularies_to_be_customized)
+
+        self.assertEqual(model_customizer.proxy,model_proxy_to_be_customized)
+
+        model_customizer_data = create_model_customizer_form_data(model_customizer,standard_category_customizers,scientific_category_customizers,vocabularies=vocabularies_to_be_customized)
+        model_customizer_form = MetadataModelCustomizerForm(instance=model_customizer,initial=model_customizer_data,all_vocabularies=vocabularies_to_be_customized)
+
+        # now the form is created; test away...
+
+        model_customizer_to_test = model_customizer_form.instance
+
+        self.assertEqual(model_customizer_to_test.name,model_customizer_form.get_current_field_value("name"))
+        self.assertEqual(model_customizer_to_test.description,model_customizer_form.get_current_field_value("description"))
+        self.assertEqual(model_customizer_to_test.default,model_customizer_form.get_current_field_value("default"))
+        self.assertEqual(model_customizer_to_test.model_title,model_customizer_form.get_current_field_value("model_title"))
+        self.assertEqual(model_customizer_to_test.model_description,model_customizer_form.get_current_field_value("model_description"))
+        self.assertEqual(model_customizer_to_test.get_field("model_show_all_categories").default,model_customizer_form.get_current_field_value("model_show_all_categories"))
+        self.assertEqual(model_customizer_to_test.get_field("model_show_all_properties").default,model_customizer_form.get_current_field_value("model_show_all_properties"))
+        self.assertEqual(model_customizer_to_test.get_field("model_show_hierarchy").default,model_customizer_form.get_current_field_value("model_show_hierarchy"))
+        self.assertEqual(model_customizer_to_test.get_field("model_hierarchy_name").default,model_customizer_form.get_current_field_value("model_hierarchy_name"))
+        self.assertEqual(model_customizer_to_test.get_field("model_root_component").default,model_customizer_form.get_current_field_value("model_root_component"))
+
+
+        # fk fields are compared via primary keys
+        self.assertEqual(model_customizer_to_test.proxy.pk,model_customizer_form.get_current_field_value("proxy"))
+        self.assertEqual(model_customizer_to_test.project.pk,model_customizer_form.get_current_field_value("project"))
+        self.assertEqual(model_customizer_to_test.version.pk,model_customizer_form.get_current_field_value("version"))
+
+        # m2m fields do not yet exist on the instance
+        self.assertItemsEqual(vocabularies_to_be_customized,model_customizer_form.get_current_field_value("vocabularies"))
+        self.assertEqual(",".join(map(str,[vocabulary.pk for vocabulary in vocabularies_to_be_customized])),model_customizer_form.get_current_field_value("vocabulary_order")) # (and this is set in the get_new_customizer fn above)
+        self.assertEqual(vocabularies_to_be_customized,model_customizer_form.fields["vocabularies"].queryset)
+
+        # these fields are added in the forms...
+        self.assertEqual(JSON_SERIALIZER.serialize(standard_category_customizers),model_customizer_form.get_current_field_value("standard_categories_content"))
+        self.assertEqual("|".join([standard_category.name for standard_category in standard_category_customizers]),model_customizer_form.get_current_field_value("standard_categories_tags"))
+        for vocabulary_key,scientific_category_customizer_dict in scientific_category_customizers.iteritems():
+            for component_key,scientific_category_customizer_list in scientific_category_customizer_dict.iteritems():
+                scientific_categories_content_field_name = u"%s_%s_scientific_categories_content" % (vocabulary_key,component_key)
+                scientific_categories_tags_field_name = u"%s_%s_scientific_categories_tags" % (vocabulary_key,component_key)
+                self.assertEqual(JSON_SERIALIZER.serialize(scientific_category_customizer_list),model_customizer_form.get_current_field_value(scientific_categories_content_field_name))
+                self.assertEqual("|".join([scientific_category.name for scientific_category in scientific_category_customizer_list]),model_customizer_form.get_current_field_value(scientific_categories_tags_field_name))
 
 
     def test_new_standard_property_customizer_formset(self):

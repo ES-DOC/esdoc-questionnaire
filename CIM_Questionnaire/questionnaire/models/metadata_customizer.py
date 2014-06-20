@@ -222,15 +222,15 @@ class MetadataCustomizer(models.Model):
             return None
         return field[0]
 
-#    @classmethod
-#    def get_field(cls,field_name):
-#        try:
-#            field = cls._meta.get_field_by_name(field_name)
-#        except FieldDoesNotExist:
-#            msg = "Could not find a field called '%s'" % (field_name)
-#            #raise QuestionnaireError(msg)
-#            return None
-#        return field[0]
+    @classmethod
+    def get_field(cls,field_name):
+        try:
+            field = cls._meta.get_field_by_name(field_name)
+        except FieldDoesNotExist:
+            msg = "Could not find a field called '%s'" % (field_name)
+            #raise QuestionnaireError(msg)
+            return None
+        return field[0]
 
 class MetadataModelCustomizer(MetadataCustomizer):
     class Meta:
@@ -290,6 +290,7 @@ class MetadataModelCustomizer(MetadataCustomizer):
         self.model_show_all_categories  = self.get_field("model_show_all_categories").default
         self.model_show_all_properties  = self.get_field("model_show_all_properties").default
         self.model_show_hierarchy       = self.get_field("model_show_hierarchy").default
+        self.model_hierarchy_name       = self.get_field("model_hierarchy_name").default
         self.model_root_component       = self.get_field("model_root_component").default
 
     def clean(self):

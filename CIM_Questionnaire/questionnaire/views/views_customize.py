@@ -10,6 +10,7 @@
 #   This project is distributed according to the terms of the MIT license [http://www.opensource.org/licenses/MIT].
 ####################
 
+
 __author__="allyn.treshansky"
 __date__ ="Sep 30, 2013 3:04:42 PM"
 
@@ -30,12 +31,11 @@ from questionnaire.models   import *
 from questionnaire.forms    import *
 from questionnaire.views    import *
 
-from questionnaire.forms.forms_customize import create_model_customizer_form_data
-from questionnaire.forms.forms_customize import create_standard_property_customizer_form_data
-from questionnaire.forms.forms_customize import create_scientific_property_customizer_form_data
-from questionnaire.forms.forms_customize import save_valid_forms
+from CIM_Questionnaire.questionnaire.forms.forms_customize import create_model_customizer_form_data, create_standard_property_customizer_form_data, create_scientific_property_customizer_form_data
+from CIM_Questionnaire.questionnaire.forms.forms_customize import save_valid_forms, create_new_customizer_forms_from_models, create_existing_customizer_forms_from_models
 
-from questionnaire.models.metadata_customizer import find_category_by_key
+from CIM_Questionnaire.questionnaire.models.metadata_customizer import MetadataModelCustomizer
+from CIM_Questionnaire.questionnaire.models.metadata_customizer import find_category_by_key
 
 from django.template.defaultfilters import slugify
 
@@ -147,37 +147,11 @@ def questionnaire_customize_new(request,project_name="",model_name="",version_na
 
     if request.method == "GET":
 
-        model_customizer_data = create_model_customizer_form_data(model_customizer,standard_category_customizers,scientific_category_customizers,vocabularies=vocabularies)
-        model_customizer_form = MetadataModelCustomizerForm(initial=model_customizer_data,all_vocabularies=vocabularies)
+        (model_customizer_form,standard_property_customizer_formset,scientific_property_customizer_formsets) = \
+            create_new_customizer_forms_from_models(model_customizer,standard_category_customizers,standard_property_customizers,scientific_category_customizers,scientific_property_customizers,vocabularies_to_customize=vocabularies,is_subform=True)
 
-        standard_property_customizers_data = [create_standard_property_customizer_form_data(model_customizer,standard_property_customizer) for standard_property_customizer in standard_property_customizers]
-        standard_property_customizer_formset = MetadataStandardPropertyCustomizerInlineFormSetFactory(
-            instance    = model_customizer,
-            initial     = standard_property_customizers_data,
-            extra       = len(standard_property_customizers_data),
-            categories  = standard_category_customizers,
-        )
-
-        scientific_property_customizers_data = {}
-        scientific_property_customizer_formsets = {}
-        for vocabulary_key,scientific_property_customizer_dict in scientific_property_customizers.iteritems():
-            scientific_property_customizers_data[vocabulary_key] = {}
-            scientific_property_customizer_formsets[vocabulary_key] = {}
-            for component_key,scientific_property_customizer_list in scientific_property_customizer_dict.iteritems():
-                model_key = u"%s_%s" % (vocabulary_key,component_key)
-                scientific_property_customizers_data[vocabulary_key][component_key] = [
-                    create_scientific_property_customizer_form_data(model_customizer,scientific_property_customizer)
-                    for scientific_property_customizer in scientific_property_customizers[vocabulary_key][component_key]
-                ]
-                scientific_property_customizer_formsets[vocabulary_key][component_key] = MetadataScientificPropertyCustomizerInlineFormSetFactory(
-                    instance    = model_customizer,
-                    initial     = scientific_property_customizers_data[vocabulary_key][component_key],
-                    extra       = len(scientific_property_customizers_data[vocabulary_key][component_key]),
-                    prefix      = model_key,
-                    categories  = scientific_category_customizers[vocabulary_key][component_key]
-                )
     else: # request.method == "POST"
-        
+
         validity = []
 
         model_customizer_form = MetadataModelCustomizerForm(request.POST,all_vocabularies=vocabularies)
@@ -185,13 +159,11 @@ def questionnaire_customize_new(request,project_name="",model_name="",version_na
         model_customizer_form_validity = model_customizer_form.is_valid()
         if model_customizer_form_validity:
             model_customizer_instance = model_customizer_form.save(commit=False)
-
+            active_vocabularies       = model_customizer_form.cleaned_data["vocabularies"]
+        else:
+            active_vocabularies       = MetadataVocabulary.objects.filter(pk__in=model_customizer_form.get_current_field_value("vocabularies"))
         validity += [model_customizer_form_validity]
-        
-        # at this point I know which vocabularies were selected
-        # and I have lists of categories to save or delete
-        active_vocabularies                 = model_customizer_form.cleaned_data["vocabularies"]
-        active_vocabulary_keys              = [slugify(vocabulary.name) for vocabulary in active_vocabularies]
+        active_vocabulary_keys = [slugify(vocabulary.name) for vocabulary in active_vocabularies]
 
         standard_property_customizer_formset = MetadataStandardPropertyCustomizerInlineFormSetFactory(
             instance    = model_customizer_instance if model_customizer_form_validity else model_customizer,
@@ -279,29 +251,8 @@ def questionnaire_customize_existing(request,project_name="",model_name="",versi
 
     if request.method == "GET":
 
-        model_customizer_data = create_model_customizer_form_data(model_customizer,standard_category_customizers,scientific_category_customizers,vocabularies=vocabularies)
-        model_customizer_form = MetadataModelCustomizerForm(instance=model_customizer,initial=model_customizer_data,all_vocabularies=vocabularies)
-
-        standard_property_customizer_formset = MetadataStandardPropertyCustomizerInlineFormSetFactory(
-            instance    = model_customizer,
-            queryset    = standard_property_customizers,
-            # don't pass extra; w/ existing (queryset) models, extra ought to be 0
-            #extra       = len(standard_property_customizers),
-            categories  = standard_category_customizers,
-        )
-
-        scientific_property_customizer_formsets = {}
-        for vocabulary_key,scientific_property_customizer_dict in scientific_property_customizers.iteritems():
-            scientific_property_customizer_formsets[vocabulary_key] = {}
-            for component_key,scientific_property_customizer_list in scientific_property_customizer_dict.iteritems():
-                scientific_property_customizer_formsets[vocabulary_key][component_key] = MetadataScientificPropertyCustomizerInlineFormSetFactory(
-                    instance    = model_customizer,
-                    queryset    = scientific_property_customizer_list,
-                    # don't pass extra; w/ existing (queryset) models, extra ought to be 0
-                    #extra       = len(scientific_property_customizer_list),
-                    prefix      = u"%s_%s" % (vocabulary_key,component_key),
-                    categories  = scientific_category_customizers[vocabulary_key][component_key],
-                )
+        (model_customizer_form,standard_property_customizer_formset,scientific_property_customizer_formsets) = \
+            create_existing_customizer_forms_from_models(model_customizer,standard_category_customizers,standard_property_customizers,scientific_category_customizers,scientific_property_customizers,vocabularies_to_customize=vocabularies)
 
     else: # request.method == "POST":
 

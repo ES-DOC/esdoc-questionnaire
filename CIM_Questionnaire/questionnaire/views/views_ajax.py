@@ -29,8 +29,10 @@ from django.forms.models                import modelform_factory
 from django.template.loader             import render_to_string
 from django.forms                       import *
 
+from CIM_Questionnaire.questionnaire.models.metadata_customizer import MetadataCustomizer, MetadataModelCustomizer, MetadataStandardCategoryCustomizer, MetadataStandardPropertyCustomizer
+from CIM_Questionnaire.questionnaire.forms.forms_customize import create_new_customizer_forms_from_models, create_existing_customizer_forms_from_models
+
 from questionnaire.utils    import *
-from questionnaire.models   import *
 from questionnaire.forms    import *
 from questionnaire.views    import *
 
@@ -45,6 +47,8 @@ def ajax_customize_subform(request,**kwargs):
     property_parent     = property_customizer.model_customizer
     property_proxy      = property_customizer.proxy
     model_proxy         = property_proxy.relationship_target_model
+    # TODO: IN THE LONG-RUN, I WILL WANT TO ENSURE THAT THE CORRECT SCI PROPS ARE USED HERE
+    vocabularies        = property_parent.vocabularies.none() # using none() to avoid dealing w/ sci props
     project             = property_parent.project
     version             = property_parent.version
     prefix              = u"customize_subform_%s_standard_property" % (property_proxy.name)
@@ -55,68 +59,33 @@ def ajax_customize_subform(request,**kwargs):
         "proxy"     : model_proxy,
         "name"      : property_parent.name
     }
+
     try:
         model_customizer = MetadataModelCustomizer.objects.get(**customizer_filter_parameters)
 
-        standard_property_category_customizers = model_customizer.standard_property_category_customizers.all()
+        (model_customizer,standard_category_customizers,standard_property_customizers,scientific_category_customizers,scientific_property_customizers) = \
+            MetadataCustomizer.get_existing_customizer_set(model_customizer,vocabularies)
 
-        standard_property_customizers = model_customizer.standard_property_customizers.all()
-
-        new_customizer   = False
+        new_customizer = False
 
     except MetadataModelCustomizer.DoesNotExist:
-        model_customizer = MetadataModelCustomizer(**customizer_filter_parameters)        
-        model_customizer.reset()
 
-        standard_property_category_customizers  = [MetadataStandardCategoryCustomizer(proxy=standard_category_proxy,model_customizer=model_customizer) for standard_category_proxy in version.categorization.categories.all()]
-        for standard_property_category_customizer in standard_property_category_customizers:
-            standard_property_category_customizer.reset()
+        (model_customizer,standard_category_customizers,standard_property_customizers,scientific_category_customizers,scientific_property_customizers) = \
+            MetadataCustomizer.get_new_customizer_set(project, version, model_proxy, vocabularies)
 
-        standard_property_customizers = []
-        for standard_property_proxy in model_proxy.standard_properties.all():
-            standard_property_customizer = MetadataStandardPropertyCustomizer(
-                model_customizer    = model_customizer,
-                proxy               = standard_property_proxy,
-                category            = find_in_sequence(lambda category: category.proxy.has_property(standard_property_proxy),standard_property_category_customizers),
-            )
-            standard_property_customizer.reset()
-            standard_property_customizers.append(standard_property_customizer)
-
-        new_customizer   = True
+        new_customizer = True
 
 
     if request.method == "GET":
 
-        model_customizer_form = MetadataModelCustomizerForm(instance=model_customizer,prefix=prefix,is_subform=True)
-
         if new_customizer:
-            initial_standard_property_customizer_formset_data = [
-                get_initial_data(standard_property_customizer,{
-                    # TODO: WHICH FK or M2M FIELDS DO I HAVE TO ADD HERE?
-                    # (don't need to pass in model_customizer, b/c I'm using an "inline" formset?)
-                    "proxy"             : standard_property_customizer.proxy,
-                    "category"          : standard_property_customizer.category,
-                    "model_customizer"  : standard_property_customizer.model_customizer,
-                    "last_modified"     : time.strftime("%c"),
-                })
-                for standard_property_customizer in standard_property_customizers
-            ]
-            standard_property_customizer_formset = MetadataStandardPropertyCustomizerInlineFormSetFactory(
-                instance    = model_customizer,
-                request     = request,
-                prefix      = prefix,
-                initial     = initial_standard_property_customizer_formset_data,
-                extra       = len(initial_standard_property_customizer_formset_data),
-                categories  = [(category.key,category.name) for category in standard_property_category_customizers]
-            )
+
+            (model_customizer_form,standard_property_customizer_formset,scientific_property_customizer_formsets) = \
+                create_new_customizer_forms_from_models(model_customizer,standard_category_customizers,standard_property_customizers,scientific_category_customizers,scientific_property_customizers,vocabularies_to_customize=vocabularies,is_subform=True)
 
         else:
-            standard_property_customizer_formset = MetadataStandardPropertyCustomizerInlineFormSetFactory(
-                instance    = model_customizer,
-                request     = request,
-                prefix      = prefix,
-                categories  = [(category.key,category.name) for category in standard_property_category_customizers],
-            )
+            (model_customizer_form,standard_property_customizer_formset,scientific_property_customizer_formsets) = \
+                create_existing_customizer_forms_from_models(model_customizer,standard_category_customizers,standard_property_customizers,scientific_category_customizers,scientific_property_customizers,vocabularies_to_customize=vocabularies,is_subform=True)
 
         status = 200 # return successful response for GET (don't actually process this in the AJAX JQuery call)
         
