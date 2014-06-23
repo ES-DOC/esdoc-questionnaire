@@ -566,7 +566,6 @@ def MetadataStandardPropertyCustomizerInlineFormSetFactory(*args,**kwargs):
         _formset.number_of_properties = 0
 
     if _data:
-        import ipdb; ipdb.set_trace()
         return _formset(_data,instance=_instance,prefix=_prefix)
 
     return _formset(queryset=_queryset,initial=_initial,instance=_instance,prefix=_prefix)
@@ -881,6 +880,7 @@ def create_customizer_forms_from_data(data,model_customizer,standard_category_cu
 
     validity += [standard_property_customizer_formset.is_valid()]
 
+    import ipdb; ipdb.set_trace()
     scientific_property_customizer_formsets = {}
     for vocabulary_key, scientific_property_customizer_dict in scientific_property_customizers.iteritems():
         scientific_property_customizer_formsets[vocabulary_key] = {}

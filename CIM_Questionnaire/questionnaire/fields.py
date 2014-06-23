@@ -51,15 +51,18 @@ class EnumerationFormField(django.forms.fields.MultipleChoiceField):
 
     def clean(self,value):
         # an enumeration can be invalid in 2 ways:
-        # 1) specifying a value other than that provided by choices
+        # 1) specifying a value other than that provided by choices (recall that choices is set in the form initialization fns)
         # 2) not specifying a value when field is required
         if value:
-#            current_choices = [choice[0] for choice in self.widget.choices]
-            current_choices = self._choices
-            if not set(value).issubset(current_choices):
-                msg = "Select a valid choice, '%s' is not among the available choices" % (value)
-                raise ValidationError(msg)
+            # this block is mostly taken from the super validate() fn
+            value = self.to_python(value)
+            for val in value:
+                if not self.valid_value(val):
+                    msg = "Select a valid choice, '%s' is not among the available choices" % (val)
+                    raise ValidationError(msg)
+            self.run_validators(value)
         elif self.required:
+            # this block is here in-case there is any special processing I need to do b/c of customizers
             raise ValidationError(self.error_messages["required"])
         else:
             value = []
