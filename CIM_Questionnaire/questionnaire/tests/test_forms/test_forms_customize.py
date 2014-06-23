@@ -5,6 +5,8 @@ from CIM_Questionnaire.questionnaire.tests.base import TestQuestionnaireBase
 from CIM_Questionnaire.questionnaire.models import MetadataModelProxy
 from CIM_Questionnaire.questionnaire.models.metadata_customizer import MetadataCustomizer
 from CIM_Questionnaire.questionnaire.forms.forms_customize import create_model_customizer_form_data, create_standard_property_customizer_form_data, create_scientific_property_customizer_form_data
+from CIM_Questionnaire.questionnaire.forms.forms_customize import create_new_customizer_forms_from_models, create_existing_customizer_forms_from_models, create_customizer_forms_from_data
+from CIM_Questionnaire.questionnaire.forms.forms_customize import get_data_from_customizer_forms
 from CIM_Questionnaire.questionnaire.forms.forms_customize import MetadataModelCustomizerForm, MetadataStandardPropertyCustomizerInlineFormSetFactory, MetadataScientificPropertyCustomizerInlineFormSetFactory
 
 from CIM_Questionnaire.questionnaire.fields import MetadataFieldTypes
@@ -67,8 +69,8 @@ class Test(TestQuestionnaireBase):
 
         self.assertEqual(model_customizer.proxy,model_proxy_to_be_customized)
 
-        model_customizer_data = create_model_customizer_form_data(model_customizer,standard_category_customizers,scientific_category_customizers,vocabularies=vocabularies_to_be_customized)
-        model_customizer_form = MetadataModelCustomizerForm(initial=model_customizer_data,all_vocabularies=vocabularies_to_be_customized)
+        (model_customizer_form,standard_property_customizer_formset,scientific_property_customizer_formsets) = \
+            create_new_customizer_forms_from_models(model_customizer,standard_category_customizers,standard_property_customizers,scientific_category_customizers,scientific_property_customizers,vocabularies_to_customize=vocabularies_to_be_customized)
 
         # now the form is created; test away...
 
@@ -115,8 +117,8 @@ class Test(TestQuestionnaireBase):
 
         self.assertEqual(model_customizer.proxy,model_proxy_to_be_customized)
 
-        model_customizer_data = create_model_customizer_form_data(model_customizer,standard_category_customizers,scientific_category_customizers,vocabularies=vocabularies_to_be_customized)
-        model_customizer_form = MetadataModelCustomizerForm(instance=model_customizer,initial=model_customizer_data,all_vocabularies=vocabularies_to_be_customized)
+        (model_customizer_form,standard_property_customizer_formset,scientific_property_customizer_formsets) = \
+            create_existing_customizer_forms_from_models(model_customizer,standard_category_customizers,standard_property_customizers,scientific_category_customizers,scientific_property_customizers,vocabularies_to_customize=vocabularies_to_be_customized,is_subform=True)
 
         # now the form is created; test away...
 
@@ -166,16 +168,8 @@ class Test(TestQuestionnaireBase):
 
         self.assertEqual(model_customizer.proxy,model_proxy_to_be_customized)
 
-        standard_property_customizers_data = [
-            create_standard_property_customizer_form_data(model_customizer,standard_property_customizer)
-            for standard_property_customizer in standard_property_customizers
-        ]
-        standard_property_customizer_formset = MetadataStandardPropertyCustomizerInlineFormSetFactory(
-            instance    = model_customizer,
-            initial     = standard_property_customizers_data,
-            extra       = len(standard_property_customizers_data),
-            categories  = standard_category_customizers,
-        )
+        (model_customizer_form,standard_property_customizer_formset,scientific_property_customizer_formsets) = \
+            create_new_customizer_forms_from_models(model_customizer,standard_category_customizers,standard_property_customizers,scientific_category_customizers,scientific_property_customizers,vocabularies_to_customize=vocabularies_to_be_customized)
 
         # now the formset is created; test away...
 
@@ -247,12 +241,8 @@ class Test(TestQuestionnaireBase):
 
         self.assertEqual(model_customizer.proxy,model_proxy_to_be_customized)
 
-        standard_property_customizer_formset = MetadataStandardPropertyCustomizerInlineFormSetFactory(
-            instance    = model_customizer,
-            queryset    = standard_property_customizers,
-            # don't pass extra; w/ existing (queryset) models, extra ought to be 0
-            #extra       = len(standard_property_customizers),
-        )
+        (model_customizer_form,standard_property_customizer_formset,scientific_property_customizer_formsets) = \
+            create_existing_customizer_forms_from_models(model_customizer,standard_category_customizers,standard_property_customizers,scientific_category_customizers,scientific_property_customizers,vocabularies_to_customize=vocabularies_to_be_customized,is_subform=True)
 
         # now the formset is created; test away...
 
@@ -325,21 +315,8 @@ class Test(TestQuestionnaireBase):
 
         self.assertEqual(model_customizer.proxy,model_proxy_to_be_customized)
 
-        scientific_property_customizer_formsets = {}
-        for vocabulary_key,scientific_property_customizer_dict in scientific_property_customizers.iteritems():
-            scientific_property_customizer_formsets[vocabulary_key] = {}
-            for component_key,scientific_property_customizer_list in scientific_property_customizer_dict.iteritems():
-                scientific_property_customizers_data = [
-                    create_scientific_property_customizer_form_data(model_customizer,scientific_property_customizer)
-                    for scientific_property_customizer in scientific_property_customizers[vocabulary_key][component_key]
-                ]
-                scientific_property_customizer_formsets[vocabulary_key][component_key] = MetadataScientificPropertyCustomizerInlineFormSetFactory(
-                    instance    = model_customizer,
-                    initial     = scientific_property_customizers_data,
-                    extra       = len(scientific_property_customizers_data),
-                    prefix      = u"%s_%s" % (vocabulary_key,component_key),
-                    categories  = scientific_category_customizers[vocabulary_key][component_key],
-                )
+        (model_customizer_form,standard_property_customizer_formset,scientific_property_customizer_formsets) = \
+            create_new_customizer_forms_from_models(model_customizer,standard_category_customizers,standard_property_customizers,scientific_category_customizers,scientific_property_customizers,vocabularies_to_customize=vocabularies_to_be_customized)
 
         # now the formsets are created; test away...
 
@@ -419,18 +396,8 @@ class Test(TestQuestionnaireBase):
 
         self.assertEqual(model_customizer.proxy,model_proxy_to_be_customized)
 
-        scientific_property_customizer_formsets = {}
-        for vocabulary_key,scientific_property_customizer_dict in scientific_property_customizers.iteritems():
-            scientific_property_customizer_formsets[vocabulary_key] = {}
-            for component_key,scientific_property_customizer_list in scientific_property_customizer_dict.iteritems():
-                scientific_property_customizer_formsets[vocabulary_key][component_key] = MetadataScientificPropertyCustomizerInlineFormSetFactory(
-                    instance    = model_customizer,
-                    queryset    = scientific_property_customizer_list,
-                    # don't pass extra; w/ existing (queryset) models, extra ought to be 0
-                    #extra       = len(scientific_property_customizer_list),
-                    prefix      = u"%s_%s" % (vocabulary_key,component_key),
-                    categories  = scientific_category_customizers[vocabulary_key][component_key],
-                )
+        (model_customizer_form,standard_property_customizer_formset,scientific_property_customizer_formsets) = \
+            create_existing_customizer_forms_from_models(model_customizer,standard_category_customizers,standard_property_customizers,scientific_category_customizers,scientific_property_customizers,vocabularies_to_customize=vocabularies_to_be_customized,is_subform=True)
 
         # now the formsets are created; test away...
 
@@ -503,3 +470,35 @@ class Test(TestQuestionnaireBase):
                         self.assertEqual(all_enumeration_choices,scientific_property_customizer_form.fields["enumeration_choices"].widget.choices)
                         self.assertEqual(all_enumeration_choices,scientific_property_customizer_form.fields["enumeration_default"].choices)
                         self.assertEqual(all_enumeration_choices,scientific_property_customizer_form.fields["enumeration_default"].widget.choices)
+
+    def test_new_customizer_forms_validity(self):
+        """Test creation of scientific property customizer formsets (using new customizers)"""
+
+        test_model_name = "modelcomponent"
+        model_proxy_to_be_customized = MetadataModelProxy.objects.get(version=self.version,name__iexact=test_model_name)
+        vocabularies_to_be_customized = self.project.vocabularies.filter(document_type__iexact=self.customizer.proxy.name)
+        (model_customizer,standard_category_customizers,standard_property_customizers,scientific_category_customizers,scientific_property_customizers) = \
+            MetadataCustomizer.get_new_customizer_set(self.project,self.version,model_proxy_to_be_customized,vocabularies_to_be_customized)
+
+        self.assertEqual(model_customizer.proxy,model_proxy_to_be_customized)
+
+        (model_customizer_form,standard_property_customizer_formset,scientific_property_customizer_formsets) = \
+            create_new_customizer_forms_from_models(model_customizer,standard_category_customizers,standard_property_customizers,scientific_category_customizers,scientific_property_customizers,vocabularies_to_customize=vocabularies_to_be_customized)
+
+        data = get_data_from_customizer_forms(model_customizer_form,standard_property_customizer_formset,scientific_property_customizer_formsets)
+        # add some one-off entries that would normally be done in the interface...
+        model_customizer_form_prefix = model_customizer_form.prefix
+        if model_customizer_form_prefix:
+            data[model_customizer_form_prefix + "-name"] = "new_test_customizer"
+            data[model_customizer_form_prefix + "-vocabularies"] = [vocabulary.pk for vocabulary in model_customizer_form.get_current_field_value("vocabularies")]
+        else:
+            data["name"] = "new_test_customizer"
+            data["vocabularies"] = [vocabulary.pk for vocabulary in model_customizer_form.get_current_field_value("vocabularies")]
+
+        # now pass that data back to the forms as if a POST ocurred
+
+        (validity,model_customizer_form,standard_property_customizer_formset,scientific_property_customizer_formsets) = \
+            create_customizer_forms_from_data(data,model_customizer,standard_category_customizers,standard_property_customizers,scientific_category_customizers,scientific_property_customizers,vocabularies_to_customize=vocabularies_to_be_customized)
+
+        import ipdb; ipdb.set_trace()
+

@@ -22,6 +22,7 @@ from CIM_Questionnaire.questionnaire.models.metadata_categorization import UPLOA
 class TestQuestionnaireBase(TestCase):
 
     def setUp(self):
+
         # request factory for all tests
         self.factory = RequestFactory()
         # client for all tests (this is better-suited for testing views b/c, among other things, it has sessions, cookies, etc.)

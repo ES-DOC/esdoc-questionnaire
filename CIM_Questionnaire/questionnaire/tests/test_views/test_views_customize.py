@@ -146,7 +146,6 @@ class Test(TestQuestionnaireBase):
             post_data[u"%s-TOTAL_FORMS"%(scientific_property_customizer_formset.prefix)] = scientific_property_customizer_formset.number_of_properties
             post_data[u"%s-INITIAL_FORMS"%(scientific_property_customizer_formset.prefix)] = scientific_property_customizer_formset.extra
 
-        import ipdb; ipdb.set_trace()
         request_url = self.get_request_url(project_name=self.project.name,version_name=self.version.name,model_name=test_model_name)
         response = self.client.post(request_url,post_data)
 

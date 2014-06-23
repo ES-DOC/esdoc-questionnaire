@@ -9,6 +9,7 @@
 #
 #   This project is distributed according to the terms of the MIT license [http://www.opensource.org/licenses/MIT].
 ####################
+from django.core.exceptions import ValidationError
 
 __author__="allyn.treshansky"
 __date__ ="Dec 28, 2013 4:56:56 PM"
@@ -38,6 +39,7 @@ from django.forms import *
 from CIM_Questionnaire.questionnaire.utils import find_in_sequence, get_initial_data, JSON_SERIALIZER, QuestionnaireError
 from CIM_Questionnaire.questionnaire.models.metadata_customizer import MetadataModelCustomizer, MetadataStandardCategoryCustomizer, MetadataStandardPropertyCustomizer, MetadataScientificCategoryCustomizer, MetadataScientificPropertyCustomizer
 from CIM_Questionnaire.questionnaire.models.metadata_proxy import MetadataModelProxy, MetadataStandardPropertyProxy, MetadataScientificPropertyProxy
+from CIM_Questionnaire.questionnaire.models.metadata_vocabulary import MetadataVocabulary
 from CIM_Questionnaire.questionnaire.fields import MetadataFieldTypes, EMPTY_CHOICE
 from CIM_Questionnaire.questionnaire.utils import set_field_widget_attributes, update_field_widget_attributes
 
@@ -123,7 +125,36 @@ def create_model_customizer_form_data(model_customizer,standard_category_customi
     return model_customizer_form_data
 
 
-class MetadataModelCustomizerForm(MetadataCustomizerForm):
+class MetadataModelCustomizerAbstractForm(MetadataCustomizerForm):
+
+    class Meta:
+        abstract = True
+
+    def get_hidden_fields(self):
+        return self.get_fields_from_list(self._hidden_fields)
+
+    def get_customizer_fields(self):
+        return self.get_fields_from_list(self._customizer_fields)
+
+    def get_document_fields(self):
+        return self.get_fields_from_list(self._document_fields)
+
+    def validate_unique(self):
+        model_customizer = self.instance
+        try:
+            model_customizer.validate_unique()
+        except ValidationError, e:
+            # if there is a validation error then apply that error to the individual fields
+            # so it shows up in the form and is rendered nicely via JQuery
+            unique_together_fields_list = model_customizer.get_unique_together()
+            for unique_together_fields in unique_together_fields_list:
+                if any(field.lower() in " ".join(e.messages).lower() for field in unique_together_fields):
+                    msg = "Customizer with this %s already exists" % (", ".join(unique_together_fields))
+                    for unique_together_field in unique_together_fields:
+                        self.errors[unique_together_field] = msg
+
+
+class MetadataModelCustomizerForm(MetadataModelCustomizerAbstractForm):
 
     class Meta:
         model   = MetadataModelCustomizer
@@ -151,37 +182,16 @@ class MetadataModelCustomizerForm(MetadataCustomizerForm):
 
     standard_categories_to_process = []
     scientific_categories_to_process = {}
-    
-    def get_hidden_fields(self):
-        return self.get_fields_from_list(self._hidden_fields)
-
-    def get_customizer_fields(self):
-        return self.get_fields_from_list(self._customizer_fields)
-
-    def get_document_fields(self):
-        return self.get_fields_from_list(self._document_fields)
 
     def __init__(self,*args,**kwargs):
-        is_subform = kwargs.pop("is_subform",False)
         all_vocabularies = kwargs.pop("all_vocabularies",[])
         
-        super(MetadataModelCustomizerForm,self).__init__(*args,**kwargs)
+        super(MetadataModelCustomizerAbstractForm,self).__init__(*args,**kwargs)
 
-        if is_subform:
-            #update_field_widget_attributes(self.fields["name"],{"class":"readonly","readonly":"readonly"})
-            #update_field_widget_attributes(self.fields["default"],{"class":"readonly","readonly":"readonly"})
-            del(self.fields["name"])
-            del(self.fields["default"])
-            del(self.fields["vocabularies"])
-            del(self.fields["vocabulary_order"])
-            del(self.fields["model_show_hierarchy"])
-            del(self.fields["model_root_component"])
-            all_vocabularies = []
-        else:
-            self.fields["vocabularies"].queryset = all_vocabularies
-            update_field_widget_attributes(self.fields["vocabularies"],{"class":"multiselect"})
-            update_field_widget_attributes(self.fields["model_show_hierarchy"],{"class":"enabler"})
-            set_field_widget_attributes(self.fields["model_show_hierarchy"],{"onchange":"enable(this,'true',['model_root_component','model_hierarchy_name']);",})
+        self.fields["vocabularies"].queryset = all_vocabularies
+        update_field_widget_attributes(self.fields["vocabularies"],{"class":"multiselect"})
+        update_field_widget_attributes(self.fields["model_show_hierarchy"],{"class":"enabler"})
+        set_field_widget_attributes(self.fields["model_show_hierarchy"],{"onchange":"enable(this,'true',['model_root_component','model_hierarchy_name']);",})
 
         set_field_widget_attributes(self.fields["description"],{"cols":"60","rows":"4"})
 
@@ -252,20 +262,60 @@ class MetadataModelCustomizerForm(MetadataCustomizerForm):
 
         return cleaned_data
         
-    def validate_unique(self):        
-        model_customizer = self.instance
-        try:
-            model_customizer.validate_unique()
-        except ValidationError, e:
-            # if there is a validation error then apply that error to the individual fields
-            # so it shows up in the form and is rendered nicely via JQuery
-            unique_together_fields_list = model_customizer.get_unique_together()
-            for unique_together_fields in unique_together_fields_list:
-                if any(field.lower() in " ".join(e.messages).lower() for field in unique_together_fields):
-                    msg = "Customizer with this %s already exists" % (", ".join(unique_together_fields))
-                    for unique_together_field in unique_together_fields:
-                        self.errors[unique_together_field] = msg
 
+
+
+class MetadataModelCustomizerSubForm(MetadataModelCustomizerAbstractForm):
+
+    class Meta:
+        model   = MetadataModelCustomizer
+
+        fields  = [
+                    # hidden fields...
+                    "proxy","project","version","vocabulary_order",
+                    # customizer fields...
+                    "vocabularies",
+                    # document fields...
+                    "model_title","model_description","model_show_all_categories","model_show_all_properties",
+                    # other fields...
+                    "standard_categories_content","standard_categories_tags",
+                  ]
+
+    _hidden_fields       = ("proxy","project","version","vocabulary_order",)
+    _customizer_fields   = ("vocabularies",)
+    _document_fields     = ("model_title","model_description","model_show_all_categories","model_show_all_properties",)
+
+    standard_categories_content = CharField(required=False,widget=Textarea)                 # the categories themselves
+    standard_categories_tags    = CharField(label="Available Categories",required=False)    # the field used by the tagging widget
+    standard_categories_tags.help_text = "This widget contains the standard set of categories associated with the CIM version. If this set is unsuitable, or empty, then the categorization should be updated. Please contact your administrator."
+
+    # scientific categories are done on a per-cv / per-component basis in __init__ below
+
+    standard_categories_to_process = []
+    scientific_categories_to_process = {}
+
+    def __init__(self,*args,**kwargs):
+        all_vocabularies = kwargs.pop("all_vocabularies",[])
+
+        super(MetadataModelCustomizerAbstractForm,self).__init__(*args,**kwargs)
+
+        self.fields["vocabularies"].queryset = all_vocabularies
+        update_field_widget_attributes(self.fields["vocabularies"],{"class":"multiselect"})
+
+        set_field_widget_attributes(self.fields["model_description"],{"cols":"60","rows":"4"})
+
+        update_field_widget_attributes(self.fields["standard_categories_tags"],{"class":"tags"})
+
+        for vocabulary in all_vocabularies:
+            vocabulary_key = slugify(vocabulary.name)
+            for component_proxy in vocabulary.component_proxies.all():
+                component_key = slugify(component_proxy.name)
+                scientific_categories_content_field_name                = vocabulary_key+"_"+component_key + "_scientific_categories_content"
+                scientific_categories_tags_field_name                   = vocabulary_key+"_"+component_key + "_scientific_categories_tags"
+                self.fields[scientific_categories_content_field_name]   = CharField(required=False,widget=Textarea)               # the categories themselves
+                self.fields[scientific_categories_tags_field_name]      = CharField(label="Available Categories",required=False)  # the field used by the tagging widget
+                self.fields[scientific_categories_tags_field_name].help_text = "This widget contains the set of categories associated with this component of this CV.  Users can add to this set via this customization."
+                update_field_widget_attributes(self.fields[scientific_categories_tags_field_name],{"class":"tags"})
 
 class MetadataPropertyCustomizerInlineFormSet(BaseInlineFormSet):
 
@@ -291,7 +341,7 @@ class MetadataPropertyCustomizerInlineFormSet(BaseInlineFormSet):
             forms.sort(key = lambda x: x.data["%s-order"%(x.prefix)])
         return forms[index]
 
-    # also using it to cache fk or m2m fields to avoid needless (on the order of 30K!) db hits
+    # also using it to cache fk or m2m fields to avoid needless db hits
 
     def _construct_form(self, i, **kwargs):
 
@@ -487,7 +537,7 @@ class MetadataStandardPropertyCustomizerForm(MetadataCustomizerForm):
 
 def MetadataStandardPropertyCustomizerInlineFormSetFactory(*args,**kwargs):
     _prefix      = kwargs.pop("prefix","standard_property")
-    _request     = kwargs.pop("request",None)
+    _data        = kwargs.pop("data",None)
     _initial     = kwargs.pop("initial",[])
     _instance    = kwargs.pop("instance")
     _categories  = kwargs.pop("categories",[])
@@ -509,11 +559,11 @@ def MetadataStandardPropertyCustomizerInlineFormSetFactory(*args,**kwargs):
         _formset.number_of_properties = len(_initial)
     elif _queryset:
         _formset.number_of_properties = len(_queryset)
-    elif _request and _request.POST:
-        _formset.number_of_properties = int(_request.POST[u"%s-TOTAL_FORMS"%(_prefix)])
-    
-    if _request and _request.method == "POST":
-        return _formset(_request.POST,instance=_instance,prefix=_prefix)
+    elif _data:
+        _formset.number_of_properties = int(_data[u"%s-TOTAL_FORMS"%(_prefix)])
+
+    if _data:
+        return _formset(_data,instance=_instance,prefix=_prefix)
 
     return _formset(queryset=_queryset,initial=_initial,instance=_instance,prefix=_prefix)
 
@@ -702,7 +752,7 @@ class MetadataScientificPropertyCustomizerForm(MetadataCustomizerForm):
 
 def MetadataScientificPropertyCustomizerInlineFormSetFactory(*args,**kwargs):
     _prefix      = kwargs.pop("prefix","scientific_property")
-    _request     = kwargs.pop("request",None)
+    _data        = kwargs.pop("data",None)
     _initial     = kwargs.pop("initial",[])
     _instance    = kwargs.pop("instance")
     _categories  = kwargs.pop("categories",[])
@@ -724,11 +774,11 @@ def MetadataScientificPropertyCustomizerInlineFormSetFactory(*args,**kwargs):
         _formset.number_of_properties = len(_initial)
     elif _queryset:
         _formset.number_of_properties = len(_queryset)
-    elif _request and _request.POST:
-        _formset.number_of_properties = int(_request.POST[u"%s-TOTAL_FORMS"%(_prefix)])
+    elif _data:
+        _formset.number_of_properties = int(_data[u"%s-TOTAL_FORMS"%(_prefix)])
    
-    if _request and _request.method == "POST":
-        return _formset(_request.POST,instance=_instance,prefix=_prefix)
+    if _data:
+        return _formset(_data,instance=_instance,prefix=_prefix)
 
     return _formset(queryset=_queryset,initial=_initial,instance=_instance,prefix=_prefix)
 
@@ -736,7 +786,10 @@ def MetadataScientificPropertyCustomizerInlineFormSetFactory(*args,**kwargs):
 def create_new_customizer_forms_from_models(model_customizer,standard_category_customizers,standard_property_customizers,scientific_category_customizers,scientific_property_customizers,vocabularies_to_customize=MetadataScientificPropertyCustomizer.objects.none(),is_subform=False):
 
     model_customizer_data = create_model_customizer_form_data(model_customizer,standard_category_customizers,scientific_category_customizers,vocabularies=vocabularies_to_customize)
-    model_customizer_form = MetadataModelCustomizerForm(initial=model_customizer_data,all_vocabularies=vocabularies_to_customize,is_subform=is_subform)
+    if is_subform:
+        model_customizer_form = MetadataModelCustomizerSubForm(initial=model_customizer_data,all_vocabularies=vocabularies_to_customize)
+    else:
+        model_customizer_form = MetadataModelCustomizerForm(initial=model_customizer_data,all_vocabularies=vocabularies_to_customize)
 
     standard_property_customizers_data = [create_standard_property_customizer_form_data(model_customizer,standard_property_customizer) for standard_property_customizer in standard_property_customizers]
     standard_property_customizer_formset = MetadataStandardPropertyCustomizerInlineFormSetFactory(
@@ -768,7 +821,10 @@ def create_new_customizer_forms_from_models(model_customizer,standard_category_c
 def create_existing_customizer_forms_from_models(model_customizer,standard_category_customizers,standard_property_customizers,scientific_category_customizers,scientific_property_customizers,vocabularies_to_customize=MetadataScientificPropertyCustomizer.objects.none(),is_subform=False):
 
     model_customizer_data = create_model_customizer_form_data(model_customizer,standard_category_customizers,scientific_category_customizers,vocabularies=vocabularies_to_customize)
-    model_customizer_form = MetadataModelCustomizerForm(instance=model_customizer,initial=model_customizer_data,all_vocabularies=vocabularies_to_customize,is_subform=is_subform)
+    if is_subform:
+        model_customizer_form = MetadataModelCustomizerSubForm(instance=model_customizer,initial=model_customizer_data,all_vocabularies=vocabularies_to_customize)
+    else:
+        model_customizer_form = MetadataModelCustomizerForm(instance=model_customizer,initial=model_customizer_data,all_vocabularies=vocabularies_to_customize)
 
     standard_property_customizer_formset = MetadataStandardPropertyCustomizerInlineFormSetFactory(
         instance    = model_customizer,
@@ -792,3 +848,89 @@ def create_existing_customizer_forms_from_models(model_customizer,standard_categ
             )
 
     return (model_customizer_form,standard_property_customizer_formset,scientific_property_customizer_formsets)
+
+def create_customizer_forms_from_data(data,model_customizer,standard_category_customizers,standard_property_customizers,scientific_category_customizers,scientific_property_customizers,vocabularies_to_customize=MetadataScientificPropertyCustomizer.objects.none(),is_subform=False):
+    """This creates and validates forms based on POST data"""
+
+    if is_subform:
+        model_customizer_form = MetadataModelCustomizerSubForm(data,instance=model_customizer,all_vocabularies=vocabularies_to_customize)
+    else:
+        model_customizer_form = MetadataModelCustomizerForm(data,instance=model_customizer,all_vocabularies=vocabularies_to_customize)
+    model_customizer_form_validity = model_customizer_form.is_valid()
+
+    if model_customizer_form_validity:
+        model_customizer = model_customizer_form.save(commit=False)
+        active_vocabularies = model_customizer_form.cleaned_data["vocabularies"]
+    else:
+        active_vocabularies = MetadataVocabulary.objects.filter(pk__in=model_customizer_form.get_current_field_value("vocabularies"))
+    active_vocabulary_keys = [slugify(vocabulary.name) for vocabulary in active_vocabularies]
+    validity = [model_customizer_form_validity]
+
+    standard_property_customizer_formset = MetadataStandardPropertyCustomizerInlineFormSetFactory(
+        instance=model_customizer,
+        data=data,
+        categories=standard_category_customizers,
+    )
+
+    validity += [standard_property_customizer_formset.is_valid()]
+
+    scientific_property_customizer_formsets = {}
+    for vocabulary_key, scientific_property_customizer_dict in scientific_property_customizers.iteritems():
+        scientific_property_customizer_formsets[vocabulary_key] = {}
+        for component_key, scientific_property_customizer_list in scientific_property_customizer_dict.iteritems():
+            model_key = u"%s_%s" % (vocabulary_key, component_key)
+            scientific_property_customizer_formsets[vocabulary_key][
+                component_key] = MetadataScientificPropertyCustomizerInlineFormSetFactory(
+                instance=model_customizer,
+                data=data,
+                prefix=model_key,
+                categories=scientific_category_customizers[vocabulary_key][component_key]
+            )
+            if vocabulary_key in active_vocabulary_keys:
+                validity += [scientific_property_customizer_formsets[vocabulary_key][component_key].is_valid()]
+
+    return (validity,model_customizer_form,scientific_property_customizer_formsets, standard_property_customizer_formset)
+
+
+def get_data_from_customizer_forms(model_customizer_form,standard_property_customizer_formset,scientific_property_customizer_formsets):
+
+    data = {}
+
+    model_customizer_form_prefix = model_customizer_form.prefix
+    for field_name,field in model_customizer_form.fields.iteritems():
+        if model_customizer_form_prefix:
+            field_key = u"%s-%s" % (model_customizer_form_prefix,field_name)
+        else:
+            field_key = u"%s" % (field_name)
+        field_value = model_customizer_form.get_current_field_value(field_name)
+        data[field_key] = field_value
+
+    standard_property_customizer_formset_prefix = standard_property_customizer_formset.prefix
+    for standard_property_customizer_form in standard_property_customizer_formset:
+        standard_property_customizer_form_prefix = standard_property_customizer_form.prefix
+        for field_name,field in standard_property_customizer_form.fields.iteritems():
+            if standard_property_customizer_form_prefix:
+                field_key = u"%s-%s" % (standard_property_customizer_form_prefix,field_name)
+            else:
+                field_key = u"%s" % (field_name)
+            field_value = standard_property_customizer_form.get_current_field_value(field_name)
+            data[field_key] = field_value
+    data[u"%s-TOTAL_FORMS"%(standard_property_customizer_formset_prefix)] = standard_property_customizer_formset.number_of_properties
+    data[u"%s-INITIAL_FORMS"%(standard_property_customizer_formset_prefix)] = standard_property_customizer_formset.extra
+
+    for vocabulary_key,scientific_property_customizer_formset_dict in scientific_property_customizer_formsets.iteritems():
+        for component_key,scientific_property_customizer_formset in scientific_property_customizer_formset_dict.iteritems():
+            scientific_property_customizer_formset_prefix = scientific_property_customizer_formset.prefix
+            for scientific_property_customizer_form in scientific_property_customizer_formset:
+                scientific_property_customizer_form_prefix = scientific_property_customizer_form.prefix
+                for field_name,field in scientific_property_customizer_form.fields.iteritems():
+                    if scientific_property_customizer_form_prefix:
+                        field_key = u"%s-%s" % (scientific_property_customizer_form_prefix,field_name)
+                    else:
+                        field_key = u"%s" % (field_name)
+                    field_value = scientific_property_customizer_form.get_current_field_value(field_name)
+                    data[field_key] = field_value
+        data[u"%s-TOTAL_FORMS"%(scientific_property_customizer_formset_prefix)] = scientific_property_customizer_formset.number_of_properties
+        data[u"%s-INITIAL_FORMS"%(scientific_property_customizer_formset_prefix)] = scientific_property_customizer_formset.extra
+
+    return data

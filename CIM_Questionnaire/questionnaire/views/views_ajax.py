@@ -87,15 +87,56 @@ def ajax_customize_subform(request,**kwargs):
             (model_customizer_form,standard_property_customizer_formset,scientific_property_customizer_formsets) = \
                 create_existing_customizer_forms_from_models(model_customizer,standard_category_customizers,standard_property_customizers,scientific_category_customizers,scientific_property_customizers,vocabularies_to_customize=vocabularies,is_subform=True)
 
+        # give all this subform nonesense it's own unique prefix, so the fields aren't confused w/ the parent form fields
+        model_customizer_form.prefix = prefix
+        standard_property_customizer_formset.prefix = prefix
+        for scientific_property_customizer_formsets_dict in scientific_property_customizer_formsets.values():
+            for scientific_property_customizer_formset in scientific_property_customizer_formsets_dict.values():
+                scientific_property_customizer_formset.prefix = prefix
+
         status = 200 # return successful response for GET (don't actually process this in the AJAX JQuery call)
         
     else: # request.method == "POST":
 
-        validity = []
+        data = request.POST
 
-        model_customizer_form = MetadataModelCustomizerForm(request.POST,instance=model_customizer,prefix=prefix,is_subform=True)
+        if new_customizer:
+            model_customizer_form = MetadataModelCustomizerForm(data,all_vocabularies=vocabularies,prefix=prefix)
+        else:
+            model_customizer_form = MetadataModelCustomizerForm(data,instance=model_customizer,all_vocabularies=vocabularies)
 
-        validity += [model_customizer_form.is_valid()]
+        model_customizer_form_validity = model_customizer_form.is_valid()
+        if model_customizer_form_validity:
+            model_customizer_instance = model_customizer_form.save(commit=False)
+            active_vocabularies       = model_customizer_form.cleaned_data["vocabularies"]
+        else:
+            active_vocabularies       = MetadataVocabulary.objects.filter(pk__in=model_customizer_form.get_current_field_value("vocabularies"))
+        active_vocabulary_keys = [slugify(vocabulary.name) for vocabulary in active_vocabularies]
+
+        validity = [model_customizer_form_validity]
+
+        standard_property_customizer_formset = MetadataStandardPropertyCustomizerInlineFormSetFactory(
+            instance    = model_customizer_instance if model_customizer_form_validity else model_customizer,
+            data        = data,
+            categories  = standard_category_customizers,
+            prefix      = prefix,
+        )
+
+        validity += [standard_property_customizer_formset.is_valid()]
+
+        scientific_property_customizer_formsets = {}
+        for vocabulary_key,scientific_property_customizer_dict in scientific_property_customizers.iteritems():
+            scientific_property_customizer_formsets[vocabulary_key] = {}
+            for component_key,scientific_property_customizer_list in scientific_property_customizer_dict.iteritems():
+                model_key = u"%s_%s" % (vocabulary_key,component_key)
+                scientific_property_customizer_formsets[vocabulary_key][component_key] = MetadataScientificPropertyCustomizerInlineFormSetFactory(
+                    instance    = model_customizer_instance if model_customizer_form_validity else model_customizer,
+                    data        = data,
+                    prefix      = model_key,
+                    categories  = scientific_category_customizers[vocabulary_key][component_key]
+                )
+                if vocabulary_key in active_vocabulary_keys:
+                    validity += [scientific_property_customizer_formsets[vocabulary_key][component_key].is_valid()]
 
         standard_categories_to_process      = model_customizer_form.standard_categories_to_process
 
@@ -109,38 +150,13 @@ def ajax_customize_subform(request,**kwargs):
 
         if all(validity):
 
-            # save the model customizer...
-            model_customizer_instance = model_customizer_form.save(commit=False)
-            model_customizer_instance.save()
-            model_customizer_form.save_m2m()
+            save_valid_forms(model_customizer_form,standard_property_customizer_formset,scientific_property_customizer_formsets)
 
-            # save (or delete) the category customizers...
-            active_standard_categories = []
-            for standard_category_to_process in standard_categories_to_process:
-                standard_category_customizer = standard_category_to_process.object
-                if standard_category_customizer.pending_deletion:
-                    standard_category_to_process.delete()
-                else:
-                    standard_category_customizer.model_customizer = model_customizer_instance
-                    standard_category_to_process.save()
-                    active_standard_categories.append(standard_category_customizer)
-
-            # save the standard property customizers...
-            standard_property_customizer_instances = standard_property_customizer_formset.save(commit=False)
-            for standard_property_customizer_instance in standard_property_customizer_instances:
-                category_key = slugify(standard_property_customizer_instance.category_name)
-                category = find_in_sequence(lambda category: category.key==category_key,active_standard_categories)
-                standard_property_customizer_instance.category = category
-                standard_property_customizer_instance.save()
-
-            messages.add_message(request, messages.SUCCESS, "Successfully saved customizer '%s' for model '%s'." % (model_customizer_instance.name,model_proxy.name))
+            # using Django's built-in messaging framework to pass status messages (as per https://docs.djangoproject.com/en/dev/ref/contrib/messages/)
+            messages.add_message(request, messages.SUCCESS, "Successfully saved customizer '%s'." % (model_customizer_instance.name))
             status = 200
 
         else:
-            print "model errors: %s" % model_customizer_form.errors
-            for form in standard_property_customizer_formset:
-                print "property errors: %s" % form.errors
-
             messages.add_message(request, messages.ERROR, "Failed to save customizer.")
             status = 400
 

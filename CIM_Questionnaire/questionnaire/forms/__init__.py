@@ -14,6 +14,7 @@ class MetadataForm(ModelForm):
     _fields_none_string_overload = ('id', 'enumeration_value', 'relationship_value')
 
     def __init__(self, *args, **kwargs):
+
         super(MetadataForm, self).__init__(*args, **kwargs)
 
         ## TODO: remove during form refactoring. this is hack to avoid "None" strings of uncertain origin.
