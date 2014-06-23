@@ -186,7 +186,7 @@ class MetadataModelCustomizerForm(MetadataModelCustomizerAbstractForm):
     def __init__(self,*args,**kwargs):
         all_vocabularies = kwargs.pop("all_vocabularies",[])
         
-        super(MetadataModelCustomizerAbstractForm,self).__init__(*args,**kwargs)
+        super(MetadataModelCustomizerForm,self).__init__(*args,**kwargs)
 
         self.fields["vocabularies"].queryset = all_vocabularies
         update_field_widget_attributes(self.fields["vocabularies"],{"class":"multiselect"})
@@ -297,7 +297,7 @@ class MetadataModelCustomizerSubForm(MetadataModelCustomizerAbstractForm):
     def __init__(self,*args,**kwargs):
         all_vocabularies = kwargs.pop("all_vocabularies",[])
 
-        super(MetadataModelCustomizerAbstractForm,self).__init__(*args,**kwargs)
+        super(MetadataModelCustomizerSubForm,self).__init__(*args,**kwargs)
 
         self.fields["vocabularies"].queryset = all_vocabularies
         update_field_widget_attributes(self.fields["vocabularies"],{"class":"multiselect"})
@@ -859,7 +859,8 @@ def create_customizer_forms_from_data(data,model_customizer,standard_category_cu
     model_customizer_form_validity = model_customizer_form.is_valid()
 
     if model_customizer_form_validity:
-        model_customizer = model_customizer_form.save(commit=False)
+
+        model_customizer_instance = model_customizer_form.save(commit=False)
         active_vocabularies = model_customizer_form.cleaned_data["vocabularies"]
     else:
         active_vocabularies = MetadataVocabulary.objects.filter(pk__in=model_customizer_form.get_current_field_value("vocabularies"))
@@ -867,7 +868,7 @@ def create_customizer_forms_from_data(data,model_customizer,standard_category_cu
     validity = [model_customizer_form_validity]
 
     standard_property_customizer_formset = MetadataStandardPropertyCustomizerInlineFormSetFactory(
-        instance=model_customizer,
+        instance=model_customizer_instance if model_customizer_form_validity else model_customizer,
         data=data,
         categories=standard_category_customizers,
     )
@@ -881,7 +882,7 @@ def create_customizer_forms_from_data(data,model_customizer,standard_category_cu
             model_key = u"%s_%s" % (vocabulary_key, component_key)
             scientific_property_customizer_formsets[vocabulary_key][
                 component_key] = MetadataScientificPropertyCustomizerInlineFormSetFactory(
-                instance=model_customizer,
+                instance=model_customizer_instance if model_customizer_form_validity else model_customizer,
                 data=data,
                 prefix=model_key,
                 categories=scientific_category_customizers[vocabulary_key][component_key]
