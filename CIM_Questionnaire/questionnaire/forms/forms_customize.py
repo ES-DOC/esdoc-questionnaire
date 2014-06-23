@@ -319,8 +319,9 @@ class MetadataModelCustomizerSubForm(MetadataModelCustomizerAbstractForm):
 
 class MetadataPropertyCustomizerInlineFormSet(BaseInlineFormSet):
 
-    number_of_properties = 0
-    
+    # this is an instance-level variable that should be set in the factory functions below
+    # number_of_properties = 0
+
     # just using this class to automatically sort the forms based on the field order
 
     def __iter__(self):
@@ -561,8 +562,11 @@ def MetadataStandardPropertyCustomizerInlineFormSetFactory(*args,**kwargs):
         _formset.number_of_properties = len(_queryset)
     elif _data:
         _formset.number_of_properties = int(_data[u"%s-TOTAL_FORMS"%(_prefix)])
+    else:
+        _formset.number_of_properties = 0
 
     if _data:
+        import ipdb; ipdb.set_trace()
         return _formset(_data,instance=_instance,prefix=_prefix)
 
     return _formset(queryset=_queryset,initial=_initial,instance=_instance,prefix=_prefix)
@@ -776,7 +780,9 @@ def MetadataScientificPropertyCustomizerInlineFormSetFactory(*args,**kwargs):
         _formset.number_of_properties = len(_queryset)
     elif _data:
         _formset.number_of_properties = int(_data[u"%s-TOTAL_FORMS"%(_prefix)])
-   
+    else:
+        _formset.number_of_properties = 0
+
     if _data:
         return _formset(_data,instance=_instance,prefix=_prefix)
 
@@ -916,8 +922,8 @@ def get_data_from_customizer_forms(model_customizer_form,standard_property_custo
                 field_key = u"%s" % (field_name)
             field_value = standard_property_customizer_form.get_current_field_value(field_name)
             data[field_key] = field_value
-    data[u"%s-TOTAL_FORMS"%(standard_property_customizer_formset_prefix)] = standard_property_customizer_formset.number_of_properties
-    data[u"%s-INITIAL_FORMS"%(standard_property_customizer_formset_prefix)] = standard_property_customizer_formset.extra
+    data[u"%s-TOTAL_FORMS"%(standard_property_customizer_formset_prefix)] = standard_property_customizer_formset.total_form_count()
+    data[u"%s-INITIAL_FORMS"%(standard_property_customizer_formset_prefix)] = standard_property_customizer_formset.initial_form_count()
 
     for vocabulary_key,scientific_property_customizer_formset_dict in scientific_property_customizer_formsets.iteritems():
         for component_key,scientific_property_customizer_formset in scientific_property_customizer_formset_dict.iteritems():
@@ -931,7 +937,7 @@ def get_data_from_customizer_forms(model_customizer_form,standard_property_custo
                         field_key = u"%s" % (field_name)
                     field_value = scientific_property_customizer_form.get_current_field_value(field_name)
                     data[field_key] = field_value
-        data[u"%s-TOTAL_FORMS"%(scientific_property_customizer_formset_prefix)] = scientific_property_customizer_formset.number_of_properties
-        data[u"%s-INITIAL_FORMS"%(scientific_property_customizer_formset_prefix)] = scientific_property_customizer_formset.extra
+        data[u"%s-TOTAL_FORMS"%(scientific_property_customizer_formset_prefix)] = scientific_property_customizer_formset.total_form_count()
+        data[u"%s-INITIAL_FORMS"%(scientific_property_customizer_formset_prefix)] = scientific_property_customizer_formset.initial_form_count()
 
     return data
