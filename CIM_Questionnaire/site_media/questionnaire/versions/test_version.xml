@@ -5,7 +5,7 @@
     <classes>
         <class stereotype="document">
             <name>modelcomponent</name>
-            <description>blah</description>
+            <description>a model component is a nifty thing.</description>
             <attributes>
                 <attribute is_label="true">
                     <name>shortName</name>

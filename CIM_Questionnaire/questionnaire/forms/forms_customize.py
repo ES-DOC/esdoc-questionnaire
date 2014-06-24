@@ -41,11 +41,12 @@ from CIM_Questionnaire.questionnaire.models.metadata_customizer import MetadataM
 from CIM_Questionnaire.questionnaire.models.metadata_proxy import MetadataModelProxy, MetadataStandardPropertyProxy, MetadataScientificPropertyProxy
 from CIM_Questionnaire.questionnaire.models.metadata_vocabulary import MetadataVocabulary
 from CIM_Questionnaire.questionnaire.fields import MetadataFieldTypes, EMPTY_CHOICE
-from CIM_Questionnaire.questionnaire.utils import set_field_widget_attributes, update_field_widget_attributes
+from CIM_Questionnaire.questionnaire.utils import set_field_widget_attributes, update_field_widget_attributes, get_data_from_form, get_data_from_formset
+
 
 from CIM_Questionnaire.questionnaire.forms import MetadataCustomizerForm
 
-def save_valid_forms(model_customizer_form,standard_property_customizer_formset,scientific_property_customizer_formsets):
+def save_valid_forms(model_customizer_form, standard_property_customizer_formset, scientific_property_customizer_formsets):
 
     model_customizer_instance = model_customizer_form.save()
 
@@ -101,7 +102,9 @@ def save_valid_forms(model_customizer_form,standard_property_customizer_formset,
                     scientific_property_customizer_instance.category = category
                     scientific_property_customizer_instance.save()
 
-def create_model_customizer_form_data(model_customizer,standard_category_customizers,scientific_category_customizers,vocabularies=[]):
+    return model_customizer_instance
+
+def create_model_customizer_form_data(model_customizer, standard_category_customizers, scientific_category_customizers, vocabularies=[]):
 
     model_customizer_form_data = get_initial_data(model_customizer,{
         "last_modified"                 : time.strftime("%c"),
@@ -483,9 +486,9 @@ class MetadataStandardPropertyCustomizerForm(MetadataCustomizerForm):
             if self.type == MetadataFieldTypes.ENUMERATION:
                 current_enumeration_choices = self.get_current_field_value("enumeration_choices")
                 current_enumeration_default = self.get_current_field_value("enumeration_default")
-                if current_enumeration_choices:
+                if isinstance(current_enumeration_choices,basestring):
                     self.initial["enumeration_choices"] = current_enumeration_choices.split("|")
-                if current_enumeration_default:
+                if isinstance(current_enumeration_default,basestring):
                     self.initial["enumeration_default"] = current_enumeration_default.split("|")
 
         if self.type == MetadataFieldTypes.ATOMIC:
@@ -694,9 +697,8 @@ class MetadataScientificPropertyCustomizerForm(MetadataCustomizerForm):
 
         super(MetadataScientificPropertyCustomizerForm,self).__init__(*args,**kwargs)
 
-
         property_customizer = self.instance
-        is_enumeration = self.get_current_field_value("is_enumeration")
+        is_enumeration = self.get_current_field_value("is_enumeration",False)
 
         update_field_widget_attributes(self.fields["category"],{"class":"multiselect","onchange":"copy_value(this,'%s-category_name');"%(self.prefix)})
         self.fields["category"].choices = EMPTY_CHOICE + [(category.key,category.name) for category in category_choices]
@@ -707,9 +709,9 @@ class MetadataScientificPropertyCustomizerForm(MetadataCustomizerForm):
             if is_enumeration:
                 current_enumeration_choices = self.get_current_field_value("enumeration_choices")
                 current_enumeration_default = self.get_current_field_value("enumeration_default")
-                if current_enumeration_choices:
+                if isinstance(current_enumeration_choices,basestring):
                     self.initial["enumeration_choices"] = current_enumeration_choices.split("|")
-                if current_enumeration_default:
+                if isinstance(current_enumeration_default,basestring):
                     self.initial["enumeration_default"] = current_enumeration_default.split("|")
 
         # this attribute ("type") is needed b/c I can access it in the customize template
@@ -821,7 +823,7 @@ def create_new_customizer_forms_from_models(model_customizer,standard_category_c
                 categories  = scientific_category_customizers[vocabulary_key][component_key]
             )
 
-    return (model_customizer_form,standard_property_customizer_formset,scientific_property_customizer_formsets)
+    return (model_customizer_form, standard_property_customizer_formset, scientific_property_customizer_formsets)
 
 def create_existing_customizer_forms_from_models(model_customizer,standard_category_customizers,standard_property_customizers,scientific_category_customizers,scientific_property_customizers,vocabularies_to_customize=MetadataScientificPropertyCustomizer.objects.none(),is_subform=False):
 
@@ -839,6 +841,7 @@ def create_existing_customizer_forms_from_models(model_customizer,standard_categ
         categories  = standard_category_customizers,
     )
 
+
     scientific_property_customizer_formsets = {}
     for vocabulary_key,scientific_property_customizer_dict in scientific_property_customizers.iteritems():
         scientific_property_customizer_formsets[vocabulary_key] = {}
@@ -852,7 +855,7 @@ def create_existing_customizer_forms_from_models(model_customizer,standard_categ
                 categories  = scientific_category_customizers[vocabulary_key][component_key],
             )
 
-    return (model_customizer_form,standard_property_customizer_formset,scientific_property_customizer_formsets)
+    return (model_customizer_form, standard_property_customizer_formset, scientific_property_customizer_formsets)
 
 def create_customizer_forms_from_data(data,model_customizer,standard_category_customizers,standard_property_customizers,scientific_category_customizers,scientific_property_customizers,vocabularies_to_customize=MetadataScientificPropertyCustomizer.objects.none(),is_subform=False):
     """This creates and validates forms based on POST data"""
@@ -880,7 +883,6 @@ def create_customizer_forms_from_data(data,model_customizer,standard_category_cu
 
     validity += [standard_property_customizer_formset.is_valid()]
 
-    import ipdb; ipdb.set_trace()
     scientific_property_customizer_formsets = {}
     for vocabulary_key, scientific_property_customizer_dict in scientific_property_customizers.iteritems():
         scientific_property_customizer_formsets[vocabulary_key] = {}
@@ -896,48 +898,22 @@ def create_customizer_forms_from_data(data,model_customizer,standard_category_cu
             if vocabulary_key in active_vocabulary_keys:
                 validity += [scientific_property_customizer_formsets[vocabulary_key][component_key].is_valid()]
 
-    return (validity,model_customizer_form,scientific_property_customizer_formsets, standard_property_customizer_formset)
+    return (validity, model_customizer_form, standard_property_customizer_formset, scientific_property_customizer_formsets)
 
 
 def get_data_from_customizer_forms(model_customizer_form,standard_property_customizer_formset,scientific_property_customizer_formsets):
 
     data = {}
 
-    model_customizer_form_prefix = model_customizer_form.prefix
-    for field_name,field in model_customizer_form.fields.iteritems():
-        if model_customizer_form_prefix:
-            field_key = u"%s-%s" % (model_customizer_form_prefix,field_name)
-        else:
-            field_key = u"%s" % (field_name)
-        field_value = model_customizer_form.get_current_field_value(field_name)
-        data[field_key] = field_value
+    model_customizer_form_data = get_data_from_form(model_customizer_form)
+    data.update(model_customizer_form_data)
 
-    standard_property_customizer_formset_prefix = standard_property_customizer_formset.prefix
-    for standard_property_customizer_form in standard_property_customizer_formset:
-        standard_property_customizer_form_prefix = standard_property_customizer_form.prefix
-        for field_name,field in standard_property_customizer_form.fields.iteritems():
-            if standard_property_customizer_form_prefix:
-                field_key = u"%s-%s" % (standard_property_customizer_form_prefix,field_name)
-            else:
-                field_key = u"%s" % (field_name)
-            field_value = standard_property_customizer_form.get_current_field_value(field_name)
-            data[field_key] = field_value
-    data[u"%s-TOTAL_FORMS"%(standard_property_customizer_formset_prefix)] = standard_property_customizer_formset.total_form_count()
-    data[u"%s-INITIAL_FORMS"%(standard_property_customizer_formset_prefix)] = standard_property_customizer_formset.initial_form_count()
+    standard_property_customizer_formset_data = get_data_from_formset(standard_property_customizer_formset)
+    data.update(standard_property_customizer_formset_data)
 
     for vocabulary_key,scientific_property_customizer_formset_dict in scientific_property_customizer_formsets.iteritems():
         for component_key,scientific_property_customizer_formset in scientific_property_customizer_formset_dict.iteritems():
-            scientific_property_customizer_formset_prefix = scientific_property_customizer_formset.prefix
-            for scientific_property_customizer_form in scientific_property_customizer_formset:
-                scientific_property_customizer_form_prefix = scientific_property_customizer_form.prefix
-                for field_name,field in scientific_property_customizer_form.fields.iteritems():
-                    if scientific_property_customizer_form_prefix:
-                        field_key = u"%s-%s" % (scientific_property_customizer_form_prefix,field_name)
-                    else:
-                        field_key = u"%s" % (field_name)
-                    field_value = scientific_property_customizer_form.get_current_field_value(field_name)
-                    data[field_key] = field_value
-        data[u"%s-TOTAL_FORMS"%(scientific_property_customizer_formset_prefix)] = scientific_property_customizer_formset.total_form_count()
-        data[u"%s-INITIAL_FORMS"%(scientific_property_customizer_formset_prefix)] = scientific_property_customizer_formset.initial_form_count()
+            scientific_property_customizer_formset_data = get_data_from_formset(scientific_property_customizer_formset)
+            data.update(scientific_property_customizer_formset_data)
 
     return data

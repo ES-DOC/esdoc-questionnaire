@@ -10,8 +10,8 @@
 #   This project is distributed according to the terms of the MIT license [http://www.opensource.org/licenses/MIT].
 ####################
 
-__author__="allyn.treshansky"
-__date__ ="Dec 9, 2013 4:33:11 PM"
+__author__ = "allyn.treshansky"
+__date__ = "Dec 9, 2013 4:33:11 PM"
 
 """
 .. module:: utils
@@ -20,21 +20,19 @@ Summary of module goes here
 
 """
 
-from django.core.exceptions     import ValidationError
-from django.core.files.storage  import FileSystemStorage
-from django.conf                import settings
+from django.core.exceptions import ValidationError
+from django.core.files.storage import FileSystemStorage
+from django.conf import settings
 
-from django.forms   import model_to_dict
+from django.forms import model_to_dict
 
 import os
 import re
 
-from django.core    import serializers
-from lxml           import etree as et
+from django.core import serializers
+from lxml import etree as et
 
-from django.template.defaultfilters import slugify
-
-from questionnaire  import get_version
+from CIM_Questionnaire.questionnaire import get_version
 
 
 def xpath_fix(node, xpath):
@@ -60,13 +58,13 @@ def xpath_fix(node, xpath):
 
 APP_LABEL = "questionnaire"
 
-LIL_STRING      = 128
-SMALL_STRING    = 256
-BIG_STRING      = 512
-HUGE_STRING     = 1024
+LIL_STRING   = 128
+SMALL_STRING = 256
+BIG_STRING   = 512
+HUGE_STRING  = 1024
 
 #: a serializer to use throughout the app; defined once to avoid too many fn calls
-JSON_SERIALIZER   = serializers.get_serializer("json")()
+JSON_SERIALIZER = serializers.get_serializer("json")()
 
 CIM_STEREOTYPES = [
     "document",
@@ -80,8 +78,7 @@ CIM_DOCUMENT_TYPES = [
 ]
 
 #: vocabulary name to use for cases where a model has no vocabulary, or where it is the root component of several vocabularies
-DEFAULT_VOCABULARY  = "DEFAULT_VOCABULARY"
-
+DEFAULT_VOCABULARY = "DEFAULT_VOCABULARY"
 
 ##############
 # assertions #
@@ -132,12 +129,14 @@ def validate_no_spaces(value):
     if ' ' in value:
         raise ValidationError(u"'%s' may not contain spaces" % value)
 
+
 def valiate_no_bad_chars(value):
     INVALID_CHARS       = "< > % # % { } [ ] $"
     INVALID_CHARS_REGEX = "[<>&#%{}\[\]\$]"
 
     if re.search(INVALID_CHARS_REGEX,value):
         raise ValidationError(u"value may not contain any of the following characters: '%s'" % (INVALID_CHARS))#not contain any of the following invalid characters: '%'" % (value,INVALID_CHARS))
+
 
 def validate_password(value):
     # passwords have a minimum length...
@@ -148,6 +147,7 @@ def validate_password(value):
     if not (re.match(r'^.*[A-Za-z]', value) and
             re.match(r'^.*[0-9!@#$%^&*()\-_=+.,?:;></\\\[\]\{\}]',value)):
         raise ValidationError("A password must contain both letters and non-letters")
+
 
 def validate_no_reserved_words(value):
     """
@@ -174,6 +174,7 @@ def validate_file_extension(value,valid_extensions):
     if not value.name.split(".")[-1] in valid_extensions:
         raise ValidationError(u'Invalid File Extension')
 
+
 def validate_file_schema(value,schema_path):
     """
     validator function to use with fileFields;
@@ -194,8 +195,6 @@ def validate_file_schema(value,schema_path):
         msg = "Invalid File Contents: %s" % str(e)
         raise ValidationError(msg)
 
-
-
 ###########################
 # form/field manipulation #
 ###########################
@@ -209,6 +208,7 @@ def remove_form_errors(form):
 def set_field_widget_attributes(field,widget_attributes):
     for (key,value) in widget_attributes.iteritems():
         field.widget.attrs[key] = value
+
 
 def update_field_widget_attributes(field,widget_attributes):
     """
@@ -226,14 +226,67 @@ def update_field_widget_attributes(field,widget_attributes):
 # THIS TOOK A WHILE TO FIGURE OUT
 # model_to_dict IGNORES FOREIGNKEY FIELDS & MANYTOMANY FIELDS
 # THIS FN WILL UPDATE THE MODEL_DATA ACCORDING TO THE "update_fields" ARGUMENT
-def get_initial_data(model,update_fields={}):
+def get_initial_data(model, update_fields={}):
     dict = model_to_dict(model)
     dict.update(update_fields)
-    for key,value in dict.iteritems():
+    for key, value in dict.iteritems():
         if isinstance(value,tuple):
             # TODO: SOMETIMES THIS RETURNS A TUBLE INSTEAD OF A STRING, NOT SURE WHY
             dict[key] = value[0]
     return dict
+
+
+def get_data_from_form(form, existing_data={}):
+    data = {}
+
+    form_prefix = form.prefix
+    for field_name, field in form.fields.iteritems():
+        if field_name in existing_data:
+            field_value = existing_data[field_name]
+        else:
+            field_value = form.get_current_field_value(field_name)
+
+        if form_prefix:
+            field_key = u"%s-%s" % (form_prefix,field_name)
+        else:
+            field_key = u"%s" % (field_name)
+
+        data[field_key] = field_value
+
+    return data
+
+
+def get_data_from_formset(formset):
+    data = {}
+    existing_data = {}
+
+    for form in formset:
+        existing_data.clear()
+
+        if form.instance.pk:
+            # in general, this is only needed when calling this fn outside of the interface
+            # ie: in the testing framework
+            # (the hidden id & fk fields do not get passed in via the queryset for existing model formsets)
+            id_field_name = "id"
+            fk_field_name = formset.fk.name
+            existing_data[id_field_name] = form.fields[id_field_name].initial
+            existing_data[fk_field_name] = form.fields[fk_field_name].initial
+
+        form_data = get_data_from_form(form, existing_data)
+        data.update(form_data)
+
+    formset_prefix = formset.prefix
+    if formset_prefix:
+        total_forms_key = u"%s-TOTAL_FORMS" % (formset_prefix)
+        initial_forms_key = u"%s-INITIAL_FORMS" % (formset_prefix)
+    else:
+        total_forms_key = u"TOTAL_FORMS"
+        initial_forms_key = u"INITIALFORMS"
+    data[total_forms_key] = formset.total_form_count()
+    data[initial_forms_key] = formset.initial_form_count()
+
+    return data
+
 
 class OverwriteStorage(FileSystemStorage):
 
@@ -371,7 +424,7 @@ def find_in_sequence(fn, sequence):
   return None
 
 
-def interate_through_node(node,filter_parameters={}):
+def interate_through_node(node, filter_parameters={}):
     if filter_parameters:
         sibling_qs = node.get_siblings(include_self=True).filter(**filter_parameters)
     else:
@@ -390,6 +443,8 @@ def interate_through_node(node,filter_parameters={}):
 ########################################
 # fixing known django - postgres issue #
 ########################################
+
+# TODO: JUST RUN THIS CODE IF POSTGRES IS USED?
 
 from django.db.models.signals import post_syncdb
 from django.db import connection

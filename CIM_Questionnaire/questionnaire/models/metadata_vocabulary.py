@@ -21,11 +21,22 @@ Note my use of mptt for efficient handling of component hiearchies.
 """
 
 from django.db import models
+
+from django.template.defaultfilters import slugify
+from lxml import etree as et
+from django.conf import settings
+
 import os
 import re
 
-from questionnaire.utils import *
-from questionnaire.models import *
+from CIM_Questionnaire.questionnaire.models.metadata_proxy import MetadataComponentProxy, MetadataScientificCategoryProxy, MetadataScientificPropertyProxy
+
+from CIM_Questionnaire.questionnaire.utils import validate_file_extension, validate_file_schema, validate_no_spaces, xpath_fix
+from CIM_Questionnaire.questionnaire.utils import HUGE_STRING, BIG_STRING, SMALL_STRING, LIL_STRING, CIM_DOCUMENT_TYPES
+from CIM_Questionnaire.questionnaire.utils import QuestionnaireError, OverwriteStorage
+
+
+from CIM_Questionnaire.questionnaire import APP_LABEL
 
 UPLOAD_DIR  = "vocabularies"
 UPLOAD_PATH = os.path.join(APP_LABEL,UPLOAD_DIR)    # this is a relative path (will be concatenated w/ MEDIA_ROOT by FileFIeld)
@@ -176,6 +187,6 @@ def vocabulary_post_delete(sender, **kwargs):
     if vocabulary:
         try:
             vocabulary.file.delete(save=False)    # save=False prevents model from re-saving itself
-            print "deleted %s" % (self.file.url)
+            print "deleted %s" % (vocabulary.file.url)
         except:
             pass
