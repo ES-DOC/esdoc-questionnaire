@@ -7,7 +7,7 @@ from django.http        import *
 
 from django.core.urlresolvers   import reverse
 from django.contrib             import messages
-from django.contrib.messages    import get_messages
+#from django.contrib.messages    import get_messages
 
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.sites.models    import get_current_site

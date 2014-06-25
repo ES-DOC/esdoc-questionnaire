@@ -20,33 +20,37 @@ __date__ ="Sep 30, 2013 3:04:42 PM"
 Summary of module goes here
 
 """
-import time
 
+from django.http import HttpResponseRedirect
+from django.shortcuts import render_to_response, redirect
+from django.core.urlresolvers import reverse
+from django.template import RequestContext
+from django.contrib import messages
 
-from django.core.exceptions  import FieldError, MultipleObjectsReturned
+from django.contrib.sites.models    import get_current_site
+from django.core.exceptions import FieldError, MultipleObjectsReturned
 from django.db.models.fields import *
 
-from questionnaire.utils    import *
-from questionnaire.models   import *
-from questionnaire.forms    import *
-from questionnaire.views    import *
-
+import re
 
 from CIM_Questionnaire.questionnaire.models.metadata_project import MetadataProject
 from CIM_Questionnaire.questionnaire.models.metadata_version import MetadataVersion
 from CIM_Questionnaire.questionnaire.models.metadata_proxy import MetadataModelProxy
 
 
-from CIM_Questionnaire.questionnaire.models.metadata_customizer import MetadataModelCustomizer
+from CIM_Questionnaire.questionnaire.models.metadata_customizer import MetadataCustomizer, MetadataModelCustomizer
 from CIM_Questionnaire.questionnaire.models.metadata_customizer import find_category_by_key
 
 from CIM_Questionnaire.questionnaire.forms.forms_customize import create_model_customizer_form_data, create_standard_property_customizer_form_data, create_scientific_property_customizer_form_data
 from CIM_Questionnaire.questionnaire.forms.forms_customize import create_new_customizer_forms_from_models, create_existing_customizer_forms_from_models, create_customizer_forms_from_data
 from CIM_Questionnaire.questionnaire.forms.forms_customize import save_valid_forms
 
-from django.template.defaultfilters import slugify
+#from CIM_Questionnaire.questionnaire.views.views_error import questionnaire_error as questionnaire_error_view
+from CIM_Questionnaire.questionnaire.views import *
 
-def validate_view_arguments(project_name="",model_name="",version_name=""):
+from CIM_Questionnaire.questionnaire import get_version
+
+def validate_view_arguments(request, project_name="", model_name="", version_name=""):
     """Ensures that the arguments passed to a customize view are valid (ie: resolve to active projects, models, versions)"""
 
     # try to get the project...
@@ -80,7 +84,7 @@ def validate_view_arguments(project_name="",model_name="",version_name=""):
 def questionnaire_customize_new(request,project_name="",model_name="",version_name="",**kwargs):
 
     # validate the arguments...
-    (project,version,model_proxy) = validate_view_arguments(project_name,model_name,version_name)
+    (project,version,model_proxy) = validate_view_arguments(request,project_name=project_name,model_name=model_name,version_name=version_name)
     request.session["checked_arguments"] = True
 
     # get the relevant vocabularies...
@@ -107,13 +111,13 @@ def questionnaire_customize_new(request,project_name="",model_name="",version_na
 
     # check if the user added any parameters to the request...
     for (key,value) in request.GET.iteritems():
-        value = re.sub('[\"\']','',value) # strip out any quotes
+        value = re.sub('[\"\']', '', value) # strip out any quotes
         field_type = type(MetadataModelCustomizer.get_field(key))
         if field_type == BooleanField:
             # special case for boolean fields
-            if value.lower()=="true" or value=="1":
+            if value.lower() == "true" or value == "1":
                 customizer_parameters[key] = True
-            elif value.lower()=="false" or value=="0":
+            elif value.lower() == "false" or value == "0":
                 customizer_parameters[key] = False
             else:
                 customizer_parameters[key] = value
@@ -130,33 +134,33 @@ def questionnaire_customize_new(request,project_name="",model_name="",version_na
         try:
             existing_model_customizer_instance = MetadataModelCustomizer.objects.get(**customizer_parameters)
             customize_existing_url = reverse("customize_existing",kwargs={
-                "project_name"      : project_name,
-                "model_name"        : model_name,
-                "version_name"      : version_name,
-                "customizer_name"   : existing_model_customizer_instance.name,
+                "project_name"    : project_name,
+                "model_name"      : model_name,
+                "version_name"    : version_name,
+                "customizer_name" : existing_model_customizer_instance.name,
             })
             return HttpResponseRedirect(customize_existing_url)
         except FieldError:
             # raise an error if some of the filter parameters were invalid
-            msg = "Unable to find a MetadataModelCustomizer with the following parameters: %s" % (", ").join([u'%s=%s'%(key,value) for (key,value) in customizer_parameters.iteritems()])
+            msg = "Unable to find a MetadataModelCustomizer with the following parameters: %s" % (", ").join([u'%s=%s' % (key, value) for (key, value) in customizer_parameters.iteritems()])
             return error(request,msg)
         except MultipleObjectsReturned:
             # raise an error if those filter params weren't enough to uniquely identify a customizer
-            msg = "Unable to find a <i>single</i> MetadataModelCustomizer with the following parameters: %s" % (", ").join([u'%s=%s'%(key,value) for (key,value) in customizer_parameters.iteritems()])
+            msg = "Unable to find a <i>single</i> MetadataModelCustomizer with the following parameters: %s" % (", ").join([u'%s=%s' % (key, value) for (key, value) in customizer_parameters.iteritems()])
             return error(request,msg)
         except MetadataModelCustomizer.DoesNotExist:
             # raise an error if there was no matching query
-            msg = "Unable to find any MetadataModelCustomizer with the following parameters: %s" % (", ").join([u'%s=%s'%(key,value) for (key,value) in customizer_parameters.iteritems()])
+            msg = "Unable to find any MetadataModelCustomizer with the following parameters: %s" % (", ").join([u'%s=%s' % (key, value) for (key, value) in customizer_parameters.iteritems()])
             return error(request,msg)
 
     # create the customizer set
-    (model_customizer,standard_category_customizers,standard_property_customizers,scientific_category_customizers,scientific_property_customizers) = \
+    (model_customizer, standard_category_customizers, standard_property_customizers, scientific_category_customizers, scientific_property_customizers) = \
         MetadataCustomizer.get_new_customizer_set(project, version, model_proxy, vocabularies)
 
     if request.method == "GET":
 
-        (model_customizer_form,standard_property_customizer_formset,scientific_property_customizer_formsets) = \
-            create_new_customizer_forms_from_models(model_customizer,standard_category_customizers,standard_property_customizers,scientific_category_customizers,scientific_property_customizers,vocabularies_to_customize=vocabularies)
+        (model_customizer_form, standard_property_customizer_formset, scientific_property_customizer_formsets) = \
+            create_new_customizer_forms_from_models(model_customizer, standard_category_customizers, standard_property_customizers, scientific_category_customizers, scientific_property_customizers, vocabularies_to_customize=vocabularies)
 
     else: # request.method == "POST"
 
@@ -168,6 +172,7 @@ def questionnaire_customize_new(request,project_name="",model_name="",version_na
         if all(validity):
 
             model_customizer_instance = save_valid_forms(model_customizer_form,standard_property_customizer_formset,scientific_property_customizer_formsets)
+            request.session["model_id"] = model_customizer_instance.pk
 
             # using Django's built-in messaging framework to pass status messages (as per https://docs.djangoproject.com/en/dev/ref/contrib/messages/)
             messages.add_message(request, messages.SUCCESS, "Successfully saved customizer '%s'." % (model_customizer_instance.name))
@@ -200,7 +205,7 @@ def questionnaire_customize_new(request,project_name="",model_name="",version_na
 def questionnaire_customize_existing(request,project_name="",model_name="",version_name="",customizer_name="",**kwargs):
 
     # validate the arguments...
-    (project,version,model_proxy) = validate_view_arguments(project_name,model_name,version_name)
+    (project,version,model_proxy) = validate_view_arguments(request,project_name=project_name,model_name=model_name,version_name=version_name)
     request.session["checked_arguments"] = True
 
     # get the relevant vocabularies...
@@ -239,10 +244,10 @@ def questionnaire_customize_existing(request,project_name="",model_name="",versi
         (validity, model_customizer_form, standard_property_customizer_formset, scientific_property_customizer_formsets) = \
             create_customizer_forms_from_data(data,model_customizer,standard_category_customizers,standard_property_customizers,scientific_category_customizers,scientific_property_customizers,vocabularies_to_customize=vocabularies)
 
-        import ipdb; ipdb.set_trace()
         if all(validity):
 
             model_customizer_instance = save_valid_forms(model_customizer_form,standard_property_customizer_formset,scientific_property_customizer_formsets)
+            request.session["model_id"] = model_customizer_instance.pk
 
             # using Django's built-in messaging framework to pass status messages (as per https://docs.djangoproject.com/en/dev/ref/contrib/messages/)
             messages.add_message(request, messages.SUCCESS, "Successfully saved customizer '%s'." % (model_customizer_instance.name))

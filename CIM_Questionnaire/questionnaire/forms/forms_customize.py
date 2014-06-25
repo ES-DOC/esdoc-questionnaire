@@ -473,7 +473,7 @@ class MetadataStandardPropertyCustomizerForm(MetadataCustomizerForm):
         category_choices = kwargs.pop("category_choices",[])
 
         super(MetadataStandardPropertyCustomizerForm,self).__init__(*args,**kwargs)
-        
+
         property_customizer = self.instance
         # this attribute is needed b/c I access it in the customize_template to decide which other templates to include
         self.type = self.get_current_field_value("field_type")
@@ -916,4 +916,9 @@ def get_data_from_customizer_forms(model_customizer_form,standard_property_custo
             scientific_property_customizer_formset_data = get_data_from_formset(scientific_property_customizer_formset)
             data.update(scientific_property_customizer_formset_data)
 
-    return data
+    data_copy = data.copy()
+    for key, value in data.iteritems():
+        if value == None:
+            data_copy.pop(key)
+
+    return data_copy
