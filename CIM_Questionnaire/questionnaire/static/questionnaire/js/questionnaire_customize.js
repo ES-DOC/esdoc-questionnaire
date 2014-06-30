@@ -336,27 +336,37 @@ function customize_property_subform(subform_id) {
                 },
                 buttons     : {
                     save : function() {
-
                         var subform_data = $(this).find("#customize_subform_form").serialize();                        
 
                         $.ajax({
-                            url     : url,
-                            type    : "POST",   // (POST mimics submit)
-                            data    : subform_data,
-                            cache   : false,
-                            success : function(data) {
-                                if (data == "success") {
-                                    $(customize_subform_dialog).html(data);
-                                    var parent = $(customize_subform_dialog);
-                                    init_dialogs(parent);
-                                    render_msg($(parent).find("#msg"));
+                            url: url,
+                            type: "POST",   // (POST mimics submit)
+                            data: subform_data,
+                            cache: false,
+                            success : function(data,status,xhr) {
+                                var status_code = xhr.status;
+                                var msg = xhr.getResponseHeader("msg");
+                                var msg_dialog = $(document.createElement("div"));
+                                msg_dialog.html(msg);
+                                msg_dialog.dialog({
+                                    modal: true,
+                                    hide: "explode",
+                                    height: 200,
+                                    width: 400,
+                                    dialogClass: "no_close",
+                                    buttons: {
+                                        OK: function () {
+                                            $(this).dialog("close");
+                                        }
+                                    }
+                                });
+
+                                if (status_code == 200) {
                                     $(customize_subform_dialog).dialog("close");
                                 }
                                 else {
                                     $(customize_subform_dialog).html(data);
-                                    var parent = $(customize_subform_dialog);
-                                    init_dialogs(parent);
-                                    render_msg($(parent).find("#msg"));
+                                    /* TODO: DO I HAVE TO RE-RUN INIT FNS? */
                                 }
                             },
                             error   : function(xhr,status,error) {

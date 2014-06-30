@@ -143,10 +143,8 @@ class MetadataVersion(models.Model):
         
         for model_proxy in MetadataModelProxy.objects.filter(version=self):
             for property_proxy in model_proxy.standard_properties.all():
-                if property_proxy.field_type == MetadataFieldTypes.RELATIONSHIP:
-                    property_proxy.reset()
-                    property_proxy.save()
-                
+                property_proxy.reset()
+                property_proxy.save()
                 
         if recategorization_needed:
             msg = "Since you are re-registering an existing version, you will also have to re-register the corresponding categorization"

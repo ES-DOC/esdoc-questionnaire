@@ -275,7 +275,7 @@ class MetadataModelCustomizerSubForm(MetadataModelCustomizerAbstractForm):
 
         fields  = [
                     # hidden fields...
-                    "proxy","project","version","vocabulary_order",
+                    "proxy","project","version","vocabulary_order","name",
                     # customizer fields...
                     "vocabularies",
                     # document fields...
@@ -284,7 +284,7 @@ class MetadataModelCustomizerSubForm(MetadataModelCustomizerAbstractForm):
                     "standard_categories_content","standard_categories_tags",
                   ]
 
-    _hidden_fields       = ("proxy","project","version","vocabulary_order",)
+    _hidden_fields       = ("proxy","project","version","vocabulary_order","name",)
     _customizer_fields   = ("vocabularies",)
     _document_fields     = ("model_title","model_description","model_show_all_categories","model_show_all_properties",)
 
@@ -301,6 +301,8 @@ class MetadataModelCustomizerSubForm(MetadataModelCustomizerAbstractForm):
         all_vocabularies = kwargs.pop("all_vocabularies",[])
 
         super(MetadataModelCustomizerSubForm,self).__init__(*args,**kwargs)
+
+        #update_field_widget_attributes(self.fields["name"], {"class": "readonly", "readonly": "readonly"})
 
         self.fields["vocabularies"].queryset = all_vocabularies
         update_field_widget_attributes(self.fields["vocabularies"],{"class":"multiselect"})
@@ -857,17 +859,19 @@ def create_existing_customizer_forms_from_models(model_customizer,standard_categ
 
     return (model_customizer_form, standard_property_customizer_formset, scientific_property_customizer_formsets)
 
-def create_customizer_forms_from_data(data,model_customizer,standard_category_customizers,standard_property_customizers,scientific_category_customizers,scientific_property_customizers,vocabularies_to_customize=MetadataScientificPropertyCustomizer.objects.none(),is_subform=False):
+def create_customizer_forms_from_data(data,model_customizer,standard_category_customizers,standard_property_customizers,scientific_category_customizers,scientific_property_customizers,vocabularies_to_customize=MetadataScientificPropertyCustomizer.objects.none(),is_subform=False,subform_prefix=""):
     """This creates and validates forms based on POST data"""
 
     if is_subform:
-        model_customizer_form = MetadataModelCustomizerSubForm(data,instance=model_customizer,all_vocabularies=vocabularies_to_customize)
+        if subform_prefix:
+            model_customizer_form = MetadataModelCustomizerSubForm(data,instance=model_customizer,all_vocabularies=vocabularies_to_customize,prefix=subform_prefix)
+        else:
+            model_customizer_form = MetadataModelCustomizerSubForm(data,instance=model_customizer,all_vocabularies=vocabularies_to_customize)
     else:
         model_customizer_form = MetadataModelCustomizerForm(data,instance=model_customizer,all_vocabularies=vocabularies_to_customize)
     model_customizer_form_validity = model_customizer_form.is_valid()
 
     if model_customizer_form_validity:
-
         model_customizer_instance = model_customizer_form.save(commit=False)
         active_vocabularies = model_customizer_form.cleaned_data["vocabularies"]
     else:
@@ -875,12 +879,20 @@ def create_customizer_forms_from_data(data,model_customizer,standard_category_cu
     active_vocabulary_keys = [slugify(vocabulary.name) for vocabulary in active_vocabularies]
     validity = [model_customizer_form_validity]
 
-    standard_property_customizer_formset = MetadataStandardPropertyCustomizerInlineFormSetFactory(
-        instance=model_customizer_instance if model_customizer_form_validity else model_customizer,
-        data=data,
-        categories=standard_category_customizers,
-    )
-
+    if is_subform and subform_prefix:
+        standard_property_customizer_formset = MetadataStandardPropertyCustomizerInlineFormSetFactory(
+            instance=model_customizer_instance if model_customizer_form_validity else model_customizer,
+            data=data,
+            categories=standard_category_customizers,
+            # TODO: WORKING OUT THE APPROPRIATE PREFIX SHOULD BE AUTOMATIC!
+            prefix=u"standard_property-%s" % (subform_prefix)
+        )
+    else:
+        standard_property_customizer_formset = MetadataStandardPropertyCustomizerInlineFormSetFactory(
+            instance=model_customizer_instance if model_customizer_form_validity else model_customizer,
+            data=data,
+            categories=standard_category_customizers,
+        )
     validity += [standard_property_customizer_formset.is_valid()]
 
     scientific_property_customizer_formsets = {}
@@ -888,13 +900,20 @@ def create_customizer_forms_from_data(data,model_customizer,standard_category_cu
         scientific_property_customizer_formsets[vocabulary_key] = {}
         for component_key, scientific_property_customizer_list in scientific_property_customizer_dict.iteritems():
             model_key = u"%s_%s" % (vocabulary_key, component_key)
-            scientific_property_customizer_formsets[vocabulary_key][
-                component_key] = MetadataScientificPropertyCustomizerInlineFormSetFactory(
-                instance=model_customizer_instance if model_customizer_form_validity else model_customizer,
-                data=data,
-                prefix=model_key,
-                categories=scientific_category_customizers[vocabulary_key][component_key]
-            )
+            if is_subform and subform_prefix:
+                scientific_property_customizer_formsets[vocabulary_key][component_key] = MetadataScientificPropertyCustomizerInlineFormSetFactory(
+                    instance=model_customizer_instance if model_customizer_form_validity else model_customizer,
+                    data=data,
+                    prefix=u"%s-%s" % (model_key, subform_prefix),
+                    categories=scientific_category_customizers[vocabulary_key][component_key]
+                )
+            else:
+                scientific_property_customizer_formsets[vocabulary_key][component_key] = MetadataScientificPropertyCustomizerInlineFormSetFactory(
+                    instance=model_customizer_instance if model_customizer_form_validity else model_customizer,
+                    data=data,
+                    prefix=model_key,
+                    categories=scientific_category_customizers[vocabulary_key][component_key]
+                )
             if vocabulary_key in active_vocabulary_keys:
                 validity += [scientific_property_customizer_formsets[vocabulary_key][component_key].is_valid()]
 
