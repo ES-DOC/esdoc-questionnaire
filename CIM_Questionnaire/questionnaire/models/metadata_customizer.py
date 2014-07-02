@@ -637,7 +637,10 @@ class MetadataStandardPropertyCustomizer(MetadataPropertyCustomizer):
             self.category_name = self.category.name
             if reset_category:
                 self.category.reset()
-        
+
+    def enumerate_choices(self):
+        return [(choice,choice) for choice in self.enumeration_choices.split("|")]
+
 class MetadataScientificPropertyCustomizer(MetadataPropertyCustomizer):
     class Meta:
         app_label    = APP_LABEL

@@ -243,8 +243,9 @@ class MetadataStandardProperty(MetadataProperty):
     proxy           = models.ForeignKey("MetadataStandardPropertyProxy",blank=True,null=True)
 
     atomic_value            = models.CharField(max_length=HUGE_STRING,blank=True,null=True)
-    enumeration_value       = models.CharField(max_length=HUGE_STRING,blank=True,null=True)
+    enumeration_value       = EnumerationField(blank=True,null=True)
     enumeration_other_value = models.CharField(max_length=HUGE_STRING,blank=True,null=True)
+    # TODO: IN RESET MAKE THIS FK QS BOUND TO THE CORRECT TYPE OF METADATAMODEL
     relationship_value      = models.ForeignKey("MetadataModel",blank=True,null=True)
 
     def reset(self):
@@ -282,6 +283,9 @@ class MetadataStandardProperty(MetadataProperty):
         else: # MetadataFieldTypes.RELATIONSHIP
             return u"%s" % self.relationship_value
 
+    def __unicode__(self):
+        return u'%s' % (self.name)
+
 class MetadataScientificProperty(MetadataProperty):
 
     class Meta:
@@ -299,7 +303,6 @@ class MetadataScientificProperty(MetadataProperty):
 
     atomic_value            = models.CharField(max_length=HUGE_STRING,blank=True,null=True)
     enumeration_value       = EnumerationField(blank=True,null=True)
-    #enumeration_value       = models.CharField(max_length=HUGE_STRING,blank=True,null=True)
     enumeration_other_value = models.CharField(max_length=HUGE_STRING,blank=True,null=True)
 
     extra_standard_name         = models.CharField(blank=True,null=True,max_length=BIG_STRING)

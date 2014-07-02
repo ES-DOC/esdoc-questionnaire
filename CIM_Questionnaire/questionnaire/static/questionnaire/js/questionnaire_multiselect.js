@@ -129,8 +129,8 @@ $.widget("questionnaire.multiselect", {
             }
         }
         else {
-            
             var selected_choice = $(element).find("option:selected");
+            console.log(selected_choice)
             // a val of "" is the EMPTY_CHOICE
             if (selected_choice.length && $(selected_choice).val() != "") {
                 var new_label = "\"" + $(selected_choice).text() + "\""
@@ -173,6 +173,10 @@ $.widget("questionnaire.multiselect", {
            $(content).toggle();
            var icon = $(this).find(".ui-icon:first");
            $(icon).toggleClass("ui-icon-triangle-1-s ui-icon-triangle-1-e");
+        });
+
+        $(header).show(function(){
+            multiselect._set_text();
         });
 
         // setup content

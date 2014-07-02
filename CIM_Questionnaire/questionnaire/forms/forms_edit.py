@@ -40,7 +40,7 @@ def create_model_form_data(model,model_customizer):
 
     model_form_data = get_initial_data(model,{
         "last_modified" : time.strftime("%c"),
-#        "parent"        : model.parent,
+        #"parent" : model.parent,
     })
 
     return model_form_data
@@ -187,6 +187,8 @@ def MetadataModelFormSetFactory(*args,**kwargs):
 # standard properties #
 #######################
 
+
+
 def create_standard_property_form_data(model,standard_property,standard_property_customizer=None):
 
     standard_property_form_data = get_initial_data(standard_property,{
@@ -200,12 +202,18 @@ def create_standard_property_form_data(model,standard_property,standard_property
 
         if field_type == MetadataFieldTypes.ATOMIC:
             value_field_name = "atomic_value"
+            pass
 
         elif field_type == MetadataFieldTypes.ENUMERATION:
             value_field_name = "enumeration_value"
+            current_enumeration_value = standard_property_form_data[value_field_name]
+            if current_enumeration_value:
+                if standard_property_customizer.enumeration_multi:
+                    standard_property_form_data[value_field_name] = current_enumeration_value.split("|")
 
         elif field_type == MetadataFieldTypes.RELATIONSHIP:
             value_field_name = "relationship_value"
+            pass
 
         else:
             msg = "invalid field type for standard property: %s" % (field_type)
@@ -244,8 +252,36 @@ class MetadataStandardPropertyForm(MetadataEditingForm):
         if customizers:
             proxy = MetadataStandardPropertyProxy.objects.get(pk=self.get_current_field_value("proxy"))
             customizer = find_in_sequence(lambda c: c.proxy == proxy, customizers)
-            if customizer:
-                self.customize(customizer)
+        else:
+            customizer = None
+
+        property = self.instance
+        field_type = self.get_current_field_value("field_type")
+
+        if property.pk:
+            # ordinarily, this is done in create_scientific_property_form_data above
+            # but if this is an existing model, I still need to do this jiggery-pokery someplace
+            if field_type == MetadataFieldTypes.ENUMERATION:
+                current_enumeration_value = self.get_current_field_value("enumeration_value")
+                if isinstance(current_enumeration_value,basestring) and customizer.enumeration_multi:
+                    self.initial["enumeration_value"] = current_enumeration_value.split("|")
+
+        if field_type == MetadataFieldTypes.ATOMIC:
+            pass
+
+        elif field_type == MetadataFieldTypes.ENUMERATION:
+            update_field_widget_attributes(self.fields["enumeration_value"],{"class":"multiselect"})
+            update_field_widget_attributes(self.fields["enumeration_other_value"],{"class":"other"})
+
+        elif field_type == MetadataFieldTypes.RELATIONSHIP:
+            pass
+
+        else:
+            msg = "invalid field type for standard property: '%s'." % (field_type)
+            raise QuestionnaireError(msg)
+
+        if customizer:
+            self.customize(customizer)
 
     def get_hidden_fields(self):
         return self.get_fields_from_list(self._hidden_fields)
@@ -288,23 +324,21 @@ class MetadataStandardPropertyForm(MetadataEditingForm):
                 self.fields["atomic_value"].widget = custom_widget_class(**custom_widget_args)
                 update_field_widget_attributes(self.fields["atomic_value"],{"class":atomic_type.lower()})
 
-   
         elif customizer.field_type == MetadataFieldTypes.ENUMERATION:
-            widget_attributes = { "class" : "multiselect"}
-            choices = [(choice,choice) for choice in customizer.enumeration_choices.split('|')]
+            custom_widget_attributes = { "class" : "multiselect"}
+            all_enumeration_choices = customizer.enumerate_choices()
             if customizer.enumeration_nullable:
-                choices += NULL_CHOICE
-                widget_attributes["class"] += " nullable "
+                all_enumeration_choices += NULL_CHOICE
+                custom_widget_attributes["class"] += " nullable"
             if customizer.enumeration_open:
-                choices += OTHER_CHOICE
-                widget_attributes["class"] += " open "
+                all_enumeration_choices += OTHER_CHOICE
+                custom_widget_attributes["class"] += " open"
             if customizer.enumeration_multi:
-                self.fields["enumeration_value"].widget = SelectMultiple(choices=choices)
+                self.fields["enumeration_value"].set_choices(all_enumeration_choices,multi=True)
             else:
-                self.fields["enumeration_value"].widget = Select(choices=EMPTY_CHOICE + choices)
-
-            update_field_widget_attributes(self.fields["enumeration_value"],{"class":"multiselect"})#widget_attributes)
-            update_field_widget_attributes(self.fields["enumeration_other_value"],{"class":"other"})
+                all_enumeration_choices = EMPTY_CHOICE + all_enumeration_choices
+                self.fields["enumeration_value"].set_choices(all_enumeration_choices,multi=False)
+            update_field_widget_attributes(self.fields["enumeration_value"],custom_widget_attributes)
 
         # the other stuff is common to all and can be generic (ie: use 'value_field_name')
 
@@ -411,7 +445,6 @@ def MetadataStandardPropertyInlineFormSetFactory(*args,**kwargs):
 
 def create_scientific_property_form_data(model,scientific_property,scientific_property_customizer=None):
 
-
     if scientific_property_customizer:
         assert(scientific_property.category_key == scientific_property_customizer.category.key)
 
@@ -426,7 +459,8 @@ def create_scientific_property_form_data(model,scientific_property,scientific_pr
             # enumeration fields...
             current_enumeration_value = scientific_property_form_data["enumeration_value"]
             if current_enumeration_value:
-                scientific_property_form_data["enumeration_value"] = current_enumeration_value.split("|")
+                if scientific_property_customizer.enumeration_multi:
+                    scientific_property_form_data["enumeration_value"] = current_enumeration_value.split("|")
 
         else:
             # atomic fields...
@@ -454,15 +488,21 @@ class MetadataScientificPropertyForm(MetadataEditingForm):
 
         super(MetadataScientificPropertyForm,self).__init__(*args,**kwargs)
 
-        property_customizer = self.instance
+        if customizers:
+            proxy = MetadataScientificPropertyProxy.objects.get(pk=self.get_current_field_value("proxy"))
+            customizer = find_in_sequence(lambda c: c.proxy == proxy, customizers)
+        else:
+            customizer = None
+
+        property = self.instance
         is_enumeration = self.get_current_field_value("is_enumeration",False)
 
-        if property_customizer.pk:
+        if property.pk:
             # ordinarily, this is done in create_scientific_property_form_data above
             # but if this is an existing model, I still need to do this jiggery-pokery someplace
             if is_enumeration:
                 current_enumeration_value = self.get_current_field_value("enumeration_value")
-                if isinstance(current_enumeration_value,basestring):
+                if isinstance(current_enumeration_value,basestring) and customizer.enumeration_multi:
                     self.initial["enumeration_value"] = current_enumeration_value.split("|")
 
         if not is_enumeration:
@@ -475,12 +515,8 @@ class MetadataScientificPropertyForm(MetadataEditingForm):
             # instead I have to do it on the widget in js
             #update_field_widget_attributes(self.fields["enumeration_value"],{"onchange":"copy_value(this,'%s-scientific_property_value');"%(self.prefix)})
 
-
-        if customizers:
-            proxy = MetadataScientificPropertyProxy.objects.get(pk=self.get_current_field_value("proxy"))
-            customizer = find_in_sequence(lambda c: c.proxy == proxy, customizers)
-            if customizer:
-                self.customize(customizer)
+        if customizer:
+            self.customize(customizer)
 
 
     def customize(self,customizer):
@@ -509,23 +545,10 @@ class MetadataScientificPropertyForm(MetadataEditingForm):
                 all_enumeration_choices += OTHER_CHOICE
                 widget_attributes["class"] += " open"
             if customizer.enumeration_multi:
-                all_enumeration_choices = EMPTY_CHOICE + all_enumeration_choices
                 self.fields["enumeration_value"].set_choices(all_enumeration_choices,multi=True)
             else:
+                all_enumeration_choices = EMPTY_CHOICE + all_enumeration_choices
                 self.fields["enumeration_value"].set_choices(all_enumeration_choices,multi=False)
-
-            # widget_attributes = { "class" : "multiselect"}
-            # choices = [(slugify(choice),choice) for choice in customizer.enumeration_choices.split('|')]
-            # if customizer.enumeration_nullable:
-            #     choices += NULL_CHOICE
-            #     widget_attributes["class"] += " nullable "
-            # if customizer.enumeration_open:
-            #     choices += OTHER_CHOICE
-            #     widget_attributes["class"] += " open "
-            # if customizer.enumeration_multi:
-            #     self.fields["enumeration_value"].widget = SelectMultiple(choices=choices)
-            # else:
-            #     self.fields["enumeration_value"].widget = Select(choices=EMPTY_CHOICE + choices)
 
             update_field_widget_attributes(self.fields["enumeration_value"],widget_attributes)
             update_field_widget_attributes(self.fields["enumeration_other_value"],{"class":"other"})
