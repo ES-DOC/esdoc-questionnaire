@@ -20,6 +20,8 @@ function autocompletes(parent) {
         });
     });
 }
+
+
 /*
 function nullables(parent) {
     $(parent).find(".multiselect.nullable").each(function() {

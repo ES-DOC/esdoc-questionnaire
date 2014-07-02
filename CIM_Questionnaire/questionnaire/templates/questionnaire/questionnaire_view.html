@@ -35,8 +35,18 @@
             init_widget(treeviews,parent)
             init_widget(enumerations,parent)
             init_widget(autocompletes,parent)
-            
-            // do this last b/c some of the xpath depends on changes made by the above fns...
+
+            $(parent).find(".scientific_property .ui-multiselect").each(function() {
+                var source_name = $(this).prev(".multiselect").attr("name");
+                var target_name = source_name.replace("-enumeration_value", "-scientific_property_value")
+                $(this).find(".multiselect_header").change(function (event) {
+                    var source_value = $(this).button("option", "label");
+                    var target = $("*[name='" + target_name + "']");
+                    $(target).val(source_value);
+                })
+            });
+
+             // do this last b/c some of the xpath depends on changes made by the above fns...
             init_errors(parent);
 
         }
@@ -317,29 +327,31 @@
 
                                                                                             <div class="accordion_content">
                                                                                                 <div class="form"> {# wrapping everything in a div.form so I can group together fields belonging to the same model #}
-                                                                                                    
-                                                                                                    <table width="100%">
-                                                                                                        <tr class="odd">
 
-                                                                                                            {% include "questionnaire/_property_field.html" %}
+                                                                                                    <div class="scientific_property">
+                                                                                                        <table width="100%">
+                                                                                                            <tr class="odd">
 
-                                                                                                            <td class="nothidden"> <!-- seems weird to have a td I don't display, but it seemed weirder to have content outside of the table -->
-                                                                                                                <div class="nothidden">
-                                                                                                                    {# the fields I explicitly set to hidden #}
-                                                                                                                    {% for field in property_form.get_hidden_fields %}
-                                                                                                                        {{ field }}
-                                                                                                                    {% endfor %} {# /field #}
+                                                                                                                {% include "questionnaire/_property_field.html" %}
+
+                                                                                                                <td class="nothidden"> <!-- seems weird to have a td I don't display, but it seemed weirder to have content outside of the table -->
+                                                                                                                    <div class="nothidden">
+                                                                                                                        {# the fields I explicitly set to hidden #}
+                                                                                                                        {% for field in property_form.get_hidden_fields %}
+                                                                                                                            {{ field }}
+                                                                                                                        {% endfor %} {# /field #}
 {% comment "TODO: DO I NEED TO INCLUDE ANY HIDDEN FIELDS?" %}
-                                                                                                                    {# and the fields that are hidden by default #}
-                                                                                                                    {% for hidden_field in property_form.hidden_fields %}
-                                                                                                                        {{ hidden_field }}
-                                                                                                                    {% endfor %} {# /hidden_field #}
+                                                                                                                        {# and the fields that are hidden by default #}
+                                                                                                                        {% for hidden_field in property_form.hidden_fields %}
+                                                                                                                            {{ hidden_field }}
+                                                                                                                        {% endfor %} {# /hidden_field #}
 {% endcomment %}
-                                                                                                                </div> <!-- /.hidden -->
-                                                                                                            </td> <!-- /.hidden -->
+                                                                                                                    </div> <!-- /.hidden -->
+                                                                                                                </td> <!-- /.hidden -->
 
-                                                                                                        </tr>
-                                                                                                    </table>
+                                                                                                            </tr>
+                                                                                                        </table>
+                                                                                                    </div> <!-- .scientific_property -->
 
                                                                                                     {% if property_customizer.display_extra_attributes %}
                                                                                                         {% include "questionnaire/_property_extra_fields.html" %}

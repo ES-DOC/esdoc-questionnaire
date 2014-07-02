@@ -141,6 +141,7 @@ $.widget("questionnaire.multiselect", {
             
         }
         $(header).button("option","label",new_label);
+        $(header).trigger("change"); // this provides a hook for other js methods
     },
 
     _create : function(){
