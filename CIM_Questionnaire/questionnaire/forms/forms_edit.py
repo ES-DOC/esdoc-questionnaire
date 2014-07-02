@@ -47,15 +47,40 @@ def create_model_form_data(model,model_customizer):
 
 class MetadataModelFormSet(BaseModelFormSet):
 
-    number_of_models = 0        # lets me keep track of the number of forms w/out having to actually render them
-    prefix_iterator  = None     # pass a list of form prefixes all at once to the formset (lets me associate forms w/ elements in the comopnent hierarchy)
+    # these are instance-level variables that should be set in the factory functions below
+    #number_of_models = 0        # lets me keep track of the number of forms w/out having to actually render them
+    #prefix_iterator  = None     # pass a list of form prefixes all at once to the formset (lets me associate forms w/ elements in the comopnent hierarchy)
 
     def _construct_form(self, i, **kwargs):
 
         if self.prefix_iterator:
-            kwargs["prefix"] = next(self.prefix_iterator)
+            form_prefix = next(self.prefix_iterator)
+            kwargs["prefix"] = form_prefix
 
-        form = super(MetadataModelFormSet,self)._construct_form(i,**kwargs)
+        # this section rewrites the original fn from BaseModelFormSet b/c I am using a separate prefix for each form
+        # (see django.forms.models.BaseModelFormSet._construct_form
+        if self.is_bound and i < self.initial_form_count():
+            # Import goes here instead of module-level because importing
+            # django.db has side effects
+            from django.db import connections
+            pk_key = "%s-%s" % (form_prefix, self.model._meta.pk.name)    # THIS IS THE DIFFERENT BIT!
+            pk = self.data[pk_key]
+            pk_field = self.model._meta.pk
+            pk = pk_field.get_db_prep_lookup('exact', pk,
+                connection=connections[self.get_queryset().db])
+            if isinstance(pk, list):
+                pk = pk[0]
+            kwargs['instance'] = self._existing_object(pk)
+        if i < self.initial_form_count() and not kwargs.get('instance'):
+            kwargs['instance'] = self.get_queryset()[i]
+        if i >= self.initial_form_count() and self.initial_extra:
+            # Set initial values for extra forms
+            try:
+                kwargs['initial'] = self.initial_extra[i-self.initial_form_count()]
+            except IndexError:
+                pass
+        form = super(BaseModelFormSet, self)._construct_form(i, **kwargs)
+        # end section
 
         # this speeds up loading time
         # (see "cached_fields" attribute in the form class below)
@@ -111,7 +136,7 @@ class MetadataModelForm(MetadataEditingForm):
 
         self.customizer = customizer
         
-        # (but in the case of a modelform, it's _all_ done in the template)
+        # (but in the case of this class, MetadataModelForm, it's _all_ done in the template)
 
         pass
         
@@ -696,7 +721,9 @@ def create_edit_forms_from_data(data, models, model_customizer, standard_propert
 
     model_formset_validity = model_formset.is_valid()
     if model_formset_validity:
-        model_instances = model_formset.save(commit=False)
+        # force model_formset to save instances even if they haven't changed
+        #model_instances = model_formset.save(commit=False)
+        model_instances = [model_form.save(commit=False) for model_form in model_formset.forms]
     validity = [model_formset_validity]
 
     standard_properties_formsets = {}
@@ -731,7 +758,10 @@ def create_edit_forms_from_data(data, models, model_customizer, standard_propert
 
 def save_valid_forms(model_formset, standard_properties_formsets, scientific_properties_formsets, model_parent_dictionary={}):
 
-    model_instances = model_formset.save(commit=True)
+    # force model_formset to save instances even if they haven't changed
+    #model_instances = model_formset.save(commit=True)
+    model_instances = [model_form.save(commit=True) for model_form in model_formset.forms]
+
     for model_instance in model_instances:
         try:
             model_parent_key = model_parent_dictionary[model_instance.get_model_key()]

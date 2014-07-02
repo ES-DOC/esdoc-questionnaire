@@ -301,7 +301,27 @@ def questionnaire_edit_existing(request, project_name="", model_name="", version
 
     else: # request.method == "POST":
 
-        pass
+        data = request.POST
+
+        (validity, model_formset, standard_properties_formsets, scientific_properties_formsets) = \
+            create_edit_forms_from_data(data,models,model_customizer,standard_properties, standard_property_customizers, scientific_properties, scientific_property_customizers)
+
+        if all(validity):
+
+            model_instances = save_valid_forms(model_formset,standard_properties_formsets,scientific_properties_formsets, model_parent_dictionary=model_parent_dictionary)
+            root_model_id = model_instances[0].pk
+
+            # this is used for other fns that might need to know what the view returns
+            # (such as those in the testing framework)
+            request.session["root_model_id"] = root_model_id
+
+            # using Django's built-in messaging framework to pass status messages (as per https://docs.djangoproject.com/en/dev/ref/contrib/messages/)
+            messages.add_message(request, messages.SUCCESS, "Successfully saved instances.")
+
+        else:
+
+            # using Django's built-in messaging framework to pass status messages (as per https://docs.djangoproject.com/en/dev/ref/contrib/messages/)
+            messages.add_message(request, messages.ERROR, "Error saving model instances")
 
     # gather all the extra information required by the template
     dict = {
