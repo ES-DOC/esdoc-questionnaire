@@ -55,10 +55,20 @@
 
     TEST!
 
-  <select id="id_projects" class="multiselect" name="projects" multiple="multiple"">
-<option value="4">downscaling</option>
-<option selected="selected" value="1">hiwpp</option>
-</select>
+    <form method="POST" action="">
+
+        {% csrf_token %}
+
+        {{ form.as_table }}
+
+        <div class="submit">
+            <input class="button"  name="save"  type="submit"   value="save"/>
+        </div> <!-- /.submit -->
+        <div style="clear: both;">&nbsp;</div>
+
+    </form>
+
+    TEST!
 
 {% endblock %} {# /content #}
 

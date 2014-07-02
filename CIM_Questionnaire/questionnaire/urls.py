@@ -28,7 +28,7 @@ admin.autodiscover()
 urlpatterns = patterns('',
 
     # testing (obviously)...
-    url(r'^test/$',     'questionnaire.views.test'),
+    #url(r'^test/$',     'questionnaire.views.test'),
 
 
 #    # project error...
@@ -73,4 +73,3 @@ urlpatterns = patterns('',
     url(r'^ajax/customize_category/(?P<category_id>[^/]+)/$', 'questionnaire.views.ajax_customize_category'),
 
 )
-
