@@ -231,12 +231,12 @@ class MetadataStandardPropertyForm(MetadataEditingForm):
         model   = MetadataStandardProperty
         fields = [
             # hidden fields...
-            "proxy", "field_type", "name", "order", "model", "is_label",
+            "proxy", "field_type", "name", "order", "is_label",
             # value fields...
             "atomic_value", "enumeration_value", "enumeration_other_value", "relationship_value",
         ]
 
-    _hidden_fields      = ["proxy", "field_type", "name", "order", "model", "is_label"]
+    _hidden_fields      = ["proxy", "field_type", "name", "order", "is_label"]
     _value_fields       = ["atomic_value", "enumeration_value", "enumeration_other_value", "relationship_value",]
 
     # set of fields that will be the same for all members of a formset; allows me to cache the query (for relationship fields)
@@ -274,7 +274,8 @@ class MetadataStandardPropertyForm(MetadataEditingForm):
             update_field_widget_attributes(self.fields["enumeration_other_value"],{"class":"other"})
 
         elif field_type == MetadataFieldTypes.RELATIONSHIP:
-            pass
+            # TODO: FILTER BY PROJECT AS WELL
+            self.fields["relationship_value"].queryset = MetadataModel.objects.filter(proxy=proxy.relationship_target_model)
 
         else:
             msg = "invalid field type for standard property: '%s'." % (field_type)
