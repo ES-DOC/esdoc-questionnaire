@@ -171,12 +171,10 @@
                                         {% for field in form.get_hidden_fields %}
                                             {{ field }}
                                         {% endfor %} {# /field #}
-{% comment "TODO: DO I NEED TO INCLUDE ANY HIDDEN FIELDS?" %}
                                         {# and the fields that are hidden by default #}
                                         {% for hidden_field in form.hidden_fields %}
                                             {{ hidden_field }}
                                         {% endfor %}  {# /hidden_field #}
-{% endcomment %}
                                     </div> <!-- /.hidden -->
 
                                     <div class="tabs">
@@ -240,11 +238,9 @@
                                                                                             {{ field }}
                                                                                         {% endfor %} {# /field #}
                                                                                         {# and the fields that are hidden by default #}
-{% comment "TODO: DO I NEED TO INCLUDE ANY HIDDEN FIELDS?" %}
                                                                                         {% for hidden_field in property_form.hidden_fields %}
                                                                                             {{ hidden_field }}
                                                                                         {% endfor %} {# /hidden_field #}
-{% endcomment %}
                                                                                     </div> <!-- /.hidden -->
                                                                                 </td> <!-- /.hidden -->
                                                                                 
@@ -334,18 +330,16 @@
 
                                                                                                                 {% include "questionnaire/_property_field.html" %}
 
-                                                                                                                <td class="nothidden"> <!-- seems weird to have a td I don't display, but it seemed weirder to have content outside of the table -->
-                                                                                                                    <div class="nothidden">
+                                                                                                                <td class="hidden"> <!-- seems weird to have a td I don't display, but it seemed weirder to have content outside of the table -->
+                                                                                                                    <div class="hidden">
                                                                                                                         {# the fields I explicitly set to hidden #}
                                                                                                                         {% for field in property_form.get_hidden_fields %}
                                                                                                                             {{ field }}
                                                                                                                         {% endfor %} {# /field #}
-{% comment "TODO: DO I NEED TO INCLUDE ANY HIDDEN FIELDS?" %}
                                                                                                                         {# and the fields that are hidden by default #}
                                                                                                                         {% for hidden_field in property_form.hidden_fields %}
                                                                                                                             {{ hidden_field }}
                                                                                                                         {% endfor %} {# /hidden_field #}
-{% endcomment %}
                                                                                                                     </div> <!-- /.hidden -->
                                                                                                                 </td> <!-- /.hidden -->
 
