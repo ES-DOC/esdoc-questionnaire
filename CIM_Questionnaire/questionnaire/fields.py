@@ -50,6 +50,7 @@ class EnumerationFormField(django.forms.fields.MultipleChoiceField):
         self.widget = SelectMultiple(choices=choices)
 
     def clean(self,value):
+
         # an enumeration can be invalid in 2 ways:
         # 1) specifying a value other than that provided by choices (recall that choices is set in the form initialization fns)
         # 2) not specifying a value when field is required

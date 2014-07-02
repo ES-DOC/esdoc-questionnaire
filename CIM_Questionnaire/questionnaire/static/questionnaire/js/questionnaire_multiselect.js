@@ -13,7 +13,7 @@ $.widget("questionnaire.multiselect", {
         multiple        : true,
         sortable        : false,
         numToShow       : 1,
-	emptySingleText : 'Select option',
+    	emptySingleText : 'Select option',
         emptyMultiText  : 'Select options',
         onChange        : null
     },
@@ -187,7 +187,7 @@ $.widget("questionnaire.multiselect", {
             else {
                 var type = "radio";
             }
-            var widget_choice   = $("<label previous_value='unchecked' style='display: block;' for='"+id+"'><input id='"+id+"' name='"+element_name+"' type='"+type+"' value='"+value+"'>&nbsp;"+text+"</input></label>")
+            var widget_choice   = $("<label previous_value='unchecked' style='display: block;' for='"+id+"'><input id='"+id+"' name='"+element_name+"-multiselect' type='"+type+"' value='"+value+"'>&nbsp;"+text+"</input></label>")
           
             $(widget_choice).click(function(event) {
                 // this bit of code prevents responding to click events if they were triggered during sorting

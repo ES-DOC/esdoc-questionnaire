@@ -26,7 +26,7 @@ class TestQuestionnaireBase(TestCase):
         # request factory for all tests
         self.factory = RequestFactory()
         # client for all tests (this is better-suited for testing views b/c, among other things, it has sessions, cookies, etc.)
-        self.client = Client(enforce_csrf_checks=True)
+        self.client = Client()#enforce_csrf_checks=True)
 
         # ensure that there are no categorizations before a new one is loaded
         qs = MetadataCategorization.objects.all()

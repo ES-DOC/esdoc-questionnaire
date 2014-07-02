@@ -180,7 +180,6 @@ class MetadataModelCustomizerForm(MetadataModelCustomizerAbstractForm):
     standard_categories_content = CharField(required=False,widget=Textarea)                 # the categories themselves
     standard_categories_tags    = CharField(label="Available Categories",required=False)    # the field used by the tagging widget
     standard_categories_tags.help_text = "This widget contains the standard set of categories associated with the CIM version. If this set is unsuitable, or empty, then the categorization should be updated. Please contact your administrator."
-
     # scientific categories are done on a per-cv / per-component basis in __init__ below
 
     standard_categories_to_process = []
@@ -370,7 +369,7 @@ def create_standard_property_customizer_form_data(model_customizer,standard_prop
     standard_property_customizer_form_data = get_initial_data(standard_property_customizer,{
         "last_modified"                 : time.strftime("%c"),
     })
-    
+
     field_type = standard_property_customizer_form_data["field_type"]
 
     if field_type == MetadataFieldTypes.ATOMIC:
@@ -481,7 +480,7 @@ class MetadataStandardPropertyCustomizerForm(MetadataCustomizerForm):
         self.type = self.get_current_field_value("field_type")
 
         if property_customizer.pk:
-            # ordinarily, this is done in create_scientific_property_customizer_form_data above
+            # ordinarily, this is done in create_standard_property_customizer_form_data above
             # but if this is an existing model, I still need to do this jiggery-pokery someplace
             # not displaying category field for standard_properties (so I should be able to get away w/ not doing this)
             #self.initial["category"] = property_customizer.category.key

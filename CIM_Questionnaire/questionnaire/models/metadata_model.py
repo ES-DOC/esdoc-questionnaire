@@ -27,11 +27,13 @@ from django.db.models.loading   import cache
 from south.db                   import db
 
 from django.utils import timezone
+from django.template.defaultfilters import slugify
 
 from questionnaire.utils        import *
 from questionnaire.fields       import *
 from questionnaire.models       import *
 
+from CIM_Questionnaire.questionnaire.utils import DEFAULT_VOCABULARY
 from django.db import models
 
 from mptt.models import MPTTModel, TreeForeignKey
@@ -133,6 +135,65 @@ class MetadataModel(MPTTModel):
             self.created = timezone.now()
         self.last_modified = timezone.now()
         super(MetadataModel,self).save(*args,**kwargs)
+
+    @classmethod
+    def get_new_realization_set(cls, project, version, model_proxy, standard_property_proxies, scientific_property_proxies, model_customizer, vocabularies):
+        """creates the full set of realizations required for a particular project/version/proxy combination w/ a specified list of vocabs"""
+
+        model_parameters = {
+            "project" : project,
+            'version' : version,
+            "proxy" : model_proxy,
+        }
+        # setup the root model...
+        model = MetadataModel(**model_parameters)
+        model.is_root = True
+        if model_customizer.model_show_hierarchy:
+            # TODO: DON'T LIKE DOING THIS HERE
+            model.title = model_customizer.model_root_component
+            model.vocabulary_key = slugify(DEFAULT_VOCABULARY)
+            model.component_key = slugify(model_customizer.model_root_component)
+
+        # it has to go in a list in-case it is part of a hierarchy
+        # (the formsets assume a hierarchy; if not, it will just be a formset w/ 1 form)
+        models = []
+        models.append(model)
+
+        for vocabulary in vocabularies:
+            model_parameters["vocabulary_key"] = slugify(vocabulary.name)
+            components = vocabulary.component_proxies.all()
+            if components:
+                # recursively go through the components of each vocabulary
+                # adding corresponding models to the list
+                root_component = components[0].get_root()
+                model_parameters["parent"] = model
+                model_parameters["title"] = u"%s : %s" % (vocabulary.name, root_component.name)
+                create_models_from_components(root_component, model_parameters, models)
+
+        standard_properties = {}
+        scientific_properties = {}
+        for model in models:
+            model.reset(True)
+            model_key = u"%s_%s" % (model.vocabulary_key,model.component_key)
+
+            standard_properties[model_key] = []
+            for standard_property_proxy in standard_property_proxies:
+                 standard_property = MetadataStandardProperty(proxy=standard_property_proxy,model=model)
+                 standard_property.reset()
+                 standard_properties[model_key].append(standard_property)
+
+            scientific_properties[model_key] = []
+            try:
+                for scientific_property_proxy in scientific_property_proxies[model_key]:
+                    scientific_property = MetadataScientificProperty(proxy=scientific_property_proxy,model=model)
+                    scientific_property.reset()
+                    scientific_properties[model_key].append(scientific_property)
+            except KeyError:
+                # there were no scientific properties associated w/ this component (or, rather, no components associated w/ this vocabulary)
+                # that's okay,
+                scientific_properties[model_key] = []
+
+        return (models,standard_properties,scientific_properties)
 
 class MetadataProperty(models.Model):
 

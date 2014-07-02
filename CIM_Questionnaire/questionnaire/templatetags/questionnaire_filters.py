@@ -21,6 +21,7 @@ Summary of module goes here
 """
 
 from django import template
+from django.template.defaultfilters import slugify
 import os
 import re
 
