@@ -413,11 +413,7 @@ def create_scientific_property_form_data(model,scientific_property,scientific_pr
 
 
     if scientific_property_customizer:
-        if model.get_model_key() ==  "atmos_atmosdynamicalcore":
-            if scientific_property.category_key != scientific_property_customizer.category.key:
-                import ipdb; ipdb.set_trace()
-
-        #assert(scientific_property.category_key == scientific_property_customizer.category.key)
+        assert(scientific_property.category_key == scientific_property_customizer.category.key)
 
     scientific_property_form_data = get_initial_data(scientific_property,{
         "last_modified" : time.strftime("%c"),
@@ -426,7 +422,15 @@ def create_scientific_property_form_data(model,scientific_property,scientific_pr
 
     if scientific_property_customizer:
 
-        pass
+        if scientific_property_customizer.is_enumeration:
+            # enumeration fields...
+            current_enumeration_value = scientific_property_form_data["enumeration_value"]
+            if current_enumeration_value:
+                scientific_property_form_data["enumeration_value"] = current_enumeration_value.split("|")
+
+        else:
+            # atomic fields...
+            pass
 
     return scientific_property_form_data
 
@@ -450,12 +454,26 @@ class MetadataScientificPropertyForm(MetadataEditingForm):
 
         super(MetadataScientificPropertyForm,self).__init__(*args,**kwargs)
 
-        update_field_widget_attributes(self.fields["enumeration_value"],{"class":"multiselect"})
-        update_field_widget_attributes(self.fields["atomic_value"],{"onchange":"copy_value(this,'%s-scientific_property_value');"%(self.prefix)})
-        # multiselect widgets are annoyingly annoying
-        # I can't do this on the actual field here
-        # instead I have to do it on the widget in js
-        #update_field_widget_attributes(self.fields["enumeration_value"],{"onchange":"copy_value(this,'%s-scientific_property_value');"%(self.prefix)})
+        property_customizer = self.instance
+        is_enumeration = self.get_current_field_value("is_enumeration",False)
+
+        if property_customizer.pk:
+            # ordinarily, this is done in create_scientific_property_form_data above
+            # but if this is an existing model, I still need to do this jiggery-pokery someplace
+            if is_enumeration:
+                current_enumeration_value = self.get_current_field_value("enumeration_value")
+                if isinstance(current_enumeration_value,basestring):
+                    self.initial["enumeration_value"] = current_enumeration_value.split("|")
+
+        if not is_enumeration:
+            update_field_widget_attributes(self.fields["atomic_value"],{"onchange":"copy_value(this,'%s-scientific_property_value');"%(self.prefix)})
+
+        else:
+            update_field_widget_attributes(self.fields["enumeration_value"],{"class":"multiselect"})
+            # multiselect widgets are annoyingly annoying
+            # I can't do this on the actual field here
+            # instead I have to do it on the widget in js
+            #update_field_widget_attributes(self.fields["enumeration_value"],{"onchange":"copy_value(this,'%s-scientific_property_value');"%(self.prefix)})
 
 
         if customizers:
@@ -482,21 +500,36 @@ class MetadataScientificPropertyForm(MetadataEditingForm):
                 update_field_widget_attributes(self.fields["atomic_value"],{"class":atomic_type.lower()})
 
         else:
-            widget_attributes = { "class" : "multiselect"}
-            choices = [(slugify(choice),choice) for choice in customizer.enumeration_choices.split('|')]
+            widget_attributes = { "class" : "multiselect" }
+            all_enumeration_choices = customizer.enumerate_choices()
             if customizer.enumeration_nullable:
-                choices += NULL_CHOICE
-                widget_attributes["class"] += " nullable "
+                all_enumeration_choices += NULL_CHOICE
+                widget_attributes["class"] += " nullable"
             if customizer.enumeration_open:
-                choices += OTHER_CHOICE
-                widget_attributes["class"] += " open "
+                all_enumeration_choices += OTHER_CHOICE
+                widget_attributes["class"] += " open"
             if customizer.enumeration_multi:
-                self.fields["enumeration_value"].widget = SelectMultiple(choices=choices)
+                all_enumeration_choices = EMPTY_CHOICE + all_enumeration_choices
+                self.fields["enumeration_value"].set_choices(all_enumeration_choices,multi=True)
             else:
-                self.fields["enumeration_value"].widget = Select(choices=EMPTY_CHOICE + choices)
+                self.fields["enumeration_value"].set_choices(all_enumeration_choices,multi=False)
+
+            # widget_attributes = { "class" : "multiselect"}
+            # choices = [(slugify(choice),choice) for choice in customizer.enumeration_choices.split('|')]
+            # if customizer.enumeration_nullable:
+            #     choices += NULL_CHOICE
+            #     widget_attributes["class"] += " nullable "
+            # if customizer.enumeration_open:
+            #     choices += OTHER_CHOICE
+            #     widget_attributes["class"] += " open "
+            # if customizer.enumeration_multi:
+            #     self.fields["enumeration_value"].widget = SelectMultiple(choices=choices)
+            # else:
+            #     self.fields["enumeration_value"].widget = Select(choices=EMPTY_CHOICE + choices)
 
             update_field_widget_attributes(self.fields["enumeration_value"],widget_attributes)
             update_field_widget_attributes(self.fields["enumeration_other_value"],{"class":"other"})
+
 
         # extra_attributes...
         if not customizer.edit_extra_standard_name:
@@ -760,6 +793,7 @@ def save_valid_forms(model_formset, standard_properties_formsets, scientific_pro
 
     # force model_formset to save instances even if they haven't changed
     #model_instances = model_formset.save(commit=True)
+    # TODO: MAKE THE commit KWARG CONDITIONAL ON WHETHER THE FORM CHANGED (OR IS NEW) TO CUT DOWN ON DB HITS
     model_instances = [model_form.save(commit=True) for model_form in model_formset.forms]
 
     for model_instance in model_instances:

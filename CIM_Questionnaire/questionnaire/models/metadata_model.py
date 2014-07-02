@@ -33,7 +33,9 @@ from questionnaire.utils        import *
 from questionnaire.fields       import *
 from questionnaire.models       import *
 
+from CIM_Questionnaire.questionnaire.fields import EnumerationField
 from CIM_Questionnaire.questionnaire.utils import DEFAULT_VOCABULARY
+
 from django.db import models
 
 from mptt.models import MPTTModel, TreeForeignKey
@@ -296,7 +298,8 @@ class MetadataScientificProperty(MetadataProperty):
     category_key = models.CharField(max_length=BIG_STRING,blank=True,null=True)
 
     atomic_value            = models.CharField(max_length=HUGE_STRING,blank=True,null=True)
-    enumeration_value       = models.CharField(max_length=HUGE_STRING,blank=True,null=True)
+    enumeration_value       = EnumerationField(blank=True,null=True)
+    #enumeration_value       = models.CharField(max_length=HUGE_STRING,blank=True,null=True)
     enumeration_other_value = models.CharField(max_length=HUGE_STRING,blank=True,null=True)
 
     extra_standard_name         = models.CharField(blank=True,null=True,max_length=BIG_STRING)
@@ -323,7 +326,6 @@ class MetadataScientificProperty(MetadataProperty):
         
         self.field_type     = MetadataFieldTypes.PROPERTY.getType()
         self.is_enumeration = proxy.choice in ["OR","XOR"]
-        
 
     def get_value(self):
         if not self.is_enumeration:

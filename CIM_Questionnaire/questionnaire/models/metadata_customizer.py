@@ -763,3 +763,6 @@ class MetadataScientificPropertyCustomizer(MetadataPropertyCustomizer):
     def display_extra_attributes(self):
         display_extra_attributes = (self.display_extra_standard_name or self.display_extra_description or self.display_extra_units)
         return display_extra_attributes
+
+    def enumerate_choices(self):
+        return [(choice,choice) for choice in self.enumeration_choices.split("|")]

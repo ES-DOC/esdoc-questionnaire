@@ -45,11 +45,20 @@ OTHER_CHOICE  = [("_OTHER","---OTHER---")]
 
 class EnumerationFormField(django.forms.fields.MultipleChoiceField):
 
-    def set_choices(self,choices):
+    def set_choices(self,choices,multi=True):
         self._choices = choices
-        self.widget = SelectMultiple(choices=choices)
+        if multi:
+            self.widget = SelectMultiple(choices=choices)
+        else:
+            self.widget = Select(choices=choices)
 
     def clean(self,value):
+
+        # if this is _not_ a multi enumeration,
+        # then the value will be a single string rather than a list;
+        # change it into a list so that validation works.
+        if isinstance(value,basestring):
+            value = [value]
 
         # an enumeration can be invalid in 2 ways:
         # 1) specifying a value other than that provided by choices (recall that choices is set in the form initialization fns)
