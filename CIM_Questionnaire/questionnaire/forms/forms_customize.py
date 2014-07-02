@@ -858,7 +858,7 @@ def create_existing_customizer_forms_from_models(model_customizer,standard_categ
 
     return (model_customizer_form, standard_property_customizer_formset, scientific_property_customizer_formsets)
 
-def create_customizer_forms_from_data(data,model_customizer,standard_category_customizers,standard_property_customizers,scientific_category_customizers,scientific_property_customizers,vocabularies_to_customize=MetadataScientificPropertyCustomizer.objects.none(),is_subform=False,subform_prefix=""):
+def create_customizer_forms_from_data(data,model_customizer,standard_category_customizers,standard_property_customizers,scientific_category_customizers,scientific_property_customizers,vocabularies_to_customize=MetadataVocabulary.objects.none(),is_subform=False,subform_prefix=""):
     """This creates and validates forms based on POST data"""
 
     if is_subform:

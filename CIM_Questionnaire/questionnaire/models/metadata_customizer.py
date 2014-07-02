@@ -21,14 +21,21 @@ Summary of module goes here
 """
 
 from django.db import models
-from django.utils.functional import lazy
+from django.db.models.fields import FieldDoesNotExist
+#from django.utils.functional import lazy
+
+from django.template.defaultfilters import slugify
 
 from collections import OrderedDict
 from django.utils import timezone
 
-from questionnaire.utils        import *
-from questionnaire.fields       import *
-from questionnaire.models.metadata_proxy    import *
+from CIM_Questionnaire.questionnaire.models.metadata_vocabulary import MetadataVocabulary
+
+from CIM_Questionnaire.questionnaire.fields import MetadataFieldTypes, MetadataAtomicFieldTypes, EnumerationField, CardinalityField, MetadataUnitTypes
+from CIM_Questionnaire.questionnaire.utils import LIL_STRING, SMALL_STRING, BIG_STRING, HUGE_STRING, QuestionnaireError
+from CIM_Questionnaire.questionnaire.utils import find_in_sequence, validate_no_spaces, validate_no_reserved_words, valiate_no_bad_chars
+
+from CIM_Questionnaire.questionnaire import APP_LABEL
 
 class MetadataCustomizer(models.Model):
     class Meta:
@@ -137,7 +144,7 @@ class MetadataCustomizer(models.Model):
         """retrieves the full set of customizations used by a particular model_customizer w/ a specified list of vocabs"""
 
         standard_category_customizers = model_customizer.standard_property_category_customizers.all()
-        standard_property_customizers = model_customizer.standard_property_customizers.all()
+        standard_property_customizers = model_customizer.standard_property_customizers.all().order_by("category__order","order")
 
         # don't get _all_ of the scientific customizers
         # just get the ones associated w/ the vocabularies that were passed in
@@ -172,13 +179,18 @@ class MetadataCustomizer(models.Model):
             for component in vocabulary.component_proxies.all():
                 component_key = slugify(component.name)
                 scientific_category_customizers[vocabulary_key][component_key] = model_customizer.scientific_property_category_customizers.filter(vocabulary_key=vocabulary_key,component_key=component_key)
-                scientific_property_customizers[vocabulary_key][component_key] = model_customizer.scientific_property_customizers.filter(vocabulary_key=vocabulary_key,component_key=component_key)
+                scientific_property_customizers[vocabulary_key][component_key] = model_customizer.scientific_property_customizers.filter(vocabulary_key=vocabulary_key,component_key=component_key).order_by("category__order","order")
 
         return (model_customizer,standard_category_customizers,standard_property_customizers,scientific_category_customizers,scientific_property_customizers)
 
     @classmethod
     def save_customizer_set(cls,model_customizer,standard_category_customizers,standard_property_customizers,scientific_category_customizers,scientific_property_customizers):
 
+        model_customizer.save()
+
+        # this fn is called outside of the forms, so I have to manually re-create and add the m2m field here
+        vocabularies = MetadataVocabulary.objects.filter(pk__in=model_customizer.vocabulary_order)
+        model_customizer.vocabularies = vocabularies
         model_customizer.save()
 
         for standard_category_customizer in standard_category_customizers:
@@ -582,9 +594,10 @@ class MetadataStandardPropertyCustomizer(MetadataPropertyCustomizer):
 
         # enumeration fields...
         elif self.field_type == MetadataFieldTypes.ENUMERATION:
-            enumeration_choices_field = self.get_field("enumeration_choices")
+            pass
+            #enumeration_choices_field = self.get_field("enumeration_choices")
             #enumeration_choices_field.set_choices(proxy.enumeration_choices.split("|"))
-  #          enumeration_choices_field.set_enumeration(proxy.enumeration_choices.split("|"))
+            #enumeration_choices_field.set_enumeration(proxy.enumeration_choices.split("|"))
 
         # relationship fields...
         elif self.field_type == MetadataFieldTypes.RELATIONSHIP:
