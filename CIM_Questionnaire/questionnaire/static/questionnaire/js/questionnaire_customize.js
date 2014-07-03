@@ -301,11 +301,13 @@ function enable_customize_subform_button(source) {
     }
 };
 
-function customize_property_subform(subform_id) {
+function customize_property_subform(subform_id,subform_customizer_field_name) {
 
     url = window.document.location.protocol + "//" + window.document.location.host + "/ajax/customize_subform/";
     url += "?i=" + subform_id;
-    
+
+    subform_customizer_field = $("*[name='"+subform_customizer_field_name+"']");
+
     var customize_subform_dialog = $("#customize_subform_dialog");
     
     $.ajax({
@@ -346,6 +348,7 @@ function customize_property_subform(subform_id) {
                             success : function(data,status,xhr) {
                                 var status_code = xhr.status;
                                 var msg = xhr.getResponseHeader("msg");
+                                var instance_id = xhr.getResponseHeader("instance_id");
                                 var msg_dialog = $(document.createElement("div"));
                                 msg_dialog.html(msg);
                                 msg_dialog.dialog({
@@ -361,8 +364,10 @@ function customize_property_subform(subform_id) {
                                     }
                                 });
 
+
                                 if (status_code == 200) {
                                     $(customize_subform_dialog).dialog("close");
+                                    $(subform_customizer_field).val(instance_id);
                                 }
                                 else {
                                     $(customize_subform_dialog).html(data);

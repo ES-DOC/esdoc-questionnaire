@@ -104,6 +104,7 @@ def ajax_customize_subform(request,**kwargs):
                 scientific_property_customizer_formset.prefix = u"%s-%s" % (scientific_property_customizer_formset.prefix, subform_prefix)
 
         msg = None
+        instance_id = None
         status = 200 # return successful response for GET (don't actually process this in the AJAX JQuery call)
 
 
@@ -120,6 +121,7 @@ def ajax_customize_subform(request,**kwargs):
             # (don't want it to interfere w/ messages on main form)
             # instead, using header fields
             msg =  "Successfully saved customizer '%s' for %s." % (model_customizer_instance.name,property_customizer.name)
+            instance_id = model_customizer_instance.pk
             status = 200
 
         else:
@@ -152,6 +154,7 @@ def ajax_customize_subform(request,**kwargs):
     rendered_form = render_to_string("questionnaire/questionnaire_customize_subform.html", dictionary=dict, context_instance=RequestContext(request))
     response = HttpResponse(rendered_form,content_type='text/html',status=status)
     response["msg"] = msg
+    response["instance_id"] = instance_id
     return response
 
 def ajax_customize_category(request,category_id="",**kwargs):

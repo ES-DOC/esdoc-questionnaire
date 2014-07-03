@@ -246,7 +246,8 @@ class MetadataStandardProperty(MetadataProperty):
     enumeration_value       = EnumerationField(blank=True,null=True)
     enumeration_other_value = models.CharField(max_length=HUGE_STRING,blank=True,null=True)
     # TODO: IN RESET MAKE THIS FK QS BOUND TO THE CORRECT TYPE OF METADATAMODEL
-    relationship_value      = models.ForeignKey("MetadataModel",blank=True,null=True)
+    relationship_value      = models.ManyToManyField("MetadataModel",blank=True,null=True)
+    #relationship_value      = models.ForeignKey("MetadataModel",blank=True,null=True)
 
     def reset(self):
         # this resets values according to the proxy
@@ -266,7 +267,9 @@ class MetadataStandardProperty(MetadataProperty):
         self.atomic_value             = None
         self.enumeration_value        = None
         self.enumeration_other_value  = "Please enter a custom value"
-        self.relationship_value       = None
+
+        if self.pk:
+            self.relationship_value.clear()
 
     def save(self,*args,**kwargs):        
         # TODO: if the customizer is required and the field is not displayed and there is no existing default value

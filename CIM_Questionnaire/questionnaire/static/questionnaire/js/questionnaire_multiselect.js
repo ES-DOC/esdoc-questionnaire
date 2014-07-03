@@ -130,7 +130,6 @@ $.widget("questionnaire.multiselect", {
         }
         else {
             var selected_choice = $(element).find("option:selected");
-            console.log(selected_choice)
             // a val of "" is the EMPTY_CHOICE
             if (selected_choice.length && $(selected_choice).val() != "") {
                 var new_label = "\"" + $(selected_choice).text() + "\""
@@ -176,6 +175,7 @@ $.widget("questionnaire.multiselect", {
         });
 
         $(header).show(function(){
+            // force the text to be rendered even if the widget was hidden to start
             multiselect._set_text();
         });
 

@@ -641,6 +641,12 @@ class MetadataStandardPropertyCustomizer(MetadataPropertyCustomizer):
     def enumerate_choices(self):
         return [(choice,choice) for choice in self.enumeration_choices.split("|")]
 
+    def render_subformset(self):
+        assert(self.field_type==MetadataFieldTypes.RELATIONSHIP)
+        min,max = self.relationship_cardinality.split("|")
+        multiple_subforms = max == "*" or int(max) > 1
+        return multiple_subforms
+
 class MetadataScientificPropertyCustomizer(MetadataPropertyCustomizer):
     class Meta:
         app_label    = APP_LABEL

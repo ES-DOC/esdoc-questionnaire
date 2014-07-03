@@ -406,7 +406,7 @@ class MetadataStandardPropertyCustomizerForm(MetadataCustomizerForm):
         model = MetadataStandardPropertyCustomizer
         fields  = [
                 # hidden fields...
-                "field_type","proxy","category",
+                "field_type","proxy","category","subform_customizer",
                 # header fields...
                 "name","category_name","order",
                 # common fields...
@@ -422,7 +422,7 @@ class MetadataStandardPropertyCustomizerForm(MetadataCustomizerForm):
     category_name = CharField(label="Category",required=False)
     category      = ChoiceField(required=False)
 
-    _hidden_fields       = ("field_type","proxy","category",)
+    _hidden_fields       = ("field_type","proxy","category","subform_customizer",)
     _header_fields       = ("name","category_name","order")
     _common_fields       = ("displayed","required","editable","unique","verbose_name","documentation","inline_help","default_value","inherited")
     _atomic_fields       = ("atomic_type","suggestions",)

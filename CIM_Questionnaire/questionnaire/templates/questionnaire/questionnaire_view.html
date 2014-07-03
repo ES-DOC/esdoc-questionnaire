@@ -226,26 +226,84 @@
                                                                     {# ensures I get the correct forms (for this category) in the correct order #}
 
                                                                     <tr class="{% cycle 'odd' 'even' %} field" name="{{property_customizer.name}}">
+
                                                                         {% with field_tuple="name|"|add:property_customizer.name %}
                                                                             {% with property_form=standard_property_formset|get_form_by_field:field_tuple %}
 
-                                                                                {% include "questionnaire/_property_field.html" %}
+                                                                                {% if property_customizer.relationship_show_subform %}
 
-                                                                                <td class="hidden"> <!-- seems weird to have a <td> I don't display, but it seemed more weird to have content outside of the table -->
-                                                                                    <div class="hidden">
-                                                                                        {# the fields I explicitly set to hidden #}
-                                                                                        {% for field in property_form.get_hidden_fields %}
-                                                                                            {{ field }}
-                                                                                        {% endfor %} {# /field #}
-                                                                                        {# and the fields that are hidden by default #}
-                                                                                        {% for hidden_field in property_form.hidden_fields %}
-                                                                                            {{ hidden_field }}
-                                                                                        {% endfor %} {# /hidden_field #}
-                                                                                    </div> <!-- /.hidden -->
-                                                                                </td> <!-- /.hidden -->
-                                                                                
+                                                                                    <td colspan="100">
+
+                                                                                        <fieldset class="collapsible_fieldset">
+                                                                                            <legend title="click to toggle content">
+                                                                                                {% if property_customizer.documentation %}
+                                                                                                    &nbsp;
+                                                                                                    <div class="help_button" title="click for more info" id="{{form.prefix}}_{{property_customizer.name}}">
+                                                                                                        <span class="default-help-icon ui-icon-info" style="display: inline-block;">&nbsp;</span>
+                                                                                                        <div class="help_description" title="{{property_customizer.verbose_name}}">
+                                                                                                            {{ property_customizer.documentation|safe }} {# the safe filter prevents inline HTML from being escaped  #}
+                                                                                                        </div> <!-- /.help_description -->
+                                                                                                    </div> <!-- /.help_button -->
+                                                                                                {% endif %} {# / help #}
+                                                                                                <span class="title">{{ property_customizer.verbose_name }}&nbsp;</span>
+                                                                                            </legend>
+                                                                                            <div class="collapsible_fieldset_content">
+                                                                                                <div class="hidden">
+                                                                                                    {# the fields I explicitly set to hidden #}
+                                                                                                    {% for field in property_form.get_hidden_fields %}
+                                                                                                        {{ field }}
+                                                                                                    {% endfor %} {# /field #}
+                                                                                                    {# and the fields that are hidden by default #}
+                                                                                                    {% for hidden_field in property_form.hidden_fields %}
+                                                                                                        {{ hidden_field }}
+                                                                                                    {% endfor %} {# /hidden_field #}
+                                                                                                </div> <!-- /.hidden -->
+                                                                                                {% if property_customizer.render_subformset %}
+                                                                                                    {#  show a subformset (cardinality max was >1) #}
+
+                                                                                                    {# alright, this looks weird I know #}
+                                                                                                    {# but passing the template as a variable gets around Django's maximum recursion issue #}
+                                                                                                    {% with "questionnaire/_subformset.html" as template %}
+                                                                                                        {% include template %}
+                                                                                                    {% endwith %}
+
+                                                                                                {%  else %}
+                                                                                                    {#  show a single subform (cardinality max was 1) #}
+
+                                                                                                    {# alright, this looks weird I know #}
+                                                                                                    {# but passing the template as a variable gets around Django's maximum recursion issue #}
+                                                                                                    {% with "questionnaire/_subform.html" as template %}
+                                                                                                        {% include template %}
+                                                                                                    {% endwith %}
+
+                                                                                                {% endif %} {# /render_subformset #}
+                                                                                            </div> <!-- /.collapsible_fieldset_content -->
+                                                                                        </fieldset> <!-- /.collapsible_fieldset -->
+
+                                                                                    </td>
+
+                                                                                {% else  %}
+
+                                                                                    {% include "questionnaire/_property_field.html" %}
+
+                                                                                    <td class="hidden"> <!-- seems weird to have a <td> I don't display, but it seemed more weird to have content outside of the table -->
+                                                                                        <div class="hidden">
+                                                                                            {# the fields I explicitly set to hidden #}
+                                                                                            {% for field in property_form.get_hidden_fields %}
+                                                                                                {{ field }}
+                                                                                            {% endfor %} {# /field #}
+                                                                                            {# and the fields that are hidden by default #}
+                                                                                            {% for hidden_field in property_form.hidden_fields %}
+                                                                                                {{ hidden_field }}
+                                                                                            {% endfor %} {# /hidden_field #}
+                                                                                        </div> <!-- /.hidden -->
+                                                                                    </td> <!-- /.hidden -->
+
+                                                                                {% endif %} {# /relationship_show_subform #}
+
                                                                             {% endwith %} {# /property_form #}
                                                                         {% endwith %} {# /field_tuple #}
+
                                                                     </tr>
                                                                 {% endfor %} {# /property_customizer #}
                                                             </table>
@@ -325,6 +383,8 @@
                                                                                                 <div class="form"> {# wrapping everything in a div.form so I can group together fields belonging to the same model #}
 
                                                                                                     <div class="scientific_property">
+
+
                                                                                                         <table width="100%">
                                                                                                             <tr class="odd">
 
