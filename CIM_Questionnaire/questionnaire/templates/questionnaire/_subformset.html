@@ -56,12 +56,7 @@
                                     <td colspan="100">
 
                                         <!-- this is taken from questionnaire_view.html -->
-                                        {% if property_customizer.required %}
-                                        <fieldset class="collapsible_fieldset required">
-                                        {% else  %}
-                                        <fieldset class="collapsible_fieldset optional">
-                                        {%  endif %}
-
+                                        <fieldset class="collapsible_fieldset">
                                             <legend title="click to toggle content">
                                                 {% if property_customizer.documentation %}
                                                     &nbsp;
@@ -142,8 +137,5 @@
         {% endwith %}
 
     </div> <!-- /.form -->
-
-    <button class="add" type="button" style="float: left; margin-top: 8px;" title="add a new instance of {{model_customizer.model_title}}">add</button>
-    <button class="remove" type="button" style="float: left; margin-top: 8px;" title="remove this {{model_customizer.model_title}}">remove</button>
 
 {% endwith %}

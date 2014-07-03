@@ -125,8 +125,12 @@ class MetadataModelForm(MetadataEditingForm):
 
         super(MetadataModelForm,self).__init__(*args,**kwargs)
 
-        update_field_widget_attributes(self.fields["title"],{"class":"label","readonly":"readonly","size":"50%"})
-        
+        # this is really important!
+        # this ensures that there is something to compare field data against so that I can truly tell is the model has changed
+        # [http://stackoverflow.com/questions/11710845/in-django-1-4-do-form-has-changed-and-form-changed-data-which-are-undocument]
+        for field_name in self._meta.fields:
+            self.fields[field_name].show_hidden_initial = True
+
         if customizer:
             self.customize(customizer)
 
@@ -353,7 +357,7 @@ class MetadataStandardPropertyForm(MetadataEditingForm):
                 subform_customizer = customizer.subform_customizer
                 subform_prefix=u"%s-subform" % (self.prefix)
                 (model_customizer,standard_category_customizers,standard_property_customizers,nested_scientific_category_customizers,nested_scientific_property_customizers) = \
-                    MetadataCustomizer.get_existing_customizer_set(subform_customizer,MetadataVocabulary.objects.none())
+                    MetadataCustomizer.get_existing_customizer_set(subform_customizer, MetadataVocabulary.objects.none())
                 standard_property_proxies = [standard_property_customizer.proxy for standard_property_customizer in standard_property_customizers]
                 scientific_property_proxies = {}
                 scientific_property_customizers = {}
@@ -364,6 +368,13 @@ class MetadataStandardPropertyForm(MetadataEditingForm):
                         # but here, they should only be one level deep (hence the use of "nested_" above
                         scientific_property_customizers[model_key] = scientific_property_customizer_list
                         scientific_property_proxies[model_key] = [scientific_property_customizer.proxy for scientific_property_customizer in scientific_property_customizer_list]
+
+                # determine if the subforms ought to be a 1-to-1 (ie: a subformset w/ 1 item)
+                # or a m-to-m (ie: a subformset w/ multiple items)
+                # even though the underlying model uses a m-to-m field, this restricts how many items users can add
+                render_subformset = customizer.render_subformset()
+
+#I AM HERE; USE SUBCLASSES FOR SUBFORMS
 
                 if not property.pk:
                     (models, standard_properties, scientific_properties) = \
@@ -974,23 +985,8 @@ def save_valid_forms(model_formset, standard_properties_formsets, scientific_pro
                     if subforms_have_changed:
                         subform_model_instances = save_valid_forms(model_subformset,standard_properties_subformsets,scientific_properties_subformsets)
                         standard_property_instance.save()   # have to save the instance before adding the m2m field
-                        standard_property_instance.relationship_value.add(subform_model_instances[0])
+                        standard_property_instance.relationship_value.add(*subform_model_instances)
             standard_property_instance.save()
-    #
-    # for standard_property_formset in standard_properties_formsets.values():
-    #
-    #     for standard_property_instance, standard_property_form in zip(standard_property_formset.save(commit=False),standard_property_formset.forms):
-    #
-    #         if standard_property_instance.field_type == MetadataFieldTypes.RELATIONSHIP:
-    #             import ipdb;ipdb.set_trace()
-    #             (subform_customizer, model_subformset, standard_properties_subformsets, scientific_properties_subformsets) = \
-    #                 standard_property_form.get_subform_tuple()
-    #             subforms_have_changed = any([model_subformset.has_changed(),standard_properties_subformsets.values()[0].has_changed(),scientific_properties_subformsets.values()[0].has_changed()])
-    #             if subforms_have_changed:
-    #                 subform_model_instances = save_valid_forms(model_subformset,standard_properties_subformsets,scientific_properties_subformsets)
-    #                 standard_property_instance.save()   # have to save the instance before adding the m2m field
-    #                 standard_property_instance.relationship_value.add(subform_model_instances[0])
-    #         standard_property_instance.save()
 
     for scientific_property_formset in scientific_properties_formsets.values():
         scientific_property_instances = scientific_property_formset.save(commit=False)

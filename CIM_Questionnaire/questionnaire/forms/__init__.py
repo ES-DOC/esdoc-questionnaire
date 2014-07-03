@@ -24,28 +24,6 @@ class MetadataForm(ModelForm):
                     if k.endswith('-'+f) and v == 'None':
                         self.data[k] = None
 
-#     def __init__(self,*args,**kwargs):
-#         super(MetadataForm,self).__init__(*args,**kwargs)
-#
-# #        assert_no_string_nones(self.data)
-#
-#         # when initializing formsets,
-#         # the fields aren't always setup yet in the underlying model
-#         # so this gets them either from the request (in the case of POST) or initial (in the case of GET)
-#
-#         self.current_values = {}
-#         
-#         if self.data:
-#             # POST; request was passed into constructor
-#             for key,value in self.data.iteritems():
-#                 if key.startswith(self.prefix+"-"):
-#                     self.current_values[key.split(self.prefix+"-")[1]] = value
-#
-#         else:
-#             # GET; initial was passed into constructor
-#             self.current_values = self.initial
-
-
     def get_fields_from_list(self,field_names_list):
         # I _think_ that iterating over self causes _all_ fields to be evaluated
         # which is expensive (especially w/ relationship fields)

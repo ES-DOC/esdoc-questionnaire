@@ -46,6 +46,22 @@
                 })
             });
 
+            /* add and remove formsets (and forms) */
+
+            $("button.add").button({
+                icons: { primary : "ui-icon-circle-plus" },
+                text: true
+            }).click(function(event) {
+               alert("click");
+            });
+
+            $("button.remove").button({
+                icons: { primary : "ui-icon-circle-minus" },
+                text: true
+            }).click(function(event) {
+               alert("click");
+            });
+
              // do this last b/c some of the xpath depends on changes made by the above fns...
             init_errors(parent);
 
@@ -234,7 +250,12 @@
 
                                                                                     <td colspan="100">
 
-                                                                                        <fieldset class="collapsible_fieldset">
+                                                                                        {% if property_customizer.required %}
+                                                                                        <fieldset class="collapsible_fieldset required">
+                                                                                        {% else  %}
+                                                                                        <fieldset class="collapsible_fieldset optional">
+                                                                                        {%  endif %}
+
                                                                                             <legend title="click to toggle content">
                                                                                                 {% if property_customizer.documentation %}
                                                                                                     &nbsp;

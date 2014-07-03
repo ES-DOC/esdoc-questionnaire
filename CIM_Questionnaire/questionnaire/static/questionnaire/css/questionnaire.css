@@ -68,7 +68,7 @@ body {
 
 #questionnaire .title { font-size: x-large; color: #358C92; text-align: center; }
 
-#questionnaire .documentation { font-style: italic; padding: 2px; }
+#questionnaire .documentation { font-style: italic; padding: 2px; font-weight: normal !important; }
 
 #questionnaire table tr {margin-bottom: 4px; }
 #questionnaire table tr.odd { background-color: #fff; }

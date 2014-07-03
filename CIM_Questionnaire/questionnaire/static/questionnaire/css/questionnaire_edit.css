@@ -31,8 +31,14 @@
 #questionnaire .required { font-weight: bold; border-color: #000000; }
 #questionnaire .optional { font-weight: normal; }
 
-#questionnaire .other        { font-style: italic; }
+#questionnaire .other { font-style: italic; }
 
 #questionnaire .readonly { background: #dcdad5 !important }
 
 #questionnaire .inheritance_options { display: inline; background-color: #B9E0E3; padding: 2px; margin: 2px; }
+
+/* buttons unique to editing */
+
+/* additional styling is done in the templates based on where these appear */
+#questionnaire button.add    { font-size: 10px; padding: 1px; }
+#questionnaire button.remove { font-size: 10px; padding: 1px; }
