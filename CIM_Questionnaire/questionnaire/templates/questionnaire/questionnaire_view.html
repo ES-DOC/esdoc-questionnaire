@@ -6,6 +6,7 @@
 {% block scripts %}
 
     <script language="javascript" type="text/javascript" src="{{ STATIC_URL }}questionnaire/js/ext/jquery.dynatree.min.js"></script>
+    <script language="javascript" type="text/javascript" src="{{ STATIC_URL }}questionnaire/js/ext/jquery.formset.min.js"></script>
     <script language="javascript" type="text/javascript" src="{{ STATIC_URL }}questionnaire/js/questionnaire_edit.js"></script>
     <script language="javascript">
 
@@ -13,12 +14,12 @@
     $(document).ready(
         function() {
 
+            var parent = document.body;
+
             // do this first so that the dialogs appear near the top of the page
             init_dialogs(parent);
             
             render_msg($("#msg"));
-
-            var parent = document.body;
 
             init_widget(users,parent);
             init_widget(readonlies,parent);
@@ -31,10 +32,11 @@
             init_widget(enablers,parent);
 
             // specific to the viewer/editor...
-            init_widget(panes,parent)
-            init_widget(treeviews,parent)
-            init_widget(enumerations,parent)
-            init_widget(autocompletes,parent)
+            init_widget(panes,parent);
+            init_widget(treeviews,parent);
+            init_widget(enumerations,parent);
+            init_widget(autocompletes,parent);
+            init_widget(dynamic_accordions,parent);
 
             $(parent).find(".scientific_property .ui-multiselect").each(function() {
                 var source_name = $(this).prev(".multiselect").attr("name");
@@ -52,7 +54,8 @@
                 icons: { primary : "ui-icon-circle-plus" },
                 text: true
             }).click(function(event) {
-               alert("click");
+                var dynamic_formset_add_button = $(event.target).closest("div.add").prev(".accordion").find(".add-row:last");
+                $(dynamic_formset_add_button).click();
             });
 
             $("button.remove").button({
@@ -250,56 +253,11 @@
 
                                                                                     <td colspan="100">
 
-                                                                                        {% if property_customizer.required %}
-                                                                                        <fieldset class="collapsible_fieldset required">
-                                                                                        {% else  %}
-                                                                                        <fieldset class="collapsible_fieldset optional">
-                                                                                        {%  endif %}
-
-                                                                                            <legend title="click to toggle content">
-                                                                                                {% if property_customizer.documentation %}
-                                                                                                    &nbsp;
-                                                                                                    <div class="help_button" title="click for more info" id="{{form.prefix}}_{{property_customizer.name}}">
-                                                                                                        <span class="default-help-icon ui-icon-info" style="display: inline-block;">&nbsp;</span>
-                                                                                                        <div class="help_description" title="{{property_customizer.verbose_name}}">
-                                                                                                            {{ property_customizer.documentation|safe }} {# the safe filter prevents inline HTML from being escaped  #}
-                                                                                                        </div> <!-- /.help_description -->
-                                                                                                    </div> <!-- /.help_button -->
-                                                                                                {% endif %} {# / help #}
-                                                                                                <span class="title">{{ property_customizer.verbose_name }}&nbsp;</span>
-                                                                                            </legend>
-                                                                                            <div class="collapsible_fieldset_content">
-                                                                                                <div class="hidden">
-                                                                                                    {# the fields I explicitly set to hidden #}
-                                                                                                    {% for field in property_form.get_hidden_fields %}
-                                                                                                        {{ field }}
-                                                                                                    {% endfor %} {# /field #}
-                                                                                                    {# and the fields that are hidden by default #}
-                                                                                                    {% for hidden_field in property_form.hidden_fields %}
-                                                                                                        {{ hidden_field }}
-                                                                                                    {% endfor %} {# /hidden_field #}
-                                                                                                </div> <!-- /.hidden -->
-                                                                                                {% if property_customizer.render_subformset %}
-                                                                                                    {#  show a subformset (cardinality max was >1) #}
-
-                                                                                                    {# alright, this looks weird I know #}
-                                                                                                    {# but passing the template as a variable gets around Django's maximum recursion issue #}
-                                                                                                    {% with "questionnaire/_subformset.html" as template %}
-                                                                                                        {% include template %}
-                                                                                                    {% endwith %}
-
-                                                                                                {%  else %}
-                                                                                                    {#  show a single subform (cardinality max was 1) #}
-
-                                                                                                    {# alright, this looks weird I know #}
-                                                                                                    {# but passing the template as a variable gets around Django's maximum recursion issue #}
-                                                                                                    {% with "questionnaire/_subform.html" as template %}
-                                                                                                        {% include template %}
-                                                                                                    {% endwith %}
-
-                                                                                                {% endif %} {# /render_subformset #}
-                                                                                            </div> <!-- /.collapsible_fieldset_content -->
-                                                                                        </fieldset> <!-- /.collapsible_fieldset -->
+                                                                                        {# alright, this looks weird I know #}
+                                                                                        {# but passing the template as a variable gets around Django's maximum recursion issue #}
+                                                                                        {% with "questionnaire/_subform.html" as template %}
+                                                                                            {% include template %}
+                                                                                        {% endwith %}
 
                                                                                     </td>
 

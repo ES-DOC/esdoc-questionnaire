@@ -201,8 +201,6 @@ class MetadataModel(MPTTModel):
     def get_existing_realization_set(cls, models, model_customizer, standard_property_customizers):
         """retrieves the full set of realizations used by a particular project/version/proxy combination """
 
-        ordered_standard_property_proxies = [standard_property_customizer.proxy for standard_property_customizer in standard_property_customizers]
-
         standard_properties = {
             model.get_model_key() : model.standard_properties.all()
             for model in models

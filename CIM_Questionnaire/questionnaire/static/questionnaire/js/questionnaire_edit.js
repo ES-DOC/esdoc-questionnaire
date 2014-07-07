@@ -21,6 +21,31 @@ function autocompletes(parent) {
     });
 }
 
+function dynamic_accordions(parent) {
+   /* have to do this in two steps b/c the accordion JQuery method cannot handle any content inbetween accordion panes */
+   /* but I need a container for dynamic formsets to be bound to */
+   /* so _after_ multiopenaccordion() is called, I stick a div into each pane and bind the formset() method to that div */
+    $(parent).find(".accordion .accordion_header").each(function() {
+        var prefix = $(this).closest(".accordion").attr("name");
+        var accordion_wrapper = "<div class='accordion_unit'></div>";
+        $(this).next().andSelf().wrapAll(accordion_wrapper);
+    });
+
+    $(parent).find(".accordion_unit").each(function() {
+        var prefix = $(this).closest(".accordion").attr("name");
+       $(this).formset({
+           prefix : prefix,
+           formCssClass : "dynamic_accordion_" + prefix,
+           added : function(row) {
+               added_subformset_form(row);
+           },
+           removed : function(row) {
+               removed_subformset_form(row);
+           }
+           // TODO: CAN I USE THE "keepFieldValues" OPTION?
+       });
+    });
+}
 
 /*
 function nullables(parent) {
@@ -46,6 +71,7 @@ function nullables(parent) {
     });
 }
 */
+
 function enumerations(parent) {
     // this is a single fn for _both_ open & nullable enumerations
     $(parent).find(".multiselect.open,.multiselect.nullable").each(function() {
@@ -207,3 +233,11 @@ function inherit(item) {
     }
 
 };
+
+function added_subformset_form(row) {
+    alert("added");
+}
+
+function removed_subformset_form(row) {
+    alert("removed");
+}

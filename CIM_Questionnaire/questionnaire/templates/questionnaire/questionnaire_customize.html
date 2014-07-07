@@ -13,12 +13,12 @@
     $(document).ready(
         function() {
 
+            var parent = document.body;
+
             // do this first so that the dialogs appear near the top of the page
             init_dialogs(parent);
             
             render_msg($("#msg"));
-
-            var parent = document.body;
 
             init_widget(users,parent);
             init_widget(readonlies,parent);

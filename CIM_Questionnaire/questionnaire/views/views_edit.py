@@ -169,8 +169,8 @@ def questionnaire_edit_new(request, project_name="", model_name="", version_name
         if all(validity):
 
             model_instances = save_valid_forms(model_formset,standard_properties_formsets,scientific_properties_formsets, model_parent_dictionary=model_parent_dictionary)
-            root_model_id = model_instances[0].pk
-
+            assert(len(model_instances)>0)
+            root_model_id = model_instances[0].get_root().pk
             # this is used for other fns that might need to know what the view returns
             # (such as those in the testing framework)
             request.session["root_model_id"] = root_model_id
@@ -291,7 +291,8 @@ def questionnaire_edit_existing(request, project_name="", model_name="", version
 
     # this is used for other fns that might need to know what the view returns
     # (such as those in the testing framework)
-    root_model_id = models[0].pk
+    assert(len(models)>0)
+    root_model_id = models[0].get_root().pk
     request.session["root_model_id"] = root_model_id
 
     if request.method == "GET":
@@ -309,7 +310,10 @@ def questionnaire_edit_existing(request, project_name="", model_name="", version
         if all(validity):
 
             model_instances = save_valid_forms(model_formset,standard_properties_formsets,scientific_properties_formsets, model_parent_dictionary=model_parent_dictionary)
-            root_model_id = model_instances[0].pk
+            assert(len(model_instances) > 0)
+            assert(root_model_id == model_instances[0].get_root().pk)
+            # already set this above, just double-check that it hasn't changed
+            #root_model_id = model_instances[0].get_root().pk
 
             # this is used for other fns that might need to know what the view returns
             # (such as those in the testing framework)
