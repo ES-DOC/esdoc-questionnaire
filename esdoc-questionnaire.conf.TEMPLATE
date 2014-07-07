@@ -9,3 +9,7 @@ port=5432
 [settings]
 secret_key=
 static_root=static/
+
+[debug]
+debug=true
+debug_toolbar=false

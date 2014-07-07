@@ -10,8 +10,9 @@ The system must have the following Python packages installed:
 * Django 1.6+
 * South
 * libXML
-* pytz
-* PIL
+* pytz (pip install pytz)
+* mptt (pip install django-mptt)
+* PIL (pip install pillow)
 * django-registration, django-authopenid (build from source)
 * A PostGres database is recommended.  However, Django also supports MySQL and SQLite3.
     * To use PostGres you must install psycopg2.

@@ -163,6 +163,11 @@ def questionnaire_edit_new(request, project_name="", model_name="", version_name
 
         data = request.POST
 
+        # import json
+        # file = open("post_data.json","w")
+        # file.write(json.dumps(data))
+        # file.close()
+        #
         (validity, model_formset, standard_properties_formsets, scientific_properties_formsets) = \
             create_edit_forms_from_data(data,models,model_customizer,standard_properties, standard_property_customizers, scientific_properties, scientific_property_customizers)
 
@@ -271,16 +276,26 @@ def questionnaire_edit_existing(request, project_name="", model_name="", version
         model_key = model.get_model_key()
         standard_property_list = standard_properties[model_key]
         for standard_property, standard_property_customizer in zip(standard_property_list,standard_property_customizers):
+            standard_properties_to_remove = []
             if not standard_property_customizer.displayed:
-                standard_property_list.remove(standard_property)
+                # this list is actually a queryset, so remove doesn't work
+                #standard_property_list.remove(standard_property)
+                # instead, I have to use exclude
+                standard_properties_to_remove.append(standard_property.pk)
+        standard_property_list.exclude(id__in=standard_properties_to_remove)
         # TODO: JUST A LIL HACK UNTIL I CAN FIGURE OUT WHERE TO SETUP THIS LOGIC
         if model_key not in scientific_property_customizers:
             scientific_property_customizers[model_key] = []
         scientific_property_list = scientific_properties[model_key]
         for scientific_property, scientific_property_customizer in zip(scientific_property_list,scientific_property_customizers[model_key]):
+            scientific_properties_to_remove = []
             if not scientific_property_customizer.displayed:
-                scientific_property_list.remove(scientific_property)
-
+                # (as above) this list is actually a queryset, so remove doesn't work
+                #scientific_property_list.remove(scientific_property)
+                # instead, I have to use exclude
+                scientific_properties_to_remove.append(scientific_property.pk)
+        scientific_property_list.exclude(id__in=scientific_properties_to_remove)
+                
     model_parent_dictionary = {}
     for model in models:
         if model.parent:

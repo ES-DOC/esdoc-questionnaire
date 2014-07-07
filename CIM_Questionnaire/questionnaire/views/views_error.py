@@ -19,13 +19,13 @@ __date__ ="Sep 30, 2013 3:04:42 PM"
 Summary of module goes here
 
 """
+from django.template import RequestContext
+from django.http import HttpResponse
+from django.shortcuts import loader
 
-from questionnaire.views import *
-from questionnaire.utils import get_version
+from django.contrib.sites.models    import get_current_site
 
-from django.template import *
-from django.shortcuts import *
-from django.http import *
+from CIM_Questionnaire.questionnaire.utils import get_version
 
 def questionnaire_error(request,error_msg="",status_code=400):
 
