@@ -537,6 +537,14 @@ class MetadataStandardPropertyCustomizerForm(MetadataCustomizerForm):
         except KeyError:
             pass
 
+        if cleaned_data["field_type"] == MetadataFieldTypes.RELATIONSHIP and cleaned_data["relationship_show_subform"]:
+            # make sure that if a user chose to render a property as a subform that the subform customizer exists
+            if not cleaned_data["subform_customizer"]:
+                msg = u"Failed to associate a subform customizer with this property."
+                self._errors["relationship_show_subform"] = self.error_class([msg])
+                del cleaned_data["relationship_show_subform"]
+                del cleaned_data["subform_customizer"]
+
         return cleaned_data
 
 

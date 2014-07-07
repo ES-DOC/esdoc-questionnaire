@@ -306,8 +306,6 @@ function customize_property_subform(subform_id,subform_customizer_field_name) {
     url = window.document.location.protocol + "//" + window.document.location.host + "/ajax/customize_subform/";
     url += "?i=" + subform_id;
 
-    subform_customizer_field = $("*[name='"+subform_customizer_field_name+"']");
-
     var customize_subform_dialog = $("#customize_subform_dialog");
     
     $.ajax({
@@ -364,9 +362,9 @@ function customize_property_subform(subform_id,subform_customizer_field_name) {
                                     }
                                 });
 
-
                                 if (status_code == 200) {
                                     $(customize_subform_dialog).dialog("close");
+                                    var subform_customizer_field = $("select[name='"+subform_customizer_field_name+"']");
                                     $(subform_customizer_field).val(instance_id);
                                 }
                                 else {
