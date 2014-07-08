@@ -54,16 +54,64 @@
                 icons: { primary : "ui-icon-circle-plus" },
                 text: true
             }).click(function(event) {
-                var dynamic_formset_add_button = $(event.target).closest("div.add").prev(".accordion").find(".add-row:last");
-                $(dynamic_formset_add_button).click();
+                var max = $(event.target).prevAll("input[name='max']").val();
+                var accordion = $(event.target).closest("div.add").prev(".accordion");
+                var n_accordion_panes = $(accordion).find(".accordion_unit").length;
+                if (n_accordion_panes == max) { // don't need to explicitly check where max="*" b/c this comparison will still be untrue
+
+                    $("#confirm_dialog").html("Unable to add; this would create more than the maxium number of instances.");
+                    $("#confirm_dialog").dialog("option", {
+                        title: "add",
+                        dialogClass: "no_close",
+                        height: 200,
+                        width: 400,
+                        buttons: {
+                            ok: function () {
+                                $(this).dialog("close");
+                            }
+                        }
+                    }).dialog("open");
+
+                }
+                else {
+
+                    var dynamic_formset_add_button = $(event.target).closest("div.add").prev(".accordion").find(".add-row:last");
+                    $(dynamic_formset_add_button).click();
+                }
+
             });
 
             $("button.remove").button({
                 icons: { primary : "ui-icon-circle-minus" },
                 text: true
             }).click(function(event) {
-               alert("click");
+                var min = $(event.target).prevAll("input[name='min']").val();
+                var accordion = $(event.target).closest(".accordion");
+                var n_accordion_panes = $(accordion).find(".accordion_unit").length;
+                if (n_accordion_panes == min) {
+
+                    $("#confirm_dialog").html("Unable to remove; this would result in less than the minumum number of instances.");
+                    $("#confirm_dialog").dialog("option", {
+                        title: "remove",
+                        dialogClass: "no_close",
+                        height: 200,
+                        width: 400,
+                        buttons: {
+                            ok: function () {
+                                $(this).dialog("close");
+                            }
+                        }
+                    }).dialog("open");
+
+                }
+                else {
+
+                    alert("remove");
+
+                }
+
             });
+
 
              // do this last b/c some of the xpath depends on changes made by the above fns...
             init_errors(parent);
