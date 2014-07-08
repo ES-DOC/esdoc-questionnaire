@@ -20,7 +20,7 @@ function init_widget(init_fn,parent,force_init) {
 }
 
 function users(parent) {
-    $(parent).find("#user a").button();
+    $(parent).find("#user a.button").button();
 }
 
 function readonlies(parent) {

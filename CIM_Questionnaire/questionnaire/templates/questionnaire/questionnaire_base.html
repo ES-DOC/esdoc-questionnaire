@@ -116,13 +116,15 @@
                         <!-- default user login/logout block -->
                         <div id="user">
                             {% if request.user.is_authenticated %}
-                                welcome: <b>{{ request.user }}</b>&nbsp; <a title="logout" href="{% url 'logout' %}?next={{ request.path }}">logout</a>                                
+                                {%  with user=request.user %}
+                                    welcome: <a href="/user/{{ user }}"><b>{{ user }}</b></a>&nbsp; <a class="button" title="logout" href="{% url 'logout' %}?next={{ request.path }}">logout</a>
+                                {% endwith %} {# /user #}
                             {% else %}
-                                <a title="register" href="/register">register</a>
-                                <a title="login" href="/login">login</a>
+                                <a title="register" class="button" href="/register">register</a>
+                                <a title="login" class="button" href="/login">login</a>
                             {% endif %}
                         </div>
-                    {% endblock %} {# /user #}
+                    {% endblock %} {# /#user #}
                 </div> <!-- /.header -->
             {% endblock %} {# /header #}
 
