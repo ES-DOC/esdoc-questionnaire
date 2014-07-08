@@ -36,50 +36,61 @@ __author__ = "allyn.treshansky"
 __date__ = "Sep 30, 2013 3:04:42 PM"
 
 
-def validate_view_arguments(request, project_name="", model_name="", version_name=""):
+def validate_view_arguments(project_name="", model_name="", version_name=""):
     """Ensures that the arguments passed to an edit view are valid (ie: resolve to active projects, models, versions)"""
+
+    (validity,project,version,model_proxy,model_customizer,msg) = (True,None,None,None,None,"")
 
     # try to get the project...
     try:
         project = MetadataProject.objects.get(name__iexact=project_name)
     except MetadataProject.DoesNotExist:
         msg = "Cannot find the <u>project</u> '%s'.  Has it been registered?" % (project_name)
-        return error(request,msg)
+        validity = False
+        return (validity,project,version,model_proxy,model_customizer,msg)
 
     if not project.active:
         msg = "Project '%s' is inactive." % (project_name)
-        return error(request,msg)
+        validity = False
+        return (validity,project,version,model_proxy,model_customizer,msg)
 
     # try to get the version...
     try:
         version = MetadataVersion.objects.get(name__iexact=version_name,registered=True)
     except MetadataVersion.DoesNotExist:
         msg = "Cannot find the <u>version</u> '%s'.  Has it been registered?" % (version_name)
-        return error(request,msg)
+        validity = False
+        return (validity,project,version,model_proxy,model_customizer,msg)
+
 
     # try to get the model (proxy)...
     try:
         model_proxy = MetadataModelProxy.objects.get(version=version,name__iexact=model_name)
     except MetadataModelProxy.DoesNotExist:
         msg = "Cannot find the <u>model</u> '%s' in the <u>version</u> '%s'." % (model_name,version_name)
-        return error(request,msg)
+        validity = False
+        return (validity,project,version,model_proxy,model_customizer,msg)
     if not model_proxy.is_document():
         msg = "<u>%s</u> is not a recognized document type in the CIM." % model_name
-        return error(request, msg)
+        validity = False
+        return (validity,project,version,model_proxy,model_customizer,msg)
 
     # try to get the default model customizer for this project/version/proxy combination...
     try:
         model_customizer = MetadataModelCustomizer.objects.get(project=project, version=version, proxy=model_proxy, default=True)
     except MetadataModelCustomizer.DoesNotExist:
         msg = "There is no default customization associated with this project/model/version."
-        return error(request, msg)
+        validity = False
+        return (validity,project,version,model_proxy,model_customizer,msg)
 
-    return (project,version,model_proxy,model_customizer)
+    return (validity,project,version,model_proxy,model_customizer,msg)
 
 def questionnaire_edit_new(request, project_name="", model_name="", version_name="", **kwargs):
 
     # validate the arguments...
-    (project,version,model_proxy,model_customizer) = validate_view_arguments(request,project_name=project_name,model_name=model_name,version_name=version_name)
+    (validity,project,version,model_proxy,model_customizer,msg) = validate_view_arguments(project_name=project_name,model_name=model_name,version_name=version_name)
+    if not validity:
+        return error(request,msg)
     request.session["checked_arguments"] = True
 
     # check authentication...
@@ -215,7 +226,9 @@ def questionnaire_edit_new(request, project_name="", model_name="", version_name
 def questionnaire_edit_existing(request, project_name="", model_name="", version_name="", model_id="", **kwargs):
 
     # validate the arguments...
-    (project,version,model_proxy,model_customizer) = validate_view_arguments(request,project_name=project_name,model_name=model_name,version_name=version_name)
+    (validity,project,version,model_proxy,model_customizer,msg) = validate_view_arguments(project_name=project_name,model_name=model_name,version_name=version_name)
+    if not validity:
+        return error(request,msg)
     request.session["checked_arguments"] = True
 
     # check authentication...

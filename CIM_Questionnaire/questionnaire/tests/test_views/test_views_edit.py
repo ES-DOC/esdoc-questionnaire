@@ -27,24 +27,23 @@ class Test(TestQuestionnaireBase):
             "model_name" : "modelcomponent",
         }
 
-        request = self.factory.get("")    # just a "dummy" request for testing
-
-        validate_view_arguments(request,**kwargs)
+        (validity,project,version,model_proxy,model_customizer,msg) = validate_view_arguments(**kwargs)
+        self.assertEqual(validity,True)
 
         invalid_kwargs = kwargs.copy()
         invalid_kwargs.update({"project_name":"invalid"})
-        invalid_response = validate_view_arguments(request, **invalid_kwargs)
-        self.assertEqual(invalid_response.status_code,400)
+        (validity,project,version,model_proxy,model_customizer,msg) = validate_view_arguments(**invalid_kwargs)
+        self.assertEqual(validity,False)
 
         invalid_kwargs = kwargs.copy()
         invalid_kwargs.update({"version_name":"invalid"})
-        invalid_response = validate_view_arguments(request, **invalid_kwargs)
-        self.assertEqual(invalid_response.status_code,400)
+        (validity,project,version,model_proxy,model_customizer,msg) = validate_view_arguments(**invalid_kwargs)
+        self.assertEqual(validity,False)
 
         invalid_kwargs = kwargs.copy()
         invalid_kwargs.update({"model_name":"invalid"})
-        invalid_response = validate_view_arguments(request, **invalid_kwargs)
-        self.assertEqual(invalid_response.status_code,400)
+        (validity,project,version,model_proxy,model_customizer,msg) = validate_view_arguments(**invalid_kwargs)
+        self.assertEqual(validity,False)
 
     def test_questionnaire_edit_help_get(self):
 
