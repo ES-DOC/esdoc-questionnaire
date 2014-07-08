@@ -23,9 +23,17 @@
     {% block content_documentation %}
         <div class="documentation">
             <p>
-                {{model_customizer.model_description|safe}}
+                Use this form to create or modify a {{ model_customizer.model_title|title }} instance.
+                Fill out the fields for each component on each tab from left to right and on each subform from top to bottom.
+                When you have finished filling in all properties, click the "save" button at the bottom of the page to store a local copy or the "publish" buttom to make the document available for other ES-DOC tools.
+                Invalid entries are indicated using a <span style="color: #ff0000; font-weight: bold;">red</span> font.&nbsp;&nbsp;
                 <a href="/edit/help" target="blank"><b>More detailed instructions</b></a> are available.
             </p>
+            {%  if model_customizer.model_description %}
+                <div style="border: 1px solid #B9E0E3; padding: 8px;">
+                    {{model_customizer.model_description|safe}}
+                </div>
+            {% endif %}
         </div> <!-- /.documentation -->
     {% endblock %} {# /content_documentation #}
 

@@ -97,12 +97,17 @@
         </div> <!-- /.title -->
     {% endblock %} {# /content_title #}
 
+
     {% block content_documentation %}
         <div class="documentation">
             <p>
-                {{model_customizer.model_description|safe}}
-                <a href="/view/help" target="blank"><b>More detailed instructions</b></a> are available.
+                Use this form to view a {{ model_customizer.model_title|title }} instance in the CIM Questionnaire.
             </p>
+            {%  if model_customizer.model_description %}
+                <div style="border: 1px solid #B9E0E3; padding: 8px;">
+                    {{model_customizer.model_description|safe}}
+                </div>
+            {% endif %}
         </div> <!-- /.documentation -->
     {% endblock %} {# /content_documentation #}
 

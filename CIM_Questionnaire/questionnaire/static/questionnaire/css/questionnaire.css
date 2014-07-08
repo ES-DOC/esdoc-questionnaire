@@ -29,6 +29,7 @@ body {
     margin: 4px;
 }
 
+#questionnaire dt { font-weight: bold; font-style: italic; }
 /* begin popup dialog boxes */
 
 #questionnaire .hidden_dialog { display: none; } /* still need to do this for pages where dialogs aren't initialized w/ JQuery */
