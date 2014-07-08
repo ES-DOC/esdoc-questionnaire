@@ -67,6 +67,7 @@ body {
 /* begin content */
 
 #questionnaire .title { font-size: x-large; color: #358C92; text-align: center; }
+#questionnaire .title a { color:  inherit; }
 
 #questionnaire .documentation { font-style: italic; padding: 2px; font-weight: normal !important; }
 

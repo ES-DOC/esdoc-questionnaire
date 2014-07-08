@@ -16,7 +16,7 @@
 
     {% block content_title %}
         <div class="title">
-            Editing a <b>{{model_customizer.model_title|title}}</b> for the <b>{{project.title|title}}</b> Project
+            Editing a <b>{{model_customizer.model_title|title}}</b> instance for the <a href="/{{ project.name|lower }}" title="ES-DOC Questionnaire Project Home"><b>{{project.title|title}}</b></a> Project
         </div> <!-- /.title -->
     {% endblock %} {# /content_title #}
 
