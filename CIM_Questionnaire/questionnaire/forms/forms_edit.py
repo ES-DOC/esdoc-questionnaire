@@ -42,6 +42,7 @@ from CIM_Questionnaire.questionnaire.fields import MetadataFieldTypes, MetadataA
 
 from CIM_Questionnaire.questionnaire.utils import QuestionnaireError, find_in_sequence, update_field_widget_attributes
 from CIM_Questionnaire.questionnaire.utils import get_initial_data, find_in_sequence, update_field_widget_attributes, set_field_widget_attributes
+from CIM_Questionnaire.questionnaire.utils import LIL_STRING, SMALL_STRING, BIG_STRING, HUGE_STRING
 
 def create_model_form_data(model,model_customizer):
 
@@ -188,6 +189,13 @@ class MetadataModelForm(MetadataModelAbstractForm):
 
     def has_changed(self):
         return True
+
+
+    def __init__(self,*args,**kwargs):
+
+        super(MetadataModelForm,self).__init__(*args,**kwargs)
+
+        set_field_widget_attributes(self.fields["title"],{"size":64})
 
 class MetadataModelSubForm(MetadataModelAbstractForm):
 

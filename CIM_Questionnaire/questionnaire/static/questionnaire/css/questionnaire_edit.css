@@ -21,8 +21,10 @@
 #questionnaire .pane fieldset { margin-top: 0px; }
 #questionnaire .pane fieldset legend { padding-left: 0.5em; cursor: pointer; }
 #questionnaire .pane fieldset legend:hover * { cursor: pointer; }
-#questionnaire .pane fieldset legend span.title { padding-left: 0.5em; background: #358c92 url(../img/default_ui_background.png) repeat-x 50% 50%; font-size: 110%; }
-#questionnaire .pane fieldset legend:hover span.title { background: #358c92 url(../img/default_ui_background.png) repeat-x 50% 50%; color: #358C92; }
+
+#questionnaire .pane fieldset legend span.title * { border: 0px; padding-left: 0.5em; background: #358c92 url(../img/default_ui_background.png) repeat-x 50% 50%; font-size: 110%; }
+#questionnaire .pane fieldset legend:hover span.title * { border: 0px; background: #358c92 url(../img/default_ui_background.png) repeat-x 50% 50%; color: #358C92; }
+
 
 /* ways to customize fields */
 
