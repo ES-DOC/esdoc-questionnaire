@@ -113,6 +113,11 @@ class MetadataModelSubFormSet(BaseModelFormSet):
 
     def _construct_form(self, i, **kwargs):
 
+        # when these forms are being constructed via AJAX for adding new subforms
+        # I need to increment the prefix of individual forms to take into account any existing forms
+        # (self.increment_prefix is 0 in all other cases)
+        i += self.increment_prefix
+
         form = super(MetadataModelSubFormSet, self)._construct_form(i, **kwargs)
 
         # this speeds up loading time
@@ -276,13 +281,14 @@ def MetadataModelFormSetFactory(*args,**kwargs):
 def MetadataModelSubFormSetFactory(*args,**kwargs):
     DEFAULT_PREFIX = "_subform"
 
-    _prefix      = kwargs.pop("prefix","")+DEFAULT_PREFIX
-    _data        = kwargs.pop("data",None)
-    _initial     = kwargs.pop("initial",[])
-    _queryset    = kwargs.pop("queryset",MetadataModel.objects.none())
-    _customizer  = kwargs.pop("customizer",None)
-    _min         = kwargs.pop("min",0)
-    _max         = kwargs.pop("max",1)
+    _prefix       = kwargs.pop("prefix","")+DEFAULT_PREFIX
+    _data         = kwargs.pop("data",None)
+    _initial      = kwargs.pop("initial",[])
+    _queryset     = kwargs.pop("queryset",MetadataModel.objects.none())
+    _customizer   = kwargs.pop("customizer",None)
+    _min          = kwargs.pop("min",0)
+    _max          = kwargs.pop("max",1)
+    _increment_prefix = kwargs.pop("increment_prefix",0)
     new_kwargs = {
         "can_delete"   : True,
         "extra"        : kwargs.pop("extra",0),
@@ -302,6 +308,7 @@ def MetadataModelSubFormSetFactory(*args,**kwargs):
     _formset.form = staticmethod(curry(MetadataModelSubForm,customizer=_customizer))
     _formset.min = _min
     _formset.max = _max
+    _formset.increment_prefix = _increment_prefix
 
     if _initial:
         _formset.number_of_models = len(_initial)
@@ -1190,7 +1197,7 @@ def create_new_edit_subforms_from_models(models,model_customizer,standard_proper
     return (model_formset, standard_properties_formsets, scientific_properties_formsets)
 
 
-def create_existing_edit_subforms_from_models(models, model_customizer, standard_properties, standard_property_customizers, scientific_properties, scientific_property_customizers, subform_prefix="", subform_min=0, subform_max=1):
+def create_existing_edit_subforms_from_models(models, model_customizer, standard_properties, standard_property_customizers, scientific_properties, scientific_property_customizers, subform_prefix="", subform_min=0, subform_max=1, increment_prefix=0):
 
     model_keys = [u"%s_%s" % (model.vocabulary_key, model.component_key) for model in models]
 
@@ -1200,7 +1207,12 @@ def create_existing_edit_subforms_from_models(models, model_customizer, standard
         customizer = model_customizer,
         min = subform_min,
         max = subform_max,
+        increment_prefix = increment_prefix,
     )
+
+    # TODO: FOR SUBFORMS I CAN ASSUME THERE WILL ONLY BE ONE MODELFORM
+    # BUT I REALLY SHOULD ADD SUPPORT FOR THE GENERAL CASE
+    incremented_prefix = model_formset.forms[0].prefix
 
     standard_properties_formsets = {}
     scientific_properties_formsets = {}
@@ -1214,7 +1226,8 @@ def create_existing_edit_subforms_from_models(models, model_customizer, standard
 
         standard_properties_formsets[model_key] = MetadataStandardPropertyInlineSubFormSetFactory(
             instance=model,
-            prefix = subform_prefix,
+            #prefix = subform_prefix,
+            prefix = incremented_prefix,
             queryset=standard_properties[model_key],
             customizers=standard_property_customizers,
         )
@@ -1225,7 +1238,8 @@ def create_existing_edit_subforms_from_models(models, model_customizer, standard
 
         scientific_properties_formsets[model_key] = MetadataScientificPropertyInlineFormSetFactory(
             instance = model,
-            prefix = subform_prefix,
+            #prefix = subform_prefix,
+            prefix = incremented_prefix,
             queryset = scientific_properties[model_key],
             customizers = scientific_property_customizers[model_key],
         )

@@ -48,4 +48,6 @@
 /* additional styling is done in the templates based on where these appear */
 #questionnaire button.add    { font-size: 10px; padding: 1px; }
 #questionnaire button.remove { font-size: 10px; padding: 1px; }
-#questionnaire a.add-row     { display: none; }
+/* make these !important b/c the formset plugin re-creates them w/ inline styles upon adding & deleting */
+#questionnaire a.add-row     { display: none !important; }
+#questionnaire a.delete-row  { display: none !important; }

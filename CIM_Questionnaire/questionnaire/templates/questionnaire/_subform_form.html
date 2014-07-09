@@ -94,10 +94,9 @@
 
     </div> <!-- /.form -->
 
-    <div>
-        <button class="add" type="button" style="float: left; margin-top: 8px;" title="add a new instance of {{model_customizer.model_title}}">add</button>
-        <button class="remove" type="button" style="float: left; margin-top: 8px;" title="remove this {{model_customizer.model_title}}">remove</button>
-        <div style="clear: both;"/>
+    <div class="refresh">
+        <button class="refresh" type="button" style="float: left; margin-top: 8px;" title="replace (ore reseet) this {{model_customizer.model_title}}">refresh</button>
+        <!-- putting this documentation here so the float is aligned with the button -->
         <div class="documentation" style="float: right; font-size: 10pt; padding: 1px;">(min:&nbsp;{{ model_subformset.get_min }}&nbsp;max:&nbsp;{{ model_subformset.get_max }})</div>
     <div>
 

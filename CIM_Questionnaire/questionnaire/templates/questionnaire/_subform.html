@@ -31,6 +31,9 @@
             {% for hidden_field in property_form.hidden_fields %}
                 {{ hidden_field }}
             {% endfor %} {# /hidden_field #}
+            <input name="customizer_id" value="{{ property_customizer.pk }}"/>
+            <input name="property_id" value="{{ property_form.id.value|default_if_none:"" }}"/>
+            <input name="prefix" value="{{ property_form.prefix }}"/>
         </div> <!-- /.hidden -->
 
         {% if property_customizer.render_as_formset %}

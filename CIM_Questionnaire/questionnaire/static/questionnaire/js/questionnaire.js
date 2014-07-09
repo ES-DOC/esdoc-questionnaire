@@ -53,6 +53,9 @@ $.ajaxSetup({
 
 /* END enable ajax access to the same domain */
 
+/* functions to initialize jquery widgets */
+/* (widgets specific to edit/view or customize forms are defined in their respective js files) */
+
 function init_widget(init_fn,parent,force_init) {
     force_init = typeof force_init !== 'undefined' ? force_init : false;
     

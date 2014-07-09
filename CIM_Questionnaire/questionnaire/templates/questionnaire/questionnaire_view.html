@@ -6,6 +6,8 @@
 {% block scripts %}
 
     <script language="javascript" type="text/javascript" src="{{ STATIC_URL }}questionnaire/js/ext/jquery.dynatree.min.js"></script>
+    <!-- TODO: ENCOUNTERED BUG IN jquery.formset.min.js [http://code.google.com/p/django-dynamic-formset/issues/detail?id=54] -->
+    <!-- MODIFIED LOCAL CODE TO FIX THIS; SHOULD SEND PATCH -->
     <script language="javascript" type="text/javascript" src="{{ STATIC_URL }}questionnaire/js/ext/jquery.formset.min.js"></script>
     <script language="javascript" type="text/javascript" src="{{ STATIC_URL }}questionnaire/js/questionnaire_edit.js"></script>
     <script language="javascript">
@@ -77,6 +79,10 @@
 
                     var dynamic_formset_add_button = $(event.target).closest("div.add").prev(".accordion").find(".add-row:last");
                     $(dynamic_formset_add_button).click();
+                    // there is function bound to the dynamic-formset add event that will fire after that button is pressed
+                    // (I don't have to explicitly call add_subform)
+
+
                 }
 
             });
@@ -84,34 +90,37 @@
             $("button.remove").button({
                 icons: { primary : "ui-icon-circle-minus" },
                 text: true
+            });
+            /* the click event had to move to its own fn ("remove_subform" defined in questionnaire_edit.js), since as forms are dynamically added this js doesn't get rerun */
+
+
+            $("button.refresh").button({
+                icons: { primary : "ui-icon-circle-minus" },
+                text: true
             }).click(function(event) {
-                var min = $(event.target).prevAll("input[name='min']").val();
-                var accordion = $(event.target).closest(".accordion");
-                var n_accordion_panes = $(accordion).find(".accordion_unit").length;
-                if (n_accordion_panes == min) {
 
-                    $("#confirm_dialog").html("Unable to remove; this would result in less than the minumum number of instances.");
-                    $("#confirm_dialog").dialog("option", {
-                        title: "remove",
-                        dialogClass: "no_close",
-                        height: 200,
-                        width: 400,
-                        buttons: {
-                            ok: function () {
-                                $(this).dialog("close");
-                            }
+                $("#confirm_dialog").html("This will replace the current instance.  You will be unable to undo this operation.  Are you sure you want to continue?");
+                $("#confirm_dialog").dialog("option", {
+                    title: "remove",
+                    dialogClass: "no_close",
+                    height: 200,
+                    width: 400,
+                    buttons: {
+                        yes : function () {
+
+                            alert("refresh");
+
+                        },
+                        no : function() {
+
+                            $(this).dialog("close");
+
                         }
-                    }).dialog("open");
+                    }
+                }).dialog("open");
 
-                }
-                else {
-
-                    alert("remove");
-
-                }
 
             });
-
 
              // do this last b/c some of the xpath depends on changes made by the above fns...
             init_errors(parent);
@@ -124,8 +133,8 @@
 
 {% block style %}
 
-    <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}questionnaire/css/questionnaire_edit.css" />
     <link rel='stylesheet' type="text/css" href="{{ STATIC_URL }}questionnaire/css/ext/jquery.dynatree.css"/>
+    <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}questionnaire/css/questionnaire_edit.css" />
 
     <style type="text/css">
         #questionniare .no_float    { float: none important! }

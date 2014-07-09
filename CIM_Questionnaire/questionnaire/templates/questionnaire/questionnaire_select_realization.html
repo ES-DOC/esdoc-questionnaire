@@ -22,31 +22,34 @@
 
 {% block content %}
 
-<form id="category">
-
-    <div class="form">
+    {% block content_documentation %}
         <div class="documentation">
             <p>
-                Use this form to customize details of this category.
+                Select an existing instance.
+                Choosing "cancel" will create a new (blank) instance.
+                Be sure not to choose the same instance more than once.
             </p>
         </div> <!-- /.documentation -->
+    {% endblock %} {# /content_documentation #}
 
-        <div class="hidden">
-            {% for field in form.get_hidden_fields %}
-                {{field}}
-            {% endfor %}
-        </div> <!-- /.hidden -->
+    <form method="POST" id="select_realization_form" action="">
 
-        <table width="100%">
-            {% for field in form.get_customizer_fields %}
-                <tr class="{% cycle 'odd' 'even' %} field" name="{{field.html_name}}">
-                    {% include "questionnaire/_field.html" %}
-                </tr>
-            {% endfor %} {# / field in form #}
-        </table>
+        {% csrf_token %}
 
-    </div> <!-- / .form -->
-    
-</form> <!-- /#category -->
+        <div class="form"> {# wrap everything in div.form, so I can group related fields together #}
+
+            <fieldset>
+
+                 <table width="100%">
+                    {% for field in form %}
+                        <tr class="{% cycle 'even' 'odd' %} field" name="{{field.html_name}}"> {# cycling in reverse oder just b/c this form only has one field and "even" rows look nicer #}
+                            {% include "questionnaire/_field.html" %}
+                        </tr>
+                    {% endfor %} {# / field in model_customizer_form.get_document_fields #}
+                </table>
+            </fieldset>
+        </div> <!-- /.form -->
+
+    </form>
 
 {% endblock %} {# /content #}

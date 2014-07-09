@@ -45,7 +45,7 @@
                 <div class="remove">
                     <input class="hidden" type="text" name="min" value="{{ model_subformset.get_min }}"/>
                     <input class="hidden" type="text" name="max" value="{{ model_subformset.get_max }}"/>
-                    <button class="remove" type="button" style="float: right; margin: 4px;" title="remove this {{model_customizer.model_title}}">remove</button>
+                    <button class="remove" type="button" style="float: right; margin: 4px;" onclick="remove_subform(this);" title="remove this {{model_customizer.model_title}}">remove</button>
                     {{ model_subform.DELETE }}
                     <br/> <!-- not sure why "<div style='clear: both;'/>" doesn't work here -->
                 </div>

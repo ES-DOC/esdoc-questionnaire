@@ -27,13 +27,14 @@ function dynamic_accordions(parent) {
    /* so _after_ multiopenaccordion() is called, I stick a div into each pane and bind the formset() method to that div */
     $(parent).find(".accordion .accordion_header").each(function() {
         var prefix = $(this).closest(".accordion").attr("name");
-        var accordion_wrapper = "<div class='accordion_unit'></div>";
+        var accordion_wrapper = "<div class='accordion_unit' name='" + prefix + "'></div>";
         $(this).next().andSelf().wrapAll(accordion_wrapper);
     });
 
     $(parent).find(".accordion_unit").each(function() {
         var prefix = $(this).closest(".accordion").attr("name");
-       $(this).formset({
+
+        $(this).formset({
            prefix : prefix,
            formCssClass : "dynamic_accordion_" + prefix,
            added : function(row) {
@@ -42,7 +43,6 @@ function dynamic_accordions(parent) {
            removed : function(row) {
                removed_subformset_form(row);
            }
-           // TODO: CAN I USE THE "keepFieldValues" OPTION?
        });
     });
 }
@@ -234,10 +234,177 @@ function inherit(item) {
 
 };
 
+function add_subform(row) {
+
+    /* this takes place AFTER the form is added */
+
+    var customizer_id = $(row).closest(".field").find("input[name='customizer_id']").val();
+    var prefix        = $(row).closest(".field").find("input[name='prefix']").val()
+    var n_forms       = $(row).closest(".accordion").find(".accordion_unit").length
+    var property_id   = $(row).closest(".field").find("input[name='property_id']").val()
+
+    url = window.document.location.protocol + "//" + window.document.location.host + "/ajax/select_realization/";
+    url += "?c=" + customizer_id + "&p=" + prefix + "&n=" + n_forms;
+    if (property_id != "") {
+        url += "&s=" + property_id;
+    }
+
+    var add_subform_dialog = $("#add_dialog");
+
+    $.ajax({
+        url     : url,
+        type    : "GET",
+        cache   : false,
+        success : function(data) {
+            $(add_subform_dialog).html(data);
+            $(add_subform_dialog).dialog("option",{
+                height      : 300,
+                width       : 600,
+                dialogClass : "no_close",
+                title       : "Select an instance to add",
+                open : function() {
+                    // apply all of the JQuery code to _this_ dialog
+                    var parent = $(add_subform_dialog);
+                    // the addition of the 'true' attribute forces initialization,
+                    // even if this dialog is opened multiple times
+                    init_widget(buttons,parent,true);
+                    init_widget(fieldsets,parent,true);
+                    init_widget(selects,parent,true);
+                    init_widget(helps,parent,true);
+                },
+
+                buttons : [
+                    {
+                        text : "ok",
+                        click : function() {
+
+                            var add_subform_data = $(this).find("#select_realization_form").serialize();
+                            $.ajax({
+                                url     : url,
+                                type    : "POST",  // (POST mimics submit)
+                                data    : add_subform_data,
+                                cache   : false,
+                                error   : function(xhr,status,error) {
+                                    console.log(xhr.responseText + status + error);
+                                },
+                                success : function(data,status,xhr) {
+
+                                    var status_code = xhr.status;
+
+                                    if (status_code == 200 ) {
+                                        alert("yay");
+                                        $(add_subform_dialog).dialog("close");
+                                    }
+                                    else {
+
+                                        /*
+                                         note - do not use a status code of 400 for form valiation errors
+                                         that will be routed to the "error" event below
+                                         instead use some valid success code other than 200 (202, for example)
+                                        */
+
+                                        var msg = xhr.getResponseHeader("msg");
+                                        var msg_dialog = $(document.createElement("div"));
+                                        msg_dialog.html(msg);
+                                        msg_dialog.dialog({
+                                            modal: true,
+                                            title : "error",
+                                            hide: "explode",
+                                            height: 200,
+                                            width: 400,
+                                            // I'm only ever showing a dialog box if there was an error in the POST
+                                            // TODO: ENSURE THE ERROR CLASS PROPAGATES TO ALL CHILD NODES?
+                                            dialogClass: "no_close ui-state-error",
+                                            buttons: {
+                                                OK: function () {
+                                                    $(this).dialog("close");
+                                                }
+                                            }
+                                        });
+
+                                        $(add_subform_dialog).html(data);
+                                        // re-apply all of the JQuery code to _this_ dialog
+                                        var parent = $(add_subform_dialog);
+                                        // the addition of the 'true' attribute forces initialization,
+                                        // even if this dialog is opened multiple times
+                                        init_widget(buttons,parent,true);
+                                        init_widget(fieldsets,parent,true);
+                                        init_widget(selects,parent,true);
+                                        init_widget(helps,parent,true);
+
+                                    }
+                                }
+                            })
+                        }
+                    },
+                    {
+                        text : "cancel",
+                        click : function() {
+                            $(add_subform_dialog).dialog("close");
+                        }
+                    }
+                ],
+                close   : function() {
+                    $(this).dialog("close");
+                }
+            }).dialog("open");
+        }
+    });
+};
+
+
+function remove_subform(remove_button) {
+
+    /* this takes place BEFORE the form is removed */
+
+    var min = $(remove_button).prevAll("input[name='min']").val();
+    var accordion = $(remove_button).closest(".accordion");
+    var n_accordion_panes = $(accordion).find(".accordion_unit").length;
+    if (n_accordion_panes == min) {
+
+        $("#confirm_dialog").html("Unable to remove; this would result in less than the minumum number of instances.");
+        $("#confirm_dialog").dialog("option", {
+            title: "remove",
+            dialogClass: "no_close",
+            height: 200,
+            width: 400,
+            buttons: {
+                ok: function () {
+                    $(this).dialog("close");
+                }
+            }
+        }).dialog("open");
+
+    }
+    else {
+
+        $("#confirm_dialog").html("Removing this will delete the relationship but not the underlying instance.  Do you wish to continue?.");
+        $("#confirm_dialog").dialog("option", {
+            title: "remove",
+            dialogClass: "no_close",
+            height: 200,
+            width: 400,
+            buttons: {
+                yes: function () {
+                    var dynamic_formset_remove_button = $(remove_button).closest(".accordion_content").next(".delete-row:first");
+                    $(dynamic_formset_remove_button).click();
+                    // there is function bound to the dynamic-formset remove event that will fire after that button is pressed
+                    // (I don't have to explicitly call anything)
+                    $(this).dialog("close")
+                },
+                no: function () {
+                    $(this).dialog("close")
+                }
+            }
+        }).dialog("open");
+    }
+}
+
+
 function added_subformset_form(row) {
-    alert("added");
+    add_subform(row);
 }
 
 function removed_subformset_form(row) {
-    alert("removed");
+    // don't have to do anything else
 }
