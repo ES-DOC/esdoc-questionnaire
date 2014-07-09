@@ -174,11 +174,6 @@ def questionnaire_edit_new(request, project_name="", model_name="", version_name
 
         data = request.POST
 
-        # import json
-        # file = open("post_data.json","w")
-        # file.write(json.dumps(data))
-        # file.close()
-        #
         (validity, model_formset, standard_properties_formsets, scientific_properties_formsets) = \
             create_edit_forms_from_data(data,models,model_customizer,standard_properties, standard_property_customizers, scientific_properties, scientific_property_customizers)
 

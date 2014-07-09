@@ -240,7 +240,7 @@ function add_subform(row) {
 
     var customizer_id = $(row).closest(".field").find("input[name='customizer_id']").val();
     var prefix        = $(row).closest(".field").find("input[name='prefix']").val()
-    var n_forms       = $(row).closest(".accordion").find(".accordion_unit").length
+    var n_forms       = parseInt($(row).closest(".accordion").find(".accordion_unit").length)
     var property_id   = $(row).closest(".field").find("input[name='property_id']").val()
 
     url = window.document.location.protocol + "//" + window.document.location.host + "/ajax/select_realization/";
@@ -248,6 +248,10 @@ function add_subform(row) {
     if (property_id != "") {
         url += "&s=" + property_id;
     }
+
+    /* TODO: DOUBLE-CHECK THAT THIS WILL WORK W/ LESS THAN 2 FORMS */
+    var old_prefix = $(row).closest(".accordion").attr("name");
+    old_prefix += "-" + (n_forms - 2);
 
     var add_subform_dialog = $("#add_dialog");
 
@@ -292,7 +296,16 @@ function add_subform(row) {
                                     var status_code = xhr.status;
 
                                     if (status_code == 200 ) {
-                                        alert("yay");
+
+                                        /* TODO: CHECK DATATYPE OF DATA? */
+                                        var parsed_data = $.parseJSON(data);
+
+                                        var new_prefix = parsed_data.prefix
+
+                                        // rename ids and names
+                                        update_field_names(row,old_prefix,new_prefix);
+                                        populate_form(row,parsed_data);
+
                                         $(add_subform_dialog).dialog("close");
                                     }
                                     else {

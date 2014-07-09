@@ -22,13 +22,14 @@ Summary of module goes here
 
 
 import time
+import json
 
 from django.contrib import messages
 from django.contrib.sites.models import get_current_site
 
 from django.db.models import get_app, get_model
 
-from django.forms import *#ModelChoiceField
+from django.forms import *  #ModelChoiceField
 
 from django.template.loader import render_to_string
 from django.template.context import RequestContext
@@ -43,7 +44,7 @@ from CIM_Questionnaire.questionnaire.models.metadata_model import MetadataModel,
 from CIM_Questionnaire.questionnaire.forms.forms_customize import create_new_customizer_forms_from_models, create_existing_customizer_forms_from_models, create_customizer_forms_from_data, save_valid_forms
 from CIM_Questionnaire.questionnaire.forms.forms_customize import MetadataModelCustomizerForm, MetadataStandardPropertyCustomizerInlineFormSetFactory, MetadataScientificPropertyCustomizerInlineFormSetFactory
 
-from CIM_Questionnaire.questionnaire.forms.forms_edit import create_new_edit_subforms_from_models, create_existing_edit_subforms_from_models
+from CIM_Questionnaire.questionnaire.forms.forms_edit import create_new_edit_subforms_from_models, create_existing_edit_subforms_from_models, get_data_from_existing_edit_forms
 
 from CIM_Questionnaire.questionnaire.utils import QuestionnaireError, update_field_widget_attributes, set_field_widget_attributes
 
@@ -266,6 +267,10 @@ def ajax_select_realization(request,**kwargs):
         form = _RealizationSelectForm(data)
 
         if form.is_valid():
+
+            status = 200
+            msg = None
+
             realization = form.cleaned_data["realizations"]
             realizations = MetadataModel.objects.filter(pk__in=[realization.pk])    # I have to pass an actual queryset (not a list) to formset constructors or else all hell will break loose
 
@@ -311,12 +316,25 @@ def ajax_select_realization(request,**kwargs):
 
             subform_min, subform_max = [int(val) if val != "*" else val for val in parent_standard_property_customizer.relationship_cardinality.split("|")]
 
-            import ipdb; ipdb.set_trace()
-
             (model_formset, standard_properties_formsets, scientific_properties_formsets) = \
                 create_existing_edit_subforms_from_models(models, model_customizer, standard_properties, standard_property_customizers, scientific_properties, scientific_property_customizers, subform_prefix=prefix, subform_min=subform_min, subform_max=subform_max, increment_prefix=n_forms)
 
-            model_formset.forms
+            data = get_data_from_existing_edit_forms(model_formset,standard_properties_formsets,scientific_properties_formsets)
+
+            # no need to use the management form, since I'm only ever adding a single form
+            fields_to_remove_from_data = [u"%s-%s" % (model_formset.prefix,field_key) for field_key in model_formset.management_form.fields.keys()]
+            for field_to_remove_from_data in fields_to_remove_from_data:
+                if field_to_remove_from_data in data:
+                    data.pop(field_to_remove_from_data)
+            # but do need to pass the prefix to make sure that js updates all added fields appropriately
+            adjusted_prefix = model_formset.forms[0].prefix
+            data["prefix"] = adjusted_prefix
+
+            # finally return a JSON version of all of the fields used in this subform
+            json_data = json.dumps(data)
+            response = HttpResponse(json_data,content_type="text/html",status=status)
+            return response
+
 
         else:
             msg = u"Error selecting %s" % (realization_customizer.model_title)

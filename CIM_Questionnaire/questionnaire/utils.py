@@ -25,6 +25,7 @@ from django.core.files.storage import FileSystemStorage
 from django.conf import settings
 
 from django.forms import model_to_dict
+from django.forms.models import BaseModelFormSet, BaseInlineFormSet
 
 import os
 import re
@@ -266,11 +267,15 @@ def get_data_from_formset(formset):
         if form.instance.pk:
             # in general, this is only needed when calling this fn outside of the interface
             # ie: in the testing framework
-            # (the hidden id & fk fields do not get passed in via the queryset for existing model formsets)
-            id_field_name = "id"
-            fk_field_name = formset.fk.name
-            existing_data[id_field_name] = form.fields[id_field_name].initial
-            existing_data[fk_field_name] = form.fields[fk_field_name].initial
+            # (the hidden pk & fk fields do not get passed in via the queryset for existing model formsets)
+            pk_field_name = formset.model._meta.pk.name
+            existing_data[pk_field_name] = form.fields[pk_field_name].initial
+            if isinstance(formset,BaseInlineFormSet):
+                fk_field_name = formset.fk.name
+                existing_data[fk_field_name] = form.fields[fk_field_name].initial
+
+        if formset.can_delete:
+            existing_data["DELETE"] = False
 
         form_data = get_data_from_form(form, existing_data)
         data.update(form_data)
@@ -286,7 +291,6 @@ def get_data_from_formset(formset):
     data[initial_forms_key] = formset.initial_form_count()
 
     return data
-
 
 class OverwriteStorage(FileSystemStorage):
 

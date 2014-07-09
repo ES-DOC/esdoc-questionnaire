@@ -427,3 +427,54 @@ function restrict_options_bak(source,target_names) {
 function slugify(string) {
     return string.toLowerCase().replace(/[^\w ]+/g,'').replace(/ +/g,'-');
 }
+
+function update_field_names(form,old_prefix,new_prefix) {
+    /* for every field in form change the name and id from "old_prefix" to "new_prefix" */
+
+    $(form).find("input,select,textarea,label").each(function() {
+        var _id = $(this).attr("id");
+        var _name = $(this).attr("name");
+        var _for = $(this).attr("for"); /* this is for labels w/in the multiselect widget */
+
+        if (_id) {
+            $(this).attr("id",_id.replace(old_prefix,new_prefix));
+        }
+        if (_name) {
+            $(this).attr("name",_name.replace(old_prefix,new_prefix));
+        }
+        if (_for) {
+            $(this).attr("for",_for.replace(old_prefix,new_prefix));
+        }
+    });
+};
+
+function populate_form(form,data) {
+
+    $.each(data,function(key,value) {
+
+        var field_selector = "*[name='" + key + "']";
+        var field = $(form).find(field_selector);
+        if (field.length) {
+
+            var field_type = $(field).prop("tagName").toLowerCase();
+
+            // field can either be input, select (including multiple select), or textarea
+            // TODO: WHAT ABOUT MULTISELECT WIDGETS?
+
+            if (field_type == "input") {
+                $(field).val(value);
+            }
+
+            else if (field_type == "textarea") {
+                $(field).val(value);
+            }
+
+            else if (field_type == "select") {
+                $(field).val(value);
+            }
+        }
+
+    });
+
+};
+
