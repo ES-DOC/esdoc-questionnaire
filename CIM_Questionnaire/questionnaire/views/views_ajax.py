@@ -238,7 +238,6 @@ def ajax_select_realization(request,**kwargs):
     assert(parent_standard_property_customizer.relationship_show_subform)
     realization_customizer = parent_standard_property_customizer.subform_customizer
 
-
     realization_parameters = {
         "project" : realization_customizer.project,
         "proxy"   : realization_customizer.proxy,
@@ -287,12 +286,15 @@ def ajax_select_realization(request,**kwargs):
 
             # get the full realization set...
             (models, standard_properties, scientific_properties) = \
-                MetadataModel.get_existing_realization_set(realizations, model_customizer, standard_property_customizers)
+                MetadataModel.get_existing_realization_set(realizations, model_customizer, standard_property_customizers, is_subrealization=True)
 
             # clean it up a bit based on properties that have been customized not to be displayed
             for model in models:
+
                 model_key = model.get_model_key()
-                standard_property_list = standard_properties[model_key]
+                property_key = model_key + str(model.pk)
+
+                standard_property_list = standard_properties[property_key]
                 standard_properties_to_remove = []
                 for standard_property, standard_property_customizer in zip(standard_property_list,standard_property_customizers):
                     if not standard_property_customizer.displayed:
@@ -304,7 +306,7 @@ def ajax_select_realization(request,**kwargs):
                 # TODO: JUST A LIL HACK UNTIL I CAN FIGURE OUT WHERE TO SETUP THIS LOGIC
                 if model_key not in scientific_property_customizers:
                     scientific_property_customizers[model_key] = []
-                scientific_property_list = scientific_properties[model_key]
+                scientific_property_list = scientific_properties[property_key]
                 scientific_properties_to_remove = []
                 for scientific_property, scientific_property_customizer in zip(scientific_property_list,scientific_property_customizers[model_key]):
                     if not scientific_property_customizer.displayed:

@@ -198,18 +198,29 @@ class MetadataModel(MPTTModel):
         return (models,standard_properties,scientific_properties)
 
     @classmethod
-    def get_existing_realization_set(cls, models, model_customizer, standard_property_customizers):
+    def get_existing_realization_set(cls, models, model_customizer, standard_property_customizers,  is_subrealization=False):
         """retrieves the full set of realizations used by a particular project/version/proxy combination """
 
-        standard_properties = {
-            model.get_model_key() : model.standard_properties.all()
-            for model in models
-        }
+        # standard_properties = {
+        #     model.get_model_key() : model.standard_properties.all()
+        #     for model in models
+        # }
+        #
+        # scientific_properties = {
+        #     model.get_model_key() : model.scientific_properties.all().order_by("proxy__category__order","order")
+        #     for model in models
+        # }
 
-        scientific_properties = {
-            model.get_model_key() : model.scientific_properties.all().order_by("proxy__category__order","order")
-            for model in models
-        }
+        standard_properties = {}
+        scientific_properties = {}
+        for model in models:
+
+            property_key = model.get_model_key()
+            if is_subrealization:
+                property_key += str(model.pk)
+
+            standard_properties[property_key] = model.standard_properties.all()
+            scientific_properties[property_key] = model.scientific_properties.all().order_by("proxy__category__order","order")
 
         return (models, standard_properties, scientific_properties)
 

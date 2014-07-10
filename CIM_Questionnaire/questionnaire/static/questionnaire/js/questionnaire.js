@@ -445,6 +445,7 @@ function update_field_names(form,old_prefix,new_prefix) {
         if (_for) {
             $(this).attr("for",_for.replace(old_prefix,new_prefix));
         }
+
     });
 };
 

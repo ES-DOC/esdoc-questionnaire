@@ -153,19 +153,54 @@ def get_forms_by_field(formset,field_tuple):
             forms.append(form)
     return forms
 
+
 @register.filter
 def get_active_scientific_categories_by_key(model_customizer,key):
     return model_customizer.get_active_scientific_categories_by_key(key)
+
 
 @register.filter
 def get_active_scientific_properties_by_key(model_customizer,key):
     return model_customizer.get_active_scientific_properties_by_key(key)
 
+
 @register.filter
 def get_active_scientific_categories_and_properties_by_key(model_customizer,key):
     return model_customizer.get_active_scientific_categories_and_properties_by_key(key)
 
+
+@register.filter
+def get_standard_properties_subformset_for_model(standard_property_form,model_form):
+    # returns the standard_property_subformset for this standard_property that relates to the model referenced by this model_form
+    # if there is no model_form.instance, then there should only be a single entry in the standard_property_subformsets dictionary, so just get that
+    standard_properties_subformsets = standard_property_form.get_standard_properties_subformsets()
+
+    # beware here is some brittle logic
+
+    # if the standard_properties_subformsets dictionary is keyed by modelkeys, then I can assume that this is an existing model
+    # otherwise I have to key by model_form.prefix
+
+    standard_properties_subformsets_keys = standard_properties_subformsets.keys()
+
+    model_prefix = model_form.prefix
+    model_key = model_form.instance.get_model_key()
+
+    if model_prefix in standard_properties_subformsets_keys:
+        return standard_properties_subformsets[model_prefix]
+
+    else:
+
+        if model_key in standard_properties_subformsets_keys:
+            return standard_properties_subformsets[model_key]
+
+        model_instance = model_form.instance
+        assert(model_instance.pk)
+        model_key += str(model_instance.pk)
+        return standard_properties_subformsets[model_key]
+
 @register.assignment_tag
 def get_default_vocabulary_key():
     return slugify(DEFAULT_VOCABULARY)
+
+
 
