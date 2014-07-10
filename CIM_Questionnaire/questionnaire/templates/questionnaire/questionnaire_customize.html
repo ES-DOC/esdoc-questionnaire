@@ -5,6 +5,10 @@
 
 {% block scripts %}
 
+    <!-- ext js -->
+    <script language="javascript" type="text/javascript" src="{{ STATIC_URL }}questionnaire/js/ext/jquery.tagit.min.js"></script>
+
+    <!--custom js -->
     <script language="javascript" type="text/javascript" src="{{ STATIC_URL }}questionnaire/js/questionnaire_customize.js"></script>
 
     <script language="javascript">
@@ -117,7 +121,12 @@
 
 {% block style %}
 
+    <!-- ext css -->
+    <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}questionnaire/css/ext/jquery.tagit.css" />
+
+    <!-- custom css -->
     <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}questionnaire/css/questionnaire_customize.css" />
+
     <style type="text/css">
         #questionniare .no_float    { float: none important! }
     </style>
