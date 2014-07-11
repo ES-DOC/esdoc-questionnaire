@@ -25,5 +25,5 @@ from views_authenticate import questionnaire_login as login, questionnaire_logou
 from views_openid       import login as oid_login, process as oid_process
 from views_customize    import questionnaire_customize_new as customize_new, questionnaire_customize_existing as customize_existing, questionnaire_customize_help as customize_help
 from views_edit         import questionnaire_edit_new as edit_new, questionnaire_edit_existing as edit_existing, questionnaire_edit_help as edit_help
-from views_view         import questionnaire_view_new as view_new, questionnaire_view_existing as view_existing, questionnaire_view_help as view_help
+from views_view         import questionnaire_view_existing as view_existing, questionnaire_view_help as view_help
 from views_test         import test
