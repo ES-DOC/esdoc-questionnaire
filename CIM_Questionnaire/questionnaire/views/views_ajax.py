@@ -29,7 +29,7 @@ from django.contrib.sites.models import get_current_site
 
 from django.db.models import get_app, get_model
 
-from django.forms import *  #ModelChoiceField
+from django.forms import  *  #TypedChoiceField, ModelChoiceField
 
 from django.template.loader import render_to_string
 from django.template.context import RequestContext
@@ -243,9 +243,13 @@ def ajax_select_realization(request,**kwargs):
         "proxy"   : realization_customizer.proxy,
     }
     realization_qs = MetadataModel.objects.filter(**realization_parameters).exclude(id__in=realizations_to_exclude)
+    realization_choices = [(realization.pk,u"%s"%realization) for realization in realization_qs]
+    empty_pk = -1
+    empty_choice = [(empty_pk,"create a new instance")]
 
     class _RealizationSelectForm(forms.Form):
-        realizations = ModelChoiceField(queryset=realization_qs,label=realization_customizer.model_title, required=True)
+        realizations = ChoiceField(choices=empty_choice+realization_choices,required=True,label=realization_customizer.model_title)
+        #realizations = ModelChoiceField(queryset=realization_qs,label=realization_customizer.model_title, required=True, empty_label="NONE")
 
         def __init__(self, *args, **kwargs):
             super(_RealizationSelectForm,self).__init__(*args, **kwargs)
@@ -268,14 +272,15 @@ def ajax_select_realization(request,**kwargs):
         if form.is_valid():
 
             status = 200
-            msg = None
 
-            realization = form.cleaned_data["realizations"]
-            realizations = MetadataModel.objects.filter(pk__in=[realization.pk])    # I have to pass an actual queryset (not a list) to formset constructors or else all hell will break loose
+            realization_pk = int(form.cleaned_data["realizations"])
 
             # get the full customizer set for this project/version/proxy combination...
             (model_customizer,standard_category_customizers,standard_property_customizers,nested_scientific_category_customizers,nested_scientific_property_customizers) = \
                 MetadataCustomizer.get_existing_customizer_set(realization_customizer,MetadataVocabulary.objects.none())
+            # (also get the proxies b/c I'll need them when setting up new properties below)
+            standard_property_proxies = [standard_property_customizer.proxy for standard_property_customizer in standard_property_customizers]
+            scientific_property_proxies = {}
             scientific_property_customizers = {}
             for vocabulary_key,scientific_property_customizer_dict in nested_scientific_property_customizers.iteritems():
                 for component_key,scientific_property_customizer_list in scientific_property_customizer_dict.iteritems():
@@ -283,43 +288,71 @@ def ajax_select_realization(request,**kwargs):
                     # I have to restructure this; in the customizer views it makes sense to store these as a dictionary of dictionary
                     # but here, they should only be one level deep (hence the use of "nested_" above
                     scientific_property_customizers[model_key] = scientific_property_customizer_list
+                    scientific_property_proxies[model_key] = [scientific_property_customizer.proxy for scientific_property_customizer in scientific_property_customizer_list]
 
-            # get the full realization set...
-            (models, standard_properties, scientific_properties) = \
-                MetadataModel.get_existing_realization_set(realizations, model_customizer, standard_property_customizers, is_subrealization=True)
+            if realization_pk == empty_pk:
+
+                # get the full realization set
+                (models, standard_properties, scientific_properties) = \
+                    MetadataModel.get_new_realization_set(model_customizer.project, model_customizer.version, model_customizer.proxy, standard_property_proxies, scientific_property_proxies, model_customizer, vocabularies=MetadataVocabulary.objects.none(), is_subrealization=True)
+
+            else:
+
+                realizations = MetadataModel.objects.filter(pk=realization_pk)    # I have to pass an actual queryset (not a list) to formset constructors or else all hell will break loose
+                realization = realizations[0]
+
+                # get the full realization set...
+                (models, standard_properties, scientific_properties) = \
+                    MetadataModel.get_existing_realization_set(realizations, model_customizer, standard_property_customizers, is_subrealization=True)
 
             # clean it up a bit based on properties that have been customized not to be displayed
             for model in models:
 
                 model_key = model.get_model_key()
-                property_key = model_key + str(model.pk)
+                property_key = model_key
+                if model.pk:
+                    property_key = model_key + str(model.pk)
 
                 standard_property_list = standard_properties[property_key]
                 standard_properties_to_remove = []
                 for standard_property, standard_property_customizer in zip(standard_property_list,standard_property_customizers):
                     if not standard_property_customizer.displayed:
-                        # this list is actually a queryset, so remove doesn't work
-                        #standard_property_list.remove(standard_property)
-                        # instead, I have to use exclude
-                        standard_properties_to_remove.append(standard_property.pk)
-                standard_property_list.exclude(id__in=standard_properties_to_remove)
+                        standard_properties_to_remove.append(standard_property)
+                # this list might actually be a queryset, so remove doesn't work
+                # instead, I have to use exclude
+                if standard_properties_to_remove:
+                    if realization_pk == empty_pk:
+                        standard_property_list.remove(standard_properties_to_remove)
+                    else:
+                        standard_property_list.exclude(id__in=[standard_property.pk for standard_property in standard_properties_to_remove])
+
                 # TODO: JUST A LIL HACK UNTIL I CAN FIGURE OUT WHERE TO SETUP THIS LOGIC
-                if model_key not in scientific_property_customizers:
-                    scientific_property_customizers[model_key] = []
+                if property_key not in scientific_property_customizers:
+                    scientific_property_customizers[property_key] = []
+
                 scientific_property_list = scientific_properties[property_key]
                 scientific_properties_to_remove = []
-                for scientific_property, scientific_property_customizer in zip(scientific_property_list,scientific_property_customizers[model_key]):
+                for scientific_property, scientific_property_customizer in zip(scientific_property_list,scientific_property_customizers[property_key]):
                     if not scientific_property_customizer.displayed:
-                        # (as above) this list is actually a queryset, so remove doesn't work
-                        #scientific_property_list.remove(scientific_property)
-                        # instead, I have to use exclude
-                        scientific_properties_to_remove.append(scientific_property.pk)
-                scientific_property_list.exclude(id__in=scientific_properties_to_remove)
+                        scientific_properties_to_remove.append(scientific_property)
+                # (as above) this list might actually be a queryset, so remove doesn't work
+                # instead, I have to use exclude
+                if scientific_properties_to_remove:
+                    if realization_pk == empty_pk:
+                        scientific_property_list.remove(scientific_properties_to_remove)
+                    else:
+                        scientific_property_list.exclude(id__in=[scientific_property.pk for scientific_property in scientific_properties_to_remove])
 
             subform_min, subform_max = [int(val) if val != "*" else val for val in parent_standard_property_customizer.relationship_cardinality.split("|")]
 
-            (model_formset, standard_properties_formsets, scientific_properties_formsets) = \
-                create_existing_edit_subforms_from_models(models, model_customizer, standard_properties, standard_property_customizers, scientific_properties, scientific_property_customizers, subform_prefix=prefix, subform_min=subform_min, subform_max=subform_max, increment_prefix=n_forms)
+            if realization_pk == empty_pk:
+
+                (model_formset, standard_properties_formsets, scientific_properties_formsets) = \
+                    create_new_edit_subforms_from_models(models, model_customizer, standard_properties, standard_property_customizers, scientific_properties, scientific_property_customizers, subform_prefix=prefix, subform_min=subform_min, subform_max=subform_max, increment_prefix=n_forms)
+
+            else:
+                (model_formset, standard_properties_formsets, scientific_properties_formsets) = \
+                    create_existing_edit_subforms_from_models(models, model_customizer, standard_properties, standard_property_customizers, scientific_properties, scientific_property_customizers, subform_prefix=prefix, subform_min=subform_min, subform_max=subform_max, increment_prefix=n_forms)
 
             data = get_data_from_existing_edit_forms(model_formset,standard_properties_formsets,scientific_properties_formsets)
 

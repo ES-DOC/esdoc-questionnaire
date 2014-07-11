@@ -1114,12 +1114,6 @@ def create_new_edit_forms_from_models(models,model_customizer,standard_propertie
     scientific_properties_formsets = {}
     for model_key, model in zip(model_keys,models):
 
-        # b/c of how I pass customizers to the forms (using find_in_sequence rather than iterators)
-        # I no longer have to ensure everything is in the same order
-        # that's good b/c that was very confusing
-        #for standard_property, standard_property_customizer in zip(standard_properties[model_key],standard_property_customizers):
-        #    assert(standard_property.name==standard_property_customizer.name)
-
         standard_properties_data = [
             create_standard_property_form_data(model, standard_property, standard_property_customizer)
             for standard_property, standard_property_customizer in
@@ -1156,6 +1150,7 @@ def create_new_edit_forms_from_models(models,model_customizer,standard_propertie
     return (model_formset, standard_properties_formsets, scientific_properties_formsets)
 
 
+
 def create_existing_edit_forms_from_models(models, model_customizer, standard_properties, standard_property_customizers, scientific_properties, scientific_property_customizers):
 
     model_keys = [u"%s_%s" % (model.vocabulary_key, model.component_key) for model in models]
@@ -1169,12 +1164,6 @@ def create_existing_edit_forms_from_models(models, model_customizer, standard_pr
     standard_properties_formsets = {}
     scientific_properties_formsets = {}
     for model_key, model in zip(model_keys,models):
-
-        # b/c of how I pass customizers to the forms (using find_in_sequence rather than iterators)
-        # I no longer have to ensure everything is in the same order
-        # that's good b/c that was very confusing
-        #for standard_property, standard_property_customizer in zip(standard_properties[model_key],standard_property_customizers):
-        #    assert(standard_property.name==standard_property_customizer.name)
 
         standard_properties_formsets[model_key] = MetadataStandardPropertyInlineFormSetFactory(
             instance=model,
@@ -1197,7 +1186,7 @@ def create_existing_edit_forms_from_models(models, model_customizer, standard_pr
     return (model_formset, standard_properties_formsets, scientific_properties_formsets)
 
 
-def create_new_edit_subforms_from_models(models, model_customizer, standard_properties, standard_property_customizers, scientific_properties, scientific_property_customizers, subform_prefix="", subform_min=0, subform_max=1):
+def create_new_edit_subforms_from_models(models, model_customizer, standard_properties, standard_property_customizers, scientific_properties, scientific_property_customizers, subform_prefix="", subform_min=0, subform_max=1,  increment_prefix=0):
 
     model_keys = [model.get_model_key() for model in models]
 
@@ -1209,6 +1198,7 @@ def create_new_edit_subforms_from_models(models, model_customizer, standard_prop
         customizer = model_customizer,
         min = subform_min,
         max = subform_max,
+        increment_prefix = increment_prefix,
     )
 
     standard_properties_formsets = {}
@@ -1216,12 +1206,9 @@ def create_new_edit_subforms_from_models(models, model_customizer, standard_prop
     for model_key, model, model_form in zip(model_keys, models, model_formset.forms):
 
         adjusted_prefix = model_form.prefix
-
-        # b/c of how I pass customizers to the forms (using find_in_sequence rather than iterators)
-        # I no longer have to ensure everything is in the same order
-        # that's good b/c that was very confusing
-        #for standard_property, standard_property_customizer in zip(standard_properties[model_key],standard_property_customizers):
-        #    assert(standard_property.name==standard_property_customizer.name)
+        submodel_key = model_key
+        if model.pk:
+            submodel_key += str(model.pk)
 
         standard_properties_data = [
             create_standard_property_form_data(model, standard_property, standard_property_customizer)
@@ -1229,7 +1216,7 @@ def create_new_edit_subforms_from_models(models, model_customizer, standard_prop
             zip(standard_properties[model_key], standard_property_customizers)
             if standard_property_customizer.displayed
         ]
-        standard_properties_formsets[adjusted_prefix] = MetadataStandardPropertyInlineSubFormSetFactory(
+        standard_properties_formsets[submodel_key] = MetadataStandardPropertyInlineSubFormSetFactory(
             instance = model,
             prefix = adjusted_prefix,
             initial = standard_properties_data,
@@ -1248,7 +1235,7 @@ def create_new_edit_subforms_from_models(models, model_customizer, standard_prop
             if scientific_property_customizer.displayed
         ]
         assert(len(scientific_properties_data)==len(scientific_properties[model_key]))
-        scientific_properties_formsets[adjusted_prefix] = MetadataScientificPropertyInlineFormSetFactory(
+        scientific_properties_formsets[submodel_key] = MetadataScientificPropertyInlineFormSetFactory(
             instance = model,
             prefix = adjusted_prefix,
             initial = scientific_properties_data,
@@ -1324,6 +1311,7 @@ def create_edit_forms_from_data(data, models, model_customizer, standard_propert
     standard_properties_formsets = {}
     scientific_properties_formsets = {}
 
+
     for (i, model_key) in enumerate(model_keys):
 
         standard_properties_formsets[model_key] = MetadataStandardPropertyInlineFormSetFactory(
@@ -1333,7 +1321,11 @@ def create_edit_forms_from_data(data, models, model_customizer, standard_propert
             customizers = standard_property_customizers,
         )
 
-        validity += [standard_properties_formsets[model_key].is_valid()]
+        try:
+            validity += [standard_properties_formsets[model_key].is_valid()]
+        except:
+            import ipdb; ipdb.set_trace()
+            validity += [standard_properties_formsets[model_key].is_valid()]
 
         # TODO: JUST A LIL HACK UNTIL I CAN FIGURE OUT WHERE TO SETUP THIS LOGIC
         if model_key not in scientific_property_customizers:

@@ -139,7 +139,7 @@ class MetadataModel(MPTTModel):
         super(MetadataModel,self).save(*args,**kwargs)
 
     @classmethod
-    def get_new_realization_set(cls, project, version, model_proxy, standard_property_proxies, scientific_property_proxies, model_customizer, vocabularies):
+    def get_new_realization_set(cls, project, version, model_proxy, standard_property_proxies, scientific_property_proxies, model_customizer, vocabularies,  is_subrealization=False):
         """creates the full set of realizations required for a particular project/version/proxy combination w/ a specified list of vocabs"""
 
         model_parameters = {
@@ -150,7 +150,7 @@ class MetadataModel(MPTTModel):
         # setup the root model...
         model = MetadataModel(**model_parameters)
         model.is_root = True
-        if model_customizer.model_show_hierarchy:
+        if not is_subrealization and model_customizer.model_show_hierarchy:
             # TODO: DON'T LIKE DOING THIS HERE
             model.title = model_customizer.model_root_component
             model.vocabulary_key = slugify(DEFAULT_VOCABULARY)
@@ -176,24 +176,25 @@ class MetadataModel(MPTTModel):
         scientific_properties = {}
         for model in models:
             model.reset(True)
-            model_key = u"%s_%s" % (model.vocabulary_key,model.component_key)
 
-            standard_properties[model_key] = []
+            property_key = model.get_model_key()
+
+            standard_properties[property_key] = []
             for standard_property_proxy in standard_property_proxies:
                  standard_property = MetadataStandardProperty(proxy=standard_property_proxy,model=model)
                  standard_property.reset()
-                 standard_properties[model_key].append(standard_property)
+                 standard_properties[property_key].append(standard_property)
 
-            scientific_properties[model_key] = []
+            scientific_properties[property_key] = []
             try:
-                for scientific_property_proxy in scientific_property_proxies[model_key]:
+                for scientific_property_proxy in scientific_property_proxies[property_key]:
                     scientific_property = MetadataScientificProperty(proxy=scientific_property_proxy,model=model)
                     scientific_property.reset()
-                    scientific_properties[model_key].append(scientific_property)
+                    scientific_properties[property_key].append(scientific_property)
             except KeyError:
                 # there were no scientific properties associated w/ this component (or, rather, no components associated w/ this vocabulary)
                 # that's okay,
-                scientific_properties[model_key] = []
+                scientific_properties[property_key] = []
 
         return (models,standard_properties,scientific_properties)
 

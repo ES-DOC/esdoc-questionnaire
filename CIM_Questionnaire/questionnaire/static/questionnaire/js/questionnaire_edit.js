@@ -356,7 +356,10 @@ function add_subform(row) {
                     {
                         text : "cancel",
                         click : function() {
-                            /* TODO NEED TO CHANGE PREFIXES HERE TOO; BUT WHAT DO I USE FOR NEW PREFIX? */
+
+                            var dynamic_formset_remove_button = $(row).find(".delete-row:first");
+                            $(dynamic_formset_remove_button).click();
+
                             $(add_subform_dialog).dialog("close");
                         }
                     }

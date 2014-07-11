@@ -183,7 +183,7 @@ def get_standard_properties_subformset_for_model(standard_property_form,model_fo
     standard_properties_subformsets_keys = standard_properties_subformsets.keys()
 
     model_prefix = model_form.prefix
-    model_key = model_form.instance.get_model_key()
+    model_key = u"%s_%s" % (model_form.get_current_field_value("vocabulary_key"),model_form.get_current_field_value("component_key"))
 
     if model_prefix in standard_properties_subformsets_keys:
         return standard_properties_subformsets[model_prefix]
