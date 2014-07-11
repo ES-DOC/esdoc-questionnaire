@@ -76,6 +76,10 @@ def validate_view_arguments(project_name="", model_name="", version_name=""):
         msg = "Cannot find the <u>version</u> '%s'.  Has it been registered?" % (version_name)
         validity = False
         return (validity,project,version,model_proxy,msg)
+    if version.categorization is None:
+        msg = "The <u>version</u> '%s' has no categorization associated with it." % (version_name)
+        validity = False
+        return (validity,project,version,model_proxy,msg)
 
     # try to get the model (proxy)...
     try:
