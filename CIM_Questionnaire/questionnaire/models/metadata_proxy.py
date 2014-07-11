@@ -44,7 +44,7 @@ class MetadataModelProxy(models.Model):
         verbose_name_plural = '(DISABLE ADMIN ACCESS SOON) Metadata Model Proxies'
 
     name                    = models.CharField(max_length=SMALL_STRING,blank=False,null=False)
-    stereotype              = models.CharField(max_length=BIG_STRING,blank=False,null=True,choices=[(slugify(stereotype),stereotype) for stereotype in CIM_STEREOTYPES])    
+    stereotype              = models.CharField(max_length=BIG_STRING,blank=True,null=True,choices=[(slugify(stereotype),stereotype) for stereotype in CIM_STEREOTYPES])
     documentation           = models.TextField(blank=True,null=True)
     package                 = models.CharField(max_length=SMALL_STRING,blank=True,null=True)
     order                   = models.PositiveIntegerField(blank=True,null=True)
@@ -53,8 +53,10 @@ class MetadataModelProxy(models.Model):
 
     def is_document(self):
         is_document = False
-        if self.stereotype.lower() == "document":
+
+        if self.stereotype and self.stereotype.lower() == "document":
             is_document = True
+
         return is_document
     
     def __unicode__(self):
@@ -125,7 +127,7 @@ class MetadataStandardPropertyProxy(MetadataPropertyProxy):
     atomic_type     = models.CharField(max_length=64,blank=False,choices=[(ft.getType(),ft.getName()) for ft in MetadataAtomicFieldTypes],default=MetadataAtomicFieldTypes.DEFAULT.getType())
 
     # attributes for ENUMERATION fields
-    enumeration_choices  = models.CharField(max_length=HUGE_STRING,blank=True)
+    enumeration_choices  = models.TextField(blank=True)
     enumeration_open     = models.BooleanField(default=False,blank=True)
     enumeration_multi    = models.BooleanField(default=False,blank=True)
     enumeration_nullable = models.BooleanField(default=False,blank=True)
