@@ -51,77 +51,13 @@
                 })
             });
 
-            /* add and remove formsets (and forms) */
+            /* disable all add/remove buttons in view */
+            /* (these buttons actually do stuff in edit */
 
-            $("button.add").button({
-                icons: { primary : "ui-icon-circle-plus" },
-                text: true
-            }).click(function(event) {
-                var max = $(event.target).prevAll("input[name='max']").val();
-                var accordion = $(event.target).closest("div.add").prev(".accordion");
-                var n_accordion_panes = $(accordion).find(".accordion_unit").length;
-                if (n_accordion_panes == max) { // don't need to explicitly check where max="*" b/c this comparison will still be untrue
-
-                    $("#confirm_dialog").html("Unable to add; this would create more than the maxium number of instances.");
-                    $("#confirm_dialog").dialog("option", {
-                        title: "add",
-                        dialogClass: "no_close",
-                        height: 200,
-                        width: 400,
-                        buttons: {
-                            ok: function () {
-                                $(this).dialog("close");
-                            }
-                        }
-                    }).dialog("open");
-
-                }
-                else {
-
-                    var dynamic_formset_add_button = $(event.target).closest("div.add").prev(".accordion").find(".add-row:last");
-                    $(dynamic_formset_add_button).click();
-                    // there is function bound to the dynamic-formset add event that will fire after that button is pressed
-                    // (I don't have to explicitly call add_subform)
-
-
-                }
-
-            });
-
-            $("button.remove").button({
-                icons: { primary : "ui-icon-circle-minus" },
-                text: true
-            });
-            /* the click event had to move to its own fn ("remove_subform" defined in questionnaire_edit.js), since as forms are dynamically added this js doesn't get rerun */
-
-
-            $("button.refresh").button({
-                icons: { primary : "ui-icon-circle-minus" },
-                text: true
-            }).click(function(event) {
-
-                $("#confirm_dialog").html("This will replace the current instance.  You will be unable to undo this operation.  Are you sure you want to continue?");
-                $("#confirm_dialog").dialog("option", {
-                    title: "remove",
-                    dialogClass: "no_close",
-                    height: 200,
-                    width: 400,
-                    buttons: {
-                        yes : function () {
-
-                            alert("refresh");
-
-                        },
-                        no : function() {
-
-                            $(this).dialog("close");
-
-                        }
-                    }
-                }).dialog("open");
-
-
-            });
+            $("button.add").hide();
+            $("button.remove").hide();
+            $("button.replace").hide();
+            $("button.reset").hide();
 
              // do this last b/c some of the xpath depends on changes made by the above fns...
             init_errors(parent);
@@ -130,6 +66,7 @@
     );
 
     </script>
+
 {% endblock %} {# /scripts #}
 
 {% block style %}

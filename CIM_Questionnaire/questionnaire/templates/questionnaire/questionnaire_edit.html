@@ -3,9 +3,160 @@
 {% load questionnaire_filters %}
 {% load mptt_tags %}
 
+
 {% block scripts %}
 
-    {{ block.super }}
+    <script language="javascript" type="text/javascript" src="{{ STATIC_URL }}questionnaire/js/ext/jquery.dynatree.min.js"></script>
+    <!-- TODO: ENCOUNTERED BUG IN jquery.formset.min.js [http://code.google.com/p/django-dynamic-formset/issues/detail?id=54] -->
+    <!-- MODIFIED LOCAL CODE TO FIX THIS; SHOULD SEND PATCH -->
+    <script language="javascript" type="text/javascript" src="{{ STATIC_URL }}questionnaire/js/ext/jquery.formset.min.js"></script>
+    <script language="javascript" type="text/javascript" src="{{ STATIC_URL }}questionnaire/js/questionnaire_edit.js"></script>
+    <script language="javascript">
+
+    /* just setup a minimum of jquery-ui functionality */
+    $(document).ready(
+        function() {
+
+            var parent = document.body;
+
+            // do this first so that the dialogs appear near the top of the page
+            init_dialogs(parent);
+
+            render_msg($("#msg"));
+
+            init_widget(users,parent);
+            init_widget(readonlies,parent);
+            init_widget(buttons,parent);
+            init_widget(fieldsets,parent);
+            init_widget(dates,parent);
+            init_widget(tabs,parent);
+            init_widget(selects,parent);
+            init_widget(accordions,parent);
+            init_widget(helps,parent);
+            init_widget(enablers,parent);
+
+            // specific to the viewer/editor...
+            init_widget(panes,parent);
+            init_widget(treeviews,parent);
+            init_widget(enumerations,parent);
+            init_widget(autocompletes,parent);
+            init_widget(dynamic_accordions,parent);
+
+            $(parent).find(".scientific_property .ui-multiselect").each(function() {
+                var source_name = $(this).prev(".multiselect").attr("name");
+                var target_name = source_name.replace("-enumeration_value", "-scientific_property_value")
+                $(this).find(".multiselect_header").change(function (event) {
+                    var source_value = $(this).button("option", "label");
+                    var target = $("*[name='" + target_name + "']");
+                    $(target).val(source_value);
+                })
+            });
+
+            /* add and remove formsets (and forms) */
+
+            $("button.add").button({
+                icons: { primary : "ui-icon-circle-plus" },
+                text: true
+            }).click(function(event) {
+                var max = $(event.target).prevAll("input[name='max']").val();
+                var accordion = $(event.target).closest("div.add").prev(".accordion");
+                var n_accordion_panes = $(accordion).find(".accordion_unit").length;
+                if (n_accordion_panes == max) { // don't need to explicitly check where max="*" b/c this comparison will still be untrue
+
+                    $("#confirm_dialog").html("Unable to add; this would create more than the maxium number of instances.");
+                    $("#confirm_dialog").dialog("option", {
+                        title: "add",
+                        dialogClass: "no_close",
+                        height: 200,
+                        width: 400,
+                        buttons: {
+                            ok: function () {
+                                $(this).dialog("close");
+                            }
+                        }
+                    }).dialog("open");
+
+                }
+                else {
+
+                    var dynamic_formset_add_button = $(event.target).closest("div.add").prev(".accordion").find(".add-row:last");
+                    $(dynamic_formset_add_button).click();
+                    // there is function bound to the dynamic-formset add event that will fire after that button is pressed
+                    // (I don't have to explicitly call add_subform)
+
+
+                }
+
+            });
+
+            $("button.remove").button({
+                icons: { primary : "ui-icon-circle-minus" },
+                text: true
+            });
+            /* the click event had to move to its own fn ("remove_subform" defined in questionnaire_edit.js), since as forms are dynamically added this js doesn't get rerun */
+
+
+            $("button.replace").button({
+                icons: { primary : "ui-icon-refresh" },
+                text: true
+            }).click(function(event) {
+
+                $("#confirm_dialog").html("This will replace the current instance.  You will be unable to undo this operation.  Are you sure you want to continue?");
+                $("#confirm_dialog").dialog("option", {
+                    title: "remove",
+                    dialogClass: "no_close",
+                    height: 200,
+                    width: 400,
+                    buttons: {
+                        yes : function () {
+
+                            alert("refresh");
+
+                        },
+                        no : function() {
+
+                            $(this).dialog("close");
+
+                        }
+                    }
+                }).dialog("open");
+
+            });
+
+            $("button.reset").button({
+                icons: { primary : "ui-icon-close" },
+                text: true
+            }).click(function(event) {
+
+                $("#confirm_dialog").html("This will remove the current instance.  You will be unable to undo this operation.  Are you sure you want to continue?");
+                $("#confirm_dialog").dialog("option", {
+                    title: "remove",
+                    dialogClass: "no_close",
+                    height: 200,
+                    width: 400,
+                    buttons: {
+                        yes : function () {
+
+                            alert("refresh");
+
+                        },
+                        no : function() {
+
+                            $(this).dialog("close");
+
+                        }
+                    }
+                }).dialog("open");
+
+            });
+
+             // do this last b/c some of the xpath depends on changes made by the above fns...
+            init_errors(parent);
+
+        }
+    );
+
+    </script>
 
 {% endblock %} {# /scripts #}
 
