@@ -42,6 +42,7 @@
     <xs:complexType name="AttributeType">
         <xs:sequence>
             <xs:element name="name" type="xs:string"/>
+            <xs:element name="description" type="xs:string" minOccurs="0" maxOccurs="1"/>
             <xs:element name="type">
                 <xs:simpleType>
                     <xs:restriction base="xs:string">
@@ -55,7 +56,8 @@
             <xs:choice>
                 <xs:element name="atomic" type="AtomicType" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="enumeration" type="EnumerationType" minOccurs="0" maxOccurs="1"/>
-                <xs:element name="relationship" type="RelationshipType" minOccurs="0" maxOccurs="1"/>                
+                <xs:element name="relationship" type="RelationshipType" minOccurs="0" maxOccurs="1"
+                />
             </xs:choice>
         </xs:sequence>
         <xs:attribute name="is_label" type="xs:boolean"/>
@@ -66,27 +68,28 @@
             <xs:element name="atomic_type" minOccurs="0" maxOccurs="1">
                 <xs:simpleType>
                     <xs:restriction base="xs:string">
-                        <xs:enumeration value=""/>                        
+                        <xs:enumeration value=""/>
                         <xs:enumeration value="BOOLEAN"/>
                         <xs:enumeration value="DATE"/>
                         <xs:enumeration value="DATETIME"/>
                         <xs:enumeration value="DECIMAL"/>
                         <xs:enumeration value="EMAIL"/>
                         <xs:enumeration value="INTEGER"/>
-                        <xs:enumeration value="STRING"/> <!-- default -->
+                        <xs:enumeration value="STRING"/>
+                        <!-- default -->
                         <xs:enumeration value="TEXT"/>
                         <xs:enumeration value="TIME"/>
                         <xs:enumeration value="URL"/>
                     </xs:restriction>
                 </xs:simpleType>
             </xs:element>
-        </xs:sequence>    
+        </xs:sequence>
     </xs:complexType>
-    
+
     <xs:complexType name="EnumerationType">
         <xs:sequence>
             <xs:element name="choice" minOccurs="0" maxOccurs="unbounded"/>
-        </xs:sequence>    
+        </xs:sequence>
         <xs:attribute name="open" type="xs:boolean"/>
         <xs:attribute name="multi" type="xs:boolean"/>
         <xs:attribute name="nullable" type="xs:boolean"/>
@@ -103,7 +106,7 @@
             <xs:element name="target" type="NonEmptyStringType" minOccurs="1" maxOccurs="1"/>
         </xs:sequence>
     </xs:complexType>
-    
+
     <xs:simpleType name="NonEmptyStringType">
         <xs:restriction base="xs:string">
             <xs:minLength value="1"/>
