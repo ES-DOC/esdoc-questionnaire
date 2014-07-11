@@ -159,6 +159,21 @@ function enablers(parent) {
     $(parent).find(".enabler").trigger("change");
 }
 
+function dates(parent) {
+    $(parent).find(".date,.datetime").datepicker({
+        changeYear: true,
+        showButtonPanel: false,
+        showOn: 'button'
+    }).next("button").button({
+        icons: { primary: "ui-icon-calendar" },
+        text: false
+    });
+    $(".ui-datepicker-trigger").mouseover(function () {
+        $(this).css('cursor', 'pointer');
+    });
+    $(".ui-datepicker-trigger").attr("title", "click to select date");
+};
+
 function fieldsets(parent) {
     $(parent).find(".collapsible_fieldset").addClass("expanded");
     $(parent).find(".collapsible_fieldset legend").click(function() {
