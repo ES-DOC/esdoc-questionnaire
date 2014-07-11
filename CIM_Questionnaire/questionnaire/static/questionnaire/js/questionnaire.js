@@ -99,20 +99,16 @@ function buttons(parent) {
     }).click(function(event){
         var accordion = $(event.target).closest(".subform_toolbar").nextAll(".accordion:first");
 
-        if ($(accordion).hasClass("ui-sortable")) {
-            // I have to do this manually (rather than w/ the active:all option)
-            // b/c each accordion is wrapped in 'accordion_content' (to allow sorting)
-            $(accordion).children(".accordion_unit").each(function() {
-                var header = $(this).find(".accordion_header:first");
-                if (! $(header).hasClass("open_accordion")) {
-                    $(header).click();
-                }
-            });
-        }
-        else {
-            $(accordion).multiOpenAccordion("option","active","all");
-        }
-
+        // can't use the built-in plugin option
+        // b/c accordions are wrapped in ".accordion_content"
+        // (to allow sorting in customizer form and dynamic adding/removing in editing forms)
+        //$(accordion).multiOpenAccordion("option","active","all");
+        $(accordion).children(".accordion_unit").each(function() {
+            var header = $(this).find(".accordion_header:first");
+            if (! $(header).hasClass("open_accordion")) {
+                $(header).click();
+            }
+        });
     });
     $(parent).find(".subform_toolbar button.collapse").button({
          icons : {primary: "ui-icon-circle-triangle-n"},
@@ -120,19 +116,15 @@ function buttons(parent) {
     }).click(function(event){
         var accordion = $(event.target).closest(".subform_toolbar").nextAll(".accordion:first");
 
-        if ($(accordion).hasClass("ui-sortable")) {
-            // I have to do this manually (rather than w/ the active:none option)
-            // b/c each accordion is wrapped in 'accordion_content' (to allow sorting)
-            $(accordion).children(".accordion_unit").each(function() {
-                var header = $(this).find(".accordion_header:first");
-                if ($(header).hasClass("open_accordion")) {
-                    $(header).click();
-                }
-            });
-        }
-        else {
-            $(accordion).multiOpenAccordion("option","active","none");
-        }
+        // as above, can't use the built-in plugin option
+        // b/c accordions are wrapped in ".accordion_content"
+        //$(accordion).multiOpenAccordion("option","active","none");
+        $(accordion).children(".accordion_unit").each(function() {
+            var header = $(this).find(".accordion_header:first");
+            if ($(header).hasClass("open_accordion")) {
+                $(header).click();
+            }
+        });
     });
     $(parent).find(".subform_toolbar button.sort").button({
         icons : { primary : "ui-icon-arrowthick-2-n-s"},
