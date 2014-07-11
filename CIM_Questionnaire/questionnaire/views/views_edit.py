@@ -362,7 +362,9 @@ def questionnaire_edit_existing(request, project_name="", model_name="", version
         "standard_properties_formsets": standard_properties_formsets,
         "scientific_properties_formsets": scientific_properties_formsets,
         "questionnaire_version": get_version(),  # used in the footer
-        "can_publish": True,  # only models that have already been saved can be published
+        # TODO: FINISH PUBLISHING STUFF
+        #"can_publish": True,  # only models that have already been saved can be published
+        "can_publish" : False,
     }
 
     return render_to_response('questionnaire/questionnaire_edit.html', dict, context_instance=RequestContext(request))
