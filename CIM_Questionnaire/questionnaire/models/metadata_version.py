@@ -90,7 +90,7 @@ class MetadataVersion(models.Model):
             version_model_proxy_name          = xpath_fix(version_model_proxy,"name/text()")
             version_model_proxy_documentation = xpath_fix(version_model_proxy,"description/text()") or None
             version_model_proxy_stereotype    = xpath_fix(version_model_proxy,"@stereotype") or None
-       
+
             new_model_proxy_kwargs["name"]              = re.sub(r'\.','_',str(version_model_proxy_name[0]))
             if version_model_proxy_documentation:
                 new_model_proxy_kwargs["documentation"] = version_model_proxy_documentation[0]
@@ -127,7 +127,10 @@ class MetadataVersion(models.Model):
                 new_standard_property_proxy_kwargs["order"]                 = j
                 new_standard_property_proxy_kwargs["is_label"]              = bool(version_property_proxy_is_label[0].lower()=="true")
                 if atomic_type:
-                    new_standard_property_proxy_kwargs["atomic_type"]       = MetadataAtomicFieldTypes.get(atomic_type[0])
+                    atomic_type = atomic_type[0]
+                    if atomic_type == u"STRING":
+                        atomic_type = "DEFAULT"
+                    new_standard_property_proxy_kwargs["atomic_type"]       = MetadataAtomicFieldTypes.get(atomic_type)
                 else:
                     new_standard_property_proxy_kwargs.pop("atomic_type",None)
                 new_standard_property_proxy_kwargs["enumeration_choices"]   = "|".join(enumeration_choices)
@@ -138,7 +141,8 @@ class MetadataVersion(models.Model):
 
                 (new_standard_property_proxy,created_property) = MetadataStandardPropertyProxy.objects.get_or_create(**new_standard_property_proxy_kwargs)
                 new_standard_property_proxy.save()
-                                
+
+
             new_model_proxy.save()
         
         for model_proxy in MetadataModelProxy.objects.filter(version=self):
