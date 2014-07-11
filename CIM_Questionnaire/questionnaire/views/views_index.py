@@ -148,7 +148,7 @@ def questionnaire_project_index(request,project_name=""):
     all_versions = MetadataVersion.objects.filter(registered=True)
     all_proxies = MetadataModelProxy.objects.filter(stereotype__iexact="document",version__in=all_versions)
     all_customizers = MetadataModelCustomizer.objects.filter(project=project,proxy__in=all_proxies)
-    all_models = MetadataModel.objects.filter(project=project,is_root=True,proxy__in=all_proxies)
+    all_models = MetadataModel.objects.filter(project=project,is_root=True,proxy__in=all_proxies,is_document=True)
 
    # I AM HERE
     
