@@ -307,87 +307,121 @@ function customize_property_subform(subform_id,subform_customizer_field_name) {
     url += "?i=" + subform_id;
 
     var customize_subform_dialog = $("#customize_subform_dialog");
-    
+
     $.ajax({
-        url     : url,
-        type    : "GET",
-        cache   : false,
-        success : function(data) {
+        url: url,
+        type: "GET",
+        cache: false,
+        success: function (data) {
             $(customize_subform_dialog).html(data);
-            $(customize_subform_dialog).dialog("option",{
-                height      : 860,
-                width       : 1200,
-                dialogClass : "no_close",
-                title       : "Customize Subform",
-                open : function() {
+            $(customize_subform_dialog).dialog("option", {
+                height: 860,
+                width: 1200,
+                dialogClass: "no_close",
+                title: "Customize Subform",
+                open: function () {
                     // apply all of the JQuery code to _this_ dialog
                     var parent = $(customize_subform_dialog);
                     // the addition of the 'true' attribute forces initialization,
                     // even if this dialog is opened multiple times
-                    init_widget(readonlies,parent,true);
-                    init_widget(buttons,parent,true);
-                    init_widget(fieldsets,parent,true);
-                    init_widget(selects,parent,true);
-                    init_widget(accordions,parent,true);
-                    init_widget(helps,parent,true);
-                    init_widget(enablers,parent,true);
-                    init_widget(tags,parent,true);
-
+                    init_widget(readonlies, parent, true);
+                    init_widget(buttons, parent, true);
+                    init_widget(fieldsets, parent, true);
+                    init_widget(selects, parent, true);
+                    init_widget(accordions, parent, true);
+                    init_widget(helps, parent, true);
+                    init_widget(enablers, parent, true);
+                    init_widget(tags, parent, true);
                 },
-                buttons     : {
-                    save : function() {
-                        var subform_data = $(this).find("#customize_subform_form").serialize();                        
+                buttons: [
+                    {
+                        text: "save",
+                        click: function () {
+                            var subform_data = $(this).find("#customize_subform_form").serialize();
+                            $.ajax({
+                                url: url,
+                                type: "POST",  // (POST mimics submi)
+                                data: subform_data,
+                                cache: false,
+                                error: function (xhr, status, error) {
+                                    console.log(xhr.responseText + status + error);
+                                },
+                                success: function (data, status, xhr) {
 
-                        $.ajax({
-                            url: url,
-                            type: "POST",   // (POST mimics submit)
-                            data: subform_data,
-                            cache: false,
-                            success : function(data,status,xhr) {
-                                var status_code = xhr.status;
-                                var msg = xhr.getResponseHeader("msg");
-                                var instance_id = xhr.getResponseHeader("instance_id");
-                                var msg_dialog = $(document.createElement("div"));
-                                msg_dialog.html(msg);
-                                msg_dialog.dialog({
-                                    modal: true,
-                                    hide: "explode",
-                                    height: 200,
-                                    width: 400,
-                                    dialogClass: "no_close",
-                                    buttons: {
-                                        OK: function () {
-                                            $(this).dialog("close");
+                                    var msg = xhr.getResponseHeader("msg");
+                                    var msg_dialog = $(document.createElement("div"));
+                                    msg_dialog.html(msg);
+                                    msg_dialog.dialog({
+                                        modal: true,
+                                        hide: "explode",
+                                        height: 200,
+                                        width: 400,
+                                        dialogClass: "no_close",
+                                        buttons: {
+                                            OK: function () {
+                                                $(this).dialog("close");
+                                            }
                                         }
+                                    });
+
+                                    var status_code = xhr.status;
+                                    if (status_code == 200) {
+
+                                        var parsed_data = $.parseJSON(data);
+                                        var subform_customizer_id = parsed_data.subform_customizer_id;
+                                        var subform_customizer_name = parsed_data.subform_customizer_name;
+
+                                        var subform_customizer_field = $("select[name='" + subform_customizer_field_name + "']");
+                                        if ($(subform_customizer_field).find("option[value='" + subform_customizer_id + "']").length == 0) {
+                                            // add this new customizer if it didn't already exist
+                                            $(subform_customizer_field).append(
+                                                $("<option>", { value: subform_customizer_id }).text(subform_customizer_name)
+                                            );
+                                        }
+                                        $(subform_customizer_field).val(subform_customizer_id)
+
+                                        console.log(subform_customizer_id);
+                                        console.log(subform_customizer_field);
+                                        console.log($(subform_customizer_field).val());
+
+                                        $(customize_subform_dialog).dialog("close");
+
                                     }
-                                });
+                                    else {
 
-                                if (status_code == 200) {
-                                    $(customize_subform_dialog).dialog("close");
-                                    var subform_customizer_field = $("select[name='"+subform_customizer_field_name+"']");
-                                    $(subform_customizer_field).val(instance_id);
-                                }
-                                else {
-                                    $(customize_subform_dialog).html(data);
-                                    /* TODO: DO I HAVE TO RE-RUN INIT FNS? */
-                                }
-                            },
-                            error   : function(xhr,status,error) {
-                               console.log(xhr.responseText + status + error);
-                            }
+                                        $(customize_subform_dialog).html(data)
+                                        // re-apply all of the JQuery code
+                                        var parent = $(customize_subform_dialog);
+                                        // the addition of the 'true' attribute forces initialization,
+                                        // even if this dialog is opened multiple times
+                                        init_widget(readonlies, parent, true);
+                                        init_widget(buttons, parent, true);
+                                        init_widget(fieldsets, parent, true);
+                                        init_widget(selects, parent, true);
+                                        init_widget(accordions, parent, true);
+                                        init_widget(helps, parent, true);
+                                        init_widget(enablers, parent, true);
+                                        init_widget(tags, parent, true);
 
-                        })
+                                    }
+                                }
+                            })
+                        }
                     },
-                    cancel : function() {
-                        $(customize_subform_dialog).dialog("close");
+                    {
+                        text: "Cancel",
+                        click: function () {
+                            $(customize_subform_dialog).dialog("close");
+                        }
                     }
-                },
-                close   : function() {
-                    $(this).dialog("close");
+
+                ],
+                close: function () {
+                    $(this).dialog("close")
                 }
             }).dialog("open");
         }
-    });  
+    });
 };
 
 function restrict_options(source,target_names) {
