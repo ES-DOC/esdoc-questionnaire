@@ -207,7 +207,8 @@ function selects(parent) {
 }
 
 function accordions(parent) {
-    $(parent).find(".accordion").each(function() {
+
+    $(parent).find(".accordion").not(".fake").each(function() {
         $(this).multiOpenAccordion({
             active : false,   // this _should_ hide all panes, but there is a known bug [http://code.google.com/p/jquery-multi-open-accordion/issues/detail?id=15] preventing this
             tabShown : function(event,ui) {

@@ -65,7 +65,7 @@ def ajax_customize_subform(request,**kwargs):
     vocabularies   = property_parent.vocabularies.none() # using none() to avoid dealing w/ sci props
     project        = property_parent.project
     version        = property_parent.version
-    subform_prefix = u"customize_subform_%s" % (property_proxy.name)
+    subform_prefix = u"customize_subform_%s-%s" % (property_proxy.name,subform_id)
 
     customizer_filter_parameters = {
         "project"   : project,

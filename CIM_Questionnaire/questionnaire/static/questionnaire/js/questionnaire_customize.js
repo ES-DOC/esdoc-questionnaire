@@ -303,18 +303,28 @@ function enable_customize_subform_button(source) {
 
 function customize_property_subform(subform_id,subform_customizer_field_name) {
 
-    url = window.document.location.protocol + "//" + window.document.location.host + "/ajax/customize_subform/";
-    url += "?i=" + subform_id;
+    url_root = window.document.location.protocol + "//" + window.document.location.host + "/ajax/customize_subform/";
+    //url += "?i=" + subform_id;
 
-    var customize_subform_dialog = $("#customize_subform_dialog");
+    // can't actually use the predefined dialog
+    // since I could potentially have multiple instances open at once
+    // I need a unique instance each time this fn is called
+    //var customize_subform_dialog = $("#customize_subform_dialog");
+    var customize_subform_dialog = $(document.createElement("div"));
+
+
+                                        console.log(subform_customizer_field_name);
 
     $.ajax({
-        url: url,
+        //url: url,
+        url : url_root + "?i=" + subform_id,
         type: "GET",
         cache: false,
         success: function (data) {
             $(customize_subform_dialog).html(data);
-            $(customize_subform_dialog).dialog("option", {
+            $(customize_subform_dialog).dialog({
+                modal: true,
+                hide: "explode",
                 height: 860,
                 width: 1200,
                 dialogClass: "no_close",
@@ -339,7 +349,8 @@ function customize_property_subform(subform_id,subform_customizer_field_name) {
                         click: function () {
                             var subform_data = $(this).find("#customize_subform_form").serialize();
                             $.ajax({
-                                url: url,
+                                //url: url,
+                                url : url_root + "?i=" + subform_id,
                                 type: "POST",  // (POST mimics submi)
                                 data: subform_data,
                                 cache: false,
@@ -381,6 +392,7 @@ function customize_property_subform(subform_id,subform_customizer_field_name) {
                                         $(subform_customizer_field).val(subform_customizer_id)
 
                                         console.log(subform_customizer_id);
+                                        console.log(subform_customizer_field_name);
                                         console.log(subform_customizer_field);
                                         console.log($(subform_customizer_field).val());
 
