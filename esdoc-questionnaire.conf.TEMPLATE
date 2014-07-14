@@ -1,0 +1,15 @@
+[database]
+engine=django.db.backends.postgresql_psycopg2
+name=questionnaire
+user=
+password=
+host=127.0.0.1
+port=5432
+
+[settings]
+secret_key=
+static_root=static/
+
+[debug]
+debug=true
+debug_toolbar=false

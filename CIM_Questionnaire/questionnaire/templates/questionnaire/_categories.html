@@ -1,0 +1,22 @@
+{# this displays any errors for a metadata field #}
+
+<div class="categories">
+    <fieldset>
+        {% with field=tags field_label=tags.label field_id=tags.html_name %}
+            {% if field.help_text %}
+                {% include "questionnaire/_help.html" %}
+            {% endif %} {# /field.help_text #}        
+            <span>{{ field_label }}:&nbsp;</span>
+            {{ field }}
+        {% endwith %} {# /field, field_label, field_id #}
+
+        <div class="hidden">
+            {{content}}
+        </div>
+
+        <div class="add_tag">
+            add a new category:&nbsp;<input type="text" class="add_tag" title="enter a new category name here"/>
+        </div>
+
+    </fieldset>
+</div> <!-- /.categories -->

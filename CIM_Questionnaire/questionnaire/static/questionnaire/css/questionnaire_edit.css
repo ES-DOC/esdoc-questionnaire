@@ -1,0 +1,57 @@
+/* custom CSS for CIM_Questionnaire editor & viewer */
+
+/* some colors:
+#B9E0E3 borders (lt teal)
+#FF6666 errors  (lt red)
+#358C92 titles  (dk teal)
+*/
+
+#questionnaire #component_tree { }
+#questionnaire #component_tree #component_tree_header  { padding: 2px; background: #B9E0E3; border: 1px solid #358C92; font-weight: bold; text-align: center; }
+#questionnaire #component_tree #component_tree_content { border: 1px dotted #358C92; margin-top: 2px; }
+
+/* change the default colors for the treeview nodes */
+#questionnaire .dynatree-selected .dynatree-title { color: #359C92 !important; font-weight: normal !important; }
+#questionnaire .dynatree-partsel  .dynatree-title { color: #359C92 !important; font-weight: normal !important; }
+#questionnaire .dynatree-active   .dynatree-title { color: #ffffff !important; font-weight: normal !important; }
+#questionnaire .dynatree-title { color: #999999; !important; font-weight: normal !important; }
+
+#questionnaire .pane { margin-left: 8px; }
+/* panes in the editor are fieldsets, but not 'collapsible_fieldsets', so undo all the fancy styling from questionnaire.css */
+#questionnaire .pane fieldset { margin-top: 0px; }
+#questionnaire .pane fieldset legend { padding-left: 0.5em; cursor: pointer; }
+#questionnaire .pane fieldset legend:hover * { cursor: pointer; }
+
+#questionnaire .pane fieldset legend span.title * { border: 0px; padding-left: 0.5em; background: #358c92 url(../img/default_ui_background.png) repeat-x 50% 50%; font-size: 110%; }
+#questionnaire .pane fieldset legend:hover span.title * { border: 0px; background: #358c92 url(../img/default_ui_background.png) repeat-x 50% 50%; color: #358C92; }
+
+
+/* ways to customize fields */
+
+#questionnaire .extra { margin-top: 8px; margin-bottom: 8px; }
+
+#questionnaire .required { font-weight: bold; border-color: #000000; }
+#questionnaire .optional { font-weight: normal; }
+
+/* prevents subform required/optional from cascading to child properties */
+/* TODO: ADD THE CORRECT BORDER ELEMENTS AS NEEDED */
+#questionnaire fieldset.required * { font-weight: normal; }
+
+#questionnaire .other { font-style: italic; }
+
+#questionnaire .readonly { background: #dcdad5 !important }
+
+#questionnaire .inheritance_options { display: inline; background-color: #B9E0E3; padding: 2px; margin: 2px; }
+
+#questionnaire button.ui-datepicker-trigger { font-size: 11px; margin-left: 4px; }
+
+/* buttons unique to editing */
+
+/* additional styling is done in the templates based on where these appear */
+#questionnaire button.add       { font-size: 10px; padding: 1px; }
+#questionnaire button.remove    { font-size: 10px; padding: 1px; }
+#questionnaire button.reset     { font-size: 10px; padding: 1px; }
+#questionnaire button.replace   { font-size: 10px; padding: 1px; }
+/* make these !important b/c the formset plugin re-creates them w/ inline styles upon adding & deleting */
+#questionnaire a.add-row        { display: none !important; }
+#questionnaire a.delete-row     { display: none !important; }

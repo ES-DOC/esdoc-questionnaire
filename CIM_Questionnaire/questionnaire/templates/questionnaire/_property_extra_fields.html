@@ -1,0 +1,48 @@
+{# this displays any extra fields for a scientific property #}
+<div class="extra">
+    <fieldset class="collapsible_fieldset">
+        <legend title="click to toggle content">
+            <span class="title">&nbsp;Extra Attributes&nbsp;</span>
+        </legend>
+        <div class="collapsible_fieldset_content">
+            <div class="documentation">
+                <p>
+                    This section includes additional information that can be associated with this property.
+                </p>
+            </div> <!-- /.documentation -->
+            <table width="100%">
+                {% if property_customizer.display_extra_standard_name %}
+                    <tr class="odd">
+                        <td>
+                            <span>Standard Name:&nbsp;</span>
+                        </td>
+                        <td>
+                            {{property_form.extra_standard_name}}
+                        </td>
+                    </tr>
+                {% endif %} {# /display_extra_standard_name #}
+                {% if property_customizer.display_extra_description %}
+                    <tr class="even">
+                        <td>
+                            <span>Description:&nbsp;</span>
+                        </td>
+                        <td>
+                            {{property_form.extra_description}}
+                        </td>
+                    </tr>
+                {% endif %} {# /display_extra_description #}
+
+                {% if property_customizer.display_extra_units %}
+                    <tr class="odd">
+                        <td>
+                            <span>Scientific Units:&nbsp;</span>
+                        </td>
+                        <td>
+                            {{property_form.extra_units}}
+                        </td>
+                    </tr>
+                {% endif %} {# /display_extra_units #}
+            </table>
+        </div> <!-- /.collapsible_fieldset_content -->
+    </fieldset>
+</div> <!-- /.extra -->

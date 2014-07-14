@@ -1,0 +1,30 @@
+{# this displays help for a property field #}
+
+{# the structure is a bit funny, b/c it gets inserted into the middle of a table #}
+
+{% if property_customizer.inline_help %}
+
+    <td colspan="2">
+        <div class="documentation">
+            {{ property_customizer.documentation|safe }} {# the safe filter prevents inline HTML from being escaped  #}
+        </div>
+    </td>
+
+    <!-- end the tr and start a new one -->
+    </tr>
+    <tr>
+    <td>
+
+{% else %}
+
+    <td>
+
+    <div class="help_button" title="click for more info" id="{{form.prefix}}_{{property_customizer.name}}">
+        <span class="default-help-icon ui-icon-info" style="display: inline-block;">&nbsp;</span>
+        <div class="help_description" title="{{property_customizer.verbose_name}}">
+            {{ property_customizer.documentation|safe }} {# the safe filter prevents inline HTML from being escaped  #}
+        </div> <!-- /.help_description -->
+    </div> <!-- /.help_button -->
+
+{% endif %}
+        

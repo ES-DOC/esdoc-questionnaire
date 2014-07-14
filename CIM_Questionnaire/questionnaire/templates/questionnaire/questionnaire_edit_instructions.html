@@ -1,0 +1,145 @@
+{% extends "questionnaire/questionnaire_base.html" %}
+
+
+{% block scripts %}
+
+    <script language="javascript">
+
+    /* just setup a minimum of jquery-ui functionality */
+    $(document).ready(
+        function() {
+
+            // do this first so that the dialogs appear near the top of the page
+            init_dialogs(parent);
+            
+            render_msg($("#msg"));
+
+            var parent = document.body;
+
+            init_widget(users,parent);
+            init_widget(buttons,parent);            
+            init_widget(fieldsets,parent);
+            init_widget(helps,parent);
+
+            // do this last b/c some of the xpath depends on changes made by the above fns...
+            init_errors(parent);
+
+        }
+
+
+    );
+
+    </script>
+{% endblock %} {# /scripts #}
+
+{% block style %}
+
+    <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}questionnaire/css/questionnaire_instructions.css" />
+
+{% endblock %} {# / style #}
+
+{% block title %}
+    CIM Questionnaire Viewing & Editing Help
+{% endblock %} {# /title #}
+
+{% block content %}
+
+    <div class="title">
+        The CIM Questionnaire editing/viewing form
+    </div> <!-- /.title -->
+
+    <div id="instructions">
+
+        <div class="documentation">
+            <p>
+                Note that the underlying form for viewing and editing are identical.  The difference is that the editor allows users to save (and eventually publish) their content.
+            </p>
+        </div>
+
+        <ol>
+
+            <li><span class="title">The purpose of the form</span>
+                <p>
+                    <!--The  CIM provides a way to document, view, search, and compare the properties of the various types of models used in climate science.-->
+                    The CIM Questionnaire allows you to create a CIM Instance descring your specific climate modeling artifact (be it a grid, a data file, a regional model, or a global model comoponent, etc.).
+                    By creating a CIM Instance for your artifact, you are joining an international community that seeks common standards and increased transparency in climate modeling.
+                    Once the instance is completed it may then be published to the ES-DOC archive where they can be accessed by the full suite of ES-DOC tools.
+                    This will allow other users to discover your artifact as well as compare it against other similar artifacts.
+                </p>
+            </li>
+
+            <li><span class="title">The use of the form</span>
+                <p>
+                    Note that, CIM Instances can be quite large and complex.  The CIM Questionnaire can be customized for particular project/model combinations to only expose relevant CIM properties in intuitive ways.
+                    Even so, we encourage you to produce a detailed description of the main features of the artifact, and have this at hand while filling out the CIM Questionnaire.
+                    Do not feel that you need to complete the entire document in one go.  Provided you fill in the bare minimum of required properties, the remaining properties can be completed at a later time.
+                </p>
+
+            </li>
+
+            <li><span class="title">The layout of the form</span>
+                <p>
+                    Along the left is the "Component Hierarchy."  This is a clickable treeview with branches of the tree corresponding to sub-components of the model.
+                    Note that if the top-level component has no sub-components, then this section may not appear.
+                    <img class="screenshot" src="{{STATIC_URL}}questionnaire/img/screenshots/component_hierarchy.png"/>
+                </p>
+                <p>
+                    To the right of the Component Hierarchy are the "Component Panes."  These contains all of the properties belonging to the currently selected component.
+                    Each property is assigned to a particular category which correspond to the tabs along the top of the Component Pane.
+                    The final tab is reserved for <i>Scientific Properties</i>; all other tabs correspond to <i>Standard Properties</i>.
+                    <img class="screenshot" src="{{STATIC_URL}}questionnaire/img/screenshots/tabs.png"/>
+                    Note that the number of properties is included in each tab header.
+                </p>
+                <p>
+                    Standard Properties are defined by the CIM Schema.  Therefore all components in the hiearchy will have the same set of standard properties.
+                    Scientific Properties are defined by the CIM CVs.  Therefore, each component in the hiearchy can potentially have a different set of scientific properties.
+                    <dl>
+                        <dt>Types and Characteristics of CIM Properties</dt>
+                        <dd>
+                            <p>
+                                Each property can have help associated with it - either inline or via the help icon.  Required properties are indicated by a bold font and/or border.  There are three types of properties:
+                                <dl>
+                                    <dt>Atomic Properties</dt>
+                                    <dd>
+                                        <p>
+                                            These support user-specified input.
+                                            Depending on the customization, they may be rendered as a text input or some other widget.
+                                            An atomic standard property can be "inherited" by children; This means that when its value changes the values of the corresponding properties of any child components change in the same way.
+                                            An inheritable property is indicated by the following widget:
+                                            <img class="screenshot" src="{{STATIC_URL}}questionnaire/img/screenshots/inheritance.png"/>
+                                            Uncheck the checkbox to prevent a particular component property from passing its value to descendants or inheriting its value from ancestors.
+                                        </p>
+                                    </dd>
+                                    <dt>Enumeration Properties</dt>
+                                    <dd>
+                                        <p>
+                                            These support selection from a pre-defined list of enumerated items.
+                                            Depending on the customization, an enumeration may also support a "--None--" or "--Other--" option.
+                                            Selecting "--None--" will de-select any existing choices.  It must be explicitly de-selected before changing the enumeration value again.  And selecting "--Other--" presents the user with a text box where they can enter their own custom value.
+                                        </p>
+                                    </dd>
+                                    <dt>Relationship Properties</dt>
+                                    <dd>
+                                        <p>
+                                            These can either be rendered using the default method or via subforms.
+                                            The default method will present the user with a select widget containing instances of the appropriate type.  Note that if there are no existing instances in the database, then this widget will be empty (and somewhat unintuitive).
+                                            If rendered via subforms, then an inline subform or subformset (depending on the cardinality of the property) will appear.
+                                        </p>
+                                    </dd>
+                                </dl>
+                            </p>
+                        </dd>
+                    </dl>
+                </p>
+            </li>
+
+        </ol>
+
+    </div> <!-- /#instructions -->
+
+{% endblock %} {# /content #}
+
+{% block footer %}
+    <br/>
+    {{ block.super }}
+{% endblock %} {# /footer #}

@@ -1,0 +1,1103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<version>
+    <name>CIM 1.8.1</name>
+    <description>blah</description>
+    <classes>
+        <class stereotype="document">
+            <name>modelComponent</name>
+            <description>A ModelCompnent is a scientific model; it represents code which models some physical phenomena for a particular length of time.</description>
+            <attributes>
+                <attribute>
+                    <name>purpose</name>
+                    <description/>
+                    <type>ATOMIC</type>
+                    <atomic>
+                        <atomic_type>STRING</atomic_type>                        
+                    </atomic>
+                </attribute>
+                <attribute>
+                    <name>embedded</name>
+                    <description>An embedded component cannot exist on its own as an atomic piece of software; instead it is embedded within another (parent) component. When embedded equals "true", the SoftwareComponent has a corresponding piece of software (otherwise it is acting as a "virtual" component which may be inexorably nested within a piece of software along with several other virtual components).</description>
+                    <type>ATOMIC</type>
+                    <atomic>
+                        <atomic_type>BOOLEAN</atomic_type>
+                    </atomic>
+                </attribute>
+                <attribute>
+                    <name>couplingFramework</name>
+                    <description>The coupling framework that this entire component conforms to.</description>
+                    <type>ENUMERATION</type>
+                    <enumeration  multi="false" nullable="false" open="false">
+                        <choice>OASIS</choice>
+                        <choice>BFG</choice>
+                        <choice>ESMF</choice>
+                    </enumeration>
+                </attribute>
+                <attribute is_label="true">
+                    <name>shortName</name>
+                    <description>The name of the model (that is used internally).</description>
+                    <type>ATOMIC</type>
+                    <atomic>
+                        <atomic_type>STRING</atomic_type>
+                    </atomic>
+                </attribute>
+                <attribute>
+                    <name>longName</name>
+                    <description>The name of the model (that is recognized externally).</description>
+                    <type>ATOMIC</type>
+                    <atomic>
+                        <atomic_type>STRING</atomic_type>
+                    </atomic>
+                </attribute>
+                <attribute>
+                    <name>description</name>
+                    <description>A free-text description of the component.</description>
+                    <type>ATOMIC</type>
+                    <atomic>
+                        <atomic_type>TEXT</atomic_type>
+                    </atomic>
+                </attribute>
+                <attribute>
+                    <name>license</name>
+                    <description>The license held by this piece of software</description>
+                    <type>RELATIONSHIP</type>
+                    <relationship>
+                        <cardinality min="0" max="1"/>
+                        <target>license</target>
+                    </relationship>
+                </attribute>
+                <attribute>
+                    <name>responsibleParty</name>
+                    <description/>
+                    <type>RELATIONSHIP</type>
+                    <relationship>
+                        <cardinality min="0" max="*"/>
+                        <target>responsibleParty</target>
+                    </relationship>
+                </attribute>
+                <attribute>
+                    <name>releaseDate</name>
+                    <description>The date of publication of the software component code (as opposed to the date of publication of the metadata document, or the date of deployment of the model)</description>
+                    <type>ATOMIC</type>
+                    <atomic>
+                        <atomic_type>DATETIME</atomic_type>
+                    </atomic>
+                </attribute>
+                <attribute>
+                    <name>previousVersion</name>
+                    <description/>
+                    <type>ATOMIC</type>
+                    <atomic>
+                        <atomic_type>STRING</atomic_type>
+                    </atomic>
+                </attribute>
+                <attribute>
+                    <name>fundingSource</name>
+                    <description>The entities that funded this software component.</description>
+                    <type>ATOMIC</type>
+                    <atomic>
+                        <atomic_type>STRING</atomic_type>
+                    </atomic>
+                </attribute>
+                <attribute>
+                    <name>citation</name>
+                    <description/>
+                    <type>RELATIONSHIP</type>
+                    <relationship>
+                        <cardinality min="0" max="*"/>
+                        <target>citation</target>
+                    </relationship>
+                </attribute>
+                <attribute>
+                    <name>onlineResource</name>
+                    <description>Provides a URL location for this model.</description>
+                    <type>RELATIONSHIP</type>
+                    <relationship>
+                        <cardinality min="0" max="1"/>
+                        <target>onlineResource</target>
+                    </relationship>
+                </attribute>
+                <attribute>
+                    <name>componentLanguage</name>
+                    <description/>
+                    <type>RELATIONSHIP</type>
+                    <relationship>
+                        <cardinality min="0" max="1"/>
+                        <target>componentLanguage</target>
+                    </relationship>
+                </attribute>
+                <attribute>
+                    <name>grid</name>
+                    <description>A reference to the grid that is used by this component.</description>
+                    <type>RELATIONSHIP</type>
+                    <relationship>
+                        <cardinality min="0" max="1"/>
+                        <target>gridspec</target>
+                    </relationship>
+                </attribute>
+                <attribute>
+                    <name>composition</name>
+                    <description/>
+                    <type>RELATIONSHIP</type>
+                    <relationship>
+                        <cardinality min="0" max="1"/>
+                        <target>composition</target>
+                    </relationship>
+                </attribute>
+                <attribute>
+                    <name>deployment</name>
+                    <description/>
+                    <type>RELATIONSHIP</type>
+                    <relationship>
+                        <cardinality min="0" max="1"/>
+                        <target>deployment</target>
+                    </relationship>
+                </attribute>
+                <attribute>
+                    <name>type</name>
+                    <description>Describes the type of component.  There can be multiple types.</description>
+                    <type>ENUMERATION</type>
+                    <enumeration multi="true" open="true" nullable="false">
+                        <choice>Advection</choice>
+                        <choice>Aerosol3D-Sources</choice>
+                        <choice>Aerosol2D-Sources</choice>
+                        <choice>AerolEmissionAndConc</choice>
+                        <choice>AerosolKeyProperties</choice>
+                        <choice>AerosolModel</choice>
+                        <choice>Aerosols</choice>
+                        <choice>AerosolSpaceConfig</choice>
+                        <choice>AerosolTransport</choice>
+                        <choice>AtmChem2D-Sources</choice>
+                        <choice>AtmChem3D-Sources</choice>
+                        <choice>AtmChemEmissionAndConc</choice>
+                        <choice>AtmChemKeyProperties</choice>
+                        <choice>AtmChemSpaceConfig</choice>
+                        <choice>AtmChemTransport</choice>
+                        <choice>AtmGasPhaseChemistry</choice>
+                        <choice>AtmHeterogeneousChemistry</choice>
+                        <choice>AtmosAdvection</choice>
+                        <choice>AtmosCloudScheme</choice>
+                        <choice>AtmosConvectTurbulCloud</choice>
+                        <choice>AtmosDynamicalCore</choice>
+                        <choice>AtmosHorizontalDomain</choice>
+                        <choice>AtmosKeyProperties</choice>
+                        <choice>AtmosOrographyAndWaves</choice>
+                        <choice>Atmosphere</choice>
+                        <choice>AtmosphericChemistry</choice>
+                        <choice>AtmosRadiation</choice>
+                        <choice>AtmosSpaceConfiguration</choice>
+                        <choice>Climate</choice>
+                        <choice>CloudSimulator</choice>
+                        <choice>IceSheetDynamics</choice>
+                        <choice>LandIce</choice>
+                        <choice>LandIceGlaciers</choice>
+                        <choice>LandIceKeyProperties</choice>
+                        <choice>LandIceSheet</choice>
+                        <choice>LandIceShelves</choice>
+                        <choice>LandIceShelvesDynamics</choice>
+                        <choice>LandSurface</choice>
+                        <choice>LandSurfaceAlbedo</choice>
+                        <choice>LandSurfaceCarbonCycle</choice>
+                        <choice>LandSurfaceEnergyBalance</choice>
+                        <choice>LandSurfaceKeyProperties</choice>
+                        <choice>LandSurfaceLakes</choice>
+                        <choice>LandSurfaceSnow</choice>
+                        <choice>LandSurfaceSoil</choice>
+                        <choice>LandSurfaceSpaceConfiguration</choice>
+                        <choice>LandSurfaceVegetation</choice>
+                        <choice>LandSurfSoilHeatTreatment</choice>
+                        <choice>LandSurfSoilHydrology</choice>
+                        <choice>Ocean</choice>
+                        <choice>OceanAdvection</choice>
+                        <choice>OceanBioBoundaryForcing</choice>
+                        <choice>OceanBioChemistry</choice>
+                        <choice>OceanBioGasExchange</choice>
+                        <choice>OceanBioGeoChemistry</choice>
+                        <choice>OceanBioKeyProperties</choice>
+                        <choice>OceanBioSpaceConfig</choice>
+                        <choice>OceanBioTimeStepFramework</choice>
+                        <choice>OceanBioTracers</choice>
+                        <choice>OceanBioTracersEcosystem</choice>
+                        <choice>OceanBoundaryForcing</choice>
+                        <choice>OceanBoundaryForcingTracers</choice>
+                        <choice>OceanHorizontalDomain</choice>
+                        <choice>OceanInteriorMixing</choice>
+                        <choice>OceanKeyProperties</choice>
+                        <choice>OceanLateralPhysics</choice>
+                        <choice>OceanLateralPhysMomentum</choice>
+                        <choice>OceanLateralPhysTracers</choice>
+                        <choice>OceanMixedLayer</choice>
+                        <choice>OceanNudging</choice>
+                        <choice>OceanSpaceConfiguration</choice>
+                        <choice>OceanUpAndLowBoundaries</choice>
+                        <choice>OceanVerticalPhysics</choice>
+                        <choice>PhotoChemistry</choice>
+                        <choice>RiverRouting</choice>
+                        <choice>SeaIce</choice>
+                        <choice>SeaIceDynamics</choice>
+                        <choice>SeaIceKeyProperties</choice>
+                        <choice>SeaIceSpaceConfiguration</choice>
+                        <choice>SeaIceThermodynamics</choice>
+                        <choice>StratosphericHeterChem</choice>
+                        <choice>TopOfAtmosInsolation</choice>
+                        <choice>ToposphericHeterChem</choice>
+                        <choice>VegetationCarbonCycle</choice>                                               
+                    </enumeration>
+                </attribute>
+                <attribute>
+                    <name>timing</name>
+                    <description>Describes information about how this component simulates time.</description>
+                    <type>RELATIONSHIP</type>
+                    <relationship>
+                        <cardinality min="0" max="1"/>
+                        <target>timing</target>
+                    </relationship>
+                </attribute>                
+                <attribute>
+                    <name>activity</name>
+                    <description/>
+                    <type>RELATIONSHIP</type>
+                    <relationship>
+                        <cardinality min="0" max="1"/>
+                        <target>simulationRun</target>
+                    </relationship>
+                </attribute>                
+                <attribute>
+                    <name>documentStatus</name>
+                    <description/>
+                    <type>ENUMERATION</type>
+                    <enumeration nullable="false" open="false" multi="false">
+                        <choice>complete</choice>
+                        <choice>incomplete</choice>
+                        <choice>in-progress</choice>
+                    </enumeration>
+                </attribute>                
+                <attribute>
+                    <name>documentAuthor</name>
+                    <description>A contact for the author of this document (as opposed to the author of the artifact being described by this document; ie: the simulation or component or whatever).This includes information about the authoring institution.</description>                    
+                    <type>RELATIONSHIP</type>
+                    <relationship>
+                        <cardinality min="0" max="1"/>
+                        <target>responsibleParty</target>
+                    </relationship>
+                </attribute>                
+                <attribute>
+                    <name>documentCreationDate</name>
+                    <description>The date the document was created.</description>
+                    <type>ATOMIC</type>
+                    <atomic>
+                        <atomic_type>DATETIME</atomic_type>
+                    </atomic>                
+                </attribute>
+            </attributes>
+        </class>
+        <class>
+            <name>license</name>
+            <description>A description of a license restricting access to a unit of data or software.</description>
+            <attributes>
+                <attribute>
+                    <name>unrestricted</name>
+                    <description>If unrestricted="true" then the artifact can be downloaded with no restrictions (ie: there are no administrative steps for the user to deal with; code or data can be downloaded and used directly).</description>
+                    <type>ATOMIC</type>
+                    <atomic>
+                        <atomic_type>BOOLEAN</atomic_type>
+                    </atomic>
+                </attribute>
+                <attribute is_label="true">
+                    <name>licenseName</name>
+                    <description>The name that the license goes by (ie: "GPL")</description>
+                    <type>ATOMIC</type>
+                    <atomic>
+                        <atomic_type>STRING</atomic_type>
+                    </atomic>
+                </attribute>
+                <attribute>
+                    <name>licenseContact</name>
+                    <description>The point of contact for access to this artifact; may be either a person or an institution</description>
+                    <type>ATOMIC</type>
+                    <atomic>
+                        <atomic_type>STRING</atomic_type>
+                    </atomic>
+                </attribute>
+                <attribute>
+                    <name>licenseDescription</name>
+                    <description>A textual description of the license; might be the full text of the license, more likely to be a brief summary</description>
+                    <type>ATOMIC</type>
+                    <atomic>
+                        <atomic_type>TEXT</atomic_type>
+                    </atomic>
+                </attribute>
+            </attributes>
+        </class>
+        <class>
+            <name>responsibleParty</name>
+            <description>A CIM-specific ResponsibleParty.  Sub-classes the gmd ResponsibleParty type and adds the attribute "abbreviation."</description>
+            <attributes>
+                <attribute is_label="true">
+                    <name>individualName</name>
+                    <description/>
+                    <type>ATOMIC</type>
+                    <atomic>
+                        <atomic_type>STRING</atomic_type>
+                    </atomic>
+                </attribute>                
+                <attribute>
+                    <name>organisationName</name>
+                    <description/>
+                    <type>ATOMIC</type>
+                    <atomic>
+                        <atomic_type>STRING</atomic_type>
+                    </atomic>
+                </attribute>                
+                <attribute>
+                    <name>positionName</name>
+                    <description/>
+                    <type>ATOMIC</type>
+                    <atomic>
+                        <atomic_type>STRING</atomic_type>
+                    </atomic>
+                </attribute>                
+                <attribute>
+                    <name>contactInfo</name>
+                    <description/>
+                    <type>RELATIONSHIP</type>
+                    <relationship>
+                        <cardinality min="1" max="1"/>
+                        <target>contactType</target>
+                    </relationship>
+                </attribute>
+                <attribute>
+                    <name>role</name>
+                    <description/>
+                    <type>ENUMERATION</type>
+                    <enumeration multi="true" open="true" nullable="false">
+                        <!-- TODO: GET CHOICES -->
+                    </enumeration>
+                </attribute>
+                <attribute>
+                    <name>abbreviation</name>
+                    <description/>
+                    <type>ATOMIC</type>
+                    <atomic>
+                        <atomic_type>STRING</atomic_type>
+                    </atomic>
+                </attribute>
+            </attributes>
+        </class>
+        <class>
+            <name>citation</name>
+            <description>Standardized resource reference</description>
+            <attributes>
+                <attribute is_label="true">
+                    <name>title</name>
+                    <description/>
+                    <type>ATOMIC</type>
+                    <atomic>
+                        <atomic_type>STRING</atomic_type>
+                    </atomic>
+                </attribute>
+                <attribute>
+                    <name>alternateTitle</name>
+                    <description/>
+                    <type>ATOMIC</type>
+                    <atomic>
+                        <atomic_type>STRING</atomic_type>
+                    </atomic>
+                </attribute>
+                <attribute>
+                    <name>date</name>
+                    <description/>
+                    <type>ATOMIC</type>
+                    <atomic>
+                        <atomic_type>DATE</atomic_type>
+                    </atomic>
+                </attribute>                
+                <attribute>
+                    <name>edition</name>
+                    <description/>
+                    <type>ATOMIC</type>
+                    <atomic>
+                        <atomic_type>STRING</atomic_type>
+                    </atomic>
+                </attribute>                
+                <attribute>
+                    <name>editionDate</name>
+                    <description/>
+                    <type>ATOMIC</type>
+                    <atomic>
+                        <atomic_type>DATE</atomic_type>
+                    </atomic>
+                </attribute>                
+                <attribute>
+                    <name>citedResponsibleParty</name>
+                    <description/>
+                    <type>RELATIONSHIP</type>
+                    <relationship>
+                        <cardinality min="0" max="*"/>
+                        <target>responsibleParty</target>
+                    </relationship>
+                </attribute>                
+                <attribute>
+                    <name>series</name>
+                    <description/>
+                    <type>ATOMIC</type>
+                    <atomic>
+                        <atomic_type>STRING</atomic_type>
+                    </atomic>
+                </attribute>                
+                <attribute>
+                    <name>otherCitationDetails</name>
+                    <description/>
+                    <type>ATOMIC</type>
+                    <atomic>
+                        <atomic_type>TEXT</atomic_type>
+                    </atomic>
+                </attribute>
+                <attribute>
+                    <name>collectiveTitle</name>
+                    <description/>
+                    <type>ATOMIC</type>
+                    <atomic>
+                        <atomic_type>STRING</atomic_type>
+                    </atomic>
+                </attribute>
+                <attribute>
+                    <name>ISBN</name>
+                    <description/>
+                    <type>ATOMIC</type>
+                    <atomic>
+                        <atomic_type>STRING</atomic_type>
+                    </atomic>
+                </attribute>
+                <attribute>
+                    <name>ISSN</name>
+                    <description/>
+                    <type>ATOMIC</type>
+                    <atomic>
+                        <atomic_type>STRING</atomic_type>
+                    </atomic>
+                </attribute>                
+            </attributes>
+        </class>
+        <class>
+            <name>onlineResource</name>
+            <description>Information about online sources from which the dataset, specification, or community profile name and extended metadata elements can be obtained.</description>
+            <attributes>
+                <attribute is_label="true">
+                    <name>linkage</name>
+                    <description/>
+                    <type>ATOMIC</type>
+                    <atomic>
+                        <atomic_type>URL</atomic_type>
+                    </atomic>
+                </attribute>
+                <attribute>
+                    <name>protocol</name>
+                    <description/>
+                    <type>ATOMIC</type>
+                    <atomic>
+                        <atomic_type>STRING</atomic_type>
+                    </atomic>
+                </attribute>
+                <attribute>
+                    <name>applicationProfile</name>
+                    <description/>
+                    <type>ATOMIC</type>
+                    <atomic>
+                        <atomic_type>STRING</atomic_type>
+                    </atomic>
+                </attribute>
+                <attribute>
+                    <name>name</name>
+                    <description/>
+                    <type>ATOMIC</type>
+                    <atomic>
+                        <atomic_type>STRING</atomic_type>
+                    </atomic>
+                </attribute>
+                <attribute>
+                    <name>description</name>
+                    <description/>
+                    <type>ATOMIC</type>
+                    <atomic>
+                        <atomic_type>TEXT</atomic_type>
+                    </atomic>
+                </attribute>
+                <attribute>
+                    <name>function</name>
+                    <description/>
+                    <type>ENUMERATION</type>
+                    <enumeration nullable="false" open="true" multi="true">
+                        <!-- TODO GET CHOICE ELEMENTS -->
+                    </enumeration>
+                </attribute>                              
+            </attributes>
+        </class>       
+        <class>
+            <name>componentLanguage</name>
+            <description>Details of the programming language a component is written in. There is an assumption that all EntryPoints use the same ComponentLanguage.</description>
+            <attributes>
+                <attribute is_label="true">
+                    <name>name</name>
+                    <description>The name of the language</description>
+                    <type>ATOMIC</type>
+                    <atomic>
+                        <atomic_type>STRING</atomic_type>
+                    </atomic>
+                </attribute>
+            </attributes>
+        </class>        
+        <class>
+            <name>timing</name>
+            <description>Provides information about the rate of couplings and connections and/or the timing characteristics of individual components - for example, the start and stop times that the component was run for or the units of time that a component is able to model (in a single timestep).</description>
+            <attributes>
+                <attribute>
+                    <name>units</name>
+                    <description/>
+                    <type>ENUMERATION</type>
+                    <enumeration multi="false" open="true" nullable="true">
+                        <!-- TODO GET CHOICES -->
+                    </enumeration>
+                </attribute>
+                <attribute>
+                    <name>variableRate</name>
+                    <description>Describes whether or not the model supports a variable timestep.  If set to true, then rate should not be specified.</description>                                       
+                    <type>ATOMIC</type>
+                    <atomic>
+                        <atomic_type>BOOLEAN</atomic_type>
+                    </atomic>                    
+                </attribute>
+                <attribute>
+                    <name>start</name>
+                    <description/>
+                    <type>ATOMIC</type>
+                    <atomic>
+                        <atomic_type>DATETIME</atomic_type>
+                    </atomic>
+                </attribute>                
+                <attribute>
+                    <name>end</name>
+                    <description/>
+                    <type>ATOMIC</type>
+                    <atomic>
+                        <atomic_type>DATETIME</atomic_type>
+                    </atomic>
+                </attribute>                
+                <attribute>
+                    <name>rate</name>
+                    <description/>
+                    <type>ATOMIC</type>
+                    <atomic>
+                        <atomic_type>INTEGER</atomic_type>
+                    </atomic>
+                </attribute>
+            </attributes>
+        </class>                
+        <class>
+            <name>contactType</name>
+            <description>Information required enabling contact with the  responsible person and/or organisation</description>
+            <attributes>
+                <!-- TODO I SCALED BACK THIS GMD CONTENT ; SHOULD I PUT IN THE FULL CONTENT? -->
+                <attribute>
+                    <name>phone</name>
+                    <description/>
+                    <type>ATOMIC</type>
+                    <atomic>
+                        <atomic_type>STRING</atomic_type>
+                    </atomic>
+                </attribute>
+                <attribute>
+                    <name>address</name>
+                    <description/>
+                    <type>ATOMIC</type>
+                    <atomic>
+                        <atomic_type>TEXT</atomic_type>
+                    </atomic>
+                </attribute>
+                <attribute>
+                    <name>onlineResource</name>
+                    <description/>
+                    <type>RELATIONSHIP</type>
+                    <relationship>
+                        <cardinality min="0" max="1"/>
+                        <target>onlineResource</target>
+                    </relationship>
+                </attribute>
+                <attribute>
+                    <name>contactInstructions</name>
+                    <description/>
+                    <type>ATOMIC</type>
+                    <atomic>
+                        <atomic_type>TEXT</atomic_type>
+                    </atomic>
+                </attribute>
+            </attributes>
+        </class>           
+        <class>
+            <name>deployment</name>
+            <description>Gives information about the technical properties of a component: what machine it was run on, which compilers were used, how it was parallised, etc.
+                
+                A deployment basically associates a deploymentDate with a Platform.  A deployment only exists if something has been deployed.  A platform, in contrast, can exist independently, waiting to be used in deployments.
+            </description>
+            <attributes>
+                <attribute>
+                    <name>deploymentDate</name>
+                    <description/>
+                    <type>ATOMIC</type>
+                    <atomic>
+                        <atomic_type>DATETIME</atomic_type>
+                    </atomic>
+                </attribute>                
+                <attribute>
+                    <name>description</name>
+                    <description/>
+                    <type>ATOMIC</type>
+                    <atomic>
+                        <atomic_type>TEXT</atomic_type>
+                    </atomic>
+                </attribute>                
+                <attribute>
+                    <name>parallelisation</name>
+                    <description/>
+                    <type>RELATIONSHIP</type>
+                    <relationship>
+                        <cardinality min="0" max="1"/>
+                        <target>parallelisation</target>
+                    </relationship>
+                </attribute>                
+                <attribute>
+                    <name>platform</name>
+                    <description>The platform that this deployment has been run on.  It is optional to allow for "unconfigured" models, that nonetheless specify their parallelisation constraints (a feature needed by OASIS).</description>
+                    <type>RELATIONSHIP</type>
+                    <relationship>
+                        <cardinality min="0" max="1"/>
+                        <target>platform</target>
+                    </relationship>
+                </attribute>                
+                <attribute>
+                    <name>executableName</name>
+                    <description/>
+                    <type>ATOMIC</type>
+                    <atomic>
+                        <atomic_type>STRING</atomic_type>
+                    </atomic>
+                </attribute>                
+                <attribute>
+                    <name>executableArgument</name>
+                    <description/>
+                    <type>ATOMIC</type>
+                    <atomic>
+                        <atomic_type>STRING</atomic_type>
+                    </atomic>
+                </attribute>
+            </attributes>
+        </class>        
+        <class>
+            <name>parallelisation</name>
+            <description>Describes how a deployment has been parallelised across a computing platform.</description>
+            <attributes>
+                <attribute>
+                    <name>process</name>
+                    <type>ATOMIC</type>
+                    <atomic>
+                        <atomic_type>INTEGER</atomic_type>
+                    </atomic>
+                </attribute>
+                <attribute>
+                    <name>rank</name>
+                    <type>RELATIONSHIP</type>
+                    <relationship>
+                        <cardinality min="0" max="*"/>
+                        <target>rank</target>
+                    </relationship>
+                </attribute>
+            </attributes>
+        </class>
+        <class>
+            <name>rank</name>
+            <description/>
+            <attributes>
+                <attribute is_label="true">
+                    <name>rankValue</name>
+                    <type>ATOMIC</type>
+                    <atomic>
+                        <atomic_type>INTEGER</atomic_type>
+                    </atomic>
+                </attribute>                
+                <attribute>
+                    <name>rankMin</name>
+                    <type>ATOMIC</type>
+                    <atomic>
+                        <atomic_type>INTEGER</atomic_type>
+                    </atomic>
+                </attribute>                
+                <attribute>
+                    <name>rankMax</name>
+                    <type>ATOMIC</type>
+                    <atomic>
+                        <atomic_type>INTEGER</atomic_type>
+                    </atomic>
+                </attribute>                
+                <attribute>
+                    <name>rankIncrement</name>
+                    <type>ATOMIC</type>
+                    <atomic>
+                        <atomic_type>INTEGER</atomic_type>
+                    </atomic>
+                </attribute>
+            </attributes>
+        </class>
+        <class stereotype="document">
+            <name>platform</name>
+            <description>A platform is a description of resources used to deploy a component/simulation.  A platform pairs a machine with a (set of) compilers.  There is also a point of contact for the platform. </description>
+            <attributes>
+                <attribute is_label="true">
+                    <name>shortName</name>
+                    <description/>
+                    <type>ATOMIC</type>
+                    <atomic>
+                        <atomic_type>STRING</atomic_type>
+                    </atomic>
+                </attribute>                
+                <attribute>
+                    <name>longName</name>
+                    <description/>
+                    <type>ATOMIC</type>
+                    <atomic>
+                        <atomic_type>STRING</atomic_type>
+                    </atomic>
+                </attribute>                
+                <attribute>
+                    <name>description</name>
+                    <description/>
+                    <type>ATOMIC</type>
+                    <atomic>
+                        <atomic_type>TEXT</atomic_type>
+                    </atomic>
+                </attribute>                
+                <attribute>
+                    <name>contact</name>
+                    <description/>
+                    <type>RELATIONSHIP</type>
+                    <relationship>
+                        <cardinality min="0" max="*"/>
+                        <target>responsibleParty</target>
+                    </relationship>
+                </attribute>                
+                <attribute>
+                    <name>unit</name>
+                    <description/>
+                    <type>RELATIONSHIP</type>
+                    <relationship>
+                        <cardinality min="1" max="*"/>
+                        <target>machineCompilerUnit</target>
+                    </relationship>
+                </attribute>
+                <attribute>
+                    <name>documentStatus</name>
+                    <description/>
+                    <type>ENUMERATION</type>
+                    <enumeration nullable="false" open="false" multi="false">
+                        <choice>complete</choice>
+                        <choice>incomplete</choice>
+                        <choice>in-progress</choice>
+                    </enumeration>
+                </attribute>                
+                <attribute>
+                    <name>documentAuthor</name>
+                    <description>A contact for the author of this document (as opposed to the author of the artifact being described by this document; ie: the simulation or component or whatever).This includes information about the authoring institution.</description>                    
+                    <type>RELATIONSHIP</type>
+                    <relationship>
+                        <cardinality min="0" max="1"/>
+                        <target>responsibleParty</target>
+                    </relationship>
+                </attribute>                
+                <attribute>
+                    <name>documentCreationDate</name>
+                    <description>The date the document was created.</description>
+                    <type>ATOMIC</type>
+                    <atomic>
+                        <atomic_type>DATETIME</atomic_type>
+                    </atomic>                
+                </attribute>                
+            </attributes>
+        </class>
+        <class>
+            <name>machineCompilerUnit</name>
+            <description>Associates a machine with a [set of] compilers.  This is a separate class in case a platform needs to specify more than one machine/compiler pair.</description>
+            <attributes>
+                <attribute>
+                    <name>machine</name>
+                    <description/>
+                    <type>RELATIONSHIP</type>
+                    <relationship>
+                        <cardinality min="1" max="1"/>
+                        <target>machine</target>
+                    </relationship>
+                </attribute>               
+                <attribute>
+                    <name>compiler</name>
+                    <description/>
+                    <type>RELATIONSHIP</type>
+                    <relationship>
+                        <cardinality min="0" max="*"/>
+                        <target>compiler</target>
+                    </relationship>
+                </attribute>
+            </attributes>
+        </class>
+        <class>
+            <name>machine</name>
+            <description>A description of a machine used by a particular platform.</description>
+            <attributes>
+                <attribute>
+                    <name>machineType</name>
+                    <description/>
+                    <type>ATOMIC</type>
+                    <atomic>
+                        <atomic_type>STRING</atomic_type>
+                    </atomic>
+                </attribute>                
+                <attribute is_label="true">
+                    <name>machineName</name>
+                    <description/>
+                    <type>ATOMIC</type>
+                    <atomic>
+                        <atomic_type>STRING</atomic_type>
+                    </atomic>
+                </attribute>
+                <attribute>
+                    <name>machineSystem</name>
+                    <description/>
+                    <type>ATOMIC</type>
+                    <atomic>
+                        <atomic_type>STRING</atomic_type>
+                    </atomic>
+                </attribute>
+                <attribute>
+                    <name>machineLibrary</name>
+                    <description>A library residing on this machine.</description>
+                    <type>ATOMIC</type>
+                    <atomic>
+                        <atomic_type>STRING</atomic_type>
+                    </atomic>
+                </attribute>                
+                <attribute>
+                    <name>machineDescription</name>
+                    <description/>
+                    <type>ATOMIC</type>
+                    <atomic>
+                        <atomic_type>TEXT</atomic_type>
+                    </atomic>
+                </attribute>                
+                <attribute>
+                    <name>machineLocation</name>
+                    <description/>
+                    <type>ATOMIC</type>
+                    <atomic>
+                        <atomic_type>STRING</atomic_type>
+                    </atomic>
+                </attribute>
+                <attribute>
+                    <name>machineOperatingSystem</name>
+                    <description/>
+                    <type>ENUMERATION</type>
+                    <enumeration nullable="false" open="true" multi="false">
+                        <choice>AIX</choice>
+                        <choice>Darwin</choice>
+                        <choice>Iris64</choice>
+                        <choice>Linux</choice>
+                        <choice>SunOS</choice>
+                        <choice>Unicos</choice>
+                    </enumeration>
+                </attribute>                
+                <attribute>
+                    <name>machineVendor</name>
+                    <description/>
+                    <type>ENUMERATION</type>
+                    <enumeration multi="false" open="true" nullable="true">
+                        <choice>ACTION</choice>
+                        <choice>Appro International</choice>
+                        <choice>Bull SA</choice>
+                        <choice>ClusterVision/Dell</choice>
+                        <choice>ClusterVision/IBM</choice>
+                        <choice>Cray Inc</choice>
+                        <choice>DALCO AG Switzerland</choice>
+                        <choice>Dawning</choice>
+                        <choice>Dell</choice>
+                        <choice>DELL/ACS</choice>
+                        <choice>Dell/Sun/IBM</choice>
+                        <choice>Fujitsu</choice>
+                        <choice>Hewlett-Packard</choice>
+                        <choice>Hitachi</choice>
+                        <choice>IBM</choice>
+                        <choice>Intel</choice>
+                        <choice>Koi Computers</choice>
+                        <choice>Lenovo</choice>
+                        <choice>Linux Networx</choice>
+                        <choice>NEC</choice>
+                        <choice>NEC/Sun</choice>
+                        <choice>NUDT</choice>
+                        <choice>Pyramid Computer</choice>
+                        <choice>Raytheon-Aspen Systems/Appro</choice>
+                        <choice>Self-made</choice>
+                        <choice>SGI</choice>
+                        <choice>SKIF/T-Platforms</choice>
+                        <choice>Sun Microsystems</choice>
+                        <choice>T-Platforms</choice>                        
+                    </enumeration>
+                </attribute>
+                <attribute>
+                    <name>machineInterconnect</name>
+                    <description/>
+                    <type>ENUMERATION</type>
+                    <enumeration nullable="true" open="true" multi="true">
+                        <choice>Cray Interconnect</choice>
+                        <choice>Fat Tree</choice>
+                        <choice>Gigibit Ethernet</choice>
+                        <choice>Infiniband</choice>
+                        <choice>Mixed</choice>
+                        <choice>Myrinet</choice>
+                        <choice>NUMAlink</choice>
+                        <choice>Quadrics</choice>
+                        <choice>SP Switch</choice>
+                    </enumeration>
+                </attribute>
+                <attribute>
+                    <name>machineMaximumProcessors</name>
+                    <description/>
+                    <type>ATOMIC</type>
+                    <atomic>
+                        <atomic_type>INTEGER</atomic_type>
+                    </atomic>
+                </attribute>                
+                <attribute>
+                    <name>machineCoresPerProcessor</name>
+                    <description/>
+                    <type>ATOMIC</type>
+                    <atomic>
+                        <atomic_type>INTEGER</atomic_type>
+                    </atomic>
+                </attribute>                
+                <attribute>
+                    <name>machineProcessorType</name>
+                    <description/>
+                    <type>ENUMERATION</type>
+                    <enumeration multi="true" open="true" nullable="false">
+                        <choice>AMD X86_64</choice>
+                        <choice>Intel</choice>
+                        <choice>Intel EM64T</choice>
+                        <choice>Intel IA-64</choice>
+                        <choice>NEC</choice>
+                        <choice>Other AMD</choice>
+                        <choice>Other Intel</choice>
+                        <choice>Sparc</choice>
+                    </enumeration>
+                </attribute>
+            </attributes>
+        </class>        
+        <class>
+            <name>compiler</name>
+            <description>A description of a compiler used on a particular platform.</description>
+            <attributes>
+                <attribute is_label="true">
+                    <name>name</name>
+                    <description/>
+                    <type>ATOMIC</type>
+                    <atomic>
+                        <atomic_type>STRING</atomic_type>
+                    </atomic>
+                </attribute>                
+                <attribute>
+                    <name>version</name>
+                    <description/>
+                    <type>ATOMIC</type>
+                    <atomic>
+                        <atomic_type>STRING</atomic_type>
+                    </atomic>
+                </attribute>                
+                <attribute>
+                    <name>language</name>
+                    <description/>
+                    <type>ATOMIC</type>
+                    <atomic>
+                        <atomic_type>STRING</atomic_type>
+                    </atomic>
+                </attribute>                
+                <attribute>
+                    <name>compilerType</name>
+                    <description/>
+                    <type>ENUMERATION</type>
+                    <enumeration nullable="false" open="true" multi="false">
+                        <choice>Absoft</choice>
+                        <choice>Intel</choice>
+                        <choice>Lahey</choice>
+                        <choice>NAG</choice>
+                        <choice>Pathscale</choice>
+                        <choice>Portland PGI</choice>
+                        <choice>Silverfrost</choice>                        
+                    </enumeration>
+                </attribute>
+                <attribute>
+                    <name>compilerOptions</name>
+                    <description>The set of options used during compilation (recorded here as a single string rather than separate elements)</description>
+                    <type>ATOMIC</type>
+                    <atomic>
+                        <atomic_type>STRING</atomic_type>
+                    </atomic>
+                </attribute>
+                <attribute>
+                    <name>compilerEnvironmentVariables</name>
+                    <description>The state of envrionment variables used during compilation (recorded here as a single string rather than separate elements)</description>
+                    <type>ATOMIC</type>
+                    <atomic>
+                        <atomic_type>STRING</atomic_type>
+                    </atomic>
+                </attribute>
+            </attributes>
+        </class>
+        <!-- TODO THIS POINT FORWARD -->
+        <class stereotype="document">
+            <name>simulationRun</name>
+            <description/>
+            <attributes>
+                <attribute>
+                    <name>tmp</name>
+                    <description/>
+                    <type>ATOMIC</type>
+                    <atomic>
+                        <atomic_type>STRING</atomic_type>
+                    </atomic>
+                </attribute>
+            </attributes>
+        </class>
+        <class stereotype="document">
+            <name>gridspec</name>
+            <description/>
+            <attributes>
+                <attribute>
+                    <name>tmp</name>
+                    <description/>
+                    <type>ATOMIC</type>
+                    <atomic>
+                        <atomic_type>STRING</atomic_type>
+                    </atomic>
+                </attribute>
+            </attributes>
+        </class>        
+        <class>
+            <name>composition</name>
+            <description/>
+            <attributes>
+                <attribute>
+                    <name>tmp</name>
+                    <description/>
+                    <type>ATOMIC</type>
+                    <atomic>
+                        <atomic_type>STRING</atomic_type>
+                    </atomic>
+                </attribute>
+            </attributes>
+        </class>     
+    </classes>
+</version>

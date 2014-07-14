@@ -7,7 +7,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='cim_questionnaire',
-    version='0.10.2.2',  # major.minor.patch (good idea to append deployment id in production)
+    version='0.11.0.0',  # major.minor.patch (good idea to append deployment id in production)
     author='Allyn Treshansky',
     author_email='allyn.treshansky@noaa.gov',
     packages=find_packages(),
@@ -20,7 +20,10 @@ setup(
     install_requires=[
         "Django",
         "distribute",
-        "south", 
+        "south>=0.8.2", # v0.8.2 fails w/ DateTimeFields (see https://code.djangoproject.com/ticket/21312) 
         "lxml",
+        "pillow",
+	"pytz",
+	"django-mptt",
     ],
 )

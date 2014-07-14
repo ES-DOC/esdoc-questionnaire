@@ -1,0 +1,52 @@
+{% extends "questionnaire/questionnaire_base.html" %}
+
+{% load questionnaire_filters %}
+
+{% block head %}
+    <!-- this page is displayed in a JQuery dialog box -->
+    <!-- hence, there is no need for the <head> section -->
+    <!-- (note - any JQuery widgets to be initialized are handled in the dialog open event) -->
+{% endblock %} {# /head #}
+
+
+{% block header %}
+    <!-- this page is displayed in a JQuery dialog box -->
+    <!-- hence, there is no need for the header -->
+{% endblock %} {# /header #}
+
+
+{% block footer %}
+    <!-- this page is displayed in a JQuery dialog box -->
+    <!-- hence, there is no need for the footer -->
+{% endblock %} {# /footer #}
+
+{% block content %}
+
+<form id="category">
+
+    <div class="form">
+        <div class="documentation">
+            <p>
+                Use this form to customize details of this category.
+            </p>
+        </div> <!-- /.documentation -->
+
+        <div class="hidden">
+            {% for field in form.get_hidden_fields %}
+                {{field}}
+            {% endfor %}
+        </div> <!-- /.hidden -->
+
+        <table width="100%">
+            {% for field in form.get_customizer_fields %}
+                <tr class="{% cycle 'odd' 'even' %} field" name="{{field.html_name}}">
+                    {% include "questionnaire/_field.html" %}
+                </tr>
+            {% endfor %} {# / field in form #}
+        </table>
+
+    </div> <!-- / .form -->
+    
+</form> <!-- /#category -->
+
+{% endblock %} {# /content #}

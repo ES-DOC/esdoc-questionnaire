@@ -1,0 +1,220 @@
+
+{% load questionnaire_filters %}
+{% load mptt_tags %}
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<div id="questionnaire">
+
+{% block content %}
+
+    <div class="hidden_dialog" id="customize_subform_dialog"     title="customize">&nbsp;</div>
+
+    <div class="title">
+        Customize the CIM Questionnaire for <b>{{model_proxy.name|title}}</b> instances of the <b>{{project.title|title}}</b> Project
+        <br/>
+        (in the context of the <b>{{parent_customizer.name|title}}</b> customization)
+    </div> <!-- /.title -->
+
+    <form method="POST" action="" id="customize_subform_form">
+
+        {% csrf_token %}
+
+        <div class="form"> {# wrap everything in div.form, so I can group related fields together #}
+
+            <div class="hidden">
+                {% for field in model_customizer_form.get_hidden_fields %} 
+                    {{field}}                                              
+                {% endfor %}                                               
+            </div> <!-- /.hidden -->
+
+            <fieldset class="collapsible_fieldset">
+                <legend title="click to toggle content">
+                    <span class="title">&nbsp;Customization Details&nbsp;</span>
+                </legend>
+
+                <div class="collapsible_fieldset_content">
+                    <div class="documentation">
+                        <p>
+                            This section contains information relating to the <i>customization</i> itself, as opposed to the form being customized.
+                        </p>
+                    </div> <!-- /.documentation -->
+
+                    <table width="100%">
+                        {% for field in model_customizer_form.get_customizer_fields %}
+                            <tr class="{% cycle 'odd' 'even' %} field" name="{{field.html_name}}">
+                                {% include "questionnaire/_field.html" %}
+                            </tr>
+                        {% endfor %} {# / field in model_customizer_form.get_customizer_fields #}
+                    </table>
+
+                </div> <!-- / .collapsible_fieldset_content -->
+
+            </fieldset> <!-- / .collapsible_fieldset -->
+
+            <fieldset class="collapsible_fieldset">
+                <legend title="click to toggle content">
+                    <span class="title">&nbsp;Document Details&nbsp;</span>
+                </legend>
+
+                <div class="collapsible_fieldset_content">
+                    <div class="documentation">
+                        <p>
+                            This section contains information relating to the <i>document</i> itself.  This will appear in the title of the document form.
+                        </p>
+                    </div> <!-- /.documentation -->
+
+                    <table width="100%">
+                        {% for field in model_customizer_form.get_document_fields %}
+                            <tr class="{% cycle 'odd' 'even' %} field" name="{{field.html_name}}">
+                                {% include "questionnaire/_field.html" %}
+                            </tr>
+                        {% endfor %} {# / field in model_customizer_form.get_document_fields #}
+                    </table>
+
+                </div> <!-- / .collapsible_fieldset_content -->
+
+            </fieldset> <!-- / .collapsible_fieldset -->
+
+            <fieldset class="collapsible_fieldset">
+                <legend title="click to toggle content">
+                    <span class="title">&nbsp;Property Details&nbsp;</span>
+                </legend>
+
+                <div class="collapsible_fieldset_content">
+                    <div class="documentation">
+                        <p>
+                            This section contains information relating to the standard properties of the document.
+                        </p>
+                    </div> <!-- /.documentation -->
+
+
+                                    {% with tags=model_customizer_form.standard_categories_tags content=model_customizer_form.standard_categories_content %}
+                                        {% include "questionnaire/_categories.html" %}
+                                    {% endwith %}
+
+                                    <!-- this section is pretty similar to the "_formset.html" template -->
+                                    <!-- but those are intended for the editing form -->
+                                    <!-- the titles, etc. of the accordions are different for the customization form -->
+                                    {% with formset=standard_property_customizer_formset %}
+
+                                        {{ formset.management_form }}
+                                        {# formset.non_form_errors #}
+
+                                        {% if formset.forms %}
+
+                                            <span class="subform_toolbar ui-widget-header ui-corner-all">
+                                                <button type="button" class="sort">sort</button>
+                                                <ul class="sort_by">
+                                                    <li><a href="#" name="sort_by_name">by name</a></li>
+                                                    <li><a href="#" name="sort_by_category">by category</a></li>
+                                                    <li><a href="#" name="sort_by_order" title="(category order + property order)">by order</a></li>
+                                                </ul>
+                                                <button type="button" class="expand" title="expand all properties">expand all</button>
+                                                <button type="button" class="collapse" title="collapse all properties">collapse all</button>
+                                            </span> <!-- /.subform_toolbar -->
+                                            <div style="clear: both;">&nbsp;</div>
+
+                                        {% endif %} {# / formset.forms #}
+
+                                        <div class="accordion" prefix="{{formset.prefix}}">
+                                            {% for form in formset %}
+                                                <h3 class="accordion_header">
+                                                    <table width="90%" border="0">
+                                                        <tr valign="center">
+                                                            {% for field in form.get_header_fields %}
+                                                                <td width="30%">
+                                                                    <b>{{field.label}}:&nbsp;</b>
+                                                                    {{field}}
+                                                                </td>
+                                                            {% endfor %} {# / field in form.get_header_fields #}
+                                                        </tr>
+                                                    </table>
+                                                </h3> <!-- /.accordion_header -->
+
+                                                <div class="accordion_content">
+
+                                                    <div class="form"> {# wrapping everything in a div.form so I can group together fields belonging to the same model #}
+
+                                                        <div class="hidden">
+                                                            {# the fields I explicitly set to hidden #}
+                                                            {% for field in form.get_hidden_fields %}
+                                                                {{ field }}
+                                                            {% endfor %} {# /field #}
+                                                            {# and the fields that are hidden by default #}
+                                                            {% for hidden_field in form.hidden_fields %}
+                                                                {{ hidden_field }}
+                                                            {% endfor %} {# /hidden_field #}
+                                                        </div>
+
+                                                        <table width="100%">
+                                                            {% with type=form.type %}
+                                                                {% if type == "ATOMIC" %}
+                                                                    {% for field in form.get_atomic_fields %}
+                                                                        <tr class="{% cycle 'odd' 'even' %} field" name="{{field.html_name}}">
+                                                                            {% include "questionnaire/_field.html" %}
+                                                                        </tr>
+                                                                    {% endfor %} {# / field in form.get_atomic_fields #}
+                                                                {% elif type == "ENUMERATION" %}
+                                                                    {% for field in form.get_enumeration_fields %}
+                                                                        <tr class="{% cycle 'odd' 'even' %} field" name="{{field.html_name}}">
+                                                                            {% include "questionnaire/_field.html" %}
+                                                                        </tr>
+                                                                    {% endfor %} {# / field in form.get_enumeration_fields #}
+                                                                {% elif type == "RELATIONSHIP" %}
+                                                                    {% for field in form.get_relationship_fields %}
+                                                                        <tr class="{% cycle 'odd' 'even' %} field" name="{{field.html_name}}">
+                                                                            {% if field.name|lower == "relationship_show_subform" %}
+                                                                                {# this is a copy of the "_field" template, but it adds a 'customize_subform' button to the field #}
+                                                                                {% with field_label=field.label field_id=field.html_name %}
+                                                                                    <td>
+                                                                                        {% if field.help_text %}
+                                                                                            {% include "questionnaire/_help.html" %}
+                                                                                        {% endif %} {# /field.help_text #}
+                                                                                        <span>{{field_label}}&nbsp;</span>
+                                                                                    </td>
+                                                                                    <td>
+                                                                                        {{field}}
+                                                                                        <br/>
+                                                                                        <button type="button"
+                                                                                                class="customize_subform"
+                                                                                                name="customize_subform"
+                                                                                                title="Customize the subform corresponding to this field."
+                                                                                                onClick="customize_property_subform({{ form|get_instance_pk }}, '{{ form.prefix }}-subform_customizer');"
+                                                                                        >
+                                                                                            customize subform
+                                                                                        </button>
+                                                                                        {% if field.errors %}
+                                                                                            {% include "questionnaire/_error.html" %}
+                                                                                        {% endif %} {# / field.errors #}
+                                                                                    </td>
+                                                                                {% endwith %}
+
+                                                                            {% else %}
+                                                                                {% include "questionnaire/_field.html" %}
+                                                                            {% endif %}
+                                                                        </tr>
+                                                                    {% endfor %} {# / field in form.get_relationship_fields #}
+                                                                {% endif %}
+                                                            {% endwith %}
+                                                        </table>
+
+                                                    </div> <!-- /.form -->
+
+                                                </div> <!-- /.accordion_content -->
+
+                                            {% endfor %}
+                                        </div> <!-- /.accordion -->
+                                    {% endwith %} {# /formset #}
+                                </div> <!-- /.form -->
+                    
+                </div> <!-- / .collapsible_fieldset_content -->
+
+            </fieldset> <!-- / .collapsible_fieldset -->
+
+        </div> <!-- /.form -->
+    </form>
+
+{% endblock %} {# /content #}
+
+</div> <!-- /#questionnaire -->

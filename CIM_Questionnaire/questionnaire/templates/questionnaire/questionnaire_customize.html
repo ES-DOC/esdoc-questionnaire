@@ -1,0 +1,573 @@
+{% extends "questionnaire/questionnaire_base.html" %}
+
+{% load questionnaire_filters %}
+{% load mptt_tags %}
+
+{% block scripts %}
+
+    <!-- ext js -->
+    <script language="javascript" type="text/javascript" src="{{ STATIC_URL }}questionnaire/js/ext/jquery.tagit.min.js"></script>
+
+    <!--custom js -->
+    <script language="javascript" type="text/javascript" src="{{ STATIC_URL }}questionnaire/js/questionnaire_customize.js"></script>
+
+    <script language="javascript">
+
+    /* just setup a minimum of jquery-ui functionality */
+    $(document).ready(
+        function() {
+
+            var parent = document.body;
+
+            // do this first so that the dialogs appear near the top of the page
+            init_dialogs(parent);
+            
+            render_msg($("#msg"));
+
+            init_widget(users,parent);
+            init_widget(readonlies,parent);
+            init_widget(buttons,parent);            
+            init_widget(fieldsets,parent);
+            init_widget(tabs,parent);
+            init_widget(selects,parent);
+            init_widget(accordions,parent);
+            init_widget(helps,parent);
+            init_widget(enablers,parent);
+
+            // specific to customizer...
+            init_widget(tags,parent);
+            init_widget(sortable_accordions,parent);            
+
+            $("button.customize_subform").button({
+                  icons : {primary: "ui-icon-extlink"},
+                  text : true
+            });
+
+            $("#vocabularies_tabs").addClass("ui-tabs-vertical ui-helper-clearfix");
+            $("#vocabularies_tabs li").removeClass("ui-corner-top" ).addClass("ui-corner-left");
+
+            $("select[name='vocabularies']").change(function(){
+                var current_order = $(this).find("option").map(function() {
+                    return parseInt($(this).val());
+                }).get();
+                $("input[name='vocabulary_order']").val(current_order);
+            });
+
+            $("button#sort_vocabulary_up").button({
+                icons: { primary : "ui-icon-arrowthick-1-n" },
+                text: false
+            });
+            $("button#sort_vocabulary_down").button({
+                icons: { primary : "ui-icon-arrowthick-1-s" },
+                text: false
+            });
+
+            $("select[name='vocabularies']").multiselect("option",{            
+                sortable : true,
+                autoOpen : true,
+                emptyMultiText  : 'Select vocabularies',
+                onChange        : function(event,data) {
+                    var vocabularies_tabs = $("#vocabularies_tabs");
+                    $(event.target).find("option").each(function(index,element) {
+                        var vocabulary_key = $(element).text().toLowerCase().replace(/[^\w]+/g,'');
+                        var vocabulary_tab_content = $(vocabularies_tabs).find("div[id$='"+vocabulary_key+"']");
+                        if ($(this).is(":selected")) {
+                            $(vocabularies_tabs).tabs("enable",index);
+                            $(vocabulary_tab_content).removeClass("ui-state-disabled");
+                        }
+                        else {
+                            $(vocabularies_tabs).tabs("disable",index);
+                            $(vocabulary_tab_content).addClass("ui-state-disabled");
+                        }
+                    });
+                }
+            });
+
+            $("select[name='vocabularies']").find("option").each(function(index,element) {
+                // make sure that the appropriate vocabulary tabs are active or inactive according to the selected options
+                var vocabulary_key = $(element).text().toLowerCase().replace(/[^\w]+/g,'');
+                var vocabulary_tab_content = $(vocabularies_tabs).find("div[id$='"+vocabulary_key+"']");
+                if ($(this).is(":selected")) {
+                    $(vocabularies_tabs).tabs("enable",index);
+                    $(vocabulary_tab_content).removeClass("ui-state-disabled");
+                }
+                else {
+                    $(vocabularies_tabs).tabs("disable",index);
+                    $(vocabulary_tab_content).addClass("ui-state-disabled");
+                }
+            });
+
+            // make sure that the vocabulary selector is in the correct order
+            var current_order = $("input[name='vocabulary_order']").val().split(",");
+            var multiselect = $("select[name='vocabularies']").next(".ui-multiselect").find(".multiselect_content")
+            var multiselect_options = $(multiselect).children("label").get();
+            multiselect_options.sort(function(a,b) {
+               a_order = current_order.indexOf($(a).find("input").attr("value"));
+               b_order = current_order.indexOf($(b).find("input").attr("value"));
+               return a_order > b_order;
+            });
+            $(multiselect).append(multiselect_options);
+            
+            // do this last b/c some of the xpath depends on changes made by the above fns...
+            init_errors(parent);
+
+        }
+
+
+    );
+
+    </script>
+{% endblock %} {# /scripts #}
+
+{% block style %}
+
+    <!-- ext css -->
+    <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}questionnaire/css/ext/jquery.tagit.css" />
+
+    <!-- custom css -->
+    <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}questionnaire/css/questionnaire_customize.css" />
+
+    <style type="text/css">
+        #questionniare .no_float    { float: none important! }
+    </style>
+
+{% endblock %} {# / style #}
+
+{% block title %}
+    CIM Questionnaire Customizer
+{% endblock %} {# /title #}
+
+{% block content %}
+
+    <div class="hidden_dialog" id="customize_subform_dialog"     title="customize">&nbsp;</div>
+
+    <div class="title">
+        Customize the CIM Questionnaire for <b>{{model_proxy.name|title}}</b> instances of the <b>{{project.title|title}}</b> Project
+    </div> <!-- /.title -->
+
+    <div class="documentation">
+        <p>
+            Use this form to customize how a particular CIM Document for a particular Questionnaire Project is presented.
+            Drag-and-drop properties, and categories to specify an order.
+            Specify customizable features for each property.
+            When you have finished, click the "submit" button at the bottom of the page.
+            Invalid entries are indicated using a <span style="color: #ff0000; font-weight: bold;">red</span> font.
+            <a href="/customize/help" target="blank"><b>More detailed instructions</b></a> are available.
+        </p>
+    </div> <!-- /.documentation -->
+
+    <form method="POST" action="">
+
+        {% csrf_token %}
+
+        <div class="form"> {# wrap everything in div.form, so I can group related fields together #}
+
+            <div class="hidden">
+                {% for field in model_customizer_form.get_hidden_fields %} 
+                    {{field}}                                              
+                {% endfor %}                                               
+            </div> <!-- /.hidden -->
+
+            <fieldset class="collapsible_fieldset">
+                <legend title="click to toggle content">
+                    <span class="title">&nbsp;Customization Details&nbsp;</span>
+                </legend>
+
+                <div class="collapsible_fieldset_content">
+                    <div class="documentation">
+                        <p>
+                            This section contains information relating to the <i>customization</i> itself, as opposed to the form being customized.
+                        </p>
+                    </div> <!-- /.documentation -->
+
+                    <table width="100%">
+                        {% for field in model_customizer_form.get_customizer_fields %}
+                            <tr class="{% cycle 'odd' 'even' %} field" name="{{field.html_name}}">
+                                {% include "questionnaire/_field.html" %}
+                            </tr>
+                        {% endfor %} {# / field in model_customizer_form.get_customizer_fields #}
+                    </table>
+
+                </div> <!-- / .collapsible_fieldset_content -->
+
+            </fieldset> <!-- / .collapsible_fieldset -->
+
+            <fieldset class="collapsible_fieldset">
+                <legend title="click to toggle content">
+                    <span class="title">&nbsp;Document Details&nbsp;</span>
+                </legend>
+
+                <div class="collapsible_fieldset_content">
+                    <div class="documentation">
+                        <p>
+                            This section contains information relating to the <i>document</i> itself.  This will appear in the title of the document form.
+                        </p>
+                    </div> <!-- /.documentation -->
+
+                    <table width="100%">
+                        {% for field in model_customizer_form.get_document_fields %}
+                            <tr class="{% cycle 'odd' 'even' %} field" name="{{field.html_name}}">
+                                {% include "questionnaire/_field.html" %}
+                            </tr>
+                        {% endfor %} {# / field in model_customizer_form.get_document_fields #}
+                    </table>
+
+                </div> <!-- / .collapsible_fieldset_content -->
+
+            </fieldset> <!-- / .collapsible_fieldset -->
+
+            <fieldset class="collapsible_fieldset">
+                <legend title="click to toggle content">
+                    <span class="title">&nbsp;Property Details&nbsp;</span>
+                </legend>
+
+                <div class="collapsible_fieldset_content">
+                    <div class="documentation">
+                        <p>
+                            This section contains information relating to the properties of the document. This includes both those defined by the metadata version (ie: the standard CIM content) as well as those defined by the controlled vocabularies (ie: the scientific properties).
+                        </p>
+                    </div> <!-- /.documentation -->
+
+                    <div class="tabs">
+                        <ul> <!-- the tab menu -->
+                            <li>
+                                <a href="#tab_standard_properties">
+                                    Standard Properties (CIM)
+                                </a>
+                            </li>
+                            <li>
+                                <a href="#tab_scientific_properties">
+                                    Scientific Properties (CV)
+                                </a>
+                            </li>
+                        </ul>
+
+                        <div id="tab_standard_properties">
+                            <div class="tab_content">
+                                <div class="form">
+                                    <div class="documentation">
+                                        <p>
+                                            These properties are defined by the CIM. They have pre-defined categories. Click a category widget to toggle the display of properties belonging to that category. (Categories appear as tabs on the CIM Questionnaire editing form."
+                                        </p>
+                                    </div> <!-- /.documentation -->
+
+                                    {% with tags=model_customizer_form.standard_categories_tags content=model_customizer_form.standard_categories_content %}
+                                        {% include "questionnaire/_categories.html" %}
+                                    {% endwith %}
+
+                                    <!-- this section is pretty similar to the "_formset.html" template -->
+                                    <!-- but those are intended for the editing form -->
+                                    <!-- the titles, etc. of the accordions are different for the customization form -->
+                                    {% with formset=standard_property_customizer_formset %}
+
+                                        {{ formset.management_form }}
+                                        {# formset.non_form_errors #}
+
+                                        {% if formset.forms %}
+
+                                            <span class="subform_toolbar ui-widget-header ui-corner-all">
+                                                <button type="button" class="sort">sort</button>
+                                                <ul class="sort_by">
+                                                    <li><a href="#" name="sort_by_name">by name</a></li>
+                                                    <li><a href="#" name="sort_by_category">by category</a></li>
+                                                    <li><a href="#" name="sort_by_order" title="(category order + property order)">by order</a></li>
+                                                </ul>
+                                                <button type="button" class="expand" title="expand all properties">expand all</button>
+                                                <button type="button" class="collapse" title="collapse all properties">collapse all</button>
+                                            </span> <!-- /.subform_toolbar -->
+                                            <div style="clear: both;">&nbsp;</div>
+
+                                        {% endif %} {# / formset.forms #}
+
+                                        <div class="accordion" prefix="{{formset.prefix}}">
+                                            {% for form in formset %}
+                                                <h3 class="accordion_header">
+                                                    <table width="90%" border="0">
+                                                        <tr valign="center">
+                                                            {% for field in form.get_header_fields %}
+                                                                <td width="30%">
+                                                                    <b>{{field.label}}:&nbsp;</b>
+                                                                    {{field}}
+                                                                </td>
+                                                            {% endfor %} {# / field in form.get_header_fields #}
+                                                        </tr>
+                                                    </table>
+                                                </h3> <!-- /.accordion_header -->
+
+                                                <div class="accordion_content">
+
+                                                    <div class="form"> {# wrapping everything in a div.form so I can group together fields belonging to the same model #}
+
+                                                        <div class="hidden">
+                                                            {# the fields I explicitly set to hidden #}
+                                                            {% for field in form.get_hidden_fields %}
+                                                                {{ field }}
+                                                            {% endfor %} {# /field #}
+                                                            {# and the fields that are hidden by default #}
+                                                            {% for hidden_field in form.hidden_fields %}
+                                                                {{ hidden_field }}
+                                                            {% endfor %} {# /hidden_field #}
+                                                        </div>
+
+                                                        <table width="100%">
+                                                            {% with type=form.type %}
+                                                                {% if type == "ATOMIC" %}
+                                                                    {% for field in form.get_atomic_fields %}
+                                                                        <tr class="{% cycle 'odd' 'even' %} field" name="{{field.html_name}}">
+                                                                            {% include "questionnaire/_field.html" %}
+                                                                        </tr>
+                                                                    {% endfor %} {# / field in form.get_atomic_fields #}
+                                                                {% elif type == "ENUMERATION" %}
+                                                                    {% for field in form.get_enumeration_fields %}
+                                                                        <tr class="{% cycle 'odd' 'even' %} field" name="{{field.html_name}}">
+                                                                            {% include "questionnaire/_field.html" %}
+                                                                        </tr>
+                                                                    {% endfor %} {# / field in form.get_enumeration_fields #}
+                                                                {% elif type == "RELATIONSHIP" %}
+                                                                    {% for field in form.get_relationship_fields %}
+                                                                        <tr class="{% cycle 'odd' 'even' %} field" name="{{field.html_name}}">
+                                                                            {% if field.name|lower == "relationship_show_subform" %}
+                                                                                {# this is a copy of the "_field" template, but it adds a 'customize_subform' button to the field #}
+                                                                                {% with field_label=field.label field_id=field.html_name %}
+                                                                                    <td>
+                                                                                        {% if field.help_text %}
+                                                                                            {% include "questionnaire/_help.html" %}
+                                                                                        {% endif %} {# /field.help_text #}
+                                                                                        <span>{{field_label}}&nbsp;</span>
+                                                                                    </td>
+                                                                                    <td>
+                                                                                        {{field}}
+                                                                                        <br/>
+                                                                                        <button type="button"
+                                                                                                class="customize_subform"
+                                                                                                name="customize_subform"
+                                                                                                title="Customize the subform corresponding to this field."
+                                                                                                onClick="customize_property_subform({{ form|get_instance_pk }}, '{{ form.prefix }}-subform_customizer');"
+                                                                                        >
+                                                                                            customize subform
+                                                                                        </button>
+                                                                                        {% if field.errors %}
+                                                                                            {% include "questionnaire/_error.html" %}
+                                                                                        {% endif %} {# / field.errors #}
+                                                                                    </td>
+                                                                                {% endwith %}
+
+                                                                            {% else %}
+                                                                                {% include "questionnaire/_field.html" %}
+                                                                            {% endif %}
+                                                                        </tr>
+                                                                    {% endfor %} {# / field in form.get_relationship_fields #}
+                                                                {% endif %}
+                                                            {% endwith %}
+                                                        </table>
+
+                                                    </div> <!-- /.form -->
+
+                                                </div> <!-- /.accordion_content -->
+
+                                            {% endfor %}
+                                        </div> <!-- /.accordion -->
+                                    {% endwith %} {# /formset #}
+                                </div> <!-- /.form -->
+                            </div> <!-- /.tab_content -->
+                        </div> <!-- /#tab_standard_properties -->
+
+                        <div id="tab_scientific_properties">
+                            <div class="tab_content">
+                                <div class="documentation">
+                                    <p>
+                                        These properties are defined by the CVs. Their categories can be edited. For each CV, categories and properties are divided into separate components using the tabs below.  If a set of categories and properties appears disabled, then the corresponding CV must be activated.
+                                    </p>
+                                </div> <!-- /.documentation -->
+
+                                <div class="tabs" id="vocabularies_tabs">
+                                    <ul  style="width: 120px;"> <!-- the tab menu -->
+                                        {% for vocabulary in project.vocabularies.all %}
+                                            {% with vocabulary_key=vocabulary.name|slugify %}
+                                                <li>
+                                                    <a href="#tab_scientific_properties_{{vocabulary_key}}">
+                                                        {{ vocabulary.name }}
+                                                    </a>
+                                                </li>
+                                            {% endwith %} {# / vocabulary_key #}
+                                        {% endfor %} {# / for vocabulary #}
+                                    </ul>
+
+                                    {% for vocabulary in project.vocabularies.all %}
+                                        {% with vocabulary_key=vocabulary.name|slugify %}
+
+                                            {% with formsets=scientific_property_customizer_formsets|get_value_from_key:vocabulary_key %}
+
+                                                <div id="tab_scientific_properties_{{vocabulary_key}}" style="width: 1000px;">
+                                                    <div class="tab_content">
+
+                                                        <div class="tabs">
+                                                            <ul>
+                                                                {% for component in vocabulary.component_proxies.all %}
+                                                                    {% with component_key=component.name|slugify %}
+                                                                        <li>
+                                                                            <a href="#tab_scientific_properties_{{vocabulary_key}}_{{component_key}}">
+                                                                                {{component.name}} <span style="font-size: small;">({{formsets|get_number_of_properties_from_key:component_key}})</span>
+                                                                            </a>
+                                                                        </li>
+                                                                    {% endwith %} {# / component_key #}
+                                                                {% endfor %} {# / component #}
+                                                            </ul>
+
+                                                            {% for component in vocabulary.component_proxies.all %}
+                                                                {% with component_key=component.name|slugify %}
+                                                                    <div id="tab_scientific_properties_{{vocabulary_key}}_{{component_key}}">
+                                                                        <div class="tab_content">
+
+                                                                            {% with tag_field_name=vocabulary_key|add:'_'|add:component_key|add:'_scientific_categories_tags' content_field_name=vocabulary_key|add:'_'|add:component_key|add:'_scientific_categories_content' %}
+                                                                                {% with tags=model_customizer_form|get_field_by_name:tag_field_name content=model_customizer_form|get_field_by_name:content_field_name %}
+                                                                                    {% include "questionnaire/_categories.html" %}
+                                                                                {% endwith %} {# / tags, content #}
+                                                                            {% endwith %} {# / tag_field_name, content_field_name #}
+
+                                                                            <!-- this section is pretty similar to the "_formset.html" template -->
+                                                                            <!-- but those are intended for the editing form -->
+                                                                            <!-- the titles, etc. of the accordions are different for the customization form -->
+                                                                            {% with formset=formsets|get_value_from_key:component_key %}
+
+                                                                                
+                                                                                {{ formset.management_form }}
+                                                                                {# formset.non_form_errors #}
+
+                                                                                {% if formset.forms %}
+
+                                                                                    <span class="subform_toolbar ui-widget-header ui-corner-all">
+                                                                                        <button type="button" class="sort">sort</button>
+                                                                                        <ul class="sort_by">
+                                                                                            <li><a href="#" name="sort_by_name">by name</a></li>
+                                                                                            <li><a href="#" name="sort_by_category">by category</a></li>
+                                                                                            <li><a href="#" name="sort_by_order" title="(category order + property order)">by order</a></li>
+                                                                                        </ul>
+                                                                                        <button type="button" class="expand" title="expand all properties">expand all</button>
+                                                                                        <button type="button" class="collapse" title="collapse all properties">collapse all</button>
+                                                                                    </span> <!-- /.subform_toolbar -->
+                                                                                    <div style="clear: both;">&nbsp;</div>
+
+                                                                                {% endif %} {# / formset.forms #}
+
+                                                                                <div class="accordion" prefix="{{formset.prefix}}">
+                                                                                    {% for form in formset %}
+                                                                                        <h3 class="accordion_header">
+                                                                                            <table width="90%" border="0">
+                                                                                                <tr valign="center">
+                                                                                                    {% for field in form.get_header_fields %}
+                                                                                                        <td width="30%">
+                                                                                                            <b>{{field.label}}:&nbsp;</b>
+                                                                                                            {{field}}
+                                                                                                        </td>
+                                                                                                    {% endfor %} {# / field in form.get_header_fields #}
+                                                                                                </tr>
+                                                                                            </table>
+                                                                                        </h3> <!-- /.accordion_header -->
+
+                                                                                        <div class="accordion_content">
+                                                                                            <div class="form"> {# wrapping everything in a div.form so I can group together fields belonging to the same model #}
+
+                                                                                                <div class="hidden">
+                                                                                                    {# the fields I explicitly set to hidden #}
+                                                                                                    {% for field in form.get_hidden_fields %}
+                                                                                                        {{ field }}
+                                                                                                    {% endfor %} {# /field #}
+                                                                                                    {# and the fields that are hidden by default #}
+                                                                                                    {% for hidden_field in form.hidden_fields %}
+                                                                                                        {{ hidden_field }}
+                                                                                                    {% endfor %} {# /hidden_field #}
+                                                                                                </div>
+
+                                                                                                <table width="100%">
+                                                                                                    {% for field in form.get_fields %}
+                                                                                                        <tr class="{% cycle 'odd' 'even' %} field" name="{{field.html_name}}">
+                                                                                                            {% include "questionnaire/_field.html" %}
+                                                                                                        </tr>
+                                                                                                    {% endfor %} {# / field in form.get_fields #}
+                                                                                                    <tr>
+                                                                                                        <td colspan="2">
+                                                                                                            <fieldset class="collapsible_fieldset extra_attributes">
+                                                                                                                <legend title="click to toggle content">
+                                                                                                                    <span class="title">&nbsp;Extra Attributes&nbsp;</span>
+                                                                                                                </legend>
+                                                                                                                <div class="collapsible_fieldset_content">
+                                                                                                                    <div class="documentation">
+                                                                                                                        <p>
+                                                                                                                            Every scientific property can have additional information associated with it.
+                                                                                                                        </p>
+                                                                                                                    </div> <!-- /.documentation -->
+                                                                                                                    <table width="100%">
+                                                                                                                        <tr style="text-align: center; text-decoration: underline;">
+                                                                                                                            <td width="25%">extra attribute</td>
+                                                                                                                            <td style="width: 10% !important;" width="10%">display</td>
+                                                                                                                            <td width="10%">allow editing</td>
+                                                                                                                            <td width="55%">defalt value</td>
+                                                                                                                        </tr>
+                                                                                                                        {% for label,fields in form.get_extra_fieldsets.items %}
+                                                                                                                            <tr class="{% cycle 'even' 'odd' %} field">
+                                                                                                                                <td width="25%">                                                                                                                                    
+                                                                                                                                    {{label}}
+                                                                                                                                </td>
+                                                                                                                                {% for field in fields %}
+                                                                                                                                    <td width="{% cycle '10%' '10%' '55%' %}">
+                                                                                                                                        {{field}}
+                                                                                                                                        {% if field.errors %}
+                                                                                                                                            {% include "questionnaire/_error.html" %}
+                                                                                                                                        {% endif %} {# / field.errors #}
+                                                                                                                                    </td>
+                                                                                                                                {% endfor %}
+                                                                                                                            </tr>
+                                                                                                                        {% endfor %} {# / field in form.get_extra_fieldsets #}
+                                                                                                                    </table>
+                                                                                                                </div><!-- /.collapsible_fielset_content -->
+                                                                                                            </fieldset>
+                                                                                                        </td>
+                                                                                                    </tr>
+                                                                                                </table>
+
+                                                                                            </div> <!-- /.form -->
+                                                                                        </div> <!-- /.accordion_content -->
+                                                                                    {% endfor %} {# /form in formset #}
+                                                                                </div>
+
+                                                                            {% endwith %} {# / formset #}
+                                                                        
+                                                                        </div> <!-- /.tab_content -->
+                                                                    </div> <!-- /#tab_scientific_properties_{{vocabulary_key}}_{{component_key}} -->
+                                                                {% endwith %} {# / component_key #}
+                                                            {% endfor %} {# / component #}
+                                                        </div> <!-- /.tabs -->
+                                                    </div> <!-- /.tab_content -->
+                                                </div> <!-- /#tab_scientific_properties_{{vocabulary_key}} -->
+
+                                                {% endwith %} {# /formsets #}
+
+                                        {% endwith %} {# / vocabulary_key #}
+                                    {% endfor %} {# / for vocabulary #}
+
+                            </div> <!-- /.tab_content -->
+                        </div> <!-- /#tab_scientific_properties -->
+                    
+                </div> <!-- / .collapsible_fieldset_content -->
+
+            </fieldset> <!-- / .collapsible_fieldset -->
+
+            <div class="submit">
+                <input class="button"  name="save"  type="submit"   value="save""/>
+            </div> <!-- /.submit -->
+            <div style="clear: both;">&nbsp;</div>
+
+        </div> <!-- /.form -->
+    </form>
+
+{% endblock %} {# /content #}
+
+{% block footer %}
+    {{ block.super }}
+    It is based on the CIM Version "{% if version.url %}<a target="_blank" href="{{version.url}}">{% endif %}{{ version }}{% if version.url %}</a> {% endif %}".&nbsp;
+    And it includes the Controlled Vocabularies
+    {% for vocabulary in vocabularies %}
+        {% if not forloop.first %}, {% endif %}
+            "<a target="_blank" href="{{vocabulary.file.url}}">{{vocabulary}}</a>"{% endfor %}. {# /vocabulary #}
+{% endblock %} {# /footer #}

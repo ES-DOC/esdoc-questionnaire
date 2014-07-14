@@ -1,0 +1,61 @@
+{# template to setup structure for a subform #}
+{# and determines whether to render as a single form or a formset #}
+
+{% if property_customizer.required %}
+<fieldset class="collapsible_fieldset required">
+{% else  %}
+<fieldset class="collapsible_fieldset optional">
+{%  endif %}
+
+    <legend title="click to toggle content">
+        {% if property_customizer.documentation %}
+            &nbsp;
+            <div class="help_button" title="click for more info" id="{{form.prefix}}_{{property_customizer.name}}">
+                <span class="default-help-icon ui-icon-info" style="display: inline-block;">&nbsp;</span>
+                <div class="help_description" title="{{property_customizer.verbose_name}}">
+                    {{ property_customizer.documentation|safe }} {# the safe filter prevents inline HTML from being escaped  #}
+                </div> <!-- /.help_description -->
+            </div> <!-- /.help_button -->
+        {% endif %} {# / help #}
+        <span class="title">{{ property_customizer.verbose_name }}&nbsp;</span>
+    </legend>
+
+    <div class="collapsible_fieldset_content">
+
+        <div class="hidden">
+            {# the fields I explicitly set to hidden #}
+            {% for field in property_form.get_hidden_fields %}
+                {{ field }}
+            {% endfor %} {# /field #}
+            {# and the fields that are hidden by default #}
+            {% for hidden_field in property_form.hidden_fields %}
+                {{ hidden_field }}
+            {% endfor %} {# /hidden_field #}
+            <input name="customizer_id" value="{{ property_customizer.pk }}"/>
+            <input name="property_id" value="{{ property_form.id.value|default_if_none:"" }}"/>
+            <input name="prefix" value="{{ property_form.prefix }}"/>
+        </div> <!-- /.hidden -->
+
+        {% if property_customizer.render_as_formset %}
+            {#  show a subformset (cardinality max was >1) #}
+
+            {# alright, this looks weird I know #}
+            {# but passing the template as a variable gets around Django's maximum recursion issue #}
+            {% with "questionnaire/_subform_formset.html" as template %}
+                {% include template %}
+            {% endwith %}
+
+        {%  else %}
+            {#  show a single subform (cardinality max was 1) #}
+
+            {# alright, this looks weird I know #}
+            {# but passing the template as a variable gets around Django's maximum recursion issue #}
+            {% with "questionnaire/_subform_form.html" as template %}
+                {% include template %}
+            {% endwith %}
+
+        {% endif %} {# /render_as_formset #}
+
+    </div> <!-- /.collapsible_fieldset_content -->
+
+</fieldset> <!-- /.collapsible_fieldset -->

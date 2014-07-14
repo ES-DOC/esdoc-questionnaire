@@ -1,0 +1,185 @@
+{% extends "questionnaire/questionnaire_view.html" %}
+
+{% load questionnaire_filters %}
+{% load mptt_tags %}
+
+
+{% block scripts %}
+
+    <script language="javascript" type="text/javascript" src="{{ STATIC_URL }}questionnaire/js/ext/jquery.dynatree.min.js"></script>
+    <!-- TODO: ENCOUNTERED BUG IN jquery.formset.min.js [http://code.google.com/p/django-dynamic-formset/issues/detail?id=54] -->
+    <!-- MODIFIED LOCAL CODE TO FIX THIS; SHOULD SEND PATCH -->
+    <script language="javascript" type="text/javascript" src="{{ STATIC_URL }}questionnaire/js/ext/jquery.formset.min.js"></script>
+    <script language="javascript" type="text/javascript" src="{{ STATIC_URL }}questionnaire/js/questionnaire_edit.js"></script>
+    <script language="javascript">
+
+    /* just setup a minimum of jquery-ui functionality */
+    $(document).ready(
+        function() {
+
+            var parent = document.body;
+
+            // do this first so that the dialogs appear near the top of the page
+            init_dialogs(parent);
+
+            render_msg($("#msg"));
+
+            init_widget(users,parent);
+            init_widget(readonlies,parent);
+            init_widget(buttons,parent);
+            init_widget(fieldsets,parent);
+            init_widget(dates,parent);
+            init_widget(tabs,parent);
+            init_widget(selects,parent);
+            init_widget(accordions,parent);
+            init_widget(helps,parent);
+            init_widget(enablers,parent);
+
+            // specific to the viewer/editor...
+            init_widget(panes,parent);
+            init_widget(treeviews,parent);
+            init_widget(enumerations,parent);
+            init_widget(autocompletes,parent);
+            init_widget(dynamic_accordions,parent);
+
+            $(parent).find(".scientific_property .ui-multiselect").each(function() {
+                var source_name = $(this).prev(".multiselect").attr("name");
+                var target_name = source_name.replace("-enumeration_value", "-scientific_property_value")
+                $(this).find(".multiselect_header").change(function (event) {
+                    var source_value = $(this).button("option", "label");
+                    var target = $("*[name='" + target_name + "']");
+                    $(target).val(source_value);
+                })
+            });
+
+            /* add and remove formsets (and forms) */
+
+            $("button.add").button({
+                icons: { primary : "ui-icon-circle-plus" },
+                text: true
+            }).click(function(event) {
+                var max = $(event.target).prevAll("input[name='max']").val();
+                var accordion = $(event.target).closest("div.add").prev(".accordion");
+                var n_accordion_panes = $(accordion).find(".accordion_unit").length;
+                if (n_accordion_panes == max) { // don't need to explicitly check where max="*" b/c this comparison will still be untrue
+
+                    $("#confirm_dialog").html("Unable to add; this would create more than the maxium number of instances.");
+                    $("#confirm_dialog").dialog("option", {
+                        title: "add",
+                        dialogClass: "no_close",
+                        height: 200,
+                        width: 400,
+                        buttons: {
+                            ok: function () {
+                                $(this).dialog("close");
+                            }
+                        }
+                    }).dialog("open");
+
+                }
+                else {
+
+                    var dynamic_formset_add_button = $(event.target).closest("div.add").prev(".accordion").find(".add-row:last");
+                    $(dynamic_formset_add_button).click();
+                    // there is function bound to the dynamic-formset add event that will fire after that button is pressed
+                    // (I don't have to explicitly call add_subform)
+
+
+                }
+
+            });
+
+            $("button.remove").button({
+                icons: { primary : "ui-icon-circle-minus" },
+                text: true
+            });
+            /* the click event had to move to its own fn ("remove_subform" defined in questionnaire_edit.js), since as forms are dynamically added this js doesn't get rerun */
+
+            $("button.replace").button({
+                icons: { primary : "ui-icon-refresh" },
+                text: true
+            }).click(function(event) {
+
+                var accordion = $(event.target).closest(".form").find(".accordion:first");
+
+                $("#confirm_dialog").html("This will remove the current instance and replace it with either an existing or new instance.  You will be unable to undo this operation.  Are you sure you want to continue?");
+                $("#confirm_dialog").dialog("option", {
+                    title: "replace",
+                    dialogClass: "no_close",
+                    height: 200,
+                    width: 400,
+                    buttons: {
+                        yes : function () {
+
+                            var dynamic_formset_remove_button = $(accordion).find(".delete-row:last");
+                            $(dynamic_formset_remove_button).click();
+                            var dynamic_formset_add_button = $(accordion).find(".add-row:last");
+                            $(dynamic_formset_add_button).click();
+
+
+                            $(this).dialog("close")
+
+                        },
+                        no : function() {
+
+                            $(this).dialog("close");
+
+                        }
+                    }
+                }).dialog("open");
+
+            });
+
+             // do this last b/c some of the xpath depends on changes made by the above fns...
+            init_errors(parent);
+
+        }
+    );
+
+    </script>
+
+{% endblock %} {# /scripts #}
+
+{% block title %}
+    CIM Questionnaire Editor
+{% endblock %} {# /title #}
+
+
+    {% block content_title %}
+        <div class="title">
+            Editing a <b>{{model_customizer.model_title|title}}</b> instance for the <a href="/{{ project.name|lower }}" title="ES-DOC Questionnaire Project Home"><b>{{project.title|title}}</b></a> Project
+        </div> <!-- /.title -->
+    {% endblock %} {# /content_title #}
+
+    {% block content_documentation %}
+        <div class="documentation">
+            <p>
+                Use this form to create or modify a {{ model_customizer.model_title|title }} instance.
+                Fill out the fields for each component on each tab from left to right and on each subform from top to bottom.
+                When you have finished filling in all properties, click the "save" button at the bottom of the page to store a local copy or the "publish" buttom to make the document available for other ES-DOC tools.
+                Invalid entries are indicated using a <span style="color: #ff0000; font-weight: bold;">red</span> font.&nbsp;&nbsp;
+                <a href="/edit/help" target="blank"><b>More detailed instructions</b></a> are available.
+            </p>
+            {%  if model_customizer.model_description %}
+                <div style="border: 1px solid #B9E0E3; padding: 8px;">
+                    {{model_customizer.model_description|safe}}
+                </div>
+            {% endif %}
+        </div> <!-- /.documentation -->
+    {% endblock %} {# /content_documentation #}
+
+    {# IF YOU'RE LOOKING FOR ALL OF THE CONTENT #}
+    {# IT'S IN THE "questionnaire_view.html" TEMPLATE #}
+    {# THIS TEMPLATE BASICALLY JUST ADDS A SUBMIT/PUBLISH BUTTON TO THAT TEMPLATE #}
+
+    {% block content_submit %}
+
+        <div class="submit">
+            <input class="button"  name="save"  type="submit"   value="save"/>
+            {% if can_publish %}
+                <input class="button"  name="publish"  type="submit"   value="publish"/>
+            {% endif %} {# /can_publish #}
+        </div> <!-- /.submit -->
+        <div style="clear: both;">&nbsp;</div>
+
+    {% endblock %} {# /content_submit #}
