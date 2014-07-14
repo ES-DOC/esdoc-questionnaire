@@ -255,6 +255,7 @@ class MetadataModelSubForm(MetadataModelAbstractForm):
         # this ensures that there is something to compare field data against so that I can truly tell is the model has changed
         # [http://stackoverflow.com/questions/11710845/in-django-1-4-do-form-has-changed-and-form-changed-data-which-are-undocument]
 # actually, just check if the standard_properties have changed...
+# (see has_changed() below)
 #        for field_name in self._meta.fields:
 #            if field_name not in self._hidden_fields:
 #                self.fields[field_name].show_hidden_initial = True
@@ -263,6 +264,7 @@ class MetadataModelSubForm(MetadataModelAbstractForm):
         # so I explicitly do not check the validity of modelsubforms (instead relying on propertysubforms)
         # see save_valid_forms() below
         return True
+
 
 def MetadataModelFormSetFactory(*args,**kwargs):
     DEFAULT_PREFIX = "form"
@@ -547,6 +549,7 @@ class MetadataAbstractStandardPropertyForm(MetadataEditingForm):
                 subform_min, subform_max = [int(val) if val != "*" else val for val in customizer.relationship_cardinality.split("|")]
 
                 if property.pk:
+
                     models = property.relationship_value.all()
                     if models:
                         (models, standard_properties, scientific_properties) = \
@@ -559,6 +562,9 @@ class MetadataAbstractStandardPropertyForm(MetadataEditingForm):
                             (validity, model_formset, standard_properties_formsets, scientific_properties_formsets) = \
                                 create_edit_subforms_from_data(self.data, models, model_customizer, standard_properties, standard_property_customizers, scientific_properties, scientific_property_customizers, subform_prefix=self.prefix, subform_min=subform_min, subform_max=subform_max)
                             self.subform_validity = all(validity)
+                            if self.subform_validity:
+                                for standard_properties_formset in standard_properties_formsets.values():
+                                    standard_properties_formset.force_clean()
 
                     else:
                         (models, standard_properties, scientific_properties) = \
@@ -571,6 +577,9 @@ class MetadataAbstractStandardPropertyForm(MetadataEditingForm):
                             (validity, model_formset, standard_properties_formsets, scientific_properties_formsets) = \
                                 create_edit_subforms_from_data(self.data, models, model_customizer, standard_properties, standard_property_customizers, scientific_properties, scientific_property_customizers, subform_prefix=self.prefix, subform_min=subform_min, subform_max=subform_max)
                             self.subform_validity = all(validity)
+                            if self.subform_validity:
+                                for standard_properties_formset in standard_properties_formsets.values():
+                                    standard_properties_formset.force_clean()
 
                 else:
                     (models, standard_properties, scientific_properties) = \
@@ -584,6 +593,9 @@ class MetadataAbstractStandardPropertyForm(MetadataEditingForm):
                         (validity, model_formset, standard_properties_formsets, scientific_properties_formsets) = \
                             create_edit_subforms_from_data(self.data, models, model_customizer, standard_properties, standard_property_customizers, scientific_properties, scientific_property_customizers, subform_prefix=self.prefix, subform_min=subform_min, subform_max=subform_max)
                         self.subform_validity = all(validity)
+                        if self.subform_validity:
+                            for standard_properties_formset in standard_properties_formsets.values():
+                                standard_properties_formset.force_clean()
 
                 self.subform_tuple = (subform_customizer, model_formset, standard_properties_formsets, scientific_properties_formsets)
 
@@ -716,6 +728,20 @@ class MetadataStandardPropertySubForm(MetadataAbstractStandardPropertyForm):
                 # inline formsets treat pk fields strangely, just ignore them in this context
                 pass
 
+    def force_clean(self):
+        # alright, this is very confusing...
+        # in __init__ I add hidden initial fields to let me know if something has changed
+        # that work fine when I am determining whether or not to save a subform
+        # but, subform_has_changed uses the boolean "any" to work out whether to save the full set
+        # for those subforms in the subformset that have not changed, they will have not run a full clean
+        # therefore their "cleaned_data" will be emtpy
+        # therefore saving them will create properties w/ emtpy content
+        # so this function exists to do what full_clean would have done if has_changed had returned True
+        # I call it in save_valid_subforms below
+        # [code is taken from "full_clean" in django.forms.forms.BaseForm.full_clean()]
+        self._clean_fields()
+        self._clean_form()
+        self._post_clean()
 
 class MetadataStandardPropertyInlineFormSet(BaseInlineFormSet):
 
@@ -778,6 +804,9 @@ class MetadataStandardPropertyInlineFormSet(BaseInlineFormSet):
 
         return form
 
+    def force_clean(self):
+        for form in self.forms:
+            form.force_clean()
 
 def MetadataStandardPropertyInlineFormSetFactory(*args,**kwargs):
     DEFAULT_PREFIX = "_standard_properties"
@@ -1321,11 +1350,7 @@ def create_edit_forms_from_data(data, models, model_customizer, standard_propert
             customizers = standard_property_customizers,
         )
 
-        try:
-            validity += [standard_properties_formsets[model_key].is_valid()]
-        except:
-            import ipdb; ipdb.set_trace()
-            validity += [standard_properties_formsets[model_key].is_valid()]
+        validity += [standard_properties_formsets[model_key].is_valid()]
 
         # TODO: JUST A LIL HACK UNTIL I CAN FIGURE OUT WHERE TO SETUP THIS LOGIC
         if model_key not in scientific_property_customizers:
@@ -1425,6 +1450,9 @@ def save_valid_forms(model_formset, standard_properties_formsets, scientific_pro
     #         standard_property_instance.save()
 
     for standard_property_formset in standard_properties_formsets.values():
+        # using zip here is the only way that I managed to get saving to work
+        # I have to save via the inlineformset (so that the inline fk gets saved appropriately)
+        # but I also need access to the underlying form so I can check certain customization details
         for standard_property_instance, standard_property_form in zip(standard_property_formset.save(commit=True),standard_property_formset.forms):
             assert(standard_property_instance.name == standard_property_form.get_current_field_value("name"))
             if standard_property_instance.field_type == MetadataFieldTypes.RELATIONSHIP and standard_property_form.customizer.relationship_show_subform:
@@ -1463,14 +1491,26 @@ def save_valid_subforms(model_subform, standard_properties_subformset, scientifi
     # (NOTE, I'LL HAVE TO CHANGE THE LOOP BELOW ONCE I'VE DONE THIS)
     model_instance = model_subform.save(commit=True)
 
-
     # for standard_property_formset in standard_properties_formsets.values():
     #     standard_property_instances = standard_property_formset.save(commit=False)
     #     for standard_property_instance in standard_property_instances:
     #         standard_property_instance.save()
 
-    for standard_property_instance, standard_property_form in zip(standard_properties_subformset.save(commit=True),standard_properties_subformset.forms):
+    # using zip here is the only way that I managed to get saving to work
+    # I have to save via the inlineformset (so that the inline fk gets saved appropriately)
+    # but I also need access to the underlying form so I can check certain customization details
+    # NOTE THAT force_clean() MUST HAVE BEEN CALLED AFTER VALIDATION BUT PRIOR TO SAVING FOR THIS TO WORK
+ #   for standard_property_instance, standard_property_form in zip(standard_properties_subformset.save(commit=True),standard_properties_subformset.forms):
+
+
+    standard_property_instances = [sp.save(commit=False) for sp in standard_properties_subformset.forms]
+    for standard_property_instance, standard_property_form in zip(standard_property_instances, standard_properties_subformset.forms):
+    #for standard_property_form in standard_properties_subformset.forms:
         assert(standard_property_instance.name == standard_property_form.get_current_field_value("name"))
+        # TODO: NO IDEA WHY I HAVE TO EXPLICITLY ADD THIS HERE
+        # BUT NOT IN THE ABOVE save_valid_forms FUNCTION?!?
+        standard_property_instance.model = model_instance
+        standard_property_instance.save()
         if standard_property_instance.field_type == MetadataFieldTypes.RELATIONSHIP and standard_property_form.customizer.relationship_show_subform:
 
             (subform_customizer, model_subformset, standard_properties_subformsets, scientific_properties_subformsets) = \
@@ -1487,7 +1527,7 @@ def save_valid_subforms(model_subform, standard_properties_subformset, scientifi
                 ])
 
                 if subform_has_changed:
-                    subform_model_instance = save_valid_subforms(model_subformset,standard_properties_subformsets[property_key], scientific_properties_subformsets[property_key])
+                    subform_model_instance = save_valid_subforms(model_subform,standard_properties_subformsets[property_key], scientific_properties_subformsets[property_key])
                     standard_property_instance.relationship_value.add(subform_model_instance)
             standard_property_instance.save()
 
@@ -1506,9 +1546,11 @@ def get_data_from_existing_edit_forms(model_formset,standard_properties_formsets
     data.update(model_formset_data)
 
     # TODO: handle nested formsets here
+    # I AM HERE
     for standard_property_formset in standard_properties_formsets.values():
         standard_property_formset_data = get_data_from_formset(standard_property_formset)
         data.update(standard_property_formset_data)
+
 
     for scientific_property_formset in scientific_properties_formsets.values():
         scientific_property_formset_data = get_data_from_formset(scientific_property_formset)

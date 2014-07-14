@@ -240,7 +240,7 @@ function add_subform(row) {
 
     var customizer_id = $(row).closest(".field").find("input[name='customizer_id']").val();
     var prefix        = $(row).closest(".field").find("input[name='prefix']").val()
-    var n_forms       = parseInt($(row).closest(".accordion").find(".accordion_unit").length)
+    var n_forms       = parseInt($(row).closest(".accordion").children(".accordion_unit").length)
     var property_id   = $(row).closest(".field").find("input[name='property_id']").val()
 
     url = window.document.location.protocol + "//" + window.document.location.host + "/ajax/select_realization/";
@@ -304,6 +304,7 @@ function add_subform(row) {
 
                                         console.log(old_prefix);
                                         console.log(new_prefix);
+                                        console.log(parsed_data);
 
                                         // rename ids and names
                                         update_field_names(row,old_prefix,new_prefix);

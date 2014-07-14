@@ -4,7 +4,7 @@ __date__ ="$Sep 30, 2013 4:12:23 PM$"
 APP_LABEL     = "questionnaire"
 
 __version_info__ = {
-    'major': 1,
+    'major': 0.11,
     'minor': 0,
     'patch': 0,
 }

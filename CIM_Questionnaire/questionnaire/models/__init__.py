@@ -17,4 +17,3 @@ from metadata_customizer       import MetadataCustomizer, MetadataModelCustomize
 from metadata_model            import MetadataModel, MetadataStandardProperty, MetadataScientificProperty
 from metadata_version          import MetadataVersion
 from metadata_categorization   import MetadataCategorization
-

@@ -7,7 +7,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='cim_questionnaire',
-    version='1.0.0',  # major.minor.patch (good idea to append deployment id in production)
+    version='0.11.0.0',  # major.minor.patch (good idea to append deployment id in production)
     author='Allyn Treshansky',
     author_email='allyn.treshansky@noaa.gov',
     packages=find_packages(),

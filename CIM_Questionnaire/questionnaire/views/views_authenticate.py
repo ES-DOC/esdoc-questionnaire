@@ -68,7 +68,6 @@ def questionnaire_login(request):
                 provider     = QuestionnaireProvider.objects.get(id=provider_id)
                 username     = remote_form.cleaned_data["username"]
                 provider_url = provider.url.replace("{username}",username)
-                #I AM HERE
                 return HttpResponseRedirect(provider_url)
                 print provider_url
                 # goto provider_url and get authentication

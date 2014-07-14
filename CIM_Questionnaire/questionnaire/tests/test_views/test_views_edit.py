@@ -103,5 +103,3 @@ class Test(TestQuestionnaireBase):
         self.assertNotIn("root_model_id",session_variables)
         self.assertEqual(session_variables["checked_arguments"],True)
         self.assertEqual(response.status_code,200)
-
-
