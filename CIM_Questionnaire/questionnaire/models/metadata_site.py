@@ -43,9 +43,7 @@ class MetadataSite(models.Model):
         verbose_name        = 'Metadata Site'
         verbose_name_plural = 'Metadata Sites'
 
-    # related name of 'metadata_site' was conflicting w/ debug_toolbar
-    # so I changed it to 'questionnaire_site'
-    site = models.OneToOneField(Site,related_name="questionnaire_site")
+    site = models.OneToOneField(Site,related_name="metadata_site")
 
     type = models.CharField(
         max_length=SMALL_STRING,

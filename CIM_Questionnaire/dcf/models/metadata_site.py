@@ -42,7 +42,7 @@ class MetadataSite(models.Model):
         verbose_name        = 'Metadata Site'
         verbose_name_plural = 'Metadata Sites'
 
-    site = models.OneToOneField(Site,related_name="metadata_site")
+    site = models.OneToOneField(Site,related_name="dcf_metadata_site")
     type = models.CharField(
         max_length=LIL_STRING,
         blank=True,

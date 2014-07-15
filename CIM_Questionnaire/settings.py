@@ -185,7 +185,7 @@ OPTIONAL_INSTALLED_APPS = [
         "condition"  : DEBUG_TOOLBAR,
         "import"     : "debug_toolbar",
         "app"        : ("debug_toolbar",),   # TODO: CHANGE THIS TO "debug_toolbar.apps.DebugToolbarConfig' IF UPGRADING TO DJANGO 1.7
-        #"middleware" : ("debug_toolbar.middleware.DebugToolbarMiddleware",),
+        "middleware" : ("debug_toolbar.middleware.DebugToolbarMiddleware",),
     },
 ]
 
@@ -236,6 +236,32 @@ LOGGING = {
         },
     }
 }
+
+
+#########################
+# debugging & profiling #
+#########################
+
+def show_toolbar(request):
+    # overloaded from 'debug_toolbar.middleware.show_toolbar'
+    #if request.META.get('REMOTE_ADDR', None) not in settings.INTERNAL_IPS:
+    #    return False
+    #
+    # if request.is_ajax():
+    #     return False
+    #
+    # return bool(DEBUG_TOOLBAR)
+
+    if bool(DEBUG_TOOLBAR):
+        return not request.is_ajax()
+
+    return False
+
+DEBUG_TOOLBAR_CONFIG = {
+    "SHOW_TOOLBAR_CALLBACK" : 'CIM_Questionnaire.settings.show_toolbar',
+}
+
+DEBUG_TOOLBAR_PATCH_SETTINGS = False
 
 ######################################
 # tools for usage & memory profiling #
