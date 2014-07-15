@@ -25,6 +25,7 @@ from django.contrib.sites.models import Site
 
 from questionnaire.utils import *
 
+
 class MetadataSiteType(EnumeratedType):
     pass
 
@@ -41,8 +42,11 @@ class MetadataSite(models.Model):
         abstract    = False
         verbose_name        = 'Metadata Site'
         verbose_name_plural = 'Metadata Sites'
-    
-    site = models.OneToOneField(Site,related_name="metadata_site")
+
+    # related name of 'metadata_site' was conflicting w/ debug_toolbar
+    # so I changed it to 'questionnaire_site'
+    site = models.OneToOneField(Site,related_name="questionnaire_site")
+
     type = models.CharField(
         max_length=SMALL_STRING,
         blank=True,
@@ -75,3 +79,6 @@ def site_post_save(sender, **kwargs):
             else:
                 msg = "Unable to create site profile for %s" % (site)
                 raise MetadataError(msg)
+
+def get_metadata_site_type(site):
+    return site.questionnaire_site.get_type()

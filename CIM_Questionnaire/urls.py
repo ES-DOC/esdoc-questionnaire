@@ -14,9 +14,6 @@ urlpatterns = patterns('',
     url(r'^admin/',     include(admin.site.urls)),
     url(r'^admin/doc/', include('django.contrib.admindocs.urls')),
 
-    # media (when NOT served through the Apache web server)...
-    url(r'^site_media/(?P<path>.*)$', 'django.views.static.serve', {'document_root': settings.MEDIA_ROOT} ),
-
     # questionnaire
     (r'', include('questionnaire.urls')),
 
@@ -35,6 +32,7 @@ urlpatterns = patterns('',
 )
 
 if settings.DEBUG_TOOLBAR:
+
     import debug_toolbar
 
     urlpatterns += patterns('',

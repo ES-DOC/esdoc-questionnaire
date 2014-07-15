@@ -13,3 +13,4 @@ static_root=static/
 [debug]
 debug=true
 debug_toolbar=false
+debug_profiling=false

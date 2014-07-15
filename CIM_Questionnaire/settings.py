@@ -14,7 +14,8 @@ parser = SafeConfigParser()
 parser.read(CONF_PATH)
 
 DEBUG = parser.getboolean('debug','debug')
-DEBUG_TOOLBAR = parser.getboolean('debug','debug_toolbar')
+DEBUG_TOOLBAR = parser.getboolean('debug','debug_toolbar') # this enables django-debug-toolbar (look in project-level "urls.py" for more info)
+DEBUG_PROFILING = parser.getboolean('debug','debug_profiling')
 
 ADMINS = (
 # ('name', 'email')
@@ -160,8 +161,7 @@ INSTALLED_APPS = (
     'django.contrib.staticfiles',
     'django.contrib.admin',    
     'django.contrib.admindocs',
-#    # testing...
-#    'django_nose',
+    # testing / debugging / profiling apps are added conditionally below
     # db migration...
     'south',
 #    # openid authentication...
@@ -177,11 +177,28 @@ INSTALLED_APPS = (
 #    'django_cim_forms', 'django_cim_forms.cim_1_5', 'dycore',
     # old apps from QED...
 #    'dcf', 'dcf.cim_1_8_1',
-#    # new apps...
-#    # TODO #
 )
 
-#TEST_RUNNER = "django_nose.NoseTestSuiteRunner"
+OPTIONAL_INSTALLED_APPS = [
+    # list of apps that are installed conditionally
+    {
+        "condition"  : DEBUG_TOOLBAR,
+        "import"     : "debug_toolbar",
+        "app"        : ("debug_toolbar",),   # TODO: CHANGE THIS TO "debug_toolbar.apps.DebugToolbarConfig' IF UPGRADING TO DJANGO 1.7
+        #"middleware" : ("debug_toolbar.middleware.DebugToolbarMiddleware",),
+    },
+]
+
+for optional_app in OPTIONAL_INSTALLED_APPS:
+    if optional_app.get("condition",False):
+        try:
+            __import__(optional_app["import"])
+        except ImportError:
+            pass
+        else:
+            INSTALLED_APPS += optional_app.get("app",())
+            MIDDLEWARE_CLASSES += optional_app.get("middleware", ())
+
 
 SESSION_SERIALIZER = 'django.contrib.sessions.serializers.JSONSerializer'
 

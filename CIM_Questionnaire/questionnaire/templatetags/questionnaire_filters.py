@@ -32,6 +32,8 @@ from questionnaire.utils  import *
 from questionnaire.models import *
 from questionnaire.forms  import *
 
+from CIM_Questionnaire.questionnaire.models.metadata_site import get_metadata_site_type
+
 register = template.Library()
 
 @register.filter
@@ -75,7 +77,7 @@ def get_number_of_properties_from_key(formsets,key):
 @register.filter
 def site_type(site):
     if isinstance(site,Site):
-        return site.metadata_site.get_type()
+        return get_metadata_site_type(site)
     else:
         return None
 
