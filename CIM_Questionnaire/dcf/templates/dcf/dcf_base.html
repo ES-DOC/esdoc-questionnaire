@@ -127,6 +127,14 @@
 
 <body>
 
+{% block site %}
+    {% if site|site_type != "PROD" %}
+        <div id="site" class="ui-state-error" style="width: 80%; margin: 2px auto 2px auto; text-align: center; padding: 4px;">
+            This is not a production site.&nbsp;&nbsp;Data will not be stored.
+        </div>
+    {% endif %} {# /site_type != "PROD" #}
+{% endblock %} {# /site #}
+
 {% block main %}
 
     <div id="dcf">
@@ -152,6 +160,18 @@
                 <!-- default header -->
                 <div class="header">
                     <a href="http://www.earthsystemcurator.org/esdoc/index.shtml"><img src="{{ STATIC_URL }}dcf/img/esdoc_logo_purple.png"/></a>
+
+                    {% block user %}
+                        <!-- default user login/logout block -->
+                        <div id="user">
+                            {% if request.user.is_authenticated %}
+                                welcome: <b>{{ request.user }}</b>&nbsp; <a title="logout" href="{% url 'logout' %}?next={{ request.path }}">logout</a>
+                            {% else %}
+                                <a title="login" href="{% url 'login' %}?next={{ request.path }}">login</a>
+                            {% endif %}
+                        </div>
+                    {% endblock %} {# /user #}
+
                 </div> <!-- /.header -->
             {% endblock %} {# /header #}
 

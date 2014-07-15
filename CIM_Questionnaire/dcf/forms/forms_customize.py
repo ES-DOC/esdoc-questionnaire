@@ -47,7 +47,7 @@ class MetadataModelCustomizerForm(ModelForm):
     # actual values for these fields is set below
     #version         = ModelChoiceField(label="Metadata Version",required=False,queryset=MetadataVersion.objects.none())
     categorization  = ModelChoiceField(label="Categorization",required=False,queryset=MetadataCategorization.objects.none())
-    #vocabularies    = ModelMultipleChoiceField(label="Controlled Vocabularies",required=False,queryset=MetadataVocabulary.objects.none())
+    vocabularies    = ModelMultipleChoiceField(label="Controlled Vocabularies",required=False,queryset=MetadataVocabulary.objects.all())
 
     standard_categories                 = ModelMultipleChoiceField(queryset=MetadataStandardCategory.objects.none(),required=False) # the categories themselves
     standard_categories_tags            = CharField(label="Available Categories",required=False)                               # the field that is used for the tagging widget
@@ -68,10 +68,12 @@ class MetadataModelCustomizerForm(ModelForm):
 
 
         categorization                          = self.initial["categorization"]
-        vocabularies                            = self.initial["vocabularies"]
+#        vocabularies                            = self.initial["vocabularies"]
+        vocabularies = customizer_instance.project.vocabularies.all().filter(document_type__iexact=customizer_instance.model)
+
         self.fields["vocabularies"].queryset    = MetadataVocabulary.objects.filter(pk__in=[vocabulary.pk for vocabulary in vocabularies])
         self.fields["categorization"].queryset  = MetadataCategorization.objects.filter(pk__in=[categorization.pk])
-        self.fields["vocabularies"].initial     = vocabularies
+        #self.fields["vocabularies"].initial     = vocabularies
         self.fields["categorization"].initial   = categorization
         
         try:
@@ -143,6 +145,13 @@ class MetadataModelCustomizerForm(ModelForm):
 
         return cleaned_data
 
+    def save(self, *args, **kwargs):
+        ordered_vocabularies = self.cleaned_data["vocabularies"]
+        for i, vocabulary in enumerate(ordered_vocabularies):
+            vocabulary.order = i
+            vocabulary.save()
+
+        return super(MetadataModelCustomizerForm, self).save(*args, **kwargs)
 
 #    def validate_unique(self):
 #        model_customizer = self.instance
@@ -163,7 +172,7 @@ class MetadataStandardPropertyCustomizerForm(ModelForm):
         model = MetadataStandardPropertyCustomizer
         fields  = ( "name","type","field_type","order","category","displayed","required","editable",    \
                     "default_value",  \
-                    "unique","verbose_name","documentation","suggestions","enumeration_values",         \
+                    "unique","verbose_name","documentation","suggestions","inherited","enumeration_values",         \
                     "enumeration_default","enumeration_choices","enumeration_open","enumeration_multi", \
                     "enumeration_nullable","relationship_target_model","relationship_source_model",     \
                     "relationship_cardinality","customize_subform","subform_customizer", "proxy", )

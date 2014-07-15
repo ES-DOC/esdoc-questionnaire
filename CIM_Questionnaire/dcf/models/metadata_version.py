@@ -20,7 +20,7 @@ Summary of module goes here
 
 """
 
-from django.db import models, DatabaseError
+from django.db import models, DatabaseError, IntegrityError
 from django.db.models import get_app, get_model, get_models
 from django.db.models.fields import NOT_PROVIDED
 from django.db.utils import DatabaseError as UtilsDatabaseError
@@ -164,13 +164,17 @@ class MetadataVersion(models.Model):
                     else:
                         pass
 
-                    (property_proxy,created) = MetadataStandardPropertyProxy.objects.get_or_create(**property_filter_parameters)
-                    if created:
-                        print "created new property proxy: %s" % property_proxy
-                    else:
-                        print "propery proxy %s already exists" % property_proxy
-
+                    try:
+                        (property_proxy,created) = MetadataStandardPropertyProxy.objects.get_or_create(**property_filter_parameters)
+                        if created:
+                            print "created new property proxy: %s" % property_proxy
+                        else:
+                            print "propery proxy %s already exists" % property_proxy
+                    except IntegrityError:
+                        print "trying to create a duplicate '%s' proxy" % (field_name)
+                        pass
                     models_dict[model_name].append(field_name)
+
 
         self.setModels(models_dict)
         self.save()

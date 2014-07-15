@@ -23,6 +23,7 @@ Summary of module goes here
 from django.contrib.syndication.views import Feed
 from django.utils.feedgenerator import Atom1Feed
 from django.core.exceptions import ObjectDoesNotExist
+from django.contrib.sites.models    import get_current_site
 
 from django.template import *
 from django.http import *

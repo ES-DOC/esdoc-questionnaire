@@ -25,6 +25,7 @@ from django.core.exceptions import ObjectDoesNotExist, FieldError, MultipleObjec
 from django.core.urlresolvers import reverse
 from django.http import *
 from django.shortcuts import *
+from django.contrib.sites.models    import get_current_site
 
 from dcf.utils  import *
 from dcf.models import *

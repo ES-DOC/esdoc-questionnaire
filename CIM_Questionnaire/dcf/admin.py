@@ -117,6 +117,78 @@ admin.site.register(MetadataProject)
 
 admin.site.register(MetadataModelCustomizer,MetadataModelCustomizerAdmin)
 
+from django.db.models import Q
+
+from django.contrib.sites.models import Site
+
+from dcf.models import MetadataSite
+
+class MetadataSiteAdminForm(ModelForm):
+    class Meta:
+        model = Site
+
+    def clean(self):
+        cleaned_data = super(MetadataSiteAdminForm, self).clean()
+        site = self.instance
+        existing_sites = Site.objects.filter(Q(name=cleaned_data["name"]) | Q(domain=cleaned_data["domain"])).exclude(pk=site.pk)
+        if existing_sites:
+            msg = "Sites must have unique names and domains."
+            raise forms.ValidationError(msg)
+        return cleaned_data
+
+class MetadataSiteInline(admin.StackedInline):
+    model = MetadataSite
+    can_delete = False
+
+class MetadataSiteAdmin(admin.ModelAdmin):
+
+    inlines = (MetadataSiteInline, )
+    form    = MetadataSiteAdminForm
+
+admin.site.unregister(Site)
+admin.site.register(Site, MetadataSiteAdmin)
+
+
+
+from django.contrib.auth.admin import UserAdmin
+from django.contrib.auth.models import User
+
+from dcf.models import MetadataUser
+
+class MetadataUserInline(admin.StackedInline):
+    model = MetadataUser
+    can_delete = False
+
+class MetadataAdmin(UserAdmin):
+    inlines = (MetadataUserInline, )
+
+    # this took a while to figure out...
+    # I want to update the group membership of a user based on which projects they belong to, but...
+    # 1) the save method on metadata_user gets called before the save_m2m method of the inlineform here (so the contents of 'projects' would be invalid)
+    # 2) there is a known Django bug in the m2m_changed signal
+    # so I do it here after save_m2m has been called
+    # (see models/metadata_authentication.py for more info)
+    def save_formset(self,request,form,formset,change):
+        try:
+            # since this is based off a one-to-one field, there will only ever be a single form in the formset
+            metadata_user = formset.save(commit=False)[0]
+        except IndexError:
+            # ...except for the case where the admin has not yet been assocated w/ a metadata_user
+            return
+        metadata_user.save()
+        old_projects = set(metadata_user.projects.all())
+        formset.save_m2m()
+        new_projects = set(metadata_user.projects.all())
+
+        for project in old_projects.difference(new_projects):
+            metadata_user.leave_project(project)
+        for project in new_projects.difference(old_projects):
+            metadata_user.join_project(project)
+
+admin.site.unregister(User)
+admin.site.register(User, MetadataAdmin)
+
+
 # TODO: REMOVE AFTER DEBUGGING...
 #admin.site.register(MetadataStandardCategory)
 #admin.site.register(MetadataScientificCategory)

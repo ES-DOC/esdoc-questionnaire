@@ -142,6 +142,10 @@
                     <category_key>basic-properties</category_key>
                 </field>
                 <field>
+                    <name>version</name>
+                    <category_key>basicproperties</category_key>
+                </field>
+                <field>
                     <name>purpose</name>
                     <category_key>component-description</category_key>
                 </field>         

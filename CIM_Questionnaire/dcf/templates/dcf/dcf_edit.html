@@ -25,7 +25,7 @@
 
 
     <div class="title">
-        CIM <u>{{customizer.model_title}}</u> Questionnaire
+        CIM <b>{{customizer.model_title}}</b> Questionnaire
     </div> <!-- /.title -->
 
     <div id="edit">
@@ -35,7 +35,7 @@
             Use this questionnaire to create or modify {{customizer.model_title|aOrAn}} {{customizer.model_title}} CIM document.&nbsp;&nbsp;
             Fill out the fields for each component on each tab from left to right, and on each subform from top to bottom.&nbsp;&nbsp;
             Fields or subforms with <span style="font-weight: bold;">bold</span> labels are required.&nbsp;&nbsp;
-            When you have finished, click the "save" button at the bottom of the page to store a local copy or the "publish" button to make the document available for others to view (using the ES-DOC toolset).&nbsp;&nbsp;
+            When you have finished filling in all properties, click the "save" button at the bottom of the page to store a local copy or the "publish" button to make the document available for others to view (using the ES-DOC toolset).&nbsp;&nbsp;
             Invalid entries are indicated using a <span style="color: #ff0000; font-weight: bold;">red</span> font.&nbsp;&nbsp;
             <a href="/dcf/edit/instructions" target="blank"><b>More detailed instructions</b></a> are available.&nbsp;&nbsp;
         </i>
@@ -56,6 +56,9 @@
                 </div>
 
                 {% if customizer.model_nested %}
+                <div class="hidden">
+                    <div id="component_tree">{{component_tree|safe}}</div>
+                </div>
                 <table border="0" width="100%">
                     <tr valign="top">
                         <td width="15%">
@@ -153,18 +156,28 @@
                                 <ul>
                                     {% for category in scientific_categories %}
                                         {% if category.component_name.lower == component_name_key %}
-                                        <li>
-                                            <a href="#tab-{{component_name_key}}-{{category.key}}">
-                                                {{category.name}}
-                                            </a>
-                                        </li>
+                                            {% with formset=scientific_property_formsets|getValueFromKey:component_name_key %}
+                                                {% with number_of_properties=category|number_of_properties:formset %}
+                                                    {% if model_customizer.model_show_all_categories or number_of_properties %}
+                                                        <li>
+                                                            <a href="#tab-{{component_name_key}}-{{category.key}}">
+                                                                {{category.name}}
+                                                                <span style="font-size: small;">({{number_of_properties}})</span>
+                                                            </a>
+                                                        </li>
+                                                    {% endif %}
+                                              {% endwith %}
+                                            {% endwith %}
                                         {% endif %} {# /category.component_name == component_name #}
                                     {% endfor %} {# /category #}
                                 </ul>
                                 {% for category in scientific_categories %}
                                     {% if category.component_name.lower == component_name_key %}
+                                            {% with formset=scientific_property_formsets|getValueFromKey:component_name_key %}
+                                                {% with number_of_properties=category|number_of_properties:formset %}
+                                                    {% if model_customizer.model_show_all_categories or number_of_properties %}
 
-                                    
+
                                         <div id="tab-{{component_name_key}}-{{category.key}}">
                                             <div class="tab_content">
                                                 <span class="documentation">{{category.description}}<br/></span>
@@ -197,6 +210,10 @@
                                                 
                                             </div> <!-- /.tab_content -->
                                         </div> <!-- /#tab-{{component_name_key}}-{{category.key}} -->
+                                              {% endif %}
+                                          {% endwith %}
+                                       {% endwith %}
+
                                     {% endif %} {# /category.component_name == component_name #}
                                 {% endfor %} {# /category #}
                             </div>

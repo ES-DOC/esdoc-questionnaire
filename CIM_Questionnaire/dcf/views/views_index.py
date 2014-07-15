@@ -23,6 +23,7 @@ Summary of module goes here
 from django.template import *
 from django.shortcuts import *
 from django.http import *
+from django.contrib.sites.models    import get_current_site
 
 from django.utils import simplejson as json
 from django.forms import *
@@ -64,8 +65,8 @@ def index(request):
             fields  = ("versions","categorizations","vocabularies","projects","customizations","models","action")
 
         versions        = ModelChoiceField(queryset=allVersions,label="Metadata Version",required=False)
-        categorizations = ModelChoiceField(queryset=allCategorizations,label="Associated Categorization",required=False)
-        vocabularies    = ModelMultipleChoiceField(queryset=allVocabularies,label="Associated Vocabularies",required=False)
+#        categorizations = ModelChoiceField(queryset=allCategorizations,label="Associated Categorization",required=False)
+#        vocabularies    = ModelMultipleChoiceField(queryset=allVocabularies,label="Associated Vocabularies",required=False)
         projects        = ModelChoiceField(queryset=allProjects,label="Metadata Project",required=True)
         customizations  = ModelChoiceField(queryset=allCustomizations,label="Form Customization",required=False)
 
@@ -77,9 +78,9 @@ def index(request):
             super(_IndexForm,self).__init__(*args,**kwargs)
 
             update_field_widget_attributes(self.fields["versions"],{"onchange":"reset_options(this);"})
-            update_field_widget_attributes(self.fields["categorizations"],{"onchange":"reset_options(this);"})
+ #           update_field_widget_attributes(self.fields["categorizations"],{"onchange":"reset_options(this);"})
             update_field_widget_attributes(self.fields["projects"],{"onchange":"reset_options(this);"})
-            update_field_widget_attributes(self.fields["vocabularies"],{"onchange":"reset_options(this);"})
+#            update_field_widget_attributes(self.fields["vocabularies"],{"onchange":"reset_options(this);"})
             update_field_widget_attributes(self.fields["customizations"],{"onchange":"reset_options(this);"})
             update_field_widget_attributes(self.fields["models"],{"onchange":"reset_options(this);"})
 
@@ -96,8 +97,8 @@ def index(request):
         if form.is_valid():
             action          = form.cleaned_data["action"]
             version         = form.cleaned_data["versions"]
-            categorization  = form.cleaned_data["categorizations"]
-            vocabulary      = form.cleaned_data["vocabularies"]
+ #           categorization  = form.cleaned_data["categorizations"]
+ #           vocabulary      = form.cleaned_data["vocabularies"]
             project         = form.cleaned_data["projects"]
             customization   = form.cleaned_data["customizations"]
             model           = form.cleaned_data["models"]
@@ -108,11 +109,11 @@ def index(request):
                 return error(request,msg)
 
             if version:
-                version_number = version.version
+                version_number = version.number
             if customization and action == "customize":
                 parameters = "?name=%s" % customization.name
 
-            url = "%s/%s/%s/%s/%s" % (action,project.name,model,version_number,parameters)
+            url = "dcf/%s/%s/%s/%s/%s" % (action,project.name,model,version_number,parameters)
             return HttpResponseRedirect(url)
 
     else:
@@ -121,5 +122,5 @@ def index(request):
     return render_to_response('dcf/dcf_index.html', {"form":form,"data":data}, context_instance=RequestContext(request))
 
 def index_project(request,project_name=""):
-    return HttpResponse("todo")
+    return HttpResponse("project index")
 

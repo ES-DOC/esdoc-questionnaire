@@ -446,7 +446,6 @@ class MetadataForm(ModelForm):
         field_name = property_customizer.name
         field_type = property_customizer.type
 
-
         if field_type == MetadataFieldTypes.ATOMIC:
 
             if property_customizer.suggestions:
@@ -459,6 +458,9 @@ class MetadataForm(ModelForm):
             if property_customizer.default_value:
                 self.initial[field_name] = property_customizer.default_value
 
+
+            if property_customizer.inherited:
+                update_field_widget_attributes(self.fields[field_name],{"class":"inherited","onchange":"inherit(this);"})
         
         elif field_type == MetadataFieldTypes.RELATIONSHIP:
 
@@ -479,8 +481,9 @@ class MetadataForm(ModelForm):
                 #current_choices =  INITIAL_CHOICE   # need to give an initial value (to allow Django to compare final values against; see http://stackoverflow.com/questions/14933475/django-formset-validating-all-forms)
                 #current_choices += [(choice,choice) for choice in property_customizer.enumeration_values.split("|")]
                 # TODO: WHY CAN'T I DO THIS IN TWO STEPS (ABOVE)? WHY MUST I DO IT IN ONE STEP (BELOW)?
-                current_choices = INITIAL_CHOICE + [(choice,choice) for choice in property_customizer.enumeration_values.split("|")]
-                
+                #current_choices = INITIAL_CHOICE + [(choice,choice) for choice in property_customizer.enumeration_values.split("|")]
+                current_choices = [(choice,choice) for choice in property_customizer.enumeration_values.split("|")]
+
                 if property_customizer.enumeration_nullable:
                     current_choices += NULL_CHOICE
 
@@ -490,7 +493,7 @@ class MetadataForm(ModelForm):
                 if property_customizer.enumeration_multi:
                     multiwidget[0] = SelectMultiple(choices=current_choices)
                 else:
-                    multiwidget[0] = Select(choices=current_choices)
+                    multiwidget[0] = Select(choices=INITIAL_CHOICE + current_choices)
 
                 if not property_customizer.editable:
                     update_widget_attributes(multiwidget[0],{"disabled":"true"})
@@ -511,6 +514,11 @@ class MetadataForm(ModelForm):
             # some custom CSS added to enumeration widgets
             update_widget_attributes(multiwidget[0],{"class":"enumeration-value multiselect"})
             update_widget_attributes(multiwidget[1],{"class":"enumeration-other"})
+
+
+            if property_customizer.inherited:
+                update_widget_attributes(multiwidget[0],{"class":"inherited","onchange":"inherit(this);"})
+                update_widget_attributes(multiwidget[1],{"class":"inherited","onchange":"inherit(this);"})
 
         else:
             pass

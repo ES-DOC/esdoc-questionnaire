@@ -125,13 +125,13 @@ class MetadataForm(ModelForm):
                 except KeyError:
                     msg = "invalid field ('%s') specified in fieldOrder" % fieldName
                     raise MetadataError(msg)
-
+        
         if initialize:
             self.initialize()
 
         # have to setup the subForms here
         # (by the time this fn is called, I can be certain POTENTIAL_SUBFORMS is complete)
-        for (key,value) in self._subForms.iteritems():
+        for (key,value) in self._subForms.iteritems():            
             # if the subForm hasn't yet been set, then set it
             if isinstance(value,basestring):
                 self._subForms[key] = POTENTIAL_SUBFORMS[value]

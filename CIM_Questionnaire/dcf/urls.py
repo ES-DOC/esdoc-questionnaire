@@ -30,9 +30,11 @@ admin.autodiscover()
 
 urlpatterns = patterns('',
 
-    # index pages...
-    url(r'^$', 'dcf.views.index'),
-    url(r'^(?P<project_name>[^/]+)/$', 'dcf.views.index_project'),
+    
+    # authentication...
+    url(r'^login/$',  'django.contrib.auth.views.login', {'template_name': 'dcf/dcf_login.html'}, name='login'),
+    url(r'^logout/$', 'django.contrib.auth.views.logout_then_login', {'login_url': '/dcf/login/'}, name='logout'),
+
 
     # TODO: custom error handling (400,403,404)?
 
@@ -60,6 +62,10 @@ urlpatterns = patterns('',
     url(r'^feed/(?P<project_name>[^/]+)/(?P<model_name>[^/]+)/(?P<version_number>[^/]+)/$', MetadataFeed()),
     url(r'^feed/(?P<project_name>[^/]+)/(?P<model_name>[^/]+)/$', MetadataFeed()),
     url(r'^feed/(?P<project_name>[^/]+)/$', MetadataFeed()),
+
+    # index pages...
+    url(r'^$', 'dcf.views.index', name="dcf_index"),
+    url(r'^(?P<project_name>[^/]+)/$', 'dcf.views.index_project', name="dcf_project_index"),
 
 )
 

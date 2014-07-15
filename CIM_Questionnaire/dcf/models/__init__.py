@@ -15,6 +15,8 @@ __date__ ="$Jan 31, 2013 11:24:31 AM$"
 
 from dcf.fields import *
 
+from metadata_site              import MetadataSite
+from metadata_authentication    import MetadataUser
 from metadata_model             import MetadataModel, MetadataEnumeration, MetadataProperty, MetadataDocument
 from metadata_proxy             import MetadataModelProxy, MetadataPropertyProxy, MetadataStandardPropertyProxy, MetadataScientificPropertyProxy, MetadataScientificPropertyProxyValue
 from metadata_customizer        import MetadataCustomizer, MetadataModelCustomizer, MetadataPropertyCustomizer, MetadataStandardPropertyCustomizer, MetadataScientificPropertyCustomizer

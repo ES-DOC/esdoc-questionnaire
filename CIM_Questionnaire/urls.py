@@ -7,6 +7,9 @@ admin.autodiscover()
 urlpatterns = patterns('',
     # ORDER IS IMPORTANT!
 
+    # media (when NOT served through the Apache web server)...
+    url(r'^site_media/(?P<path>.*)$', 'django.views.static.serve', {'document_root': settings.MEDIA_ROOT} ),
+
     # admin...
     url(r'^admin/',     include(admin.site.urls)),
     url(r'^admin/doc/', include('django.contrib.admindocs.urls')),
@@ -26,6 +29,9 @@ urlpatterns = patterns('',
     # dcf
     (r'^dcf/', include('dcf.urls')),
 
+    # index
+    url(r'^$', 'dcf.views.index'),
+    
 )
 
 if settings.DEBUG_TOOLBAR:

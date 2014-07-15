@@ -46,18 +46,15 @@ def get_cv_remote(cv_name):
     else:
         return cv_response.read()
 
-def get_cv_local(cv_name):
-    try:
-        cv_filepath  = CV_ROOT + cv_name + ".xml"
-        cv_file = open(cv_filepath, 'r')
-        cv_text = cv_file.read()
-        cv_file.close()
-        return cv_text
 
-    except IOError, e:
-        msg = e.strerror
-        print cv_filepath
-        raise MetadataError(msg)
+def get_cv_local(cv_name):
+    cv_filepath  = CV_ROOT + cv_name + ".xml"
+    try:
+        with open(cv_filepath, 'r') as cv_file:
+            return cv_file.read()
+    except IOError as e:
+        raise MetadataError(e.strerror)
+
 
 def get_cv(cv_name):
     # TODO: get_cv_remote is timing out... why?
@@ -68,6 +65,24 @@ def get_cv(cv_name):
     except CvError:
         cv = get_cv_local(cv_name)
     return cv
+
+
+def _xpath(node, xpath):
+    """Helper function to address lxml smart strings memory leakage issue.
+
+    :param lxml.etree.Element node: An xml element.
+    :param str xpath: An xpath statement.
+
+    :returns: Resuls of xpath expression evaluation.
+    :rtype: list or lxml.etree.Element
+
+    """
+    if node is None:
+        raise ValueError("Xpath expression cannot be evaluated against a null XML node.")
+    if xpath is None or not len(xpath):
+        raise ValueError("Xpath expression is invalid.")
+
+    return node.xpath(xpath, smart_strings=False)
 
 
 #########
@@ -189,29 +204,27 @@ class MetadataControlledVocabulary(models.Model):
         parser = et.XMLParser(remove_blank_text=True)
         cv = et.fromstring(get_cv(cv_name),parser)
         xpath_item_expression = "//item"
-        items = cv.xpath(xpath_item_expression)
+        items = _xpath(cv, xpath_item_expression)
 
         for item in items:
             # create the property if it doesn't already exist...
-            shortName = item.xpath("shortName/text()") or None
-            longName = item.xpath("longName/text()") or None
+            shortName = _xpath(item, "shortName/text()") or None
+            longName = _xpath(item, "longName/text()") or None
             if shortName: shortName = strip_completely(shortName[0])
             if longName: longName = strip_completely(longName[0])
-            print "about to create %s..." % shortName
             (model,created) = cls.objects.get_or_create(shortName=shortName,longName=longName)
-            #print "...created %s" % shortName
             # figure out if it has values
             # and, if so, work out if they are "open," "multi," or "nullable"...
             xpath_values_expression="//item[shortName/text()='%s']/values" % shortName
-            values = cv.xpath(xpath_values_expression)
+            values = _xpath(cv, xpath_values_expression)
             if values:
-                open = values[0].xpath("@open")
+                open = _xpath(values[0], "@open")
                 model.open = open and open[0].lower()=="true"
-                multi = values[0].xpath("@multi")
+                multi = _xpath(values[0], "@multi")
                 model.multi = multi and multi[0].lower()=="true"
-                nullable = values[0].xpath("@nullable")
+                nullable = _xpath(values[0], "@nullable")
                 model.nullable = nullable and nullable[0].lower()=="true"
-                custom = values[0].xpath("@custom")
+                custom = _xpath(values[0], "@custom")
                 model.custom = custom and custom[0].lower()=="true"
 
             if model.custom:
@@ -222,14 +235,14 @@ class MetadataControlledVocabulary(models.Model):
 
             # figure out its specific value choices...
             xpath_value_expression="//item[shortName/text()='%s']/values/value" % shortName
-            values = cv.xpath(xpath_value_expression)
+            values = _xpath(cv, xpath_values_expression)
             valueChoices = ""
 #            if model.custom:
 #                print "%s IS CUSTOM AND VALUES=%s" % (model, values)
             for value in values:
-                valueShortName = value.xpath("shortName/text()")
-                valueShortName = strip_completely(valueShortName[0])                
-                valueLongName = value.xpath("longName/text()")
+                valueShortName = _xpath(value, "shortName/text()")
+                valueShortName = strip_completely(valueShortName[0])
+                valueLongName = _xpath(value, "longName/text()")
                 #longName can have embedded markup in it, so I'm doing things a bit differently...
                 #valueLongName = v for v in value.xpath("longName/child::node()")
                 #valueLongName = value.find("longName")
@@ -249,10 +262,10 @@ class MetadataControlledVocabulary(models.Model):
             # figure out if it has a parent...
             parent = None
             xpath_parent_expression = "//item[shortName/text()='%s']/parent::items/parent::item" % shortName
-            parents = cv.xpath(xpath_parent_expression)
+            parents = _xpath(cv, xpath_parent_expression)
             if parents:
-                parentShortName = parents[0].xpath("shortName/text()") or None
-                parentLongName = parents[0].xpath("longName/text()") or None
+                parentShortName = _xpath(parents[0], "shortName/text()") or None
+                parentLongName = _xpath(parents[0], "longName/text()") or None
                 if parentShortName: parentShortName = strip_completely(parentShortName[0])
                 if parentLongName: parentLongName = strip_completely(parentLongName[0])
                 try:
@@ -262,6 +275,6 @@ class MetadataControlledVocabulary(models.Model):
             model.parent = parent
 
             if created:
-                #print "storing %s" % model
+                print "storing %s" % model
                 model.save()
 

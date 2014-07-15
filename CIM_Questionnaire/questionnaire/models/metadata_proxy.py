@@ -69,32 +69,6 @@ class MetadataModelProxy(models.Model):
         else:
             return MetadataStandardCategoryProxy.objects.none()
 
-    @classmethod
-    def factory(cls,*args,**kwargs):
-
-        proxy_model_fields = kwargs.pop("fields",{})
-        
-        (new_model_proxy,created_model) = MetadataModelProxy.objects.get_or_create(**kwargs)
-        
-        if not created_model:
-            # delete all old properties (going to replace them during this registration)...
-            old_model_proxy_properties = new_model_proxy.standard_properties.all()
-            old_model_proxy_properties.delete()
-
-        property_kwargs = {
-            "model_proxy"   : new_model_proxy
-        }
-
-        for (new_model_proxy_field_key,new_model_proxy_field_value) in proxy_model_fields.iteritems():
-            property_kwargs["name"] = new_model_proxy_field_key
-            #new_model_standard_property_proxy = MetadataStandardPropertyProxy()
-            (new_model_standard_property_proxy,created_property) = MetadataStandardPropertyProxy.objects.get_or_create(**property_kwargs)
-            new_model_standard_property_proxy.save()
-        
-        # TODO: SHOULD SAVE IT HERE
-        # SO THAT I CAN ADD THE PROPERTIES
-        # AND SAVE IT AGAIN
-        return new_model_proxy
 
 class MetadataPropertyProxy(models.Model):
     class Meta:

@@ -34,6 +34,9 @@ body {
 
 #dcf .documentation { font-style: italic; padding: 2px; }
 
+
+#dcf div.header div#user { float: right; font-size: smaller !important; }
+
 /* disable certain fields */
 /* (but don't compeletely remove them, else the Django View won't have access to them on HTTP POST */
 #dcf .hidden { display: none; }
@@ -79,6 +82,7 @@ body {
 #dcf button.add { float: left; margin-top: 8px; font-size: 10px; padding: 1px; }
 #dcf button.remove {float: right; margin: 4px; font-size: 10px; padding: 1px; }
 
+#dcf .inherited-options { display: inline; background-color: #B9E0E3; padding: 2px; margin: 2px; }
 
 #dcf button.customize-subform * { padding-top: 2px; padding-bottom: 2px; } /* since this button is part of a table row, make it a bit shorter than the others */
 
@@ -87,6 +91,8 @@ body {
 /* BE SURE TO RENAME UI-ICON IMAGES TO "_default" AND "_hover" AS NEEDED */
 #dcf .default-help-icon    { width: 16px; height: 16px; background-image: url(./custom/images/ui-icons_default.png); }
 #dcf .hover-help-icon      { width: 16px; height: 16px; background-image: url(./custom/images/ui-icons_hover.png); }
+
+#dcf .sort_vocabularies { display: inline; padding: 4px; }
 
 /* explicitly reset the img/color for open accordion headers */
 /* (by default, JQuery applies no style to them once opened) */

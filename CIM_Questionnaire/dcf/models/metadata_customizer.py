@@ -67,6 +67,27 @@ class MetadataCustomizer(models.Model):
         unique_together = self._meta.unique_together
         return list(unique_together)
 
+    def getField(self,field_name):
+        try:
+            field = self._meta.get_field_by_name(field_name)
+        except FieldDoesNotExist:
+            msg = "Could not find a field called '%s'" % (field_name)
+            #raise QuestionnaireError(msg)
+            print msg
+            return None
+        return field[0]
+    
+    @classmethod
+    def getField(cls,field_name):
+        try:
+            field = cls._meta.get_field_by_name(field_name)
+        except FieldDoesNotExist:
+            msg = "Could not find a field called '%s'" % (field_name)
+            #raise QuestionnaireError(msg)
+            print msg
+            return None
+        return field[0]
+
 class MetadataModelCustomizer(MetadataCustomizer):
     class Meta:
         app_label   = APP_LABEL
@@ -81,6 +102,7 @@ class MetadataModelCustomizer(MetadataCustomizer):
     name.help_text      = "A unique name for this customization (ie: \"basic\" or \"advanced\")"
     description         = models.TextField(verbose_name="Customization Description",blank=True)
     description.help_text = "An explanation of how this customization is intended to be used.  This information is for informational purposes only."
+    #default             = models.NullBooleanField(verbose_name="Is Default Customization",blank=True)
     default             = models.BooleanField(verbose_name="Is Default Customization",blank=True)
     default.help_text   = "Defines the default customization that is used by this project/model combination if no explicit customization is provided"
     vocabularies        = models.ManyToManyField("MetadataVocabulary",blank=True,null=True)
@@ -267,6 +289,8 @@ class MetadataStandardPropertyCustomizer(MetadataPropertyCustomizer):
     category    = models.ForeignKey("MetadataStandardCategory",blank=True,null=True)
     field_type  = models.CharField(max_length=64,blank=True,null=True)
     order       = models.PositiveIntegerField(blank=True,null=True)
+
+    inherited           = models.BooleanField(default=False,blank=True,verbose_name="should this property be inherited by children?")
 
     # ways to customize an enumeration...
     enumeration_values   = EnumerationField(blank=True,null=True,verbose_name="choose the property values that should be presented to the user:")

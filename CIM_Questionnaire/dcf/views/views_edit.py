@@ -25,6 +25,8 @@ from django.core.exceptions import ObjectDoesNotExist, FieldError, MultipleObjec
 from django.core.urlresolvers import reverse
 from django.http import *
 from django.shortcuts import *
+from django.contrib.sites.models    import get_current_site
+
 
 from profiling          import encode_profile as profile_usage
 from profiling          import profile_memory as profile_memory
@@ -85,7 +87,7 @@ def check_parameters(version_number="",project_name="",model_name="",msg=""):
     if not model_class:
         msg = "Cannot find the model type '%s' in version '%s'.  Have all model types been registered?" % (model_name, version)
         return (project,version,customizer,categorization,vocabularies,model_class,msg)
-
+ 
     # try to get the default customizer for this project/version/model...
     try:
         customizer = MetadataModelCustomizer.objects.get(project=project,version=version,model=model_name,default=1)
@@ -122,14 +124,15 @@ def edit_existing(request,version_number="",project_name="",model_name="",model_
     if not all ([project,version,customizer,categorization,vocabularies,model_class]):
         return dcf_error(request,msg)
 
-#    # check that the user has permission for this view
-#    if not request.user.is_authenticated():
-#        return HttpResponseRedirect('%s/?next=%s' % (settings.LOGIN_URL,request.path))
-#    else:
-#        if not user_has_permission(request.user,project.restriction_edit):
-#            msg = "You do not have permission to access this resource."
-#            return dcf_error(request,msg)
-
+    # check authentication...
+    # (not using @login_required b/c some projects ignore authentication)
+    if project.authenticated:
+        current_user = request.user
+        if not current_user.is_authenticated():
+            return redirect('/dcf/login/?next=%s'%(request.path))
+        if not (request.user.is_superuser or request.user.metadata_user.is_user_of(project)):
+            msg = "User '%s' does not have permission to edit customizations for project '%s'." % (request.user,project_name)
+            return dcf_error(request,msg)
 
     # try to get the requested model...    
     try:
@@ -170,7 +173,6 @@ def edit_existing(request,version_number="",project_name="",model_name="",model_
         except:
             msg = "There is no component hierarchy defined in vocabulary '%s'.  Has it been registered?" % vocabulary
             return dcf_error(request,msg)
-
 
     standard_categories     = customizer.getStandardCategories()
     scientific_categories   = project.categories.all().order_by("order")
@@ -269,6 +271,8 @@ def edit_existing(request,version_number="",project_name="",model_name="",model_
 
     # gather all the extra information required by the template
     dict = {
+            "site"                                  : get_current_site(request),
+
         "msg"                           : msg,
         "forms"                         : model_forms,
         "scientific_property_formsets"  : scientific_property_formsets,
@@ -294,30 +298,42 @@ def edit_new(request,version_number="",project_name="",model_name=""):
     if not all ([project,version,customizer,categorization,vocabularies,model_class]):
         return dcf_error(request,msg)
 
-#    # check that the user has permission for this view
-#    if not request.user.is_authenticated():
-#        return HttpResponseRedirect('%s/?next=%s' % (settings.LOGIN_URL,request.path))
-#    else:
-#        if not user_has_permission(request.user,project.restriction_edit):
-#            msg = "You do not have permission to access this resource."
-#            return dcf_error(request,msg)
-
+   # check authentication...
+    # (not using @login_required b/c some projects ignore authentication)
+    if project.authenticated:
+        current_user = request.user
+        if not current_user.is_authenticated():
+            return redirect('/dcf/login/?next=%s'%(request.path))
+        if not (request.user.is_superuser or request.user.metadata_user.is_user_of(project)):
+            msg = "User '%s' does not have permission to edit customizations for project '%s'." % (request.user,project_name)
+            return dcf_error(request,msg)
 
     model_filter_parameters = {
         "metadata_project"   : project,
     }
     if request.method == "GET":
+        # check if the user added any parameters to the request
         for (key,value) in request.GET.iteritems():
-            key = key + "__iexact"  # this ensures that the filter is case-insenstive
-            # bear in mind that if I ever change to using get_or_craete, the filter will have to be case-sensitive
-            # see https://code.djangoproject.com/ticket/7789 for more info
-            if value.lower()=="true":
-                model_filter_parameters[key] = 1
-            elif value.lower()=="false":
-                model_filter_parameters[key] = 0
-            else:
-                model_filter_parameters[key] = re.sub('[\"\']','',value) # strip out any quotes
-
+            value = re.sub('[\"\']','',value) # strip out any quotes
+            field_type = type(model_class.getField(key))
+            if issubclass(field_type,MetadataField):
+                field_model_class = field_type.getModelClass()
+                if field_model_class == django.db.models.fields.BooleanField:
+                    if value.lower()=="true" or value=="1":
+                        model_filter_parameters[key] = True
+                    elif value.lower()=="false" or value=="0":
+                        model_filter_parameters[key] = False
+                    else:
+                        model_filter_parameters[key] = value
+                elif field_model_class == django.db.models.fields.CharField or field_model_class == django.db.models.fields.TextField:
+                    # this ensures that the filter is case-insenstive for strings
+                    key = key + "__iexact"
+                    # bear in mind that if I ever change to using get_or_create, the filter will have to be case-sensitive
+                    # see https://code.djangoproject.com/ticket/7789 for more info
+                    model_filter_parameters[key] = value
+                else:
+                    model_filter_parameters[key] = value
+          
         if len(model_filter_parameters) > 1:
             # if there were (extra) filter parameters passed
             # then try to get the customizer w/ those parameters
@@ -340,7 +356,7 @@ def edit_new(request,version_number="",project_name="",model_name=""):
                 # raise an error if those filter params weren't enough to uniquely identify a customizer
                 msg = "Unable to find a <i>single</i> '%s' with the following parameters: %s" % (model_class.getTitle(), (", ").join([u'%s=%s'%(key,value) for (key,value) in model_filter_parameters.iteritems()]))
                 return dcf_error(request,msg)
-            except MetadataModelCustomizer.DoesNotExist:
+            except model_class.DoesNotExist:
                 # raise an error if there was no matching query
                 msg = "Unable to find any '%s' with the following parameters: %s" % (model_class.getTitle(), (", ").join([u'%s=%s'%(key,value) for (key,value) in model_filter_parameters.iteritems()]))
                 return dcf_error(request,msg)
@@ -517,6 +533,8 @@ def edit_new(request,version_number="",project_name="",model_name=""):
     
     # gather all the extra information required by the template
     dict = {
+            "site"                                  : get_current_site(request),
+
         "msg"                           : msg,
         "forms"                         : model_forms,
         "scientific_property_formsets"  : scientific_property_formsets,

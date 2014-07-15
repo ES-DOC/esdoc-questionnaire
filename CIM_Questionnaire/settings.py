@@ -17,7 +17,7 @@ DEBUG = parser.getboolean('debug','debug')
 DEBUG_TOOLBAR = parser.getboolean('debug','debug_toolbar')
 
 ADMINS = (
-    # ('Your Name', 'your_email@example.com'),
+# ('name', 'email')
 )
 
 MANAGERS = ADMINS
@@ -59,7 +59,7 @@ USE_I18N = True
 USE_L10N = True
 
 # If you set this to False, Django will not use timezone-aware datetimes.
-USE_TZ = True
+USE_TZ = False
 
 # Absolute filesystem path to the directory that will hold user-uploaded files.
 # Example: "/var/www/example.com/media/"
@@ -137,6 +137,8 @@ TEMPLATE_DIRS = (
 # makes 'request' object available in templates
 TEMPLATE_CONTEXT_PROCESSORS += (
      'django.core.context_processors.request',
+     # requirement of messaging framework...
+     'django.contrib.messages.context_processors.messages',
      # requirement of openid
      #'django_authopenid.context_processors.authopenid',
 )
@@ -223,7 +225,7 @@ LOGGING = {
 ######################################
 
 PROFILE 	 = False
-PROFILE_LOG_BASE = rel('profiles/'),
+PROFILE_LOG_BASE = rel('profiles/')
 SETUP_HPY 	 = False
 
 ##################################

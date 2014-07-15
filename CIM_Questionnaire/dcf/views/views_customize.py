@@ -21,6 +21,9 @@ Summary of module goes here
 """
 
 from django.core.exceptions import ObjectDoesNotExist, FieldError, MultipleObjectsReturned
+from django.db.models.fields import *
+from django.contrib.sites.models    import get_current_site
+
 from django.core.urlresolvers import reverse
 from itertools import chain
 from django.http import *
@@ -54,6 +57,16 @@ def customize_existing(request,version_number="",project_name="",model_name="",c
     project     = model_customizer_instance.getProject()
     version     = model_customizer_instance.getVersion()
     model_class = model_customizer_instance.getModel()
+
+    # check authentication...
+    # (not using @login_required b/c some projects ignore authentication)
+    if project.authenticated:
+        current_user = request.user
+        if not current_user.is_authenticated():
+            return redirect('/dcf/login/?next=%s'%(request.path))
+        if not (request.user.is_superuser or request.user.metadata_user.is_admin_of(project)):
+            msg = "User '%s' does not have permission to edit customizations for project '%s'." % (request.user,project_name)
+            return dcf_error(request,msg)
 
     # get the default categorization and vocabulary...
     categorizations = version.categorizations.all()
@@ -104,7 +117,7 @@ def customize_existing(request,version_number="",project_name="",model_name="",c
             component_list = component_list,
             initial = {
                 "categorization"                : categorization,
-                "vocabularies"                  : vocabularies,
+#                "vocabularies"                  : vocabularies,
                 "standard_categories_content"   : JSON_SERIALIZER.serialize(standard_categories),
                 "scientific_categories_content" : JSON_SERIALIZER.serialize(scientific_categories),
             }
@@ -155,7 +168,7 @@ def customize_existing(request,version_number="",project_name="",model_name="",c
             component_list = component_list,
             initial = {
                 "categorization"                : categorization,
-                "vocabularies"                  : vocabularies,
+ #               "vocabularies"                  : vocabularies,
                 "standard_categories_content"   : JSON_SERIALIZER.serialize(standard_categories),
                 "scientific_categories_content" : JSON_SERIALIZER.serialize(scientific_categories),
             }
@@ -222,9 +235,21 @@ def customize_new(request,version_number="",project_name="",model_name=""):
         msg = "Cannot find the model type '%s' in version '%s'.  Have all model types been registered?" % (model_name, version)
         return dcf_error(request,msg)
 
+
+    # check authentication...
+    # (not using @login_required b/c some projects ignore authentication)
+    if project.authenticated:
+        current_user = request.user
+        if not current_user.is_authenticated():
+            return redirect('/dcf/login/?next=%s'%(request.path))
+        if not (request.user.is_superuser or request.user.metadata_user.is_admin_of(project)):
+            msg = "User '%s' does not have permission to edit customizations for project '%s'." % (request.user,project_name)
+            return dcf_error(request,msg)
+
     # get the default categorization and vocabulary...
     categorizations = version.categorizations.all()
     vocabularies = project.vocabularies.all().filter(document_type__iexact=model_name)
+    
     # TODO: THIS IS CLEARLY DUMB,
     # BUT THE RELATEDOBJECTMANAGER IS BEING USED FOR THE TIME WHEN
     # THIS CODE CAN SUPPORT MULTPLE CATEGORIZATIONS
@@ -233,7 +258,7 @@ def customize_new(request,version_number="",project_name="",model_name=""):
         msg = "There is no default categorization associated with version %s." % version
         return dcf_error(request,msg)
     if not vocabularies:
-        msg = "There are no default vocabularies associated with project %s." % project
+        msg = "There are no default vocabularies associated with '%s' within the project '%s'." % (model_class.getTitle(),project)
         return dcf_error(request,msg)
 
     component_list = []
@@ -261,19 +286,26 @@ def customize_new(request,version_number="",project_name="",model_name=""):
         "model"     : model_name,
     }
     if request.method == "GET":
+        # check if the user added any parameters to the request
         for (key,value) in request.GET.iteritems():
-            if value.lower()=="true":
-                customizer_filter_parameters[key] = 1
-            elif value.lower()=="false":
-                customizer_filter_parameters[key] = 0
-            else:
-                # I can assume that the filter parameter is not boolean
-                key = key + "__iexact"  # this ensures that the filter is case-insenstive
-                # bear in mind that if I ever change to using get_or_craete, the filter will have to be case-sensitive
-                # see https://code.djangoproject.com/ticket/7789 for more info
+            value = re.sub('[\"\']','',value) # strip out any quotes
+            field_type = type(MetadataModelCustomizer.getField(key))
+            if field_type == BooleanField:
+                # special case for boolean fields
+                if value.lower()=="true" or value=="1":
+                    customizer_filter_parameters[key] = True
+                elif value.lower()=="false" or value=="0":
+                    customizer_filter_parameters[key] = False
+                else:
+                    customizer_filter_parameters[key] = value
+            elif field_type == CharField or field_type == TextField:
+                # this ensures that the filter is case-insenstive for strings
                 key = key + "__iexact"
-                customizer_filter_parameters[key] = re.sub('[\"\']','',value) # strip out any quotes
-
+                # bear in mind that if I ever change to using get_or_create, the filter will have to be case-sensitive
+                # see https://code.djangoproject.com/ticket/7789 for more info
+                customizer_filter_parameters[key] = value
+            else:
+                customizer_filter_parameters[key] = value        
         if len(customizer_filter_parameters) > 3:
             # if there were (extra) filter parameters passed
             # then try to get the customizer w/ those parameters
@@ -328,7 +360,7 @@ def customize_new(request,version_number="",project_name="",model_name=""):
             instance=model_customizer_instance,
             initial = {
                 "categorization"                : categorization,
-                "vocabularies"                  : vocabularies,
+  #              "vocabularies"                  : vocabularies,
                 "standard_categories_content"   : JSON_SERIALIZER.serialize(standard_categories),
                 "scientific_categories_content" : JSON_SERIALIZER.serialize(scientific_categories),
             }
@@ -403,7 +435,7 @@ def customize_new(request,version_number="",project_name="",model_name=""):
                 "version"                       : version,
                 "model"                         : model_name,
                 "categorization"                : categorization,
-                "vocabularies"                  : vocabularies,
+   #             "vocabularies"                  : vocabularies,
                 "standard_categories_content"   : JSON_SERIALIZER.serialize(standard_categories),
                 "scientific_categories_content" : JSON_SERIALIZER.serialize(scientific_categories),
             }

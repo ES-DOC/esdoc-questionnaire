@@ -10,6 +10,11 @@
 
 {% block scripts %}
 
+    $(document).ready(
+        enableDCF()
+    )
+
+
     /* fill the 'action' field w/ the appropriate value */
     /* based on which submit button was clicked */
     function set_action(actionName) {
@@ -72,15 +77,15 @@
 {% block content %}
 
     <div class="title">
-        Welcome to the Django CIM Forms application
+        Welcome to the CIM Questionnaire
     </div> <!-- /.title -->
+
 
     <div id="index">
 
         <p>
             <i>
                 This is just a temporary page showing how to get to other pages.  A real portal would probably want to hard-code these links.&nbsp;&nbsp;
-                Note that while <b>"customize"</b> allows you to look at an arbitrary customization, <b>"edit"</b> can only use a project's default customization.&nbsp;&nbsp;
                 <ul>
                     <li><a href="{{ STATIC_URL }}dcf/doc/index.html"><b>Here</b></a> is some documentation about the code.&nbsp;&nbsp;</li>
                     <li><a href="/admin/dcf"><b>Here</b></a> is the Django Admin Interface (for registering versions/projects/etc.&nbsp;&nbsp;</li>
@@ -122,7 +127,6 @@
         </fieldset>
 
         <div class="submit">
-            <input class="button" name="test" type="submit" value="test" onclick="set_action('test');"/>
             <input class="button" name="customize" type="submit" value="customize" onclick="set_action('customize');"/>
             <input class="button" name="edit" type="submit" value="edit" onclick="set_action('edit');"/>
         </div> <!-- /.submit -->

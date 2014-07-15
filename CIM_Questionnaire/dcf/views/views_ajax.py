@@ -23,6 +23,7 @@ Summary of module goes here
 from django.template import *
 from django.shortcuts import *
 from django.http import *
+from django.contrib.sites.models    import get_current_site
 
 from django.core.exceptions import ObjectDoesNotExist, FieldError, MultipleObjectsReturned
 from django.utils import simplejson as json

@@ -196,9 +196,6 @@ def ajax_customize_category(request,category_id="",**kwargs):
 
     (category_app_name,category_model_name) = category_class.split(".")
     
-    print category_class
-    print category_app_name
-    print category_model_name
     category_model = get_model(category_app_name,category_model_name)
 
     if not category_model:

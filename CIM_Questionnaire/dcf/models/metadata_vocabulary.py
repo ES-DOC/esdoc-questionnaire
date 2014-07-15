@@ -44,40 +44,46 @@ class MetadataVocabulary(models.Model):
         # this is one of the few classes that I allow admin access to, so give it pretty names:
         verbose_name        = 'Metadata Vocabulary'
         verbose_name_plural = 'Metadata Vocabularies'
+        
+        ordering = [ "order" ]
 
 #    project = models.ForeignKey("MetadataProject",blank=True,null=True,related_name="vocabularies")
     projects = models.ManyToManyField("MetadataProject",blank=True,null=True,related_name="vocabularies")
 #    file    = models.FileField(verbose_name="Vocabulary File",upload_to=_UPLOAD_PATH,validators=[validate_vocabulary_file_extension,validate_vocabulary_file_schema])
-    file    = models.FileField(verbose_name="Vocabulary File",upload_to=_UPLOAD_PATH,validators=[validate_vocabulary_file_extension])
+    file    = models.FileField(verbose_name="Vocabulary File",upload_to=_UPLOAD_PATH,validators=[validate_vocabulary_file_extension],storage=OverwriteStorage())
+    file.help_text  = "Note that files with the same names will be overwritten"
     name    = models.CharField(max_length=255,blank=True,null=True,unique=True)
     document_type = models.CharField(max_length=64,blank=False,choices=CIM_DOCUMENT_TYPES)
 
     component_tree = models.TextField(blank=True)
     component_list = models.TextField(blank=True)
+
+    order = models.IntegerField(null=True,blank=True)
     
     def __unicode__(self):
         if self.file:
             return u'%s' % os.path.basename(self.file.name)
         return u'%s' % self
-
+    
+### OverwriteStorage above takes care of this
     def save(self, *args, **kwargs):
-        """
-        before saving a vocabulary, check if a file of the same name already exists.
-        if so, overwrite it.
-        """
-        vocabulary_file_name = os.path.basename(self.file.name)
-        vocabulary_file_path = os.path.join(settings.MEDIA_ROOT,APP_LABEL,_UPLOAD_DIR,vocabulary_file_name)
-
-        if not self.name:
-            self.name = vocabulary_file_name
-
+###        """
+###        before saving a vocabulary, check if a file of the same name already exists.
+###        if so, overwrite it.
+###        """
+###        vocabulary_file_name = os.path.basename(self.file.name)
+###        vocabulary_file_path = os.path.join(settings.MEDIA_ROOT,APP_LABEL,_UPLOAD_DIR,vocabulary_file_name)
+###
+###        if not self.name:
+###            self.name = vocabulary_file_name
+###
         force_overwrite = kwargs.pop("force_overwrite",True)
-        if force_overwrite:
-            if os.path.exists(vocabulary_file_path):
-                print "warning: the file '%s' is being overwritten" % vocabulary_file_path
-                os.remove(vocabulary_file_path)
-
-        print "ABOUT TO SAVE"
+###        if force_overwrite:
+###            if os.path.exists(vocabulary_file_path):
+###                print "warning: the file '%s' is being overwritten" % vocabulary_file_path
+###                os.remove(vocabulary_file_path)
+###
+###        print "ABOUT TO SAVE"
         super(MetadataVocabulary, self).save(*args, **kwargs)
 
     def register(self):
@@ -102,6 +108,7 @@ class MetadataVocabulary(models.Model):
         value_filter_parameters     = { }
 
         for i, component in enumerate(vocabulary_content.xpath("//component")):
+
             component_name = component.xpath("@name")[0]
 
             # parse the component hierarchy buried w/in the CV into a dictionary-of-lists-of-dictionaries
@@ -152,6 +159,7 @@ class MetadataVocabulary(models.Model):
                     (new_property, created) = MetadataScientificPropertyProxy.objects.get_or_create(**property_filter_parameters)
                     if created:
                         print "created property %s" % new_property
+                        pass
 
                     value_filter_parameters["property"] = new_property
                     for i, value in enumerate(property.xpath("./value")):
@@ -167,8 +175,10 @@ class MetadataVocabulary(models.Model):
                             value_filter_parameters["format"] = value_format[0]
 
                         (new_value, created) = MetadataScientificPropertyProxyValue.objects.get_or_create(**value_filter_parameters)
+
                         if created:
                             print "created property value %s" % new_value
+                            pass
 
         print "converting component hierarchy to dictionary & list..."
         self.setComponents(component_hierarchy)
@@ -198,3 +208,23 @@ def list_from_tree(tree):
             for list_item in value:
                 for key in list_from_tree(list_item):
                     yield key
+
+from django.dispatch import receiver
+from django.db.models.signals import post_save, post_delete
+
+@receiver(post_save, sender=MetadataVocabulary)
+def vocabulary_post_save(sender, **kwargs):
+    created = kwargs.pop("created",True)
+    vocabulary = kwargs.pop("instance",None)
+    # TODO:
+    pass
+
+@receiver(post_delete, sender=MetadataVocabulary)
+def vocabulary_post_delete(sender, **kwargs):
+    vocabulary = kwargs.pop("instance",None)
+    if vocabulary:
+        try:
+            vocabulary.file.delete(save=False)    # save=False prevents model from re-saving itself
+            print "deleted %s" % (self.file.url)
+        except:
+            pass
