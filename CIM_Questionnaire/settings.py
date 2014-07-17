@@ -101,11 +101,19 @@ STATICFILES_FINDERS = (
 SECRET_KEY = parser.get('settings', 'secret_key', raw=True)
 
 # List of callables that know how to import templates from various sources.
-TEMPLATE_LOADERS = (
-    'django.template.loaders.filesystem.Loader',
-    'django.template.loaders.app_directories.Loader',
-#     'django.template.loaders.eggs.Loader',
-)
+# (note templates are cached in production mode)
+if not DEBUG:
+    TEMPLATE_LOADERS = (
+        ('django.template.loaders.cached.Loader', (
+            'django.template.loaders.filesystem.Loader',
+            'django.template.loaders.app_directories.Loader',
+        )),
+    )
+else:
+    TEMPLATE_LOADERS = (
+        'django.template.loaders.filesystem.Loader',
+        'django.template.loaders.app_directories.Loader',
+    )
 
 MIDDLEWARE_CLASSES = (
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -184,20 +192,24 @@ OPTIONAL_INSTALLED_APPS = [
     {
         "condition"  : DEBUG_TOOLBAR,
         "import"     : "debug_toolbar",
-        "app"        : ("debug_toolbar",),   # TODO: CHANGE THIS TO "debug_toolbar.apps.DebugToolbarConfig' IF UPGRADING TO DJANGO 1.7
+        "app"        : ("debug_toolbar", "template_timings_panel", ),   # TODO: CHANGE THIS TO "debug_toolbar.apps.DebugToolbarConfig' IF UPGRADING TO DJANGO 1.7
         "middleware" : ("debug_toolbar.middleware.DebugToolbarMiddleware",),
     },
 ]
 
 for optional_app in OPTIONAL_INSTALLED_APPS:
-    if optional_app.get("condition",False):
-        try:
-            __import__(optional_app["import"])
-        except ImportError:
-            pass
-        else:
-            INSTALLED_APPS += optional_app.get("app",())
-            MIDDLEWARE_CLASSES += optional_app.get("middleware", ())
+   if optional_app.get("condition",False):
+#       try:
+#           __import__(optional_app["import"])
+#       except ImportError:
+#           pass
+#       else:
+       INSTALLED_APPS += optional_app.get("app",())
+       # django is pretty ridiculous
+       # the order of entries in middleware is very important
+       # so rather than append this middleware, insert it as the next-to-last one
+       #MIDDLEWARE_CLASSES += optional_app.get("middleware", ())
+       MIDDLEWARE_CLASSES = MIDDLEWARE_CLASSES[0:-1] + optional_app.get("middleware",()) + (MIDDLEWARE_CLASSES[-1],)
 
 
 SESSION_SERIALIZER = 'django.contrib.sessions.serializers.JSONSerializer'
@@ -242,26 +254,50 @@ LOGGING = {
 # debugging & profiling #
 #########################
 
-def show_toolbar(request):
-    # overloaded from 'debug_toolbar.middleware.show_toolbar'
-    #if request.META.get('REMOTE_ADDR', None) not in settings.INTERNAL_IPS:
-    #    return False
+
+if DEBUG_TOOLBAR:
+
+    # this is only needed if running via apache
+    # BEGIN
     #
-    # if request.is_ajax():
+    #DEBUG_TOOLBAR_PATCH_SETTINGS = False
+    #
+    # def show_toolbar(request):
+    #     # overloaded from 'debug_toolbar.middleware.show_toolbar'
+    #     #if request.META.get('REMOTE_ADDR', None) not in settings.INTERNAL_IPS:
+    #     #    return False
+    #     #
+    #     # if request.is_ajax():
+    #     #     return False
+    #     #
+    #     # return bool(DEBUG_TOOLBAR)
+    #
+    #     if bool(DEBUG_TOOLBAR):
+    #         return not request.is_ajax()
+    #
     #     return False
     #
-    # return bool(DEBUG_TOOLBAR)
+    # DEBUG_TOOLBAR_CONFIG = {
+    #     "SHOW_TOOLBAR_CALLBACK" : 'CIM_Questionnaire.settings.show_toolbar',
+    # }
+    #
+    # END
 
-    if bool(DEBUG_TOOLBAR):
-        return not request.is_ajax()
-
-    return False
-
-DEBUG_TOOLBAR_CONFIG = {
-    "SHOW_TOOLBAR_CALLBACK" : 'CIM_Questionnaire.settings.show_toolbar',
-}
-
-DEBUG_TOOLBAR_PATCH_SETTINGS = False
+    DEBUG_TOOLBAR_PANELS = [
+        #'debug_toolbar.panels.versions.VersionsPanel',
+        'debug_toolbar.panels.timer.TimerPanel',
+        #'debug_toolbar.panels.settings.SettingsPanel',
+        'debug_toolbar.panels.headers.HeadersPanel',
+        'debug_toolbar.panels.request.RequestPanel',
+        'debug_toolbar.panels.sql.SQLPanel',
+        "template_timings_panel.panels.TemplateTimings.TemplateTimings",    # this is a 3rd party panel
+        #'debug_toolbar.panels.staticfiles.StaticFilesPanel',
+        'debug_toolbar.panels.templates.TemplatesPanel',
+        'debug_toolbar.panels.cache.CachePanel',
+        'debug_toolbar.panels.signals.SignalsPanel',
+        'debug_toolbar.panels.logging.LoggingPanel',
+        #'debug_toolbar.panels.redirects.RedirectsPanel',
+    ]
 
 ######################################
 # tools for usage & memory profiling #

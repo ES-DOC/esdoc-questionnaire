@@ -134,9 +134,9 @@ class MetadataCategorization(models.Model):
 
     def unregister(self,**kwargs):
         request = kwargs.pop("request",None)
-        # TODO: DO STUFF!
         for category in self.categories.all():
-            print category
+            category.delete()
+        self.registered = False
 
 from django.dispatch import receiver
 from django.db.models.signals import post_save, post_delete

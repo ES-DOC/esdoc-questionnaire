@@ -1,0 +1,32 @@
+{# this displays a standard property field #}
+
+{% if property_customizer.documentation %}
+    {% include "questionnaire/_property_help.html" %}
+{% else %}
+    <td>
+{% endif %} {# / help #}
+
+    {% if property_customizer.required %}
+        <span class="required">{{property_customizer.verbose_name}}:&nbsp;</span>
+    {% else %}
+        <span class="optional">{{property_customizer.verbose_name}}&nbsp;</span>
+    {% endif %} {# / required #}
+
+    </td>
+
+    <td>
+
+        {{property_form.get_value_field}}
+
+        {% if property_customizer.inherited %}
+            <div class="inheritance_options" title="This field's value can be passed onto its children.  Uncheck the box to prevent both passing on this field's value or inheriting a value from corresponding fields of a parent component.">
+                &nbsp;&nbsp;<span class="ui-icon ui-icon-link" style="display: inline-block;">&nbsp;</span>
+                <input class="enable_inheritance" type="checkbox" checked="checked"/>
+            </div> <!-- /.inheritance_options -->
+        {% endif %} {# / inherited #}
+
+        {% if property_customizer.enumeration_open %}
+            {{property_form.enumeration_other_value}}
+        {% endif %} {# /enumeration_other_value #}
+
+    </td>

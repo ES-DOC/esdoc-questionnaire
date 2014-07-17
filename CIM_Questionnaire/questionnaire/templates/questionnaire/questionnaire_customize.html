@@ -141,9 +141,12 @@
 
     <div class="hidden_dialog" id="customize_subform_dialog"     title="customize">&nbsp;</div>
 
-    <div class="title">
-        Customize the CIM Questionnaire for <b>{{model_proxy.name|title}}</b> instances of the <b>{{project.title|title}}</b> Project
-    </div> <!-- /.title -->
+    {% block content_title %}
+        <div class="title">
+            Customize the CIM Questionnaire for <b>{{model_proxy.name|title}}</b> instances of the <a href="/{{ project.name|lower }}" title="ES-DOC Questionnaire Project Home"><b>{{project.title|title}}</b></a> Project
+        </div> <!-- /.title -->
+    {% endblock %} {# /content_title #}
+
 
     <div class="documentation">
         <p>

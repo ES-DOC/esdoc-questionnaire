@@ -85,14 +85,17 @@ class MetadataUser(models.Model):
     def remove_group(self,group):
         group.user_set.remove(self.user)
 
+def get_metadata_user(user):
+    return user.metadata_user
+
 from django.dispatch import receiver
-from django.db.models.signals import post_save, m2m_changed
+from django.db.models.signals import post_save, post_delete, m2m_changed
 from django.db.utils import ProgrammingError
 
 @receiver(post_save, sender=User)
 def user_post_save(sender, **kwargs):
     created = kwargs.pop("created",True)
-    user    = kwargs.pop("instance",None)
+    user = kwargs.pop("instance",None)
     if user and created:
         try:
             (metadata_user,created_metadata_user) = MetadataUser.objects.get_or_create(user=user)
@@ -105,6 +108,7 @@ def user_post_save(sender, **kwargs):
             else:
                 msg = "Unable to create user profile for %s" % (user)
                 raise MetadataError(msg)
+
 
 ### THIS IS A KNOWN BUG IN DJANGO [https://code.djangoproject.com/ticket/16073]
 ### I CAN'T USE THIS SIGNAL

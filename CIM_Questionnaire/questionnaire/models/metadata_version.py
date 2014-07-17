@@ -55,7 +55,7 @@ class MetadataVersion(models.Model):
     url             = models.URLField(blank=True)
     file            = models.FileField(upload_to=UPLOAD_PATH,validators=[validate_version_file_extension,validate_version_file_schema],storage=OverwriteStorage())
     file.help_text  = "Note that files with the same names will be overwritten"
-    categorization  = models.ForeignKey("MetadataCategorization",blank=True,null=True,related_name="versions")
+    categorization  = models.ForeignKey("MetadataCategorization",blank=True,null=True,related_name="versions",on_delete=models.SET_NULL)
     categorization.help_text = "A version can only have a single categorization."
 
 
@@ -69,6 +69,7 @@ class MetadataVersion(models.Model):
     def clean(self):
         # force name to be lowercase
         # this avoids hacky methods of ensuring case-insensitive uniqueness
+        # this also allows me to query the db w/out using the '__iexact' qualifier, which should reduce db hits
         self.name = self.name.lower()
 
     def register(self,**kwargs):
@@ -161,9 +162,19 @@ class MetadataVersion(models.Model):
             
     def unregister(self,**kwargs):
         request = kwargs.pop("request",None)
-        for model in self.models.all():
-            print "going to unregister %s" % model
-        self.registered = False
+
+        if not self.registered:
+
+            msg = "This version is not currently registered.  No action was taken."
+            if request:
+                messages.add_message(request, messages.WARNING, msg)
+            else:
+                print msg
+        else:
+
+            for model in self.model_proxies.all():
+                model.delete()
+            self.registered = False
 
 from django.dispatch import receiver
 from django.db.models.signals import post_save, post_delete

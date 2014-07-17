@@ -22,19 +22,20 @@ Summary of module goes here
 
 from django import template
 from django.template.defaultfilters import slugify
-import os
-import re
 
 from django.contrib.sites.models import Site
 from django.contrib.auth.models  import User
 
-from questionnaire.utils  import *
-from questionnaire.models import *
-from questionnaire.forms  import *
-
 from CIM_Questionnaire.questionnaire.models.metadata_site import get_metadata_site_type
+from CIM_Questionnaire.questionnaire.utils import DEFAULT_VOCABULARY
 
 register = template.Library()
+
+
+@register.assignment_tag
+def get_default_vocabulary_key():
+    return slugify(DEFAULT_VOCABULARY)
+
 
 @register.filter
 def a_or_an(string):
@@ -48,31 +49,20 @@ def a_or_an(string):
     else:
         return "a"
 
+
 @register.filter
-def get_number_of_values(dict):
-    number_of_values = 0
-    for value in dict.values():
-        number_of_values += len(value)
-    return number_of_values
+def get_length_of_values(dict):
+    length_of_values = 0
+    values = dict.values()
+    for value in values:
+        length_of_values += len(value)
+    return length_of_values
+
 
 @register.filter
 def get_value_from_key(dict,key):
-    if dict and key in dict:
-        return dict[key]
-    return None
+    return dict.get(key)
 
-@register.filter
-def index(sequence,index):
-    try:
-        return sequence[index]
-    except IndexError:
-        return ''
-
-@register.filter
-def get_number_of_properties_from_key(formsets,key):
-    if formsets and key in formsets:
-        return formsets[key].number_of_properties
-    return 0
 
 @register.filter
 def site_type(site):
@@ -80,6 +70,7 @@ def site_type(site):
         return get_metadata_site_type(site)
     else:
         return None
+
 
 @register.filter
 def is_member_of(user,project):
@@ -90,6 +81,7 @@ def is_member_of(user,project):
         return user.metadata_user.is_member_of(project)
     return False
 
+
 @register.filter
 def is_user_of(user, project):
     if isinstance(user,User):
@@ -98,6 +90,7 @@ def is_user_of(user, project):
             return True
         return  user.metadata_user.is_user_of(project)
     return False
+
 
 @register.filter
 def is_admin_of(user, project):
@@ -110,40 +103,14 @@ def is_admin_of(user, project):
 
 
 @register.filter
-def get_field_by_name(form,field_name):
-    return form[field_name]
-
-@register.filter
-def get_instance_pk(form):
-    instance = form.instance
-    if instance:
-        return instance.pk
-    return -1
-
-@register.filter
-def analyze(formsets):
-#    print "these formsets are contained in a %s" % (type(formsets))
-#    print "there are %s items: %s" % (len(formsets),formsets.keys())
-#    print "and each item has the following statistics:"
-#    for (key,formset) in formsets.iteritems():
-#        print "%s has a %s with %s properties" % (key,type(formset),formset.number_of_properties)
-#        print "and they are..."
-#        for form in formset:
-#            print form.current_values["name"]
-#            try:
-#                print u"%s: %s" %(form.prefix,form.data[form.prefix+"-name"])
-#            except:
-#                print u"no data for %s" % (form.prefix)        
-    return "analyzed"
-
-@register.filter
 def get_form_by_field(formset,field_tuple):
     # returns the 1st form in a fieldset whose specified field has the specified value
     (field_name,field_value) = field_tuple.split('|')
-    for (i,form) in enumerate(formset):
+    for form in formset:
         if form.get_current_field_value(field_name) == field_value:
             return form
     return None
+
 
 @register.filter
 def get_forms_by_field(formset,field_tuple):
@@ -155,6 +122,9 @@ def get_forms_by_field(formset,field_tuple):
             forms.append(form)
     return forms
 
+##############################
+# not happy w/ these filters #
+##############################
 
 @register.filter
 def get_active_scientific_categories_by_key(model_customizer,key):
@@ -200,9 +170,34 @@ def get_standard_properties_subformset_for_model(standard_property_form,model_fo
         model_key += str(model_instance.pk)
         return standard_properties_subformsets[model_key]
 
-@register.assignment_tag
-def get_default_vocabulary_key():
-    return slugify(DEFAULT_VOCABULARY)
 
 
 
+#########################
+# check if still needed #
+#########################
+
+@register.filter
+def index(sequence,index):
+    try:
+        return sequence[index]
+    except IndexError:
+        return ''
+
+
+@register.filter
+def get_number_of_properties_from_key(formsets,key):
+    if formsets and key in formsets:
+        return formsets[key].number_of_properties
+    return 0
+
+@register.filter
+def get_field_by_name(form,field_name):
+    return form[field_name]
+
+@register.filter
+def get_instance_pk(form):
+    instance = form.instance
+    if instance:
+        return instance.pk
+    return -1

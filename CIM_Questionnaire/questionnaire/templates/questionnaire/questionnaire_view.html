@@ -85,7 +85,7 @@
 {% endblock %} {# /title #}
 
 {% block content %}
-                                       
+
     {% block content_title %}
         <div class="title">
             Viewing a <b>{{model_customizer.model_title|title}}</b> instance for the <a href="/{{ project.name|lower }}" title="ES-DOC Questionnaire Project Home"></a><b>{{project.title|title}}</b></a> Project
@@ -113,7 +113,7 @@
         <div class="form"> {# wrap everything in div.form, so I can group related fields together #}
 
             <fieldset>
-                
+
                 {% if vocabularies %}
                     <!-- naughty, naughty developer using tables -->
                     <table border="0" width="100%">
@@ -163,35 +163,35 @@
                             <td width="85%">
                 {% endif %} {# /vocabularies #}
 
-                {{ model_formset.management_form }}
-                {{ model_formset.non_form_errors }}
-                
                 {# doing this here, outside of the formset loop, b/c standard categories & properties are the same for every component #}
                 {# this therefore avoids multiple queries of the db #}
                 {% with active_standard_categories_and_properties=model_customizer.get_active_standard_categories_and_properties %}
 
-                    {% for form in model_formset %}
+                    {{ model_formset.management_form }}
+                    {{ model_formset.non_form_errors }}
+
+                    {% for model_form in model_formset %}
 
                         {# doing this here, inside of the formset loop, b/c scientific categories & properties vary for each component #}
-                        {% with active_scientific_categories_and_properties=model_customizer|get_active_scientific_categories_and_properties_by_key:form.prefix %}
+                        {% with active_scientific_categories_and_properties=model_customizer|get_active_scientific_categories_and_properties_by_key:model_form.prefix %}
 
-                            <div class="pane" id="{{form.prefix}}_pane">
+                            <div class="pane" id="{{ model_form.prefix }}_pane">
                                 <fieldset>
                                     <legend>
                                         <span class="title">
-                                            {% for field in form.get_header_fields %}
-                                                {{field}}
+                                            {% for field in model_form.get_header_fields %}
+                                                {{ field }}
                                             {% endfor %} {# /field #}
                                         </span>
                                     </legend>
 
                                     <div class="hidden">
                                         {# the fields I explicitly set to hidden #}
-                                        {% for field in form.get_hidden_fields %}
+                                        {% for field in model_form.get_hidden_fields %}
                                             {{ field }}
                                         {% endfor %} {# /field #}
                                         {# and the fields that are hidden by default #}
-                                        {% for hidden_field in form.hidden_fields %}
+                                        {% for hidden_field in model_form.hidden_fields %}
                                             {{ hidden_field }}
                                         {% endfor %}  {# /hidden_field #}
                                     </div> <!-- /.hidden -->
@@ -203,25 +203,22 @@
                                                     <a href="#tab_{{form.prefix}}_{{category_customizer.key}}">
                                                         {{category_customizer.name}}
                                                         <span style="font-size: small;">
-                                                            ({{property_customizers|length}})
+                                                            ({{ property_customizers|length }})
                                                         </span>
                                                     </a>
                                                 </li>
                                             {% endfor %} {# /category_customizer,property_customizers #}
                                             <li>
-                                                <a href="#tab_{{form.prefix}}_scientificproperties">
+                                               <a href="#tab_{{form.prefix}}_scientificproperties">
                                                     Scientific Properties
                                                     <span style="font-size: small;">
-                                                        ({{active_scientific_categories_and_properties|get_number_of_values}})
+                                                        ({{active_scientific_categories_and_properties|get_length_of_values}})
                                                     </span>
                                                 </a>
                                             </li>
                                         </ul>
 
-                                        {# again, doing this here, outside of the categories loop, b/c I fetch all standard properties at once #}
-                                        {# and then just get the ones relevant to the current category #}
-                                        {# this therefore avoids multiple queries of the db #}
-                                        {% with standard_property_formset=standard_properties_formsets|get_value_from_key:form.prefix %}
+                                        {% with standard_property_formset=standard_properties_formsets|get_value_from_key:model_form.prefix %}
 
                                             {{ standard_property_formset.management_form }}
                                             {{ standard_property_formset.non_form_errors }}
@@ -238,16 +235,21 @@
                                                         {% endif %} {# /category_customizer.description #}
 
                                                         <div class="form"> {# wrapping everything in a div.form so I can group together fields belonging to the same model #}
-                         
+
                                                             <table width="100%" border="0">
+
                                                                 {% for property_customizer in property_customizers %}
+
                                                                     {# looping through the customizers initially instead of the formset itself #}
-                                                                    {# ensures I get the correct forms (for this category) in the correct order #}
+                                                                    {# ensures I get the correct forms (for this category) (in the correct order) out of the full set of forms #}
 
                                                                     <tr class="{% cycle 'odd' 'even' %} field" name="{{property_customizer.name}}">
 
                                                                         {% with field_tuple="name|"|add:property_customizer.name %}
-                                                                            {% with property_form=standard_property_formset|get_form_by_field:field_tuple %}
+
+                                                                            {# using a tuple of the form "field_name|field_value" to find the correct form #}
+                                                                            {# this will find a form with a field named "field_name" that has a value of "field_value" #}
+                                                                            {%  with property_form=standard_property_formset|get_form_by_field:field_tuple %}
 
                                                                                 {% if property_customizer.relationship_show_subform %}
 
@@ -263,7 +265,7 @@
 
                                                                                 {% else  %}
 
-                                                                                    {% include "questionnaire/_property_field.html" %}
+                                                                                    {% include "questionnaire/_standard_property.html" %}
 
                                                                                     <td class="hidden"> <!-- seems weird to have a <td> I don't display, but it seemed more weird to have content outside of the table -->
                                                                                         <div class="hidden">
@@ -280,32 +282,32 @@
 
                                                                                 {% endif %} {# /relationship_show_subform #}
 
-                                                                            {% endwith %} {# /property_form #}
+
+                                                                            {% endwith %} {# /standard_property_formset #}
+
                                                                         {% endwith %} {# /field_tuple #}
 
-                                                                    </tr>
                                                                 {% endfor %} {# /property_customizer #}
                                                             </table>
 
                                                         </div> <!-- /.form -->
                                                     </div> <!-- /.tab_content -->
-                                                </div>
-                                            {% endfor %} {# /category_customizer,property_customizers #}
+                                                </div> <!-- /#tab_{{ form_prefix }}_{{ category_customizer.key }} -->
+                                            {% endfor %} {# category_customizer,property_customizers #}
+
+
                                         {% endwith %} {# /standard_property_formset #}
 
                                         <div id="tab_{{form.prefix}}_scientificproperties">
                                             <div class="tab_content">
-                        
-                                                {% with scientific_property_formset=scientific_properties_formsets|get_value_from_key:form.prefix %}
+                                                {% with scientific_property_formset=scientific_properties_formsets|get_value_from_key:model_form.prefix %}
 
-                                                    {# even if I'm not going to display the complete forms #}
-                                                    {# I still need the management data #}
                                                     {{ scientific_property_formset.management_form }}
                                                     {{ scientific_property_formset.non_form_errors }}
 
-                                                    {% if active_scientific_categories_and_properties|get_number_of_values %}
-                           
-                                                        <div class="tabs">
+                                                    {% if active_scientific_categories_and_properties|get_length_of_values %}
+
+                                                       <div class="tabs">
                                                             <ul>
                                                                 {% for category_customizer,property_customizers in active_scientific_categories_and_properties.items %}
                                                                     <li>
@@ -318,6 +320,7 @@
                                                                     </li>
                                                                 {% endfor %} {# /category_customizer,property_customizers #}
                                                             </ul>
+
                                                             {% for category_customizer,property_customizers in active_scientific_categories_and_properties.items %}
                                                                 <div id="tab_{{form.prefix}}_{{category_customizer.key}}">
                                                                     <div class="tab_content">
@@ -337,11 +340,9 @@
                                                                         {% endif %} {# /category_customizer.description #}
 
                                                                             <div class="accordion" prefix="{{formset.prefix}}">
-
                                                                                 {% with field_tuple="category_key|"|add:category_customizer.key %}
                                                                                     {% for property_form in scientific_property_formset|get_forms_by_field:field_tuple %}
-                                                                                        {# TODO: IS THERE A BUILT-IN TAG TO GET LIST ITEM BY (VARIABLE) INDEX? #}
-                                                                                        {% with property_customizer=property_customizers|index:forloop.counter0 %}
+                                                                                        {% with property_customizer=property_form.get_customizer %}
 
                                                                                             <h3 class="accordion_header">
                                                                                                 <table width="90%" border="0">
@@ -362,7 +363,6 @@
                                                                                                 <div class="form"> {# wrapping everything in a div.form so I can group together fields belonging to the same model #}
 
                                                                                                     <div class="scientific_property">
-
 
                                                                                                         <table width="100%">
                                                                                                             <tr class="odd">
@@ -389,57 +389,57 @@
                                                                                                     {% if property_customizer.display_extra_attributes %}
                                                                                                         {% include "questionnaire/_property_extra_fields.html" %}
                                                                                                     {% endif %} {# /show_extra_attributes #}
-                                                                                                    
+
                                                                                                 </div> <!-- /.form -->
                                                                                             </div> <!-- /.accordion_content -->
-                                                                                        {% endwith %} {# /property_customizer #}
-                                                                                     {% endfor %} {# /form #}
-                                                                                 {% endwith %} {# /field_tuple #}
-                                                                            </div> <!-- /.accordion -->
 
-                                                                    </div> <!-- /.tab_content-->
-                                                                </div> <!-- /#tab_{{form.prefix}}_{{category_customizer.key}} -->
+                                                                                        {% endwith %} {# property_customizer #}
+                                                                                    {% endfor %} {# /property_form #}
+                                                                                {% endwith %}   {# /field_tuple #}
+                                                                            </div>
+                                                                    </div> <!-- /.tab_content -->
+                                                                </div> <!-- /#tab_{{ form.prefix }}_{{ category_customizer.key }} -->
                                                             {% endfor %} {# /category_customizer,property_customizers #}
+
+
                                                         </div> <!-- /.tabs -->
 
                                                     {% else %}
 
-                                                        <div class="documentation">
+                                                       <div class="documentation">
                                                             <p>
                                                                 This component has no scientific properties associated with it.
                                                             </p>
-                                                        </div>
+                                                       </div>
 
-                                                    {% endif %}
-
+                                                    {% endif %} {# /active_scientific_categories_and_properties|get_length_of_values #}
                                                 {% endwith %} {# /scientific_property_formset #}
-
                                             </div> <!-- /.tab_content -->
-                                        </div>
-                                    </div> <!-- /.tabs -->
+                                        </div> <!-- /#tab_{{ form_prefix }}_scientificproperties -->
+
+                                    </div>  <!-- /.tabs -->
 
                                 </fieldset>
-
                             </div> <!-- /.pane -->
 
-                        {% endwith %} {# / active_scientific_categories_and_properties #}
+                        {% endwith %} {# /active_scientific_categories_and_properties #}
 
-                    {% endfor %} {# /form #}
+                    {%  endfor %}
 
-                {% endwith %} {# /active_standard_categories_and_properties #}
+                {% endwith %} {# active_standard_categories_and_properties #}
 
                 {% if vocabularies %}
                             </td>
                         </tr>
                     </table>
                 {% endif %} {# /vocabularies #}
-                
+
             </fieldset>
-            
+
         {% block content_submit %}
 
             <!-- there is no ability to submit from a view -->
-            
+
         {% endblock %} {# /content_submit #}
 
         </div> <!-- /.form -->

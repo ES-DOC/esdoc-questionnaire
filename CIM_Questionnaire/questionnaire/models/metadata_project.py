@@ -64,6 +64,7 @@ class MetadataProject(models.Model):
     def clean(self):
         # force name to be lowercase
         # this avoids hacky methods of ensuring case-insensitive uniqueness
+        # this also allows me to query the db w/out using the '__iexact' qualifier, which should reduce db hits
         self.name = self.name.lower()
 
     def get_group(self,group_suffix):

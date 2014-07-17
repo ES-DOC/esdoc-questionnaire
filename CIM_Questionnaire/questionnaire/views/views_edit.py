@@ -41,9 +41,12 @@ def validate_view_arguments(project_name="", model_name="", version_name=""):
 
     (validity,project,version,model_proxy,model_customizer,msg) = (True,None,None,None,None,"")
 
+    project_name_lower = project_name.lower()
+    version_name_lower = version_name.lower()
+
     # try to get the project...
     try:
-        project = MetadataProject.objects.get(name__iexact=project_name)
+        project = MetadataProject.objects.get(name=project_name_lower)
     except MetadataProject.DoesNotExist:
         msg = "Cannot find the <u>project</u> '%s'.  Has it been registered?" % (project_name)
         validity = False
@@ -56,7 +59,7 @@ def validate_view_arguments(project_name="", model_name="", version_name=""):
 
     # try to get the version...
     try:
-        version = MetadataVersion.objects.get(name__iexact=version_name,registered=True)
+        version = MetadataVersion.objects.get(name=version_name_lower,registered=True)
     except MetadataVersion.DoesNotExist:
         msg = "Cannot find the <u>version</u> '%s'.  Has it been registered?" % (version_name)
         validity = False
@@ -77,7 +80,7 @@ def validate_view_arguments(project_name="", model_name="", version_name=""):
 
     # try to get the default model customizer for this project/version/proxy combination...
     try:
-        model_customizer = MetadataModelCustomizer.objects.get(project=project, version=version, proxy=model_proxy, default=True)
+        model_customizer = MetadataModelCustomizer.objects.prefetch_related("vocabularies").get(project=project, version=version, proxy=model_proxy, default=True)
     except MetadataModelCustomizer.DoesNotExist:
         msg = "There is no default customization associated with this project/model/version."
         validity = False
@@ -108,12 +111,11 @@ def questionnaire_edit_new(request, project_name="", model_name="", version_name
     # getting the vocabularies into the right order is a 2-step process
     # b/c vocabularies do not have an "order" attribute (since they can be used by multiple projects/customizations),
     # but the model_customizer does record the desired order of active vocabularies (as a comma-separated list)
-    vocabularies = model_customizer.vocabularies.all()
+    vocabularies = model_customizer.vocabularies.all().prefetch_related("component_proxies")
     vocabulary_order = [int(order) for order in model_customizer.vocabulary_order.split(',')]
     vocabularies = sorted(vocabularies, key=lambda vocabulary: vocabulary_order.index(vocabulary.pk))
 
     # now try to get the default customizer set for this project/version/proxy combination...
-
     (model_customizer,standard_category_customizers,standard_property_customizers,nested_scientific_category_customizers,nested_scientific_property_customizers) = \
             MetadataCustomizer.get_existing_customizer_set(model_customizer,vocabularies)
 
@@ -132,11 +134,11 @@ def questionnaire_edit_new(request, project_name="", model_name="", version_name
             scientific_property_proxies[model_key] = [scientific_property_customizer.proxy for scientific_property_customizer in scientific_property_customizer_list]
 
     # TODO: remove assert statement
-    for properties in [model_customizer.standard_property_customizers.all(), model_customizer.scientific_property_customizers.all()]:
+    for properties in [model_customizer.standard_property_customizers.all().select_related("proxy"), model_customizer.scientific_property_customizers.all().select_related("proxy")]:
         for property in properties:
             assert property.name == property.proxy.name
 
-    # TODO: will have to include _all_ properties in the forms (and just hide them in the template) so that they are there when I save things
+    # TODO: may have to include _all_ properties in the forms (and just hide them in the template) so that they are there when I save things
 
     model_parameters = {
         "project": project,
@@ -146,7 +148,7 @@ def questionnaire_edit_new(request, project_name="", model_name="", version_name
     INITIAL_PARAMETER_LENGTH = len(model_parameters)
 
     # TODO: check if the user added any parameters to the request; if so, pass those parameters to "questionnaire_edit_existing()"
-    # TODO: HAVE TO DO THIS DIFFERENTLY THAN CUSTOMIZERS (see "views_customize.py"), SINCE FIELDS ARE FKS TO PROPERTIES
+    # TODO: HAVE TO DO THIS DIFFERENTLY THAN WITH CUSTOMIZERS (see "views_customize.py"), SINCE FIELDS ARE FKS TO PROPERTIES
     for (key,value) in request.GET.iteritems():
         pass
     if len(model_parameters) > INITIAL_PARAMETER_LENGTH:
@@ -215,6 +217,8 @@ def questionnaire_edit_new(request, project_name="", model_name="", version_name
         "can_publish": False,  # only models that have already been saved can be published
     }
 
+#        return render_to_response('questionnaire/questionnaire_test.html', {}, context_instance=RequestContext(request))
+
     return render_to_response('questionnaire/questionnaire_edit.html', dict, context_instance=RequestContext(request))
 
 
@@ -272,7 +276,7 @@ def questionnaire_edit_existing(request, project_name="", model_name="", version
 
     # create the realization set
     (models, standard_properties, scientific_properties) = \
-        MetadataModel.get_existing_realization_set(models, model_customizer, standard_property_customizers)
+        MetadataModel.get_existing_realization_set(models)#, model_customizer, standard_property_customizers)
     #
     # # clean it up so that everything is in the correct order...
     # for i,standard_property_customizer in enumerate(standard_property_customizers):

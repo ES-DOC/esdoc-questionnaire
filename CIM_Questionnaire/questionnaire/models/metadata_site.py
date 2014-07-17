@@ -79,4 +79,5 @@ def site_post_save(sender, **kwargs):
                 raise MetadataError(msg)
 
 def get_metadata_site_type(site):
-    return site.questionnaire_site.get_type()
+    return site.metadata_site.get_type()
+

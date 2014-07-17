@@ -180,6 +180,48 @@ class CardinalityField(models.CharField):
         return (field_class_path,args,kwargs)
 
 
+
+
+
+class CachedModelChoiceIterator(forms.models.ModelChoiceIterator):
+
+    def __init__(self, field):
+        super(CachedModelChoiceIterator,self).__init__(field)
+
+    def __iter__(self):
+        if self.field.empty_label is not None:
+            yield (u"", self.field.empty_label)
+        if self.field.cache_choices:
+            if self.field.choice_cache is None:
+                self.field.choice_cache = [
+                    self.choice(obj) for obj in self.queryset.all()
+                ]
+            for choice in self.field.choice_cache:
+                yield choice
+        else:
+            # here is the changed bit
+            #for obj in self.queryset.all();
+            for obj in self.queryset:
+                yield self.choice(obj)
+
+
+class CachedModelChoiceField(forms.ModelChoiceField):
+    # only purpose of this class is to use a non-standard ModelChoiceIterator (above)
+    # see [http://stackoverflow.com/a/8211123]
+
+    def __init__(self,*args,**kwargs):
+        super(CachedModelChoiceField,self).__init__(*args,**kwargs)
+
+    def _get_choices(self):
+        if hasattr(self, '_choices'):
+            return self._choices
+
+        return CachedModelChoiceIterator(self)
+
+    choices = property(_get_choices, forms.ModelChoiceField._set_choices)
+
+# TODO: CachedModelMultipleChoiceField
+
 ## just a one-off for vocabularies
 #class OrderedModelMultipleChoiceField(django.forms.ModelMultipleChoiceField):
 #

@@ -28,8 +28,7 @@ admin.autodiscover()
 urlpatterns = patterns('',
 
     # testing (obviously)...
-    #url(r'^test/$',     'questionnaire.views.test'),
-
+    url(r'^test/$',     'questionnaire.views.test'),
 
 #    # project error...
 #    url(r'^error/$',   'questionnaire.views.error',    name='questionnaire_error'),

@@ -199,7 +199,8 @@ class MetadataModel(MPTTModel):
         return (models,standard_properties,scientific_properties)
 
     @classmethod
-    def get_existing_realization_set(cls, models, model_customizer, standard_property_customizers,  is_subrealization=False):
+    #def get_existing_realization_set(cls, models, model_customizer, standard_property_customizers,  is_subrealization=False):
+    def get_existing_realization_set(cls, models, is_subrealization=False):
         """retrieves the full set of realizations used by a particular project/version/proxy combination """
 
         # standard_properties = {
@@ -224,6 +225,22 @@ class MetadataModel(MPTTModel):
             scientific_properties[property_key] = model.scientific_properties.all().order_by("proxy__category__order","order")
 
         return (models, standard_properties, scientific_properties)
+
+    @classmethod
+    def save_realization_set(cls,models,standard_properties,scientific_properties):
+
+        # this fn is called outside of the forms
+
+        for model in models:
+            model.save()
+
+        for model_key, standard_property_list in standard_properties.iteritems():
+            for standard_property in standard_property_list:
+                standard_property.save()
+
+        for model_key, scientific_property_list in scientific_properties.iteritems():
+            for scientific_property in scientific_property_list:
+                scientific_property.save()
 
 class MetadataProperty(models.Model):
 

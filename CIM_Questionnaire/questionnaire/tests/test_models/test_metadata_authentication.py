@@ -9,31 +9,40 @@
 #   This project is distributed according to the terms of the MIT license [http://www.opensource.org/licenses/MIT].
 ####################
 
-
-from CIM_Questionnaire.questionnaire.tests.base import TestQuestionnaireBase
-from CIM_Questionnaire.questionnaire.models.metadata_authentication import MetadataUser
-from CIM_Questionnaire.questionnaire.models.metadata_project import MetadataProject
 from django.contrib.auth.models import User
 
+from CIM_Questionnaire.questionnaire.tests.base import TestQuestionnaireBase
+
+from CIM_Questionnaire.questionnaire.models.metadata_authentication import MetadataUser, get_metadata_user
+
+
 class TestMetadataUser(TestQuestionnaireBase):
+
 
     def setUp(self):
 
         super(TestMetadataUser,self).setUp()
 
-        # MetadataUser is created automatically after a regular user is created in Django
-        # (except for the Django Administrator User)
-        test_user = User.objects.create_user("test","test@test.com","test")
-        metadata_user = test_user.metadata_user
+        new_user = User.objects.create_user("new", "a@b.com", "new")
+        new_metadata_user = get_metadata_user(new_user)
+        self.assertIsNotNone(new_metadata_user)
+        self.metadata_user = new_metadata_user
 
-        self.assertEqual(test_user.is_superuser,False)
-        self.assertIsNotNone(metadata_user,msg="MetadataUser not created after User.save() method")
 
-        self.user = metadata_user
+    # MetadataUser creation testing is happening implicitly in setUp above
+    #def test_create_user(self):
+    #    pass
 
+
+    def test_delete_user(self):
+
+        metadata_user_pk = self.metadata_user.pk
+        self.metadata_user.user.delete()
+
+        self.assertRaises(MetadataUser.DoesNotExist, MetadataUser.objects.get, pk=metadata_user_pk )
 
     def test_join_project(self):
-        test_user = self.user
+        test_user = self.metadata_user
         test_project = self.project
 
         self.assertEqual(len(test_user.projects.all()),0)
@@ -43,7 +52,7 @@ class TestMetadataUser(TestQuestionnaireBase):
 
         test_user.join_project(test_project)
 
-        self.assertEqual(len(self.user.projects.all()),1)
+        self.assertEqual(len(test_user.projects.all()),1)
         self.assertEqual(test_user.is_member_of(test_project),True)
         self.assertEqual(test_user.is_user_of(test_project),False)
         self.assertEqual(test_user.is_admin_of(test_project),False)
@@ -51,7 +60,7 @@ class TestMetadataUser(TestQuestionnaireBase):
 
     def test_leave_project(self):
 
-        test_user = self.user
+        test_user = self.metadata_user
         test_project = self.project
 
         test_user.join_project(test_project)
@@ -64,7 +73,7 @@ class TestMetadataUser(TestQuestionnaireBase):
 
     def test_add_group(self):
 
-        test_user = self.user
+        test_user = self.metadata_user
         test_project = self.project
 
         test_user.join_project(test_project)
@@ -77,7 +86,7 @@ class TestMetadataUser(TestQuestionnaireBase):
 
     def test_remove_group(self):
 
-        test_user = self.user
+        test_user = self.metadata_user
         test_project = self.project
 
         test_user.join_project(test_project)
@@ -85,13 +94,14 @@ class TestMetadataUser(TestQuestionnaireBase):
             test_user.remove_group(group)
 
         # somewhat counter-intuitively you cannot leave a project by removing that project's "default" group
+        # everyone belongs to the "default" group
         self.assertEqual(test_user.is_member_of(test_project),True)
         self.assertEqual(test_user.is_user_of(test_project),False)
         self.assertEqual(test_user.is_admin_of(test_project),False)
 
     def test_add_user_privileges(self):
 
-        test_user = self.user
+        test_user = self.metadata_user
         test_project = self.project
 
         test_user.join_project(test_project)
@@ -108,7 +118,7 @@ class TestMetadataUser(TestQuestionnaireBase):
 
     def test_add_admin_privileges(self):
 
-        test_user = self.user
+        test_user = self.metadata_user
         test_project = self.project
 
         test_user.join_project(test_project)
@@ -125,7 +135,7 @@ class TestMetadataUser(TestQuestionnaireBase):
 
     def test_remove_user_privileges(self):
 
-        test_user = self.user
+        test_user = self.metadata_user
         test_project = self.project
 
         test_user.join_project(test_project)
@@ -139,7 +149,7 @@ class TestMetadataUser(TestQuestionnaireBase):
 
     def test_remove_admin_privileges(self):
 
-        test_user = self.user
+        test_user = self.metadata_user
         test_project = self.project
 
         test_user.join_project(test_project)
@@ -150,26 +160,5 @@ class TestMetadataUser(TestQuestionnaireBase):
         self.assertEqual(test_user.is_user_of(test_project),False)
         self.assertEqual(test_user.is_admin_of(test_project),False)
 
-    def test_user_post_save(self):
-        """Tests the User post-save signal triggers the appropriate adding/removing of groups (and hence privileges)"""
-
-        test_user = self.user
-        test_project = self.project
-
-        test_django_user = self.user.user
-
-        test_user.join_project(test_project)
-
-        for group in test_project.get_all_groups():
-            test_django_user.groups.add(group)
-
-        self.assertEqual(test_user.is_member_of(test_project),True)
-        self.assertEqual(test_user.is_user_of(test_project),True)
-        self.assertEqual(test_user.is_admin_of(test_project),True)
-
-        for group in test_project.get_all_groups():
-            test_django_user.groups.remove(group)
-
-        self.assertEqual(test_user.is_member_of(test_project),True)
-        self.assertEqual(test_user.is_user_of(test_project),False)
-        self.assertEqual(test_user.is_admin_of(test_project),False)
+    # TODO: test that as User group membership changes in the admin those changes get propagated to the corresponding MetadataUser
+    # (see save_formset() fn in "admin_authentication.py")

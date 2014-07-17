@@ -41,7 +41,7 @@ from CIM_Questionnaire.questionnaire.models.metadata_vocabulary import MetadataV
 
 from CIM_Questionnaire.questionnaire.forms import MetadataEditingForm
 
-from CIM_Questionnaire.questionnaire.fields import MetadataFieldTypes, MetadataAtomicFieldTypes, METADATA_ATOMICFIELD_MAP, EMPTY_CHOICE, NULL_CHOICE, OTHER_CHOICE
+from CIM_Questionnaire.questionnaire.fields import MetadataFieldTypes, MetadataAtomicFieldTypes, CachedModelChoiceField, METADATA_ATOMICFIELD_MAP, EMPTY_CHOICE, NULL_CHOICE, OTHER_CHOICE
 
 from CIM_Questionnaire.questionnaire.utils import QuestionnaireError, find_in_sequence, update_field_widget_attributes
 from CIM_Questionnaire.questionnaire.utils import get_initial_data, find_in_sequence, update_field_widget_attributes, set_field_widget_attributes, get_data_from_formset, get_data_from_form
@@ -410,12 +410,16 @@ class MetadataAbstractStandardPropertyForm(MetadataEditingForm):
     _value_fields       = ["atomic_value", "enumeration_value", "enumeration_other_value", "relationship_value",]
     _hidden_fields      = ["proxy", "field_type", "name", "order", "is_label"]
 
+    # TODO: FILTER THESE BY PROJECT & VERSION?
+    proxy = CachedModelChoiceField(queryset=MetadataStandardPropertyProxy.objects.all())
+
     def __init__(self,*args,**kwargs):
 
         # customizers was passed in via curry in the factory function below
         customizers = kwargs.pop("customizers",None)
 
         super(MetadataAbstractStandardPropertyForm,self).__init__(*args,**kwargs)
+
 
         # this is really really important!
         # this ensures that there is something to compare field data against so that I can truly tell is the model has changed
@@ -430,15 +434,16 @@ class MetadataAbstractStandardPropertyForm(MetadataEditingForm):
         #        # inline formsets treat pk fields strangely, just ignore them in this context
         #        pass
 
+        proxy_pk = int(self.get_current_field_value("proxy"))
+        field_type = self.get_current_field_value("field_type")
+
         if customizers:
-            proxy = MetadataStandardPropertyProxy.objects.get(pk=self.get_current_field_value("proxy"))
-            customizer = find_in_sequence(lambda c: c.proxy == proxy, customizers)
+            customizer = find_in_sequence(lambda c: c.proxy.pk == proxy_pk , customizers)
+            assert(customizer.name==self.get_current_field_value("name"))   # this is new code; just make sure it works
         else:
             customizer = None
 
         property = self.instance
-        field_type = self.get_current_field_value("field_type")
-
         if property.pk:
             # ordinarily, this is done in create_scientific_property_form_data above
             # but if this is an existing model, I still need to do this jiggery-pokery someplace
@@ -456,6 +461,7 @@ class MetadataAbstractStandardPropertyForm(MetadataEditingForm):
 
         elif field_type == MetadataFieldTypes.RELATIONSHIP:
             # TODO: FILTER BY PROJECT AS WELL
+            proxy = MetadataStandardPropertyProxy.objects.select_related("relationship_target_model").get(pk=proxy_pk)
             self.fields["relationship_value"].queryset = MetadataModel.objects.filter(proxy=proxy.relationship_target_model)
             self.subform_tuple = (None,)    # I should only ever access this once it's been setup in customize()
                                             # hence the assert statements in get_subform_tuple()
@@ -791,16 +797,29 @@ class MetadataStandardPropertyInlineFormSet(BaseInlineFormSet):
         setattr(form.instance, self.fk.get_attname(), self.instance.pk)
 
         # this speeds up loading time
-        # (see "cached_fields" attribute in the form class above)
+        # (see "cached_fields" attribute in the form class)
         for cached_field_name in form.cached_fields:
             cached_field = form.fields[cached_field_name]
             cached_field_key = u"%s_%s" % (self.prefix, cached_field_name)
             cached_field.cache_choices = True
-            choices = getattr(self, '_cached_choices_%s' % (cached_field_key), None)
-            if choices is None:
-                choices = list(cached_field.choices)
-                setattr(self, '_cached_choices_%s '% (cached_field_key), choices)
-            cached_field.choice_cache = choices
+
+            if hasattr(cached_field,"_choices"):
+                # it's a ChoiceField or something similar
+                cached_choices = getattr(self, '_cached_choices_%s' % (cached_field_key), None)
+                if cached_choices is None:
+                    cached_choices = list(cached_field.choices)
+                    setattr(self, "_cached_choices_%s" % (cached_field_key), cached_choices)
+                cached_field.choices = cached_choices
+
+            # this is not working for modelchoicefields
+            # instead I use a custom "CachedModelChoiceField" directly in the form
+            # elif hasattr(cached_field,"_queryset"):
+            #     # it's a ModelChoiceField or something similar
+            #     cached_queryset = getattr(self, '_cached_queryset_%s' % (cached_field_key), None)
+            #     if cached_queryset is None:
+            #         cached_queryset = cached_field.queryset
+            #         setattr(self, "_cached_queryset_%s" % (cached_field_key), cached_queryset)
+            #     cached_field.queryset = cached_queryset
 
         return form
 
@@ -1539,6 +1558,32 @@ def save_valid_subforms(model_subform, standard_properties_subformset, scientifi
 
 
 def get_data_from_existing_edit_forms(model_formset,standard_properties_formsets,scientific_properties_formsets):
+
+    data = {}
+
+    model_formset_data = get_data_from_formset(model_formset)
+    data.update(model_formset_data)
+
+    # TODO: handle nested formsets here
+    # I AM HERE
+    for standard_property_formset in standard_properties_formsets.values():
+        standard_property_formset_data = get_data_from_formset(standard_property_formset)
+        data.update(standard_property_formset_data)
+
+
+    for scientific_property_formset in scientific_properties_formsets.values():
+        scientific_property_formset_data = get_data_from_formset(scientific_property_formset)
+        data.update(scientific_property_formset_data)
+
+    data_copy = data.copy()
+    for key, value in data.iteritems():
+        if value == None:
+            data_copy.pop(key)
+
+    return data_copy
+
+
+def get_data_from_edit_forms(model_formset,standard_properties_formsets,scientific_properties_formsets):
 
     data = {}
 
