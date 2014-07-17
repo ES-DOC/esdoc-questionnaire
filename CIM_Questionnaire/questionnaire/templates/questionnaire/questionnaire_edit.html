@@ -42,7 +42,12 @@
             init_widget(autocompletes,parent);
             init_widget(dynamic_accordions,parent);
 
+            /* make sure the accordion headers have updated their content */
+            $(parent).find(".scientific_property .atomic_value").each(function() {
+                $(this).trigger("change");
+            });
             $(parent).find(".scientific_property .ui-multiselect").each(function() {
+                /* (it's a bit harder w/ non-atomic-values) */
                 var source_name = $(this).prev(".multiselect").attr("name");
                 var target_name = source_name.replace("-enumeration_value", "-scientific_property_value")
                 $(this).find(".multiselect_header").change(function (event) {

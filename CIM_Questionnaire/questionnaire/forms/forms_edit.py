@@ -984,6 +984,7 @@ class MetadataScientificPropertyForm(MetadataEditingForm):
 
         if not is_enumeration:
             update_field_widget_attributes(self.fields["atomic_value"],{"onchange":"copy_value(this,'%s-scientific_property_value');"%(self.prefix)})
+            update_field_widget_attributes(self.fields["atomic_value"],{"class":"atomic_value"})
 
         else:
             update_field_widget_attributes(self.fields["enumeration_value"],{"class":"multiselect"})
