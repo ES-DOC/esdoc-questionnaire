@@ -127,7 +127,7 @@
                     </div> <!-- /.submit -->
                 </div> <!-- /.collapsible_fieldset_content -->
             </fieldset>
-            {% if not user_is_admin %}
+            {% if not user_is_admin and project.authenticated %}
                 </div> <!-- /.inactive -->
             {% endif %}
 
@@ -159,7 +159,7 @@
                     </div> <!-- /.submit -->
                 </div> <!-- /.collapsible_fieldset_content -->
             </fieldset>
-            {% if not user_is_user %}
+            {% if not user_is_user and project.authenticated %}
                 </div> <!-- /.inactive -->
             {% endif %}
         
