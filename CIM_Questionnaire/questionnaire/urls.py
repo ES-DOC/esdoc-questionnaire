@@ -44,8 +44,8 @@ urlpatterns = patterns('',
     url(r'^user/(?P<user_name>[^/]+)/$', 'questionnaire.views.user', name='user'),
 
     # openid authentication...
-    url(r'^openid/$', 'questionnaire.views.oid_login'),
-    url(r'^openid/process/(?P<token>.*)/$', 'questionnaire.views.oid_process'),
+    #url(r'^openid/$', 'questionnaire.views.oid_login'),
+    #url(r'^openid/process/(?P<token>.*)/$', 'questionnaire.views.oid_process'),
 
     # indices
     url(r'^$',                                'questionnaire.views.index', name="index"),
