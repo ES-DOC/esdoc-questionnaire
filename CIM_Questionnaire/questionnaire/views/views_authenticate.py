@@ -105,15 +105,16 @@ def questionnaire_logout(request):
 
 @sensitive_post_parameters()
 def questionnaire_user(request,user_name=""):
+    
     try:
         user            = User.objects.get(username=user_name)
-        metadata_user   = user.metadata_user
     except User.DoesNotExist:
         msg = "Unable to locate user '%s'" % (user_name)
         return error(request,msg)
     if user.is_superuser:
         msg = "You can't edit details of the site administrator.  Sheesh."
         return error(request,msg)
+    metadata_user = user.metadata_user
 
     current_user = request.user
     if current_user.username != user_name and not current_user.is_superuser:
