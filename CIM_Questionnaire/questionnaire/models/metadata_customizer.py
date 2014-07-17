@@ -73,19 +73,17 @@ class MetadataCustomizer(models.Model):
         )
         model_customizer.reset()
 
-        try:
-            # setup the standard category customizers...
-            standard_category_customizers = [
-                MetadataStandardCategoryCustomizer(
-                    model_customizer=model_customizer,
-                    proxy=standard_category_proxy,
-                )
-                for standard_category_proxy in version.categorization.categories.all()
-            ]
-            for standard_category_customizer in standard_category_customizers:
-                standard_category_customizer.reset()
-        except:
-            import ipdb; ipdb.set_trace()
+        # setup the standard category customizers...
+        standard_category_customizers = [
+            MetadataStandardCategoryCustomizer(
+                model_customizer=model_customizer,
+                proxy=standard_category_proxy,
+            )
+            for standard_category_proxy in version.categorization.categories.all()
+        ]
+        for standard_category_customizer in standard_category_customizers:
+            standard_category_customizer.reset()
+
         # setup the standard property customizers...
         standard_property_customizers = [
             MetadataStandardPropertyCustomizer(

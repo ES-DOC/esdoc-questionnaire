@@ -259,8 +259,6 @@ class MetadataModelCustomizerForm(MetadataModelCustomizerAbstractForm):
         except KeyError:
             # this takes care of the case when this being called on a subform
             pass
-        except:
-            import ipdb; ipdb.set_trace()
 
         return cleaned_data
         
