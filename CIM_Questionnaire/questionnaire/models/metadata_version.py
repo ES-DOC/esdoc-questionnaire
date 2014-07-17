@@ -111,27 +111,30 @@ class MetadataVersion(models.Model):
                 "model_proxy"   : new_model_proxy
             }
             for j, version_property_proxy in enumerate(xpath_fix(version_model_proxy,"attributes/attribute")):
-                version_property_proxy_name     = xpath_fix(version_property_proxy,"name/text()")
-                version_property_proxy_type     = xpath_fix(version_property_proxy,"type/text()")
+                version_property_proxy_name = xpath_fix(version_property_proxy,"name/text()")
+                version_property_proxy_type = xpath_fix(version_property_proxy,"type/text()")
+                version_property_proxy_documentation = xpath_fix(version_property_proxy,"description/text()") or None
                 version_property_proxy_is_label = xpath_fix(version_property_proxy,"@is_label") or ["false"]
-                atomic_type                     = xpath_fix(version_property_proxy,"atomic/atomic_type/text()") or None
+                atomic_type = xpath_fix(version_property_proxy,"atomic/atomic_type/text()") or None
                 enumeration_choices = []
                 relationship_cardinality_min = xpath_fix(version_property_proxy,"relationship/cardinality/@min")
                 relationship_cardinality_max = xpath_fix(version_property_proxy,"relationship/cardinality/@max")
-                relationship_target_name     = xpath_fix(version_property_proxy,"relationship/target/text()")
+                relationship_target_name = xpath_fix(version_property_proxy,"relationship/target/text()")
                 for version_property_proxy_enumeration_choice in xpath_fix(version_property_proxy,"enumeration/choice"):
                     enumeration_choices.append(xpath_fix(version_property_proxy_enumeration_choice,"text()")[0])
                 # TODO: ADD MORE FIELDS
 
-                new_standard_property_proxy_kwargs["field_type"]            = MetadataFieldTypes.get(version_property_proxy_type[0])
-                new_standard_property_proxy_kwargs["name"]                  = re.sub(r'\.','_',str(version_property_proxy_name[0]))
-                new_standard_property_proxy_kwargs["order"]                 = j
-                new_standard_property_proxy_kwargs["is_label"]              = bool(version_property_proxy_is_label[0].lower()=="true")
+                new_standard_property_proxy_kwargs["field_type"] = MetadataFieldTypes.get(version_property_proxy_type[0])
+                new_standard_property_proxy_kwargs["name"] = re.sub(r'\.','_',str(version_property_proxy_name[0]))
+                if version_property_proxy_documentation:
+                    new_standard_property_proxy_kwargs["documentation"] = version_property_proxy_documentation[0]
+                new_standard_property_proxy_kwargs["order"] = j
+                new_standard_property_proxy_kwargs["is_label"] = bool(version_property_proxy_is_label[0].lower()=="true")
                 if atomic_type:
                     atomic_type = atomic_type[0]
                     if atomic_type == u"STRING":
                         atomic_type = "DEFAULT"
-                    new_standard_property_proxy_kwargs["atomic_type"]       = MetadataAtomicFieldTypes.get(atomic_type)
+                    new_standard_property_proxy_kwargs["atomic_type"] = MetadataAtomicFieldTypes.get(atomic_type)
                 else:
                     new_standard_property_proxy_kwargs.pop("atomic_type",None)
                 new_standard_property_proxy_kwargs["enumeration_choices"]   = "|".join(enumeration_choices)
