@@ -22,7 +22,6 @@ from views_help         import questionnaire_help  as help
 from views_ajax         import ajax_customize_category, ajax_customize_subform, ajax_select_realization
 from views_index        import questionnaire_index as index, questionnaire_project_index as project_index
 from views_authenticate import questionnaire_login as login, questionnaire_logout as logout, questionnaire_user as user, questionnaire_register as register
-from views_openid       import login as oid_login, process as oid_process
 from views_customize    import questionnaire_customize_new as customize_new, questionnaire_customize_existing as customize_existing, questionnaire_customize_help as customize_help
 from views_edit         import questionnaire_edit_new as edit_new, questionnaire_edit_existing as edit_existing, questionnaire_edit_help as edit_help
 from views_view         import questionnaire_view_existing as view_existing, questionnaire_view_help as view_help
