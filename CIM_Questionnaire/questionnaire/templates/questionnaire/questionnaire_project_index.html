@@ -92,21 +92,13 @@
         {% endif %} {# /project.email #}
     </div>
 
-    <!--
-    <div style="border: 1px solid #ff0000; width: 20em; padding: 4px;">
-        TODO: DELETE THIS SECTION<br/>
-        {{request.user}}    {% if user_is_default %}    is a    {% else %}    is not a    {% endif %}    member of {{project}}  <br/>
-        {{request.user}}    {% if user_is_user %}       is a    {% else %}    is not a    {% endif %}    user of {{project}}    <br/>
-        {{request.user}}    {% if user_is_admin %}      is a    {% else %}    is not a    {% endif %}    admin of {{project}}   <br/>
-    </div>
-    -->
-      
+
     <div class="form_container">
 
         <form method="POST" action=".">
             {% csrf_token %}
 
-            {% if not user_is_admin %}
+            {% if not user_is_admin and project.authenticated %}
                 <div class="inactive">
             {% endif %}
             <fieldset class="collapsible_fieldset">
@@ -139,7 +131,7 @@
                 </div> <!-- /.inactive -->
             {% endif %}
 
-            {% if not user_is_user %}
+            {% if not user_is_user and project.authenticated %}
                 <div class="inactive">
             {% endif %}
             <fieldset class="collapsible_fieldset">
