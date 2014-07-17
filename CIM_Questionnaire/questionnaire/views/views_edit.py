@@ -262,7 +262,6 @@ def questionnaire_edit_existing(request, project_name="", model_name="", version
     vocabularies = sorted(vocabularies, key=lambda vocabulary: vocabulary_order.index(vocabulary.pk))
 
     # now try to get the default customizer set for this project/version/proxy combination...
-
     (model_customizer,standard_category_customizers,standard_property_customizers,nested_scientific_category_customizers,nested_scientific_property_customizers) = \
             MetadataCustomizer.get_existing_customizer_set(model_customizer,vocabularies)
 
@@ -276,7 +275,7 @@ def questionnaire_edit_existing(request, project_name="", model_name="", version
 
     # create the realization set
     (models, standard_properties, scientific_properties) = \
-        MetadataModel.get_existing_realization_set(models)#, model_customizer, standard_property_customizers)
+        MetadataModel.get_existing_realization_set(models, model_customizer, standard_property_customizers, vocabularies=vocabularies)
     #
     # # clean it up so that everything is in the correct order...
     # for i,standard_property_customizer in enumerate(standard_property_customizers):

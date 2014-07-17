@@ -199,8 +199,7 @@ class MetadataModel(MPTTModel):
         return (models,standard_properties,scientific_properties)
 
     @classmethod
-    #def get_existing_realization_set(cls, models, model_customizer, standard_property_customizers,  is_subrealization=False):
-    def get_existing_realization_set(cls, models, is_subrealization=False):
+    def get_existing_realization_set(cls, models, model_customizer, standard_property_customizers,  is_subrealization=False, vocabularies = None):
         """retrieves the full set of realizations used by a particular project/version/proxy combination """
 
         # standard_properties = {
@@ -222,7 +221,11 @@ class MetadataModel(MPTTModel):
                 property_key += str(model.pk)
 
             standard_properties[property_key] = model.standard_properties.all()
-            scientific_properties[property_key] = model.scientific_properties.all().order_by("proxy__category__order","order")
+            if not vocabularies:
+                scientific_properties[property_key] = model.scientific_properties.all().order_by("proxy__category__order","order")
+            else:
+                # TODO: THIS IS LIKELY TO BE AN INEFFICIENT DB CALL; RESTRUCTURE IT
+                scientific_properties[property_key] = model.scientific_properties.filter(proxy__component__vocabulary__in=vocabularies).order_by("proxy__category__order","order")
 
         return (models, standard_properties, scientific_properties)
 
