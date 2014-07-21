@@ -37,7 +37,8 @@ from django.template.defaultfilters import slugify
 
 from django.http import HttpResponse
 
-from CIM_Questionnaire.questionnaire.models.metadata_customizer import MetadataCustomizer, MetadataModelCustomizer, MetadataStandardCategoryCustomizer, MetadataStandardPropertyCustomizer
+from CIM_Questionnaire.questionnaire.models.metadata_customizer import MetadataCustomizer, MetadataModelCustomizer, MetadataStandardCategoryCustomizer, MetadataStandardPropertyCustomizer, MetadataScientificCategoryCustomizer
+
 from CIM_Questionnaire.questionnaire.models.metadata_vocabulary import MetadataVocabulary
 from CIM_Questionnaire.questionnaire.models.metadata_model import MetadataModel, MetadataStandardProperty
 
