@@ -539,15 +539,15 @@ class MetadataPropertyCustomizer(MetadataCustomizer):
 
     name        = models.CharField(max_length=SMALL_STRING,blank=False,null=False)
     order       = models.PositiveIntegerField(blank=True,null=True)
-    field_type  = models.CharField(max_length=64,blank=True,choices=[(ft.getType(),ft.getName()) for ft in MetadataFieldTypes])
+    field_type  = models.CharField(max_length=LIL_STRING,blank=True,choices=[(ft.getType(),ft.getName()) for ft in MetadataFieldTypes])
 
     # ways to customize _any_ field...
     displayed           = models.BooleanField(default=True,blank=True,verbose_name="should this property be displayed?")
     required            = models.BooleanField(default=True,blank=True,verbose_name="is this property required?")
     editable            = models.BooleanField(default=True,blank=True,verbose_name="can the value of this property be edited?")
     unique              = models.BooleanField(default=False,blank=True,verbose_name="must the value of this property be unique?")
-    verbose_name        = models.CharField(max_length=64,blank=False,verbose_name="how should this property be labeled (overrides default name)?")
-    default_value       = models.CharField(max_length=128,blank=True,null=True,verbose_name="what is the default value of this property?")
+    verbose_name        = models.CharField(max_length=LIL_STRING,blank=False,verbose_name="how should this property be labeled (overrides default name)?")
+    default_value       = models.CharField(max_length=BIG_STRING,blank=True,null=True,verbose_name="what is the default value of this property?")
     documentation       = models.TextField(blank=True,verbose_name="what is the help text to associate with property?")
     inline_help         = models.BooleanField(default=False,blank=True,verbose_name="should the help text be displayed inline?")
     
