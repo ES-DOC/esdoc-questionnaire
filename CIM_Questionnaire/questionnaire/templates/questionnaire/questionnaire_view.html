@@ -131,10 +131,12 @@
                                     </div>
                                     <div id="component_tree_content">
                                         <div class="treeview">
+					    {% if model_customizer.model_show_hierarchy %}
                                             <ul><!-- style="display: none;">-->
                                                 {% get_default_vocabulary_key as root_vocabulary_key %}
                                                 <li data="key:'{{root_vocabulary_key}}_{{model_customizer.model_root_component|slugify}}'">
                                                     {{model_customizer.model_root_component}}
+					    {% endif %} {# /model_customizer.model_show_hierarchy %}
                                                     <ul>
                                                     {% for vocabulary in vocabularies %}
                                                         {% with nodes=vocabulary.component_proxies.all vocabulary_key=vocabulary.name|slugify %}
@@ -154,8 +156,10 @@
                                                         {% endwith %} {# / nodes #}
                                                     {% endfor %} {# / vocabulary #}
                                                     </ul>
+                                                {% if model_customizer.model_show_hierarchy %}
                                                 </li>
                                             </ul>
+                                            {% endif %} {# /model_customizer.model_show_hierarhcy #}
                                         </div> <!-- /.treeview -->
                                     </div> <!-- /#component_tree_content -->
                                 </div> <!-- /#component_tree -->
