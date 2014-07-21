@@ -133,7 +133,7 @@ class MetadataVocabulary(models.Model):
             new_category_proxy_kwargs["key"]    = slugify(category_proxy_name)
 
             if category_proxy_documentation:
-                new_category_proxy_kwargs["documentation"] = category_proxy_documentation[0]
+                new_category_proxy_kwargs["description"] = category_proxy_documentation[0]
 
             (new_category_proxy,created_category_proxy) = MetadataScientificCategoryProxy.objects.get_or_create(**new_category_proxy_kwargs)
 
