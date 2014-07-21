@@ -1,8 +1,235 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <version>
     <name>CIM 1.8.1</name>
-    <description>blah</description>
+    <description>This is the CIM Schema v1.8.8</description>
     <classes>
+        
+        <class stereotype="document">
+            <name>statisticalModelComponent</name>
+            <description>A ModelCompnent is a scientific model; it represents code which models some
+                physical phenomena for a particular length of time.</description>
+            <attributes>
+                <attribute>
+                    <name>purpose</name>
+                    <description/>
+                    <type>ATOMIC</type>
+                    <atomic>
+                        <atomic_type>STRING</atomic_type>
+                    </atomic>
+                </attribute>
+                <attribute>
+                    <name>embedded</name>
+                    <description>An embedded component cannot exist on its own as an atomic piece of
+                        software; instead it is embedded within another (parent) component. When
+                        embedded equals "true", the SoftwareComponent has a corresponding piece of
+                        software (otherwise it is acting as a "virtual" component which may be
+                        inexorably nested within a piece of software along with several other
+                        virtual components).</description>
+                    <type>ATOMIC</type>
+                    <atomic>
+                        <atomic_type>BOOLEAN</atomic_type>
+                    </atomic>
+                </attribute>
+                <attribute>
+                    <name>couplingFramework</name>
+                    <description>The coupling framework that this entire component conforms
+                        to.</description>
+                    <type>ENUMERATION</type>
+                    <enumeration multi="false" nullable="false" open="false">
+                        <choice>OASIS</choice>
+                        <choice>BFG</choice>
+                        <choice>ESMF</choice>
+                    </enumeration>
+                </attribute>
+                <attribute is_label="true">
+                    <name>shortName</name>
+                    <description>The name of the model (that is used internally).</description>
+                    <type>ATOMIC</type>
+                    <atomic>
+                        <atomic_type>STRING</atomic_type>
+                    </atomic>
+                </attribute>
+                <attribute>
+                    <name>longName</name>
+                    <description>The name of the model (that is recognized
+                        externally).</description>
+                    <type>ATOMIC</type>
+                    <atomic>
+                        <atomic_type>STRING</atomic_type>
+                    </atomic>
+                </attribute>
+                <attribute>
+                    <name>description</name>
+                    <description>A free-text description of the component.</description>
+                    <type>ATOMIC</type>
+                    <atomic>
+                        <atomic_type>TEXT</atomic_type>
+                    </atomic>
+                </attribute>
+                <attribute>
+                    <name>license</name>
+                    <description>The license held by this piece of software</description>
+                    <type>RELATIONSHIP</type>
+                    <relationship>
+                        <cardinality min="0" max="1"/>
+                        <target>license</target>
+                    </relationship>
+                </attribute>
+                <attribute>
+                    <name>responsibleParty</name>
+                    <description/>
+                    <type>RELATIONSHIP</type>
+                    <relationship>
+                        <cardinality min="0" max="*"/>
+                        <target>responsibleParty</target>
+                    </relationship>
+                </attribute>
+                <attribute>
+                    <name>releaseDate</name>
+                    <description>The date of publication of the software component code (as opposed
+                        to the date of publication of the metadata document, or the date of
+                        deployment of the model)</description>
+                    <type>ATOMIC</type>
+                    <atomic>
+                        <atomic_type>DATETIME</atomic_type>
+                    </atomic>
+                </attribute>
+                <attribute>
+                    <name>previousVersion</name>
+                    <description/>
+                    <type>ATOMIC</type>
+                    <atomic>
+                        <atomic_type>STRING</atomic_type>
+                    </atomic>
+                </attribute>
+                <attribute>
+                    <name>fundingSource</name>
+                    <description>The entities that funded this software component.</description>
+                    <type>ATOMIC</type>
+                    <atomic>
+                        <atomic_type>STRING</atomic_type>
+                    </atomic>
+                </attribute>
+                <attribute>
+                    <name>citation</name>
+                    <description/>
+                    <type>RELATIONSHIP</type>
+                    <relationship>
+                        <cardinality min="0" max="*"/>
+                        <target>citation</target>
+                    </relationship>
+                </attribute>
+                <attribute>
+                    <name>onlineResource</name>
+                    <description>Provides a URL location for this model.</description>
+                    <type>RELATIONSHIP</type>
+                    <relationship>
+                        <cardinality min="0" max="1"/>
+                        <target>onlineResource</target>
+                    </relationship>
+                </attribute>
+                <attribute>
+                    <name>componentLanguage</name>
+                    <description/>
+                    <type>RELATIONSHIP</type>
+                    <relationship>
+                        <cardinality min="0" max="1"/>
+                        <target>componentLanguage</target>
+                    </relationship>
+                </attribute>
+                <attribute>
+                    <name>grid</name>
+                    <description>A reference to the grid that is used by this
+                        component.</description>
+                    <type>RELATIONSHIP</type>
+                    <relationship>
+                        <cardinality min="0" max="1"/>
+                        <target>gridspec</target>
+                    </relationship>
+                </attribute>
+                <attribute>
+                    <name>composition</name>
+                    <description/>
+                    <type>RELATIONSHIP</type>
+                    <relationship>
+                        <cardinality min="0" max="1"/>
+                        <target>composition</target>
+                    </relationship>
+                </attribute>
+                <attribute>
+                    <name>deployment</name>
+                    <description/>
+                    <type>RELATIONSHIP</type>
+                    <relationship>
+                        <cardinality min="0" max="1"/>
+                        <target>deployment</target>
+                    </relationship>
+                </attribute>
+                <attribute>
+                    <name>type</name>
+                    <description>Describes the type of component. There can be multiple
+                        types.</description>
+                    <type>ENUMERATION</type>
+                    <enumeration multi="true" open="true" nullable="false">
+                        <choice>Downscaling</choice>
+                        <choice>Forecast</choice>
+                        <choice>Impact</choice>
+                   </enumeration>
+                </attribute>
+                <attribute>
+                    <name>timing</name>
+                    <description>Describes information about how this component simulates
+                        time.</description>
+                    <type>RELATIONSHIP</type>
+                    <relationship>
+                        <cardinality min="0" max="1"/>
+                        <target>timing</target>
+                    </relationship>
+                </attribute>
+                <attribute>
+                    <name>activity</name>
+                    <description/>
+                    <type>RELATIONSHIP</type>
+                    <relationship>
+                        <cardinality min="0" max="1"/>
+                        <target>simulationRun</target>
+                    </relationship>
+                </attribute>
+                <attribute>
+                    <name>documentStatus</name>
+                    <description/>
+                    <type>ENUMERATION</type>
+                    <enumeration nullable="false" open="false" multi="false">
+                        <choice>complete</choice>
+                        <choice>incomplete</choice>
+                        <choice>in-progress</choice>
+                    </enumeration>
+                </attribute>
+                <attribute>
+                    <name>documentAuthor</name>
+                    <description>A contact for the author of this document (as opposed to the author
+                        of the artifact being described by this document; ie: the simulation or
+                        component or whatever).This includes information about the authoring
+                        institution.</description>
+                    <type>RELATIONSHIP</type>
+                    <relationship>
+                        <cardinality min="0" max="1"/>
+                        <target>responsibleParty</target>
+                    </relationship>
+                </attribute>
+                <attribute>
+                    <name>documentCreationDate</name>
+                    <description>The date the document was created.</description>
+                    <type>ATOMIC</type>
+                    <atomic>
+                        <atomic_type>DATETIME</atomic_type>
+                    </atomic>
+                </attribute>
+            </attributes>
+        </class>
+        
+        
+        
         <class stereotype="document">
             <name>modelComponent</name>
             <description>A ModelCompnent is a scientific model; it represents code which models some
