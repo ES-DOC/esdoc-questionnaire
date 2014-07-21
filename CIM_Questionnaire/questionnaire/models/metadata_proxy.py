@@ -75,7 +75,7 @@ class MetadataPropertyProxy(models.Model):
         app_label   = APP_LABEL
         abstract    = True
 
-    name                = models.CharField(max_length=BIG_STRING,blank=False,null=False)
+    name                = models.CharField(max_length=HUGE_STRING,blank=False,null=False)
     documentation       = models.TextField(blank=True)
     field_type          = models.CharField(max_length=SMALL_STRING,blank=False,null=True,choices=[(ft.getType(),ft.getName()) for ft in MetadataFieldTypes])
     order               = models.PositiveIntegerField(blank=True,null=True)
@@ -158,7 +158,9 @@ class MetadataScientificPropertyProxy(MetadataPropertyProxy):
     category      = models.ForeignKey("MetadataScientificCategoryProxy",blank=True,null=True,related_name="scientific_properties")
 
     choice        = models.CharField(max_length=LIL_STRING,blank=True,null=True,choices=SCIENTIFIC_PROPERTY_CHOICES)
-    values        = models.CharField(max_length=HUGE_STRING,blank=True)
+    # need a text field b/c the set of values can be really really big
+    #values        = models.CharField(max_length=HUGE_STRING,blank=True)
+    values        = models.TextField(blank=True)
 
     def enumerate_choices(self):
         return [(choice,choice) for choice in self.values.split("|")]

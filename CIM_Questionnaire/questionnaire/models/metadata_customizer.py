@@ -294,7 +294,7 @@ class MetadataModelCustomizer(MetadataCustomizer):
     model_show_all_properties.help_text = "Include attributes in the editing form that have no associated category.  These will show up below any category tabs."
     model_show_hierarchy                = models.BooleanField(verbose_name="Include the full component hierarchy",default=True)
     model_show_hierarchy.help_text      ="Some CIM SoftwareComponents are comprised of a hierarchy of nested child components.  Checking this option allows that full hierarchy to be edited at once in the CIM Editor."
-    model_hierarchy_name                = models.CharField(max_length=LIL_STRING,verbose_name="Title of the component hierarchy tree",default="Component Hierarchy".blank=False)
+    model_hierarchy_name                = models.CharField(max_length=LIL_STRING,verbose_name="Title of the component hierarchy tree",default="Component Hierarchy",blank=False)
     model_hierarchy_name.help_text      = "What should the title be for widget that navigates the component hierarchy?"
     model_root_component                = models.CharField(max_length=LIL_STRING,verbose_name="Name of the root component",blank=True,validators=[validate_no_spaces],default="RootComponent")
     model_root_component.help_text      = "If this component uses mulitple CVs, then the corresponding component hierarchies will be grouped under a single root component.  Please provide the component name here."
