@@ -53,16 +53,7 @@
                 $("input[name='vocabulary_order']").val(current_order);
             });
 
-            $("button#sort_vocabulary_up").button({
-                icons: { primary : "ui-icon-arrowthick-1-n" },
-                text: false
-            });
-            $("button#sort_vocabulary_down").button({
-                icons: { primary : "ui-icon-arrowthick-1-s" },
-                text: false
-            });
-
-            $("select[name='vocabularies']").multiselect("option",{            
+            $("select[name='vocabularies']").multiselect("option",{
                 sortable : true,
                 autoOpen : true,
                 emptyMultiText  : 'Select vocabularies',

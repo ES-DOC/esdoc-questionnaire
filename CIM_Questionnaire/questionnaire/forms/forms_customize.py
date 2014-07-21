@@ -110,13 +110,14 @@ def create_model_customizer_form_data(model_customizer, standard_category_custom
         "last_modified"                 : time.strftime("%c"),
         "standard_categories_content"   : JSON_SERIALIZER.serialize(standard_category_customizers),
         "standard_categories_tags"      : "|".join([standard_category.name for standard_category in standard_category_customizers]),
-        "vocabularies"                  : vocabularies,
     })
 
-    # if not model_customizer.pk:
-    #     # if this is a new customizer, by default all of the vocabularies should be active
-    #     # if this is not a new customizer, then the vocabulary order will have been set previously
-    #     model_customizer_form_data["vocabulary_order"]  = ",".join(map(str,[vocabulary.pk for vocabulary in vocabularies]))
+    if not model_customizer.pk:
+        vocabulary_pks = [vocabulary.pk for vocabulary in vocabularies]
+        # if this is a new customizer, by default all of the vocabularies should be active
+        model_customizer_form_data["vocabularies"]  = vocabulary_pks
+        # if this is not a new customizer, then the vocabulary order will have been set previously
+        model_customizer_form_data["vocabulary_order"]  = ",".join(map(str,vocabulary_pks))
 
     for vocabulary_key,scientific_category_customizer_dict in scientific_category_customizers.iteritems():
         for component_key,scientific_category_customizer_list in scientific_category_customizer_dict.iteritems():
