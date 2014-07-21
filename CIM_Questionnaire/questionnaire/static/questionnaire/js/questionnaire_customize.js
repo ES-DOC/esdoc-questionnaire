@@ -484,4 +484,40 @@ function restrict_options(source,target_names) {
         });
 
     }
-}
+};
+
+
+function sort_accordions(sort_target,sort_key) {
+
+    if (sort_key.indexOf("name")>=0) {
+        key_selector = ".accordion_header input[name$='-name']";
+    }
+    else if (sort_key.indexOf("category")>=0) {
+       key_selector = ".accordion_header input[name$='-category_name']";
+    }
+    else if (sort_key.indexOf("order")>=0) {
+       key_selector = ".accordion_header input[name$='-order']";
+
+    }
+    else {
+        alert("unknown sort key: " + key)
+    }
+
+    var sortable_items = $(sort_target).children(".accordion_unit").get();
+    sortable_items.sort(function(a,b){
+       var a_key = $(a).find(key_selector).val();
+       var b_key = $(b).find(key_selector).val();
+       if (sort_key.indexOf("order")>=0) {
+           // order is an integer comparison; all others are string (default) comparisons
+           a_key = parseInt(a_key);
+           b_key = parseInt(b_key);
+       }
+       return (a_key < b_key) ? -1 : (a_key > b_key) ? 1 : 0;
+    });
+
+    $.each(sortable_items, function(i, item) {
+        $(sort_target).append(item);
+    });
+
+
+};

@@ -143,11 +143,13 @@ function buttons(parent) {
         return false;
 
     });
+
     $(parent).find(".sort_by").each(function() {
         $(this).menu().width("8em").hide();
         $(this).click(function(event){
             var sort_key = $(event.target).attr("name");
-            alert("TODO: write handler for " + sort_key);
+            var sort_target = $(event.target).closest(".tab_content").find(".accordion:first");
+            sort_accordions(sort_target,sort_key);
             $(event.target).closest(".sort_by").hide();     // hide the sort_by menu
             event.preventDefault();                         // don't actually follow the menu link (one of these is bound to work)
             return false;                                   // don't actually follow the menu link (one of these is bound to work)

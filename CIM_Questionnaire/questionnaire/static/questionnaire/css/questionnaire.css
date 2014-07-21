@@ -95,7 +95,7 @@ body {
 #questionnaire div.submit input.button { width: 120px; padding-top: 8px; padding-bottom: 8px; font-weight: bold; border-width: 2px; }
 
 #questionnaire .subform_toolbar { padding: 4px; float: right;  }
-#questionnaire .sort_by { position: absolute; }/*z-index: 999999; }*/
+#questionnaire .sort_by { position: absolute; z-index: 9999; }
 
 
 
