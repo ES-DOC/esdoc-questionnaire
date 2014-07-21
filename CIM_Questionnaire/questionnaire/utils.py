@@ -29,6 +29,7 @@ from django.forms.models import BaseModelFormSet, BaseInlineFormSet
 
 import os
 import re
+import urllib
 
 from django.core import serializers
 from lxml import etree as et
@@ -320,6 +321,16 @@ class OverwriteStorage(FileSystemStorage):
         return name
 
 ####################
+# url manipulation #
+####################
+
+def add_parameters_to_url(path, **kwargs):
+    """
+    slightly less error-prone way to add GET parameters to the url
+    """
+    return path + "?" + urllib.urlencode(kwargs)
+
+####################
 # enumerated types #
 ####################
 
@@ -391,6 +402,26 @@ class EnumeratedTypeList(list):
         # otherwise return a value greater than the last position of the orderList
         return len(etOrderList)+1
 
+#################
+# FuzzyIntegers #
+#################
+
+# this is a very clever idea for comparing integers against min/max bounds
+# credit goes to http://lukeplant.me.uk/blog/posts/fuzzy-testing-with-assertnumqueries/
+
+class FuzzyInt(int):
+
+    def __new__(cls, lowest, highest):
+        obj = super(FuzzyInt, cls).__new__(cls, highest)
+        obj.lowest = lowest
+        obj.highest = highest
+        return obj
+
+    def __eq__(self, other):
+        return other >= self.lowest and other <= self.highest
+
+    def __repr__(self):
+        return "[%d..%d]" % (self.lowest, self.highest)
 
 #####################################
 # deal w/ hierarchies of components #
