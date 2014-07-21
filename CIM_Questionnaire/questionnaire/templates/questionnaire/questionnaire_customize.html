@@ -385,7 +385,7 @@
 
                                 <div class="tabs" id="vocabularies_tabs">
                                     <ul  style="width: 120px;"> <!-- the tab menu -->
-                                        {% for vocabulary in project.vocabularies.all %}
+                                        {% for vocabulary in vocabularies %}
                                             {% with vocabulary_key=vocabulary.name|slugify %}
                                                 <li>
                                                     <a href="#tab_scientific_properties_{{vocabulary_key}}">
@@ -396,7 +396,7 @@
                                         {% endfor %} {# / for vocabulary #}
                                     </ul>
 
-                                    {% for vocabulary in project.vocabularies.all %}
+                                    {% for vocabulary in vocabularies %}
                                         {% with vocabulary_key=vocabulary.name|slugify %}
 
                                             {% with formsets=scientific_property_customizer_formsets|get_value_from_key:vocabulary_key %}
