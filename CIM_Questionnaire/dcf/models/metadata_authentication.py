@@ -88,22 +88,23 @@ from django.dispatch import receiver
 from django.db.models.signals import post_save, m2m_changed
 from django.db.utils import ProgrammingError
 
-@receiver(post_save, sender=User)
-def user_post_save(sender, **kwargs):
-    created = kwargs.pop("created",True)
-    user    = kwargs.pop("instance",None)
-    if user and created:
-        try:
-            (metadata_user,created_metadata_user) = MetadataUser.objects.get_or_create(user=user)
-        except ProgrammingError:
-            if user.is_superuser:
-                # this might fail in syncdb w/ the Django admin b/c the full set of db tables will not have been setup yet
-                # that's ok, the admin doesn't need to be associated w/ a metadata_user; they have _all_ permissions for _all_ projects
-                print "skipped creating user profile for %s" % (user)
-                pass
-            else:
-                msg = "Unable to create user profile for %s" % (user)
-                raise MetadataError(msg)
+#comment this out; it interferes w/ questionnaire app
+#@receiver(post_save, sender=User)
+#def user_post_save(sender, **kwargs):
+#    created = kwargs.pop("created",True)
+#    user    = kwargs.pop("instance",None)
+#    if user and created:
+#        try:
+#            (metadata_user,created_metadata_user) = MetadataUser.objects.get_or_create(user=user)
+#        except ProgrammingError:
+#            if user.is_superuser:
+#                # this might fail in syncdb w/ the Django admin b/c the full set of db tables will not have been setup yet
+#                # that's ok, the admin doesn't need to be associated w/ a metadata_user; they have _all_ permissions for _all_ projects
+#                print "skipped creating user profile for %s" % (user)
+#                pass
+#            else:
+#                msg = "Unable to create user profile for %s" % (user)
+#                raise MetadataError(msg)
 
 ### THIS IS A KNOWN BUG IN DJANGO [https://code.djangoproject.com/ticket/16073]
 ### I CAN'T USE THIS SIGNAL

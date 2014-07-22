@@ -25,7 +25,7 @@ from django.shortcuts import *
 from django.http import *
 from django.contrib.sites.models    import get_current_site
 
-from django.utils import simplejson as json
+import json
 from django.forms import *
 
 import re

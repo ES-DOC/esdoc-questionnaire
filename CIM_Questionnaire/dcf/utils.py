@@ -31,7 +31,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes import generic
 import inspect
 
-from django.utils import simplejson as json
+import json
 
 from django.core import serializers
 from lxml import etree as et

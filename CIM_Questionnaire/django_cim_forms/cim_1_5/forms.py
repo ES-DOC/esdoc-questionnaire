@@ -7,7 +7,7 @@ from django_cim_forms.cim_1_5.models import *
 
 #def setup_cimforms():
 try:
-    print "setup_cimforms"
+#    print "setup_cimforms"
     DataSource_form = MetadataFormFactory(DataSource,name="DataSource_form")
     DataSource_formset = MetadataFormSetFactory(DataSource,DataSource_form,name="DataSource_formset")
 
@@ -65,8 +65,8 @@ try:
     Coupling_form = MetadataFormFactory(Coupling,name="Coupling_form",subForms={"timeProfile" : "Timing_form", "timeLag" : "TimeLag_form", "spatialRegridding" : "SpatialRegridding_formset", "timeTransformation" : "TimeTransformation_form",})
     Coupling_formset = MetadataFormSetFactory(Coupling,Coupling_form,name="Coupling_formset")
 
-    print "success"
+#    print "success"
 except DatabaseError:
-    print "error"
+#    print "error"
     pass
 
