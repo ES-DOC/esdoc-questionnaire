@@ -1,8 +1,13 @@
 import os
+import json
 
-from django.test import RequestFactory, Client, TestCase
+from django.test import TestCase, RequestFactory, Client
 
+from django.core.urlresolvers import reverse
+from django.contrib import messages
 from django.contrib.auth.models import User
+
+from CIM_Questionnaire.questionnaire.views import *
 
 from CIM_Questionnaire.questionnaire.models.metadata_authentication import MetadataUser, get_metadata_user
 from CIM_Questionnaire.questionnaire.models.metadata_project import MetadataProject
@@ -17,8 +22,11 @@ from CIM_Questionnaire.questionnaire.models.metadata_version import UPLOAD_PATH 
 from CIM_Questionnaire.questionnaire.models.metadata_categorization import UPLOAD_PATH as CATEGORIZATION_UPLOAD_PATH
 from CIM_Questionnaire.questionnaire.models.metadata_vocabulary import UPLOAD_PATH as VOCABULARY_UPLOAD_PATH
 
-from CIM_Questionnaire.questionnaire.views import *
+from CIM_Questionnaire.questionnaire.forms.forms_customize import get_data_from_customizer_forms
 
+from CIM_Questionnaire.questionnaire.fields import MetadataFieldTypes
+
+from CIM_Questionnaire.questionnaire.utils import add_parameters_to_url
 from CIM_Questionnaire.questionnaire.utils import CIM_DOCUMENT_TYPES
 
 
@@ -34,8 +42,8 @@ class TestQuestionnaireBase(TestCase):
 
     def setUp(self):
 
-        # request factory for all tests
-        self.factory = RequestFactory()
+        # # request factory for all tests
+        # self.factory = RequestFactory()
         # client for all tests (this is better-suited for testing views b/c, among other things, it has sessions, cookies, etc.)
         self.client = Client()#enforce_csrf_checks=True)
 
@@ -45,6 +53,7 @@ class TestQuestionnaireBase(TestCase):
         user_qs = User.objects.all()
         self.assertEqual(len(user_qs),2)
         self.assertIsNotNone(get_metadata_user(test_user), msg="MetadataUser not created after the User.objects.create_user() fn")
+        self.client.login(username=test_superuser.username, password=test_superuser.password)
         self.user = test_user
         self.super_user = test_superuser
 
@@ -113,8 +122,13 @@ class TestQuestionnaireBase(TestCase):
         # SETUP DEFAULT CUSTOMIZERS
         (test_model_customizer, test_standard_category_customizers, test_standard_property_customizers, test_scientific_category_customizers, test_scientific_property_customizers) = \
             MetadataCustomizer.get_new_customizer_set(test_project, test_version, proxy_to_test, vocabularies_to_test)
+        # add some one-off customizations as if this had been filled out in the form...
         test_model_customizer.name = "customizer"
         test_model_customizer.default = True
+        for standard_property_customizer in test_standard_property_customizers:
+            if standard_property_customizer.category is None:
+                # TODO: REMOVE THIS AS SOON AS I'VE FIXED ISSUE #71
+                standard_property_customizer.displayed = False
         MetadataCustomizer.save_customizer_set(test_model_customizer, test_standard_category_customizers, test_standard_property_customizers, test_scientific_category_customizers, test_scientific_property_customizers)
         model_customizer_qs = MetadataModelCustomizer.objects.all()
         standard_category_customizer_qs = MetadataStandardCategoryCustomizer.objects.all()
@@ -147,6 +161,12 @@ class TestQuestionnaireBase(TestCase):
         self.model_realization = test_models[0].get_root()
 
 
+    # def tearDown(self):
+    #     # this is for resetting things that are not db-related (ie: files, etc.)
+    #     # but it's not needed for the db since each test is run in its own transaction
+    #     pass
+
+
     def assertQuerysetEqual(self, qs1, qs2):
         """Tests that two django querysets are equal"""
         # the built-in TestCase method takes a qs and a list, which is confusing
@@ -166,27 +186,186 @@ class TestQuestionnaireBase(TestCase):
 
         return self.assertEqual(file_exists,True,msg=msg)
 
-    def get_new_edit_forms(self):
+    ##########################################################################
+    # the fns below get forms exactly as they would have been setup by views #
+    # other fns in other classes explicitly test the fns used in those views #
+    ##########################################################################
 
-        project_name = self.project.name,
-        version_name = self.version.name,
-        model_name = self.model_realization.name,
+    def get_new_customizer_forms(self,*args,**kwargs):
 
-        request_url = reverse("edit_new", kwargs = {
-            "project_name" : "project",
-            "version_name" : "version",
-            "model_name" : "modelcomponent",
+        project_name = kwargs.pop("project_name", self.project.name.lower())
+        version_name = kwargs.pop("version_name", self.version.name.lower())
+        model_name = kwargs.pop("model_name", self.model_realization.name.lower())
+
+        request_url = reverse("customize_new", kwargs = {
+            "project_name" : project_name,
+            "version_name" : version_name,
+            "model_name" : model_name,
         })
 
         response = self.client.get(request_url, follow=True)
         context = response.context
 
-        import ipdb; ipdb.set_trace()
+        self.assertEqual(response.status_code,200)
+
+        model_customizer_form = context["model_customizer_form"]
+        standard_property_customizer_formset = context["standard_property_customizer_formset"]
+        scientific_property_customizer_formsets = context["scientific_property_customizer_formsets"]
+
+        for standard_property_customizer_form in standard_property_customizer_formset:
+            if standard_property_customizer_form.get_current_field_value("category") is None:
+                # TODO: REMOVE THIS AS SOON AS I'VE FIXED ISSUE #71
+                standard_property_customizer_form.initial["displayed"] = False
+
+        return (model_customizer_form, standard_property_customizer_formset, scientific_property_customizer_formsets)
+
+    def get_new_customizer_subforms(self,*args,**kwargs):
+
+        property_id  = kwargs.pop("property_id", None)
+
+        self.assertIsNotNone(property_id, msg="cannot create a customize subform without specifying which property to customize")
+
+        request_url = add_parameters_to_url(reverse("customize_subform"), i=property_id)
+
+        response = self.client.get(request_url, follow=True)
+        context = response.context
 
         self.assertEqual(response.status_code,200)
 
-        model_formset = response.context["model_formset"]
-        standard_properties_formsets = response.context["standard_properties_formsets"]
-        scientific_properties_formsets = response.context["scientific_properties_formsets"]
+        model_customizer_form = context["model_customizer_form"]
+        standard_property_customizer_formset = context["standard_property_customizer_formset"]
+        # NOT NEEDED FOR SUBFORMS
+        #scientific_property_customizer_formsets = context["scientific_property_customizer_formsets"]
+        scientific_property_customizer_formsets = {}
 
-        return (model_formset, standard_properties_formsets, scientific_properties_formsets)
+        # NOT NEEDED FOR SUBFORMS
+        # for standard_property_customizer_form in standard_property_customizer_formset:
+        #     if standard_property_customizer_form.get_current_field_value("category") is None:
+        #         # TODO: REMOVE THIS AS SOON AS I'VE FIXED ISSUE #71
+        #         standard_property_customizer_form.initial["displayed"] = False
+
+        return (model_customizer_form, standard_property_customizer_formset, scientific_property_customizer_formsets)
+
+    def get_new_edit_forms(self,*args,**kwargs):
+
+        project_name = kwargs.pop("project_name", self.project.name.lower())
+        version_name = kwargs.pop("version_name", self.version.name.lower())
+        model_name = kwargs.pop("model_name", self.model_realization.name.lower())
+
+        request_url = reverse("edit_new", kwargs = {
+            "project_name" : project_name,
+            "version_name" : version_name,
+            "model_name" : model_name,
+        })
+
+        response = self.client.get(request_url, follow=True)
+        context = response.context
+
+        self.assertEqual(response.status_code,200)
+
+        edit_forms = {
+            "model_formset" : context["model_formset"],
+            "standard_properties_formsets" : context["standard_properties_formsets"],
+            "scientific_properties_formsets" : context["scientific_properties_formsets"],
+        }
+
+        return edit_forms
+
+    def fully_serialize_model(self,model,exclude=[]):
+        """
+        serializes model to dictionary (like model_to_dict) but follows foreign keys
+        makes lots of db hits - good enough for tests but not ready for production
+        """
+        model_dictionary = {}
+        for field in model._meta.fields:
+            field_name = field.name
+            if field_name not in exclude:
+                model_dictionary[field.name] = getattr(model,field_name)
+
+        # suspect that the above logic is faster & cleaner than the below logic
+        # model_dictionary = model_to_dict(model,exclude=exclude)
+        # model_dictionary_copy = model_dictionary.copy()
+        # for key, value in model_dictionary_copy.iteritems():
+        #     field = model._meta.get_field_by_name(key)[0]
+        #     if isinstance(field,ForeignKey):
+        #         model_dictionary[key] = field.rel.to.objects.get(pk=value)
+
+        return model_dictionary
+
+    #######################################################################################
+    # the fns below create customizers & realizations exactly as they would have by views #
+    # other fns in other classes explicitly test the fns used in those views              #
+    #######################################################################################
+
+
+    def create_customizer_set_with_subforms(self,document_type,properties_with_subforms=[]):
+
+        # setup an additional customizer for testing purposes
+        # this one uses subforms
+        customizer_name = "customizer_with_subforms"
+
+        project_name = self.project.name.lower()
+        version_name = self.version.name.lower()
+        model_name = document_type.lower()
+
+        (model_customizer_form, standard_property_customizer_formset, scientific_property_customizer_formsets) = \
+            self.get_new_customizer_forms(project_name=project_name, version_name=version_name, model_name=model_name)
+
+        customizer_forms_data = get_data_from_customizer_forms(model_customizer_form, standard_property_customizer_formset, scientific_property_customizer_formsets)
+
+        if model_customizer_form.prefix:
+            model_customizer_form_prefix = u"%s-" % (model_customizer_form.prefix)
+        else:
+            model_customizer_form_prefix = ""
+        customizer_forms_data[u"%sname" % (model_customizer_form_prefix)] = customizer_name
+
+        request_url = reverse("customize_new", kwargs = {
+            "project_name" : project_name,
+            "version_name" : version_name,
+            "model_name" : model_name,
+        })
+        # ("follow=True" allows the context setup in the initial view to be retained in the redirected view [http://stackoverflow.com/questions/16143149/django-testing-check-messages-for-a-view-that-redirects])
+        response = self.client.post(request_url, data=customizer_forms_data, follow=True)
+
+        session_variables = self.client.session
+        message_variables = [m for m in list(response.context["messages"])]
+
+        self.assertIn("model_id", session_variables)
+        self.assertEqual(session_variables["checked_arguments"], True)
+        self.assertEqual(len(message_variables),1)
+        self.assertEqual(message_variables[0].tags,messages.DEFAULT_TAGS[messages.SUCCESS])
+        self.assertEqual(response.status_code,200)
+
+        parent_customizer = MetadataModelCustomizer.objects.get(pk=session_variables["model_id"])
+
+        request_url = reverse("customize_new", kwargs = {
+            "project_name" : project_name,
+            "version_name" : version_name,
+            "model_name" : model_name,
+        })
+
+        for property_name in properties_with_subforms:
+            property = parent_customizer.standard_property_customizers.get(name=property_name)
+            self.assertEqual(property.field_type,MetadataFieldTypes.RELATIONSHIP)
+
+            (model_customizer_subform, standard_property_customizer_subformset, scientific_property_customizer_subformsets) = \
+                self.get_new_customizer_subforms(property_id=property.pk)
+
+            customizer_subforms_data = get_data_from_customizer_forms(model_customizer_subform, standard_property_customizer_subformset, scientific_property_customizer_subformsets)
+
+            request_url = add_parameters_to_url(reverse("customize_subform"), i=property.pk)
+            response = self.client.post(request_url, data=customizer_subforms_data, follow=True) # (the saving is handled in the POST)
+
+            json_response = json.loads(response.content)
+
+            self.assertEqual(json_response["subform_customizer_name"],parent_customizer.name)
+            self.assertEqual(json_response["subform_customizer_name"],customizer_name)
+            self.assertEqual(response.status_code,200)
+
+            child_customizer = MetadataModelCustomizer.objects.get(pk=json_response["subform_customizer_id"])
+
+            property.relationship_show_customizer = True
+            property.subform_customizer = child_customizer
+            property.save()
+
+        return parent_customizer

@@ -28,7 +28,6 @@ class TestMetadataUser(TestQuestionnaireBase):
         self.assertIsNotNone(new_metadata_user)
         self.metadata_user = new_metadata_user
 
-
     # MetadataUser creation testing is happening implicitly in setUp above
     #def test_create_user(self):
     #    pass
