@@ -195,13 +195,12 @@ function inherit(item) {
             child_pane_keys.push(node.data.key+"_pane")
         });
 
-        
         if ($(item).attr("type") == "checkbox") {
             // checkbox
             var item_value = $(item).is(":checked");
             $(child_pane_keys).each(function() {
                 var child_pane = $(".pane[id='"+this+"']");
-                var child_item = $(child_pane).find("tr.field[name='"+item_name+"']").find("input");
+                var child_item = $(child_pane).find("tr.field[name='"+item_name+"']").find("input:first");
                 if ($(child_item).next(".inheritance_options").find(".enable_inheritance").is(":checked")) {
                     $(child_item).prop("checked",item_value);
                 }
@@ -221,7 +220,7 @@ function inherit(item) {
             var item_value = $(item).val();
             $(child_pane_keys).each(function() {
                 var child_pane = $(".pane[id='"+this+"']");
-                var child_item = $(child_pane).find("tr.field[name='"+item_name+"']").find("input,textarea");
+                var child_item = $(child_pane).find("tr.field[name='"+item_name+"']").find("input:first,textarea:first");
                 if ($(child_item).next(".inheritance_options").find(".enable_inheritance").is(":checked")) {
                     $(child_item).val(item_value);
                     if ($(child_item).hasClass("enumeration_other")) {
