@@ -32,7 +32,8 @@ class MetadataUser(models.Model):
         verbose_name        = 'Metadata User'
         verbose_name_plural = 'Metadata Users'
 
-    user = models.OneToOneField(User,related_name='metadata_user')
+#comment this out; it interferes w/ questionnaire app
+#    user = models.OneToOneField(User,related_name='metadata_user')
     projects = models.ManyToManyField("MetadataProject",null=True,blank=True,related_name="metadata_user")
     projects.verbose_name = "Project Membership"
 
