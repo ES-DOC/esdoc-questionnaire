@@ -1,0 +1,46 @@
+{% extends "mindmaps/mindmaps_base.html" %}
+
+{% block scripts %}
+    <script language="javascript">
+
+        function giveFocus() {
+            document.visorFreeMind.focus();
+        };
+
+        var flashobject = new FlashObject("{{ STATIC_URL }}/mindmaps/js/ext/visorFreemind.swf", "visorFreeMind", "100%", "100%", 6, "#9999ff");
+
+     </script>
+{% endblock %} {# /scripts #}
+
+{% block title %}
+
+    CIM MindMap Viewer
+
+{% endblock %} {# /title #}
+
+{% block content %}
+
+    <div class="title">
+        CIM MindMap Viewer
+    </div> <!-- /.title -->
+
+    <div class="documentation">
+        <p>
+            This mindmap can be found at <a href="{{ mindmap_url }}">{{ mindmap_url }}</a>.
+        </p>
+    </div>
+
+    <fieldset>
+        <div class="fieldset_content">
+
+            <div id="flashcontent" onmouseover="giveFocus();">
+	            Flash plugin or Javascript are turned off or otherwise unavailable. Activate both and reload to view the MindMap.
+            </div>
+            <script type="text/javascript">
+                render_mindmap_to_flashobject(flashobject,"{{ mindmap_relative_path }}");
+	        </script>
+        </div>
+    </fieldset>
+
+{% endblock %} {# /content #}
+
