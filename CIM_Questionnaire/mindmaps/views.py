@@ -1,7 +1,3 @@
-
-
-#from django.http import HttpResponse
-#from django.template import Context
 from django.template import RequestContext
 
 from django.conf import settings
@@ -14,7 +10,6 @@ from urlparse import urlparse
 import os
 import urllib2
 import hashlib
-import json
 
 from CIM_Questionnaire.questionnaire import get_version
 from CIM_Questionnaire.mindmaps.models import MindMapSource
