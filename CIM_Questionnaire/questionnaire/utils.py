@@ -473,24 +473,3 @@ def interate_through_node(node, filter_parameters={}):
         for child in child_qs:
             iterate_through_node(child,filter_parameters)
 
-
-
-########################################
-# fixing known django - postgres issue #
-########################################
-
-# TODO: JUST RUN THIS CODE IF POSTGRES IS USED?
-
-from django.db.models.signals import post_syncdb
-from django.db import connection
-
-# before proceeding after the syncdb call
-# increase the size of the "name" field in auth_permission
-
-def update_db(sender, **kwargs):
-    if kwargs['app'].__name__ == "questionnaire.models":
-        cursor = connection.cursor()
-        cursor.execute("ALTER TABLE auth_permission DROP COLUMN name;")
-        cursor.execute("ALTER TABLE auth_permission ADD COLUMN name character varying(100);")
-
-post_syncdb.connect(update_db)

@@ -179,7 +179,7 @@ INSTALLED_APPS = (
     'pytz',
     # efficient hierarchies of models...
     'mptt',
-    # project-level app...
+    # main project app...
     'questionnaire',
     # old apps from DCMIP-2012...
     'django_cim_forms', 'django_cim_forms.cim_1_5', 'dycore',
@@ -219,6 +219,35 @@ SESSION_SERIALIZER = 'django.contrib.sessions.serializers.JSONSerializer'
 # EVENTUALLY, I SHOULD MOVE TO CACHE: https://docs.djangoproject.com/en/dev/topics/cache/
 SESSION_ENGINE = 'django.contrib.sessions.backends.signed_cookies'
 SESSION_COOKIE_HTTPONLY = True
+
+################################################
+# fixing known django / south / postgres issue #
+################################################
+
+# before proceeding after the syncdb call
+# increase the size of the "name" field in auth_permission if needed
+
+from django.db.models.signals import post_syncdb
+from django.db import connection
+
+from django.contrib.auth.models import Permission
+
+def update_db(sender, **kwargs):
+
+    # when the 1st APP tries to sync,
+    # check if auth_permission_name is too small;
+    # if so, increase the column size
+    if kwargs['app'].__name__ == INSTALLED_APPS[0] + ".models":
+        auth_permission_name = Permission._meta.get_field_by_name("name")[0]
+        if auth_permission_name.max_length < 100:
+
+            cursor = connection.cursor()
+
+            cursor.execute("ALTER TABLE auth_permission DROP COLUMN name;")
+            cursor.execute("ALTER TABLE auth_permission ADD COLUMN name character varying(100);")
+
+post_syncdb.connect(update_db)
+
 
 # A sample logging configuration. The only tangible logging
 # performed by this configuration is to send an email to
