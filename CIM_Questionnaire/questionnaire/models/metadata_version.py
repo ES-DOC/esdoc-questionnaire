@@ -124,8 +124,6 @@ class MetadataVersion(models.Model):
                 relationship_target_name = xpath_fix(version_property_proxy,"relationship/target/text()")
                 for version_property_proxy_enumeration_choice in xpath_fix(version_property_proxy,"enumeration/choice"):
                     enumeration_choices.append(xpath_fix(version_property_proxy_enumeration_choice,"text()")[0])
-                # TODO: ADD MORE FIELDS
-
                 new_standard_property_proxy_kwargs["field_type"] = MetadataFieldTypes.get(version_property_proxy_type[0])
                 new_standard_property_proxy_kwargs["name"] = re.sub(r'\.','_',str(version_property_proxy_name[0]))
                 if version_property_proxy_documentation:

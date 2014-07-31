@@ -41,8 +41,8 @@ class MetadataSite(models.Model):
         abstract    = False
         verbose_name        = 'Metadata Site'
         verbose_name_plural = 'Metadata Sites'
-
-    site = models.OneToOneField(Site,related_name="dcf_metadata_site")
+#comment this out; it interferes w/ questionnaire app
+#    site = models.OneToOneField(Site,related_name="dcf_metadata_site")
     type = models.CharField(
         max_length=LIL_STRING,
         blank=True,
@@ -60,18 +60,19 @@ from django.dispatch import receiver
 from django.db.models.signals import post_save
 from django.db.utils import ProgrammingError
 
-@receiver(post_save, sender=Site)
-def site_post_save(sender, **kwargs):
-    created = kwargs.pop("created",True)
-    site = kwargs.pop("instance",None)
-    if site and created:
-        try:
-            (metadata_site,created_metadata_site) = MetadataSite.objects.get_or_create(site=site)
-        except ProgrammingError:
-            if site.pk == 1:
-                # this might fail in syncdb w/ the Django admin b/c the full set of db tables will not have been setup yet
-                print "skipped creating site profile for %s" % (site)
-                pass
-            else:
-                msg = "Unable to create site profile for %s" % (site)
-                raise MetadataError(msg)
+#comment this out; it interferes w/ questionnaire app
+# @receiver(post_save, sender=Site)
+# def site_post_save(sender, **kwargs):
+#     created = kwargs.pop("created",True)
+#     site = kwargs.pop("instance",None)
+#     if site and created:
+#         try:
+#             (metadata_site,created_metadata_site) = MetadataSite.objects.get_or_create(site=site)
+#         except ProgrammingError:
+#             if site.pk == 1:
+#                 # this might fail in syncdb w/ the Django admin b/c the full set of db tables will not have been setup yet
+#                 print "skipped creating site profile for %s" % (site)
+#                 pass
+#             else:
+#                 msg = "Unable to create site profile for %s" % (site)
+#                 raise MetadataError(msg)

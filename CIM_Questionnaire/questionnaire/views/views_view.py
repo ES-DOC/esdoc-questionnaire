@@ -88,7 +88,7 @@ def questionnaire_view_existing(request, project_name="", model_name="", version
 
     # create the realization set
     (models, standard_properties, scientific_properties) = \
-        MetadataModel.get_existing_realization_set(models, model_customizer, standard_property_customizers, vocabularies=vocabularies)
+        MetadataModel.get_existing_realization_set(models, model_customizer, vocabularies=vocabularies)
 
     # clean it up a bit based on properties that have been customized not to be displayed
     for model in models:

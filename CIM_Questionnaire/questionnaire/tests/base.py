@@ -1,7 +1,9 @@
 import os
 import json
 
-from django.test import TestCase, RequestFactory, Client
+from django.test import TestCase, Client
+from django.test.utils import CaptureQueriesContext
+from django.db import connection, connections, DEFAULT_DB_ALIAS
 
 from django.core.urlresolvers import reverse
 from django.contrib import messages
@@ -24,10 +26,37 @@ from CIM_Questionnaire.questionnaire.models.metadata_vocabulary import UPLOAD_PA
 
 from CIM_Questionnaire.questionnaire.forms.forms_customize import get_data_from_customizer_forms
 
-from CIM_Questionnaire.questionnaire.fields import MetadataFieldTypes
+from CIM_Questionnaire.questionnaire.fields import MetadataFieldTypes, EnumerationFormField, CardinalityFormField
 
 from CIM_Questionnaire.questionnaire.utils import add_parameters_to_url
 from CIM_Questionnaire.questionnaire.utils import CIM_DOCUMENT_TYPES
+
+
+class QueryCounter(CaptureQueriesContext):
+    """ provides a context manager for me to keep track of the number of queries
+        (not to be confused w/ assertNumQueries)
+
+        usage is:
+        >> test_query_counter = QueryCounter()
+        >> with test_query_counter:
+        >>     do_some_stuff()
+        >>     test_query_count = test_query_counter.get_num_queries()
+    """
+
+    def __init__(self):
+        conn = connections[DEFAULT_DB_ALIAS]
+        super(QueryCounter, self).__init__(conn)
+
+    def reset(self):
+        self.initial_queries = 0
+        self.final_queries = None
+
+    def get_num_queries(self):
+        try:
+            num_queries = len(self.captured_queries)
+            return num_queries
+        except AttributeError:
+            return 0
 
 
 class TestQuestionnaireBase(TestCase):
@@ -42,9 +71,8 @@ class TestQuestionnaireBase(TestCase):
 
     def setUp(self):
 
-        # # request factory for all tests
         # self.factory = RequestFactory()
-        # client for all tests (this is better-suited for testing views b/c, among other things, it has sessions, cookies, etc.)
+        # client for all tests (this is better-suited for testing views than the above factory b/c, among other things, it has sessions, cookies, etc.)
         self.client = Client()#enforce_csrf_checks=True)
 
         # SETUP DEFAULT TEST USER & SUPERUSER
@@ -178,18 +206,39 @@ class TestQuestionnaireBase(TestCase):
             list(sorted(qs2, key=pk))
         )
 
+
+    def assertDictEqual(self, d1, d2, excluded_keys=[]):
+        """Overrides super.assertDictEqual fn to remove certain keys from either list before the comparison"""
+        d1_copy = d1.copy()
+        d2_copy = d2.copy()
+        for key_to_exclude in excluded_keys:
+            d1_copy.pop(key_to_exclude,None)
+            d2_copy.pop(key_to_exclude,None)
+        return super(TestQuestionnaireBase, self).assertDictEqual(d1_copy, d2_copy)
+
+
     def assertFileExists(self, file_path, **kwargs):
         """Tests that a file exists"""
 
         msg = kwargs.pop("msg",None)
         file_exists = os.path.exists(file_path)
 
-        return self.assertEqual(file_exists,True,msg=msg)
+        return self.assertEqual(file_exists, True, msg=msg)
+
+
+    def assertFileDoesntExist(self, file_path, **kwargs):
+        """Tests that a file doesn't exist"""
+
+        msg = kwargs.pop("msg",None)
+        file_exists = os.path.exists(file_path)
+
+        return self.assertEqual(file_exists, False, msg=msg)
 
     ##########################################################################
     # the fns below get forms exactly as they would have been setup by views #
     # other fns in other classes explicitly test the fns used in those views #
     ##########################################################################
+
 
     def get_new_customizer_forms(self,*args,**kwargs):
 
@@ -219,6 +268,7 @@ class TestQuestionnaireBase(TestCase):
 
         return (model_customizer_form, standard_property_customizer_formset, scientific_property_customizer_formsets)
 
+
     def get_new_customizer_subforms(self,*args,**kwargs):
 
         property_id  = kwargs.pop("property_id", None)
@@ -238,13 +288,8 @@ class TestQuestionnaireBase(TestCase):
         #scientific_property_customizer_formsets = context["scientific_property_customizer_formsets"]
         scientific_property_customizer_formsets = {}
 
-        # NOT NEEDED FOR SUBFORMS
-        # for standard_property_customizer_form in standard_property_customizer_formset:
-        #     if standard_property_customizer_form.get_current_field_value("category") is None:
-        #         # TODO: REMOVE THIS AS SOON AS I'VE FIXED ISSUE #71
-        #         standard_property_customizer_form.initial["displayed"] = False
-
         return (model_customizer_form, standard_property_customizer_formset, scientific_property_customizer_formsets)
+
 
     def get_new_edit_forms(self,*args,**kwargs):
 
@@ -271,6 +316,7 @@ class TestQuestionnaireBase(TestCase):
 
         return edit_forms
 
+
     def fully_serialize_model(self,model,exclude=[]):
         """
         serializes model to dictionary (like model_to_dict) but follows foreign keys
@@ -282,7 +328,7 @@ class TestQuestionnaireBase(TestCase):
             if field_name not in exclude:
                 model_dictionary[field.name] = getattr(model,field_name)
 
-        # suspect that the above logic is faster & cleaner than the below logic
+        # suspect that the new logic above is faster & cleaner than the old logic below
         # model_dictionary = model_to_dict(model,exclude=exclude)
         # model_dictionary_copy = model_dictionary.copy()
         # for key, value in model_dictionary_copy.iteritems():
@@ -292,21 +338,22 @@ class TestQuestionnaireBase(TestCase):
 
         return model_dictionary
 
+
     #######################################################################################
     # the fns below create customizers & realizations exactly as they would have by views #
     # other fns in other classes explicitly test the fns used in those views              #
     #######################################################################################
 
 
-    def create_customizer_set_with_subforms(self,document_type,properties_with_subforms=[]):
+    def create_customizer_set_with_subforms(self,project,version,proxy,properties_with_subforms=[]):
 
         # setup an additional customizer for testing purposes
         # this one uses subforms
         customizer_name = "customizer_with_subforms"
 
-        project_name = self.project.name.lower()
-        version_name = self.version.name.lower()
-        model_name = document_type.lower()
+        project_name = project.name.lower()
+        version_name = version.name.lower()
+        model_name = proxy.name.lower()
 
         (model_customizer_form, standard_property_customizer_formset, scientific_property_customizer_formsets) = \
             self.get_new_customizer_forms(project_name=project_name, version_name=version_name, model_name=model_name)
@@ -324,6 +371,7 @@ class TestQuestionnaireBase(TestCase):
             "version_name" : version_name,
             "model_name" : model_name,
         })
+
         # ("follow=True" allows the context setup in the initial view to be retained in the redirected view [http://stackoverflow.com/questions/16143149/django-testing-check-messages-for-a-view-that-redirects])
         response = self.client.post(request_url, data=customizer_forms_data, follow=True)
 
@@ -337,12 +385,6 @@ class TestQuestionnaireBase(TestCase):
         self.assertEqual(response.status_code,200)
 
         parent_customizer = MetadataModelCustomizer.objects.get(pk=session_variables["model_id"])
-
-        request_url = reverse("customize_new", kwargs = {
-            "project_name" : project_name,
-            "version_name" : version_name,
-            "model_name" : model_name,
-        })
 
         for property_name in properties_with_subforms:
             property = parent_customizer.standard_property_customizers.get(name=property_name)
@@ -364,7 +406,7 @@ class TestQuestionnaireBase(TestCase):
 
             child_customizer = MetadataModelCustomizer.objects.get(pk=json_response["subform_customizer_id"])
 
-            property.relationship_show_customizer = True
+            property.relationship_show_subform = True
             property.subform_customizer = child_customizer
             property.save()
 

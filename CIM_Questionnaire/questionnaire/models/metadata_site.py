@@ -43,7 +43,7 @@ class MetadataSite(models.Model):
         verbose_name        = 'Metadata Site'
         verbose_name_plural = 'Metadata Sites'
 
-    site = models.OneToOneField(Site,related_name="metadata_site")
+    site = models.OneToOneField(Site, null=True, related_name="metadata_site")
 
     type = models.CharField(
         max_length=SMALL_STRING,
@@ -78,6 +78,16 @@ def site_post_save(sender, **kwargs):
                 msg = "Unable to create site profile for %s" % (site)
                 raise MetadataError(msg)
 
+def get_metadata_site(site):
+    try:
+        return site.metadata_site
+    except MetadataSite.DoesNotExist:
+        return None
+
 def get_metadata_site_type(site):
-    return site.metadata_site.get_type()
+    metadata_site = get_metadata_site(site)
+    if metadata_site:
+        return metadata_site.get_type()
+    else:
+        return None
 

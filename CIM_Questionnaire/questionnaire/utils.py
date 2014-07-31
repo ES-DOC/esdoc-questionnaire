@@ -26,6 +26,7 @@ from django.conf import settings
 
 from django.forms import model_to_dict
 from django.forms.models import BaseModelFormSet, BaseInlineFormSet
+from django.forms.fields import MultiValueField
 
 import os
 import re
@@ -34,8 +35,8 @@ import urllib
 from django.core import serializers
 from lxml import etree as et
 
-from CIM_Questionnaire.questionnaire import get_version
 
+from CIM_Questionnaire.questionnaire import get_version
 
 def xpath_fix(node, xpath):
     """Helper function to address lxml smart strings memory leakage issue.
@@ -233,12 +234,38 @@ def get_initial_data(model, update_fields={}):
     dict.update(update_fields)
     for key, value in dict.iteritems():
         if isinstance(value,tuple):
-            # TODO: SOMETIMES THIS RETURNS A TUBLE INSTEAD OF A STRING, NOT SURE WHY
+            # TODO: SOMETIMES THIS RETURNS A TUPLE INSTEAD OF A STRING, NOT SURE WHY
             dict[key] = value[0]
     return dict
 
+# TODO: REPLACE THE ABOVE FN W/ THIS FN IN CODE
+def model_to_data(model, exclude=[], include={}):
+    model_data = model_to_dict(model)
+    model_data.update(include)
+    model_data_copy = model_data.copy()
+    for key, value in model_data_copy.iteritems():
+        if key in exclude:
+            model_data.pop(key)
+    return model_data
+
+def model_to_data_old(model, exclude=[], include={}):
+    """
+    serializes model to dictionary (like get_initial_data) but follows fk & m2m fields
+    """
+    model_data = {}
+    for field in model._meta.fields:
+        field_name = field.name
+        if field_name not in exclude:
+            if field_name in include:
+                model_data[field_name] = include[field_name]
+            else:
+                model_data[field_name] = getattr(model,field_name)
+    return model_data
+
+
 
 def get_data_from_form(form, existing_data={}):
+
     data = {}
 
     form_prefix = form.prefix
@@ -253,7 +280,16 @@ def get_data_from_form(form, existing_data={}):
         else:
             field_key = u"%s" % (field_name)
 
-        data[field_key] = field_value
+        # this checks if I am dealing w/ a MultiValueField
+        # Django automatically separates this into its constituent fields when gathering data via POST
+        # this fn has to do this manually b/c it's called outside of the standard GET/POST view paradigm
+        # TODO: AM I SURE THAT THE FIELD_VALUE WILL ALWAYS BE A LIST AND NOT A TUPLE?
+        if isinstance(field,MultiValueField) and isinstance(field_value,list):
+            for i, v in enumerate(field_value):
+                data[u"%s_%s" % (field_key, i)] = v
+        else:
+            # obviously, a non-MultiValueField is much easier
+            data[field_key] = field_value
 
     return data
 
@@ -265,15 +301,15 @@ def get_data_from_formset(formset):
     for form in formset:
         existing_data.clear()
 
+        # in general, this is only needed when calling this fn outside of the interface
+        # ie: in the testing framework
+        # (the hidden pk & fk fields do not get passed in via the queryset for existing model formsets)
         if form.instance.pk:
-            # in general, this is only needed when calling this fn outside of the interface
-            # ie: in the testing framework
-            # (the hidden pk & fk fields do not get passed in via the queryset for existing model formsets)
             pk_field_name = formset.model._meta.pk.name
             existing_data[pk_field_name] = form.fields[pk_field_name].initial
-            if isinstance(formset,BaseInlineFormSet):
-                fk_field_name = formset.fk.name
-                existing_data[fk_field_name] = form.fields[fk_field_name].initial
+        if isinstance(formset,BaseInlineFormSet):
+            fk_field_name = formset.fk.name
+            existing_data[fk_field_name] = form.fields[fk_field_name].initial
 
         if formset.can_delete:
             existing_data["DELETE"] = False
@@ -457,6 +493,32 @@ def find_in_sequence(fn, sequence):
     if fn(item)==True:
       return item
   return None
+
+
+
+########################
+# flatten a dictionary #
+########################
+
+def get_joined_keys_dict(dct):
+    """
+    Convert 2D dictionary to 1D dictionary joining keys by an underscore.
+
+    >>> dct = {'a': {'b': 1, 'c': 2}}
+    >>> get_joined_keys_dict(dct)
+    >>> {'a_b': 1, 'a_c': 2}
+
+    :param dict dct: The input dictionary to collapse.
+    :rtype: dict
+    """
+
+    ret = {}
+    for k, v in dct.iteritems():
+        for k2, v2 in v.iteritems():
+            ret[u'{0}_{1}'.format(k, k2)] = v2
+    return ret
+
+################################################
 
 
 def interate_through_node(node, filter_parameters={}):

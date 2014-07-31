@@ -35,7 +35,7 @@ class TestMetadataCustomizer(TestQuestionnaireBase):
 
         # setup an additional customizer for testing purposes that uses subforms
         test_proxy = MetadataModelProxy.objects.get(version=self.version, name__iexact="modelcomponent")
-        test_customizer = self.create_customizer_set_with_subforms(test_proxy.name, properties_with_subforms=["author"])
+        test_customizer = self.create_customizer_set_with_subforms(self.project, self.version, test_proxy, properties_with_subforms=["author"])
 
         self.model_customizer.default = False
         self.model_customizer.save()

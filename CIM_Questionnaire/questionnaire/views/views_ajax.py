@@ -321,7 +321,7 @@ def ajax_select_realization(request,**kwargs):
 
                 # get the full realization set...
                 (models, standard_properties, scientific_properties) = \
-                    MetadataModel.get_existing_realization_set(realizations, model_customizer, standard_property_customizers, is_subrealization=True)
+                    MetadataModel.get_existing_realization_set(realizations, model_customizer, is_subrealization=True)
 
             # clean it up a bit based on properties that have been customized not to be displayed
             for model in models:

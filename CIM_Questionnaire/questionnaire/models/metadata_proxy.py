@@ -22,15 +22,14 @@ Summary of module goes here
 
 from django.db import models
 
-#from mptt.models import MPTTModel, TreeForeignKey
-
-from questionnaire.utils import *
-from questionnaire.fields import *
+from django.template.defaultfilters import slugify
 
 from mptt.models import MPTTModel, TreeForeignKey
 
-### note - following fk fields in __unicode__ method forces queries on the db
-### only do that if it's absolutely necessary
+from CIM_Questionnaire.questionnaire.fields import MetadataFieldTypes, MetadataAtomicFieldTypes
+from CIM_Questionnaire.questionnaire.utils import QuestionnaireError
+from CIM_Questionnaire.questionnaire.utils import APP_LABEL, LIL_STRING, SMALL_STRING, BIG_STRING, HUGE_STRING, CIM_DOCUMENT_TYPES, CIM_STEREOTYPES
+
 
 class MetadataModelProxy(models.Model):
     class Meta:
@@ -69,6 +68,20 @@ class MetadataModelProxy(models.Model):
         else:
             return MetadataStandardCategoryProxy.objects.none()
 
+    @classmethod
+    def get_proxy_set(cls,model_proxy,vocabularies=None):#MetadataVocabulary.objects.none()): # (commented out to avoid circular imports)
+
+        standard_property_proxies = model_proxy.standard_properties.all().order_by("category__order", "order")
+
+        scientific_property_proxies = {}
+        for vocabulary in vocabularies:
+            vocabulary_key = slugify(vocabulary.name)
+            for component_proxy in vocabulary.component_proxies.all():
+                component_key = slugify(component_proxy.name)
+                model_key = u"%s_%s" % (vocabulary_key, component_key)
+                scientific_property_proxies[model_key] = component_proxy.scientific_properties.all().order_by("category__order", "order")
+
+        return (model_proxy, standard_property_proxies, scientific_property_proxies)
 
 class MetadataPropertyProxy(models.Model):
     class Meta:
