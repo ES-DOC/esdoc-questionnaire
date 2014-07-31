@@ -28,7 +28,7 @@ from CIM_Questionnaire.questionnaire.forms.forms_edit import create_new_edit_for
 from CIM_Questionnaire.questionnaire.views.views_error import questionnaire_error
 from CIM_Questionnaire.questionnaire.views import *
 
-from CIM_Questionnaire.questionnaire.utils import DEFAULT_VOCABULARY
+from CIM_Questionnaire.questionnaire.utils import get_joined_keys_dict
 
 from CIM_Questionnaire.questionnaire import get_version
 
@@ -119,19 +119,22 @@ def questionnaire_edit_new(request, project_name="", model_name="", version_name
     (model_customizer,standard_category_customizers,standard_property_customizers,nested_scientific_category_customizers,nested_scientific_property_customizers) = \
             MetadataCustomizer.get_existing_customizer_set(model_customizer,vocabularies)
 
+
     # (also get the proxies b/c I'll need them when setting up properties below)
     # note that the proxies need to be sorted according to the customizers (which are ordered by default),
     # so that when I pass an iterator of customizers to the formsets, they will match the underlying form that is created for each property
     standard_property_proxies = [standard_property_customizer.proxy for standard_property_customizer in standard_property_customizers]
-    scientific_property_proxies = {}
-    scientific_property_customizers = {}
-    for vocabulary_key,scientific_property_customizer_dict in nested_scientific_property_customizers.iteritems():
-        for component_key,scientific_property_customizer_list in scientific_property_customizer_dict.iteritems():
-            model_key = u"%s_%s" % (vocabulary_key, component_key)
-            # I have to restructure this; in the customizer views it makes sense to store these as a dictionary of dictionary
-            # but here, they should only be one level deep (hence the use of "nested_" above
-            scientific_property_customizers[model_key] = scientific_property_customizer_list
-            scientific_property_proxies[model_key] = [scientific_property_customizer.proxy for scientific_property_customizer in scientific_property_customizer_list]
+
+    scientific_property_customizers = get_joined_keys_dict(nested_scientific_property_customizers)
+    scientific_property_proxies = { key : [spc.proxy for spc in value] for key,value in  scientific_property_customizers.items() }
+
+    # for vocabulary_key,scientific_property_customizer_dict in nested_scientific_property_customizers.iteritems():
+    #     for component_key,scientific_property_customizer_list in scientific_property_customizer_dict.iteritems():
+    #         model_key = u"%s_%s" % (vocabulary_key, component_key)
+    #         # I have to restructure this; in the customizer views it makes sense to store these as a dictionary of dictionary
+    #         # but here, they should only be one level deep (hence the use of "nested_" above
+    #         scientific_property_customizers[model_key] = scientific_property_customizer_list
+    #         scientific_property_proxies[model_key] = [scientific_property_customizer.proxy for scientific_property_customizer in scientific_property_customizer_list]
 
     # TODO: remove assert statement
     for properties in [model_customizer.standard_property_customizers.all().select_related("proxy"), model_customizer.scientific_property_customizers.all().select_related("proxy")]:
@@ -275,7 +278,7 @@ def questionnaire_edit_existing(request, project_name="", model_name="", version
 
     # create the realization set
     (models, standard_properties, scientific_properties) = \
-        MetadataModel.get_existing_realization_set(models, model_customizer, standard_property_customizers, vocabularies=vocabularies)
+        MetadataModel.get_existing_realization_set(models, model_customizer, vocabularies=vocabularies)
     #
     # # clean it up so that everything is in the correct order...
     # for i,standard_property_customizer in enumerate(standard_property_customizers):

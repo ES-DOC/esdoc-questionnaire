@@ -23,8 +23,6 @@ Summary of module goes here
 
 import time
 
-from itertools import izip
-
 from django.utils import timezone
 
 from django.forms import *
@@ -47,12 +45,21 @@ from CIM_Questionnaire.questionnaire.utils import QuestionnaireError, find_in_se
 from CIM_Questionnaire.questionnaire.utils import get_initial_data, find_in_sequence, update_field_widget_attributes, set_field_widget_attributes, get_data_from_formset, get_data_from_form
 from CIM_Questionnaire.questionnaire.utils import LIL_STRING, SMALL_STRING, BIG_STRING, HUGE_STRING
 
+from CIM_Questionnaire.questionnaire.utils import model_to_data
+
 def create_model_form_data(model,model_customizer):
 
-    model_form_data = get_initial_data(model,{
-        "last_modified" : time.strftime("%c"),
-        #"parent" : model.parent,
-    })
+    model_form_data = model_to_data(
+        model,
+        exclude = [ "tree_id", "lft", "rght", "level", "parent", ], # ignore mptt fields
+        include = {
+            "last_modified" : time.strftime("%c"),
+        }
+    )
+    # model_form_data = get_initial_data(model,{
+    #     "last_modified" : time.strftime("%c"),
+    #     #"parent" : model.parent,
+    # })
 
     return model_form_data
 
@@ -64,6 +71,7 @@ class MetadataModelFormSet(BaseModelFormSet):
 
     def _construct_form(self, i, **kwargs):
 
+        print 'calling construct form'
         if self.prefix_iterator:
             form_prefix = next(self.prefix_iterator)
             kwargs["prefix"] = form_prefix
@@ -227,6 +235,7 @@ class MetadataModelForm(MetadataModelAbstractForm):
 
     def __init__(self,*args,**kwargs):
 
+        print "calling init"
         super(MetadataModelForm,self).__init__(*args,**kwargs)
 
         set_field_widget_attributes(self.fields["title"],{"size":64})
@@ -367,10 +376,18 @@ def MetadataModelSubFormSetFactory(*args,**kwargs):
 
 def create_standard_property_form_data(model,standard_property,standard_property_customizer=None):
 
-    standard_property_form_data = get_initial_data(standard_property,{
-        "last_modified" : time.strftime("%c"),
-        # no need to pass model, since this is handled by virtue of being an "inline" formset
-    })
+
+    standard_property_form_data = model_to_data(
+        standard_property,
+        exclude = [ "model" ],
+        include = {
+            "last_modified" : time.strftime("%c"),
+        }
+    )
+    # standard_property_form_data = get_initial_data(standard_property,{
+    #     "last_modified" : time.strftime("%c"),
+    #     # no need to pass model, since this is handled by virtue of being an "inline" formset
+    # })
 
     if standard_property_customizer:
 
@@ -420,14 +437,12 @@ class MetadataAbstractStandardPropertyForm(MetadataEditingForm):
 
         super(MetadataAbstractStandardPropertyForm,self).__init__(*args,**kwargs)
 
-
         # this is really really important!
         # this ensures that there is something to compare field data against so that I can truly tell is the model has changed
         # [http://stackoverflow.com/questions/11710845/in-django-1-4-do-form-has-changed-and-form-changed-data-which-are-undocument]
-        for field_name in self._meta.fields:
+        #for field_name in self._meta.fields:
         # actually, let's assume that the properties have always changed
         # and override the has_changed() class on model sub forms
-            pass
         #    try:
         #        self.fields[field_name].show_hidden_initial = True
         #    except KeyError:
@@ -559,7 +574,7 @@ class MetadataAbstractStandardPropertyForm(MetadataEditingForm):
                     models = property.relationship_value.all()
                     if models:
                         (models, standard_properties, scientific_properties) = \
-                            MetadataModel.get_existing_realization_set(models, model_customizer, standard_property_customizers, is_subrealization=True)
+                            MetadataModel.get_existing_realization_set(models, model_customizer, is_subrealization=True)
 
                         if not self.is_bound:
                             (model_formset, standard_properties_formsets, scientific_properties_formsets) = \
@@ -922,13 +937,18 @@ def MetadataStandardPropertyInlineSubFormSetFactory(*args,**kwargs):
 
 def create_scientific_property_form_data(model,scientific_property,scientific_property_customizer=None):
 
-    if scientific_property_customizer:
-        assert(scientific_property.category_key == scientific_property_customizer.category.key)
+    scientific_property_form_data = model_to_data(
+        scientific_property,
+        exclude = [ "model" ],
+        include = {
+            "last_modified" : time.strftime("%c"),
+        }
+    )
 
-    scientific_property_form_data = get_initial_data(scientific_property,{
-        "last_modified" : time.strftime("%c"),
-        # no need to pass model, since this is handled by virtue of being an "inline" formset
-    })
+    # scientific_property_form_data = get_initial_data(scientific_property,{
+    #     "last_modified" : time.strftime("%c"),
+    #     # no need to pass model, since this is handled by virtue of being an "inline" formset
+    # })
 
     if scientific_property_customizer:
 

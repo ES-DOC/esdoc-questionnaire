@@ -199,7 +199,8 @@ class MetadataModel(MPTTModel):
         return (models,standard_properties,scientific_properties)
 
     @classmethod
-    def get_existing_realization_set(cls, models, model_customizer, standard_property_customizers,  is_subrealization=False, vocabularies = None):
+    def get_existing_realization_set(cls, models, model_customizer, vocabularies=None, is_subrealization=False):
+
         """retrieves the full set of realizations used by a particular project/version/proxy combination """
 
         # standard_properties = {
@@ -233,16 +234,20 @@ class MetadataModel(MPTTModel):
     def save_realization_set(cls,models,standard_properties,scientific_properties):
 
         # this fn is called outside of the forms
+        # hence, I have to set model explicitly in each property
+        # since it's not automated by virtue of being in an inlineformset
 
         for model in models:
+            model_key = model.get_model_key()
+
             model.save()
 
-        for model_key, standard_property_list in standard_properties.iteritems():
-            for standard_property in standard_property_list:
+            for standard_property in standard_properties[model_key]:
+                standard_property.model = model
                 standard_property.save()
 
-        for model_key, scientific_property_list in scientific_properties.iteritems():
-            for scientific_property in scientific_property_list:
+            for scientific_property in scientific_properties[model_key]:
+                scientific_property.model = model
                 scientific_property.save()
 
 class MetadataProperty(models.Model):
