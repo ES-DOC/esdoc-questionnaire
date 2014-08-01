@@ -100,6 +100,8 @@ class MetadataVersion(models.Model):
             new_model_proxy_kwargs["order"]             = i
 
             (new_model_proxy,created_model) = MetadataModelProxy.objects.get_or_create(**new_model_proxy_kwargs)
+	    new_model_proxy_kwargs.pop("documentation",None)
+	    new_model_proxy_kwargs.pop("stereotype",None)
             if not created_model:
                 recategorization_needed = True
                 # TODO: THIS WILL DELETE ASSOCIATED PROPERTY CUSTOMIZATIONS WHICH IS A REALLY BAD IDEA!
@@ -145,6 +147,10 @@ class MetadataVersion(models.Model):
 
                 (new_standard_property_proxy,created_property) = MetadataStandardPropertyProxy.objects.get_or_create(**new_standard_property_proxy_kwargs)
                 new_standard_property_proxy.save()
+                new_standard_property_proxy_kwargs.pop("documentation",None)
+                new_standard_property_proxy_kwargs.pop("atomic_type",None)
+                new_standard_property_proxy_kwargs.pop("relationship_cardinality",None)
+                new_standard_property_proxy_kwargs.pop("relationship_target_name",None)
 
 
             new_model_proxy.save()
