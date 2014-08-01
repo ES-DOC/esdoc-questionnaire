@@ -79,26 +79,26 @@ def questionnaire_project_index(request,project_name=""):
     all_proxies = MetadataModelProxy.objects.filter(stereotype__iexact="document",version__in=all_versions)
     all_customizers = MetadataModelCustomizer.objects.filter(project=project,proxy__in=all_proxies)
     all_models = MetadataModel.objects.filter(project=project,is_root=True,proxy__in=all_proxies,is_document=True)
-    
+   
     class _AdminIndexForm(forms.Form):
 
         versions        = ModelChoiceField(queryset=all_versions,label="Metadata Version",required=True)
-        proxies         = ModelChoiceField(queryset=all_proxies,label="Metadata Model Type",required=True)
+        proxies         = ModelChoiceField(queryset=all_proxies,label="Document Type",required=True)
         customizations  = ModelChoiceField(queryset=all_customizers,label="Form Customization",required=False)
         customizations.help_text = "If this field is left blank, a <i>new</i> customization will be created."
 
     class _UserIndexForm(forms.Form):
 
         versions        = ModelChoiceField(queryset=all_versions,label="Metadata Version",required=True)
-        proxies         = ModelChoiceField(queryset=all_proxies,label="Metadata Model Type",required=True)
-        models          = ModelChoiceField(queryset=all_models,label="Metadata Model",required=False)
+        proxies         = ModelChoiceField(queryset=all_proxies,label="Document Type",required=True)
+        models          = ModelChoiceField(queryset=all_models,label="Document Instance",required=False)
         models.help_text = "If this field is left blank, a <i>new</i> model will be created."
 
     class _DefaultIndexForm(forms.Form):
 
         versions        = ModelChoiceField(queryset=all_versions,label="Metadata Version",required=True)
-        proxies         = ModelChoiceField(queryset=all_proxies,label="Metadata Model Type",required=True)
-        models          = ModelChoiceField(queryset=all_models,label="Metadata Model",required=True)
+        proxies         = ModelChoiceField(queryset=all_proxies,label="Document Type",required=True)
+        models          = ModelChoiceField(queryset=all_models,label="Document Instance",required=True)
 
     # TODO: SETUP ENABLERS
 
