@@ -174,3 +174,9 @@ button.ui-multiselect           { margin-top:  4px !important; }
 
 
 /* end errors */
+
+/* one-off help text during development */
+
+#questionnaire .caveat { font-style: italic; border: 2px solid #FF8800; padding: 4px; background: #F3E2A9; }
+
+/* end one-off help text during development */
