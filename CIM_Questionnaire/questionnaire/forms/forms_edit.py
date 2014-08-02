@@ -1608,3 +1608,4 @@ def get_data_from_edit_forms(model_formset,standard_properties_formsets,scientif
             data_copy.pop(key)
 
     return data_copy
+
