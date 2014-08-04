@@ -15,6 +15,12 @@ framework.
 """
 import os
 
+# ensure that the correct paths are listed
+# (in case a remote installation uses a non-standard Django installation)
+import sys
+local_paths = [ os.path.abspath('..'), os.path.abspath('.'), ]
+sys.path += local_paths
+
 # We defer to a DJANGO_SETTINGS_MODULE already in the environment. This breaks
 # if running multiple sites in the same mod_wsgi process. To fix this, use
 # mod_wsgi daemon mode with each site in its own daemon process, or use
