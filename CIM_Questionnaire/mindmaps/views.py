@@ -113,7 +113,7 @@ def mindmaps_view(request,**kwargs):
         # then create it...
         with open(absolute_path, 'w') as file:
             file.write(content)
-                
+
     dict = {
         "questionnaire_version" : get_version(),
         "mindmap_url" : url,
