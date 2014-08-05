@@ -14,6 +14,9 @@ urlpatterns = patterns('',
     url(r'^admin/',     include(admin.site.urls)),
     url(r'^admin/doc/', include('django.contrib.admindocs.urls')),
 
+    # mindmaps...
+    url(r'^mindmaps/', include('mindmaps.urls')),
+
     # questionnaire
     (r'', include('questionnaire.urls')),
 
