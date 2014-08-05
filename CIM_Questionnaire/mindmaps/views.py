@@ -91,10 +91,10 @@ def mindmaps_view(request,**kwargs):
     # create the local path if it doesn't already exist...
     if not os.path.exists(os.path.dirname(absolute_path)):
         os.makedirs(os.path.dirname(absolute_path))
-        with open(absolute_path, 'w') as file:
-            file.write(content)
-    else:
-        # if it does exist see if the local hash is different from the remote content...
+
+    # if the file (not just the path) exists...
+    if os.path.exists(absolute_path):
+        # then check if the content has changed...
         remote_hash = hashlib.sha1()
         remote_hash.update(content)
         local_hash = hashlib.sha1()
@@ -104,9 +104,15 @@ def mindmaps_view(request,**kwargs):
                 local_hash.update(buff)
                 buff = file.read(hash_block_size)
         if remote_hash.hexdigest() != local_hash.hexdigest():
-            # and overwrite the local file if it is...
+            # and overwrite the local file if it has...
             with open(absolute_path, 'w') as file:
                 file.write(content)
+
+    # if the file doesn't exist...
+    else:
+        # then create it...
+        with open(absolute_path, 'w') as file:
+            file.write(content)
 
     dict = {
         "questionnaire_version" : get_version(),
