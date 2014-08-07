@@ -6,7 +6,7 @@ from CIM_Questionnaire.questionnaire.models.metadata_proxy import MetadataModelP
 from CIM_Questionnaire.questionnaire.models.metadata_customizer import MetadataCustomizer
 
 from CIM_Questionnaire.questionnaire.forms.forms_edit import create_model_form_data, create_standard_property_form_data, create_scientific_property_form_data
-from CIM_Questionnaire.questionnaire.forms.forms_edit import create_new_edit_forms_from_models, create_new_edit_subforms_from_models
+from CIM_Questionnaire.questionnaire.forms.forms_edit import create_new_edit_forms_from_models, create_new_edit_subforms_from_models, create_edit_forms_from_data
 from CIM_Questionnaire.questionnaire.forms.forms_edit import get_data_from_edit_forms
 from CIM_Questionnaire.questionnaire.forms.forms_edit import MetadataModelFormSetFactory, MetadataStandardPropertyInlineFormSetFactory
 
@@ -164,7 +164,7 @@ class Test(TestQuestionnaireBase):
                 self.assertDictEqual(actual_scientific_property_form_data, test_scientific_property_data, excluded_keys=["last_modified","model"])
 
 
-    def test_metadata_model_formset_factory(self):
+    def test_metadata_model_formset_factory_from_models(self):
 
         test_document_type = "modelcomponent"
 
@@ -200,7 +200,7 @@ class Test(TestQuestionnaireBase):
             self.assertEqual(model_form.customizer, model_customizer)
 
 
-    def test_metadata_standard_property_inline_formset_factory(self):
+    def test_metadata_standard_property_inline_formset_factory_from_models(self):
 
         test_document_type = "modelcomponent"
 
@@ -255,7 +255,7 @@ class Test(TestQuestionnaireBase):
                     self.assertQuerysetEqual(standard_property_form.fields["relationship_value"].queryset, MetadataModel.objects.filter(proxy=standard_property.proxy.relationship_target_model))
 
 
-    def test_metadata_standard_property_inline_formset_factory_with_subforms(self):
+    def test_metadata_standard_property_inline_formset_factory_from_models_with_subforms(self):
 
         test_document_type = "modelcomponent"
 
@@ -263,7 +263,8 @@ class Test(TestQuestionnaireBase):
 
         test_vocabularies = self.project.vocabularies.filter(document_type__iexact=test_document_type)
 
-        test_customizer = self.create_customizer_set_with_subforms(self.project, self.version, test_proxy, properties_with_subforms=["author"])
+        properties_with_subforms = [ "author", ]
+        test_customizer = self.create_customizer_set_with_subforms(self.project, self.version, test_proxy, properties_with_subforms=properties_with_subforms)
         (model_customizer, standard_category_customizers, standard_property_customizers, nested_scientific_category_customizers, nested_scientific_property_customizers) = \
             MetadataCustomizer.get_existing_customizer_set(test_customizer, test_vocabularies)
 
@@ -309,21 +310,19 @@ class Test(TestQuestionnaireBase):
 
                 if standard_property.field_type == MetadataFieldTypes.RELATIONSHIP:
                     self.assertQuerysetEqual(standard_property_form.fields["relationship_value"].queryset, MetadataModel.objects.filter(proxy=standard_property.proxy.relationship_target_model))
-                    subform_customizer = standard_property_form.get_subform_customizer()
-                    model_subformset = standard_property_form.get_model_subformset()
-                    standard_properties_subformsets = standard_property_form.get_standard_properties_subformsets()
-                    scientific_properties_subformsets = standard_property_form.get_scientific_properties_subformsets()
 
-                    self.assertIsNotNone(subform_customizer)
-                    self.assertIsNotNone(model_subformset)
-                    self.assertIsNotNone(standard_properties_subformsets)
-                    self.assertIsNotNone(scientific_properties_subformsets)
+                    if standard_property.name in properties_with_subforms:
+                        subform_customizer = standard_property_form.get_subform_customizer()
+                        model_subformset = standard_property_form.get_model_subformset()
+                        standard_properties_subformsets = standard_property_form.get_standard_properties_subformsets()
+                        scientific_properties_subformsets = standard_property_form.get_scientific_properties_subformsets()
 
-                    # further testing of the subform content is handled in test_create_new_edit_subforms_from_models below
+                        self.assertIsNotNone(subform_customizer)
+                        self.assertIsNotNone(model_subformset)
+                        self.assertIsNotNone(standard_properties_subformsets)
+                        self.assertIsNotNone(scientific_properties_subformsets)
 
-
-                    # TODO
-                    pass
+                    # further testing of the subform content is handled in below
 
 
     def test_create_new_edit_forms_from_models(self):
@@ -451,6 +450,170 @@ class Test(TestQuestionnaireBase):
            self.assertEqual(len(scientific_properties_subformset.forms), 0)
 
 
+
+    def test_metadata_model_formset_factory_from_data(self):
+
+        test_document_type = "modelcomponent"
+
+        test_proxy = MetadataModelProxy.objects.get(version=self.version, name__iexact=test_document_type)
+
+        test_vocabularies = self.project.vocabularies.filter(document_type__iexact=test_document_type)
+
+        test_customizer = self.create_customizer_set_with_subforms(self.project, self.version, test_proxy, properties_with_subforms=["author"])
+        (model_customizer,standard_category_customizers,standard_property_customizers,nested_scientific_category_customizers,nested_scientific_property_customizers) = \
+            MetadataCustomizer.get_existing_customizer_set(test_customizer, test_vocabularies)
+        scientific_property_customizers = get_joined_keys_dict(nested_scientific_property_customizers)
+
+        (model_proxy, standard_property_proxies, scientific_property_proxies) = MetadataModelProxy.get_proxy_set(test_proxy, vocabularies=test_vocabularies)
+
+        (models, standard_properties, scientific_properties) = \
+            MetadataModel.get_new_realization_set(self.project, self.version, model_proxy, standard_property_proxies, scientific_property_proxies, test_customizer, test_vocabularies)
+
+        (model_formset, standard_properties_formsets, scientific_properties_formsets) = \
+            create_new_edit_forms_from_models(models,model_customizer,standard_properties,standard_property_customizers,scientific_properties,scientific_property_customizers)
+
+        data = get_data_from_edit_forms(model_formset, standard_properties_formsets, scientific_properties_formsets, simulate_post=False)
+
+        model_keys = [model.get_model_key() for model in models]
+
+        model_formset = MetadataModelFormSetFactory(
+            data = data,
+            prefixes = model_keys,
+            customizer = model_customizer,
+        )
+
+        self.assertEqual(len(model_formset), 6)
+        self.assertEqual(model_formset.number_of_models, 6)
+        self.assertEqual(model_formset.prefix, "form")
+        for model_key, model_form in zip(model_keys, model_formset):
+            self.assertEqual(model_key, model_form.prefix)
+            self.assertEqual(model_form.customizer, model_customizer)
+
+
+
+    def test_metadata_standard_property_inline_formset_factory_from_data(self):
+
+        test_document_type = "modelcomponent"
+
+        test_proxy = MetadataModelProxy.objects.get(version=self.version, name__iexact=test_document_type)
+
+        test_vocabularies = self.project.vocabularies.filter(document_type__iexact=test_document_type)
+
+        test_customizer = self.create_customizer_set_with_subforms(self.project, self.version, test_proxy, properties_with_subforms=["author"])
+        (model_customizer,standard_category_customizers,standard_property_customizers,nested_scientific_category_customizers,nested_scientific_property_customizers) = \
+            MetadataCustomizer.get_existing_customizer_set(test_customizer, test_vocabularies)
+        scientific_property_customizers = get_joined_keys_dict(nested_scientific_property_customizers)
+
+        (model_proxy, standard_property_proxies, scientific_property_proxies) = MetadataModelProxy.get_proxy_set(test_proxy, vocabularies=test_vocabularies)
+
+        (models, standard_properties, scientific_properties) = \
+            MetadataModel.get_new_realization_set(self.project, self.version, model_proxy, standard_property_proxies, scientific_property_proxies, test_customizer, test_vocabularies)
+
+        (model_formset, standard_properties_formsets, scientific_properties_formsets) = \
+            create_new_edit_forms_from_models(models,model_customizer,standard_properties,standard_property_customizers,scientific_properties,scientific_property_customizers)
+
+        data = get_data_from_edit_forms(model_formset, standard_properties_formsets, scientific_properties_formsets, simulate_post=False)
+
+        model_keys = [model.get_model_key() for model in models]
+
+        standard_properties_formsets = {}
+        for model_key, model in zip(model_keys, models):
+
+            standard_properties_formsets[model_key] = MetadataStandardPropertyInlineFormSetFactory(
+                instance = model,
+                prefix = model_key,
+                data = data,
+                customizers = standard_property_customizers,
+            )
+
+        self.assertSetEqual(set(model_keys), set(standard_properties_formsets.keys()))
+
+        for model_key, model in zip(model_keys, models):
+            standard_properties_formset = standard_properties_formsets[model_key]
+
+            standard_properties_formset_prefix = standard_properties_formset.prefix
+            self.assertEqual(standard_properties_formset_prefix, u"%s_standard_properties"%(model_key))
+
+            self.assertEqual(len(standard_properties_formset), 6)
+            self.assertEqual(standard_properties_formset.number_of_properties, 6)
+            for i, (standard_property_form, standard_property) in enumerate(zip(standard_properties_formset, standard_properties[model_key])):
+
+                self.assertEqual(standard_property_form.prefix, u"%s-%s" % (standard_properties_formset_prefix, i))
+                self.assertEqual(standard_property_form.customizer.proxy, standard_property.proxy)
+
+                if standard_property.field_type == MetadataFieldTypes.RELATIONSHIP:
+                    self.assertQuerysetEqual(standard_property_form.fields["relationship_value"].queryset, MetadataModel.objects.filter(proxy=standard_property.proxy.relationship_target_model))
+
+
+    def test_metadata_standard_property_inline_formset_factory_from_data_with_subforms(self):
+
+        test_document_type = "modelcomponent"
+
+        test_proxy = MetadataModelProxy.objects.get(version=self.version, name__iexact=test_document_type)
+
+        test_vocabularies = self.project.vocabularies.filter(document_type__iexact=test_document_type)
+
+        properties_with_subforms = [ "author", ]
+        test_customizer = self.create_customizer_set_with_subforms(self.project, self.version, test_proxy, properties_with_subforms=properties_with_subforms)
+        (model_customizer,standard_category_customizers,standard_property_customizers,nested_scientific_category_customizers,nested_scientific_property_customizers) = \
+            MetadataCustomizer.get_existing_customizer_set(test_customizer, test_vocabularies)
+        scientific_property_customizers = get_joined_keys_dict(nested_scientific_property_customizers)
+
+        (model_proxy, standard_property_proxies, scientific_property_proxies) = MetadataModelProxy.get_proxy_set(test_proxy, vocabularies=test_vocabularies)
+
+        (models, standard_properties, scientific_properties) = \
+            MetadataModel.get_new_realization_set(self.project, self.version, model_proxy, standard_property_proxies, scientific_property_proxies, test_customizer, test_vocabularies)
+
+        (model_formset, standard_properties_formsets, scientific_properties_formsets) = \
+            create_new_edit_forms_from_models(models,model_customizer,standard_properties,standard_property_customizers,scientific_properties,scientific_property_customizers)
+
+        data = get_data_from_edit_forms(model_formset, standard_properties_formsets, scientific_properties_formsets, simulate_post=False)
+
+        model_keys = [model.get_model_key() for model in models]
+
+        standard_properties_formsets = {}
+        for model_key, model in zip(model_keys, models):
+
+            standard_properties_formsets[model_key] = MetadataStandardPropertyInlineFormSetFactory(
+                instance = model,
+                prefix = model_key,
+                data = data,
+                customizers = standard_property_customizers,
+            )
+
+
+        self.assertSetEqual(set(model_keys), set(standard_properties_formsets.keys()))
+
+        for model_key, model in zip(model_keys, models):
+            standard_properties_formset = standard_properties_formsets[model_key]
+
+            standard_properties_formset_prefix = standard_properties_formset.prefix
+            self.assertEqual(standard_properties_formset_prefix, u"%s_standard_properties"%(model_key))
+
+            self.assertEqual(len(standard_properties_formset), 6)
+            self.assertEqual(standard_properties_formset.number_of_properties, 6)
+            for i, (standard_property_form, standard_property) in enumerate(zip(standard_properties_formset, standard_properties[model_key])):
+
+                self.assertEqual(standard_property_form.prefix, u"%s-%s" % (standard_properties_formset_prefix, i))
+                self.assertEqual(standard_property_form.customizer.proxy, standard_property.proxy)
+
+                if standard_property.field_type == MetadataFieldTypes.RELATIONSHIP:
+                    self.assertQuerysetEqual(standard_property_form.fields["relationship_value"].queryset, MetadataModel.objects.filter(proxy=standard_property.proxy.relationship_target_model))
+
+                    if standard_property.name in properties_with_subforms:
+                        subform_customizer = standard_property_form.get_subform_customizer()
+                        model_subformset = standard_property_form.get_model_subformset()
+                        standard_properties_subformsets = standard_property_form.get_standard_properties_subformsets()
+                        scientific_properties_subformsets = standard_property_form.get_scientific_properties_subformsets()
+
+                        self.assertIsNotNone(subform_customizer)
+                        self.assertIsNotNone(model_subformset)
+                        self.assertIsNotNone(standard_properties_subformsets)
+                        self.assertIsNotNone(scientific_properties_subformsets)
+
+                        # further testing of the subform content is handled below
+
+                
     def test_create_edit_forms_from_data(self):
 
         test_document_type = "modelcomponent"
@@ -472,7 +635,13 @@ class Test(TestQuestionnaireBase):
         (model_formset, standard_properties_formsets, scientific_properties_formsets) = \
             create_new_edit_forms_from_models(models,model_customizer,standard_properties,standard_property_customizers,scientific_properties,scientific_property_customizers)
 
-        post_data = get_data_from_edit_forms(model_formset, standard_properties_formsets, scientific_properties_formsets)
+        original_data = get_data_from_edit_forms(model_formset, standard_properties_formsets, scientific_properties_formsets, simulate_post=False)
 
+        (validity, model_formset, standard_properties_formsets, scientific_properties_formsets) = \
+            create_edit_forms_from_data(original_data, models, model_customizer, standard_properties, standard_property_customizers, scientific_properties, scientific_property_customizers)
 
-        import ipdb; ipdb.set_trace()
+        new_data = get_data_from_edit_forms(model_formset, standard_properties_formsets, scientific_properties_formsets, simulate_post=False)
+
+        self.assertEqual(all(validity), True)
+        self.assertEqual(original_data,new_data)
+

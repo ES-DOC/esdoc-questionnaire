@@ -162,6 +162,7 @@ def validate_no_reserved_words(value):
         # cannot have projects w/ these names, else the URLs won't make sense...
         "admin", "ajax", "customize", "edit", "help", "index", "login", "logout",
         "questionnaire", "register", "static", "site_media", "test", "user",
+        "mindmaps", "view",
     ]
 
     if value.lower() in RESERVED_WORDS:
@@ -304,9 +305,8 @@ def get_data_from_formset(formset):
         # in general, this is only needed when calling this fn outside of the interface
         # ie: in the testing framework
         # (the hidden pk & fk fields do not get passed in via the queryset for existing model formsets)
-        if form.instance.pk:
-            pk_field_name = formset.model._meta.pk.name
-            existing_data[pk_field_name] = form.fields[pk_field_name].initial
+        pk_field_name = formset.model._meta.pk.name
+        existing_data[pk_field_name] = form.fields[pk_field_name].initial
         if isinstance(formset,BaseInlineFormSet):
             fk_field_name = formset.fk.name
             existing_data[fk_field_name] = form.fields[fk_field_name].initial
