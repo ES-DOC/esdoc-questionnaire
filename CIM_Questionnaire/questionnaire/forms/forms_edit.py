@@ -71,7 +71,6 @@ class MetadataModelFormSet(BaseModelFormSet):
 
     def _construct_form(self, i, **kwargs):
 
-        print 'calling construct form'
         if self.prefix_iterator:
             form_prefix = next(self.prefix_iterator)
             kwargs["prefix"] = form_prefix
@@ -235,7 +234,6 @@ class MetadataModelForm(MetadataModelAbstractForm):
 
     def __init__(self,*args,**kwargs):
 
-        print "calling init"
         super(MetadataModelForm,self).__init__(*args,**kwargs)
 
         set_field_widget_attributes(self.fields["title"],{"size":64})
@@ -451,6 +449,7 @@ class MetadataAbstractStandardPropertyForm(MetadataEditingForm):
 
         proxy_pk = int(self.get_current_field_value("proxy"))
         field_type = self.get_current_field_value("field_type")
+
 
         if customizers:
             customizer = find_in_sequence(lambda c: c.proxy.pk == proxy_pk , customizers)
@@ -1392,6 +1391,7 @@ def create_edit_forms_from_data(data, models, model_customizer, standard_propert
 
         validity += [standard_properties_formsets[model_key].is_valid()]
 
+
         # TODO: JUST A LIL HACK UNTIL I CAN FIGURE OUT WHERE TO SETUP THIS LOGIC
         if model_key not in scientific_property_customizers:
             scientific_property_customizers[model_key] = []
@@ -1424,7 +1424,7 @@ def create_edit_subforms_from_data(data, models, model_customizer, standard_prop
     # this code fixes that
     for model_form in model_formset.forms:
         instance_pk = model_form.instance.pk
-        form_pk = model_form.get_current_field_value("id")
+        form_pk = model_form.get_current_field_value("id",None)
         if (not instance_pk) and form_pk:
             model_form.instance = MetadataModel.objects.get(pk=form_pk)
 
@@ -1585,12 +1585,20 @@ def get_data_from_existing_edit_forms(model_formset,standard_properties_formsets
     model_formset_data = get_data_from_formset(model_formset)
     data.update(model_formset_data)
 
-    # TODO: handle nested formsets here
-    # I AM HERE
     for standard_property_formset in standard_properties_formsets.values():
         standard_property_formset_data = get_data_from_formset(standard_property_formset)
         data.update(standard_property_formset_data)
 
+        for standard_property_form in standard_property_formset:
+            field_type = standard_property_form.get_current_field_value("field_type")
+            customizer = standard_property_form.customizer
+            if field_type == MetadataFieldTypes.RELATIONSHIP and customizer.relationship_show_subform:
+
+                (subform_customizer, model_subformset, standard_properties_subformsets, scientific_properties_subformsets) = \
+                    standard_property_form.get_subform_tuple()
+
+                subform_data = get_data_from_edit_forms(model_subformset, standard_properties_subformsets, scientific_properties_subformsets)
+                data.update(subform_data)
 
     for scientific_property_formset in scientific_properties_formsets.values():
         scientific_property_formset_data = get_data_from_formset(scientific_property_formset)
@@ -1604,27 +1612,43 @@ def get_data_from_existing_edit_forms(model_formset,standard_properties_formsets
     return data_copy
 
 
-def get_data_from_edit_forms(model_formset,standard_properties_formsets,scientific_properties_formsets):
+def get_data_from_edit_forms(model_formset, standard_properties_formsets, scientific_properties_formsets, simulate_post=False):
 
     data = {}
 
     model_formset_data = get_data_from_formset(model_formset)
     data.update(model_formset_data)
 
-    # TODO: handle nested formsets here
-    # I AM HERE
     for standard_property_formset in standard_properties_formsets.values():
         standard_property_formset_data = get_data_from_formset(standard_property_formset)
         data.update(standard_property_formset_data)
 
+        for standard_property_form in standard_property_formset:
+            field_type = standard_property_form.get_current_field_value("field_type")
+            customizer = standard_property_form.customizer
+            if field_type == MetadataFieldTypes.RELATIONSHIP and customizer.relationship_show_subform:
+
+                (subform_customizer, model_subformset, standard_properties_subformsets, scientific_properties_subformsets) = \
+                    standard_property_form.get_subform_tuple()
+
+                subform_data = get_data_from_edit_forms(model_subformset, standard_properties_subformsets, scientific_properties_subformsets, simulate_post=simulate_post)
+                data.update(subform_data)
 
     for scientific_property_formset in scientific_properties_formsets.values():
         scientific_property_formset_data = get_data_from_formset(scientific_property_formset)
         data.update(scientific_property_formset_data)
 
-    data_copy = data.copy()
-    for key, value in data.iteritems():
-        if value == None:
-            data_copy.pop(key)
-
-    return data_copy
+    # THIS BIT IS REQUIRED TO SIMULATE POST DATA TO VIEWS
+    # (IN DJANGO IF A FIELD HAS NO VALUE IT DOES NOT GET INCLUDED UPON FORM SUBMISSION)
+    # HOWEVER, WHEN USING THIS FN IN TESTING - WHERE I DO NOT INTEND TO USE THE RETURNED DATA AS A POST -
+    # I RUN INTO PROBLEMS B/C THE get_data_from_form / get_data_from_formset SEARCHES FOR DATA FROM ALL FORM FIELDS
+    # SO IF I RUN get_data_from_edit_forms WITH THE INTENTION OF USING IT AS A POST,
+    # I NEED TO ENSURE THAT I CLEAN THE DATA BEFORE SENDING THE POST
+    if simulate_post:
+        data_copy = data.copy()
+        for key, value in data.iteritems():
+            if value == None:
+                data_copy.pop(key)
+        return data_copy
+    else:
+        return data

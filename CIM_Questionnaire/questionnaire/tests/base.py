@@ -85,71 +85,75 @@ class TestQuestionnaireBase(TestCase):
         self.user = test_user
         self.super_user = test_superuser
 
-        # SETUP DEFAULT PROJECT
-        test_project = MetadataProject(name="project", title="Test Project", active=True, authenticated=False)
-        test_project.save()
-        project_qs = MetadataProject.objects.all()
-        self.assertEqual(len(project_qs), 1)
-        self.project = test_project
+        # REPLACED ALL OF THIS W/ create_static_x() FNS BELOW
+        self.create_static_content()
+        # # SETUP DEFAULT PROJECT
+        # test_project = MetadataProject(name="project", title="Test Project", active=True, authenticated=False)
+        # test_project.save()
+        # project_qs = MetadataProject.objects.all()
+        # self.assertEqual(len(project_qs), 1)
+        # self.project = test_project
+        #
+        # # SETUP DEFAULT VERSION
+        # test_version_path = os.path.join(VERSION_UPLOAD_PATH, "test_version.xml")
+        # test_version = MetadataVersion(name="version", file=test_version_path)
+        # test_version.save()
+        # version_qs = MetadataVersion.objects.all()
+        # self.assertEqual(len(version_qs), 1)
+        # self.version = test_version
+        #
+        # # SETUP DEFAULT CATEGORIZATION
+        # test_categorization_path = os.path.join(CATEGORIZATION_UPLOAD_PATH, "test_categorization.xml")
+        # test_categorization = MetadataCategorization(name="categorization", file=test_categorization_path)
+        # test_categorization.save()
+        # categorization_qs = MetadataCategorization.objects.all()
+        # self.assertEqual(len(categorization_qs), 1)
+        # self.categorization = test_categorization
+        #
+        # # SETUP DEFAULT VOCABULARY
+        # test_document_type = "modelcomponent"
+        # self.assertIn(test_document_type, CIM_DOCUMENT_TYPES, msg="Unrecognized vocabulary document type: %s" % (test_document_type))
+        # test_vocabulary_path = os.path.join(VOCABULARY_UPLOAD_PATH, "test_vocabulary_bdl.xml")
+        # test_vocabulary = MetadataVocabulary(name="vocabulary", file=test_vocabulary_path, document_type=test_document_type)
+        # test_vocabulary.save()
+        # vocabulary_qs = MetadataVocabulary.objects.all()
+        # self.assertEqual(len(vocabulary_qs), 1)
+        # self.vocabulary = test_vocabulary
+        #
+        # # SETUP RELATIONS AMONG THOSE DEFAULT OBJECTS
+        # test_version.categorization = test_categorization
+        # test_version.save()
+        # test_project.vocabularies.add(test_vocabulary)
+        # test_project.save()
+        #
+        # # REGISTER THE DEFAULT OBJECTS TO GET PROXIES
+        # test_version.register()
+        # test_version.save()
+        # test_categorization.register()
+        # test_categorization.save()
+        # test_vocabulary.register()
+        # test_vocabulary.save()
+        # model_proxy_qs = MetadataModelProxy.objects.all()
+        # standard_category_proxy_qs = MetadataStandardCategoryProxy.objects.all()
+        # scientific_category_proxy_qs = MetadataScientificCategoryProxy.objects.all()
+        # standard_property_proxy_qs = MetadataStandardPropertyProxy.objects.all()
+        # scientific_property_proxy_qs = MetadataScientificPropertyProxy.objects.all()
+        # component_proxy_qs = MetadataComponentProxy.objects.all()
+        # self.assertEqual(len(model_proxy_qs), 3, msg="Unexpected number of MetadataModelProxy.  Did you change %s" % (test_version.file.path))
+        # self.assertEqual(len(standard_category_proxy_qs), 3, msg="Unexpected number of MetadataStandardCategoryProxy.  Did you change %s" % (test_version.file.path))
+        # self.assertEqual(len(scientific_category_proxy_qs), 10, msg="Unexpected number of MetadataScientificCategoryProxy.  Did you change %s" % (test_vocabulary.file.path))
+        # self.assertEqual(len(standard_property_proxy_qs), 11, msg="Unexpected number of MetadataStandardPropertyProxy.  Did you change %s" % (test_version.file.path))
+        # self.assertEqual(len(scientific_property_proxy_qs), 9, msg="Unexpected number of MetadataScientificCategoryProxy.  Did you change %s" % (test_vocabulary.file.path))
+        # self.assertEqual(len(component_proxy_qs), 5, msg="Unexpected number of MetadataComponentProxy.  Did you change %s" % (test_vocabulary.file.path))
 
-        # SETUP DEFAULT VERSION
-        test_version_path = os.path.join(VERSION_UPLOAD_PATH, "test_version.xml")
-        test_version = MetadataVersion(name="version", file=test_version_path)
-        test_version.save()
-        version_qs = MetadataVersion.objects.all()
-        self.assertEqual(len(version_qs), 1)
-        self.version = test_version
-
-        # SETUP DEFAULT CATEGORIZATION
-        test_categorization_path = os.path.join(CATEGORIZATION_UPLOAD_PATH, "test_categorization.xml")
-        test_categorization = MetadataCategorization(name="categorization", file=test_categorization_path)
-        test_categorization.save()
-        categorization_qs = MetadataCategorization.objects.all()
-        self.assertEqual(len(categorization_qs), 1)
-        self.categorization = test_categorization
-
-        # SETUP DEFAULT VOCABULARY
         test_document_type = "modelcomponent"
-        self.assertIn(test_document_type, CIM_DOCUMENT_TYPES, msg="Unrecognized vocabulary document type: %s" % (test_document_type))
-        test_vocabulary_path = os.path.join(VOCABULARY_UPLOAD_PATH, "test_vocabulary_bdl.xml")
-        test_vocabulary = MetadataVocabulary(name="vocabulary", file=test_vocabulary_path, document_type=test_document_type)
-        test_vocabulary.save()
-        vocabulary_qs = MetadataVocabulary.objects.all()
-        self.assertEqual(len(vocabulary_qs), 1)
-        self.vocabulary = test_vocabulary
 
-        # SETUP RELATIONS AMONG THOSE DEFAULT OBJECTS
-        test_version.categorization = test_categorization
-        test_version.save()
-        test_project.vocabularies.add(test_vocabulary)
-        test_project.save()
-
-        # REGISTER THE DEFAULT OBJECTS TO GET PROXIES
-        test_version.register()
-        test_version.save()
-        test_categorization.register()
-        test_categorization.save()
-        test_vocabulary.register()
-        test_vocabulary.save()
-        model_proxy_qs = MetadataModelProxy.objects.all()
-        standard_category_proxy_qs = MetadataStandardCategoryProxy.objects.all()
-        scientific_category_proxy_qs = MetadataScientificCategoryProxy.objects.all()
-        standard_property_proxy_qs = MetadataStandardPropertyProxy.objects.all()
-        scientific_property_proxy_qs = MetadataScientificPropertyProxy.objects.all()
-        component_proxy_qs = MetadataComponentProxy.objects.all()
-        self.assertEqual(len(model_proxy_qs), 3, msg="Unexpected number of MetadataModelProxy.  Did you change %s" % (test_version.file.path))
-        self.assertEqual(len(standard_category_proxy_qs), 3, msg="Unexpected number of MetadataStandardCategoryProxy.  Did you change %s" % (test_version.file.path))
-        self.assertEqual(len(scientific_category_proxy_qs), 10, msg="Unexpected number of MetadataScientificCategoryProxy.  Did you change %s" % (test_vocabulary.file.path))
-        self.assertEqual(len(standard_property_proxy_qs), 11, msg="Unexpected number of MetadataStandardPropertyProxy.  Did you change %s" % (test_version.file.path))
-        self.assertEqual(len(scientific_property_proxy_qs), 9, msg="Unexpected number of MetadataScientificCategoryProxy.  Did you change %s" % (test_vocabulary.file.path))
-        self.assertEqual(len(component_proxy_qs), 5, msg="Unexpected number of MetadataComponentProxy.  Did you change %s" % (test_vocabulary.file.path))
-
-        proxy_to_test = test_version.model_proxies.get(name__iexact=test_document_type)
-        vocabularies_to_test = test_project.vocabularies.filter(document_type__iexact=test_document_type)
+        proxy_to_test = self.version.model_proxies.get(name__iexact=test_document_type)
+        vocabularies_to_test = self.project.vocabularies.filter(document_type__iexact=test_document_type)
 
         # SETUP DEFAULT CUSTOMIZERS
         (test_model_customizer, test_standard_category_customizers, test_standard_property_customizers, test_scientific_category_customizers, test_scientific_property_customizers) = \
-            MetadataCustomizer.get_new_customizer_set(test_project, test_version, proxy_to_test, vocabularies_to_test)
+            MetadataCustomizer.get_new_customizer_set(self.project, self.version, proxy_to_test, vocabularies_to_test)
         # add some one-off customizations as if this had been filled out in the form...
         test_model_customizer.name = "customizer"
         test_model_customizer.default = True
@@ -178,7 +182,7 @@ class TestQuestionnaireBase(TestCase):
                 model_key = u"%s_%s" % (vocabulary_key, component_key)
                 reordered_test_scientific_property_proxies[model_key] = [scientific_property_customizer.proxy for scientific_property_customizer in scientific_property_customizer_list]
         (test_models, test_standard_properties, test_scientific_properties) = \
-            MetadataModel.get_new_realization_set(test_project, test_version, proxy_to_test, reordered_test_standard_property_proxies, reordered_test_scientific_property_proxies, test_model_customizer, vocabularies_to_test)
+            MetadataModel.get_new_realization_set(self.project, self.version, proxy_to_test, reordered_test_standard_property_proxies, reordered_test_scientific_property_proxies, test_model_customizer, vocabularies_to_test)
         MetadataModel.save_realization_set(test_models,test_standard_properties,test_scientific_properties)
         model_qs = MetadataModel.objects.all()
         standard_property_qs = MetadataStandardProperty.objects.all()
@@ -194,6 +198,10 @@ class TestQuestionnaireBase(TestCase):
     #     # but it's not needed for the db since each test is run in its own transaction
     #     pass
 
+
+    ##############################
+    # some additional assertions #
+    ##############################
 
     def assertQuerysetEqual(self, qs1, qs2):
         """Tests that two django querysets are equal"""
@@ -233,6 +241,75 @@ class TestQuestionnaireBase(TestCase):
         file_exists = os.path.exists(file_path)
 
         return self.assertEqual(file_exists, False, msg=msg)
+
+
+    #################################################################################
+    # the fns below are used to setup static db content                             #
+    # they should be used in conjunction w/ fixtures for customizers & realizations #
+    #################################################################################
+
+    def create_static_content(self):
+
+        self.create_static_version()
+        self.create_static_vocabulary()
+        self.create_static_project()
+
+    def create_static_version(self):
+
+        test_categorization_path = os.path.join(CATEGORIZATION_UPLOAD_PATH, "test_categorization.xml")
+        test_categorization = MetadataCategorization(name="categorization", file=test_categorization_path)
+        test_categorization.save()
+
+        test_version_path = os.path.join(VERSION_UPLOAD_PATH, "test_version.xml")
+        test_version = MetadataVersion(name="version", file=test_version_path, categorization=test_categorization)
+        test_version.save()
+
+        test_version.register()
+        test_version.save()
+        test_categorization.register()
+        test_categorization.save()
+
+        model_proxy_qs = MetadataModelProxy.objects.all()
+        standard_category_proxy_qs = MetadataStandardCategoryProxy.objects.all()
+        standard_property_proxy_qs = MetadataStandardPropertyProxy.objects.all()
+        self.assertEqual(len(model_proxy_qs), 3, msg="Unexpected number of MetadataModelProxy.  Did you change %s" % (test_version.file.path))
+        self.assertEqual(len(standard_category_proxy_qs), 3, msg="Unexpected number of MetadataStandardCategoryProxy.  Did you change %s" % (test_version.file.path))
+        self.assertEqual(len(standard_property_proxy_qs), 11, msg="Unexpected number of MetadataStandardPropertyProxy.  Did you change %s" % (test_version.file.path))
+
+        self.version = test_version
+        self.categorization = test_categorization
+
+
+    def create_static_vocabulary(self):
+
+        test_document_type = "modelcomponent"
+        self.assertIn(test_document_type, CIM_DOCUMENT_TYPES, msg="Unrecognized vocabulary document type: %s" % (test_document_type))
+        test_vocabulary_path = os.path.join(VOCABULARY_UPLOAD_PATH, "test_vocabulary_bdl.xml")
+        test_vocabulary = MetadataVocabulary(name="vocabulary", file=test_vocabulary_path, document_type=test_document_type)
+        test_vocabulary.save()
+
+        test_vocabulary.register()
+        test_vocabulary.save()
+
+        component_proxy_qs = MetadataComponentProxy.objects.all()
+        scientific_category_proxy_qs = MetadataScientificCategoryProxy.objects.all()
+        scientific_property_proxy_qs = MetadataScientificPropertyProxy.objects.all()
+        self.assertEqual(len(component_proxy_qs), 5, msg="Unexpected number of MetadataComponentProxy.  Did you change %s" % (test_vocabulary.file.path))
+        self.assertEqual(len(scientific_category_proxy_qs), 10, msg="Unexpected number of MetadataScientificCategoryProxy.  Did you change %s" % (test_vocabulary.file.path))
+        self.assertEqual(len(scientific_property_proxy_qs), 9, msg="Unexpected number of MetadataScientificCategoryProxy.  Did you change %s" % (test_vocabulary.file.path))
+
+        self.vocabulary = test_vocabulary
+
+
+    def create_static_project(self,**kwargs):
+        vocabularies = kwargs.pop("vocabularies",[self.vocabulary])
+        test_project = MetadataProject(name="project", title="Test Project", active=True, authenticated=False)
+        test_project.save()
+        for vocabulary in vocabularies:
+            test_project.vocabularies.add(vocabulary)
+        test_project.save()
+        self.project = test_project
+
 
     ##########################################################################
     # the fns below get forms exactly as they would have been setup by views #

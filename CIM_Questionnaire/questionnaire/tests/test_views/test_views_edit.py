@@ -103,7 +103,7 @@ class Test(TestQuestionnaireBase):
     #
     #     edit_forms = self.get_new_edit_forms(project_name=project_name, version_name=version_name, model_name=model_name)
     #
-    #     test_data = get_data_from_edit_forms(edit_forms["model_formset"], edit_forms["standard_properties_formsets"], edit_forms["scientific_properties_formsets"])
+    #     test_data = get_data_from_edit_forms(edit_forms["model_formset"], edit_forms["standard_properties_formsets"], edit_forms["scientific_properties_formsets"], simulate_post=True)
     #
     #     # ("follow=True" allows the context setup in the initial view to be retained in the redirected view [http://stackoverflow.com/questions/16143149/django-testing-check-messages-for-a-view-that-redirects])
     #     response = self.client.post(request_url, data=test_data, follow=True)
