@@ -22,6 +22,7 @@ from CIM_Questionnaire.questionnaire.models.metadata_version import MetadataVers
 from CIM_Questionnaire.questionnaire.models.metadata_proxy import MetadataModelProxy
 from CIM_Questionnaire.questionnaire.models.metadata_customizer import MetadataCustomizer, MetadataModelCustomizer, MetadataStandardPropertyCustomizer, MetadataScientificPropertyCustomizer
 from CIM_Questionnaire.questionnaire.models.metadata_model import MetadataModel, MetadataStandardProperty, MetadataScientificProperty
+from CIM_Questionnaire.questionnaire.models.metadata_model import get_model_parent_dictionary
 
 from CIM_Questionnaire.questionnaire.forms.forms_edit import create_new_edit_forms_from_models, create_existing_edit_forms_from_models, create_edit_forms_from_data, save_valid_forms
 
@@ -163,12 +164,7 @@ def questionnaire_edit_new(request, project_name="", model_name="", version_name
     (models, standard_properties, scientific_properties) = \
         MetadataModel.get_new_realization_set(project, version, model_proxy, standard_property_proxies, scientific_property_proxies, model_customizer, vocabularies)
 
-    model_parent_dictionary = {}
-    for model in models:
-        if model.parent:
-            model_parent_dictionary[model.get_model_key()] = model.parent.get_model_key()
-        else:
-            model_parent_dictionary[model.get_model_key()] = None
+    model_parent_dictionary = get_model_parent_dictionary(models)
 
     if request.method == "GET":
 

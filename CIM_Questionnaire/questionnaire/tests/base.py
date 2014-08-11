@@ -28,7 +28,7 @@ from CIM_Questionnaire.questionnaire.forms.forms_customize import get_data_from_
 
 from CIM_Questionnaire.questionnaire.fields import MetadataFieldTypes, EnumerationFormField, CardinalityFormField
 
-from CIM_Questionnaire.questionnaire.utils import add_parameters_to_url
+from CIM_Questionnaire.questionnaire.utils import add_parameters_to_url, get_form_by_field, get_forms_by_field
 from CIM_Questionnaire.questionnaire.utils import CIM_DOCUMENT_TYPES
 
 
@@ -422,7 +422,7 @@ class TestQuestionnaireBase(TestCase):
     #######################################################################################
 
 
-    def create_customizer_set_with_subforms(self,project,version,proxy,properties_with_subforms=[]):
+    def create_customizer_set_with_subforms(self, project, version, proxy, properties_with_subforms=[]):
 
         # setup an additional customizer for testing purposes
         # this one uses subforms
@@ -457,13 +457,14 @@ class TestQuestionnaireBase(TestCase):
 
         self.assertIn("model_id", session_variables)
         self.assertEqual(session_variables["checked_arguments"], True)
-        self.assertEqual(len(message_variables),1)
-        self.assertEqual(message_variables[0].tags,messages.DEFAULT_TAGS[messages.SUCCESS])
-        self.assertEqual(response.status_code,200)
+        self.assertEqual(len(message_variables), 1)
+        self.assertEqual(message_variables[0].tags, messages.DEFAULT_TAGS[messages.SUCCESS])
+        self.assertEqual(response.status_code, 200)
 
         parent_customizer = MetadataModelCustomizer.objects.get(pk=session_variables["model_id"])
 
         for property_name in properties_with_subforms:
+
             property = parent_customizer.standard_property_customizers.get(name=property_name)
             self.assertEqual(property.field_type,MetadataFieldTypes.RELATIONSHIP)
 
@@ -485,6 +486,7 @@ class TestQuestionnaireBase(TestCase):
 
             property.relationship_show_subform = True
             property.subform_customizer = child_customizer
+
             property.save()
 
         return parent_customizer

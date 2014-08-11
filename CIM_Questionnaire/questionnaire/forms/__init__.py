@@ -68,19 +68,6 @@ class MetadataForm(ModelForm):
         return ret
 
 
-    # def is_valid(self,*args,**kwargs):
-    #     """
-    #     Ensure that there are no id="None" in the data to be validated
-    #     """
-    #
-    #     id_key = self.prefix + "-id" if self.prefix else "id"
-    #     if id_key in self.data:
-    #         if self.data[id_key] == "None":
-    #             self.data[id_key] = None
-    #
-    #     return super(MetadataForm,self).is_valid(*args,**kwargs)
-
-
 class MetadataCustomizerForm(MetadataForm):
 
     pass

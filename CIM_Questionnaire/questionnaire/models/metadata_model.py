@@ -20,54 +20,61 @@ Summary of module goes here
 
 """
 
-from django.db                  import models
-from django.contrib             import admin
-from django.db.models.loading   import cache
-
-from south.db                   import db
-
 from django.utils import timezone
 from django.template.defaultfilters import slugify
-
-from questionnaire.utils        import *
-from questionnaire.fields       import *
-from questionnaire.models       import *
-
-from CIM_Questionnaire.questionnaire.fields import EnumerationField
-from CIM_Questionnaire.questionnaire.utils import DEFAULT_VOCABULARY
 
 from django.db import models
 
 from mptt.models import MPTTModel, TreeForeignKey
 
-############################################
-# create a hiearchy of models based on the #
-# built-in hiearchical relationships that  #
-# mppt adds to components                  #
-############################################
+from CIM_Questionnaire.questionnaire.fields import MetadataFieldTypes, EnumerationField
 
+from CIM_Questionnaire.questionnaire.utils import APP_LABEL, DEFAULT_VOCABULARY, LIL_STRING, SMALL_STRING, BIG_STRING, HUGE_STRING, QuestionnaireError
+from CIM_Questionnaire.questionnaire.utils import find_in_sequence
+
+#############################################
+# create a hierarchy of models based on the #
+# built-in hierarchical relationships that  #
+# mppt adds to components                   #
+#############################################
 
 def create_models_from_components(component_node,model_parameters,models=[]):
-        title = model_parameters["title"]
-        model_parameters["title"] = title[:title.index(" : ")] + " : " + component_node.name
-        model_parameters["component_key"] = slugify(component_node.name)
+    """
+    recursively look through mppt components to recreate that hierarchy in models
+    :param component_node:
+    :param model_parameters:
+    :param models:
+    :return: None
+    """
+    title = model_parameters["title"]
+    model_parameters["title"] = title[:title.index(" : ")] + " : " + component_node.name
+    model_parameters["component_key"] = slugify(component_node.name)
 
-        model = MetadataModel(**model_parameters)
-        models.append(model)
-        for child_component in component_node.get_children():
-            model_parameters["parent"] = model
-            create_models_from_components(child_component,model_parameters,models)
+    model = MetadataModel(**model_parameters)
+    models.append(model)
+    for child_component in component_node.get_children():
+        model_parameters["parent"] = model
+        create_models_from_components(child_component,model_parameters,models)
+
+
+def get_model_parent_dictionary(models):
+    """
+    given a list of models, returns a dictionary of parent-child relationships (based on keys)
+    :param models:
+    :return: model_instances
+    """
+    model_parent_dictionary = {}
+    for model in models:
+        if model.parent:
+            model_parent_dictionary[model.get_model_key()] = model.parent.get_model_key()
+        else:
+            model_parent_dictionary[model.get_model_key()] = None
+    return model_parent_dictionary
 
 
 #################
 # MetadataModel #
 #################
-
-def find_model_by_key(key,sequence):
-    for model in sequence:
-        if model.get_model_key() == key:
-            return model
-    return None
 
 class MetadataModel(MPTTModel):
     # ideally, MetadataModel should be an ABC
@@ -106,14 +113,14 @@ class MetadataModel(MPTTModel):
     order           = models.PositiveIntegerField(blank=True,null=True)
 
     def __unicode__(self):
-        label_property = find_in_sequence(lambda property: property.is_label==True,self.standard_properties.all())
+        label_property = find_in_sequence(lambda property: property.is_label == True, self.standard_properties.all())
         if label_property:
-            return u"%s : %s" % (self.name,label_property.get_value())
+            return u"%s : %s" % (self.name, label_property.get_value())
         else:
             return u'%s' % (self.name)
 
     def get_model_key(self):
-        return u"%s_%s" % (self.vocabulary_key,self.component_key)
+        return u"%s_%s" % (self.vocabulary_key, self.component_key)
     
     def reset(self,reset_properties=False):
         # this resets values according to the proxy
@@ -136,7 +143,7 @@ class MetadataModel(MPTTModel):
         if not self.id:
             self.created = timezone.now()
         self.last_modified = timezone.now()
-        super(MetadataModel,self).save(*args,**kwargs)
+        super(MetadataModel, self).save(*args, **kwargs)
 
     @classmethod
     def get_new_realization_set(cls, project, version, model_proxy, standard_property_proxies, scientific_property_proxies, model_customizer, vocabularies,  is_subrealization=False):
@@ -315,7 +322,7 @@ class MetadataStandardProperty(MetadataProperty):
         field_type = self.field_type
         if field_type == MetadataFieldTypes.ATOMIC:
             return self.atomic_value
-        elif field_type == MetadaFieldTypes.ENUMERATION:
+        elif field_type == MetadataFieldTypes.ENUMERATION:
             # TODO
             pass
         else: # MetadataFieldTypes.RELATIONSHIP

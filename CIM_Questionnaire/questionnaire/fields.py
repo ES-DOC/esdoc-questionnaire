@@ -57,15 +57,16 @@ class EnumerationFormField(django.forms.fields.MultipleChoiceField):
         # if this is _not_ a multi enumeration,
         # then the value will be a single string rather than a list;
         # change it into a list so that validation works.
-        if isinstance(value,basestring):
-            value = [value]
+        # TODO: DOUBLE-CHECK THAT CALLING to_python BELOW WILL TAKE CARE OF THIS
+        # if value and isinstance(value,basestring):
+        #     value = [value]
 
         # an enumeration can be invalid in 2 ways:
         # 1) specifying a value other than that provided by choices (recall that choices is set in the form initialization fns)
         # 2) not specifying a value when field is required
+        value = self.to_python(value)
         if value:
             # this block is mostly taken from the super validate() fn
-            value = self.to_python(value)
             for val in value:
                 if not self.valid_value(val):
                     msg = "Select a valid choice, '%s' is not among the available choices" % (val)
@@ -314,78 +315,4 @@ MODELFIELD_MAP = {
     "timefield"             : [ models.TimeField,            { } ],
     "urlfield"              : [ models.URLField,             { } ],
 }
-
-class MetadataField(models.Field):
-    """
-    the base class for all metadata fields (attributes)
-    """
-    class Meta:
-        abstract = True
-
-    name = ""
-    type = ""
-
-    def contribute_to_class(self,cls,name,*args,**kwargs):
-        ### in Django > 1.6 the virtual_only kwargs seems to be deprecated
-        kwargs.pop("virtual_only",False)
-        super(MetadataField,self).contribute_to_class(cls,name)
-
-def isAtomicField(field_type):
-    return field_type.lower() in MODELFIELD_MAP.iterkeys()
-
-def isRelationshipField(field_type):
-    return field_type.lower() in [field.type.lower() for field in MetadataRelationshipField.__subclasses__()]
-
-def isEnumerationField(field_type):
-    return field_type.lower() in [MetadataEnumerationField.type.lower()]
-
-class MetadataAtomicField(MetadataField):
-    type = "AtomicField"
-
-    @classmethod
-    def Factory(cls,field_class_name,**kwargs):
-        try:
-            field_class_info    = MODELFIELD_MAP[field_class_name.lower()]
-            field_class         = field_class_info[0]
-            field_class_kwargs  = field_class_info[1]
-        except:
-            msg = "unknown field type: '%s'" % field_class_name
-            print msg
-            raise QuestionnaireError(msg)
-
-        class _MetadataAtomicField(cls,field_class):
-
-            def __init__(self,*args,**kwargs):
-                kwargs.update(field_class_kwargs)
-                super(_MetadataAtomicField,self).__init__(**kwargs)
-                self.type = field_class_name
-
-            def south_field_triple(self):
-                field_class_path = "django.db.models.fields" + "." + field_class.__name__
-                args,kwargs = introspector(self)
-                return (field_class_path,args,kwargs)
-
-        return _MetadataAtomicField(**kwargs)
-
-
-class MetadataRelationshipField(MetadataField):
-    class Meta:
-        abstract = True
-
-    type = "RelationshipField"
-
-    sourceModelName    = None
-    sourceAppName      = None
-    targetModelName    = None
-    targetAppName      = None
-
-    def __init__(self,*args,**kwargs):
-        # explicitly call super on this base class
-        # so that the next item in inheritance calls its initializer
-        super(MetadataRelationshipField,self).__init__(*args,**kwargs)
-
-
-class MetadataEnumerationField(MetadataField):
-    type = "EnumerationField"
-    pass
 
