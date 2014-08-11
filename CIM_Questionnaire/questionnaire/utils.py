@@ -59,6 +59,8 @@ def xpath_fix(node, xpath):
 # constants #
 #############
 
+MONOPOLY = False
+
 APP_LABEL = "questionnaire"
 
 LIL_STRING   = 128
@@ -202,6 +204,33 @@ def validate_file_schema(value,schema_path):
 ###########################
 # form/field manipulation #
 ###########################
+
+def get_form_by_field(formset,field_name,field_value):
+    """
+    returns the 1st form in a formset whose specified field has the specified value
+    :param formset: formset to check
+    :param field_name: name of field to check
+    :parem field_value: value of field to check
+    :return: matching form or None
+    """
+    for form in formset:
+        if form.get_current_field_value(field_name) == field_value:
+            return form
+    return None
+
+def get_forms_by_field(formset,field_name,field_value):
+    """
+    returns all forms in a formset whose specified field has the specified value
+    :param formset: formset to check
+    :param field_name: name of field to check
+    :param field_value: value of field to check
+    :return: list of matching forms
+    """
+    forms = []
+    for form in formset:
+        if form.get_current_field_value(field_name) == field_value:
+            forms.append(form)
+    return forms
 
 def remove_form_errors(form):
     form.errors["__all__"] = form.error_class()
@@ -517,6 +546,63 @@ def get_joined_keys_dict(dct):
         for k2, v2 in v.iteritems():
             ret[u'{0}_{1}'.format(k, k2)] = v2
     return ret
+
+
+from collections import namedtuple
+import itertools
+
+def itr_row(key, sequence):
+    for element in sequence:
+        yield ({key: element})
+
+def itr_product_keywords(keywords, as_namedtuple=False):
+    if as_namedtuple:
+        yld_tuple = namedtuple('ITesterKeywords', keywords.keys())
+
+    iterators = [itr_row(ki, vi) for ki, vi in keywords.iteritems()]
+    for dictionaries in itertools.product(*iterators):
+        yld = {}
+        for dictionary in dictionaries:
+            yld.update(dictionary)
+        if as_namedtuple:
+            yld = yld_tuple(**yld)
+        yield yld
+
+# sample usage...
+#
+# def test_iter(self):
+#
+#         test_document_type = "modelcomponent"
+#
+#         test_proxy = MetadataModelProxy.objects.get(version=self.version, name__iexact=test_document_type)
+#
+#         test_vocabularies = self.project.vocabularies.filter(document_type__iexact=test_document_type)
+#
+#         test_customizer = self.create_customizer_set_with_subforms(self.project, self.version, test_proxy, properties_with_subforms=["author"])
+#         (model_customizer,standard_category_customizers,standard_property_customizers,nested_scientific_category_customizers,nested_scientific_property_customizers) = \
+#             MetadataCustomizer.get_existing_customizer_set(test_customizer, test_vocabularies)
+#         scientific_property_customizers = get_joined_keys_dict(nested_scientific_property_customizers)
+#
+#
+#         standard_property_displayed_values = [True, False]
+#         standard_property_inherited_values = [True, False]
+#         standard_property_values_to_iterate_over = {
+#             "displayed" : standard_property_displayed_values,
+#             "inherited" : standard_property_inherited_values,
+#         }
+#
+#         for k in itr_product_keywords(standard_property_values_to_iterate_over):
+#                 # TODO: CAN I DO SOMETHING LIKE standard_property_customizers[i].__dict__.update(k)
+#               for field_name, field_value in k.iteritems():
+#                   standard_property_customizers[i].setattr(field_name,field_value)
+#
+#               if an-exeception-happens:
+#                   if k has invalid values:
+#                       continue
+#                   else:
+#                       raise
+#             import ipdb; ipdb.set_trace()
+#
 
 ################################################
 

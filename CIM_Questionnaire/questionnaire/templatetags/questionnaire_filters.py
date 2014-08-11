@@ -104,6 +104,7 @@ def is_admin_of(user, project):
 
 @register.filter
 def get_form_by_field(formset,field_tuple):
+    # TODO: USE FNS IN UTILS FOR THIS
     # returns the 1st form in a fieldset whose specified field has the specified value
     (field_name,field_value) = field_tuple.split('|')
     for form in formset:
@@ -114,6 +115,7 @@ def get_form_by_field(formset,field_tuple):
 
 @register.filter
 def get_forms_by_field(formset,field_tuple):
+    # TODO: USE FNS IN UTILS FOR THIS
     # returns all forms in a fieldset whose specified field has the specified value
     (field_name,field_value) = field_tuple.split('|')
     forms = []

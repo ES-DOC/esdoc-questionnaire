@@ -39,11 +39,11 @@ from CIM_Questionnaire.questionnaire import APP_LABEL
 
 class MetadataCustomizer(models.Model):
     class Meta:
-        app_label   = APP_LABEL
-        abstract    = True
+        app_label = APP_LABEL
+        abstract = True
 
-    created                 = models.DateTimeField(blank=True,null=True,editable=False)
-    last_modified           = models.DateTimeField(blank=True,null=True,editable=False)
+    created = models.DateTimeField(blank=True,null=True,editable=False)
+    last_modified = models.DateTimeField(blank=True,null=True,editable=False)
 
     def refresh(self):
         """re-gets the model from the db"""
@@ -53,9 +53,7 @@ class MetadataCustomizer(models.Model):
 
     def save(self,*args,**kwargs):
         if not self.id:
-            #self.created = datetime.datetime.today()
             self.created = timezone.now()
-        #self.last_modified = datetime.datetime.now()
         self.last_modified = timezone.now()
         super(MetadataCustomizer,self).save(*args,**kwargs)
 
@@ -133,48 +131,6 @@ class MetadataCustomizer(models.Model):
                         reset               = True,
                     )
                     scientific_property_customizers[vocabulary_key][component_key].append(scientific_property_customizer)
-
-        # scientific_category_customizers = {}
-        # scientific_property_customizers = {}
-        # for vocabulary in vocabularies:
-        #     vocabulary_key = slugify(vocabulary.name)
-        #     scientific_category_customizers[vocabulary_key] = {}
-        #     scientific_property_customizers[vocabulary_key] = {}
-        #     for component in vocabulary.component_proxies.all():
-        #         component_key = slugify(component.name)
-        #         model_key = u"%s_%s" % (vocabulary_key,component_key)
-        #         scientific_category_customizers[vocabulary_key][component_key] = []
-        #         scientific_property_customizers[vocabulary_key][component_key] = []
-        #         for scientific_property_proxy in component.scientific_properties.all():
-        #             #import ipdb; ipdb.set_trace()
-        #             scientific_category_proxy = scientific_property_proxy.category
-        #             if scientific_category_proxy:
-        #                 scientific_category_key = scientific_category_proxy.key
-        #                 if scientific_category_key in [scientific_category.key for scientific_category in scientific_category_customizers[vocabulary_key][component_key]]:
-        #                     scientific_category_customizer = find_category_by_key(scientific_category_key,scientific_category_customizers[vocabulary_key][component_key])
-        #                 else:
-        #                     scientific_category_customizer = MetadataScientificCategoryCustomizer(
-        #                         model_customizer=model_customizer,
-        #                         proxy=scientific_category_proxy,
-        #                         vocabulary_key=vocabulary_key,
-        #                         component_key=component_key,
-        #                         model_key=model_key
-        #                     )
-        #                     scientific_category_customizer.reset()
-        #                     scientific_category_customizers[vocabulary_key][component_key].append(scientific_category_customizer)
-        #             else:
-        #                 scientific_category_customizer = None
-        #
-        #             scientific_property_customizer = MetadataScientificPropertyCustomizer(
-        #                 model_customizer    = model_customizer,
-        #                 proxy               = scientific_property_proxy,
-        #                 vocabulary_key      = vocabulary_key,
-        #                 component_key       = component_key,
-        #                 model_key           = model_key,
-        #                 category            = scientific_category_customizer,
-        #                 reset               = True,
-        #             )
-        #             scientific_property_customizers[vocabulary_key][component_key].append(scientific_property_customizer)
 
         return (model_customizer,standard_category_customizers,standard_property_customizers,scientific_category_customizers,scientific_property_customizers)
 
@@ -662,13 +618,8 @@ class MetadataStandardPropertyCustomizer(MetadataPropertyCustomizer):
         multiple_subforms = max == "*" or int(max) > 1
         return multiple_subforms
 
-
-    # TODO
-    # def render_as_form(self):
-    #     assert(self.field_type==MetadataFieldTypes.RELATIONSHIP)
-    #     min,max = self.relationship_cardinality.split("|")
-    #     multiple_subforms = max == "*" or int(max) > 1
-    #     return multiple_subforms
+    def render_as_form(self):
+        return not self.render_as_formset()
 
 class MetadataScientificPropertyCustomizer(MetadataPropertyCustomizer):
     class Meta:

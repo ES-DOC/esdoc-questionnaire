@@ -119,6 +119,9 @@ def ajax_customize_subform(request,**kwargs):
 
     else: # request.method == "POST":
 
+        from CIM_Questionnaire.questionnaire.utils import MONOPOLY
+        MONOPOLY = True
+
         data = request.POST
 
         (validity, model_customizer_form, standard_property_customizer_formset, scientific_property_customizer_formsets) = \
@@ -340,7 +343,8 @@ def ajax_select_realization(request,**kwargs):
                 # instead, I have to use exclude
                 if standard_properties_to_remove:
                     if realization_pk == empty_pk:
-                        standard_property_list.remove(standard_properties_to_remove)
+                        for sp in standard_properties_to_remove:
+                            standard_property_list.remove(sp)
                     else:
                         standard_property_list.exclude(id__in=[standard_property.pk for standard_property in standard_properties_to_remove])
 
@@ -357,7 +361,8 @@ def ajax_select_realization(request,**kwargs):
                 # instead, I have to use exclude
                 if scientific_properties_to_remove:
                     if realization_pk == empty_pk:
-                        scientific_property_list.remove(scientific_properties_to_remove)
+                        for sp in scientific_properties_to_remove:
+                            scientific_property_list.remove(sp)
                     else:
                         scientific_property_list.exclude(id__in=[scientific_property.pk for scientific_property in scientific_properties_to_remove])
 

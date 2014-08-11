@@ -715,6 +715,10 @@ class MetadataStandardPropertyForm(MetadataAbstractStandardPropertyForm):
 
 
     def has_changed(self):
+        # StandardProperties at this "top-level" (ie: not in a subform) should always be saved
+        # since top-level models are always saved and a model w/out its full compliment of standard properties doesn't make sense
+        # For StandardProperties which are nested w/in subforms (MetadataStandardPropertySubForm), we only want to save them if they
+        # have changed.  So I use the show_hidden_initial attribute to track this on the visible fields and do not override has_changed
         return True
 
 class MetadataStandardPropertySubForm(MetadataAbstractStandardPropertyForm):
@@ -741,12 +745,9 @@ class MetadataStandardPropertySubForm(MetadataAbstractStandardPropertyForm):
         # this is really really important!
         # this ensures that there is something to compare field data against so that I can truly tell is the model has changed
         # [http://stackoverflow.com/questions/11710845/in-django-1-4-do-form-has-changed-and-form-changed-data-which-are-undocument]
-        for field_name in self._meta.fields:
-            try:
-                self.fields[field_name].show_hidden_initial = True
-            except KeyError:
-                # inline formsets treat pk fields strangely, just ignore them in this context
-                pass
+        for field_name in self._value_fields:
+            # see comment above (MetadataStandardPropertyForm.has_changed) for an explanation of this line
+            self.fields[field_name].show_hidden_initial = True
 
     def force_clean(self):
         # alright, this is very confusing...
@@ -1361,6 +1362,7 @@ def create_existing_edit_subforms_from_models(models, model_customizer, standard
 def create_edit_forms_from_data(data, models, model_customizer, standard_properties, standard_property_customizers, scientific_properties, scientific_property_customizers):
     """This creates and validates forms based on POST data"""
 
+
     model_keys = [model.get_model_key() for model in models]
 
     model_formset = MetadataModelFormSetFactory(
@@ -1468,8 +1470,7 @@ def create_edit_subforms_from_data(data, models, model_customizer, standard_prop
     return (validity, model_formset, standard_properties_formsets, scientific_properties_formsets)
 
 
-def save_valid_forms(model_formset, standard_properties_formsets, scientific_properties_formsets, model_parent_dictionary={}):
-
+def save_valid_model_formset(model_formset, model_parent_dictionary={}):
     # force model_formset to save instances even if they haven't changed
     #model_instances = model_formset.save(commit=True)
     # TODO: MAKE THE commit KWARG CONDITIONAL ON WHETHER THE FORM CHANGED (OR IS NEW) TO CUT DOWN ON DB HITS
@@ -1484,36 +1485,45 @@ def save_valid_forms(model_formset, standard_properties_formsets, scientific_pro
             pass  # maybe this model didn't have a parent (or the dict was never passed to this fn)
         model_instance.save()
 
-    # for standard_property_formset in standard_properties_formsets.values():
-    #     standard_property_instances = standard_property_formset.save(commit=False)
-    #     for standard_property_instance in standard_property_instances:
-    #         standard_property_instance.save()
+    return model_instances
 
-    for standard_property_formset in standard_properties_formsets.values():
-        # using zip here is the only way that I managed to get saving to work
-        # I have to save via the inlineformset (so that the inline fk gets saved appropriately)
-        # but I also need access to the underlying form so I can check certain customization details
-        for standard_property_instance, standard_property_form in zip(standard_property_formset.save(commit=True),standard_property_formset.forms):
-            assert(standard_property_instance.name == standard_property_form.get_current_field_value("name"))
-            if standard_property_instance.field_type == MetadataFieldTypes.RELATIONSHIP and standard_property_form.customizer.relationship_show_subform:
+def save_valid_standard_properties_formset(standard_properties_formset):
+    # using zip here is the only way that I managed to get saving to work
+    # I have to save via the inlineformset (so that the inline fk gets saved appropriately)
+    # but I also need access to the underlying form so I can check certain customization details
+    standard_property_instances = []
+    for standard_property_instance, standard_property_form in zip(standard_properties_formset.save(commit=True),standard_properties_formset.forms):
+        assert(standard_property_instance.name == standard_property_form.get_current_field_value("name"))
+        if standard_property_instance.field_type == MetadataFieldTypes.RELATIONSHIP and standard_property_form.customizer.relationship_show_subform:
 
-                (subform_customizer, model_subformset, standard_properties_subformsets, scientific_properties_subformsets) = \
-                    standard_property_form.get_subform_tuple()
+            (subform_customizer, model_subformset, standard_properties_subformsets, scientific_properties_subformsets) = \
+                standard_property_form.get_subform_tuple()
 
-                for model_subform in model_subformset.forms:
-                    property_key = model_subform.prefix
+            for model_subform in model_subformset.forms:
+                property_key = model_subform.prefix
 
-                    subform_has_changed = any([
-                        # don't bother checking model_subformset - if the properties have changed, I'll be saving it regardless
-                        #model_subform.has_changed(),
-                        any([form.has_changed() for form in standard_properties_subformsets[property_key]]),
-                        any([form.has_changed() for form in scientific_properties_subformsets[property_key]]),
-                    ])
+                subform_has_changed = any([
+                    # don't bother checking model_subformset - if the properties have changed, I'll be saving it regardless
+                    #model_subform.has_changed(),
+                    any([form.has_changed() for form in standard_properties_subformsets[property_key]]),
+                    any([form.has_changed() for form in scientific_properties_subformsets[property_key]]),
+                ])
 
-                    if subform_has_changed:
-                        subform_model_instance = save_valid_subforms(model_subform,standard_properties_subformsets[property_key], scientific_properties_subformsets[property_key])
-                        standard_property_instance.relationship_value.add(subform_model_instance)
-                standard_property_instance.save()
+                if subform_has_changed:
+                    subform_model_instance = save_valid_subforms(model_subform,standard_properties_subformsets[property_key], scientific_properties_subformsets[property_key])
+                    standard_property_instance.relationship_value.add(subform_model_instance)
+            standard_property_instance.save()
+        standard_property_instances.append(standard_property_instance)
+
+    return standard_property_instances
+
+
+def save_valid_forms(model_formset, standard_properties_formsets, scientific_properties_formsets, model_parent_dictionary={}):
+
+    model_instances = save_valid_model_formset(model_formset, model_parent_dictionary=model_parent_dictionary)
+
+    for standard_properties_formset in standard_properties_formsets.values():
+        save_valid_standard_properties_formset(standard_properties_formset)
 
     for scientific_property_formset in scientific_properties_formsets.values():
         scientific_property_instances = scientific_property_formset.save(commit=False)
