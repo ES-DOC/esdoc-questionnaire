@@ -22,32 +22,39 @@
             // do this first so that the dialogs appear near the top of the page
             init_dialogs(parent);
 
+            // do this next, so it can happen while other widgets are loading
             render_msg($("#msg"));
 
-            init_widget(users,parent);
-            init_widget(readonlies,parent);
-            init_widget(buttons,parent);
-            init_widget(fieldsets,parent);
-            init_widget(dates,parent);
-            init_widget(tabs,parent);
-            init_widget(selects,parent);
-            init_widget(accordions,parent);
-            init_widget(helps,parent);
-            init_widget(enablers,parent);
+            init_widgets_on_show(fieldsets,$(parent).find(".collapsible_fieldset"))
+            init_widgets_on_show(tabs,$(parent).find(".tabs"));
+            init_widgets_on_show(helps,$(parent).find(".help_button"));
+            init_widgets_on_show(readonlies,$(parent).find(".readonly"));
+            init_widgets_on_show(dates,$(parent).find(".datetime,.date"));
+            init_widgets_on_show(accordions,$(parent).find(".accordion").not(".fake"));
+            init_widgets_on_show(dynamic_accordions,$(parent).find(".accordion .accordion_header"));
+            init_widgets_on_show(accordion_buttons,$(parent).find(".subform_toolbar button"));
+            init_widgets_on_show(dynamic_accordion_buttons,$(parent).find("button.add,button.remove,button.replace"));
+            /* TODO: accordion_headers
+            init_widgets_on_show(accordion_headers,$(parent).find(".scientific_property"));
+            */
+            init_widgets_on_show(selects,$(parent).find(".multiselect"));
+            init_widgets_on_show(enumerations,$(parent).find(".multiselect.open,.multiselect.nullable"));
+            init_widgets_on_show(autocompletes,$(parent).find(".autocomplete"));
+            init_widgets_on_show(enablers,$(parent).find(".enabler"))
 
-            // specific to the viewer/editor...
-            init_widget(panes,parent);
-            init_widget(treeviews,parent);
-            init_widget(enumerations,parent);
-            init_widget(autocompletes,parent);
-            init_widget(dynamic_accordions,parent);
+            init_widgets(users,$(parent).find("#user"));
+            init_widgets(buttons,$(parent).find("input.button"))
+            init_widgets(panes,$(parent).find(".pane"));
+            init_widgets(treeviews,$(parent).find(".treeview"));
 
-            /* make sure the accordion headers have updated their content */
+
+
+            /*
+            THIS CODE IS REPLACED BY THE accordion_headers FN ABOVE
             $(parent).find(".scientific_property .atomic_value").each(function() {
                 $(this).trigger("change");
             });
             $(parent).find(".scientific_property .ui-multiselect").each(function() {
-                /* (it's a bit harder w/ non-atomic-values) */
                 var source_name = $(this).prev(".multiselect").attr("name");
                 var target_name = source_name.replace("-enumeration_value", "-scientific_property_value")
                 $(this).find(".multiselect_header").change(function (event) {
@@ -56,86 +63,9 @@
                     $(target).val(source_value);
                 })
             });
+            */
 
-            /* add and remove formsets (and forms) */
-
-            $("button.add").button({
-                icons: { primary : "ui-icon-circle-plus" },
-                text: true
-            }).click(function(event) {
-                var max = $(event.target).prevAll("input[name='max']").val();
-                var accordion = $(event.target).closest("div.add").prev(".accordion");
-                var n_accordion_panes = $(accordion).find(".accordion_unit").length;
-                if (n_accordion_panes == max) { // don't need to explicitly check where max="*" b/c this comparison will still be untrue
-
-                    $("#confirm_dialog").html("Unable to add; this would create more than the maxium number of instances.");
-                    $("#confirm_dialog").dialog("option", {
-                        title: "add",
-                        dialogClass: "no_close",
-                        height: 200,
-                        width: 400,
-                        buttons: {
-                            ok: function () {
-                                $(this).dialog("close");
-                            }
-                        }
-                    }).dialog("open");
-
-                }
-                else {
-
-                    var dynamic_formset_add_button = $(event.target).closest("div.add").prev(".accordion").find(".add-row:last");
-                    $(dynamic_formset_add_button).click();
-                    // there is function bound to the dynamic-formset add event that will fire after that button is pressed
-                    // (I don't have to explicitly call add_subform)
-
-
-                }
-
-            });
-
-            $("button.remove").button({
-                icons: { primary : "ui-icon-circle-minus" },
-                text: true
-            });
-            /* the click event had to move to its own fn ("remove_subform" defined in questionnaire_edit.js), since as forms are dynamically added this js doesn't get rerun */
-
-            $("button.replace").button({
-                icons: { primary : "ui-icon-refresh" },
-                text: true
-            }).click(function(event) {
-
-                var accordion = $(event.target).closest(".form").find(".accordion:first");
-
-                $("#confirm_dialog").html("This will remove the current instance and replace it with either an existing or new instance.  You will be unable to undo this operation.  Are you sure you want to continue?");
-                $("#confirm_dialog").dialog("option", {
-                    title: "replace",
-                    dialogClass: "no_close",
-                    height: 200,
-                    width: 400,
-                    buttons: {
-                        yes : function () {
-
-                            var dynamic_formset_remove_button = $(accordion).find(".delete-row:last");
-                            $(dynamic_formset_remove_button).click();
-                            var dynamic_formset_add_button = $(accordion).find(".add-row:last");
-                            $(dynamic_formset_add_button).click();
-
-
-                            $(this).dialog("close")
-
-                        },
-                        no : function() {
-
-                            $(this).dialog("close");
-
-                        }
-                    }
-                }).dialog("open");
-
-            });
-
-             // do this last b/c some of the xpath depends on changes made by the above fns...
+            // do this last b/c some of the xpath depends on changes made by the above fns...
             init_errors(parent);
 
         }

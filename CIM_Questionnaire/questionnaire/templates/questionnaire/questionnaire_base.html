@@ -41,6 +41,28 @@
                 return this.indexOf(suffix, this.length - suffix.length) !== -1;
             };
 
+            /* redefining jquery show() and hide() fns
+             * so that I can bind event handlers to them
+             * (thanks to http://stackoverflow.com/questions/1225102/jquery-event-to-trigger-action-when-a-div-is-made-visible)
+            */
+            $.each(["show", "hide", "toggle"], function() {
+               var old_function = $.fn[this];
+               $.fn[this] = function() {
+                   var initially_hidden  = this.find(":hidden").add(this.filter(":hidden"));
+                   var initially_visible = this.find(":visible").add(this.filter(":visible"));
+                   var result = old_function.apply(this, arguments);
+                   var newly_visible = initially_hidden.filter(":visible");
+                   var newly_hidden  = initially_visible.filter(":hidden");
+                   newly_visible.each(function() {
+                       $(this).triggerHandler("show");
+                   });
+                   newly_hidden.each(function() {
+                       $(this).triggerHandler("hide");
+                   });
+                   return result;
+               }
+            });
+
         </script>
 
         <!-- page js -->
