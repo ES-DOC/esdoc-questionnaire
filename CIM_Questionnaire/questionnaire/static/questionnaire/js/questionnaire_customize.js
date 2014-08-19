@@ -499,6 +499,9 @@ function sort_accordions(sort_target,sort_key) {
        key_selector = ".accordion_header input[name$='-order']";
 
     }
+    else if (sort_key.indexOf("field_type")>0) {
+        key_selector = ".accordion_header input[name$='-field_type']";
+    }
     else {
         alert("unknown sort key: " + key)
     }

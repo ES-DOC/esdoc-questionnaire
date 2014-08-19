@@ -168,10 +168,14 @@ $.widget("questionnaire.multiselect", {
             },
             label : options.multiple ? options.emptyMultiText : options.emptySingleText,
             text : true
+        }).css({
+            "opacity": "1",
+            "width": "400px;",
+            "height" : "10px;"
         }).click(function() {
-           $(content).toggle();
-           var icon = $(this).find(".ui-icon:first");
-           $(icon).toggleClass("ui-icon-triangle-1-s ui-icon-triangle-1-e");
+            $(content).toggle();
+            var icon = $(this).find(".ui-icon:first");
+            $(icon).toggleClass("ui-icon-triangle-1-s ui-icon-triangle-1-e");
         });
 
         $(header).show(function(){

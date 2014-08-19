@@ -1,3 +1,4 @@
+var FOOBAR=0;
 
 /* BEGIN enable ajax access to the same domain */
 
@@ -56,129 +57,175 @@ $.ajaxSetup({
 /* functions to initialize jquery widgets */
 /* (widgets specific to edit/view or customize forms are defined in their respective js files) */
 
-function init_widget(init_fn,parent,force_init) {
-    force_init = typeof force_init !== 'undefined' ? force_init : false;
-    
-    initialized_class_name = "initialized_"+init_fn.name;
+/*  there are two different ways to initialize widgets:
+    immediately (all at once) via init_widget
+    or on the "show" event via init_widget_on_show
+    both of these fns take an initialization fn and only run than fn if it hasn't run before
+    the distinction between these fns is especially relevant for subforms; any new JQuery widgets
+    in  a subform must be initialized but a previously called global initializtion (via init_widget)
+    can interfere w/ additional initializations.  Therefore, it makes sense to use init_widget_on_show
+    with subforms.
+ */
 
-    // check if we've already initialized this widget for this parent element
-    if ($(parent).hasClass(initialized_class_name) && !(force_init)) {
-        // (quit if we have)
-        return;
+function init_widgets_on_show(init_fn, elements) {
+
+    $(elements).each(function() {
+        var initialized_widget_class_name = "initialized_" + init_fn.name;
+        $(this).on("show", function() {
+            if (! $(this).hasClass(initialized_widget_class_name) ) {
+                init_fn(this);
+                $(this).addClass(initialized_widget_class_name);
+            }
+        });
+    });
+
+}
+
+function init_widgets(init_fn, elements, force_init) {
+
+    force_init = typeof force_init !== 'undefined' ? force_init : false;
+
+    $(elements).each(function() {
+        var initialized_widget_class_name = "initialized_" + init_fn.name;
+        if (! $(this).hasClass(initialized_widget_class_name) || (force_init)) {
+            init_fn(this);
+            $(this).addClass(initialized_widget_class_name)
+        }
+    });
+
+}
+
+function users(element) {
+    $(element).find("a.button").button({});
+}
+
+function readonlies(element) {
+   $(element).closest("tr.field").find("input,textarea,select,button,span").each(function() {
+       $(this).addClass("ui-state-disabled");
+       $(this).prop("disabled",true);
+   });
+}
+
+function accordion_buttons(element) {
+
+    if ($(element).hasClass("expand")) {
+        $(element).button({
+            icons: {primary: "ui-icon-circle-triangle-s"},
+            text: true
+        }).click(function (event) {
+            var accordion = $(event.target).closest(".subform_toolbar").nextAll(".accordion:first");
+
+            // can't use the built-in plugin "active=all" option
+            // b/c accordions are wrapped in ".accordion_content"
+            // (to allow sorting in customizer and dynamic adding/removing in editor)
+            $(accordion).children(".accordion_unit").each(function () {
+                var header = $(this).find(".accordion_header:first");
+                if (!$(header).hasClass("open_accordion")) {
+                    $(header).click();
+                }
+            });
+        });
     }
 
-    // initialize this widget
-    init_fn(parent);
-    
-    // record that we initialized this widget,
-    // so we don't needlessly try to initialize it again
-    $(parent).addClass(initialized_class_name);
+    if ($(element).hasClass("collapse")) {
+        $(element).button({
+            icons: {primary: "ui-icon-circle-triangle-n"},
+            text: true
+        }).click(function (event) {
+            var accordion = $(event.target).closest(".subform_toolbar").nextAll(".accordion:first");
+
+            // as above, can't use the built-in plugin "active=none" option
+            $(accordion).children(".accordion_unit").each(function () {
+                var header = $(this).find(".accordion_header:first");
+                if ($(header).hasClass("open_accordion")) {
+                    $(header).click();
+                }
+            });
+        });
+    }
+
+    if ($(element).hasClass("sort")) {
+        $(element).button({
+            icons: { primary: "ui-icon-arrowthick-2-n-s"},
+            text: true
+        }).click(function (event) {
+            var menu = $(this).next(".sort_by").show().position({
+                my: "left top",
+                at: "left bottom",
+                of: this
+            });
+            $(document).one("click", function () {
+                // attaches a handler for "click" on the document;
+                // any click hides the menu
+                $(menu).hide();
+            });
+            return false;
+        });
+
+        $(element).find(".sort_by").each(function () {
+            $(this).menu().width("8em").hide();
+            $(this).click(function (event) {
+                var sort_key = $(event.target).attr("name");
+                var sort_target = $(event.target).closest(".tab_content").find(".accordion:first");
+                sort_accordions(sort_target, sort_key);
+                $(event.target).closest(".sort_by").hide();     // hide the sort_by menu
+                event.preventDefault();                         // don't actually follow the menu link (one of these is bound to work)
+                return false;                                   // don't actually follow the menu link (one of these is bound to work)
+            });
+        });
+    }
+
 }
 
-function users(parent) {
-    $(parent).find("#user a.button").button();
+function buttons(element) {
+    // submit buttons...
+    $(element).button({});
 }
 
-function readonlies(parent) {
-    $(parent).find(".readonly").each(function() {
-       $(this).closest("tr.field").find("input,textarea,select,button,span").each(function() {
-           $(this).addClass("ui-state-disabled");
-           $(this).prop("disabled",true);
-       });
-    });
+function enablers(element) {
+    $(element).trigger("change");
 }
 
-function buttons(parent) {
-    // standard buttons...
-    $(parent).find("button,.button").button();
-
-    // buttons for manipulating accordions...
-    $(parent).find(".subform_toolbar button.expand").button({
-         icons : {primary: "ui-icon-circle-triangle-s"},
-         text : true
-    }).click(function(event){
-        var accordion = $(event.target).closest(".subform_toolbar").nextAll(".accordion:first");
-
-        // can't use the built-in plugin option
-        // b/c accordions are wrapped in ".accordion_content"
-        // (to allow sorting in customizer form and dynamic adding/removing in editing forms)
-        //$(accordion).multiOpenAccordion("option","active","all");
-        $(accordion).children(".accordion_unit").each(function() {
-            var header = $(this).find(".accordion_header:first");
-            if (! $(header).hasClass("open_accordion")) {
-                $(header).click();
-            }
-        });
-    });
-    $(parent).find(".subform_toolbar button.collapse").button({
-         icons : {primary: "ui-icon-circle-triangle-n"},
-         text : true
-    }).click(function(event){
-        var accordion = $(event.target).closest(".subform_toolbar").nextAll(".accordion:first");
-
-        // as above, can't use the built-in plugin option
-        // b/c accordions are wrapped in ".accordion_content"
-        //$(accordion).multiOpenAccordion("option","active","none");
-        $(accordion).children(".accordion_unit").each(function() {
-            var header = $(this).find(".accordion_header:first");
-            if ($(header).hasClass("open_accordion")) {
-                $(header).click();
-            }
-        });
-    });
-    $(parent).find(".subform_toolbar button.sort").button({
-        icons : { primary : "ui-icon-arrowthick-2-n-s"},
-        text : true
-    }).click(function(event){
-        var menu = $(this).next(".sort_by").show().position({        
-            my : "left top",
-            at : "left bottom",
-            of : this
-        });
-        $(document).one("click",function() {
-            // attaches a handler for "click" on the document;
-            // any click hides the menu
-            $(menu).hide();
-        });
-        return false;
-
-    });
-
-    $(parent).find(".sort_by").each(function() {
-        $(this).menu().width("8em").hide();
-        $(this).click(function(event){
-            var sort_key = $(event.target).attr("name");
-            var sort_target = $(event.target).closest(".tab_content").find(".accordion:first");
-            sort_accordions(sort_target,sort_key);
-            $(event.target).closest(".sort_by").hide();     // hide the sort_by menu
-            event.preventDefault();                         // don't actually follow the menu link (one of these is bound to work)
-            return false;                                   // don't actually follow the menu link (one of these is bound to work)
-        });
-    });
-}
-
-function enablers(parent) {
-    $(parent).find(".enabler").trigger("change");
-}
-
-function dates(parent) {
-    $(parent).find(".date,.datetime").datepicker({
+function dates(element) {
+    $(element).datepicker({
         changeYear: true,
         showButtonPanel: false,
         showOn: 'button'
     }).next("button").button({
         icons: { primary: "ui-icon-calendar" },
         text: false
+    }).attr("title", "click to select date");
+}
+
+function xdates(parent) {
+    $(parent).find(".date,.datetime").each(function() {
+        var field_id = $(this).attr("id");
+        /* clear any previous setup, to ensure widget is bound to the current input element */
+        //$(this).next("button").button("destroy");
+        //$(this).datepicker('destroy');
+        if (! $(this).hasClass("hasDatepicker")) {
+            $(this).datepicker({
+                //altField: "#"+field_id,
+                changeYear: true,
+                showButtonPanel: false,
+                showOn: 'button'
+            }).next("button").button({
+                icons: { primary: "ui-icon-calendar" },
+                text: false
+            });
+        };
     });
+
     $(".ui-datepicker-trigger").mouseover(function () {
         $(this).css('cursor', 'pointer');
     });
     $(".ui-datepicker-trigger").attr("title", "click to select date");
+
 };
 
-function fieldsets(parent) {
-    $(parent).find(".collapsible_fieldset").addClass("expanded");
-    $(parent).find(".collapsible_fieldset legend").click(function() {
+function fieldsets(element) {
+    $(element).addClass("expanded");
+    $(element).find("legend:first").click(function() {
         $(this).next(".collapsible_fieldset_content").slideToggle( "fast", function() {
             var fieldset = $(this).parent("fieldset");
             $(fieldset).toggleClass("collapsed");
@@ -187,92 +234,83 @@ function fieldsets(parent) {
     });
 }
 
-function tabs(parent) {
-    $(parent).find(".tabs").each(function() {
-        $(this).tabs({
-            activate : function(event,ui) {
-                console.log("should I initialize this container?");
+function tabs(element) {
+    $(element).tabs({
+    });
+}
+
+
+function selects(element) {
+    $(element).multiselect({
+       autoOpen  : false,
+       multiple  : ($(this).is("[multiple]")) ? true : false,
+       sortable  : false,
+       numToShow : 1
+    });
+}
+
+function accordions(element) {
+
+    $(element).multiOpenAccordion({
+        active : false,   // this _should_ hide all panes, but there is a known bug [http://code.google.com/p/jquery-multi-open-accordion/issues/detail?id=15] preventing this
+        tabShown : function(event,ui) {
+            var active_tab      = ui["tab"];
+            var active_content  = ui["content"];
+            if ($(active_tab).hasClass("sorting")) {
+                // if the accordion content is being opened just b/c it was clicked during sorting,
+                // then cancel the show event and reset the relevant styles
+                $(active_content).hide();
+                $(active_tab).removeClass("ui-state-active sorting");
+                $(active_tab).addClass("ui-state-default");
+                var active_tab_icon = $(active_tab).find(".ui-icon");
+                $(active_tab_icon).removeClass("ui-icon-triangle-1-s");
+                $(active_tab_icon).addClass("ui-icon-triangle-1-e");
             }
-        });
-    });
-}
-
-function selects(parent) {
-    $(parent).find(".multiselect").each(function() {
-        $(this).multiselect({
-           autoOpen  : false,
-           multiple  : ($(this).is("[multiple]")) ? true : false,
-           sortable  : false,
-           numToShow : 1
-        });
-    });
-}
-
-function accordions(parent) {
-
-    $(parent).find(".accordion").not(".fake").each(function() {
-        $(this).multiOpenAccordion({
-            active : false,   // this _should_ hide all panes, but there is a known bug [http://code.google.com/p/jquery-multi-open-accordion/issues/detail?id=15] preventing this
-            tabShown : function(event,ui) {
-                var active_tab      = ui["tab"];
-                var active_content  = ui["content"];
-                if ($(active_tab).hasClass("sorting")) {
-                    // if the accordion content is being opened just b/c it was clicked during sorting,
-                    // then cancel the show event and reset the relevant styles
-                    $(active_content).hide();
-                    $(active_tab).removeClass("ui-state-active sorting");
-                    $(active_tab).addClass("ui-state-default");
-                    var active_tab_icon = $(active_tab).find(".ui-icon");
-                    $(active_tab_icon).removeClass("ui-icon-triangle-1-s");
-                    $(active_tab_icon).addClass("ui-icon-triangle-1-e");
+            else {
+                if (! $(active_tab).hasClass("ui-state-error")) {
+                    $(active_tab).addClass("open_accordion");
                 }
-                else {
-                    if (! $(active_tab).hasClass("ui-state-error")) {
-                        $(active_tab).addClass("open_accordion");
-                    }
-                }
-                init_widget(selects,active_content);
-
-            },
-            tabHidden : function(event,ui) {
-                var active_tab      = ui["tab"];
-                var active_content  = ui["content"];
-                $(active_tab).removeClass("open_accordion");
             }
-        });
-        $(this).find(".ui-accordion-content").hide(); // see comment about "active : false" above
+            // NO LONGER NEEDED SINCE INTRODUCTION OF init_widgets_on_show FN
+            //init_widgets(selects,active_content);
 
+        },
+        tabHidden : function(event,ui) {
+            var active_tab      = ui["tab"];
+            var active_content  = ui["content"];
+            $(active_tab).removeClass("open_accordion");
+        }
     });
+    $(element).find(".ui-accordion-content").hide(); // see comment about "active : false" above
+
 }
 
-function helps(parent) {
-    $(parent).find(".help_button").each(function(){
-       $(this).mouseover(function() {
-           $(this).css("cursor","pointer");
-       });
-       $(this).hover(
-          function() {
-              $(this).children(".ui-icon-info").addClass("hover-help-icon");
-          },
-          function() {
-              $(this).children(".ui-icon-info").removeClass("hover-help-icon");
-          }
-       );
-       $(this).click(function() {
-           /* I escape any periods that may be in the ids (unlikely) so that JQuery doesn't interepret them as class selectors */
-           var id = "#" + $(this).attr("id").replace(/(:|\.)/g,'\\$1');
+function helps(element) {
+   $(element).mouseover(function() {
+       $(this).css("cursor","pointer");
+   });
+   $(element).hover(
+      function() {
+          $(this).children(".ui-icon-info").addClass("hover-help-icon");
+      },
+      function() {
+          $(this).children(".ui-icon-info").removeClass("hover-help-icon");
+      }
+   );
+   $(element).click(function() {
+       /* I escape any periods that may be in the ids (unlikely) so that JQuery doesn't interepret them as class selectors */
+       var id = "#" + $(this).attr("id").replace(/(:|\.)/g,'\\$1');
 
-           var x = $(this).offset().left - $(document).scrollLeft();
-           var y = $(this).offset().top - $(document).scrollTop();
+       var x = $(this).offset().left - $(document).scrollLeft();
+       var y = $(this).offset().top - $(document).scrollTop();
 
-           var description = $(this).find(".help_description:first");
-           var title = $(description).attr("title");
-           var text = $(description).html();
-           $("#help_dialog").html(text);
-           $("#help_dialog").dialog("option",{title: title, position: [x,y], height: 200, width: 400}).dialog("open");
-           return false;
-       })
-    });
+       var description = $(this).find(".help_description:first");
+       var title = $(description).attr("title");
+       var text = $(description).html();
+       $("#help_dialog").html(text);
+       $("#help_dialog").dialog("option",{title: title, position: [x,y], height: 200, width: 400}).dialog("open");
+       return false;
+   })
 }
 
 function init_dialogs(parent) {
