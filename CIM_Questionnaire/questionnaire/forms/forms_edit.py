@@ -393,7 +393,9 @@ def create_standard_property_form_data(model,standard_property,standard_property
 
         if field_type == MetadataFieldTypes.ATOMIC:
             value_field_name = "atomic_value"
-            pass
+
+            if standard_property_customizer.default_value:
+                standard_property_form_data[value_field_name] = standard_property_customizer.default_value
 
         elif field_type == MetadataFieldTypes.ENUMERATION:
             value_field_name = "enumeration_value"
@@ -409,8 +411,6 @@ def create_standard_property_form_data(model,standard_property,standard_property
         else:
             msg = "invalid field type for standard property: %s" % (field_type)
             raise QuestionnaireError(msg)
-
-        standard_property_form_data[value_field_name] = standard_property_customizer.default_value
 
         # further customization is done in the customize() fn below
 
@@ -548,6 +548,7 @@ class MetadataAbstractStandardPropertyForm(MetadataEditingForm):
 
         elif customizer.field_type == MetadataFieldTypes.RELATIONSHIP:
             if customizer.relationship_show_subform:
+
                 subform_customizer = customizer.subform_customizer
 
                 (model_customizer,standard_category_customizers,standard_property_customizers,nested_scientific_category_customizers,nested_scientific_property_customizers) = \
@@ -569,6 +570,9 @@ class MetadataAbstractStandardPropertyForm(MetadataEditingForm):
                 subform_min, subform_max = [int(val) if val != "*" else val for val in customizer.relationship_cardinality.split("|")]
 
                 if property.pk:
+
+                    if len(self.get_current_field_value("relationship_value")) == 2:
+                       import ipdb; ipdb.set_trace()
 
                     models = property.relationship_value.all()
                     if models:
@@ -1207,7 +1211,6 @@ def create_new_edit_forms_from_models(models,model_customizer,standard_propertie
             zip(scientific_properties[model_key], scientific_property_customizers[model_key])
             if scientific_property_customizer.displayed
         ]
-        assert(len(scientific_properties_data)==len(scientific_properties[model_key]))
         scientific_properties_formsets[model_key] = MetadataScientificPropertyInlineFormSetFactory(
             instance = model,
             prefix = model_key,

@@ -26,6 +26,8 @@ from django.template.defaultfilters import slugify
 
 from mptt.models import MPTTModel, TreeForeignKey
 
+from uuid import uuid4
+
 from CIM_Questionnaire.questionnaire.fields import MetadataFieldTypes, MetadataAtomicFieldTypes
 from CIM_Questionnaire.questionnaire.utils import QuestionnaireError
 from CIM_Questionnaire.questionnaire.utils import APP_LABEL, LIL_STRING, SMALL_STRING, BIG_STRING, HUGE_STRING, CIM_DOCUMENT_TYPES, CIM_STEREOTYPES
@@ -242,6 +244,8 @@ class MetadataComponentProxy(MPTTModel):
     order                   = models.PositiveIntegerField(blank=True,null=True)
     vocabulary              = models.ForeignKey("MetadataVocabulary",blank=False,null=True,related_name="component_proxies")
 
+    guid   = models.CharField(blank=True, null=True, max_length=LIL_STRING)
+
     parent = TreeForeignKey('self', null=True, blank=True, related_name='children')
 
     class Meta:
@@ -257,3 +261,13 @@ class MetadataComponentProxy(MPTTModel):
     def __unicode__(self):
         return u'%s'%(self.name)
         #return u'%s::%s' % (self.vocabulary,self.name)
+
+    def get_key(self):
+        return self.guid
+
+    def save(self, *args, **kwargs):
+
+        if not self.guid:
+            self.guid = str(uuid4())
+
+        super(MetadataComponentProxy, self).save(*args, **kwargs)
