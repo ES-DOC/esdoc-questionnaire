@@ -26,6 +26,8 @@ from django.template.defaultfilters import slugify
 from lxml import etree as et
 from django.conf import settings
 
+from uuid import uuid4
+
 import os
 import re
 
@@ -64,6 +66,8 @@ class MetadataVocabulary(models.Model):
     file.help_text  = "Note that files with the same names will be overwritten"
     document_type   = models.CharField(max_length=64,blank=False,choices=[(document_type,document_type) for document_type in CIM_DOCUMENT_TYPES])
 
+    guid = models.CharField(blank=True, null=True, max_length=LIL_STRING)
+
     component_order = 0
 
     def next_component_order(self):
@@ -77,10 +81,21 @@ class MetadataVocabulary(models.Model):
         super(MetadataVocabulary,self).__init__(*args,**kwargs)
         self.component_order = 0
 
+    def get_key(self):
+        return self.guid
+
     def clean(self):
         # force name to be lowercase
         # this avoids hacky methods of ensuring case-insensitive uniqueness
         self.name = self.name.lower()
+
+
+    def save(self, *args, **kwargs):
+
+        if not self.guid:
+            self.guid = str(uuid4())
+
+        super(MetadataVocabulary, self).save(*args, **kwargs)
 
     def register(self,**kwargs):
 
