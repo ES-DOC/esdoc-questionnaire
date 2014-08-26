@@ -48,7 +48,7 @@ def a_or_an(string):
     """
     # TODO: handle confusing things like "an hour" or "a unicycle"
     vowel_sounds = ["a","e","i","o","u"]
-    if string[0] in vowel_sounds:
+    if string[0].lower() in vowel_sounds:
         return "an"
     else:
         return "a"

@@ -99,7 +99,7 @@
 
     {% block content_title %}
         <div class="title">
-            Viewing a <b>{{model_customizer.model_title|title}}</b> instance for the <a href="/{{ project.name|lower }}" title="ES-DOC Questionnaire Project Home"><b>{{project.title|title}}</b></a> Project
+            Viewing {{ model_customizer.model_title|a_or_an }} <b>{{model_customizer.model_title|title}}</b> instance for the <a href="/{{ project.name|lower }}" title="ES-DOC Questionnaire Project Home"><b>{{project.title|title}}</b></a> Project
         </div> <!-- /.title -->
     {% endblock %} {# /content_title #}
 
