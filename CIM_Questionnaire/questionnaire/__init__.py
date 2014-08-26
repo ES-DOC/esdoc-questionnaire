@@ -5,8 +5,8 @@ APP_LABEL     = "questionnaire"
 
 __version_info__ = {
     'major': 0.11,
-    'minor': 0,
-    'patch': 1,
+    'minor': 1,
+    'patch': 0,
 }
 
 def get_version():
