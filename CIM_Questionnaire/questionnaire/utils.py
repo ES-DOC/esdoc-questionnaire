@@ -83,7 +83,9 @@ CIM_DOCUMENT_TYPES = [
 ]
 
 #: vocabulary name to use for cases where a model has no vocabulary, or where it is the root component of several vocabularies
-DEFAULT_VOCABULARY = "DEFAULT_VOCABULARY"
+#DEFAULT_VOCABULARY = "DEFAULT_VOCABULARY"
+DEFAULT_VOCABULARY_KEY = "DEFAULT_VOCABULARY" #'c6fd2da4-723e-4816-9730-cf591ec8ffb9'
+DEFAULT_COMPONENT_KEY = "DEFAULT_COMPONENT" #'445af81a-3bb5-4be4-b01d-347cbf464e4e'
 
 ##############
 # assertions #
@@ -605,19 +607,4 @@ def itr_product_keywords(keywords, as_namedtuple=False):
 #
 
 ################################################
-
-
-def interate_through_node(node, filter_parameters={}):
-    if filter_parameters:
-        sibling_qs = node.get_siblings(include_self=True).filter(**filter_parameters)
-    else:
-        sibling_qs = node.get_siblings(include_self=True)
-    for sibling in sibling_qs:
-        return sibling
-        if filter_parameters:
-            child_qs = sibling.get_children(include_self=False).filter(**filter_parameters)
-        else:
-            child_qs = sibling.get_children(include_self=False)
-        for child in child_qs:
-            iterate_through_node(child,filter_parameters)
 

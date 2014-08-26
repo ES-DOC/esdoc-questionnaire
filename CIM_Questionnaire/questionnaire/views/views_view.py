@@ -39,8 +39,6 @@ from CIM_Questionnaire.questionnaire.views.views_edit import validate_view_argum
 from CIM_Questionnaire.questionnaire.views.views_error import questionnaire_error
 from CIM_Questionnaire.questionnaire.views import *
 
-from CIM_Questionnaire.questionnaire.utils import DEFAULT_VOCABULARY
-
 from CIM_Questionnaire.questionnaire import get_version
 
 

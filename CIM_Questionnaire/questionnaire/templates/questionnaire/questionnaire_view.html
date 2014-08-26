@@ -20,27 +20,42 @@
 
             // do this first so that the dialogs appear near the top of the page
             init_dialogs(parent);
-            
+
+            // do this next, so it can happen while other widgets are loading
             render_msg($("#msg"));
 
-            init_widget(users,parent);
-            init_widget(readonlies,parent);
-            init_widget(buttons,parent);            
-            init_widget(fieldsets,parent);
-            init_widget(dates,parent);
-            init_widget(tabs,parent);
-            init_widget(selects,parent);
-            init_widget(accordions,parent);
-            init_widget(helps,parent);
-            init_widget(enablers,parent);
+            init_widgets_on_show(fieldsets,$(parent).find(".collapsible_fieldset"))
+            init_widgets_on_show(tabs,$(parent).find(".tabs"));
+            init_widgets_on_show(helps,$(parent).find(".help_button"));
+            init_widgets_on_show(readonlies,$(parent).find(".readonly"));
+            init_widgets_on_show(dates,$(parent).find(".datetime,.date"));
+            init_widgets_on_show(accordions,$(parent).find(".accordion").not(".fake"));
+            init_widgets_on_show(dynamic_accordions,$(parent).find(".accordion .accordion_header"));
+            init_widgets_on_show(accordion_buttons,$(parent).find(".subform_toolbar button"));
+            /* TODO: accordion_headers
+            init_widgets_on_show(accordion_headers,$(parent).find(".scientific_property"));
+            */
+            init_widgets_on_show(selects,$(parent).find(".multiselect"));
+            init_widgets_on_show(enumerations,$(parent).find(".multiselect.open,.multiselect.nullable"));
+            init_widgets_on_show(autocompletes,$(parent).find(".autocomplete"));
+            init_widgets_on_show(enablers,$(parent).find(".enabler"))
 
-            // specific to the viewer/editor...
-            init_widget(panes,parent);
-            init_widget(treeviews,parent);
-            init_widget(enumerations,parent);
-            init_widget(autocompletes,parent);
-            init_widget(dynamic_accordions,parent);
+            init_widgets(users,$(parent).find("#user"));
+            init_widgets(buttons,$(parent).find("input.button"))
+            init_widgets(panes,$(parent).find(".pane"));
+            init_widgets(treeviews,$(parent).find(".treeview"));
 
+            /* disable all add/remove buttons in view */
+            $("button.add").hide();
+            $("button.remove").hide();
+            $("button.replace").hide();
+            $("button.reset").hide();
+
+            /*
+            THIS CODE IS REPLACED BY THE accordion_headers FN ABOVE
+            $(parent).find(".scientific_property .atomic_value").each(function() {
+                $(this).trigger("change");
+            });
             $(parent).find(".scientific_property .ui-multiselect").each(function() {
                 var source_name = $(this).prev(".multiselect").attr("name");
                 var target_name = source_name.replace("-enumeration_value", "-scientific_property_value")
@@ -50,14 +65,10 @@
                     $(target).val(source_value);
                 })
             });
+            */
 
-            /* disable all add/remove buttons in view */
-            /* (these buttons actually do stuff in edit */
-
-            $("button.add").hide();
-            $("button.remove").hide();
-            $("button.replace").hide();
-            $("button.reset").hide();
+            // do this last b/c some of the xpath depends on changes made by the above fns...
+            init_errors(parent);
 
              // do this last b/c some of the xpath depends on changes made by the above fns...
             init_errors(parent);
@@ -134,17 +145,18 @@
 					    {% if model_customizer.model_show_hierarchy %}
                                             <ul><!-- style="display: none;">-->
                                                 {% get_default_vocabulary_key as root_vocabulary_key %}
-                                                <li data="key:'{{root_vocabulary_key}}_{{model_customizer.model_root_component|slugify}}'">
+                                                {% get_default_component_key as root_component_key %}
+                                                <li data="key:'{{root_vocabulary_key}}_{{root_component_key}}'">
                                                     {{model_customizer.model_root_component}}
 					    {% endif %} {# /model_customizer.model_show_hierarchy #}
                                                     <ul>
                                                     {% for vocabulary in vocabularies %}
-                                                        {% with nodes=vocabulary.component_proxies.all vocabulary_key=vocabulary.name|slugify %}
+                                                        {% with nodes=vocabulary.component_proxies.all vocabulary_key=vocabulary.get_key %}
                                                             {# look at how cool mppt is! #}
                                                             {# this is all that's needed to re-create the component hierarchy! #}
                                                             {# wow!! #}
                                                             {% recursetree nodes %}
-                                                                <li data="key:'{{vocabulary_key}}_{{node.name|slugify}}'">
+                                                                <li data="key:'{{vocabulary_key}}_{{node.get_key}}'">   {# node is a component; it has a key #}
                                                                     {{ node.name }}
                                                                     {% if not node.is_leaf_node %}
                                                                         <ul>

@@ -66,7 +66,7 @@ class MetadataVocabulary(models.Model):
     file.help_text  = "Note that files with the same names will be overwritten"
     document_type   = models.CharField(max_length=64,blank=False,choices=[(document_type,document_type) for document_type in CIM_DOCUMENT_TYPES])
 
-    guid = models.CharField(blank=True, null=True, max_length=LIL_STRING)
+    guid = models.CharField(blank=True, null=True, max_length=LIL_STRING, unique=True, editable=False)
 
     component_order = 0
 

@@ -8,6 +8,7 @@
 #
 #   This project is distributed according to the terms of the MIT license [http://www.opensource.org/licenses/MIT].
 ####################
+
 from django.contrib import messages
 
 from django.contrib.sites.models import get_current_site
@@ -20,14 +21,15 @@ from django.template import RequestContext
 from CIM_Questionnaire.questionnaire.models.metadata_project import MetadataProject
 from CIM_Questionnaire.questionnaire.models.metadata_version import MetadataVersion
 from CIM_Questionnaire.questionnaire.models.metadata_proxy import MetadataModelProxy
-from CIM_Questionnaire.questionnaire.models.metadata_customizer import MetadataCustomizer, MetadataModelCustomizer, MetadataStandardPropertyCustomizer, MetadataScientificPropertyCustomizer
+from CIM_Questionnaire.questionnaire.models.metadata_customizer import MetadataCustomizer, MetadataModelCustomizer
 from CIM_Questionnaire.questionnaire.models.metadata_model import MetadataModel, MetadataStandardProperty, MetadataScientificProperty
 from CIM_Questionnaire.questionnaire.models.metadata_model import get_model_parent_dictionary
 
 from CIM_Questionnaire.questionnaire.forms.forms_edit import create_new_edit_forms_from_models, create_existing_edit_forms_from_models, create_edit_forms_from_data, save_valid_forms
 
 from CIM_Questionnaire.questionnaire.views.views_error import questionnaire_error
-from CIM_Questionnaire.questionnaire.views import *
+
+#from CIM_Questionnaire.questionnaire.views import *
 
 from CIM_Questionnaire.questionnaire.utils import get_joined_keys_dict
 
@@ -40,7 +42,8 @@ __date__ = "Sep 30, 2013 3:04:42 PM"
 def validate_view_arguments(project_name="", model_name="", version_name=""):
     """Ensures that the arguments passed to an edit view are valid (ie: resolve to active projects, models, versions)"""
 
-    (validity,project,version,model_proxy,model_customizer,msg) = (True,None,None,None,None,"")
+    (validity, project, version, model_proxy, model_customizer, msg) = \
+        (True, None, None, None, None, "")
 
     project_name_lower = project_name.lower()
     version_name_lower = version_name.lower()
@@ -51,12 +54,12 @@ def validate_view_arguments(project_name="", model_name="", version_name=""):
     except MetadataProject.DoesNotExist:
         msg = "Cannot find the <u>project</u> '%s'.  Has it been registered?" % (project_name)
         validity = False
-        return (validity,project,version,model_proxy,model_customizer,msg)
+        return (validity, project, version, model_proxy, model_customizer, msg)
 
     if not project.active:
         msg = "Project '%s' is inactive." % (project_name)
         validity = False
-        return (validity,project,version,model_proxy,model_customizer,msg)
+        return (validity, project, version, model_proxy, model_customizer, msg)
 
     # try to get the version...
     try:
@@ -64,8 +67,7 @@ def validate_view_arguments(project_name="", model_name="", version_name=""):
     except MetadataVersion.DoesNotExist:
         msg = "Cannot find the <u>version</u> '%s'.  Has it been registered?" % (version_name)
         validity = False
-        return (validity,project,version,model_proxy,model_customizer,msg)
-
+        return (validity, project, version, model_proxy, model_customizer, msg)
 
     # try to get the model (proxy)...
     try:
@@ -73,11 +75,11 @@ def validate_view_arguments(project_name="", model_name="", version_name=""):
     except MetadataModelProxy.DoesNotExist:
         msg = "Cannot find the <u>model</u> '%s' in the <u>version</u> '%s'." % (model_name,version_name)
         validity = False
-        return (validity,project,version,model_proxy,model_customizer,msg)
+        return (validity, project, version, model_proxy, model_customizer, msg)
     if not model_proxy.is_document():
         msg = "<u>%s</u> is not a recognized document type in the CIM." % model_name
         validity = False
-        return (validity,project,version,model_proxy,model_customizer,msg)
+        return (validity, project, version, model_proxy, model_customizer, msg)
 
     # try to get the default model customizer for this project/version/proxy combination...
     try:
@@ -85,16 +87,17 @@ def validate_view_arguments(project_name="", model_name="", version_name=""):
     except MetadataModelCustomizer.DoesNotExist:
         msg = "There is no default customization associated with this project/model/version."
         validity = False
-        return (validity,project,version,model_proxy,model_customizer,msg)
+        return (validity, project, version, model_proxy, model_customizer, msg)
 
-    return (validity,project,version,model_proxy,model_customizer,msg)
+    return (validity, project, version, model_proxy, model_customizer, msg)
+
 
 def questionnaire_edit_new(request, project_name="", model_name="", version_name="", **kwargs):
 
     # validate the arguments...
-    (validity,project,version,model_proxy,model_customizer,msg) = validate_view_arguments(project_name=project_name,model_name=model_name,version_name=version_name)
+    (validity, project, version, model_proxy, model_customizer, msg) = validate_view_arguments(project_name=project_name, model_name=model_name, version_name=version_name)
     if not validity:
-        return error(request,msg)
+        return questionnaire_error(request, msg)
     request.session["checked_arguments"] = True
 
     # check authentication...
@@ -107,7 +110,7 @@ def questionnaire_edit_new(request, project_name="", model_name="", version_name
             msg = "User '%s' does not have editing permission for project '%s'." % (request.user, project_name)
             if project.email:
                 msg += "<br/>Please <a href='mailto:%s'>contact</a> the project for support." % (project.email)
-            return error(request, msg)
+            return questionnaire_error(request, msg)
 
     # getting the vocabularies into the right order is a 2-step process
     # b/c vocabularies do not have an "order" attribute (since they can be used by multiple projects/customizations),
@@ -117,9 +120,8 @@ def questionnaire_edit_new(request, project_name="", model_name="", version_name
     vocabularies = sorted(vocabularies, key=lambda vocabulary: vocabulary_order.index(vocabulary.pk))
 
     # now try to get the default customizer set for this project/version/proxy combination...
-    (model_customizer,standard_category_customizers,standard_property_customizers,nested_scientific_category_customizers,nested_scientific_property_customizers) = \
-            MetadataCustomizer.get_existing_customizer_set(model_customizer,vocabularies)
-
+    (model_customizer, standard_category_customizers, standard_property_customizers, nested_scientific_category_customizers, nested_scientific_property_customizers) = \
+            MetadataCustomizer.get_existing_customizer_set(model_customizer, vocabularies)
 
     # (also get the proxies b/c I'll need them when setting up properties below)
     # note that the proxies need to be sorted according to the customizers (which are ordered by default),
@@ -128,19 +130,6 @@ def questionnaire_edit_new(request, project_name="", model_name="", version_name
 
     scientific_property_customizers = get_joined_keys_dict(nested_scientific_property_customizers)
     scientific_property_proxies = { key : [spc.proxy for spc in value] for key,value in  scientific_property_customizers.items() }
-
-    # for vocabulary_key,scientific_property_customizer_dict in nested_scientific_property_customizers.iteritems():
-    #     for component_key,scientific_property_customizer_list in scientific_property_customizer_dict.iteritems():
-    #         model_key = u"%s_%s" % (vocabulary_key, component_key)
-    #         # I have to restructure this; in the customizer views it makes sense to store these as a dictionary of dictionary
-    #         # but here, they should only be one level deep (hence the use of "nested_" above
-    #         scientific_property_customizers[model_key] = scientific_property_customizer_list
-    #         scientific_property_proxies[model_key] = [scientific_property_customizer.proxy for scientific_property_customizer in scientific_property_customizer_list]
-
-    # TODO: remove assert statement
-    for properties in [model_customizer.standard_property_customizers.all().select_related("proxy"), model_customizer.scientific_property_customizers.all().select_related("proxy")]:
-        for property in properties:
-            assert property.name == property.proxy.name
 
     # TODO: may have to include _all_ properties in the forms (and just hide them in the template) so that they are there when I save things
 
@@ -160,7 +149,7 @@ def questionnaire_edit_new(request, project_name="", model_name="", version_name
 
     # create the realization set
     # TODO: DON'T LIKE HAVING TO PASS MODEL_CUSTOMIZER, SINCE I WANT ALL CUSTOMIZATION FUNCTIONALITY TO BE FORM-SPECIFIC
-    # BUT I HAVE TO SET THE ROOT VOCAB & COMPONENT KEY IN THIS FN
+    # TODO: BUT I HAVE TO SET THE ROOT VOCAB & COMPONENT KEY IN THIS FN
     (models, standard_properties, scientific_properties) = \
         MetadataModel.get_new_realization_set(project, version, model_proxy, standard_property_proxies, scientific_property_proxies, model_customizer, vocabularies)
 
@@ -180,20 +169,20 @@ def questionnaire_edit_new(request, project_name="", model_name="", version_name
 
         if all(validity):
 
-            model_instances = save_valid_forms(model_formset,standard_properties_formsets,scientific_properties_formsets, model_parent_dictionary=model_parent_dictionary)
-            assert(len(model_instances)>0)
+            model_instances = save_valid_forms(model_formset, standard_properties_formsets, scientific_properties_formsets, model_parent_dictionary=model_parent_dictionary)
+            assert(len(model_instances) > 0)
             root_model_id = model_instances[0].get_root().pk
             # this is used for other fns that might need to know what the view returns
             # (such as those in the testing framework)
             request.session["root_model_id"] = root_model_id
-            
+
             # using Django's built-in messaging framework to pass status messages (as per https://docs.djangoproject.com/en/dev/ref/contrib/messages/)
             messages.add_message(request, messages.SUCCESS, "Successfully saved model instances")
             edit_existing_url = reverse("edit_existing",kwargs={
-                "project_name"      : project_name,
-                "model_name"        : model_name,
-                "version_name"      : version_name,
-                "model_id"          : root_model_id,
+                "project_name" : project_name,
+                "model_name"   : model_name,
+                "version_name" : version_name,
+                "model_id"     : root_model_id,
             })
             return HttpResponseRedirect(edit_existing_url)
 
@@ -216,8 +205,6 @@ def questionnaire_edit_new(request, project_name="", model_name="", version_name
         "can_publish": False,  # only models that have already been saved can be published
     }
 
-#        return render_to_response('questionnaire/questionnaire_test.html', {}, context_instance=RequestContext(request))
-
     return render_to_response('questionnaire/questionnaire_edit.html', dict, context_instance=RequestContext(request))
 
 
@@ -226,7 +213,7 @@ def questionnaire_edit_existing(request, project_name="", model_name="", version
     # validate the arguments...
     (validity,project,version,model_proxy,model_customizer,msg) = validate_view_arguments(project_name=project_name,model_name=model_name,version_name=version_name)
     if not validity:
-        return error(request,msg)
+        return questionnaire_error(request,msg)
     request.session["checked_arguments"] = True
 
     # check authentication...
@@ -239,7 +226,7 @@ def questionnaire_edit_existing(request, project_name="", model_name="", version
             msg = "User '%s' does not have editing permission for project '%s'." % (request.user, project_name)
             if project.email:
                 msg += "<br/>Please <a href='mailto:%s'>contact</a> the project for support." % (project.email)
-            return error(request, msg)
+            return questionnaire_error(request, msg)
 
     # try to get the requested model...
     try:
@@ -261,25 +248,19 @@ def questionnaire_edit_existing(request, project_name="", model_name="", version
     vocabularies = sorted(vocabularies, key=lambda vocabulary: vocabulary_order.index(vocabulary.pk))
 
     # now try to get the default customizer set for this project/version/proxy combination...
-    (model_customizer,standard_category_customizers,standard_property_customizers,nested_scientific_category_customizers,nested_scientific_property_customizers) = \
-            MetadataCustomizer.get_existing_customizer_set(model_customizer,vocabularies)
-
-    scientific_property_customizers = {}
-    for vocabulary_key,scientific_property_customizer_dict in nested_scientific_property_customizers.iteritems():
-        for component_key,scientific_property_customizer_list in scientific_property_customizer_dict.iteritems():
-            model_key = u"%s_%s" % (vocabulary_key, component_key)
-            # I have to restructure this; in the customizer views it makes sense to store these as a dictionary of dictionary
-            # but here, they should only be one level deep (hence the use of "nested_" above
-            scientific_property_customizers[model_key] = scientific_property_customizer_list
+    (model_customizer, standard_category_customizers, standard_property_customizers, nested_scientific_category_customizers, nested_scientific_property_customizers) = \
+            MetadataCustomizer.get_existing_customizer_set(model_customizer, vocabularies)
+    scientific_property_customizers = get_joined_keys_dict(nested_scientific_property_customizers)
 
     # create the realization set
     (models, standard_properties, scientific_properties) = \
         MetadataModel.get_existing_realization_set(models, model_customizer, vocabularies=vocabularies)
-    #
-    # # clean it up so that everything is in the correct order...
-    # for i,standard_property_customizer in enumerate(standard_property_customizers):
-    #     standard_properties
-    # standard_properties = sorted(unsorted_standard_properties, key=lambda property: standard_property_customizers.index(standard_property_customizers.get(proxy=property.proxy)))
+
+    # this is used for other fns that might need to know what the view returns
+    # (such as those in the testing framework)
+    assert(len(models)>0)
+    root_model_id = models[0].get_root().pk
+    request.session["root_model_id"] = root_model_id
 
     # clean it up a bit based on properties that have been customized not to be displayed
     for model in models:
@@ -306,19 +287,7 @@ def questionnaire_edit_existing(request, project_name="", model_name="", version
                 scientific_properties_to_remove.append(scientific_property.pk)
         scientific_property_list.exclude(id__in=scientific_properties_to_remove)
 
-    model_parent_dictionary = {}
-    for model in models:
-        if model.parent:
-            model_parent_dictionary[model.get_model_key()] = model.parent.get_model_key()
-        else:
-            model_parent_dictionary[model.get_model_key()] = None
-
-
-    # this is used for other fns that might need to know what the view returns
-    # (such as those in the testing framework)
-    assert(len(models)>0)
-    root_model_id = models[0].get_root().pk
-    request.session["root_model_id"] = root_model_id
+    model_parent_dictionary = get_model_parent_dictionary(models)
 
     if request.method == "GET":
 
@@ -364,7 +333,6 @@ def questionnaire_edit_existing(request, project_name="", model_name="", version
         "standard_properties_formsets": standard_properties_formsets,
         "scientific_properties_formsets": scientific_properties_formsets,
         "questionnaire_version": get_version(),  # used in the footer
-        # TODO: FINISH PUBLISHING STUFF
         #"can_publish": True,  # only models that have already been saved can be published
         "can_publish" : False,
     }
@@ -376,8 +344,8 @@ def questionnaire_edit_help(request):
 
     # gather all the extra information required by the template
     dict = {
-        "site"                          : get_current_site(request),
-        "questionnaire_version"         : get_version(),
+        "site"                  : get_current_site(request),
+        "questionnaire_version" : get_version(),
     }
 
     return render_to_response('questionnaire/questionnaire_edit_instructions.html', dict, context_instance=RequestContext(request))

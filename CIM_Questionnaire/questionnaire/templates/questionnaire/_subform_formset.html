@@ -8,8 +8,6 @@
 {# TODO GET SCIENTIFIC PROPERTIES LIKE I GET STANDARDPROPERTIES BELOW #}
 {% with model_customizer=property_form.get_subform_customizer model_subformset=property_form.get_model_subformset scientific_properties_subformsets=property_form.get_scientific_properties_subformsets %}
 
-{# standard_properties_subformset=property_form.get_standard_properties_subformset #}
-
     <span class="subform_toolbar ui-widget-header ui-corner-all">
         <button type="button" class="expand" title="expand all {{customizer.verbose_name}}">expand all</button>
         <button type="button" class="collapse" title="collapse all {{customizer.verbose_name}}">collapse all</button>
@@ -30,7 +28,8 @@
 
         {% for model_subform in model_subformset %}
 
-            {% with standard_properties_subformset=property_form|get_standard_properties_subformset_for_model:model_subform %}
+            {# with standard_properties_subformset=property_form|get_standard_properties_subformset_for_model:model_subform #}
+            {% with standard_properties_subformset=property_form.get_standard_properties_subformsets|get_value_from_key:model_subform.prefix %}
 
                 <h3 class="accordion_header">
 
@@ -56,7 +55,6 @@
                     </div>
 
                     <div class="form" style="clear: right;"> {# wrapping everything in a div.form so I can group together fields belonging to the same model #}
-
 
                         <div class="hidden">
                             {# the fields I explicitly set to hidden #}

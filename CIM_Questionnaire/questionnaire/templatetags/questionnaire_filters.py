@@ -27,15 +27,19 @@ from django.contrib.sites.models import Site
 from django.contrib.auth.models  import User
 
 from CIM_Questionnaire.questionnaire.models.metadata_site import get_metadata_site_type
-from CIM_Questionnaire.questionnaire.utils import DEFAULT_VOCABULARY
+from CIM_Questionnaire.questionnaire.utils import DEFAULT_VOCABULARY_KEY, DEFAULT_COMPONENT_KEY
 
 register = template.Library()
 
 
 @register.assignment_tag
 def get_default_vocabulary_key():
-    return slugify(DEFAULT_VOCABULARY)
+    return DEFAULT_VOCABULARY_KEY
 
+
+@register.assignment_tag
+def get_default_component_key():
+    return DEFAULT_COMPONENT_KEY
 
 @register.filter
 def a_or_an(string):
@@ -142,37 +146,15 @@ def get_active_scientific_properties_by_key(model_customizer,key):
 def get_active_scientific_categories_and_properties_by_key(model_customizer,key):
     return model_customizer.get_active_scientific_categories_and_properties_by_key(key)
 
-
-@register.filter
-def get_standard_properties_subformset_for_model(standard_property_form,model_form):
-    # returns the standard_property_subformset for this standard_property that relates to the model referenced by this model_form
-    # if there is no model_form.instance, then there should only be a single entry in the standard_property_subformsets dictionary, so just get that
-    standard_properties_subformsets = standard_property_form.get_standard_properties_subformsets()
-
-    # beware here is some brittle logic
-
-    # if the standard_properties_subformsets dictionary is keyed by modelkeys, then I can assume that this is an existing model
-    # otherwise I have to key by model_form.prefix
-
-    standard_properties_subformsets_keys = standard_properties_subformsets.keys()
-
-    model_prefix = model_form.prefix
-    model_key = u"%s_%s" % (model_form.get_current_field_value("vocabulary_key"),model_form.get_current_field_value("component_key"))
-
-    if model_prefix in standard_properties_subformsets_keys:
-        return standard_properties_subformsets[model_prefix]
-
-    else:
-
-        if model_key in standard_properties_subformsets_keys:
-            return standard_properties_subformsets[model_key]
-
-        model_instance = model_form.instance
-        assert(model_instance.pk)
-        model_key += str(model_instance.pk)
-        return standard_properties_subformsets[model_key]
-
-
+#
+# @register.filter
+# def get_standard_properties_subformset_for_model(standard_property_form,model_form):
+#
+#     standard_properties_subformsets = standard_property_form.get_standard_properties_subformsets()
+#
+#     model_prefix = model_form.prefix
+#
+#     return standard_properties_subformsets[model_prefix]
 
 
 #########################
