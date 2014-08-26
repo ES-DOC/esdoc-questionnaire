@@ -430,8 +430,9 @@ class MetadataAbstractStandardPropertyForm(MetadataEditingForm):
 
     def __init__(self,*args,**kwargs):
 
-        # customizers was passed in via curry in the factory function below
+        # customizers and parent werew passed in via curry in the factory functions below
         customizers = kwargs.pop("customizers",None)
+        parent = kwargs.pop("parent",None)
 
         super(MetadataAbstractStandardPropertyForm,self).__init__(*args,**kwargs)
 
@@ -450,12 +451,14 @@ class MetadataAbstractStandardPropertyForm(MetadataEditingForm):
         proxy_pk = int(self.get_current_field_value("proxy"))
         field_type = self.get_current_field_value("field_type")
 
+        self.parent = parent
 
         if customizers:
             customizer = find_in_sequence(lambda c: c.proxy.pk == proxy_pk , customizers)
             assert(customizer.name==self.get_current_field_value("name"))   # this is new code; just make sure it works
         else:
             customizer = None
+
 
         property = self.instance
         if property.pk:
@@ -577,7 +580,7 @@ class MetadataAbstractStandardPropertyForm(MetadataEditingForm):
                     models = property.relationship_value.all()
                     if models:
                         (models, standard_properties, scientific_properties) = \
-                            MetadataModel.get_existing_realization_set(models, model_customizer, is_subrealization=True)
+                            MetadataModel.get_existing_subrealization_set(models, model_customizer)
 
                         if not self.is_bound:
                             (model_formset, standard_properties_formsets, scientific_properties_formsets) = \
@@ -592,12 +595,13 @@ class MetadataAbstractStandardPropertyForm(MetadataEditingForm):
 
                     else:
                         (models, standard_properties, scientific_properties) = \
-                            MetadataModel.get_new_realization_set(subform_customizer.project, subform_customizer.version, subform_customizer.proxy, standard_property_proxies, scientific_property_proxies, model_customizer, MetadataVocabulary.objects.none())
+                            MetadataModel.get_new_subrealization_set(subform_customizer.project, subform_customizer.version, subform_customizer.proxy, standard_property_proxies, scientific_property_proxies, model_customizer, MetadataVocabulary.objects.none(), self.parent )
 
                         if not self.is_bound:
                             (model_formset, standard_properties_formsets, scientific_properties_formsets) = \
                                 create_new_edit_subforms_from_models(models, model_customizer, standard_properties, standard_property_customizers, scientific_properties, scientific_property_customizers, subform_prefix=self.prefix, subform_min=subform_min, subform_max=subform_max)
                         else:
+
                             (validity, model_formset, standard_properties_formsets, scientific_properties_formsets) = \
                                 create_edit_subforms_from_data(self.data, models, model_customizer, standard_properties, standard_property_customizers, scientific_properties, scientific_property_customizers, subform_prefix=self.prefix, subform_min=subform_min, subform_max=subform_max)
                             self.subform_validity = all(validity)
@@ -606,14 +610,17 @@ class MetadataAbstractStandardPropertyForm(MetadataEditingForm):
                                     standard_properties_formset.force_clean()
 
                 else:
+
                     (models, standard_properties, scientific_properties) = \
-                        MetadataModel.get_new_realization_set(subform_customizer.project, subform_customizer.version, subform_customizer.proxy, standard_property_proxies, scientific_property_proxies, model_customizer, MetadataVocabulary.objects.none())
+                        MetadataModel.get_new_subrealization_set(subform_customizer.project, subform_customizer.version, subform_customizer.proxy, standard_property_proxies, scientific_property_proxies, model_customizer, MetadataVocabulary.objects.none(), self.parent )
 
                     if not self.is_bound:
+
                         (model_formset, standard_properties_formsets, scientific_properties_formsets) = \
                             create_new_edit_subforms_from_models(models, model_customizer, standard_properties, standard_property_customizers, scientific_properties, scientific_property_customizers, subform_prefix=self.prefix, subform_min=subform_min, subform_max=subform_max)
 
                     else:
+
                         (validity, model_formset, standard_properties_formsets, scientific_properties_formsets) = \
                             create_edit_subforms_from_data(self.data, models, model_customizer, standard_properties, standard_property_customizers, scientific_properties, scientific_property_customizers, subform_prefix=self.prefix, subform_min=subform_min, subform_max=subform_max)
                         self.subform_validity = all(validity)
@@ -865,12 +872,7 @@ def MetadataStandardPropertyInlineFormSetFactory(*args,**kwargs):
     new_kwargs.update(kwargs)
 
     _formset = inlineformset_factory(MetadataModel,MetadataStandardProperty,*args,**new_kwargs)
-    if _customizers:
-        # no longer dealing w/ iterators and making sure everything is in the same order
-        # now I just pass the entire set of customizers and work out which one to use in the __init__ method
-        #_formset.customizers = iter(_customizers)
-        _formset.form = staticmethod(curry(MetadataStandardPropertyForm,customizers=_customizers))
-
+    _formset.form = staticmethod(curry(MetadataStandardPropertySubForm,customizers=_customizers,parent=_instance))
 
     if _initial:
         _formset.number_of_properties = len(_initial)
@@ -914,7 +916,7 @@ def MetadataStandardPropertyInlineSubFormSetFactory(*args,**kwargs):
         # no longer dealing w/ iterators and making sure everything is in the same order
         # now I just pass the entire set of customizers and work out which one to use in the __init__ method
         #_formset.customizers = iter(_customizers)
-        _formset.form = staticmethod(curry(MetadataStandardPropertySubForm,customizers=_customizers))
+        _formset.form = staticmethod(curry(MetadataStandardPropertySubForm,customizers=_customizers,parent=_instance))
 
     if _initial:
         _formset.number_of_properties = len(_initial)
@@ -1171,9 +1173,9 @@ def MetadataScientificPropertyInlineFormSetFactory(*args,**kwargs):
     return _formset(queryset=_queryset, initial=_initial, instance=_instance, prefix=_prefix)
 
 
-def create_new_edit_forms_from_models(models,model_customizer,standard_properties,standard_property_customizers,scientific_properties,scientific_property_customizers):
+def create_new_edit_forms_from_models(models, model_customizer, standard_properties, standard_property_customizers, scientific_properties,scientific_property_customizers):
 
-    model_keys = [u"%s_%s" % (model.vocabulary_key, model.component_key) for model in models]
+    model_keys = [model.get_model_key() for model in models]
 
     models_data = [create_model_form_data(model, model_customizer) for model in models]
     model_formset = MetadataModelFormSetFactory(
@@ -1225,7 +1227,7 @@ def create_new_edit_forms_from_models(models,model_customizer,standard_propertie
 
 def create_existing_edit_forms_from_models(models, model_customizer, standard_properties, standard_property_customizers, scientific_properties, scientific_property_customizers):
 
-    model_keys = [u"%s_%s" % (model.vocabulary_key, model.component_key) for model in models]
+    model_keys = [model.get_model_key() for model in models]
 
     model_formset = MetadataModelFormSetFactory(
         queryset = models,
@@ -1275,44 +1277,40 @@ def create_new_edit_subforms_from_models(models, model_customizer, standard_prop
 
     standard_properties_formsets = {}
     scientific_properties_formsets = {}
-    for model_key, model, model_form in zip(model_keys, models, model_formset.forms):
+    for i, (model, model_form) in enumerate(zip(models,model_formset.forms)):
 
-        adjusted_prefix = model_form.prefix
-        submodel_key = model_key
-        if model.pk:
-            submodel_key += str(model.pk)
+        model_prefix = model_form.prefix
+        submodel_key = model.get_model_key() + "-%s" % (i)
 
         standard_properties_data = [
             create_standard_property_form_data(model, standard_property, standard_property_customizer)
-            for standard_property, standard_property_customizer in
-            zip(standard_properties[model_key], standard_property_customizers)
+            for standard_property, standard_property_customizer in zip(standard_properties[submodel_key], standard_property_customizers)
             if standard_property_customizer.displayed
         ]
-        standard_properties_formsets[submodel_key] = MetadataStandardPropertyInlineSubFormSetFactory(
+        standard_properties_formsets[model_prefix] = MetadataStandardPropertyInlineFormSetFactory(
             instance = model,
-            prefix = adjusted_prefix,
             initial = standard_properties_data,
             extra = len(standard_properties_data),
-            customizers = standard_property_customizers,
+            customizers  = standard_property_customizers,
+            prefix = model_prefix,
         )
 
         # TODO: JUST A LIL HACK UNTIL I CAN FIGURE OUT WHERE TO SETUP THIS LOGIC
-        if model_key not in scientific_property_customizers:
-            scientific_property_customizers[model_key] = []
+        if submodel_key not in scientific_property_customizers:
+            scientific_property_customizers[submodel_key] = []
 
         scientific_properties_data = [
             create_scientific_property_form_data(model, scientific_property, scientific_property_customizer)
-            for scientific_property, scientific_property_customizer in
-            zip(scientific_properties[model_key], scientific_property_customizers[model_key])
+            for scientific_property, scientific_property_customizer in zip(scientific_properties[submodel_key], scientific_property_customizers[submodel_key])
             if scientific_property_customizer.displayed
         ]
-        assert(len(scientific_properties_data)==len(scientific_properties[model_key]))
-        scientific_properties_formsets[submodel_key] = MetadataScientificPropertyInlineFormSetFactory(
+        assert(len(scientific_properties_data)==len(scientific_properties[submodel_key]))
+        scientific_properties_formsets[model_prefix] = MetadataScientificPropertyInlineFormSetFactory(
             instance = model,
-            prefix = adjusted_prefix,
             initial = scientific_properties_data,
             extra = len(scientific_properties_data),
-            customizers = scientific_property_customizers[model_key],
+            customizers = scientific_property_customizers[submodel_key],
+            prefix = model_prefix,
         )
 
     return (model_formset, standard_properties_formsets, scientific_properties_formsets)
@@ -1331,32 +1329,29 @@ def create_existing_edit_subforms_from_models(models, model_customizer, standard
         increment_prefix = increment_prefix,
     )
 
-    for model_form in model_formset.forms:
-        assert(model_form.instance.pk is not None)
-
     standard_properties_formsets = {}
     scientific_properties_formsets = {}
-    for model_key, model, model_form in zip(model_keys, models, model_formset.forms):
+    for i, (model, model_form) in enumerate(zip(models,model_formset.forms)):
 
-        adjusted_prefix = model_form.prefix
-        submodel_key = model_key + str(model.pk)
+        model_prefix = model_form.prefix
+        submodel_key = model.get_model_key() + "-%s" % (i)
 
-        standard_properties_formsets[submodel_key] = MetadataStandardPropertyInlineSubFormSetFactory(
+        standard_properties_formsets[model_prefix] = MetadataStandardPropertyInlineSubFormSetFactory(
             instance=model,
-            prefix = adjusted_prefix,
+            prefix = model_prefix,
             queryset=standard_properties[submodel_key],
             customizers=standard_property_customizers,
         )
 
         # TODO: JUST A LIL HACK UNTIL I CAN FIGURE OUT WHERE TO SETUP THIS LOGIC
-        if model_key not in scientific_property_customizers:
-            scientific_property_customizers[model_key] = []
+        if submodel_key not in scientific_property_customizers:
+            scientific_property_customizers[submodel_key] = []
 
-        scientific_properties_formsets[submodel_key] = MetadataScientificPropertyInlineFormSetFactory(
+        scientific_properties_formsets[model_prefix] = MetadataScientificPropertyInlineFormSetFactory(
             instance = model,
-            prefix = adjusted_prefix,
+            prefix = model_prefix,
             queryset = scientific_properties[submodel_key],
-            customizers = scientific_property_customizers[model_key],
+            customizers = scientific_property_customizers[submodel_key],
         )
 
     return (model_formset, standard_properties_formsets, scientific_properties_formsets)
@@ -1364,7 +1359,6 @@ def create_existing_edit_subforms_from_models(models, model_customizer, standard
 
 def create_edit_forms_from_data(data, models, model_customizer, standard_properties, standard_property_customizers, scientific_properties, scientific_property_customizers):
     """This creates and validates forms based on POST data"""
-
 
     model_keys = [model.get_model_key() for model in models]
 
@@ -1445,30 +1439,32 @@ def create_edit_subforms_from_data(data, models, model_customizer, standard_prop
 
     for (i, model_form) in enumerate(model_formset.forms):
 
-        adjusted_prefix = model_form.prefix
-        model_key = model_form.instance.get_model_key()
 
-        standard_properties_formsets[adjusted_prefix] = MetadataStandardPropertyInlineSubFormSetFactory(
+        model_prefix = model_form.prefix
+        submodel_key = u"%s_%s-%s" % (model_form.get_current_field_value("vocabulary_key"), model_form.get_current_field_value("component_key"), i)
+        #submodel_key = model_form.instance.get_model_key() + "-%s" % (i) # I cannot depend on using model_form.instance.get_model_key() b/c the model form _may_ have been invalid (and therefore the corresponding instance _may_ not have saved)
+
+        standard_properties_formsets[model_prefix] = MetadataStandardPropertyInlineSubFormSetFactory(
             instance = model_instances[i] if model_formset_validity else model_form.instance,
-            prefix = adjusted_prefix,
+            prefix = model_prefix,
             data = data,
             customizers = standard_property_customizers,
         )
 
-        validity += [standard_properties_formsets[adjusted_prefix].is_valid()]
+        validity += [standard_properties_formsets[model_prefix].is_valid()]
 
         # TODO: JUST A LIL HACK UNTIL I CAN FIGURE OUT WHERE TO SETUP THIS LOGIC
-        if model_key not in scientific_property_customizers:
-            scientific_property_customizers[model_key] = []
+        if submodel_key not in scientific_property_customizers:
+            scientific_property_customizers[submodel_key] = []
 
-        scientific_properties_formsets[adjusted_prefix] = MetadataScientificPropertyInlineFormSetFactory(
+        scientific_properties_formsets[model_prefix] = MetadataScientificPropertyInlineFormSetFactory(
             instance = model_instances[i] if model_formset_validity else model_form.instance,
-            prefix = adjusted_prefix,
+            prefix = model_prefix,
             data = data,
-            customizers = scientific_property_customizers[model_key],
+            customizers = scientific_property_customizers[submodel_key],
         )
 
-        validity += [scientific_properties_formsets[adjusted_prefix].is_valid()]
+        validity += [scientific_properties_formsets[model_prefix].is_valid()]
 
     return (validity, model_formset, standard_properties_formsets, scientific_properties_formsets)
 
@@ -1554,6 +1550,7 @@ def save_valid_subforms(model_subform, standard_properties_subformset, scientifi
     # but I also need access to the underlying form so I can check certain customization details
     # NOTE THAT force_clean() MUST HAVE BEEN CALLED AFTER VALIDATION BUT PRIOR TO SAVING FOR THIS TO WORK
  #   for standard_property_instance, standard_property_form in zip(standard_properties_subformset.save(commit=True),standard_properties_subformset.forms):
+
 
 
     standard_property_instances = [sp.save(commit=False) for sp in standard_properties_subformset.forms]

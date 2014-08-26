@@ -236,7 +236,6 @@ def ajax_customize_category(request,category_id="",**kwargs):
 def ajax_select_realization(request,**kwargs):
 
     # I can get all of the info I need (version/proxy/project) from the customizer
-    # and it will allow me to customize the resultant form as well
     # (I still need to check for existing properties (using property_id) to exclude items from the queryset below)
     customizer_id = request.GET.get('c', None)
     standard_property_id = request.GET.get("s", None)
@@ -315,7 +314,7 @@ def ajax_select_realization(request,**kwargs):
 
                 # get the full realization set
                 (models, standard_properties, scientific_properties) = \
-                    MetadataModel.get_new_realization_set(model_customizer.project, model_customizer.version, model_customizer.proxy, standard_property_proxies, scientific_property_proxies, model_customizer, vocabularies=MetadataVocabulary.objects.none(), is_subrealization=True)
+                    MetadataModel.get_new_subrealization_set(model_customizer.project, model_customizer.version, model_customizer.proxy, standard_property_proxies, scientific_property_proxies, model_customizer, vocabularies=MetadataVocabulary.objects.none())
 
             else:
 
@@ -324,17 +323,15 @@ def ajax_select_realization(request,**kwargs):
 
                 # get the full realization set...
                 (models, standard_properties, scientific_properties) = \
-                    MetadataModel.get_existing_realization_set(realizations, model_customizer, is_subrealization=True)
+                    MetadataModel.get_existing_subrealization_set(realizations, model_customizer)
 
             # clean it up a bit based on properties that have been customized not to be displayed
-            for model in models:
+            for i,model in enumerate(models):
 
                 model_key = model.get_model_key()
-                property_key = model_key
-                if model.pk:
-                    property_key = model_key + str(model.pk)
+                submodel_key = model.get_model_key() + "-%s" % (i)
 
-                standard_property_list = standard_properties[property_key]
+                standard_property_list = standard_properties[submodel_key]
                 standard_properties_to_remove = []
                 for standard_property, standard_property_customizer in zip(standard_property_list,standard_property_customizers):
                     if not standard_property_customizer.displayed:
@@ -349,12 +346,12 @@ def ajax_select_realization(request,**kwargs):
                         standard_property_list.exclude(id__in=[standard_property.pk for standard_property in standard_properties_to_remove])
 
                 # TODO: JUST A LIL HACK UNTIL I CAN FIGURE OUT WHERE TO SETUP THIS LOGIC
-                if property_key not in scientific_property_customizers:
-                    scientific_property_customizers[property_key] = []
+                if submodel_key not in scientific_property_customizers:
+                    scientific_property_customizers[submodel_key] = []
 
-                scientific_property_list = scientific_properties[property_key]
+                scientific_property_list = scientific_properties[submodel_key]
                 scientific_properties_to_remove = []
-                for scientific_property, scientific_property_customizer in zip(scientific_property_list,scientific_property_customizers[property_key]):
+                for scientific_property, scientific_property_customizer in zip(scientific_property_list,scientific_property_customizers[submodel_key]):
                     if not scientific_property_customizer.displayed:
                         scientific_properties_to_remove.append(scientific_property)
                 # (as above) this list might actually be a queryset, so remove doesn't work

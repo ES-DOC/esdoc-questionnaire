@@ -69,6 +69,6 @@ urlpatterns = patterns('',
     url(r'^ajax/customize_subform/$', 'questionnaire.views.ajax_customize_subform', name="customize_subform"),
     url(r'^ajax/customize_category/$', 'questionnaire.views.ajax_customize_category'),
     url(r'^ajax/customize_category/(?P<category_id>[^/]+)/$', 'questionnaire.views.ajax_customize_category'),
-    url(r'^ajax/select_realization/$', 'questionnaire.views.ajax_select_realization'),
+    url(r'^ajax/select_realization/$', 'questionnaire.views.ajax_select_realization', name="select_realization"),
 
 )

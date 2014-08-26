@@ -244,7 +244,7 @@ class MetadataComponentProxy(MPTTModel):
     order                   = models.PositiveIntegerField(blank=True,null=True)
     vocabulary              = models.ForeignKey("MetadataVocabulary",blank=False,null=True,related_name="component_proxies")
 
-    guid   = models.CharField(blank=True, null=True, max_length=LIL_STRING)
+    guid   = models.CharField(blank=True, null=True, max_length=LIL_STRING, unique=True, editable=False)
 
     parent = TreeForeignKey('self', null=True, blank=True, related_name='children')
 
