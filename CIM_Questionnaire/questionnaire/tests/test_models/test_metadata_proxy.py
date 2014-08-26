@@ -9,22 +9,11 @@
 #   This project is distributed according to the terms of the MIT license [http://www.opensource.org/licenses/MIT].
 ####################
 
-#import os
 from django.template.defaultfilters import slugify
 
 from CIM_Questionnaire.questionnaire.tests.base import TestQuestionnaireBase
 
 from CIM_Questionnaire.questionnaire.models.metadata_proxy import MetadataModelProxy
-
-# from CIM_Questionnaire.questionnaire.models.metadata_model import MetadataModel
-# from CIM_Questionnaire.questionnaire.models.metadata_version import MetadataVersion
-# from CIM_Questionnaire.questionnaire.models.metadata_categorization import MetadataCategorization
-# from CIM_Questionnaire.questionnaire.models.metadata_vocabulary import MetadataVocabulary
-# from CIM_Questionnaire.questionnaire.models.metadata_project import MetadataProject
-#
-# from CIM_Questionnaire.questionnaire.utils import add_parameters_to_url
-# from CIM_Questionnaire.questionnaire.utils import DEFAULT_VOCABULARY
-
 
 class TestMetadataProxy(TestQuestionnaireBase):
 

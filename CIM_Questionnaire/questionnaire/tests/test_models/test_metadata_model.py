@@ -25,8 +25,7 @@ from CIM_Questionnaire.questionnaire.models.metadata_vocabulary import UPLOAD_PA
 from CIM_Questionnaire.questionnaire.models.metadata_version import UPLOAD_PATH as VERSION_UPLOAD_PATH
 from CIM_Questionnaire.questionnaire.models.metadata_categorization import UPLOAD_PATH as CATEGORIZATION_UPLOAD_PATH
 
-from CIM_Questionnaire.questionnaire.utils import add_parameters_to_url
-from CIM_Questionnaire.questionnaire.utils import DEFAULT_VOCABULARY
+from CIM_Questionnaire.questionnaire.utils import DEFAULT_VOCABULARY_KEY, DEFAULT_COMPONENT_KEY
 
 class TestMetadataModel(TestQuestionnaireBase):
 
@@ -145,7 +144,7 @@ class TestMetadataModel(TestQuestionnaireBase):
         (models, standard_properties, scientific_properties) = \
             MetadataModel.get_new_realization_set(self.project, self.version, model_proxy, standard_property_proxies, scientific_property_proxies, test_customizer, test_vocabularies)
 
-        root_model_key = u"%s_%s" % (slugify(DEFAULT_VOCABULARY), slugify(test_customizer.model_root_component))
+        root_model_key = u"%s_%s" % (DEFAULT_VOCABULARY_KEY, DEFAULT_COMPONENT_KEY)
 
         n_components = 1
         for vocabulary in test_vocabularies:
@@ -239,7 +238,7 @@ class TestMetadataModel(TestQuestionnaireBase):
         (models, standard_properties, scientific_properties) = \
             MetadataModel.get_existing_realization_set(models, test_customizer, vocabularies=test_vocabularies)
 
-        root_model_key = u"%s_%s" % (slugify(DEFAULT_VOCABULARY), slugify(test_customizer.model_root_component))
+        root_model_key = u"%s_%s" % (DEFAULT_VOCABULARY_KEY, DEFAULT_COMPONENT_KEY)
 
         n_components = 1
         for vocabulary in test_vocabularies:
