@@ -933,6 +933,67 @@ class Test(TestQuestionnaireBase):
                 self.assertGreater(len(standard_property_instance.relationship_value.all()), 0)
 
 
+    def test_save_valid_standard_properties_formset_with_subforms_added_subforms(self):
+
+        test_document_type = "modelcomponent"
+
+        test_proxy = MetadataModelProxy.objects.get(version=self.version, name__iexact=test_document_type)
+
+        test_vocabularies = self.project.vocabularies.filter(document_type__iexact=test_document_type)
+
+        properties_with_subforms=[ "author", "contact", ]
+        test_customizer = self.create_customizer_set_with_subforms(self.project, self.version, test_proxy, properties_with_subforms=properties_with_subforms)
+        (model_customizer,standard_category_customizers,standard_property_customizers,nested_scientific_category_customizers,nested_scientific_property_customizers) = \
+            MetadataCustomizer.get_existing_customizer_set(test_customizer, test_vocabularies)
+        scientific_property_customizers = get_joined_keys_dict(nested_scientific_property_customizers)
+
+        (model_proxy, standard_property_proxies, scientific_property_proxies) = MetadataModelProxy.get_proxy_set(test_proxy, vocabularies=test_vocabularies)
+
+        (models, standard_properties, scientific_properties) = \
+            MetadataModel.get_new_realization_set(self.project, self.version, model_proxy, standard_property_proxies, scientific_property_proxies, test_customizer, test_vocabularies)
+        model_parent_dictionary = get_model_parent_dictionary(models)
+
+        (model_formset, standard_properties_formsets, scientific_properties_formsets) = \
+            create_new_edit_forms_from_models(models,model_customizer,standard_properties, standard_property_customizers,scientific_properties, scientific_property_customizers)
+
+        data = get_data_from_edit_forms(model_formset, standard_properties_formsets, scientific_properties_formsets, simulate_post=False)
+
+        properties_to_add_subforms_to = ["contact"]
+        root_component_key = models[0].get_root().get_model_key()
+        new_data = self.add_subform_to_post_data(data, standard_properties_formsets[root_component_key], properties_to_add_subform_to=properties_to_add_subforms_to)
+
+        (validity, model_formset, standard_properties_formsets, scientific_properties_formsets) = \
+            create_edit_forms_from_data(new_data, models, model_customizer, standard_properties, standard_property_customizers, scientific_properties, scientific_property_customizers)
+
+        self.assertTrue(all(validity))
+
+        test_standard_properties_subform_data = [
+            {'field_type': u'ATOMIC',       'enumeration_other_value': u'Please enter a custom value', 'name': u'individualName',   'enumeration_value': u'', 'relationship_value': [], 'is_label': True,   'order': 0, 'atomic_value': u''},
+            {'field_type': u'RELATIONSHIP', 'enumeration_other_value': u'Please enter a custom value', 'name': u'contactInfo',      'enumeration_value': u'', 'relationship_value': [], 'is_label': False,  'order': 1, 'atomic_value': u''},
+        ]
+
+        for key, standard_properties_formset in standard_properties_formsets.iteritems():
+
+            standard_property_instances = save_valid_standard_properties_formset(standard_properties_formset)
+
+            self.assertEqual(len(standard_property_instances), 6)
+
+            for property_with_subform in properties_with_subforms:
+                standard_property_instance = find_in_sequence(lambda property: property.name==property_with_subform, standard_property_instances)
+
+                if standard_property_instance.name in properties_to_add_subforms_to and key == root_component_key:
+                    # this is the one we added a subform to
+                    self.assertEqual(len(standard_property_instance.relationship_value.all()), 2)
+                else:
+                    self.assertEqual(len(standard_property_instance.relationship_value.all()), 1)
+
+                for model_subform_instance in standard_property_instance.relationship_value.all():
+                    standard_properties_data = [model_to_data(sp) for sp in model_subform_instance.standard_properties.all()]
+                    for actual_standard_property_subform_data, test_standard_property_subform_data in zip(standard_properties_data, test_standard_properties_subform_data):
+                        self.assertDictEqual(actual_standard_property_subform_data, actual_standard_property_subform_data, excluded_keys=["id", "model", "proxy"])
+
+
+
     def test_standard_property_form_has_changed(self):
 
         test_document_type = "modelcomponent"
@@ -983,36 +1044,3 @@ class Test(TestQuestionnaireBase):
                         import ipdb; ipdb.set_trace()
                         standard_property_subform.has_changed()
 
-# I AM HERE; CARRY ON TESTING CORRECT CLASSES ARE USED AND THEN CHECK HAS_CHANGED IS FALSE
-
-
-
-
-
-# author = [
-#     (u'customize_subform_author-13-project', u'1'),
-#     (u'customize_subform_author-13-version', u'1'),
-#     (u'customize_subform_author-13-proxy', u'2'),
-#     (u'customize_subform_author-13-name', u'customizer_with_subforms'),
-#     (u'customize_subform_author-13-model_title', u'responsibleParty'),
-#     (u'customize_subform_author-13-model_description', u'a stripped-down responsible party to use for testing\n                purposes.'),
-#     (u'customize_subform_author-13-model_show_all_properties', u'True'),
-#     (u'customize_subform_author-13-model_show_all_categories', u'False'),
-#     (u'customize_subform_author-13-vocabulary_order', u''),
-#     (u'customize_subform_author-13-standard_categories_tags', u'Category One|Category Two|Category Three'),
-#     (u'customize_subform_author-13-standard_categories_content', u'[{"pk": null, "model": "questionnaire.metadatastandardcategorycustomizer", "fields": {"version": 1, "model_customizer": null, "description": "I am category one.", "created": null, "project": 1, "last_modified": null, "proxy": 1, "key": "category-one", "pending_deletion": false, "order": 1, "name": "Category One"}}, {"pk": null, "model": "questionnaire.metadatastandardcategorycustomizer", "fields": {"version": 1, "model_customizer": null, "description": "I am category two.", "created": null, "project": 1, "last_modified": null, "proxy": 2, "key": "category-two", "pending_deletion": false, "order": 2, "name": "Category Two"}}, {"pk": null, "model": "questionnaire.metadatastandardcategorycustomizer", "fields": {"version": 1, "model_customizer": null, "description": "I am category three - I am unused.", "created": null, "project": 1, "last_modified": null, "proxy": 3, "key": "category-three", "pending_deletion": false, "order": 3, "name": "Category Three"}}]'),
-# ]
-#
-# contact = [
-#     (u'customize_subform_contact-14-project', u'1'),
-#     (u'customize_subform_contact-14-version', u'1'),
-#     (u'customize_subform_contact-14-proxy', u'2'),
-#     (u'customize_subform_contact-14-name', u'customizer_with_subforms'),
-#     (u'customize_subform_contact-14-model_title', u'responsibleParty'),
-#     (u'customize_subform_contact-14-model_description', u'a stripped-down responsible party to use for testing\n                purposes.')
-#     (u'customize_subform_contact-14-standard_categories_content', u'[]'),
-#     (u'customize_subform_contact-14-model_show_all_properties', u'True'),
-#     (u'customize_subform_contact-14-model_show_all_categories', u'False'),
-#     (u'customize_subform_contact-14-vocabulary_order', u''),
-#     (u'customize_subform_contact-14-standard_categories_tags', u''),
-# ]

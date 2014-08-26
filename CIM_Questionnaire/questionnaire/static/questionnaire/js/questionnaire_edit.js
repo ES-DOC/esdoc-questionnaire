@@ -390,10 +390,6 @@ function add_subform(row) {
                                         var parsed_data = $.parseJSON(data);
                                         var new_prefix = parsed_data.prefix
 
-                                        console.log(old_prefix);
-                                        console.log(new_prefix);
-                                        console.log(parsed_data);
-
                                         /* rename ids and names */
                                         update_field_names(row,old_prefix,new_prefix);
                                         /* insert data */

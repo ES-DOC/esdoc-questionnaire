@@ -28,7 +28,7 @@ from CIM_Questionnaire.questionnaire.forms.forms_customize import get_data_from_
 
 from CIM_Questionnaire.questionnaire.fields import MetadataFieldTypes, EnumerationFormField, CardinalityFormField
 
-from CIM_Questionnaire.questionnaire.utils import add_parameters_to_url, get_form_by_field, get_forms_by_field
+from CIM_Questionnaire.questionnaire.utils import add_parameters_to_url, get_form_by_field, get_forms_by_field, get_data_from_form, get_data_from_formset
 from CIM_Questionnaire.questionnaire.utils import CIM_DOCUMENT_TYPES
 
 
@@ -490,3 +490,42 @@ class TestQuestionnaireBase(TestCase):
             property.save()
 
         return parent_customizer
+
+    def add_subform_to_post_data(self, data, standard_properties_formset, properties_to_add_subform_to=[]):
+
+        for property_name in properties_to_add_subform_to:
+
+            standard_property_form = get_form_by_field(standard_properties_formset,"name",property_name)
+
+            (subform_customizer, model_subformset, standard_properties_subformsets, scientific_properties_subformsets) = \
+            standard_property_form.get_subform_tuple()
+
+            subformset_prefix = model_subformset.prefix
+            initial_subforms = model_subformset.initial_form_count()
+            total_subforms = model_subformset.total_form_count()
+
+            request_url = add_parameters_to_url(reverse("select_realization"),
+                c = standard_property_form.customizer.pk,
+                p = standard_property_form.prefix,
+                n = total_subforms + 1 , # recall that in the interface, this view gets called _after_ a subform has been added by JS; hence the' + 1'
+            )
+
+            # this is adding a new _blank_ subform
+            response = self.client.post(request_url, data={"realizations" : -1}, follow=True)
+
+            json_response = json.loads(response.content)
+
+            # actually, don't have to mess w/ prefixes b/c there was no old subform in the interface that was copied
+            # old_prefix = subformset_prefix + "-0"
+            # new_prefix = json_response.pop("prefix")
+            # for key, value in json_response.iteritems():
+            #     data[key.replace(old_prefix,new_prefix)] = value
+            data.update(json_response)
+
+            data[subformset_prefix + "-INITIAL_FORMS"] = initial_subforms
+            data[subformset_prefix + "-TOTAL_FORMS"] = total_subforms + 1
+
+            return data
+
+
+

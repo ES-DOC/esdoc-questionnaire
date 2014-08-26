@@ -405,9 +405,9 @@ class MetadataStandardPropertyCustomizerForm(MetadataCustomizerForm):
         model = MetadataStandardPropertyCustomizer
         fields  = [
                 # hidden fields...
-                "field_type","proxy","category","subform_customizer",
+                "proxy","category","subform_customizer",
                 # header fields...
-                "name","category_name","order",
+                "name","category_name","order","field_type",
                 # common fields...
                 "displayed", "required", "editable", "unique", "verbose_name", "default_value", "documentation","inline_help","inherited",
                 # atomic fields...
@@ -419,10 +419,10 @@ class MetadataStandardPropertyCustomizerForm(MetadataCustomizerForm):
               ]
 
     category_name = CharField(label="Category",required=False)
-    category      = ChoiceField(required=False)
+    category = ChoiceField(required=False)
 
-    _hidden_fields       = ("field_type","proxy","category","subform_customizer",)
-    _header_fields       = ("name","category_name","order")
+    _hidden_fields       = ("proxy","category","subform_customizer",)
+    _header_fields       = ("name","category_name","field_type","order")
     _common_fields       = ("displayed","required","editable","unique","verbose_name","documentation","inline_help","default_value","inherited")
     _atomic_fields       = ("atomic_type","suggestions",)
     _enumeration_fields  = ("enumeration_choices","enumeration_default","enumeration_open","enumeration_multi","enumeration_nullable",)
@@ -515,12 +515,18 @@ class MetadataStandardPropertyCustomizerForm(MetadataCustomizerForm):
             msg = "invalid field type for standard property: '%s'" % (self.type)
             raise QuestionnaireError(msg)
 
+        self.fields['field_type'].widget = TextInput()  # don't give users a drop-down menu, just present the current field_type (note this is done _before_ updating widget attributes below)
         update_field_widget_attributes(self.fields["name"], {"class": "label", "readonly": "readonly"})
         update_field_widget_attributes(self.fields["category_name"], {"class": "label", "readonly": "readonly"})
         update_field_widget_attributes(self.fields["order"], {"class": "label", "readonly": "readonly"})
+        update_field_widget_attributes(self.fields["field_type"], {"class": "label", "readonly": "readonly"})
+
 
         set_field_widget_attributes(self.fields["documentation"], {"cols": "60", "rows": "4" })
         set_field_widget_attributes(self.fields["suggestions"], {"cols": "60", "rows": "4" })
+        set_field_widget_attributes(self.fields["field_type"], {"size": "12"})
+        set_field_widget_attributes(self.fields["order"], {"size": "4"})
+
     
     def clean(self):
         cleaned_data = self.cleaned_data

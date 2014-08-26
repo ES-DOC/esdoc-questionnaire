@@ -12,7 +12,7 @@ from CIM_Questionnaire.questionnaire.views.views_edit import validate_view_argum
 
 from CIM_Questionnaire.questionnaire.forms.forms_edit import get_data_from_edit_forms
 
-from CIM_Questionnaire.questionnaire.utils import FuzzyInt
+from CIM_Questionnaire.questionnaire.utils import FuzzyInt, model_to_data, find_in_sequence, get_form_by_field
 
 class Test(TestQuestionnaireBase):
 
@@ -58,6 +58,88 @@ class Test(TestQuestionnaireBase):
             response = self.client.get(request_url)
 
         self.assertEqual(response.status_code,200)
+
+    def test_questionnaire_edit_new_with_subforms_added_subforms(self):
+
+        test_document_type = "modelcomponent"
+
+        test_proxy = MetadataModelProxy.objects.get(version=self.version, name__iexact=test_document_type)
+
+        test_vocabularies = self.project.vocabularies.filter(document_type__iexact=test_document_type)
+
+        properties_with_subforms=[ "author", "contact", ]
+
+        test_customizer = self.create_customizer_set_with_subforms(self.project, self.version, test_proxy, properties_with_subforms=properties_with_subforms)
+        self.model_customizer.default = False
+        self.model_customizer.save()
+        test_customizer.default = True
+        test_customizer.save()
+
+        request_url = reverse("edit_new", kwargs = {
+            "project_name" : self.project,
+            "version_name" : self.version,
+            "model_name" : test_document_type,
+        })
+
+        response = self.client.get(request_url, follow=True)
+        context = response.context
+
+        self.assertEqual(response.status_code, 200)
+
+        model_formset = context["model_formset"]
+        standard_properties_formsets = context["standard_properties_formsets"]
+        scientific_properties_formsets = context["scientific_properties_formsets"]
+
+        original_data = get_data_from_edit_forms(model_formset, standard_properties_formsets, scientific_properties_formsets, simulate_post=True)
+
+        properties_to_add_subforms_to = ["contact"]
+        root_component_key = model_formset.forms[0].prefix
+        original_data_with_added_subforms = self.add_subform_to_post_data(original_data, standard_properties_formsets[root_component_key], properties_to_add_subform_to=properties_to_add_subforms_to)
+
+        response = self.client.post(request_url, data=original_data_with_added_subforms, follow=True)
+        context = response.context
+        session_variables = self.client.session
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("root_model_id", session_variables)
+
+        model_formset = context["model_formset"]
+        standard_properties_formsets = context["standard_properties_formsets"]
+        scientific_properties_formsets = context["scientific_properties_formsets"]
+
+        model_id = session_variables["root_model_id"]
+        model = MetadataModel.objects.get(pk=model_id)
+
+        import ipdb; ipdb.set_trace()
+
+        # EXPLICITLY TESTING THAT DB HAS THE ADDITIONAL SUBFORM:
+        test_submodel_standard_properties_data = [
+            {'field_type': u'ATOMIC',       'enumeration_other_value': u'Please enter a custom value', 'name': u'individualName',   'enumeration_value': u'', 'relationship_value': [], 'is_label': True,   'order': 0, 'atomic_value': u''},
+            {'field_type': u'RELATIONSHIP', 'enumeration_other_value': u'Please enter a custom value', 'name': u'contactInfo',      'enumeration_value': u'', 'relationship_value': [], 'is_label': False,  'order': 1, 'atomic_value': u''},
+        ]
+        standard_properties = model.standard_properties.all()
+        standard_property_to_test = find_in_sequence(lambda property: property.name in properties_to_add_subforms_to, standard_properties)
+        submodels_to_test = standard_property_to_test.relationship_value.all()
+        self.assertEqual(len(submodels_to_test), 2)
+        for submodel_to_test in submodels_to_test:
+            submodel_standard_properties_data = [model_to_data(sp) for sp in submodel_to_test.standard_properties.all()]
+            for actual_standard_property_data, test_standard_property_data in zip(submodel_standard_properties_data, test_submodel_standard_properties_data):
+                self.assertDictEqual(actual_standard_property_data, test_standard_property_data, excluded_keys=["id", "model", "proxy"])
+
+        # EXPLICITLY TEST THAT FORMS HAVE ADDITIONAL SUBFORM:
+        standard_property_form_to_test = get_form_by_field(standard_properties_formsets[root_component_key], "name", properties_to_add_subforms_to[0] )
+        self.assertEqual(len(standard_property_form_to_test.get_current_field_value("relationship_value")), 2)
+
+        (subform_customizer, model_subformset, standard_properties_subformsets, scientific_properties_subformsets) = \
+            standard_property_form_to_test.get_subform_tuple()
+
+        # AHA! FOUND THE PROBLEM; NEWLY-ADDED ITEMS DO NOT HAVE APPROPRIATE PREFIXES!!!
+        # LOOK AT THE KEYS OF standard_properties_subformsets
+        # AND CHECK THE PREFIXES OF INDIVIDUAL FORMS
+        self.assertEqual(subform_customizer.name, test_customizer.name)
+        import ipdb; ipdb.set_trace()
+
+
 
     # def test_questionnaire_edit_new_get(self):
     #     project_name = "test"

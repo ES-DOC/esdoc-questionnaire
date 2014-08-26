@@ -1,6 +1,14 @@
 CIM Questionnaire
 
-v1.0.0
+v0.11.1.0
+
+* ability to save subforms
+
+v0.11.0.1
+
+* patch to add user documentation
+
+v0.11.0.0
 
 * entire rewrite to improve efficiency
 
