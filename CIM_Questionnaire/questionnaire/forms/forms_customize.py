@@ -50,9 +50,9 @@ def save_valid_forms(model_customizer_form, standard_property_customizer_formset
 
     model_customizer_instance = model_customizer_form.save()
 
-    active_vocabularies                 = model_customizer_form.cleaned_data["vocabularies"]
-    standard_categories_to_process      = model_customizer_form.standard_categories_to_process
-    scientific_categories_to_process    = model_customizer_form.scientific_categories_to_process
+    active_vocabularies              = model_customizer_form.cleaned_data["vocabularies"]
+    standard_categories_to_process   = model_customizer_form.standard_categories_to_process
+    scientific_categories_to_process = model_customizer_form.scientific_categories_to_process
 
     # save (or delete) the standard category customizers...
     active_standard_categories = []
@@ -97,6 +97,8 @@ def save_valid_forms(model_customizer_form, standard_property_customizer_formset
             for (component_key,scientific_property_customizer_formset) in formset_dictionary.iteritems():
                 scientific_property_customizer_instances = scientific_property_customizer_formset.save(commit=False)
                 for scientific_property_customizer_instance in scientific_property_customizer_instances:
+                    # TODO: DOES THIS WORK FOR CATEGORY_KEY SINCE CHANGING TO USING GUIDS
+                    # TODO: CHANGE CODE TO USE GUIDS FOR CATEGORIES AS WELL AS COMPONENTS/VOCABULARIES
                     category_key = slugify(scientific_property_customizer_instance.category_name)
                     category = find_in_sequence(lambda category: category.key==category_key,active_scientific_categories[vocabulary_key][component_key])
                     scientific_property_customizer_instance.category = category
@@ -203,9 +205,9 @@ class MetadataModelCustomizerForm(MetadataModelCustomizerAbstractForm):
         update_field_widget_attributes(self.fields["standard_categories_tags"],{"class":"tags"})
 
         for vocabulary in all_vocabularies:
-            vocabulary_key = slugify(vocabulary.name)
+            vocabulary_key = vocabulary.get_key()
             for component_proxy in vocabulary.component_proxies.all():
-                component_key = slugify(component_proxy.name)
+                component_key = component_proxy.get_key()
                 scientific_categories_content_field_name                = vocabulary_key+"_"+component_key + "_scientific_categories_content"
                 scientific_categories_tags_field_name                   = vocabulary_key+"_"+component_key + "_scientific_categories_tags"
                 self.fields[scientific_categories_content_field_name]   = CharField(required=False,widget=Textarea)               # the categories themselves
@@ -249,10 +251,10 @@ class MetadataModelCustomizerForm(MetadataModelCustomizerAbstractForm):
             self.standard_categories_to_process.append(deserialized_standard_category_customizer)
         try:
             for vocabulary in self.cleaned_data["vocabularies"]:
-                vocabulary_key = slugify(vocabulary.name)
+                vocabulary_key = vocabulary.get_key()
                 self.scientific_categories_to_process[vocabulary_key] = {}
                 for component_proxy in vocabulary.component_proxies.all():
-                    component_key = slugify(component_proxy.name)
+                    component_key = component_proxy.get_key()
                     scientific_categories_content_field_name = vocabulary_key+"_"+component_key+"_scientific_categories_content"
                     self.scientific_categories_to_process[vocabulary_key][component_key] = []
                     for deserialized_scientific_category_customizer in serializers.deserialize("json", self.data[scientific_categories_content_field_name],ignorenonexistent=True):
@@ -263,8 +265,6 @@ class MetadataModelCustomizerForm(MetadataModelCustomizerAbstractForm):
 
         return cleaned_data
         
-
-
 
 class MetadataModelCustomizerSubForm(MetadataModelCustomizerAbstractForm):
 
@@ -310,9 +310,9 @@ class MetadataModelCustomizerSubForm(MetadataModelCustomizerAbstractForm):
         update_field_widget_attributes(self.fields["standard_categories_tags"],{"class":"tags"})
 
         for vocabulary in all_vocabularies:
-            vocabulary_key = slugify(vocabulary.name)
+            vocabulary_key = vocabulary.get_key()
             for component_proxy in vocabulary.component_proxies.all():
-                component_key = slugify(component_proxy.name)
+                component_key = component_proxy.get_key()
                 scientific_categories_content_field_name                = vocabulary_key+"_"+component_key + "_scientific_categories_content"
                 scientific_categories_tags_field_name                   = vocabulary_key+"_"+component_key + "_scientific_categories_tags"
                 self.fields[scientific_categories_content_field_name]   = CharField(required=False,widget=Textarea)               # the categories themselves
@@ -824,7 +824,7 @@ def create_new_customizer_forms_from_models(model_customizer,standard_category_c
     for vocabulary_key,scientific_property_customizer_dict in scientific_property_customizers.iteritems():
         scientific_property_customizer_formsets[vocabulary_key] = {}
         for component_key,scientific_property_customizer_list in scientific_property_customizer_dict.iteritems():
-            model_key = u"%s_%s" % (vocabulary_key,component_key)
+            model_key = u"%s_%s" % (vocabulary_key, component_key)
             scientific_property_customizers_data = [
                 create_scientific_property_customizer_form_data(model_customizer,scientific_property_customizer)
                 for scientific_property_customizer in scientific_property_customizers[vocabulary_key][component_key]

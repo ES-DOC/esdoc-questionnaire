@@ -28,7 +28,7 @@ from CIM_Questionnaire.questionnaire.forms.forms_customize import get_data_from_
 
 from CIM_Questionnaire.questionnaire.fields import MetadataFieldTypes, EnumerationFormField, CardinalityFormField
 
-from CIM_Questionnaire.questionnaire.utils import add_parameters_to_url, get_form_by_field, get_forms_by_field, get_data_from_form, get_data_from_formset
+from CIM_Questionnaire.questionnaire.utils import add_parameters_to_url, get_form_by_field, get_joined_keys_dict, get_forms_by_field, get_data_from_form, get_data_from_formset
 from CIM_Questionnaire.questionnaire.utils import CIM_DOCUMENT_TYPES
 
 
@@ -87,64 +87,6 @@ class TestQuestionnaireBase(TestCase):
 
         # REPLACED ALL OF THIS W/ create_static_x() FNS BELOW
         self.create_static_content()
-        # # SETUP DEFAULT PROJECT
-        # test_project = MetadataProject(name="project", title="Test Project", active=True, authenticated=False)
-        # test_project.save()
-        # project_qs = MetadataProject.objects.all()
-        # self.assertEqual(len(project_qs), 1)
-        # self.project = test_project
-        #
-        # # SETUP DEFAULT VERSION
-        # test_version_path = os.path.join(VERSION_UPLOAD_PATH, "test_version.xml")
-        # test_version = MetadataVersion(name="version", file=test_version_path)
-        # test_version.save()
-        # version_qs = MetadataVersion.objects.all()
-        # self.assertEqual(len(version_qs), 1)
-        # self.version = test_version
-        #
-        # # SETUP DEFAULT CATEGORIZATION
-        # test_categorization_path = os.path.join(CATEGORIZATION_UPLOAD_PATH, "test_categorization.xml")
-        # test_categorization = MetadataCategorization(name="categorization", file=test_categorization_path)
-        # test_categorization.save()
-        # categorization_qs = MetadataCategorization.objects.all()
-        # self.assertEqual(len(categorization_qs), 1)
-        # self.categorization = test_categorization
-        #
-        # # SETUP DEFAULT VOCABULARY
-        # test_document_type = "modelcomponent"
-        # self.assertIn(test_document_type, CIM_DOCUMENT_TYPES, msg="Unrecognized vocabulary document type: %s" % (test_document_type))
-        # test_vocabulary_path = os.path.join(VOCABULARY_UPLOAD_PATH, "test_vocabulary_bdl.xml")
-        # test_vocabulary = MetadataVocabulary(name="vocabulary", file=test_vocabulary_path, document_type=test_document_type)
-        # test_vocabulary.save()
-        # vocabulary_qs = MetadataVocabulary.objects.all()
-        # self.assertEqual(len(vocabulary_qs), 1)
-        # self.vocabulary = test_vocabulary
-        #
-        # # SETUP RELATIONS AMONG THOSE DEFAULT OBJECTS
-        # test_version.categorization = test_categorization
-        # test_version.save()
-        # test_project.vocabularies.add(test_vocabulary)
-        # test_project.save()
-        #
-        # # REGISTER THE DEFAULT OBJECTS TO GET PROXIES
-        # test_version.register()
-        # test_version.save()
-        # test_categorization.register()
-        # test_categorization.save()
-        # test_vocabulary.register()
-        # test_vocabulary.save()
-        # model_proxy_qs = MetadataModelProxy.objects.all()
-        # standard_category_proxy_qs = MetadataStandardCategoryProxy.objects.all()
-        # scientific_category_proxy_qs = MetadataScientificCategoryProxy.objects.all()
-        # standard_property_proxy_qs = MetadataStandardPropertyProxy.objects.all()
-        # scientific_property_proxy_qs = MetadataScientificPropertyProxy.objects.all()
-        # component_proxy_qs = MetadataComponentProxy.objects.all()
-        # self.assertEqual(len(model_proxy_qs), 3, msg="Unexpected number of MetadataModelProxy.  Did you change %s" % (test_version.file.path))
-        # self.assertEqual(len(standard_category_proxy_qs), 3, msg="Unexpected number of MetadataStandardCategoryProxy.  Did you change %s" % (test_version.file.path))
-        # self.assertEqual(len(scientific_category_proxy_qs), 10, msg="Unexpected number of MetadataScientificCategoryProxy.  Did you change %s" % (test_vocabulary.file.path))
-        # self.assertEqual(len(standard_property_proxy_qs), 11, msg="Unexpected number of MetadataStandardPropertyProxy.  Did you change %s" % (test_version.file.path))
-        # self.assertEqual(len(scientific_property_proxy_qs), 9, msg="Unexpected number of MetadataScientificCategoryProxy.  Did you change %s" % (test_vocabulary.file.path))
-        # self.assertEqual(len(component_proxy_qs), 5, msg="Unexpected number of MetadataComponentProxy.  Did you change %s" % (test_vocabulary.file.path))
 
         test_document_type = "modelcomponent"
 
@@ -176,11 +118,15 @@ class TestQuestionnaireBase(TestCase):
 
         # SETUP DEFAULT REALIZATIONS
         reordered_test_standard_property_proxies = [standard_property_customizer.proxy for standard_property_customizer in test_standard_property_customizers]
-        reordered_test_scientific_property_proxies = {}
-        for vocabulary_key,scientific_property_customizer_dict in test_scientific_property_customizers.iteritems():
-            for component_key,scientific_property_customizer_list in scientific_property_customizer_dict.iteritems():
-                model_key = u"%s_%s" % (vocabulary_key, component_key)
-                reordered_test_scientific_property_proxies[model_key] = [scientific_property_customizer.proxy for scientific_property_customizer in scientific_property_customizer_list]
+        reordered_test_scientific_property_customizers = get_joined_keys_dict(test_scientific_property_customizers)
+        reordered_test_scientific_property_proxies = { key : [spc.proxy for spc in value] for key,value in reordered_test_scientific_property_customizers.items() }
+
+        # reordered_test_standard_property_proxies = [standard_property_customizer.proxy for standard_property_customizer in test_standard_property_customizers]
+        # reordered_test_scientific_property_proxies = {}
+        # for vocabulary_key,scientific_property_customizer_dict in test_scientific_property_customizers.iteritems():
+        #     for component_key,scientific_property_customizer_list in scientific_property_customizer_dict.iteritems():
+        #         model_key = u"%s_%s" % (vocabulary_key, component_key)
+        #         reordered_test_scientific_property_proxies[model_key] = [scientific_property_customizer.proxy for scientific_property_customizer in scientific_property_customizer_list]
         (test_models, test_standard_properties, test_scientific_properties) = \
             MetadataModel.get_new_realization_set(self.project, self.version, proxy_to_test, reordered_test_standard_property_proxies, reordered_test_scientific_property_proxies, test_model_customizer, vocabularies_to_test)
         MetadataModel.save_realization_set(test_models,test_standard_properties,test_scientific_properties)

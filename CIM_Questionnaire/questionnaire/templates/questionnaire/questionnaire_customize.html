@@ -378,7 +378,7 @@
                                 <div class="tabs" id="vocabularies_tabs">
                                     <ul  style="width: 120px;"> <!-- the tab menu -->
                                         {% for vocabulary in vocabularies %}
-                                            {% with vocabulary_key=vocabulary.name|slugify %}
+                                            {% with vocabulary_key=vocabulary.get_key %}
                                                 <li>
                                                     <a href="#tab_scientific_properties_{{vocabulary_key}}">
                                                         {{ vocabulary.name }}
@@ -389,7 +389,7 @@
                                     </ul>
 
                                     {% for vocabulary in vocabularies %}
-                                        {% with vocabulary_key=vocabulary.name|slugify %}
+                                        {% with vocabulary_key=vocabulary.get_key %}
 
                                             {% with formsets=scientific_property_customizer_formsets|get_value_from_key:vocabulary_key %}
 
@@ -399,7 +399,7 @@
                                                         <div class="tabs">
                                                             <ul>
                                                                 {% for component in vocabulary.component_proxies.all %}
-                                                                    {% with component_key=component.name|slugify %}
+                                                                    {% with component_key=component.get_key %}
                                                                         <li>
                                                                             <a href="#tab_scientific_properties_{{vocabulary_key}}_{{component_key}}">
                                                                                 {{component.name}} <span style="font-size: small;">({{formsets|get_number_of_properties_from_key:component_key}})</span>
@@ -410,7 +410,7 @@
                                                             </ul>
 
                                                             {% for component in vocabulary.component_proxies.all %}
-                                                                {% with component_key=component.name|slugify %}
+                                                                {% with component_key=component.get_key %}
                                                                     <div id="tab_scientific_properties_{{vocabulary_key}}_{{component_key}}">
                                                                         <div class="tab_content">
 
