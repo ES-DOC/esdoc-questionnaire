@@ -160,16 +160,15 @@ function accordion_buttons(element) {
             return false;
         });
 
-        $(element).find(".sort_by").each(function () {
-            $(this).menu().width("8em").hide();
-            $(this).click(function (event) {
-                var sort_key = $(event.target).attr("name");
-                var sort_target = $(event.target).closest(".tab_content").find(".accordion:first");
-                sort_accordions(sort_target, sort_key);
-                $(event.target).closest(".sort_by").hide();     // hide the sort_by menu
-                event.preventDefault();                         // don't actually follow the menu link (one of these is bound to work)
-                return false;                                   // don't actually follow the menu link (one of these is bound to work)
-            });
+        var sort_menu = $(element).next(".sort_by");
+        $(sort_menu).menu().width("8em").hide();
+        $(sort_menu).click(function (event) {
+            var sort_key = $(event.target).attr("name");
+            var sort_target = $(event.target).closest(".tab_content").find(".accordion:first");
+            sort_accordions(sort_target, sort_key);
+            $(event.target).closest(".sort_by").hide();     // hide the sort_by menu
+            event.preventDefault();                         // don't actually follow the menu link (one of these is bound to work)
+            return false;                                   // don't actually follow the menu link (one of these is bound to work)
         });
     }
 
@@ -194,32 +193,6 @@ function dates(element) {
         text: false
     }).attr("title", "click to select date");
 }
-
-function xdates(parent) {
-    $(parent).find(".date,.datetime").each(function() {
-        var field_id = $(this).attr("id");
-        /* clear any previous setup, to ensure widget is bound to the current input element */
-        //$(this).next("button").button("destroy");
-        //$(this).datepicker('destroy');
-        if (! $(this).hasClass("hasDatepicker")) {
-            $(this).datepicker({
-                //altField: "#"+field_id,
-                changeYear: true,
-                showButtonPanel: false,
-                showOn: 'button'
-            }).next("button").button({
-                icons: { primary: "ui-icon-calendar" },
-                text: false
-            });
-        };
-    });
-
-    $(".ui-datepicker-trigger").mouseover(function () {
-        $(this).css('cursor', 'pointer');
-    });
-    $(".ui-datepicker-trigger").attr("title", "click to select date");
-
-};
 
 function fieldsets(element) {
     $(element).addClass("expanded");
@@ -361,6 +334,7 @@ function render_error(error) {
     });
 
     // render treeview nodes...
+    // TODO
 }
     
 function render_msg(msg) {
@@ -402,7 +376,7 @@ function enable(source,enabling_value,targets) {
 
     for (var i = 0; i < targets.length; i++) {
         var selector = ".field[name$='" + targets[i] + "']";
-        var target_container = $(source).closest(".form").find(selector)
+        var target_container = $(source).closest(".form").find(selector);
                
         if (source_value_matches) {
             $(target_container).find("input,textarea,select,button,span").each(function() {
