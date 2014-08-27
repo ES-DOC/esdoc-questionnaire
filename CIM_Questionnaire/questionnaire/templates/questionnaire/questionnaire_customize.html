@@ -21,29 +21,35 @@
 
             // do this first so that the dialogs appear near the top of the page
             init_dialogs(parent);
-            
+
+            // do this next, so it can happen while other widgets are loading
             render_msg($("#msg"));
 
-            init_widget(users,parent);
-            init_widget(readonlies,parent);
-            init_widget(buttons,parent);            
-            init_widget(fieldsets,parent);
-            init_widget(tabs,parent);
-            init_widget(selects,parent);
-            init_widget(accordions,parent);
-            init_widget(helps,parent);
-            init_widget(enablers,parent);
+            init_widgets_on_show(fieldsets,$(parent).find(".collapsible_fieldset"))
+            init_widgets_on_show(helps,$(parent).find(".help_button"));
+            init_widgets_on_show(readonlies,$(parent).find(".readonly"));
+            init_widgets_on_show(enablers,$(parent).find(".enabler"));
 
-            // specific to customizer...
-            init_widget(tags,parent);
-            init_widget(sortable_accordions,parent);            
+            init_widgets(accordions,$(parent).find(".accordion").not(".fake"));
+            init_widgets(sortable_accordions,$(parent).find(".accordion .accordion_header"));
+            init_widgets(accordion_buttons,$(parent).find(".subform_toolbar button"));
+            init_widgets(tags,$(parent).find(".tags"));
+            init_widgets(tabs,$(parent).find(".tabs"));
+            init_widgets(users,$(parent).find("#user"));
+            init_widgets(buttons,$(parent).find("input.button"))
+            init_widgets(selects,$(parent).find(".multiselect"));
 
+            // some one-offs for the customizer
             $("button.customize_subform").button({
                   icons : {primary: "ui-icon-extlink"},
                   text : true
             });
 
-            $("#vocabularies_tabs").addClass("ui-tabs-vertical ui-helper-clearfix");
+            // TODO: MOVE THIS TO A SEPARATE FN
+
+            var vocabularies_tabs = $("#vocabularies_tabs");
+
+            $(vocabularies_tabs).addClass("ui-tabs-vertical ui-helper-clearfix");
             $("#vocabularies_tabs li").removeClass("ui-corner-top" ).addClass("ui-corner-left");
 
             $("select[name='vocabularies']").change(function(){
@@ -58,10 +64,8 @@
                 autoOpen : true,
                 emptyMultiText  : 'Select vocabularies',
                 onChange        : function(event,data) {
-                    var vocabularies_tabs = $("#vocabularies_tabs");
                     $(event.target).find("option").each(function(index,element) {
-                        var vocabulary_key = $(element).text().toLowerCase().replace(/[^\w]+/g,'');
-                        var vocabulary_tab_content = $(vocabularies_tabs).find("div[id$='"+vocabulary_key+"']");
+                        var vocabulary_tab_content = $(vocabularies_tabs).children("div.ui-tabs-panel").eq(index);
                         if ($(this).is(":selected")) {
                             $(vocabularies_tabs).tabs("enable",index);
                             $(vocabulary_tab_content).removeClass("ui-state-disabled");
@@ -75,9 +79,9 @@
             });
 
             $("select[name='vocabularies']").find("option").each(function(index,element) {
-                // make sure that the appropriate vocabulary tabs are active or inactive according to the selected options
-                var vocabulary_key = $(element).text().toLowerCase().replace(/[^\w]+/g,'');
-                var vocabulary_tab_content = $(vocabularies_tabs).find("div[id$='"+vocabulary_key+"']");
+                /* make sure that the appropriate vocabulary tabs are active or inactive according to the selected options */
+                /* (mirrors what the onChange event does above) */
+                var vocabulary_tab_content = $(vocabularies_tabs).children("div.ui-tabs-panel").eq(index);
                 if ($(this).is(":selected")) {
                     $(vocabularies_tabs).tabs("enable",index);
                     $(vocabulary_tab_content).removeClass("ui-state-disabled");

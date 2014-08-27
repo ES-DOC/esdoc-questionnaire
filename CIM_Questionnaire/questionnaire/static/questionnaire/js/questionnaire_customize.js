@@ -29,12 +29,12 @@ function vocabularies(parent) {
     });
 }
 
-function tags(parent) {
-    $(parent).find(".tags").each(function() {
-        var tag_widget  = $(this);
+function tags(element) {
+
+        var tag_widget  = $(element);
         var tag_type    = $(tag_widget).attr("name").endsWith("standard_categories_tags") ? STANDARD_TAG_TYPE : SCIENTIFIC_TAG_TYPE;
 
-        $(this).tagit({
+        $(element).tagit({
             allowSpaces : true,
             singleField : true,
             singleFieldDelimiter : "|",
@@ -128,7 +128,7 @@ function tags(parent) {
                }).dialog("open");
             }
         });
-        $(parent).find(".tagit").sortable({
+        $(element).sortable({
             axis        : "x",
             items       : "li:not(.tagit-new)",
             placeholder : "sortable_item",
@@ -158,9 +158,9 @@ function tags(parent) {
         });
         // rather than set 'readonly' to true (since I still want the functionality),
         // I just hide that part of the widget...
-        $(parent).find(".tagit-new").hide();
+        $(element).find(".tagit-new").hide();
         // ...and add code to this dummy widget...
-        var add_tag = $(this).nextAll(".add_tag:first");
+        var add_tag = $(element).nextAll(".add_tag:first");
         if (tag_type == STANDARD_TAG_TYPE) {
             $(add_tag).hide()
         }
@@ -180,19 +180,16 @@ function tags(parent) {
                 }
             });
         }
-    });
 }
 
-function sortable_accordions(parent) {
-    $(parent).find(".accordion").find(".accordion_header").each(function() {
-        /* wrap each accordion header & content pair in a div */
-        /* b/c they need to be a single unit to be sortable */
-        var accordion_unit = "<div class='accordion_unit'></div>";
-        $(this).next().andSelf().wrapAll(accordion_unit);
-    });
-    $(parent).find(".accordion").sortable({
+function sortable_accordions(element) {
+    /* element = $(parent).find(".accordion .accordion_header") */
+    $(element).next().andSelf().wrapAll("<div class='accordion_unit'></div>");
+
+    var accordion = $(element).closest(".accordion");
+    $(accordion).sortable({
         axis        : "y",
-        items       : "div.accordion_unit",//"h3",
+        items       : "div.accordion_unit",
         placeholder : "sortable_item",
         start : function(e,ui){
             ui.placeholder.height(ui.item.height());
@@ -206,7 +203,6 @@ function sortable_accordions(parent) {
                 var accordion_order = $(this).find("input.label[id$='-order']");
                 $(accordion_order).val(i)
             });
-
         }
     });
 }
