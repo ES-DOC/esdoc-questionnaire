@@ -308,9 +308,6 @@ function customize_property_subform(subform_id,subform_customizer_field_name) {
     //var customize_subform_dialog = $("#customize_subform_dialog");
     var customize_subform_dialog = $(document.createElement("div"));
 
-
-                                        console.log(subform_customizer_field_name);
-
     $.ajax({
         //url: url,
         url : url_root + "?i=" + subform_id,
@@ -330,14 +327,18 @@ function customize_property_subform(subform_id,subform_customizer_field_name) {
                     var parent = $(customize_subform_dialog);
                     // the addition of the 'true' attribute forces initialization,
                     // even if this dialog is opened multiple times
-                    init_widget(readonlies, parent, true);
-                    init_widget(buttons, parent, true);
-                    init_widget(fieldsets, parent, true);
-                    init_widget(selects, parent, true);
-                    init_widget(accordions, parent, true);
-                    init_widget(helps, parent, true);
-                    init_widget(enablers, parent, true);
-                    init_widget(tags, parent, true);
+                    init_widgets(readonlies, $(parent).find("readonly"), true);
+                    init_widgets(buttons, $(parent).find("input.button"), true);
+                    init_widgets(fieldsets, $(parent).find(".collapsible_fieldset"), true);
+                    init_widgets(selects, $(parent).find(".multiselect"), true);
+                    init_widgets(accordions, $(parent).find(".accordion").not(".fake"), true);
+                    init_widgets(sortable_accordions, $(parent).find(".accordion .accordion_header"), true);
+                    init_widgets(accordion_buttons, $(parent).find(".subform_toolbar button"), true);
+                    init_widgets(helps, $(parent).find(".help_button"), true);
+                    init_widgets(enablers, $(parent).find("enabler"), true);
+                    init_widgets(tags, $(parent).find(".tags"), true);
+                    init_widgets(tabs, $(parent).find(".tabs"), true);
+
                 },
                 buttons: [
                     {
@@ -387,11 +388,6 @@ function customize_property_subform(subform_id,subform_customizer_field_name) {
                                         }
                                         $(subform_customizer_field).val(subform_customizer_id)
 
-                                        console.log(subform_customizer_id);
-                                        console.log(subform_customizer_field_name);
-                                        console.log(subform_customizer_field);
-                                        console.log($(subform_customizer_field).val());
-
                                         $(customize_subform_dialog).dialog("close");
 
                                     }
@@ -402,14 +398,17 @@ function customize_property_subform(subform_id,subform_customizer_field_name) {
                                         var parent = $(customize_subform_dialog);
                                         // the addition of the 'true' attribute forces initialization,
                                         // even if this dialog is opened multiple times
-                                        init_widget(readonlies, parent, true);
-                                        init_widget(buttons, parent, true);
-                                        init_widget(fieldsets, parent, true);
-                                        init_widget(selects, parent, true);
-                                        init_widget(accordions, parent, true);
-                                        init_widget(helps, parent, true);
-                                        init_widget(enablers, parent, true);
-                                        init_widget(tags, parent, true);
+                                        init_widgets(readonlies, $(parent).find("readonly"), true);
+                                        init_widgets(buttons, $(parent).find("input.button"), true);
+                                        init_widgets(fieldsets, $(parent).find(".collapsible_fieldset"), true);
+                                        init_widgets(selects, $(parent).find(".multiselect"), true);
+                                        init_widgets(accordions, $(parent).find(".accordion").not(".fake"), true);
+                                        init_widgets(sortable_accordions, $(parent).find(".accordion .accordion_header"), true);
+                                        init_widgets(accordion_buttons, $(parent).find(".subform_toolbar button"), true);
+                                        init_widgets(helps, $(parent).find(".help_button"), true);
+                                        init_widgets(enablers, $(parent).find("enabler"), true);
+                                        init_widgets(tags, $(parent).find(".tags"), true);
+                                        init_widgets(tabs, $(parent).find(".tabs"), true);
 
                                     }
                                 }

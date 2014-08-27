@@ -1,5 +1,3 @@
-var FOOBAR=0;
-
 /* BEGIN enable ajax access to the same domain */
 
 // see https://docs.djangoproject.com/en/1.6/ref/contrib/csrf/#ajax for more info

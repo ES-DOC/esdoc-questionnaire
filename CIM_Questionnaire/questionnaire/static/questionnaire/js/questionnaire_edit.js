@@ -103,7 +103,7 @@ function dynamic_accordion_buttons(element) {
 };
 
 function dynamic_accordions(element) {
-    /* element = $(parent).find(".accordion .accordion_header) */
+    /* element = $(parent).find(".accordion .accordion_header") */
     /* have to do this in two steps b/c the accordion JQuery method cannot handle any content inbetween accordion panes */
     /* but I need a container for dynamic formsets to be bound to */
     /* so _after_ multiopenaccordion() is called, I stick a div into each pane and bind the formset() method to that div */
