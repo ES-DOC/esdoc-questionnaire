@@ -32,7 +32,7 @@ from django.template.defaultfilters import slugify
 
 from south.modelsinspector import introspector, add_introspection_rules
 
-from questionnaire.utils import *
+from CIM_Questionnaire.questionnaire.utils import *
 
 EMPTY_CHOICE  = [("","----------")]
 NULL_CHOICE   = [("_NONE", "---NONE---")]
@@ -181,9 +181,6 @@ class CardinalityField(models.CharField):
         return (field_class_path,args,kwargs)
 
 
-
-
-
 class CachedModelChoiceIterator(forms.models.ModelChoiceIterator):
 
     def __init__(self, field):
@@ -278,16 +275,16 @@ MetadataAtomicFieldTypes = EnumeratedTypeList([
 ])
 
 METADATA_ATOMICFIELD_MAP = {
-    "DEFAULT"   : [ TextInput,      { } ],
-    "BOOLEAN"   : [ CheckboxInput,  { } ],
-    "DATE"      : [ DateInput,      { } ],
-    "DATETIME"  : [ DateTimeInput,  { } ],
-    "DECIMAL"   : [ NumberInput,    { } ],
-    "EMAIL"     : [ EmailInput,     { } ],
-    "INTEGER"   : [ NumberInput,    { } ],
-    "TEXT"      : [ Textarea,       { } ],
-    "TIME"      : [ TimeInput,      { } ],
-    "URL"       : [ URLInput,       { } ],
+    "DEFAULT"  : [ TextInput,     { } ],
+    "BOOLEAN"  : [ CheckboxInput, { } ],
+    "DATE"     : [ DateInput,     { } ],
+    "DATETIME" : [ DateTimeInput, { } ],
+    "DECIMAL"  : [ NumberInput,   { } ],
+    "EMAIL"    : [ EmailInput,    { } ],
+    "INTEGER"  : [ NumberInput,   { } ],
+    "TEXT"     : [ Textarea,      { "cols" : "60", "rows" : "4" } ],
+    "TIME"     : [ TimeInput,     { } ],
+    "URL"      : [ URLInput,      { } ],
 }
 
 ## NOTE THAT I AM NO LONGER USING MOST OF THIS CODE BELOW
@@ -302,17 +299,17 @@ METADATA_ATOMICFIELD_MAP = {
 #############################################################
 
 MODELFIELD_MAP = {
-    "booleanfield"          : [ models.BooleanField,         { } ],
-    "charfield"             : [ models.CharField,            { "max_length" : BIG_STRING} ],
-    "datefield"             : [ models.DateField,            { "null" : True, } ],
-    "datetimefield"         : [ models.DateTimeField,        { "null" : True, } ],
-    "decimalfield"          : [ models.DecimalField,         { "null" : True, "max_digits" : 10, "decimal_places" : 5 } ],
-    "emailfield"            : [ models.EmailField,           { } ],
-    "integerfield"          : [ models.IntegerField,         { "null" : True} ],
-    "nullbooleanfield"      : [ models.NullBooleanField,     { } ],
-    "positiveintegerfield"  : [ models.PositiveIntegerField, { } ],
-    "textfield"             : [ models.TextField,            { "null" : True } ],
-    "timefield"             : [ models.TimeField,            { } ],
-    "urlfield"              : [ models.URLField,             { } ],
+    "booleanfield"         : [ models.BooleanField,         { } ],
+    "charfield"            : [ models.CharField,            { "max_length" : BIG_STRING} ],
+    "datefield"            : [ models.DateField,            { "null" : True, } ],
+    "datetimefield"        : [ models.DateTimeField,        { "null" : True, } ],
+    "decimalfield"         : [ models.DecimalField,         { "null" : True, "max_digits" : 10, "decimal_places" : 5 } ],
+    "emailfield"           : [ models.EmailField,           { } ],
+    "integerfield"         : [ models.IntegerField,         { "null" : True} ],
+    "nullbooleanfield"     : [ models.NullBooleanField,     { } ],
+    "positiveintegerfield" : [ models.PositiveIntegerField, { } ],
+    "textfield"            : [ models.TextField,            { "null" : True } ],
+    "timefield"            : [ models.TimeField,            { } ],
+    "urlfield"             : [ models.URLField,             { } ],
 }
 
