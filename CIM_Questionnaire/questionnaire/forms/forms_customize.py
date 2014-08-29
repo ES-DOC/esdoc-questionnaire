@@ -79,7 +79,7 @@ def save_valid_forms(model_customizer_form, standard_property_customizer_formset
                     scientific_category_customizer.model_customizer = model_customizer_instance
                     scientific_category_customizer.vocabulary_key = vocabulary_key
                     scientific_category_customizer.component_key = component_key
-                    scientific_category_customizer.model_key = u"%s_%s" % (vocabulary_key,component_key)
+                    scientific_category_customizer.model_key = u"%s_%s" % (vocabulary_key, component_key)
                     scientific_category_customizer.save()
                     active_scientific_categories[vocabulary_key][component_key].append(scientific_category_customizer)
 
@@ -92,15 +92,15 @@ def save_valid_forms(model_customizer_form, standard_property_customizer_formset
         standard_property_customizer_instance.save()
 
     # save the scientific property customizers...
-    for (vocabulary_key,formset_dictionary) in scientific_property_customizer_formsets.iteritems():
-        if find_in_sequence(lambda vocabulary: slugify(vocabulary.name)==vocabulary_key,active_vocabularies):
+    for (vocabulary_key, formset_dictionary) in scientific_property_customizer_formsets.iteritems():
+        if find_in_sequence(lambda vocabulary: vocabulary.get_key()==vocabulary_key, active_vocabularies):
             for (component_key,scientific_property_customizer_formset) in formset_dictionary.iteritems():
                 scientific_property_customizer_instances = scientific_property_customizer_formset.save(commit=False)
                 for scientific_property_customizer_instance in scientific_property_customizer_instances:
                     # TODO: DOES THIS WORK FOR CATEGORY_KEY SINCE CHANGING TO USING GUIDS
                     # TODO: CHANGE CODE TO USE GUIDS FOR CATEGORIES AS WELL AS COMPONENTS/VOCABULARIES
                     category_key = slugify(scientific_property_customizer_instance.category_name)
-                    category = find_in_sequence(lambda category: category.key==category_key,active_scientific_categories[vocabulary_key][component_key])
+                    category = find_in_sequence(lambda category: category.key==category_key, active_scientific_categories[vocabulary_key][component_key])
                     scientific_property_customizer_instance.category = category
                     scientific_property_customizer_instance.save()
 
@@ -719,7 +719,8 @@ class MetadataScientificPropertyCustomizerForm(MetadataCustomizerForm):
         if property_customizer.pk:
             # ordinarily, this is done in create_scientific_property_customizer_form_data above
             # but if this is an existing model, I still need to do this jiggery-pokery someplace
-            self.initial["category"] = property_customizer.category.key
+            if property_customizer.category:
+                self.initial["category"] = property_customizer.category.key
             if is_enumeration:
                 current_enumeration_choices = self.get_current_field_value("enumeration_choices")
                 current_enumeration_default = self.get_current_field_value("enumeration_default")
