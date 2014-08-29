@@ -69,6 +69,8 @@ class TestQuestionnaireBase(TestCase):
      to play with in child classes
     """
 
+    # maxDiff = None  # display full errors regardless of size
+
     def setUp(self):
 
         # self.factory = RequestFactory()

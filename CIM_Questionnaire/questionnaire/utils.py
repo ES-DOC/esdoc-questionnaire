@@ -81,8 +81,7 @@ CIM_DOCUMENT_TYPES = [
     "experiment",
 ]
 
-#: vocabulary name to use for cases where a model has no vocabulary, or where it is the root component of several vocabularies
-#DEFAULT_VOCABULARY = "DEFAULT_VOCABULARY"
+#: keys to use for cases where a model has no vocabulary, or where it is the root component of several vocabularies
 DEFAULT_VOCABULARY_KEY = "DEFAULT_VOCABULARY" #'c6fd2da4-723e-4816-9730-cf591ec8ffb9'
 DEFAULT_COMPONENT_KEY = "DEFAULT_COMPONENT" #'445af81a-3bb5-4be4-b01d-347cbf464e4e'
 

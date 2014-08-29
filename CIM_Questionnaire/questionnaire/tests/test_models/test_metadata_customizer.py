@@ -11,7 +11,6 @@
 
 import json
 
-from django.template.defaultfilters import slugify
 from django.core.urlresolvers import reverse
 from django.contrib import messages
 
@@ -62,9 +61,9 @@ class TestMetadataCustomizer(TestQuestionnaireBase):
         self.assertQuerysetEqual(standard_property_customizers, test_customizer.standard_property_customizers.all())
 
         for vocabulary in test_vocabularies:
-            vocabulary_key = slugify(vocabulary.name)
+            vocabulary_key = vocabulary.get_key()
             for component_proxy in vocabulary.component_proxies.all():
-                component_key = slugify(component_proxy.name)
+                component_key = component_proxy.get_key()
 
                 # make sure the scientific category customizers are as expected
                 test_scientific_category_customizer_qs_from_model = test_customizer.scientific_property_category_customizers.filter(vocabulary_key=vocabulary_key, component_key=component_key)

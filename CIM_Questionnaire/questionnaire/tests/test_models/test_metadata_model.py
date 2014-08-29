@@ -10,12 +10,11 @@
 ####################
 
 import os
-from django.template.defaultfilters import slugify
 
 from CIM_Questionnaire.questionnaire.tests.base import TestQuestionnaireBase
 
 from CIM_Questionnaire.questionnaire.models.metadata_model import MetadataModel
-from CIM_Questionnaire.questionnaire.models.metadata_proxy import MetadataModelProxy
+from CIM_Questionnaire.questionnaire.models.metadata_proxy import MetadataModelProxy, MetadataComponentProxy
 from CIM_Questionnaire.questionnaire.models.metadata_version import MetadataVersion
 from CIM_Questionnaire.questionnaire.models.metadata_categorization import MetadataCategorization
 from CIM_Questionnaire.questionnaire.models.metadata_vocabulary import MetadataVocabulary
@@ -80,6 +79,8 @@ class TestMetadataModel(TestQuestionnaireBase):
     def test_get_new_realization_set_from_cim(self):
 
         test_vocabularies = self.cim_project.vocabularies.filter(document_type__iexact=self.cim_document_type)
+        self.assertEqual(len(test_vocabularies), 1)
+        test_vocabulary = test_vocabularies[0]
 
         test_customizer = self.create_customizer_set_with_subforms(self.cim_project, self.cim_version, self.cim_proxy, properties_with_subforms=["documentAuthor"])
 
@@ -99,34 +100,34 @@ class TestMetadataModel(TestQuestionnaireBase):
             self.assertEqual(len(standard_property_list), 23)
 
         cim_component_names = [
-            'default_vocabulary_rootcomponent',
-            'cim_atmosphere',
-            'cim_atmoskeyproperties',
-            'cim_atmoscloudscheme',
-            'cim_atmosradiation',
-            'cim_atmosadvection',
-            'cim_atmosconvectturbulcloud',
-            'cim_topofatmosinsolation',
-            'cim_atmosdynamicalcore',
-            'cim_atmosorographyandwaves',
-            'cim_atmosspaceconfiguration',
-            'cim_atmoshorizontaldomain',
-            'cim_cloudsimulator',
+            u"%s_%s" % (DEFAULT_VOCABULARY_KEY, DEFAULT_COMPONENT_KEY),
+            u"%s_%s" % (test_vocabulary.get_key(), MetadataComponentProxy.objects.get(vocabulary=test_vocabulary, name__iexact='atmosphere').get_key()),
+            u"%s_%s" % (test_vocabulary.get_key(), MetadataComponentProxy.objects.get(vocabulary=test_vocabulary, name__iexact='atmoskeyproperties').get_key()),
+            u"%s_%s" % (test_vocabulary.get_key(), MetadataComponentProxy.objects.get(vocabulary=test_vocabulary, name__iexact='atmoscloudscheme').get_key()),
+            u"%s_%s" % (test_vocabulary.get_key(), MetadataComponentProxy.objects.get(vocabulary=test_vocabulary, name__iexact='atmosradiation').get_key()),
+            u"%s_%s" % (test_vocabulary.get_key(), MetadataComponentProxy.objects.get(vocabulary=test_vocabulary, name__iexact='atmosadvection').get_key()),
+            u"%s_%s" % (test_vocabulary.get_key(), MetadataComponentProxy.objects.get(vocabulary=test_vocabulary, name__iexact='atmosconvectturbulcloud').get_key()),
+            u"%s_%s" % (test_vocabulary.get_key(), MetadataComponentProxy.objects.get(vocabulary=test_vocabulary, name__iexact='topofatmosinsolation').get_key()),
+            u"%s_%s" % (test_vocabulary.get_key(), MetadataComponentProxy.objects.get(vocabulary=test_vocabulary, name__iexact='atmosdynamicalcore').get_key()),
+            u"%s_%s" % (test_vocabulary.get_key(), MetadataComponentProxy.objects.get(vocabulary=test_vocabulary, name__iexact='atmosorographyandwaves').get_key()),
+            u"%s_%s" % (test_vocabulary.get_key(), MetadataComponentProxy.objects.get(vocabulary=test_vocabulary, name__iexact='atmosspaceconfiguration').get_key()),
+            u"%s_%s" % (test_vocabulary.get_key(), MetadataComponentProxy.objects.get(vocabulary=test_vocabulary, name__iexact='atmoshorizontaldomain').get_key()),
+            u"%s_%s" % (test_vocabulary.get_key(), MetadataComponentProxy.objects.get(vocabulary=test_vocabulary, name__iexact='cloudsimulator').get_key()),
         ]
         self.assertSetEqual(set(cim_component_names), set(scientific_properties.keys()))
-        self.assertEqual(len(scientific_properties["default_vocabulary_rootcomponent"]), 0)
-        self.assertEqual(len(scientific_properties["cim_atmosphere"]), 0)
-        self.assertEqual(len(scientific_properties["cim_atmoskeyproperties"]), 3)
-        self.assertEqual(len(scientific_properties["cim_atmoscloudscheme"]), 7)
-        self.assertEqual(len(scientific_properties["cim_atmosradiation"]), 10)
-        self.assertEqual(len(scientific_properties["cim_atmosadvection"]), 8)
-        self.assertEqual(len(scientific_properties["cim_atmosconvectturbulcloud"]), 13)
-        self.assertEqual(len(scientific_properties["cim_topofatmosinsolation"]), 4)
-        self.assertEqual(len(scientific_properties["cim_atmosdynamicalcore"]), 10)
-        self.assertEqual(len(scientific_properties["cim_atmosorographyandwaves"]), 13)
-        self.assertEqual(len(scientific_properties["cim_atmosspaceconfiguration"]), 6)
-        self.assertEqual(len(scientific_properties["cim_atmoshorizontaldomain"]), 10)
-        self.assertEqual(len(scientific_properties["cim_cloudsimulator"]), 12)
+        self.assertEqual(len(scientific_properties[cim_component_names[0]]), 0)
+        self.assertEqual(len(scientific_properties[cim_component_names[1]]), 0)
+        self.assertEqual(len(scientific_properties[cim_component_names[2]]), 3)
+        self.assertEqual(len(scientific_properties[cim_component_names[3]]), 7)
+        self.assertEqual(len(scientific_properties[cim_component_names[4]]), 10)
+        self.assertEqual(len(scientific_properties[cim_component_names[5]]), 8)
+        self.assertEqual(len(scientific_properties[cim_component_names[6]]), 13)
+        self.assertEqual(len(scientific_properties[cim_component_names[7]]), 4)
+        self.assertEqual(len(scientific_properties[cim_component_names[8]]), 10)
+        self.assertEqual(len(scientific_properties[cim_component_names[9]]), 13)
+        self.assertEqual(len(scientific_properties[cim_component_names[10]]), 6)
+        self.assertEqual(len(scientific_properties[cim_component_names[11]]), 10)
+        self.assertEqual(len(scientific_properties[cim_component_names[12]]), 12)
 
 
     def test_get_new_realization_set(self):
@@ -136,6 +137,8 @@ class TestMetadataModel(TestQuestionnaireBase):
         test_proxy = MetadataModelProxy.objects.get(version=self.version, name__iexact=test_document_type)
 
         test_vocabularies = self.project.vocabularies.filter(document_type__iexact=test_document_type)
+        self.assertEqual(len(test_vocabularies), 1)
+        test_vocabulary = test_vocabularies[0]
 
         test_customizer = self.create_customizer_set_with_subforms(self.project, self.version, test_proxy, properties_with_subforms=["author"])
 
@@ -158,17 +161,17 @@ class TestMetadataModel(TestQuestionnaireBase):
         excluded_fields = ["tree_id", "lft", "rght", "level", "parent",] # ignore mptt fields
         serialized_models = [self.fully_serialize_model(model,exclude=excluded_fields) for model in models]
         test_models_data = [
-            {'is_root': True,  'version': self.version, 'created': None, 'component_key': u'rootcomponent',          'description': u'A ModelCompnent is nice.', 'title': u'RootComponent',                       'order': 0, 'project': self.project, 'last_modified': None, 'proxy': test_proxy, 'vocabulary_key': u'default_vocabulary', 'is_document': True, 'active': True, u'id': None, 'name': u'modelComponent'},
-            {'is_root': False, 'version': self.version, 'created': None, 'component_key': u'testmodel',              'description': u'A ModelCompnent is nice.', 'title': u'vocabulary : testmodel',              'order': 0, 'project': self.project, 'last_modified': None, 'proxy': test_proxy, 'vocabulary_key': u'vocabulary',         'is_document': True, 'active': True, u'id': None, 'name': u'modelComponent'},
-            {'is_root': False, 'version': self.version, 'created': None, 'component_key': u'testmodelkeyproperties', 'description': u'A ModelCompnent is nice.', 'title': u'vocabulary : testmodelkeyproperties', 'order': 0, 'project': self.project, 'last_modified': None, 'proxy': test_proxy, 'vocabulary_key': u'vocabulary',         'is_document': True, 'active': True, u'id': None, 'name': u'modelComponent'},
-            {'is_root': False, 'version': self.version, 'created': None, 'component_key': u'pretendsubmodel',        'description': u'A ModelCompnent is nice.', 'title': u'vocabulary : pretendsubmodel',        'order': 0, 'project': self.project, 'last_modified': None, 'proxy': test_proxy, 'vocabulary_key': u'vocabulary',         'is_document': True, 'active': True, u'id': None, 'name': u'modelComponent'},
-            {'is_root': False, 'version': self.version, 'created': None, 'component_key': u'submodel',               'description': u'A ModelCompnent is nice.', 'title': u'vocabulary : submodel',               'order': 0, 'project': self.project, 'last_modified': None, 'proxy': test_proxy, 'vocabulary_key': u'vocabulary',         'is_document': True, 'active': True, u'id': None, 'name': u'modelComponent'},
-            {'is_root': False, 'version': self.version, 'created': None, 'component_key': u'subsubmodel',            'description': u'A ModelCompnent is nice.', 'title': u'vocabulary : subsubmodel',            'order': 0, 'project': self.project, 'last_modified': None, 'proxy': test_proxy, 'vocabulary_key': u'vocabulary',         'is_document': True, 'active': True, u'id': None, 'name': u'modelComponent'},
+            {'is_root': True,  'version': self.version, 'created': None, 'component_key': DEFAULT_COMPONENT_KEY,                                                                                           'description': u'A ModelCompnent is nice.', 'title': u'RootComponent',                       'order': 0, 'project': self.project, 'last_modified': None, 'proxy': test_proxy, 'vocabulary_key': DEFAULT_VOCABULARY_KEY,    'is_document': True, 'active': True, u'id': None, 'name': u'modelComponent'},
+            {'is_root': False, 'version': self.version, 'created': None, 'component_key': MetadataComponentProxy.objects.get(vocabulary=test_vocabulary, name__iexact='testmodel').get_key(),              'description': u'A ModelCompnent is nice.', 'title': u'vocabulary : testmodel',              'order': 0, 'project': self.project, 'last_modified': None, 'proxy': test_proxy, 'vocabulary_key': test_vocabulary.get_key(), 'is_document': True, 'active': True, u'id': None, 'name': u'modelComponent'},
+            {'is_root': False, 'version': self.version, 'created': None, 'component_key': MetadataComponentProxy.objects.get(vocabulary=test_vocabulary, name__iexact='testmodelkeyproperties').get_key(), 'description': u'A ModelCompnent is nice.', 'title': u'vocabulary : testmodelkeyproperties', 'order': 0, 'project': self.project, 'last_modified': None, 'proxy': test_proxy, 'vocabulary_key': test_vocabulary.get_key(), 'is_document': True, 'active': True, u'id': None, 'name': u'modelComponent'},
+            {'is_root': False, 'version': self.version, 'created': None, 'component_key': MetadataComponentProxy.objects.get(vocabulary=test_vocabulary, name__iexact='pretendsubmodel').get_key(),        'description': u'A ModelCompnent is nice.', 'title': u'vocabulary : pretendsubmodel',        'order': 0, 'project': self.project, 'last_modified': None, 'proxy': test_proxy, 'vocabulary_key': test_vocabulary.get_key(), 'is_document': True, 'active': True, u'id': None, 'name': u'modelComponent'},
+            {'is_root': False, 'version': self.version, 'created': None, 'component_key': MetadataComponentProxy.objects.get(vocabulary=test_vocabulary, name__iexact='submodel').get_key(),               'description': u'A ModelCompnent is nice.', 'title': u'vocabulary : submodel',               'order': 0, 'project': self.project, 'last_modified': None, 'proxy': test_proxy, 'vocabulary_key': test_vocabulary.get_key(), 'is_document': True, 'active': True, u'id': None, 'name': u'modelComponent'},
+            {'is_root': False, 'version': self.version, 'created': None, 'component_key': MetadataComponentProxy.objects.get(vocabulary=test_vocabulary, name__iexact='subsubmodel').get_key(),            'description': u'A ModelCompnent is nice.', 'title': u'vocabulary : subsubmodel',            'order': 0, 'project': self.project, 'last_modified': None, 'proxy': test_proxy, 'vocabulary_key': test_vocabulary.get_key(), 'is_document': True, 'active': True, u'id': None, 'name': u'modelComponent'},
         ]
 
         test_scientific_properties_data = {
-            root_model_key : [],
-            u'vocabulary_testmodelkeyproperties': [
+            u"%s_%s" % (DEFAULT_VOCABULARY_KEY, DEFAULT_COMPONENT_KEY) : [],
+            u"%s_%s" % (test_vocabulary.get_key(), MetadataComponentProxy.objects.get(vocabulary=test_vocabulary, name__iexact="testmodelkeyproperties").get_key()) : [
                 {'field_type': 'PROPERTY', 'enumeration_other_value': 'Please enter a custom value', 'extra_description': None, 'name': u'name',   'category_key': u'general-attributes',  'is_enumeration': False, 'extra_standard_name': None, u'id': None, 'enumeration_value': None, 'is_label': False, 'extra_units': None, 'order': 0, 'atomic_value': None},
                 {'field_type': 'PROPERTY', 'enumeration_other_value': 'Please enter a custom value', 'extra_description': None, 'name': u'number', 'category_key': u'general-attributes',  'is_enumeration': False, 'extra_standard_name': None, u'id': None, 'enumeration_value': None, 'is_label': False, 'extra_units': None, 'order': 1, 'atomic_value': None},
                 {'field_type': 'PROPERTY', 'enumeration_other_value': 'Please enter a custom value', 'extra_description': None, 'name': u'choice1', 'category_key': u'general-attributes', 'is_enumeration': True, 'extra_standard_name': None, u'id': None, 'enumeration_value': None, 'is_label': False, 'extra_units': None, 'order': 2, 'atomic_value': None},
@@ -176,17 +179,16 @@ class TestMetadataModel(TestQuestionnaireBase):
                 {'field_type': 'PROPERTY', 'enumeration_other_value': 'Please enter a custom value', 'extra_description': None, 'name': u'name',   'category_key': u'categoryone',         'is_enumeration': False, 'extra_standard_name': None, u'id': None, 'enumeration_value': None, 'is_label': False, 'extra_units': None, 'order': 0, 'atomic_value': None},
                 {'field_type': 'PROPERTY', 'enumeration_other_value': 'Please enter a custom value', 'extra_description': None, 'name': u'name',   'category_key': u'categorytwo',         'is_enumeration': False, 'extra_standard_name': None, u'id': None, 'enumeration_value': None, 'is_label': False, 'extra_units': None, 'order': 0, 'atomic_value': None},
             ],
-            u'vocabulary_pretendsubmodel': [
+            u"%s_%s" % (test_vocabulary.get_key(), MetadataComponentProxy.objects.get(vocabulary=test_vocabulary, name__iexact="pretendsubmodel").get_key()) : [
                 {'field_type': 'PROPERTY', 'enumeration_other_value': 'Please enter a custom value', 'extra_description': None, 'name': u'name', 'category_key': u'categoryone', 'is_enumeration': False, 'extra_standard_name': None, u'id': None, 'enumeration_value': None, 'is_label': False, 'extra_units': None, 'order': 0, 'atomic_value': None}
             ],
-            u'vocabulary_testmodel': [],
-            u'vocabulary_submodel': [
+            u"%s_%s" % (test_vocabulary.get_key(), MetadataComponentProxy.objects.get(vocabulary=test_vocabulary, name__iexact="testmodel").get_key()) : [],
+            u"%s_%s" % (test_vocabulary.get_key(), MetadataComponentProxy.objects.get(vocabulary=test_vocabulary, name__iexact="submodel").get_key()) : [
                 {'field_type': 'PROPERTY', 'enumeration_other_value': 'Please enter a custom value', 'extra_description': None, 'name': u'name', 'category_key': u'categoryone', 'is_enumeration': False, 'extra_standard_name': None, u'id': None, 'enumeration_value': None, 'is_label': False, 'extra_units': None, 'order': 0, 'atomic_value': None}
             ],
-            u'vocabulary_subsubmodel': [
+            u"%s_%s" % (test_vocabulary.get_key(), MetadataComponentProxy.objects.get(vocabulary=test_vocabulary, name__iexact="subsubmodel").get_key()) : [
                 {'field_type': 'PROPERTY', 'enumeration_other_value': 'Please enter a custom value', 'extra_description': None, 'name': u'name', 'category_key': u'categoryone', 'is_enumeration': False, 'extra_standard_name': None, u'id': None, 'enumeration_value': None, 'is_label': False, 'extra_units': None, 'order': 0, 'atomic_value': None}
             ],
-            u'default_vocabulary_rootcomponent': [],
         }
 
         for actual_model_data,test_model_data in zip(serialized_models,test_models_data):
@@ -228,6 +230,8 @@ class TestMetadataModel(TestQuestionnaireBase):
         test_proxy = MetadataModelProxy.objects.get(version=self.version, name__iexact=test_document_type)
 
         test_vocabularies = self.project.vocabularies.filter(document_type__iexact=test_document_type)
+        self.assertEqual(len(test_vocabularies), 1)
+        test_vocabulary = test_vocabularies[0]
 
         test_customizer = self.create_customizer_set_with_subforms(self.project, self.version, test_proxy, properties_with_subforms=["author"])
 
@@ -252,17 +256,17 @@ class TestMetadataModel(TestQuestionnaireBase):
         excluded_fields = [ "tree_id", "lft", "rght", "level", "parent", "last_modified", "created", "id", ] # ignore mptt fields & datetime-specific fields & pk field
         serialized_models = [ self.fully_serialize_model(model, exclude=excluded_fields) for model in models ]
         test_models_data = [
-            {'is_root': True,  'version': self.version, 'component_key': u'rootcomponent',          'description': u'A ModelCompnent is nice.', 'title': u'RootComponent',                       'order': 0, 'project': self.project,   'proxy': test_proxy, 'vocabulary_key': u'default_vocabulary', 'is_document': True, 'active': True, 'name': u'modelComponent'},
-            {'is_root': False, 'version': self.version, 'component_key': u'testmodel',              'description': u'A ModelCompnent is nice.', 'title': u'vocabulary : testmodel',              'order': 0, 'project': self.project,   'proxy': test_proxy, 'vocabulary_key': u'vocabulary',         'is_document': True, 'active': True, 'name': u'modelComponent'},
-            {'is_root': False, 'version': self.version, 'component_key': u'testmodelkeyproperties', 'description': u'A ModelCompnent is nice.', 'title': u'vocabulary : testmodelkeyproperties', 'order': 0, 'project': self.project,   'proxy': test_proxy, 'vocabulary_key': u'vocabulary',         'is_document': True, 'active': True, 'name': u'modelComponent'},
-            {'is_root': False, 'version': self.version, 'component_key': u'pretendsubmodel',        'description': u'A ModelCompnent is nice.', 'title': u'vocabulary : pretendsubmodel',        'order': 0, 'project': self.project,   'proxy': test_proxy, 'vocabulary_key': u'vocabulary',         'is_document': True, 'active': True, 'name': u'modelComponent'},
-            {'is_root': False, 'version': self.version, 'component_key': u'submodel',               'description': u'A ModelCompnent is nice.', 'title': u'vocabulary : submodel',               'order': 0, 'project': self.project,   'proxy': test_proxy, 'vocabulary_key': u'vocabulary',         'is_document': True, 'active': True, 'name': u'modelComponent'},
-            {'is_root': False, 'version': self.version, 'component_key': u'subsubmodel',            'description': u'A ModelCompnent is nice.', 'title': u'vocabulary : subsubmodel',            'order': 0, 'project': self.project,   'proxy': test_proxy, 'vocabulary_key': u'vocabulary',         'is_document': True, 'active': True, 'name': u'modelComponent'},
+            {'is_root': True,  'version': self.version, 'component_key': DEFAULT_COMPONENT_KEY,                                                                                           'description': u'A ModelCompnent is nice.', 'title': u'RootComponent',                       'order': 0, 'project': self.project,   'proxy': test_proxy, 'vocabulary_key': DEFAULT_VOCABULARY_KEY,    'is_document': True, 'active': True, 'name': u'modelComponent' },
+            {'is_root': False, 'version': self.version, 'component_key': MetadataComponentProxy.objects.get(vocabulary=test_vocabulary, name__iexact='testmodel').get_key(),              'description': u'A ModelCompnent is nice.', 'title': u'vocabulary : testmodel',              'order': 0, 'project': self.project,   'proxy': test_proxy, 'vocabulary_key': test_vocabulary.get_key(), 'is_document': True, 'active': True, 'name': u'modelComponent' },
+            {'is_root': False, 'version': self.version, 'component_key': MetadataComponentProxy.objects.get(vocabulary=test_vocabulary, name__iexact='testmodelkeyproperties').get_key(), 'description': u'A ModelCompnent is nice.', 'title': u'vocabulary : testmodelkeyproperties', 'order': 0, 'project': self.project,   'proxy': test_proxy, 'vocabulary_key': test_vocabulary.get_key(), 'is_document': True, 'active': True, 'name': u'modelComponent' },
+            {'is_root': False, 'version': self.version, 'component_key': MetadataComponentProxy.objects.get(vocabulary=test_vocabulary, name__iexact='pretendsubmodel').get_key(),        'description': u'A ModelCompnent is nice.', 'title': u'vocabulary : pretendsubmodel',        'order': 0, 'project': self.project,   'proxy': test_proxy, 'vocabulary_key': test_vocabulary.get_key(), 'is_document': True, 'active': True, 'name': u'modelComponent' },
+            {'is_root': False, 'version': self.version, 'component_key': MetadataComponentProxy.objects.get(vocabulary=test_vocabulary, name__iexact='submodel').get_key(),               'description': u'A ModelCompnent is nice.', 'title': u'vocabulary : submodel',               'order': 0, 'project': self.project,   'proxy': test_proxy, 'vocabulary_key': test_vocabulary.get_key(), 'is_document': True, 'active': True, 'name': u'modelComponent' },
+            {'is_root': False, 'version': self.version, 'component_key': MetadataComponentProxy.objects.get(vocabulary=test_vocabulary, name__iexact='subsubmodel').get_key(),            'description': u'A ModelCompnent is nice.', 'title': u'vocabulary : subsubmodel',            'order': 0, 'project': self.project,   'proxy': test_proxy, 'vocabulary_key': test_vocabulary.get_key(), 'is_document': True, 'active': True, 'name': u'modelComponent' },
         ]
 
         test_scientific_properties_data = {
             root_model_key : [],
-            u'vocabulary_testmodelkeyproperties': [
+            u"%s_%s" % (test_vocabulary.get_key(), MetadataComponentProxy.objects.get(vocabulary=test_vocabulary, name__iexact="testmodelkeyproperties").get_key()) : [
                 {'field_type': 'PROPERTY', 'enumeration_other_value': 'Please enter a custom value', 'extra_description': None, 'name': u'name',    'category_key': u'general-attributes',  'is_enumeration': False, 'extra_standard_name': None, 'enumeration_value': None, 'is_label': False, 'extra_units': None, 'order': 0, 'atomic_value': None},
                 {'field_type': 'PROPERTY', 'enumeration_other_value': 'Please enter a custom value', 'extra_description': None, 'name': u'number',  'category_key': u'general-attributes',  'is_enumeration': False, 'extra_standard_name': None, 'enumeration_value': None, 'is_label': False, 'extra_units': None, 'order': 1, 'atomic_value': None},
                 {'field_type': 'PROPERTY', 'enumeration_other_value': 'Please enter a custom value', 'extra_description': None, 'name': u'choice1', 'category_key': u'general-attributes',  'is_enumeration': True,  'extra_standard_name': None, 'enumeration_value': None, 'is_label': False, 'extra_units': None, 'order': 2, 'atomic_value': None},
@@ -270,17 +274,16 @@ class TestMetadataModel(TestQuestionnaireBase):
                 {'field_type': 'PROPERTY', 'enumeration_other_value': 'Please enter a custom value', 'extra_description': None, 'name': u'name',    'category_key': u'categoryone',         'is_enumeration': False, 'extra_standard_name': None, 'enumeration_value': None, 'is_label': False, 'extra_units': None, 'order': 0, 'atomic_value': None},
                 {'field_type': 'PROPERTY', 'enumeration_other_value': 'Please enter a custom value', 'extra_description': None, 'name': u'name',    'category_key': u'categorytwo',         'is_enumeration': False, 'extra_standard_name': None, 'enumeration_value': None, 'is_label': False, 'extra_units': None, 'order': 0, 'atomic_value': None},
             ],
-            u'vocabulary_pretendsubmodel': [
+            u"%s_%s" % (test_vocabulary.get_key(), MetadataComponentProxy.objects.get(vocabulary=test_vocabulary, name__iexact="pretendsubmodel").get_key()) : [
                 {'field_type': 'PROPERTY', 'enumeration_other_value': 'Please enter a custom value', 'extra_description': None, 'name': u'name', 'category_key': u'categoryone', 'is_enumeration': False, 'extra_standard_name': None, 'enumeration_value': None, 'is_label': False, 'extra_units': None, 'order': 0, 'atomic_value': None}
             ],
-            u'vocabulary_testmodel': [],
-            u'vocabulary_submodel': [
+            u"%s_%s" % (test_vocabulary.get_key(), MetadataComponentProxy.objects.get(vocabulary=test_vocabulary, name__iexact="testmodel").get_key()) : [],
+            u"%s_%s" % (test_vocabulary.get_key(), MetadataComponentProxy.objects.get(vocabulary=test_vocabulary, name__iexact="submodel").get_key()) : [
                 {'field_type': 'PROPERTY', 'enumeration_other_value': 'Please enter a custom value', 'extra_description': None, 'name': u'name', 'category_key': u'categoryone', 'is_enumeration': False, 'extra_standard_name': None, 'enumeration_value': None, 'is_label': False, 'extra_units': None, 'order': 0, 'atomic_value': None}
             ],
-            u'vocabulary_subsubmodel': [
+            u"%s_%s" % (test_vocabulary.get_key(), MetadataComponentProxy.objects.get(vocabulary=test_vocabulary, name__iexact="subsubmodel").get_key()) : [
                 {'field_type': 'PROPERTY', 'enumeration_other_value': 'Please enter a custom value', 'extra_description': None, 'name': u'name', 'category_key': u'categoryone', 'is_enumeration': False, 'extra_standard_name': None, 'enumeration_value': None, 'is_label': False, 'extra_units': None, 'order': 0, 'atomic_value': None}
             ],
-            u'default_vocabulary_rootcomponent': [],
         }
 
         for actual_model_data,test_model_data in zip(serialized_models,test_models_data):

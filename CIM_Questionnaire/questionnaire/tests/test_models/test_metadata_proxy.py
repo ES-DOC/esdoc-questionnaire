@@ -9,8 +9,6 @@
 #   This project is distributed according to the terms of the MIT license [http://www.opensource.org/licenses/MIT].
 ####################
 
-from django.template.defaultfilters import slugify
-
 from CIM_Questionnaire.questionnaire.tests.base import TestQuestionnaireBase
 
 from CIM_Questionnaire.questionnaire.models.metadata_proxy import MetadataModelProxy
@@ -77,6 +75,7 @@ class TestMetadataProxy(TestQuestionnaireBase):
             {'field_type': u'RELATIONSHIP', 'atomic_default': u'', 'enumeration_nullable': False, 'name': u'contact',       'enumeration_multi': False, 'relationship_target_model': MetadataModelProxy.objects.get(version=self.version, name__iexact="responsibleparty"), 'relationship_target_name': u'responsibleParty',    'enumeration_choices': u'',                 'documentation': u'I am a relationship',            'atomic_type': u'DEFAULT',  'is_label': False,  'enumeration_open': False, 'model_proxy': test_proxy, 'relationship_cardinality': u'0|*',   'order': 6},
             {'field_type': u'ATOMIC',       'atomic_default': u'', 'enumeration_nullable': False, 'name': u'uncategorized', 'enumeration_multi': False, 'relationship_target_model': None,                                                                                  'relationship_target_name': u'',                    'enumeration_choices': u'',                 'documentation': u'I am an uncategorized string',   'atomic_type': u'DEFAULT',  'is_label': False,  'enumeration_open': False, 'model_proxy': test_proxy, 'relationship_cardinality': u'',      'order': 3},
         ]
+
         for actual_standard_property_proxy_data,test_standard_property_proxy_data in zip(serialized_standard_property_proxies,test_standard_property_proxies_data):
             self.assertDictEqual(actual_standard_property_proxy_data,test_standard_property_proxy_data)
         # in the right order...
@@ -87,9 +86,9 @@ class TestMetadataProxy(TestQuestionnaireBase):
         # test the right scientific property proxies were returned...
         model_keys = []
         for vocabulary in test_vocabularies:
-            vocabulary_key = slugify(vocabulary.name)
+            vocabulary_key = vocabulary.get_key()
             for component_proxy in vocabulary.component_proxies.all():
-                component_key = slugify(component_proxy.name)
+                component_key = component_proxy.get_key()
                 model_keys.append(u"%s_%s" % (vocabulary_key, component_key))
         self.assertSetEqual(set(model_keys), set(scientific_property_proxies.keys()))
         # in the right order...

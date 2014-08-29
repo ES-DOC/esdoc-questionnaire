@@ -2,7 +2,7 @@ from CIM_Questionnaire.questionnaire.tests.base import TestQuestionnaireBase, Qu
 
 from CIM_Questionnaire.questionnaire.models.metadata_vocabulary import MetadataVocabulary
 from CIM_Questionnaire.questionnaire.models.metadata_model import MetadataModel, MetadataStandardProperty
-from CIM_Questionnaire.questionnaire.models.metadata_proxy import MetadataModelProxy, MetadataStandardPropertyProxy, MetadataScientificPropertyProxy
+from CIM_Questionnaire.questionnaire.models.metadata_proxy import MetadataModelProxy, MetadataStandardPropertyProxy, MetadataScientificPropertyProxy, MetadataComponentProxy
 from CIM_Questionnaire.questionnaire.models.metadata_customizer import MetadataCustomizer
 
 from CIM_Questionnaire.questionnaire.models.metadata_model import get_model_parent_dictionary
@@ -15,6 +15,7 @@ from CIM_Questionnaire.questionnaire.forms.forms_edit import MetadataModelFormSe
 
 from CIM_Questionnaire.questionnaire.fields import MetadataFieldTypes
 
+from CIM_Questionnaire.questionnaire.utils import DEFAULT_VOCABULARY_KEY, DEFAULT_COMPONENT_KEY
 from CIM_Questionnaire.questionnaire.utils import find_in_sequence, model_to_data, get_data_from_formset, get_data_from_form, get_form_by_field, get_joined_keys_dict, itr_product_keywords
 
 class Test(TestQuestionnaireBase):
@@ -26,6 +27,8 @@ class Test(TestQuestionnaireBase):
         test_proxy = MetadataModelProxy.objects.get(version=self.version, name__iexact=test_document_type)
 
         test_vocabularies = self.project.vocabularies.filter(document_type__iexact=test_document_type)
+        self.assertEqual(len(test_vocabularies), 1)
+        test_vocabulary = test_vocabularies[0]
 
         test_customizer = self.create_customizer_set_with_subforms(self.project, self.version, test_proxy)
         (model_customizer, standard_category_customizers, standard_property_customizers, nested_scientific_category_customizers, nested_scientific_property_customizers) = \
@@ -39,12 +42,12 @@ class Test(TestQuestionnaireBase):
         models_data = [create_model_form_data(model, model_customizer) for model in models]
 
         test_models_data = [
-            {'is_root': True,  'version': self.version.pk, 'created': None, 'component_key': u'rootcomponent',           'description': u'A ModelCompnent is nice.', 'title': u'RootComponent',                        'order': 0, 'project': self.project.pk, 'proxy': test_proxy.pk, 'vocabulary_key': u'default_vocabulary',  'is_document': True, 'active': True, u'id': None, 'name': u'modelComponent'},
-            {'is_root': False, 'version': self.version.pk, 'created': None, 'component_key': u'testmodel',               'description': u'A ModelCompnent is nice.', 'title': u'vocabulary : testmodel',               'order': 0, 'project': self.project.pk, 'proxy': test_proxy.pk, 'vocabulary_key': u'vocabulary',          'is_document': True, 'active': True, u'id': None, 'name': u'modelComponent'},
-            {'is_root': False, 'version': self.version.pk, 'created': None, 'component_key': u'testmodelkeyproperties',  'description': u'A ModelCompnent is nice.', 'title': u'vocabulary : testmodelkeyproperties',  'order': 0, 'project': self.project.pk, 'proxy': test_proxy.pk, 'vocabulary_key': u'vocabulary',          'is_document': True, 'active': True, u'id': None, 'name': u'modelComponent'},
-            {'is_root': False, 'version': self.version.pk, 'created': None, 'component_key': u'pretendsubmodel',         'description': u'A ModelCompnent is nice.', 'title': u'vocabulary : pretendsubmodel',         'order': 0, 'project': self.project.pk, 'proxy': test_proxy.pk, 'vocabulary_key': u'vocabulary',          'is_document': True, 'active': True, u'id': None, 'name': u'modelComponent'},
-            {'is_root': False, 'version': self.version.pk, 'created': None, 'component_key': u'submodel',                'description': u'A ModelCompnent is nice.', 'title': u'vocabulary : submodel',                'order': 0, 'project': self.project.pk, 'proxy': test_proxy.pk, 'vocabulary_key': u'vocabulary',          'is_document': True, 'active': True, u'id': None, 'name': u'modelComponent'},
-            {'is_root': False, 'version': self.version.pk, 'created': None, 'component_key': u'subsubmodel',             'description': u'A ModelCompnent is nice.', 'title': u'vocabulary : subsubmodel',             'order': 0, 'project': self.project.pk, 'proxy': test_proxy.pk, 'vocabulary_key': u'vocabulary',          'is_document': True, 'active': True, u'id': None, 'name': u'modelComponent'},
+            {'is_root': True,  'version': self.version.pk, 'created': None, 'component_key': DEFAULT_COMPONENT_KEY,                                                                                           'description': u'A ModelCompnent is nice.', 'title': u'RootComponent',                        'order': 0, 'project': self.project.pk, 'proxy': test_proxy.pk, 'vocabulary_key': DEFAULT_VOCABULARY_KEY,    'is_document': True, 'active': True, u'id': None, 'name': u'modelComponent'},
+            {'is_root': False, 'version': self.version.pk, 'created': None, 'component_key': MetadataComponentProxy.objects.get(vocabulary=test_vocabulary, name__iexact="testmodel").get_key(),              'description': u'A ModelCompnent is nice.', 'title': u'vocabulary : testmodel',               'order': 0, 'project': self.project.pk, 'proxy': test_proxy.pk, 'vocabulary_key': test_vocabulary.get_key(), 'is_document': True, 'active': True, u'id': None, 'name': u'modelComponent'},
+            {'is_root': False, 'version': self.version.pk, 'created': None, 'component_key': MetadataComponentProxy.objects.get(vocabulary=test_vocabulary, name__iexact="testmodelkeyproperties").get_key(), 'description': u'A ModelCompnent is nice.', 'title': u'vocabulary : testmodelkeyproperties',  'order': 0, 'project': self.project.pk, 'proxy': test_proxy.pk, 'vocabulary_key': test_vocabulary.get_key(), 'is_document': True, 'active': True, u'id': None, 'name': u'modelComponent'},
+            {'is_root': False, 'version': self.version.pk, 'created': None, 'component_key': MetadataComponentProxy.objects.get(vocabulary=test_vocabulary, name__iexact="pretendsubmodel").get_key(),        'description': u'A ModelCompnent is nice.', 'title': u'vocabulary : pretendsubmodel',         'order': 0, 'project': self.project.pk, 'proxy': test_proxy.pk, 'vocabulary_key': test_vocabulary.get_key(), 'is_document': True, 'active': True, u'id': None, 'name': u'modelComponent'},
+            {'is_root': False, 'version': self.version.pk, 'created': None, 'component_key': MetadataComponentProxy.objects.get(vocabulary=test_vocabulary, name__iexact="submodel").get_key(),               'description': u'A ModelCompnent is nice.', 'title': u'vocabulary : submodel',                'order': 0, 'project': self.project.pk, 'proxy': test_proxy.pk, 'vocabulary_key': test_vocabulary.get_key(), 'is_document': True, 'active': True, u'id': None, 'name': u'modelComponent'},
+            {'is_root': False, 'version': self.version.pk, 'created': None, 'component_key': MetadataComponentProxy.objects.get(vocabulary=test_vocabulary, name__iexact="subsubmodel").get_key(),            'description': u'A ModelCompnent is nice.', 'title': u'vocabulary : subsubmodel',             'order': 0, 'project': self.project.pk, 'proxy': test_proxy.pk, 'vocabulary_key': test_vocabulary.get_key(), 'is_document': True, 'active': True, u'id': None, 'name': u'modelComponent'},
         ]
 
         for actual_model_data, test_model_data in zip(models_data, test_models_data):
@@ -69,12 +72,12 @@ class Test(TestQuestionnaireBase):
             MetadataModel.get_new_realization_set(self.project, self.version, model_proxy, standard_property_proxies, scientific_property_proxies, test_customizer, test_vocabularies)
 
         test_standard_property_form_data = [
-            {'field_type': u'ATOMIC',       'enumeration_other_value': 'Please enter a custom value', 'name': u'string',        'enumeration_value': None,  u'id': None, 'proxy': MetadataStandardPropertyProxy.objects.get(model_proxy=model_proxy, name="string").pk,        'is_label': True,  'order': 0, 'atomic_value': u'',  'relationship_value' : [],  },
-            {'field_type': u'ATOMIC',       'enumeration_other_value': 'Please enter a custom value', 'name': u'date',          'enumeration_value': None,  u'id': None, 'proxy': MetadataStandardPropertyProxy.objects.get(model_proxy=model_proxy, name="date").pk,          'is_label': False, 'order': 2, 'atomic_value': u'',  'relationship_value' : [],  },
-            {'field_type': u'RELATIONSHIP', 'enumeration_other_value': 'Please enter a custom value', 'name': u'author',        'enumeration_value': None,  u'id': None, 'proxy': MetadataStandardPropertyProxy.objects.get(model_proxy=model_proxy, name="author").pk,        'is_label': False, 'order': 5, 'atomic_value': None, 'relationship_value' : u'', },
-            {'field_type': u'ATOMIC',       'enumeration_other_value': 'Please enter a custom value', 'name': u'boolean',       'enumeration_value': None,  u'id': None, 'proxy': MetadataStandardPropertyProxy.objects.get(model_proxy=model_proxy, name="boolean").pk,       'is_label': False, 'order': 1, 'atomic_value': u'',  'relationship_value' : [],  },
-            {'field_type': u'ENUMERATION',  'enumeration_other_value': 'Please enter a custom value', 'name': u'enumeration',   'enumeration_value': u'',   u'id': None, 'proxy': MetadataStandardPropertyProxy.objects.get(model_proxy=model_proxy, name="enumeration").pk,   'is_label': False, 'order': 4, 'atomic_value': None, 'relationship_value' : [],  },
-            {'field_type': u'RELATIONSHIP', 'enumeration_other_value': 'Please enter a custom value', 'name': u'contact',       'enumeration_value': None,  u'id': None, 'proxy': MetadataStandardPropertyProxy.objects.get(model_proxy=model_proxy, name="contact").pk,       'is_label': False, 'order': 6, 'atomic_value': None, 'relationship_value':  u'', },
+            {'field_type': u'ATOMIC',       'enumeration_other_value': 'Please enter a custom value', 'name': u'string',        'enumeration_value': None,  u'id': None, 'proxy': MetadataStandardPropertyProxy.objects.get(model_proxy=model_proxy, name="string").pk,        'is_label': True,  'order': 0, 'atomic_value': None, 'relationship_value' : [], },
+            {'field_type': u'ATOMIC',       'enumeration_other_value': 'Please enter a custom value', 'name': u'date',          'enumeration_value': None,  u'id': None, 'proxy': MetadataStandardPropertyProxy.objects.get(model_proxy=model_proxy, name="date").pk,          'is_label': False, 'order': 2, 'atomic_value': None, 'relationship_value' : [], },
+            {'field_type': u'RELATIONSHIP', 'enumeration_other_value': 'Please enter a custom value', 'name': u'author',        'enumeration_value': None,  u'id': None, 'proxy': MetadataStandardPropertyProxy.objects.get(model_proxy=model_proxy, name="author").pk,        'is_label': False, 'order': 5, 'atomic_value': None, 'relationship_value' : [], },
+            {'field_type': u'ATOMIC',       'enumeration_other_value': 'Please enter a custom value', 'name': u'boolean',       'enumeration_value': None,  u'id': None, 'proxy': MetadataStandardPropertyProxy.objects.get(model_proxy=model_proxy, name="boolean").pk,       'is_label': False, 'order': 1, 'atomic_value': None, 'relationship_value' : [], },
+            {'field_type': u'ENUMERATION',  'enumeration_other_value': 'Please enter a custom value', 'name': u'enumeration',   'enumeration_value': None,  u'id': None, 'proxy': MetadataStandardPropertyProxy.objects.get(model_proxy=model_proxy, name="enumeration").pk,   'is_label': False, 'order': 4, 'atomic_value': None, 'relationship_value' : [], },
+            {'field_type': u'RELATIONSHIP', 'enumeration_other_value': 'Please enter a custom value', 'name': u'contact',       'enumeration_value': None,  u'id': None, 'proxy': MetadataStandardPropertyProxy.objects.get(model_proxy=model_proxy, name="contact").pk,       'is_label': False, 'order': 6, 'atomic_value': None, 'relationship_value':  [], },
         ]
 
         for model in models:
@@ -102,6 +105,8 @@ class Test(TestQuestionnaireBase):
         test_proxy = MetadataModelProxy.objects.get(version=self.version, name__iexact=test_document_type)
 
         test_vocabularies = self.project.vocabularies.filter(document_type__iexact=test_document_type)
+        self.assertEqual(len(test_vocabularies), 1)
+        test_vocabulary = test_vocabularies[0]
 
         test_customizer = self.create_customizer_set_with_subforms(self.project, self.version, test_proxy)
         (model_customizer, standard_category_customizers, standard_property_customizers, nested_scientific_category_customizers, nested_scientific_property_customizers) = \
@@ -121,7 +126,7 @@ class Test(TestQuestionnaireBase):
             MetadataModel.get_new_realization_set(self.project, self.version, model_proxy, standard_property_proxies, scientific_property_proxies, test_customizer, test_vocabularies)
 
         test_scientific_property_form_data = {
-            u'vocabulary_testmodelkeyproperties': [
+            u'%s_%s' % (test_vocabulary.get_key(), MetadataComponentProxy.objects.get(vocabulary=test_vocabulary, name__iexact="testmodelkeyproperties").get_key()) : [
                 {'field_type': 'PROPERTY', 'enumeration_other_value': 'Please enter a custom value', 'extra_description': None, 'name': u'name',    'category_key': u'general-attributes',  'is_enumeration': False,    'extra_standard_name': None, u'id': None, 'enumeration_value': None, 'proxy': MetadataScientificPropertyProxy.objects.get(component__name="testmodelkeyproperties",category__key="general-attributes",name="name").pk,     'is_label': False, 'extra_units': None, 'order': 0, 'atomic_value': None},
                 {'field_type': 'PROPERTY', 'enumeration_other_value': 'Please enter a custom value', 'extra_description': None, 'name': u'number',  'category_key': u'general-attributes',  'is_enumeration': False,    'extra_standard_name': None, u'id': None, 'enumeration_value': None, 'proxy': MetadataScientificPropertyProxy.objects.get(component__name="testmodelkeyproperties",category__key="general-attributes",name="number").pk,   'is_label': False, 'extra_units': None, 'order': 1, 'atomic_value': None},
                 {'field_type': 'PROPERTY', 'enumeration_other_value': 'Please enter a custom value', 'extra_description': None, 'name': u'choice1', 'category_key': u'general-attributes',  'is_enumeration': True,     'extra_standard_name': None, u'id': None, 'enumeration_value': None, 'proxy': MetadataScientificPropertyProxy.objects.get(component__name="testmodelkeyproperties",category__key="general-attributes",name="choice1").pk,  'is_label': False, 'extra_units': None, 'order': 2, 'atomic_value': None},
@@ -129,18 +134,18 @@ class Test(TestQuestionnaireBase):
                 {'field_type': 'PROPERTY', 'enumeration_other_value': 'Please enter a custom value', 'extra_description': None, 'name': u'name',    'category_key': u'categoryone',         'is_enumeration': False,    'extra_standard_name': None, u'id': None, 'enumeration_value': None, 'proxy': MetadataScientificPropertyProxy.objects.get(component__name="testmodelkeyproperties",category__key="categoryone",name="name").pk,            'is_label': False, 'extra_units': None, 'order': 0, 'atomic_value': None},
                 {'field_type': 'PROPERTY', 'enumeration_other_value': 'Please enter a custom value', 'extra_description': None, 'name': u'name',    'category_key': u'categorytwo',         'is_enumeration': False,    'extra_standard_name': None, u'id': None, 'enumeration_value': None, 'proxy': MetadataScientificPropertyProxy.objects.get(component__name="testmodelkeyproperties",category__key="categorytwo",name="name").pk,            'is_label': False, 'extra_units': None, 'order': 0, 'atomic_value': None}
             ],
-            u'vocabulary_pretendsubmodel': [
+            u'%s_%s' % (test_vocabulary.get_key(), MetadataComponentProxy.objects.get(vocabulary=test_vocabulary, name__iexact="pretendsubmodel").get_key()) : [
                 {'field_type': 'PROPERTY', 'enumeration_other_value': 'Please enter a custom value', 'extra_description': None, 'name': u'name',    'category_key': u'categoryone',         'is_enumeration': False,    'extra_standard_name': None, u'id': None, 'enumeration_value': None, 'proxy': MetadataScientificPropertyProxy.objects.get(component__name="pretendsubmodel",category__key="categoryone",name="name").pk, 'is_label': False, 'extra_units': None, 'order': 0, 'atomic_value': None}
             ],
-            u'vocabulary_testmodel': [
+            u'%s_%s' % (test_vocabulary.get_key(), MetadataComponentProxy.objects.get(vocabulary=test_vocabulary, name__iexact="testmodel").get_key()) : [
             ],
-            u'vocabulary_submodel': [
+            u'%s_%s' % (test_vocabulary.get_key(), MetadataComponentProxy.objects.get(vocabulary=test_vocabulary, name__iexact="submodel").get_key()) : [
                 {'field_type': 'PROPERTY', 'enumeration_other_value': 'Please enter a custom value', 'extra_description': None, 'name': u'name',    'category_key': u'categoryone',         'is_enumeration': False,    'extra_standard_name': None, u'id': None, 'enumeration_value': None, 'proxy': MetadataScientificPropertyProxy.objects.get(component__name="submodel",category__key="categoryone",name="name").pk, 'is_label': False, 'extra_units': None, 'order': 0, 'atomic_value': None}
             ],
-            u'vocabulary_subsubmodel': [
+            u'%s_%s' % (test_vocabulary.get_key(), MetadataComponentProxy.objects.get(vocabulary=test_vocabulary, name__iexact="subsubmodel").get_key()) : [
                 {'field_type': 'PROPERTY', 'enumeration_other_value': 'Please enter a custom value', 'extra_description': None, 'name': u'name',    'category_key': u'categoryone',         'is_enumeration': False,    'extra_standard_name': None, u'id': None, 'enumeration_value': None, 'proxy': MetadataScientificPropertyProxy.objects.get(component__name="subsubmodel",category__key="categoryone",name="name").pk, 'is_label': False, 'extra_units': None, 'order': 0, 'atomic_value': None}
             ],
-            u'default_vocabulary_rootcomponent': [
+            u'%s_%s' % (DEFAULT_VOCABULARY_KEY, DEFAULT_COMPONENT_KEY) : [
             ]
         }
 
@@ -373,7 +378,7 @@ class Test(TestQuestionnaireBase):
         (model_proxy, standard_property_proxies, scientific_property_proxies) = MetadataModelProxy.get_proxy_set(model_customizer.proxy, vocabularies=MetadataVocabulary.objects.none())
 
         (models, standard_properties, scientific_properties) = \
-            MetadataModel.get_new_realization_set(subform_customizer.project, subform_customizer.version, subform_customizer.proxy, standard_property_proxies, scientific_property_proxies, model_customizer, MetadataVocabulary.objects.none())
+            MetadataModel.get_new_subrealization_set(subform_customizer.project, subform_customizer.version, subform_customizer.proxy, standard_property_proxies, scientific_property_proxies, model_customizer, MetadataVocabulary.objects.none())
 
         (model_subformset, standard_properties_subformsets, scientific_properties_subformsets) = \
             create_new_edit_subforms_from_models(models, model_customizer, standard_properties, standard_property_customizers, scientific_properties, scientific_property_customizers, subform_prefix=test_subform_prefix, subform_min=subform_min, subform_max=subform_max)
@@ -398,7 +403,7 @@ class Test(TestQuestionnaireBase):
             u'%s-INITIAL_FORMS' % (model_subformset.prefix) : 0,
             u'%s-TOTAL_FORMS' % (model_subformset.prefix) : 1,
             u'%s-0-id' % (model_subformset.prefix) : None,
-            u'%s-0-component_key' % (model_subformset.prefix) : u'rootcomponent',
+            u'%s-0-component_key' % (model_subformset.prefix) : DEFAULT_COMPONENT_KEY,
             u'%s-0-is_root' % (model_subformset.prefix) : True,
             u'%s-0-title' % (model_subformset.prefix) : u'RootComponent',
             u'%s-0-active' % (model_subformset.prefix) : True,
@@ -406,7 +411,7 @@ class Test(TestQuestionnaireBase):
             u'%s-0-project' % (model_subformset.prefix) : self.project.pk,
             u'%s-0-proxy' % (model_subformset.prefix) : model_proxy.pk,
             u'%s-0-order' % (model_subformset.prefix) : 1,
-            u'%s-0-vocabulary_key' % (model_subformset.prefix) : u'default_vocabulary',
+            u'%s-0-vocabulary_key' % (model_subformset.prefix) : DEFAULT_VOCABULARY_KEY,
             u'%s-0-DELETE' % (model_subformset.prefix) : False,
             u'%s-0-description' % (model_subformset.prefix) : u'a stripped-down responsible party to use for testing\n                purposes.',
             u'%s-0-name' % (model_subformset.prefix) : u'responsibleParty',
@@ -789,8 +794,10 @@ class Test(TestQuestionnaireBase):
 
         new_data = get_data_from_edit_forms(model_formset, standard_properties_formsets, scientific_properties_formsets, simulate_post=False)
 
+        excluded_keys = [key for key in new_data.keys() if "-DELETE" in key]
+
         self.assertEqual(all(validity), True)
-        self.assertDictEqual(original_data,new_data)
+        self.assertDictEqual(original_data,new_data,excluded_keys=excluded_keys)
 
 
 
@@ -801,6 +808,8 @@ class Test(TestQuestionnaireBase):
         test_proxy = MetadataModelProxy.objects.get(version=self.version, name__iexact=test_document_type)
 
         test_vocabularies = self.project.vocabularies.filter(document_type__iexact=test_document_type)
+        self.assertEqual(len(test_vocabularies), 1)
+        test_vocabulary = test_vocabularies[0]
 
         test_customizer = self.create_customizer_set_with_subforms(self.project, self.version, test_proxy, properties_with_subforms=["author"])
         (model_customizer,standard_category_customizers,standard_property_customizers,nested_scientific_category_customizers,nested_scientific_property_customizers) = \
@@ -826,12 +835,12 @@ class Test(TestQuestionnaireBase):
         models_data = [model_to_data(model) for model in model_instances]
 
         test_models_data = [
-            {'is_root': True,  'name': u'modelComponent', 'title': u'RootComponent',                        'component_key': u'rootcomponent',          'order': 0, 'project': self.project.pk, 'version': self.version.pk, 'proxy': MetadataModelProxy.objects.get(version=self.version,name__iexact=test_document_type).pk, 'vocabulary_key': u'default_vocabulary',    'is_document': True, 'active': True, 'description': u'A ModelCompnent is nice.'},
-            {'is_root': False, 'name': u'modelComponent', 'title': u'vocabulary : testmodel',               'component_key': u'testmodel',              'order': 0, 'project': self.project.pk, 'version': self.version.pk, 'proxy': MetadataModelProxy.objects.get(version=self.version,name__iexact=test_document_type).pk, 'vocabulary_key': u'vocabulary',            'is_document': True, 'active': True, 'description': u'A ModelCompnent is nice.'},
-            {'is_root': False, 'name': u'modelComponent', 'title': u'vocabulary : testmodelkeyproperties',  'component_key': u'testmodelkeyproperties', 'order': 0, 'project': self.project.pk, 'version': self.version.pk, 'proxy': MetadataModelProxy.objects.get(version=self.version,name__iexact=test_document_type).pk, 'vocabulary_key': u'vocabulary',            'is_document': True, 'active': True, 'description': u'A ModelCompnent is nice.'},
-            {'is_root': False, 'name': u'modelComponent', 'title': u'vocabulary : pretendsubmodel',         'component_key': u'pretendsubmodel',        'order': 0, 'project': self.project.pk, 'version': self.version.pk, 'proxy': MetadataModelProxy.objects.get(version=self.version,name__iexact=test_document_type).pk, 'vocabulary_key': u'vocabulary',            'is_document': True, 'active': True, 'description': u'A ModelCompnent is nice.'},
-            {'is_root': False, 'name': u'modelComponent', 'title': u'vocabulary : submodel',                'component_key': u'submodel',               'order': 0, 'project': self.project.pk, 'version': self.version.pk, 'proxy': MetadataModelProxy.objects.get(version=self.version,name__iexact=test_document_type).pk, 'vocabulary_key': u'vocabulary',            'is_document': True, 'active': True, 'description': u'A ModelCompnent is nice.'},
-            {'is_root': False, 'name': u'modelComponent', 'title': u'vocabulary : subsubmodel',             'component_key': u'subsubmodel',            'order': 0, 'project': self.project.pk, 'version': self.version.pk, 'proxy': MetadataModelProxy.objects.get(version=self.version,name__iexact=test_document_type).pk, 'vocabulary_key': u'vocabulary',            'is_document': True, 'active': True, 'description': u'A ModelCompnent is nice.'},
+            {'is_root': True,  'name': u'modelComponent', 'title': u'RootComponent',                        'component_key': DEFAULT_COMPONENT_KEY,                                                                                           'order': 0, 'project': self.project.pk, 'version': self.version.pk, 'proxy': MetadataModelProxy.objects.get(version=self.version,name__iexact=test_document_type).pk, 'vocabulary_key': DEFAULT_VOCABULARY_KEY,    'is_document': True, 'active': True, 'description': u'A ModelCompnent is nice.'},
+            {'is_root': False, 'name': u'modelComponent', 'title': u'vocabulary : testmodel',               'component_key': MetadataComponentProxy.objects.get(vocabulary=test_vocabulary, name__iexact="testmodel").get_key(),              'order': 0, 'project': self.project.pk, 'version': self.version.pk, 'proxy': MetadataModelProxy.objects.get(version=self.version,name__iexact=test_document_type).pk, 'vocabulary_key': test_vocabulary.get_key(), 'is_document': True, 'active': True, 'description': u'A ModelCompnent is nice.'},
+            {'is_root': False, 'name': u'modelComponent', 'title': u'vocabulary : testmodelkeyproperties',  'component_key': MetadataComponentProxy.objects.get(vocabulary=test_vocabulary, name__iexact="testmodelkeyproperties").get_key(), 'order': 0, 'project': self.project.pk, 'version': self.version.pk, 'proxy': MetadataModelProxy.objects.get(version=self.version,name__iexact=test_document_type).pk, 'vocabulary_key': test_vocabulary.get_key(), 'is_document': True, 'active': True, 'description': u'A ModelCompnent is nice.'},
+            {'is_root': False, 'name': u'modelComponent', 'title': u'vocabulary : pretendsubmodel',         'component_key': MetadataComponentProxy.objects.get(vocabulary=test_vocabulary, name__iexact="pretendsubmodel").get_key(),        'order': 0, 'project': self.project.pk, 'version': self.version.pk, 'proxy': MetadataModelProxy.objects.get(version=self.version,name__iexact=test_document_type).pk, 'vocabulary_key': test_vocabulary.get_key(), 'is_document': True, 'active': True, 'description': u'A ModelCompnent is nice.'},
+            {'is_root': False, 'name': u'modelComponent', 'title': u'vocabulary : submodel',                'component_key': MetadataComponentProxy.objects.get(vocabulary=test_vocabulary, name__iexact="submodel").get_key(),               'order': 0, 'project': self.project.pk, 'version': self.version.pk, 'proxy': MetadataModelProxy.objects.get(version=self.version,name__iexact=test_document_type).pk, 'vocabulary_key': test_vocabulary.get_key(), 'is_document': True, 'active': True, 'description': u'A ModelCompnent is nice.'},
+            {'is_root': False, 'name': u'modelComponent', 'title': u'vocabulary : subsubmodel',             'component_key': MetadataComponentProxy.objects.get(vocabulary=test_vocabulary, name__iexact="subsubmodel").get_key(),            'order': 0, 'project': self.project.pk, 'version': self.version.pk, 'proxy': MetadataModelProxy.objects.get(version=self.version,name__iexact=test_document_type).pk, 'vocabulary_key': test_vocabulary.get_key(), 'is_document': True, 'active': True, 'description': u'A ModelCompnent is nice.'},
         ]
 
         self.assertEqual(len(model_instances), 6)
@@ -872,12 +881,12 @@ class Test(TestQuestionnaireBase):
             create_edit_forms_from_data(data, models, model_customizer, standard_properties, standard_property_customizers, scientific_properties, scientific_property_customizers)
 
         test_standard_properties_data = [
-            {'field_type': u'ATOMIC',       'enumeration_other_value': u'Please enter a custom value', 'name': u'string',       'enumeration_value': [],    'relationship_value': [], 'is_label': True,  'model': None, 'order': 0, 'atomic_value': u''},
-            {'field_type': u'ATOMIC',       'enumeration_other_value': u'Please enter a custom value', 'name': u'date',         'enumeration_value': [],    'relationship_value': [], 'is_label': False, 'model': None, 'order': 2, 'atomic_value': u''},
-            {'field_type': u'RELATIONSHIP', 'enumeration_other_value': u'Please enter a custom value', 'name': u'author',       'enumeration_value': [],    'relationship_value': [], 'is_label': False, 'model': None, 'order': 5, 'atomic_value': u''},
-            {'field_type': u'ATOMIC',       'enumeration_other_value': u'Please enter a custom value', 'name': u'boolean',      'enumeration_value': [],    'relationship_value': [], 'is_label': False, 'model': None, 'order': 1, 'atomic_value': u'False'},
-            {'field_type': u'ENUMERATION',  'enumeration_other_value': u'Please enter a custom value', 'name': u'enumeration',  'enumeration_value': [u''], 'relationship_value': [], 'is_label': False, 'model': None, 'order': 4, 'atomic_value': u''},
-            {'field_type': u'RELATIONSHIP', 'enumeration_other_value': u'Please enter a custom value', 'name': u'contact',      'enumeration_value': [],    'relationship_value': [], 'is_label': False, 'model': None, 'order': 6, 'atomic_value': u''},
+            {'field_type': u'ATOMIC',       'enumeration_other_value': u'Please enter a custom value', 'name': u'string',       'enumeration_value': [], 'relationship_value': [], 'is_label': True,  'model': None, 'order': 0, 'atomic_value': u''},
+            {'field_type': u'ATOMIC',       'enumeration_other_value': u'Please enter a custom value', 'name': u'date',         'enumeration_value': [], 'relationship_value': [], 'is_label': False, 'model': None, 'order': 2, 'atomic_value': u''},
+            {'field_type': u'RELATIONSHIP', 'enumeration_other_value': u'Please enter a custom value', 'name': u'author',       'enumeration_value': [], 'relationship_value': [], 'is_label': False, 'model': None, 'order': 5, 'atomic_value': u''},
+            {'field_type': u'ATOMIC',       'enumeration_other_value': u'Please enter a custom value', 'name': u'boolean',      'enumeration_value': [], 'relationship_value': [], 'is_label': False, 'model': None, 'order': 1, 'atomic_value': u'False'},
+            {'field_type': u'ENUMERATION',  'enumeration_other_value': u'Please enter a custom value', 'name': u'enumeration',  'enumeration_value': [], 'relationship_value': [], 'is_label': False, 'model': None, 'order': 4, 'atomic_value': u''},
+            {'field_type': u'RELATIONSHIP', 'enumeration_other_value': u'Please enter a custom value', 'name': u'contact',      'enumeration_value': [], 'relationship_value': [], 'is_label': False, 'model': None, 'order': 6, 'atomic_value': u''},
         ]
 
         for standard_properties_formset in standard_properties_formsets.values():
@@ -1041,6 +1050,5 @@ class Test(TestQuestionnaireBase):
                         self.assertNotIsInstance(standard_property_subform,MetadataStandardPropertyForm)
 
 
-                        import ipdb; ipdb.set_trace()
                         standard_property_subform.has_changed()
 

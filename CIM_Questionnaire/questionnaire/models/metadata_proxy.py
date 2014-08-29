@@ -77,9 +77,9 @@ class MetadataModelProxy(models.Model):
 
         scientific_property_proxies = {}
         for vocabulary in vocabularies:
-            vocabulary_key = slugify(vocabulary.name)
+            vocabulary_key = vocabulary.get_key()
             for component_proxy in vocabulary.component_proxies.all():
-                component_key = slugify(component_proxy.name)
+                component_key = component_proxy.get_key()
                 model_key = u"%s_%s" % (vocabulary_key, component_key)
                 scientific_property_proxies[model_key] = component_proxy.scientific_properties.all().order_by("category__order", "order")
 
