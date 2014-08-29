@@ -402,12 +402,15 @@ function add_subform(row) {
                                     if (status_code == 200 ) {
 
                                         var parsed_data = $.parseJSON(data);
-                                        var new_prefix = parsed_data.prefix
+                                        var new_prefix = parsed_data.prefix;
+                                        var new_label = parsed_data.label;
 
                                         /* rename ids and names */
                                         update_field_names(row,old_prefix,new_prefix);
                                         /* insert data */
                                         populate_form(row,parsed_data);
+                                        /* update label */
+                                        $(row).find(".accordion_header:first .label").html(new_label);
 
                                         /* initialize JQuery widgets */
                                         $(row).ready(function() {

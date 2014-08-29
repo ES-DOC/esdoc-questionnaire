@@ -382,6 +382,7 @@ def ajax_select_realization(request,**kwargs):
             # but do need to pass the prefix to make sure that js updates all added fields appropriately
             adjusted_prefix = model_formset.forms[0].prefix
             data["prefix"] = adjusted_prefix
+            data["label"] = u"%s" % (models[0])
 
             # finally return a JSON version of all of the fields used in this subform
             json_data = json.dumps(data)
