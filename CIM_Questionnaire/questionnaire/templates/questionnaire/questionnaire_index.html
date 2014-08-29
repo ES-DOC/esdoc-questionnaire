@@ -9,17 +9,18 @@
     $(document).ready(
         function() {
 
-            render_msg($("#msg"));
-
             var parent = document.body;
 
             init_dialogs(parent);
+            render_msg($("#msg"));
+
+            init_widgets(users,$(parent).find("#user"));
+            init_widgets(buttons,$(parent).find("input.button"))
+
+            init_widgets_on_show(helps,$(parent).find(".help_button"));
+
             init_errors(parent);
 
-            init_widget(users,parent);
-            init_widget(buttons,parent);
-            init_widget(helps,parent);
-            
         }
     );
         
@@ -65,7 +66,7 @@
 
         <fieldset>
 
-<div class='caveat'>
+<div class='instructions'>
 This menu lists projects that have registered with the CIM Questionnaire.  Currently, "Downscaling" is the only registered project.  To view sample CIM Instances please select "Downscaling" and then click the "submit" button.
 </div>
             <table width="100%">
