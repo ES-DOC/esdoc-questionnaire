@@ -62,7 +62,7 @@
                 </attribute>
                 <attribute>
                     <name>contact</name>
-                    <description/>
+                    <description>I am a relationship</description>
                     <type>RELATIONSHIP</type>
                     <relationship>
                         <cardinality min="0" max="*"/>
