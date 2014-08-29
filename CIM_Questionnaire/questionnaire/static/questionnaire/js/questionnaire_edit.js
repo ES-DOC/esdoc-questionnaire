@@ -296,12 +296,14 @@ function inherit(item) {
         }
         else if ($(item).prop("tagName").toLowerCase()=="select") {
             // TODO
+            /*
             if ($(item).attr("multiple")) {
                 alert("inherit multiple select")
             }
             else {
                 alert("inherit single select");
             }
+            */
         }
         else {
             // text input or textarea
@@ -325,19 +327,31 @@ function add_subform(row) {
 
     /* this takes place AFTER the form is added */
 
-    var customizer_id = $(row).closest(".field").find("input[name='customizer_id']").val();
-    var prefix        = $(row).closest(".field").find("input[name='prefix']").val()
-    var n_forms       = parseInt($(row).closest(".accordion").children(".accordion_unit").length)
-    var property_id   = $(row).closest(".field").find("input[name='property_id']").val()
+    var field             = $(row).closest(".field");
+    var accordion         = $(row).closest(".accordion");
+    var accordion_units   = $(accordion).children(".accordion_unit");
+    var customizer_id     = $(field).find("input[name='customizer_id']").val();
+    var property_id       = $(field).find("input[name='property_id']").val()
+    var prefix            = $(field).find("input[name='prefix']").val()
+    var n_forms           = parseInt(accordion_units.length)
+    var existing_subforms = $(accordion_units).find("input[name$='-id']:first").map(function() {
+
+        var removed = $(this).closest(".accordion_content").find(".remove:first input[name$='-DELETE']").val()
+        if (!removed) {
+            var subform_id = $(this).val();
+            if (subform_id != "") {
+                return parseInt(subform_id)
+            }
+        }
+    }).get()
 
     url = window.document.location.protocol + "//" + window.document.location.host + "/ajax/select_realization/";
-    url += "?c=" + customizer_id + "&p=" + prefix + "&n=" + n_forms;
+    url += "?c=" + customizer_id + "&p=" + prefix + "&n=" + n_forms + "&e=" + existing_subforms;
     if (property_id != "") {
         url += "&s=" + property_id;
     }
 
-
-    var old_prefix = $(row).closest(".accordion").attr("name");
+    var old_prefix = $(accordion).attr("name");
     /* TODO: DOUBLE-CHECK THAT THIS IS ALWAYS CREATING A NEWFORM W/ ID=0 */
     /*old_prefix += "-" + (n_forms - 2);*/
     old_prefix += "-" + "0"

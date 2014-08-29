@@ -241,6 +241,9 @@ def ajax_select_realization(request,**kwargs):
     standard_property_id = request.GET.get("s", None)
     prefix = request.GET.get("p",None)
     n_forms = int(request.GET.get("n","0"))
+    realizations_to_exclude = request.GET.get("e",[])
+    if realizations_to_exclude:
+        realizations_to_exclude = realizations_to_exclude.split(",")
     if n_forms > 0:
         n_forms -= 1    # don't forget to take into account the current form being added (it has already been created in the DOM)
     if not customizer_id and prefix:
@@ -248,11 +251,6 @@ def ajax_select_realization(request,**kwargs):
         raise QuestionnaireError(msg)
     if standard_property_id:
         standard_property = MetadataStandardProperty.objects.get(pk=standard_property_id)
-        realizations_to_exclude = standard_property.relationship_value.all().values_list("id", flat=True)
-    else:
-        # property has not been saved yet
-        standard_property = None
-        realizations_to_exclude = []
 
     parent_standard_property_customizer = MetadataStandardPropertyCustomizer.objects.get(pk=customizer_id)
     assert(parent_standard_property_customizer.relationship_show_subform)
