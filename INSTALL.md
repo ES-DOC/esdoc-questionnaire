@@ -7,25 +7,18 @@ The following instructions describe how to install the CIM Questionnaire on a Un
 The system must have the following Python packages installed:
 
 * Python 2.7.2+
-* Django 1.6+
+* Django 1.6.5
 * South
-* libXML
+* libXML (pip install lxml)
 * pytz (pip install pytz)
 * mptt (pip install django-mptt)
 * PIL (pip install pillow)
-* django-registration, django-authopenid (build from source)
 * A PostGres database is recommended.  However, Django also supports MySQL and SQLite3.
     * To use PostGres you must install psycopg2.
 
 ## DOWNLOAD
 
 Download the software at the desired version from the github repository
-
-```sh
-cd <install directory>
-tar xvfz django-cim-forms.<version>.tar.gz
-cd CIM_Questionnaire
-```
 
 ## CONFIGURATION
 
@@ -43,16 +36,12 @@ port=5432
 [settings]
 secret_key=
 static_root=static/
+
+[debug]
+debug=true
+debug_toolbar=false
+debug_profiling=false
 ```
-
-* review settings.py
-
-  verify that the db/port/user/pwd exist (postgres is recommended; try `createdb <db> -O <user> -p <port>`)
-  to avoid profiling (recommended) set PROFILE and SETUP_HPY to "False"
-  if needed, update STATIC_ROOT and STATICFILES_DIR
-  if desired, set EMAIL_HOST and EMAIL_HOST_USER and EMAIL_HOST_PASSWORD and DEFAULT_FROM_EMAIL and SERVER_EMAIL
-
-  for production deployments, it is recommended to set DEBUG to "False" and add the appropriate value(s) for ALLOWED_HOSTS
 
 * start a virtual python environment (recommended)
 
@@ -64,28 +53,15 @@ pip install django-openid-auth python-openid
 pip install django_mptt
 pip install pytz
 pip install south
-pip install guppy (for profiling)
 ```
 
 ## INITIALIZATION
 
-* python manage.py syncdb 
-
-  this may generate a "transaction aborted" DatabaseError; this is an issue w/ v0.9.9.6 which will be fixed in future versions; for now comment out the offending bits of django_cim_forms/cim_1_5/forms.py, dycore/forms.py, dycore/models.py, dcf/cim_1_8_1/models/generated_models.py; then un-comment them once `syncdb` succeeds
-  
-  this may generate a "value too long" DatabaseError; this is a known issue w/ Django and PostGres; to fix it run `python manage.py dbshell < django_postgres_fix_sql`
-
-* python manage.py migrate dcf 
-* gather the static media files from the different applications into a single directory; first ensure location specified in settings.py by STATIC_ROOT exists
-
 ```sh
-python manage.py collectstatic
-```
-
-* copy over initial data
-
-```sh
-python manage.py loaddata fixtures/*.gz
+python CIM_Questionnaire/manage.py syncdb 
+python CIM_Questionnaire/manage.py migrate mindmaps
+python CIM_Questionnaire/manage.py migrate questionnaire
+python CIM_Questionnaire/manage.py collectstatic
 ```
 
 ## STARTUP
@@ -93,7 +69,7 @@ python manage.py loaddata fixtures/*.gz
 * Start the CIM Questionnaire either via the embedded Django server:
 
 ```sh
-python manage.py runserver
+python CIM_Questionnaire/manage.py runserver
 ```
 
   or through apache:
