@@ -1,10 +1,8 @@
-Copyright (c) 2013 CoG. All rights reserved.
+Copyright (c) 2014 ES-DOC. All rights reserved.
 
-Developed by: Earth System CoG
-University of Colorado, Boulder
-http://cires.colorado.edu/
-
-https://github.com/ES-DOC/django-cim-forms
+Developed by: Earth System Documentation
+https://www.earthsystemcog.org/projects/es-doc-models/
+https://github.com/ES-DOC/esdoc-questionnaire
 
 This project is distributed according to the terms of the MIT license [http://www.opensource.org/licenses/MIT].
 
