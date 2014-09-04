@@ -210,7 +210,7 @@ class MetadataModel(MPTTModel):
         return (models, standard_properties, scientific_properties)
 
     @classmethod
-    def get_new_subrealization_set(cls, project, version, model_proxy, standard_property_proxies, scientific_property_proxies, model_customizer, vocabularies, parent_model):
+    def get_new_subrealization_set(cls, project, version, model_proxy, standard_property_proxies, scientific_property_proxies, model_customizer, vocabularies, parent_vocabulary_key, parent_component_key):
         """creates the full set of realizations required for a particular project/version/proxy combination w/ a specified list of vocabs"""
 
         model_parameters = {
@@ -220,8 +220,8 @@ class MetadataModel(MPTTModel):
         }
         # setup the root model...
         model = MetadataModel(**model_parameters)
-        model.vocabulary_key = parent_model.vocabulary_key
-        model.component_key = parent_model.component_key
+        model.vocabulary_key = parent_vocabulary_key
+        model.component_key = parent_component_key
         model.is_root = True
 
         if model_customizer.model_show_hierarchy:
@@ -398,6 +398,8 @@ class MetadataStandardProperty(MetadataProperty):
     def save(self,*args,**kwargs):        
         # TODO: if the customizer is required and the field is not displayed and there is no existing default value
         # then set it to default value
+        if self.proxy:
+            self.is_label = self.proxy.is_label
         super(MetadataStandardProperty,self).save(*args,**kwargs)
 
     def get_value(self):

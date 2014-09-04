@@ -240,6 +240,8 @@ def ajax_select_realization(request,**kwargs):
     customizer_id = request.GET.get('c', None)
     standard_property_id = request.GET.get("s", None)
     prefix = request.GET.get("p",None)
+    parent_vocabulary_key = request.GET.get("p_v_k","")
+    parent_component_key  = request.GET.get("p_c_k","")
     n_forms = int(request.GET.get("n","0"))
     realizations_to_exclude = request.GET.get("e",[])
     if realizations_to_exclude:
@@ -312,7 +314,7 @@ def ajax_select_realization(request,**kwargs):
 
                 # get the full realization set
                 (models, standard_properties, scientific_properties) = \
-                    MetadataModel.get_new_subrealization_set(model_customizer.project, model_customizer.version, model_customizer.proxy, standard_property_proxies, scientific_property_proxies, model_customizer, vocabularies=MetadataVocabulary.objects.none())
+                    MetadataModel.get_new_subrealization_set(model_customizer.project, model_customizer.version, model_customizer.proxy, standard_property_proxies, scientific_property_proxies, model_customizer, MetadataVocabulary.objects.none(), parent_vocabulary_key, parent_component_key)
 
             else:
 
@@ -338,8 +340,10 @@ def ajax_select_realization(request,**kwargs):
                 # instead, I have to use exclude
                 if standard_properties_to_remove:
                     if realization_pk == empty_pk:
-                        for sp in standard_properties_to_remove:
-                            standard_property_list.remove(sp)
+                        standard_properties_to_remove_names = [sp.name for sp in standard_properties_to_remove]
+                        standard_property_list = [sp for sp in standard_property_list if sp.name not in standard_properties_to_remove_names]
+                        # for sp in standard_properties_to_remove:
+                        #     standard_property_list.remove(sp)
                     else:
                         standard_property_list.exclude(id__in=[standard_property.pk for standard_property in standard_properties_to_remove])
 
@@ -356,8 +360,8 @@ def ajax_select_realization(request,**kwargs):
                 # instead, I have to use exclude
                 if scientific_properties_to_remove:
                     if realization_pk == empty_pk:
-                        for sp in scientific_properties_to_remove:
-                            scientific_property_list.remove(sp)
+                        scientific_properties_to_remove_names = [sp.name for sp in scientific_properties_to_remove]
+                        scientific_property_list = [sp for sp in scientific_property_list if sp.name not in scientific_properties_to_remove_names]
                     else:
                         scientific_property_list.exclude(id__in=[scientific_property.pk for scientific_property in scientific_properties_to_remove])
 

@@ -131,6 +131,7 @@ def questionnaire_edit_new(request, project_name="", model_name="", version_name
     scientific_property_customizers = get_joined_keys_dict(nested_scientific_property_customizers)
     scientific_property_proxies = { key : [spc.proxy for spc in value] for key,value in  scientific_property_customizers.items() }
 
+
     # TODO: may have to include _all_ properties in the forms (and just hide them in the template) so that they are there when I save things
 
     model_parameters = {
@@ -156,6 +157,7 @@ def questionnaire_edit_new(request, project_name="", model_name="", version_name
     model_parent_dictionary = get_model_parent_dictionary(models)
 
     if request.method == "GET":
+
 
         (model_formset, standard_properties_formsets, scientific_properties_formsets) = \
             create_new_edit_forms_from_models(models, model_customizer, standard_properties, standard_property_customizers, scientific_properties, scientific_property_customizers)
@@ -336,6 +338,7 @@ def questionnaire_edit_existing(request, project_name="", model_name="", version
         #"can_publish": True,  # only models that have already been saved can be published
         "can_publish" : False,
     }
+
 
     return render_to_response('questionnaire/questionnaire_edit.html', dict, context_instance=RequestContext(request))
 

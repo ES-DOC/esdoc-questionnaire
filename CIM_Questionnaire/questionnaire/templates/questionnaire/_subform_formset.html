@@ -28,6 +28,7 @@
 
         {% for model_subform in model_subformset %}
 
+
             {# with standard_properties_subformset=property_form|get_standard_properties_subformset_for_model:model_subform #}
             {% with standard_properties_subformset=property_form.get_standard_properties_subformsets|get_value_from_key:model_subform.prefix %}
 
@@ -37,7 +38,7 @@
                         <tr valign="center">
                             <td>
                                 <b>{{ model_customizer.model_title }}:&nbsp;</b>
-                                {{ model_subform.instance }} {#  assuming __unicode__ method works, this should return a useful string #}
+                                <span class="label">{{ model_subform.instance }}</span> {#  assuming __unicode__ method works, this should return a useful string #}
                             </td>
                         </tr>
                     </table>
@@ -70,10 +71,10 @@
                         {%  with active_standard_properties=model_customizer.get_active_standard_properties %}
 
                             {# TODO: PURPOSEFULLY IGNORING SCIENTIFIC_PROPERTIES_FORMSETS FOR SUBFORMS FOR NOW #}
-                            {% for key,scientific_properties_subformset in scientific_properties_subformsets.items %}
+                            {% with scientific_properties_subformset=property_form.get_scientific_properties_subformsets|get_value_from_key:model_subform.prefix %}
                                 {{  scientific_properties_subformset.management_form }}
                                 {{  scientific_properties_subformset.non_form_errors }}
-                            {%  endfor %} {# /scientific_properties_subformset #}
+                            {%  endwith %} {# /scientific_properties_subformset #}
 
                             {{ standard_properties_subformset.management_form }}
                             {{ standard_properties_subformset.non_form_errors }}

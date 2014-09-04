@@ -327,15 +327,17 @@ function add_subform(row) {
 
     /* this takes place AFTER the form is added */
 
-    var field             = $(row).closest(".field");
-    var accordion         = $(row).closest(".accordion");
-    var accordion_units   = $(accordion).children(".accordion_unit");
-    var customizer_id     = $(field).find("input[name='customizer_id']").val();
-    var property_id       = $(field).find("input[name='property_id']").val()
-    var prefix            = $(field).find("input[name='prefix']").val()
-    var n_forms           = parseInt(accordion_units.length)
-    var existing_subforms = $(accordion_units).find("input[name$='-id']:first").map(function() {
-
+    var field                   = $(row).closest(".field");
+    var accordion               = $(row).closest(".accordion");
+    var pane                    = $(row).closest(".pane");
+    var accordion_units         = $(accordion).children(".accordion_unit");
+    var customizer_id           = $(field).find("input[name='customizer_id']").val();
+    var property_id             = $(field).find("input[name='property_id']").val()
+    var prefix                  = $(field).find("input[name='prefix']").val()
+    var parent_vocabulary_key   = $(pane).find("input[name$='-vocabulary_key']:first").val()
+    var parent_component_key    = $(pane).find("input[name$='-component_key']:first").val()
+    var n_forms                 = parseInt(accordion_units.length)
+    var existing_subforms       = $(accordion_units).find("input[name$='-id']:first").map(function() {
         var removed = $(this).closest(".accordion_content").find(".remove:first input[name$='-DELETE']").val()
         if (!removed) {
             var subform_id = $(this).val();
@@ -346,7 +348,7 @@ function add_subform(row) {
     }).get()
 
     url = window.document.location.protocol + "//" + window.document.location.host + "/ajax/select_realization/";
-    url += "?c=" + customizer_id + "&p=" + prefix + "&n=" + n_forms + "&e=" + existing_subforms;
+    url += "?c=" + customizer_id + "&p=" + prefix + "&n=" + n_forms + "&e=" + existing_subforms + "&p_v_k=" + parent_vocabulary_key + "&p_c_k=" + parent_component_key;
     if (property_id != "") {
         url += "&s=" + property_id;
     }
@@ -378,7 +380,6 @@ function add_subform(row) {
                     init_widgets(fieldsets,$(parent).find(".collapsible_fieldset"),true);
                     init_widgets(helps,$(parent).find(".help_button"),true);
                     init_widgets(selects,$(parent).find(".multiselect"),true);
-
                 },
 
                 buttons : [
