@@ -9,19 +9,24 @@
     $(document).ready(
         function() {
 
-            render_msg($("#msg"));
-
             var parent = document.body;
 
+            // do this first so that the dialogs appear near the top of the page
             init_dialogs(parent);
-            init_errors(parent);
 
-            init_widget(users,parent);
-            init_widget(readonlies,parent);
-            init_widget(buttons,parent);
-            init_widget(fieldsets,parent);
-            init_widget(helps,parent);
-            init_widget(enablers,parent);
+            // do this next, so it can happen while other widgets are loading
+            render_msg($("#msg"));
+
+            init_widgets(fieldsets,$(parent).find(".collapsible_fieldset"))
+            init_widgets(helps,$(parent).find(".help_button"));
+            init_widgets(readonlies,$(parent).find(".readonly"));
+            init_widgets(selects,$(parent).find(".multiselect"));
+            init_widgets(enablers,$(parent).find(".enabler"))
+            init_widgets(users,$(parent).find("#user"));
+            init_widgets(buttons,$(parent).find("input.button"))
+
+            // do this last b/c some of the xpath depends on changes made by the above fns...
+            init_errors(parent);
 
             $(".inactive").each(function() {
                 $(this).find("fieldset").addClass("ui-state-disabled");
