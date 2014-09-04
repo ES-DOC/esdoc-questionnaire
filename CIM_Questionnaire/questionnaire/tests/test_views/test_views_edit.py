@@ -110,8 +110,6 @@ class Test(TestQuestionnaireBase):
         model_id = session_variables["root_model_id"]
         model = MetadataModel.objects.get(pk=model_id)
 
-        import ipdb; ipdb.set_trace()
-
         # EXPLICITLY TESTING THAT DB HAS THE ADDITIONAL SUBFORM:
         test_submodel_standard_properties_data = [
             {'field_type': u'ATOMIC',       'enumeration_other_value': u'Please enter a custom value', 'name': u'individualName',   'enumeration_value': u'', 'relationship_value': [], 'is_label': True,   'order': 0, 'atomic_value': u''},
@@ -137,7 +135,6 @@ class Test(TestQuestionnaireBase):
         # LOOK AT THE KEYS OF standard_properties_subformsets
         # AND CHECK THE PREFIXES OF INDIVIDUAL FORMS
         self.assertEqual(subform_customizer.name, test_customizer.name)
-        import ipdb; ipdb.set_trace()
 
 
 

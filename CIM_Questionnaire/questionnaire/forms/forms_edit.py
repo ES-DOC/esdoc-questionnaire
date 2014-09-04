@@ -1517,7 +1517,7 @@ def save_valid_standard_properties_formset(standard_properties_formset):
                     any([form.has_changed() for form in scientific_properties_subformsets[property_key]]),
                 ])
 
-                if model_subform.get_current_field_value("DELETE", False):
+                if model_subform.get_current_field_value("DELETE", False) == "True":
                     model_subform_pk = model_subform.get_current_field_value("id")
                     if model_subform_pk:
                         standard_property_instance.relationship_value.remove(MetadataModel.objects.get(pk=model_subform_pk))

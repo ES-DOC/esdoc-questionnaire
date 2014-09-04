@@ -377,8 +377,9 @@ class Test(TestQuestionnaireBase):
 
         (model_proxy, standard_property_proxies, scientific_property_proxies) = MetadataModelProxy.get_proxy_set(model_customizer.proxy, vocabularies=MetadataVocabulary.objects.none())
 
+        # this is a contrived test b/c parent_vocabulary_key and parent_component_key are hard-coded
         (models, standard_properties, scientific_properties) = \
-            MetadataModel.get_new_subrealization_set(subform_customizer.project, subform_customizer.version, subform_customizer.proxy, standard_property_proxies, scientific_property_proxies, model_customizer, MetadataVocabulary.objects.none())
+            MetadataModel.get_new_subrealization_set(subform_customizer.project, subform_customizer.version, subform_customizer.proxy, standard_property_proxies, scientific_property_proxies, model_customizer, MetadataVocabulary.objects.none(), DEFAULT_VOCABULARY_KEY, DEFAULT_COMPONENT_KEY)
 
         (model_subformset, standard_properties_subformsets, scientific_properties_subformsets) = \
             create_new_edit_subforms_from_models(models, model_customizer, standard_properties, standard_property_customizers, scientific_properties, scientific_property_customizers, subform_prefix=test_subform_prefix, subform_min=subform_min, subform_max=subform_max)
@@ -415,7 +416,7 @@ class Test(TestQuestionnaireBase):
             u'%s-0-DELETE' % (model_subformset.prefix) : False,
             u'%s-0-description' % (model_subformset.prefix) : u'a stripped-down responsible party to use for testing\n                purposes.',
             u'%s-0-name' % (model_subformset.prefix) : u'responsibleParty',
-            u'%s-0-is_document' % (model_subformset.prefix) : True
+            u'%s-0-is_document' % (model_subformset.prefix) : False,
         }
 
         test_standard_properties_subformset_data = {
@@ -430,9 +431,9 @@ class Test(TestQuestionnaireBase):
             u'test_prefix_subform-0_standard_properties-0-id': None,
             u'test_prefix_subform-0_standard_properties-0-enumeration_other_value': 'Please enter a custom value',
             u'test_prefix_subform-0_standard_properties-0-order': 0,
-            u'test_prefix_subform-0_standard_properties-0-atomic_value': u'',
+            u'test_prefix_subform-0_standard_properties-0-atomic_value': None,
             u'test_prefix_subform-0_standard_properties-0-model': None,
-            u'test_prefix_subform-0_standard_properties-0-DELETE': False,
+            #u'test_prefix_subform-0_standard_properties-0-DELETE': False,
             u'test_prefix_subform-0_standard_properties-1-proxy': MetadataStandardPropertyProxy.objects.get(model_proxy=model_proxy, name__iexact="contactinfo").pk,
             u'test_prefix_subform-0_standard_properties-1-order': 1,
             u'test_prefix_subform-0_standard_properties-1-id': None,
@@ -441,22 +442,20 @@ class Test(TestQuestionnaireBase):
             u'test_prefix_subform-0_standard_properties-1-field_type': u'RELATIONSHIP',
             u'test_prefix_subform-0_standard_properties-1-model': None,
             u'test_prefix_subform-0_standard_properties-1-is_label': False,
-            u'test_prefix_subform-0_standard_properties-1-relationship_value': u'',
+            u'test_prefix_subform-0_standard_properties-1-relationship_value': [],
             u'test_prefix_subform-0_standard_properties-1-atomic_value': None,
             u'test_prefix_subform-0_standard_properties-1-enumeration_value': None,
-            u'test_prefix_subform-0_standard_properties-1-DELETE': False,
+            #u'test_prefix_subform-0_standard_properties-1-DELETE': False,
         }
 
         self.assertDictEqual(actual_model_subformset_data,test_model_subformset_data,excluded_keys=[u"%s-id"%(model_subformset.prefix)])
 
         for standard_properties_subformset in standard_properties_subformsets.values():
-            actual_standard_properties_formset_data = get_data_from_formset(standard_properties_subformset)
-            self.assertDictEqual(actual_standard_properties_formset_data,test_standard_properties_subformset_data,excluded_keys=[u"%s-id"%(standard_properties_subformset.prefix)])
-
+            actual_standard_properties_subformset_data = get_data_from_formset(standard_properties_subformset)
+            self.assertDictEqual(actual_standard_properties_subformset_data,test_standard_properties_subformset_data,excluded_keys=[u"%s-id"%(standard_properties_subformset.prefix)])
 
         for scientific_properties_subformset in scientific_properties_subformsets.values():
            self.assertEqual(len(scientific_properties_subformset.forms), 0)
-
 
 
     def test_metadata_model_formset_factory_from_data(self):
