@@ -147,7 +147,6 @@
                 /* END MODIFIED BY AT */
                 template.find('input:hidden[id $= "-DELETE"]').remove();
                 // Clear all cloned fields, except those the user wants to keep (thanks to brunogola for the suggestion):
-                console.log("CHILD_ELEMENT_SELECTOR=" + childElementSelector);
                 template.find(childElementSelector).not(options.keepFieldValues).each(function() {
                     var elem = $(this);
                     // If this is a checkbox or radiobutton, uncheck it.
@@ -186,9 +185,6 @@
                 row.find(childElementSelector).each(function() {
                     updateElementIndex($(this), options.prefix, formCount);
                 });
-
-                console.log("[IN PLUGIN]: formTemplate = " + options.formTemplate);
-                console.log("[IN PLUGIN]: row = " + row);
 
                 totalForms.val(formCount + 1);
                 // Check if we've exceeded the maximum allowed number of forms:
