@@ -19,13 +19,7 @@
         {{ model_subformset.management_form }}
         {{ model_subformset.non_form_errors }}
 
-        {# TODO: PURPOSEFULLY IGNORING SCIENTIFIC_PROPERTIES_FORMSETS FOR SUBFORMS FOR NOW #}
-        {% for key,scientific_properties_subformset in scientific_properties_subformsets.items %}
-            {{  scientific_properties_subformset.management_form }}
-            {{  scientific_properties_subformset.non_form_errors }}
-        {%  endfor %} {# /scientific_properties_subformset #}
-
-        <div class="accordion fake" "name="{{ model_subformset.prefix }}"> <!-- pretending to be an accordion so that add/remove still works -->
+        <div class="accordion fake" name="{{ model_subformset.prefix }}"> <!-- pretending to be an accordion so that add/remove still works -->
 
             {% for model_subform in model_subformset %} {# there should only be 1 form in the formset #}
 
@@ -44,6 +38,12 @@
                             {{ hidden_field }}
                         {% endfor %}  {# /hidden_field #}
                     </div> <!-- /.hidden -->
+
+                    {# TODO: PURPOSEFULLY IGNORING SCIENTIFIC_PROPERTIES_FORMSETS FOR SUBFORMS FOR NOW #}
+                    {% with scientific_properties_subformset=property_form.get_scientific_properties_subformsets|get_value_from_key:model_subform.prefix %}
+                        {{ scientific_properties_subformset.management_form }}
+                        {{ scientific_properties_subformset.non_form_errors }}
+                    {% endwith %} {# /scientific_properties_subformset #}
 
                     {%  with active_standard_properties=model_customizer.get_active_standard_properties %}
                         {# with standard_properties_subformset=property_form|get_standard_properties_subformset_for_model:model_subform #}
@@ -109,12 +109,12 @@
 
             {% endfor %} {# /model_subform #}
 
-        </div> <!-- /.fake accordion -->
+        </div> <!-- /.fake.accordion -->
 
         <div class="replace">
             <button class="replace" type="button" style="float: left; margin-top: 8px;" title="replace this {{ model_customizer.model_title }} with a new or an existing instance">replace</button>
             <!-- putting this documentation here so the float is aligned with the button -->
-            <div class="documentation" style="float: right; font-size: 10pt; padding: 1px;">(min:&nbsp;{{ model_subformset.get_min }}&nbsp;max:&nbsp;{{ model_subformset.get_max }})</div>
+            <!--<div class="documentation" style="float: right; font-size: 10pt; padding: 1px;">(min:&nbsp;{{ model_subformset.get_min }}&nbsp;max:&nbsp;{{ model_subformset.get_max }})</div>-->
         <div>
 
     </div> <!-- /.form -->

@@ -85,7 +85,6 @@ function dynamic_accordion_buttons(element) {
                         var dynamic_formset_add_button = $(accordion).find(".add-row:last");
                         $(dynamic_formset_add_button).click();
 
-
                         $(this).dialog("close")
 
                     },
@@ -146,27 +145,9 @@ function accordion_headers(element) {
 }
 
 /*
-function nullables(parent) {
-    $(parent).find(".multiselect.nullable").each(function() {
-        $(this).change(function() {
-            console.log("getting change fn from nullable")
-
-            var values = $(this).find("option:selected").map(function() {
-                return $(this).val();
-            }).get();
-
-            if (values.indexOf("_NONE") != -1) {
-                console.log("it has none as an option")
-                $(this).find("option:selected").each(function() {
-                    if ($(this).val()!="_NONE") {
-                        console.log('found option other than none')
-                        I AM HERE THIS DOESNT WORK
-                        $(this).click();
-                    }
-                });
-            }
-        });
-    });
+function nullables(element) {
+    // no longer need this fn;
+    // it's handled by multiselect plugin
 }
 */
 
@@ -329,6 +310,8 @@ function add_subform(row) {
 
     var field                   = $(row).closest(".field");
     var accordion               = $(row).closest(".accordion");
+    var is_one_to_one           = $(accordion).hasClass("fake");
+    var is_one_to_many          = !(is_one_to_one);
     var pane                    = $(row).closest(".pane");
     var accordion_units         = $(accordion).children(".accordion_unit");
     var customizer_id           = $(field).find("input[name='customizer_id']").val();
@@ -416,18 +399,41 @@ function add_subform(row) {
                                         /* initialize JQuery widgets */
                                         $(row).ready(function() {
 
-                                            init_widgets_on_show(fieldsets,$(row).find(".collapsible_fieldset"))
-                                            init_widgets_on_show(helps,$(row).find(".help_button"));
-                                            init_widgets_on_show(readonlies,$(row).find(".readonly"));
-                                            init_widgets_on_show(dates,$(row).find(".datetime,.date"));
-                                            init_widgets_on_show(accordions,$(row).find(".accordion").not(".fake"));
-                                            init_widgets_on_show(dynamic_accordions,$(row).find(".accordion .accordion_header"));
-                                            init_widgets_on_show(accordion_buttons,$(row).find(".subform_toolbar button"));
-                                            init_widgets_on_show(dynamic_accordion_buttons,$(row).find("button.add,button.remove,button.replace"));
-                                            init_widgets_on_show(selects,$(row).find(".multiselect"));
-                                            init_widgets_on_show(enumerations,$(row).find(".multiselect.open,.multiselect.nullable"));
-                                            init_widgets_on_show(autocompletes,$(row).find(".autocomplete"));
-                                            init_widgets_on_show(enablers,$(row).find(".enabler"));
+                                            if (is_one_to_many) {
+                                                init_widgets_on_show(fieldsets, $(row).find(".collapsible_fieldset"))
+                                                init_widgets_on_show(helps, $(row).find(".help_button"));
+                                                init_widgets_on_show(readonlies, $(row).find(".readonly"));
+                                                init_widgets_on_show(dates, $(row).find(".datetime,.date"));
+                                                init_widgets_on_show(accordions, $(row).find(".accordion").not(".fake"));
+                                                init_widgets_on_show(dynamic_accordions, $(row).find(".accordion .accordion_header"));
+                                                init_widgets_on_show(accordion_buttons, $(row).find(".subform_toolbar button"));
+                                                init_widgets_on_show(dynamic_accordion_buttons, $(row).find("button.add,button.remove,button.replace"));
+                                                init_widgets_on_show(selects, $(row).find(".multiselect"));
+                                                init_widgets_on_show(enumerations, $(row).find(".multiselect.open,.multiselect.nullable"));
+                                                init_widgets_on_show(autocompletes, $(row).find(".autocomplete"));
+                                                init_widgets_on_show(enablers, $(row).find(".enabler"));
+                                            }
+
+                                            else if (is_one_to_one) {
+                                                init_widgets(fieldsets, $(row).find(".collapsible_fieldset"))
+                                                init_widgets(helps, $(row).find(".help_button"));
+                                                init_widgets(readonlies, $(row).find(".readonly"));
+                                                init_widgets(dates, $(row).find(".datetime,.date"));
+                                                init_widgets(accordions, $(row).find(".accordion").not(".fake"));
+                                                init_widgets(dynamic_accordions, $(row).find(".accordion .accordion_header"));
+                                                init_widgets(accordion_buttons, $(row).find(".subform_toolbar button"));
+                                                init_widgets(dynamic_accordion_buttons, $(row).find("button.add,button.remove,button.replace"));
+                                                init_widgets(selects, $(row).find(".multiselect"));
+                                                init_widgets(enumerations, $(row).find(".multiselect.open,.multiselect.nullable"));
+                                                init_widgets(autocompletes, $(row).find(".autocomplete"));
+                                                init_widgets(enablers, $(row).find(".enabler"));
+                                            }
+
+                                            else {
+                                                console.log("unable to determine if this is a one-to-one or a one-to-many subform; cannot initialize jquery widgets");
+                                            }
+
+
 
                                         });
 
