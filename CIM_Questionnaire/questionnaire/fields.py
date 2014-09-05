@@ -282,7 +282,7 @@ METADATA_ATOMICFIELD_MAP = {
     "DECIMAL"  : [ NumberInput,   { } ],
     "EMAIL"    : [ EmailInput,    { } ],
     "INTEGER"  : [ NumberInput,   { } ],
-    "TEXT"     : [ Textarea,      { "cols" : "60", "rows" : "4" } ],
+    "TEXT"     : [ Textarea,      { } ],#"cols" : "60", "rows" : "4" } ],
     "TIME"     : [ TimeInput,     { } ],
     "URL"      : [ URLInput,      { } ],
 }
