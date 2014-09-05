@@ -105,7 +105,7 @@ def questionnaire_logout(request):
 
 @sensitive_post_parameters()
 def questionnaire_user(request,user_name=""):
-    
+
     try:
         user            = User.objects.get(username=user_name)
     except User.DoesNotExist:

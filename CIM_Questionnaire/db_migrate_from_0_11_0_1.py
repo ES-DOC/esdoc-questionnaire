@@ -1,7 +1,7 @@
 #! /usr/bin/python
 
-__author__="allyn.treshansky"
-__date__ ="$Jan 15, 2014 15:28:06 PM$"
+__author__ = "allyn.treshansky"
+__date__ = "$Jan 15, 2014 15:28:06 PM$"
 
 import os
 
@@ -58,4 +58,3 @@ if __name__ == "__main__":
                 scientific_property_customizer.model_key = u"%s_%s" % (new_vocabulary_key, new_component_key)
                 scientific_property_customizer.save()
 
-                

@@ -31,7 +31,6 @@ from CIM_Questionnaire.questionnaire.utils import DEFAULT_VOCABULARY_KEY, DEFAUL
 
 register = template.Library()
 
-
 @register.assignment_tag
 def get_default_vocabulary_key():
     return DEFAULT_VOCABULARY_KEY
