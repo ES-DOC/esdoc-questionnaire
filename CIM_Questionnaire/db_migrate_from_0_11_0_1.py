@@ -58,3 +58,13 @@ if __name__ == "__main__":
                 scientific_property_customizer.model_key = u"%s_%s" % (new_vocabulary_key, new_component_key)
                 scientific_property_customizer.save()
 
+    for model in MetadataModel.objects.all():
+        old_vocabulary_key = model.vocabulary_key
+        old_component_key = model.component_key
+        vocabulary = MetadataVocabulary.objects.get(name__iexact=old_vocabulary_key)
+        component = MetadataComponentProxy.objects.get(vocabulary=vocabulary, name__iexact=old_component_key)
+        model.vocabulary_key = vocabulary.get_key()
+        model.component_key = component.get_key()
+        model.save()
+
+
