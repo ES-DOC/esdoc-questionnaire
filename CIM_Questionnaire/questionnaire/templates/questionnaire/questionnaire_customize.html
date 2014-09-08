@@ -25,7 +25,7 @@
             // do this next, so it can happen while other widgets are loading
             render_msg($("#msg"));
 
-            init_widgets_on_show(fieldsets,$(parent).find(".collapsible_fieldset"))
+            init_widgets(fieldsets,$(parent).find(".collapsible_fieldset"))
             init_widgets_on_show(helps,$(parent).find(".help_button"));
             init_widgets_on_show(readonlies,$(parent).find(".readonly"));
             init_widgets_on_show(enablers,$(parent).find(".enabler"));

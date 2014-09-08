@@ -214,7 +214,7 @@ function tabs(element) {
 function selects(element) {
     $(element).multiselect({
        autoOpen  : false,
-       multiple  : ($(this).is("[multiple]")) ? true : false,
+       multiple  : ($(element).is("[multiple]")) ? true : false,
        sortable  : false,
        numToShow : 1
     });
