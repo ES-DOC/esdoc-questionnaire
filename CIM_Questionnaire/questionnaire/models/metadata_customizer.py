@@ -22,7 +22,6 @@ Summary of module goes here
 
 from django.db import models
 from django.db.models.fields import FieldDoesNotExist
-#from django.utils.functional import lazy
 
 from django.template.defaultfilters import slugify
 
@@ -30,7 +29,7 @@ from collections import OrderedDict
 from django.utils import timezone
 
 from CIM_Questionnaire.questionnaire.models.metadata_vocabulary import MetadataVocabulary
-
+from CIM_Questionnaire.questionnaire.models.metadata_proxy import MetadataScientificPropertyProxy, MetadataScientificCategoryProxy
 from CIM_Questionnaire.questionnaire.fields import MetadataFieldTypes, MetadataAtomicFieldTypes, EnumerationField, CardinalityField, MetadataUnitTypes
 from CIM_Questionnaire.questionnaire.utils import LIL_STRING, SMALL_STRING, BIG_STRING, HUGE_STRING, QuestionnaireError
 from CIM_Questionnaire.questionnaire.utils import find_in_sequence, validate_no_spaces, validate_no_reserved_words, valiate_no_bad_chars
@@ -133,6 +132,61 @@ class MetadataCustomizer(models.Model):
                     scientific_property_customizers[vocabulary_key][component_key].append(scientific_property_customizer)
 
         return (model_customizer,standard_category_customizers,standard_property_customizers,scientific_category_customizers,scientific_property_customizers)
+
+    @classmethod
+    def update_existing_customizer_set(cls,model_customizer,vocabularies):
+        # TODO: RIGHT NOW THIS WORKS BY UPDATING SCIENTIFIC CATEGORIES/PROPERTIES (IF VOCABULARY IS RE-REGISTERED)
+        # TODO: IT SHOULD ALSO WORK W/ STANDARD CATEGORIES/PROPERTIES (IF VERSION IS RE-REGISTERED)
+
+        # setup the scientific category & property customizers
+        for vocabulary in vocabularies:
+            vocabulary_key = vocabulary.get_key()
+            component_proxies = vocabulary.component_proxies.prefetch_related("categories", "scientific_properties").all()
+            for component_proxy in component_proxies:
+                component_key = component_proxy.get_key()
+                model_key = u"%s_%s" % (vocabulary_key, component_key)
+
+                old_scientific_category_customizers = list(model_customizer.scientific_property_category_customizers.filter(vocabulary_key=vocabulary_key,component_key=component_key).select_related("project","model_customizer"))
+                old_scientific_property_customizers = list(model_customizer.scientific_property_customizers.filter(vocabulary_key=vocabulary_key,component_key=component_key).select_related("proxy"))
+                old_scientific_category_proxies = [customizer.proxy for customizer in old_scientific_category_customizers]
+                old_scientific_property_proxies = [customizer.proxy for customizer in old_scientific_property_customizers]
+
+                scientific_category_proxies = component_proxy.categories.all()
+                scientific_property_proxies = component_proxy.scientific_properties.select_related("category").all()
+
+                missing_scientific_category_proxies = [proxy for proxy in scientific_category_proxies if proxy not in old_scientific_category_proxies]
+                missing_scientific_property_proxies = [proxy for proxy in scientific_property_proxies if proxy not in old_scientific_property_proxies]
+
+                new_scientific_category_customizers = [
+                    MetadataScientificCategoryCustomizer(
+                        model_customizer = model_customizer,
+                        proxy = scientific_category_proxy,
+                        vocabulary_key = vocabulary_key,
+                        component_key = component_key,
+                        model_key = model_key,
+                        reset = True,
+                    )
+                    for scientific_category_proxy in missing_scientific_category_proxies
+                ]
+                for scc in new_scientific_category_customizers:
+                    scc.save()
+                scientific_category_customizers = old_scientific_category_customizers + new_scientific_category_customizers
+
+                new_scientific_property_customizers = []
+                for scientific_property_proxy in missing_scientific_property_proxies:
+                    scientific_property_customizer = MetadataScientificPropertyCustomizer(
+                        model_customizer = model_customizer,
+                        proxy = scientific_property_proxy,
+                        vocabulary_key = vocabulary_key,
+                        component_key = component_key,
+                        model_key = model_key,
+                        category = find_in_sequence(lambda c: c.proxy == scientific_property_proxy.category, scientific_category_customizers),
+                        reset = True,
+                    )
+                    new_scientific_property_customizers.append(scientific_property_customizer)
+                for spc in new_scientific_property_customizers:
+                    spc.save()
+
 
     @classmethod
     def get_existing_customizer_set(cls,model_customizer,vocabularies):
