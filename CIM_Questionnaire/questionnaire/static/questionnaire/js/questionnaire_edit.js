@@ -10,9 +10,9 @@ function panes(element) {
     $(element).hide();
 }
 
-function autocompletes(parent) {
+function autocompletes(element) {
     var suggestions = $(element).attr("suggestions").split("|");
-    $(elment).autocomplete({
+    $(element).autocomplete({
         source : suggestions
     });
 }
