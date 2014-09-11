@@ -199,21 +199,21 @@ class MetadataVocabulary(models.Model):
                     property_proxy_value_name = xpath_fix(property_proxy_value, "@name")
                     if property_proxy_value_name:
                         property_proxy_values.append(property_proxy_value_name[0])
-
                 (new_property_proxy, created_property_proxy) = MetadataScientificPropertyProxy.objects.get_or_create(
                     category = property_proxy_category,
                     component = property_proxy_component,
                     name = property_proxy_name,
                     choice = property_proxy_choice,
-                    # TODO: IF THE VALUES ARE CHANGED THIS WILL CREATE A NEW PROXY
-                    # TODO: BUT THAT SEEMS LIKE OVERKILL B/C IT WILL REQUIRE THE CUSTOMIZER TO BE RE-CREATED
-                    # TODO: CAN I RESET VALUES AFTER CREATING THE PROXY?
-                    values = "|".join(property_proxy_values)
+                    # THIS IS COMMENTED OUT B/C SEE BELOW...
+                    #values = "|".join(property_proxy_values)
                 )
                 new_property_proxy.documentation = property_proxy_documentation
                 new_property_proxy.order = j
+                # TODO: SHOULD I CREATE A NEW PROXY IF THE VALUES ARE CHANGED?
+                # TODO: OR JUST ADD NEW VALUES HERE?
+                # TODO: DOUBLE-CHECK THAT VALUES ARE ADDED CORRECTLY
+                new_property_proxy.values =  "|".join(property_proxy_values)
                 new_property_proxy.save()
-                new_property_proxy.values = "|".join(property_proxy_values)
                 new_property_proxies.append(new_property_proxy)
 
             # if there's anything in old_property_proxies not in new_property_proxies, delete it

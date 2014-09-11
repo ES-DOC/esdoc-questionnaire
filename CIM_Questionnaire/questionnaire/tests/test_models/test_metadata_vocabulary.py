@@ -161,7 +161,8 @@ class TestMetadataVocabulary(TestQuestionnaireBase):
             {'category': category_testmodelkeyproperties_categoryone.pk,       'field_type': None, 'name': u'name',    'documentation': u'I am free text.',            'component': component_testmodelkeyproperties.pk,   'values': u'', 'is_label': False, 'choice': u'keyboard', 'order': 0},
             {'category': category_testmodelkeyproperties_categorytwo.pk,       'field_type': None, 'name': u'name',    'documentation': u'I am free text.',            'component': component_testmodelkeyproperties.pk,   'values': u'', 'is_label': False, 'choice': u'keyboard', 'order': 0},
             {'category': category_testmodelkeyproperties_generalattributes.pk, 'field_type': None, 'name': u'number',  'documentation': u'I am a number.',             'component': component_testmodelkeyproperties.pk,   'values': u'', 'is_label': False, 'choice': u'keyboard', 'order': 1},
-            {'category': category_testmodelkeyproperties_generalattributes.pk, 'field_type': None, 'name': u'choice1', 'documentation': u'I am an inclusive choice.',  'component': component_testmodelkeyproperties.pk,   'values': u'one|two|three|other|N/A', 'is_label': False, 'choice': u'OR', 'order': 2},
+           #{'category': category_testmodelkeyproperties_generalattributes.pk, 'field_type': None, 'name': u'choice1', 'documentation': u'I am an inclusive choice.',  'component': component_testmodelkeyproperties.pk,   'values': u'one|two|three|other|N/A', 'is_label': False, 'choice': u'OR', 'order': 2},
+            {'category': category_testmodelkeyproperties_generalattributes.pk, 'field_type': None, 'name': u'choice1', 'documentation': u'I am an inclusive choice.',  'component': component_testmodelkeyproperties.pk,   'values': u'one|two|three|another|other|N/A', 'is_label': False, 'choice': u'OR', 'order': 2},
            #{'category': category_testmodelkeyproperties_generalattributes.pk, 'field_type': None, 'name': u'choice2', 'documentation': u'I am an exclusive choice.',  'component': component_testmodelkeyproperties.pk,   'values': u'yes|no'", 'is_label': False, 'choice': u'XOR', 'order': 3},
             {'category': category_testmodelkeyproperties_generalattributes.pk, 'field_type': None, 'name': u'choice3', 'documentation': u'I am an inclusive choice.',  'component': component_testmodelkeyproperties.pk,   'values': u'four|five|six|other|N/A', 'is_label': False, 'choice': u'OR', 'order': 3},
         ]
@@ -223,7 +224,12 @@ class TestMetadataVocabulary(TestQuestionnaireBase):
 
         new_component_proxy = find_in_sequence(lambda cp: cp.name.lower() == "testmodelkeyproperties", new_component_proxies)
         new_scientific_category_proxy = find_in_sequence(lambda scp: scp.component==new_component_proxy and scp.name.lower() == "general attributes", new_scientific_category_proxies)
-        new_scientific_property_proxy = find_in_sequence(lambda scp: scp.component==new_component_proxy and scp.category==new_scientific_category_proxy and scp.name.lower() == "choice3", new_scientific_property_proxies)
+        new_scientific_property_proxy_choice3 = find_in_sequence(lambda scp: scp.component==new_component_proxy and scp.category==new_scientific_category_proxy and scp.name.lower() == "choice3", new_scientific_property_proxies)
+        new_scientific_property_proxy_choice1 = find_in_sequence(lambda scp: scp.component==new_component_proxy and scp.category==new_scientific_category_proxy and scp.name.lower() == "choice1", new_scientific_property_proxies)
 
         self.assertEqual(len(new_model_customizer.scientific_property_customizers.filter(proxy=old_scientific_property_proxy)), 0)
-        self.assertEqual(len(new_model_customizer.scientific_property_customizers.filter(proxy=new_scientific_property_proxy)), 1)
+        self.assertEqual(len(new_model_customizer.scientific_property_customizers.filter(proxy=new_scientific_property_proxy_choice3)), 1)
+
+        # TODO: CHECK THAT NEW VALUES ARE SET IN FORM
+        new_scientific_property_customizer_with_new_values = new_model_customizer.scientific_property_customizers.get(proxy=new_scientific_property_proxy_choice1)
+
