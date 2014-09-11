@@ -145,7 +145,7 @@ class MetadataVocabulary(models.Model):
         if component_proxy_documentation_node:
             component_proxy_documentation = component_proxy_documentation_node[0]
         else:
-            component_proxy_documentation = None
+            component_proxy_documentation = u''#None
 
         (new_component_proxy, created_component_proxy) = MetadataComponentProxy.objects.get_or_create(
             vocabulary = component_proxy_vocabulary,
@@ -168,7 +168,7 @@ class MetadataVocabulary(models.Model):
             if category_proxy_documentation_node:
                 category_proxy_documentation = category_proxy_documentation_node[0]
             else:
-                category_proxy_documentation = None
+                category_proxy_documentation = u''#None
 
             (new_category_proxy, created_category_proxy) = MetadataScientificCategoryProxy.objects.get_or_create(
                 component = category_proxy_component,
@@ -193,7 +193,7 @@ class MetadataVocabulary(models.Model):
                 if property_proxy_documentation_node:
                     property_proxy_documentation = property_proxy_documentation_node[0]
                 else:
-                    property_proxy_documentation = None
+                    property_proxy_documentation = u''#None
                 property_proxy_values = []
                 for property_proxy_value in xpath_fix(property_proxy_node,"value"):
                     property_proxy_value_name = xpath_fix(property_proxy_value, "@name")
@@ -208,8 +208,10 @@ class MetadataVocabulary(models.Model):
                 )
                 new_property_proxy.documentation = property_proxy_documentation
                 new_property_proxy.order = j
-                new_property_proxy.values = property_proxy_values
                 new_property_proxy.save()
+                # TODO: IF THE VALUES ARE CHANGED WILL THEY PROPAGAGE TO THE CUSTOMIZER (SINCE THE PROPERTY IS NOT NEW?)
+                # TODO: (IF NOT, I WILL HAVE TO ADD VALUE TO THE CONSTRUCTOR KWARGS ABOVE)
+                new_property_proxy.values = "|".join(property_proxy_values)
 
                 new_property_proxies.append(new_property_proxy)
 

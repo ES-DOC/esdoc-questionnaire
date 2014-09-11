@@ -91,7 +91,7 @@ class MetadataPropertyProxy(models.Model):
         abstract    = True
 
     name                = models.CharField(max_length=HUGE_STRING,blank=False,null=False)
-    documentation       = models.TextField(blank=True)
+    documentation       = models.TextField(blank=True,null=True)
     field_type          = models.CharField(max_length=SMALL_STRING,blank=False,null=True,choices=[(ft.getType(),ft.getName()) for ft in MetadataFieldTypes])
     order               = models.PositiveIntegerField(blank=True,null=True)
 
