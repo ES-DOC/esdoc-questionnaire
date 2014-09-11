@@ -205,14 +205,15 @@ class MetadataVocabulary(models.Model):
                     component = property_proxy_component,
                     name = property_proxy_name,
                     choice = property_proxy_choice,
+                    # TODO: IF THE VALUES ARE CHANGED THIS WILL CREATE A NEW PROXY
+                    # TODO: BUT THAT SEEMS LIKE OVERKILL B/C IT WILL REQUIRE THE CUSTOMIZER TO BE RE-CREATED
+                    # TODO: CAN I RESET VALUES AFTER CREATING THE PROXY?
+                    values = "|".join(property_proxy_values)
                 )
                 new_property_proxy.documentation = property_proxy_documentation
                 new_property_proxy.order = j
                 new_property_proxy.save()
-                # TODO: IF THE VALUES ARE CHANGED WILL THEY PROPAGAGE TO THE CUSTOMIZER (SINCE THE PROPERTY IS NOT NEW?)
-                # TODO: (IF NOT, I WILL HAVE TO ADD VALUE TO THE CONSTRUCTOR KWARGS ABOVE)
                 new_property_proxy.values = "|".join(property_proxy_values)
-
                 new_property_proxies.append(new_property_proxy)
 
             # if there's anything in old_property_proxies not in new_property_proxies, delete it
