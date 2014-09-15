@@ -20,8 +20,11 @@ Summary of module goes here
 
 """
 
-from django.conf.urls import patterns, include, url
+from django.conf.urls import patterns, url
 from django.contrib import admin
+
+from CIM_Questionnaire.questionnaire.views.views_feed import MetadataFeed
+
 
 admin.autodiscover()
 
@@ -70,5 +73,12 @@ urlpatterns = patterns('',
     url(r'^ajax/customize_category/$', 'questionnaire.views.ajax_customize_category'),
     url(r'^ajax/customize_category/(?P<category_id>[^/]+)/$', 'questionnaire.views.ajax_customize_category'),
     url(r'^ajax/select_realization/$', 'questionnaire.views.ajax_select_realization', name="select_realization"),
+
+    # atom feeds...
+    url(r'^feed$', MetadataFeed()),
+    url(r'^feed/(?P<project_name>[^/]+)/$', MetadataFeed()),
+    url(r'^feed/(?P<project_name>[^/]+)/(?P<version_name>[^/]+)/$', MetadataFeed()),
+    url(r'^feed/(?P<project_name>[^/]+)/(?P<version_name>[^/]+)/(?P<model_name>[^/]+)/$', MetadataFeed()),
+    url(r'^feed/(?P<project_name>[^/]+)/(?P<version_name>[^/]+)/(?P<model_name>[^/]+)/(?P<model_id>[^/]+)/$', 'questionnaire.views.serialize', name="serialize"),
 
 )

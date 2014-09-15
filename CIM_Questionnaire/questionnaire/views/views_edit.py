@@ -309,6 +309,11 @@ def questionnaire_edit_existing(request, project_name="", model_name="", version
             assert(len(model_instances) > 0)
             assert(root_model_id == model_instances[0].get_root().pk)
             # already set this above, just double-check that it hasn't changed
+
+            if "_publish" in data:
+                root_model = model_instances[0].get_root()
+                root_model.publish(force_save=True)
+
             #root_model_id = model_instances[0].get_root().pk
 
             # this is used for other fns that might need to know what the view returns
@@ -335,8 +340,7 @@ def questionnaire_edit_existing(request, project_name="", model_name="", version
         "standard_properties_formsets": standard_properties_formsets,
         "scientific_properties_formsets": scientific_properties_formsets,
         "questionnaire_version": get_version(),  # used in the footer
-        #"can_publish": True,  # only models that have already been saved can be published
-        "can_publish" : False,
+        "can_publish": True,  # only models that have already been saved can be published
     }
 
 

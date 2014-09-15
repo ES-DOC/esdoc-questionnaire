@@ -85,6 +85,7 @@ class MetadataModel(MPTTModel):
 
     parent = TreeForeignKey('self', null=True, blank=True, related_name='children')
 
+    published       = models.DateTimeField(blank=True,null=True,editable=False)
     created         = models.DateTimeField(blank=True,null=True,editable=False)
     last_modified   = models.DateTimeField(blank=True,null=True,editable=False)
 
@@ -94,6 +95,7 @@ class MetadataModel(MPTTModel):
 
     is_document     = models.BooleanField(blank=False, null=False, default=False)
     is_root         = models.BooleanField(blank=False, null=False, default=False)
+    is_published    = models.BooleanField(blank=False, null=False, default=False)
 
     vocabulary_key  = models.CharField(max_length=BIG_STRING, blank=True, null=True)
     component_key   = models.CharField(max_length=BIG_STRING, blank=True, null=True)
@@ -131,11 +133,22 @@ class MetadataModel(MPTTModel):
 
         self.is_document = proxy.is_document()
 
-    def save(self,*args,**kwargs):
+    def save(self,*args, **kwargs):
         if not self.id:
             self.created = timezone.now()
         self.last_modified = timezone.now()
         super(MetadataModel, self).save(*args, **kwargs)
+
+    def publish(self, force_save=False):
+
+        if not self.id:
+            raise QuestionnaireError("cannot publish an unsaved model")
+
+        self.published = timezone.now()
+        self.is_published = True
+
+        if force_save:
+            self.save()
 
     @classmethod
     def get_new_realization_set(cls, project, version, model_proxy, standard_property_proxies, scientific_property_proxies, model_customizer, vocabularies):
