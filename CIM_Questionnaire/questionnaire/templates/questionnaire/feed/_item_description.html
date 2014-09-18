@@ -1,0 +1,18 @@
+{# template for the description of an item in the ATOM feed #}
+
+{% load feed_filters %}
+
+
+{% with model=obj.model %}
+    <ul>
+        <li>project: {{ model.project.title }}</li>
+        <li>ontology: {{ model.version }}</li>
+        <li>type: {{ model.proxy|capfirst }}</li>
+        <li>publication date: {{ obj.publication_date }}</li>
+    </ul>
+    <!--<br/>-->
+    {% with description=model|get_standard_property_by_name:"description" %}
+        <b>description:&nbsp;</b> {{ description.get_value }}
+    {% endwith %} {# /description #}
+    <hr/> <!-- pretty way of distinguishing items, since this template makes them multi-line -->
+{% endwith %} {# /model #}

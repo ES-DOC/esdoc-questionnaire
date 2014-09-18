@@ -19,17 +19,23 @@ __date__ ="Dec 18, 2013 1:19:49 PM"
 Summary of module goes here
 
 """
+import os
 
+from django.conf import settings
+from django.db import models
+from django.template.loader import render_to_string
 from django.utils import timezone
 
-from django.db import models
-
 from mptt.models import MPTTModel, TreeForeignKey
+from uuid import uuid4
 
+from CIM_Questionnaire.questionnaire.models.metadata_serialization import MetadataModelSerialization
 from CIM_Questionnaire.questionnaire.fields import MetadataFieldTypes, EnumerationField
-
 from CIM_Questionnaire.questionnaire.utils import APP_LABEL, DEFAULT_VOCABULARY_KEY, DEFAULT_COMPONENT_KEY, LIL_STRING, SMALL_STRING, BIG_STRING, HUGE_STRING, QuestionnaireError
 from CIM_Questionnaire.questionnaire.utils import find_in_sequence
+
+
+#FEED_PATH = os.path.join(settings.MEDIA_ROOT,APP_LABEL,"feed")
 
 #############################################
 # create a hierarchy of models based on the #
@@ -85,9 +91,12 @@ class MetadataModel(MPTTModel):
 
     parent = TreeForeignKey('self', null=True, blank=True, related_name='children')
 
-    published       = models.DateTimeField(blank=True,null=True,editable=False)
+    #published       = models.DateTimeField(blank=True,null=True,editable=False)
     created         = models.DateTimeField(blank=True,null=True,editable=False)
     last_modified   = models.DateTimeField(blank=True,null=True,editable=False)
+
+    guid = models.CharField(blank=True, null=True, max_length=LIL_STRING, unique=True, editable=False)
+    document_version = models.CharField(blank=False, max_length=LIL_STRING, editable=False, default="0.0")
 
     proxy           = models.ForeignKey("MetadataModelProxy", blank=False, null=True, related_name="models")
     project         = models.ForeignKey("MetadataProject", blank=True, null=True, related_name="models")
@@ -136,19 +145,81 @@ class MetadataModel(MPTTModel):
     def save(self,*args, **kwargs):
         if not self.id:
             self.created = timezone.now()
+        if not self.guid:
+            self.guid = str(uuid4())
+        self.document_version = u"%s.%s" % (self.get_major_version(), int(self.get_minor_version())+1)
         self.last_modified = timezone.now()
         super(MetadataModel, self).save(*args, **kwargs)
 
-    def publish(self, force_save=False):
+    def get_id(self):
+        return self.guid
+
+    def get_major_version(self):
+        major, minor = self.document_version.split(".")
+        return major
+
+    def get_minor_version(self):
+        major, minor = self.document_version.split(".")
+        return minor
+
+    def publish(self, force_save=True):
 
         if not self.id:
             raise QuestionnaireError("cannot publish an unsaved model")
 
-        self.published = timezone.now()
+        self.document_version = u"%s.%s" % (int(self.get_major_version())+1, 0)
+        #self.published = timezone.now()
         self.is_published = True
 
         if force_save:
             self.save()
+            self.serialize()
+
+    # NO LONGER SERIALIZING TO FILE
+    # INSTEAD SERIALIZING TO MODEL (MetadataModelSerialization) AND GENERATING ON-DEMAND
+    # SO THAT ATOM FEED CAN LIST ALL SERIALIZATIONS (ie: ALL VERSIONS) IN THE DB
+    # def serialize(self):
+    #
+    #     dict = {
+    #         "project" : self.project,
+    #         "version" : self.version,
+    #         "proxy" : self.proxy,
+    #         "model" : self
+    #     }
+    #     serialization_template_path = "questionnaire/serialization/%s.xml" % (self.proxy.name.lower())
+    #     serialized_model = render_to_string(serialization_template_path, dict )
+    #
+    #     serialized_model_path = os.path.join(settings.MEDIA_ROOT,"questionnaire/feed",self.project.name.lower(),self.version.name.lower(),self.proxy.name.lower())
+    #     serialized_model_path += u"/%s_%s.xml" % (self.get_id(), self.get_major_version())
+    #     if not os.path.exists(os.path.dirname(serialized_model_path)):
+    #         os.makedirs(os.path.dirname(serialized_model_path))
+    #
+    #     with open(serialized_model_path, 'w') as file:
+    #         file.write(serialized_model)
+
+    def serialize(self):
+
+        serialization_dict = {
+            "project" : self.project,
+            "version" : self.version,
+            "proxy" : self.proxy,
+            "model" : self
+        }
+        serialization_template_path = "questionnaire/serialization/%s.xml" % (self.proxy.name.lower())
+        serialized_model = render_to_string(serialization_template_path, serialization_dict )
+
+        new_serialization_kwargs = {
+            "model" : self,
+            "name" : self.guid,
+            "version" : int(self.get_major_version()),
+        }
+        (serialization, created_serialization) = MetadataModelSerialization.objects.get_or_create(**new_serialization_kwargs)
+
+        serialization.content = serialized_model
+        if created_serialization:
+            serialization.publication_date = timezone.now()
+
+        serialization.save()
 
     @classmethod
     def get_new_realization_set(cls, project, version, model_proxy, standard_property_proxies, scientific_property_proxies, model_customizer, vocabularies):
@@ -371,13 +442,13 @@ class MetadataProperty(models.Model):
 class MetadataStandardProperty(MetadataProperty):
 
     class Meta:
-        app_label   = APP_LABEL
-        abstract    = False
+        app_label = APP_LABEL
+        abstract = False
 
-        ordering    = ['order']
+        ordering = ['order']
 
-    model           = models.ForeignKey("MetadataModel",blank=False,null=True,related_name="standard_properties")
-    proxy           = models.ForeignKey("MetadataStandardPropertyProxy",blank=True,null=True)
+    model        = models.ForeignKey("MetadataModel",blank=False,null=True,related_name="standard_properties")
+    proxy        = models.ForeignKey("MetadataStandardPropertyProxy",blank=True,null=True)
 
     atomic_value            = models.CharField(max_length=HUGE_STRING,blank=True,null=True)
     enumeration_value       = EnumerationField(blank=True,null=True)

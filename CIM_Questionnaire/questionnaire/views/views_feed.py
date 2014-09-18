@@ -19,20 +19,22 @@ __date__ ="Dec 18, 2013 1:32:37 PM"
 Summary of module goes here
 
 """
+import os
+from django.conf import settings
 from django.contrib.syndication.views import Feed, FeedDoesNotExist
 from django.utils.feedgenerator import Atom1Feed
 from django.http import HttpResponse
 from django.core.urlresolvers import reverse
 
-from CIM_Questionnaire.questionnaire.models import MetadataProject, MetadataVersion, MetadataModelProxy, MetadataModel
+from CIM_Questionnaire.questionnaire.models import MetadataProject, MetadataVersion, MetadataModelProxy, MetadataModel, MetadataModelSerialization
 from CIM_Questionnaire.questionnaire.views.views_error import questionnaire_error
 
 class MetadataFeed(Feed):
 
     feed_type = Atom1Feed
     link = "/feed/" # (not sure how this is used)
-    title_template = "questionnaire/_feed_item_title.html"
-    description_template = "questionnaire/_feed_item_description.html"
+    title_template = "questionnaire/feed/_item_title.html"
+    description_template = "questionnaire/feed/_item_description.html"
 
     def get_object(self, request, project_name=None, version_name=None, model_name=None):
 
@@ -86,17 +88,18 @@ class MetadataFeed(Feed):
 
     def items(self):
         """
-        returns all published models in the db
+        returns all serializations for all published models in the db
         can be restricted by project/version/proxy
         """
-        all_items = MetadataModel.objects.filter(is_published=True)
+        all_models = MetadataModel.objects.filter(is_published=True)
         if self.project:
-            all_items = all_items.filter(project=self.project)
+            all_models = all_models.filter(project=self.project)
             if self.version:
-                all_items = all_items.filter(version=self.version)
+                all_models = all_models.filter(version=self.version)
                 if self.proxy:
-                    all_items = all_items.filter(proxy=self.proxy)
-        return all_items.order_by("-published")
+                    all_models = all_models.filter(proxy=self.proxy)
+
+        return MetadataModelSerialization.objects.filter(model__in=all_models).order_by("-publication_date")
 
     # using template for finer control over title format (see above)
     # def item_title(self, item):
@@ -108,14 +111,15 @@ class MetadataFeed(Feed):
     #     pass
 
     def item_link(self, item):
-
+        model = item.model
         url_args = [
-            item.project.name.lower(),  # project
-            item.version.name.lower(),  # version
-            item.proxy.name.lower(),    # model_type
-            item.pk,                    # model_id
+            model.project.name.lower(),  # project
+            model.version.name.lower(),  # version
+            model.proxy.name.lower(),    # model_type
+            item.name,                  # serialization_name
+            item.version,   # serialization_version
         ]
-        item_url = reverse("serialize", args=url_args)
+        item_url = reverse("serialize_specific_version", args=url_args)
         return item_url
 
 
@@ -124,7 +128,7 @@ class MetadataFeed(Feed):
 #########################
 
 
-def validate_view_arguments(project_name="", version_name="", model_name="", model_id=-1):
+def validate_view_arguments(project_name="", version_name="", model_name="", model_guid=None, model_version=None):
     """
     Ensures that the arguments passed to a view are valid (ie: resolve to active projects, models, versions)
     """
@@ -170,7 +174,7 @@ def validate_view_arguments(project_name="", version_name="", model_name="", mod
 
     # try to get the actual model...
     try:
-        model = MetadataModel.objects.get(project=project, version=version, proxy=proxy, pk=model_id)
+        model = MetadataModel.objects.get(project=project, version=version, proxy=proxy, guid=model_guid)
     except (ValueError, MetadataModel.DoesNotExist):
         msg = "Unable to find specified model."
         validity = False
@@ -179,15 +183,58 @@ def validate_view_arguments(project_name="", version_name="", model_name="", mod
         msg = "This model is not yet published"
         validity = False
         return (validity, project, version, model, msg)
+    if model_version:
+        try:
+            model = MetadataModelSerialization.objects.get(model=model, version=model_version)
+        except MetadataModelSerialization.DoesNotExist:
+            msg = "Unable to find model published at version %s" % (model_version)
+            validity = False
+            return (validity, project, version, model, msg)
 
     return (validity, project, version, model, msg)
 
 
-def questionnaire_serialize(request, project_name=None, version_name=None, model_name=None, model_id=None):
+# NO LONGER SERIALIZING TO FILE
+# INSTEAD SERIALIZING TO MODEL (MetadataModelSerialization) AND GENERATING ON-DEMAND
+# SO THAT ATOM FEED CAN LIST ALL SERIALIZATIONS (ie: ALL VERSIONS) IN THE DB
+# def questionnaire_serialize(request, project_name=None, version_name=None, model_name=None, model_guid=None, model_version=None):
+#
+#     # validate arguments...
+#     # (if this view is invoked from the above feed, these checks are superfluous)
+#     # (but if a user accesses this view directly, they are needed)
+#     (validity, project, version, model, msg) = validate_view_arguments(project_name=project_name, version_name=version_name, model_name=model_name, model_guid=model_guid, model_version=model_version)
+#     if not validity:
+#         return questionnaire_error(request, msg)
+#
+#     serialized_model_path = os.path.join(settings.MEDIA_ROOT,"questionnaire/feed",model.project.name.lower(),model.version.name.lower(),model.proxy.name.lower())
+#     if model_version:
+#         serialized_model_path += u"/%s_%s.xml" % (model_guid, model_version)
+#     else:
+#         serialized_model_path += u"/%s_%s.xml" % (model_guid, model.get_major_version())
+#
+#     if not os.path.exists(serialized_model_path):
+#         msg = "Unable to locate serialized file: %s" % (serialized_model_path)
+#         return questionnaire_error(request, msg)
+#
+#     with open(serialized_model_path, "r") as file:
+#         serialized_model = file.read()
+#
+#     return HttpResponse(serialized_model, mimetype="text/xml")
+
+
+def questionnaire_serialize(request, project_name=None, version_name=None, model_name=None, model_guid=None, model_version=None):
 
     # validate arguments...
-    (validity, project, version, model, msg) = validate_view_arguments(project_name=project_name, version_name=version_name, model_name=model_name, model_id=model_id)
+    # (if this view is invoked from the above feed, these checks are superfluous)
+    # (but if a user accesses this view directly, they are needed)
+    (validity, project, version, model, msg) = validate_view_arguments(project_name=project_name, version_name=version_name, model_name=model_name, model_guid=model_guid, model_version=model_version)
     if not validity:
         return questionnaire_error(request, msg)
 
-    return HttpResponse("hi")
+    serializations = MetadataModelSerialization.objects.filter(model=model).order_by("-version")
+    if model_version:
+        serialization = serializations.get(version=model_version)
+    else:
+        serialization = serializations[0]
+
+    return HttpResponse(serialization.content, mimetype="text/xml")

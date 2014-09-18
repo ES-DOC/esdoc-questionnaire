@@ -54,6 +54,33 @@ def xpath_fix(node, xpath):
 
     return node.xpath(xpath, smart_strings=False)
 
+def get_tag_without_namespace(node):
+    """
+    gets tag from lxml element but w/out embedded namespace
+    (and w/out dealing w/ all the complexity of namespace managers)
+    this allows me to perform comparisons (in tests)
+    :param node: lxml element node
+    :return: string tag
+    """
+    full_tag = node.tag
+    return full_tag.split("}")[-1]
+
+def get_attribute_without_namespace(node,attribute_name):
+    """
+    gets tag from lxml element but w/out embedded namespace
+    (and w/out dealing w/ all the complexity of namespace managers)
+    this allows me to perform comparisons (in tests)
+    :param node: lxml element node
+    :param attribute_name: name of attribute to search for
+    :return: attribute value (or None if not found)
+    """
+    attributes = node.attrib
+    for key, value in attributes.iteritems():
+        key_without_namespace = key.split("}")[-1]
+        if attribute_name == key_without_namespace:
+            return value
+    return None
+
 #############
 # constants #
 #############
@@ -522,7 +549,6 @@ def find_in_sequence(fn, sequence):
     if fn(item)==True:
       return item
   return None
-
 
 
 ########################

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+{% load serialization_filters %}
+
+{% spaceless %}
+    <{{proxy.name}}
+            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xmlns:gml="http://www.opengis.net/gml/3.2"
+            xmlns:xlink="http://www.w3.org/1999/xlink"
+            xmlns:gco="http://www.isotc211.org/2005/gco"
+            xmlns:gmd="http://www.isotc211.org/2005/gmd"
+            xmlns="{{ version.url|get_url_path }}" xsi:schemaLocation="{{ version.url }}">
+
+        {% block content %}
+            you forgot to provide content!
+        {% endblock %} {# /content #}
+
+        <documentID>{{ model.get_id }}</documentID>
+        <documentVersion>{{ model.get_major_version }}</documentVersion>
+        <documentAuthor></documentAuthor>
+        <documentStatus>
+            {% with document_status=model|get_standard_property_by_name:"documentStatus" %}
+                {{ document_status }}
+                {{  document_status.field_type }}
+            {% endwith %}
+        </documentStatus>
+        <documentCreationDate>{{model.created|date:"c"}}</documentCreationDate>
+        
+    </{{ proxy.name }}>
+{% endspaceless %}
+
+

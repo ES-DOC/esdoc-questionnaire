@@ -19,6 +19,7 @@ Summary of module goes here
 
 """
 
+import os
 from django import template
 
 from CIM_Questionnaire.questionnaire.models.metadata_model import MetadataModel, MetadataStandardProperty, MetadataScientificProperty
@@ -43,3 +44,8 @@ def get_scientific_property_by_name(model, property_name):
         if scientific_property.name.lower() == property_name_lower:
             return scientific_property
     return None
+
+
+@register.filter
+def get_url_path(url):
+    return os.path.split(url)[0]

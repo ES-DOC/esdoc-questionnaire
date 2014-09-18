@@ -75,10 +75,10 @@ urlpatterns = patterns('',
     url(r'^ajax/select_realization/$', 'questionnaire.views.ajax_select_realization', name="select_realization"),
 
     # atom feeds...
-    url(r'^feed$', MetadataFeed()),
-    url(r'^feed/(?P<project_name>[^/]+)/$', MetadataFeed()),
-    url(r'^feed/(?P<project_name>[^/]+)/(?P<version_name>[^/]+)/$', MetadataFeed()),
-    url(r'^feed/(?P<project_name>[^/]+)/(?P<version_name>[^/]+)/(?P<model_name>[^/]+)/$', MetadataFeed()),
-    url(r'^feed/(?P<project_name>[^/]+)/(?P<version_name>[^/]+)/(?P<model_name>[^/]+)/(?P<model_id>[^/]+)/$', 'questionnaire.views.serialize', name="serialize"),
-
+    url(r'^feed$', MetadataFeed(), name="feed"),
+    url(r'^feed/(?P<project_name>[^/]+)/$', MetadataFeed(), name="feed_project"),
+    url(r'^feed/(?P<project_name>[^/]+)/(?P<version_name>[^/]+)/$', MetadataFeed(), name="feed_project_version"),
+    url(r'^feed/(?P<project_name>[^/]+)/(?P<version_name>[^/]+)/(?P<model_name>[^/]+)/$', MetadataFeed(), name="feed_project_version_proxy"),
+    url(r'^feed/(?P<project_name>[^/]+)/(?P<version_name>[^/]+)/(?P<model_name>[^/]+)/(?P<model_guid>[^/]+)/$', 'questionnaire.views.serialize', name="serialize_latest_version"),
+    url(r'^feed/(?P<project_name>[^/]+)/(?P<version_name>[^/]+)/(?P<model_name>[^/]+)/(?P<model_guid>[^/]+)/(?P<model_version>[^/]+)/$', 'questionnaire.views.serialize', name="serialize_specific_version"),
 )

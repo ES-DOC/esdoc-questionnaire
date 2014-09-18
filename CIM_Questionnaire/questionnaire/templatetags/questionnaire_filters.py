@@ -1,4 +1,3 @@
-
 ####################
 #   Django-CIM-Forms
 #   Copyright (c) 2012 CoG. All rights reserved.

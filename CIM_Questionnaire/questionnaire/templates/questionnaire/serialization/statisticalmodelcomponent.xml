@@ -1,0 +1,7 @@
+{% extends "questionnaire/serialization/base.xml" %}
+
+{% block content %}
+
+    statistical model component
+
+{% endblock %} {# /content #}
