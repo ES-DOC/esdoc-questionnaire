@@ -45,7 +45,7 @@ OTHER_CHOICE  = [("_OTHER","---OTHER---")]
 
 class EnumerationFormField(django.forms.fields.MultipleChoiceField):
 
-    def set_choices(self,choices,multi=True):
+    def set_choices(self, choices, multi=True):
         self._choices = choices
         if multi:
             self.widget = SelectMultiple(choices=choices)
@@ -56,15 +56,13 @@ class EnumerationFormField(django.forms.fields.MultipleChoiceField):
 
         # if this is _not_ a multi enumeration,
         # then the value will be a single string rather than a list;
-        # change it into a list so that validation works.
-        # TODO: DOUBLE-CHECK THAT CALLING to_python BELOW WILL TAKE CARE OF THIS
-        # if value and isinstance(value,basestring):
-        #     value = [value]
+        # (this is why I am explicitly calling to_python - see note below)
+        value = self.to_python(value)
 
         # an enumeration can be invalid in 2 ways:
         # 1) specifying a value other than that provided by choices (recall that choices is set in the form initialization fns)
         # 2) not specifying a value when field is required
-        value = self.to_python(value)
+
         if value:
             # this block is mostly taken from the super validate() fn
             for val in value:
@@ -81,6 +79,30 @@ class EnumerationFormField(django.forms.fields.MultipleChoiceField):
         return value
 
 
+    def to_python(self, value):
+        """
+        need to override this b/c this form field is based on a MultipleChoiceField
+        which uses the SelectMultiple widget by default (which provides lists on the clean callback)
+        but it uses the Select widget if the customizer/proxy specifies it should not be multiple
+        in this case it provides a string on the clean callback; I need to change that to a list
+        :param value:
+        :return:
+        """
+        if type(self.widget) == SelectMultiple: # multi
+
+            # this code taken from MultipleChoiceField.to_python ("django/forms/fields.py")
+            if not value:
+                return []
+            elif not isinstance(value, (list, tuple)):
+                raise ValidationError(self.error_messages['invalid_list'], code='invalid_list')
+            return [smart_text(val) for val in value]
+
+        else: # not multi
+
+            # this code _not_ taken from ChoiceField.to_python (since I want it to return a list)
+            if value in self.empty_values:
+                return []
+            return [smart_text(value)]
 
 class EnumerationField(models.TextField):
 
