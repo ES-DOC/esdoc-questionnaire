@@ -19,9 +19,6 @@ __date__ ="Dec 18, 2013 1:19:49 PM"
 Summary of module goes here
 
 """
-import os
-
-from django.conf import settings
 from django.db import models
 from django.template.loader import render_to_string
 from django.utils import timezone
@@ -34,8 +31,6 @@ from CIM_Questionnaire.questionnaire.fields import MetadataFieldTypes, Enumerati
 from CIM_Questionnaire.questionnaire.utils import APP_LABEL, DEFAULT_VOCABULARY_KEY, DEFAULT_COMPONENT_KEY, LIL_STRING, SMALL_STRING, BIG_STRING, HUGE_STRING, QuestionnaireError
 from CIM_Questionnaire.questionnaire.utils import find_in_sequence
 
-
-#FEED_PATH = os.path.join(settings.MEDIA_ROOT,APP_LABEL,"feed")
 
 #############################################
 # create a hierarchy of models based on the #
@@ -91,7 +86,6 @@ class MetadataModel(MPTTModel):
 
     parent = TreeForeignKey('self', null=True, blank=True, related_name='children')
 
-    #published       = models.DateTimeField(blank=True,null=True,editable=False)
     created         = models.DateTimeField(blank=True,null=True,editable=False)
     last_modified   = models.DateTimeField(blank=True,null=True,editable=False)
 
@@ -168,7 +162,6 @@ class MetadataModel(MPTTModel):
             raise QuestionnaireError("cannot publish an unsaved model")
 
         self.document_version = u"%s.%s" % (int(self.get_major_version())+1, 0)
-        #self.published = timezone.now()
         self.is_published = True
 
         if force_save:
@@ -197,7 +190,7 @@ class MetadataModel(MPTTModel):
     #     with open(serialized_model_path, 'w') as file:
     #         file.write(serialized_model)
 
-    def serialize(self):
+    def serialize(self,serialization_version=None):
 
         serialization_dict = {
             "project" : self.project,
@@ -211,8 +204,11 @@ class MetadataModel(MPTTModel):
         new_serialization_kwargs = {
             "model" : self,
             "name" : self.guid,
-            "version" : int(self.get_major_version()),
         }
+        if serialization_version:
+            new_serialization_kwargs["version"] = serialization_version
+        else:
+            new_serialization_kwargs["version"] = self.get_major_version()
         (serialization, created_serialization) = MetadataModelSerialization.objects.get_or_create(**new_serialization_kwargs)
 
         serialization.content = serialized_model

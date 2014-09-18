@@ -4,8 +4,8 @@ __date__ ="$Jan 23, 2014 10:13:32 AM$"
 from django.contrib import admin
 from django.forms   import *
 
-from questionnaire.utils    import *
-from questionnaire.models   import *
+from CIM_Questionnaire.questionnaire.utils import *
+from CIM_Questionnaire.questionnaire.models   import *
 
 from admin_authentication   import *
 from admin_sites            import *
@@ -13,6 +13,7 @@ from admin_projects         import *
 from admin_versions         import *
 from admin_categorizations  import *
 from admin_vocabularies     import *
+from admin_serialization    import *
 
 # TODO: DISABLE ADMIN ACCESS TO THESE CLASSES ONCE PROJECT IS OUT OF BETA
 admin.site.register(MetadataModelProxy)

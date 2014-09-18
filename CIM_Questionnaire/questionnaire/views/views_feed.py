@@ -185,7 +185,7 @@ def validate_view_arguments(project_name="", version_name="", model_name="", mod
         return (validity, project, version, model, msg)
     if model_version:
         try:
-            model = MetadataModelSerialization.objects.get(model=model, version=model_version)
+            MetadataModelSerialization.objects.get(model=model, version=model_version)
         except MetadataModelSerialization.DoesNotExist:
             msg = "Unable to find model published at version %s" % (model_version)
             validity = False
@@ -232,6 +232,7 @@ def questionnaire_serialize(request, project_name=None, version_name=None, model
         return questionnaire_error(request, msg)
 
     serializations = MetadataModelSerialization.objects.filter(model=model).order_by("-version")
+
     if model_version:
         serialization = serializations.get(version=model_version)
     else:
