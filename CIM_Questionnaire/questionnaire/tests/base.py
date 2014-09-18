@@ -209,7 +209,7 @@ class TestQuestionnaireBase(TestCase):
         test_categorization.save()
 
         test_version_path = os.path.join(VERSION_UPLOAD_PATH, "test_version.xml")
-        test_version = MetadataVersion(name="version", file=test_version_path, categorization=test_categorization)
+        test_version = MetadataVersion(name="version", file=test_version_path, categorization=test_categorization, url="www.namespace.com/test/cim.xsd")
         test_version.save()
 
         test_version.register()
