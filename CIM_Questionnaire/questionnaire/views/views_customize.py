@@ -210,6 +210,7 @@ def questionnaire_customize_new(request,project_name="",model_name="",version_na
         "standard_property_customizer_formset"    : standard_property_customizer_formset,
         "scientific_property_customizer_formsets" : scientific_property_customizer_formsets,
         "questionnaire_version"                   : get_version(),
+        "can_view"                                : False,  # only customizers that have been saved and are default can be viewed
     }
 
     return render_to_response('questionnaire/questionnaire_customize.html', dict, context_instance=RequestContext(request))
@@ -282,6 +283,7 @@ def questionnaire_customize_existing(request,project_name="",model_name="",versi
         "standard_property_customizer_formset"    : standard_property_customizer_formset,
         "scientific_property_customizer_formsets" : scientific_property_customizer_formsets,
         "questionnaire_version"                   : get_version(),
+        "can_view"                                : model_customizer.default,  # only customizers that have been saved and are default can be viewed
     }
 
     return render_to_response('questionnaire/questionnaire_customize.html', dict, context_instance=RequestContext(request))
