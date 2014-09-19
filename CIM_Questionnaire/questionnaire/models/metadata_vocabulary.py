@@ -55,11 +55,14 @@ class MetadataVocabulary(models.Model):
     class Meta:
         app_label   = APP_LABEL
         abstract    = False
+        unique_together = ("name", "version")
         # this is one of the few classes that I allow admin access to, so give it pretty names:
         verbose_name        = 'Metadata Vocabulary'
         verbose_name_plural = 'Metadata Vocabularies'
 
-    name            = models.CharField(max_length=SMALL_STRING,blank=False,null=False,unique=True,validators=[validate_no_spaces,])
+    name            = models.CharField(max_length=SMALL_STRING, blank=False, null=False, validators=[validate_no_spaces,])
+    version         = models.CharField(max_length=LIL_STRING, blank=False, null=False )
+    url             = models.URLField(blank=True, null=True)
     registered      = models.BooleanField(default=False)
     file            = models.FileField(upload_to=UPLOAD_PATH,validators=[validate_vocabulary_file_extension,],storage=OverwriteStorage())
     file.help_text  = "Note that files with the same names will be overwritten"
@@ -74,7 +77,7 @@ class MetadataVocabulary(models.Model):
         return self.component_order
 
     def __unicode__(self):
-        return u'%s' % self.name
+        return u"%s [%s]" % (self.name, self.version)
 
     def __init__(self,*args,**kwargs):
         super(MetadataVocabulary,self).__init__(*args,**kwargs)
@@ -128,6 +131,7 @@ class MetadataVocabulary(models.Model):
         from CIM_Questionnaire.questionnaire.models.metadata_customizer import MetadataCustomizer, MetadataModelCustomizer
         customizers_to_update = MetadataModelCustomizer.objects.filter(vocabularies__in=[self.pk])
         for customizer in customizers_to_update:
+            import ipdb; ipdb.set_trace()
             MetadataCustomizer.update_existing_customizer_set(customizer,[self])
 
 
@@ -207,6 +211,10 @@ class MetadataVocabulary(models.Model):
                     # THIS IS COMMENTED OUT B/C SEE BELOW...
                     #values = "|".join(property_proxy_values)
                 )
+
+                if property_proxy_category.name.lower() == "calibrationphase":
+                    import ipdb; ipdb.set_trace()
+
                 new_property_proxy.documentation = property_proxy_documentation
                 new_property_proxy.order = j
                 # TODO: SHOULD I CREATE A NEW PROXY IF THE VALUES ARE CHANGED?
