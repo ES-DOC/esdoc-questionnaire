@@ -15,17 +15,6 @@
             you forgot to provide content!
         {% endblock %} {# /content #}
 
-        <documentID>{{ model.get_id }}</documentID>
-        <documentVersion>{{ model.get_major_version }}</documentVersion>
-        <documentAuthor></documentAuthor>
-        <documentStatus>
-            {% with document_status=model|get_standard_property_by_name:"documentStatus" %}
-                {{ document_status }}
-                {{  document_status.field_type }}
-            {% endwith %}
-        </documentStatus>
-        <documentCreationDate>{{model.created|date:"c"}}</documentCreationDate>
-        
     </{{ proxy.name }}>
 {% endspaceless %}
 

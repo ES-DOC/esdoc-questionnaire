@@ -219,7 +219,7 @@ def validate_view_arguments(project_name="", version_name="", model_name="", mod
 #     with open(serialized_model_path, "r") as file:
 #         serialized_model = file.read()
 #
-#     return HttpResponse(serialized_model, mimetype="text/xml")
+#     return HttpResponse(serialized_model, content_type="text/xml")
 
 
 def questionnaire_serialize(request, project_name=None, version_name=None, model_name=None, model_guid=None, model_version=None):
@@ -238,4 +238,4 @@ def questionnaire_serialize(request, project_name=None, version_name=None, model
     else:
         serialization = serializations[0]
 
-    return HttpResponse(serialization.content, mimetype="text/xml")
+    return HttpResponse(serialization.content, content_type="text/xml")

@@ -31,7 +31,11 @@ class MetadataModelSerialization(models.Model):
         app_label   = APP_LABEL
         abstract    = False
 
-        unique_together = ("name","version",)
+        # this is one of the few classes that I allow admin access to, so give it pretty names:
+        verbose_name        = 'Metadata Serialization'
+        verbose_name_plural = 'Metadata Serializations'
+
+        unique_together = ("name", "version",)
 
     model = models.ForeignKey("MetadataModel", blank=False, null=False, related_name="serializations")
 
@@ -42,7 +46,14 @@ class MetadataModelSerialization(models.Model):
 
     content = models.TextField()
 
+    def __unicode__(self):
+        return u"%s_%s" % (self.name, self.version)
+
     def save(self, *args, **kwargs):
         if not self.publication_date:
             self.publication_date = timezone.now()
         super(MetadataModelSerialization, self).save(*args, **kwargs)
+
+    def validate(self):
+        # TODO
+        pass

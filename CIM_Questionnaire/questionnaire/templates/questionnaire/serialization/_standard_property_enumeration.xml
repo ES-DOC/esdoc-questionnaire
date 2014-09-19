@@ -1,0 +1,8 @@
+
+{#  property = the standard property #}
+
+<{{ property.name }}>
+    {% for value in property.get_value %}
+        <value>{{ value }}</value>
+    {% endfor %}
+</{{ property.name }}>

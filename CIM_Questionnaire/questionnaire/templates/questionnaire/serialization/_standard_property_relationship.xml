@@ -1,0 +1,16 @@
+
+{#  property = the standard property #}
+
+<{{ property.name }}>
+
+    {% for value in property.get_value %}
+
+        {% with model=value %}
+            {% with "questionnaire/serialization/_model.xml" as template %}
+                {% include template %}
+            {% endwith %}
+        {% endwith %} {# /model #}
+
+    {% endfor %} {# /value #}
+
+</{{ property.name }}>

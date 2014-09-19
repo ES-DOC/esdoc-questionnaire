@@ -1,0 +1,5 @@
+{#  property = the standard property #}
+
+<{{ property.name }}>
+    {{ property.value }}
+</{{ property.name }}>

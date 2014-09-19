@@ -30,9 +30,6 @@ admin.autodiscover()
 
 urlpatterns = patterns('',
 
-    # testing (obviously)...
-    url(r'^test/$',     'questionnaire.views.test'),
-
 #    # project error...
 #    url(r'^error/$',   'questionnaire.views.error',    name='questionnaire_error'),
 
@@ -49,10 +46,6 @@ urlpatterns = patterns('',
     # openid authentication...
     #url(r'^openid/$', 'questionnaire.views.oid_login'),
     #url(r'^openid/process/(?P<token>.*)/$', 'questionnaire.views.oid_process'),
-
-    # indices
-    url(r'^$',                                'questionnaire.views.index', name="index"),
-    url(r'^(?P<project_name>[^/]+)/$',        'questionnaire.views.project_index', name="project_index"),
 
     # customizing...
     url(r'^customize/help$', 'questionnaire.views.customize_help', name="customize_help"),
@@ -75,10 +68,15 @@ urlpatterns = patterns('',
     url(r'^ajax/select_realization/$', 'questionnaire.views.ajax_select_realization', name="select_realization"),
 
     # atom feeds...
-    url(r'^feed$', MetadataFeed(), name="feed"),
+    url(r'^feed/$', MetadataFeed(), name="feed"),
     url(r'^feed/(?P<project_name>[^/]+)/$', MetadataFeed(), name="feed_project"),
     url(r'^feed/(?P<project_name>[^/]+)/(?P<version_name>[^/]+)/$', MetadataFeed(), name="feed_project_version"),
     url(r'^feed/(?P<project_name>[^/]+)/(?P<version_name>[^/]+)/(?P<model_name>[^/]+)/$', MetadataFeed(), name="feed_project_version_proxy"),
     url(r'^feed/(?P<project_name>[^/]+)/(?P<version_name>[^/]+)/(?P<model_name>[^/]+)/(?P<model_guid>[^/]+)/$', 'questionnaire.views.serialize', name="serialize_latest_version"),
     url(r'^feed/(?P<project_name>[^/]+)/(?P<version_name>[^/]+)/(?P<model_name>[^/]+)/(?P<model_guid>[^/]+)/(?P<model_version>[^/]+)/$', 'questionnaire.views.serialize', name="serialize_specific_version"),
+
+    # indices
+    url(r'^$',                                'questionnaire.views.index', name="index"),
+    url(r'^(?P<project_name>[^/]+)/$',        'questionnaire.views.project_index', name="project_index"),
+
 )
