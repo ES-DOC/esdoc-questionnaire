@@ -557,7 +557,7 @@
                 {% if can_view %}
                     {% with project_name=project.name|lower version_name=version.name|lower model_name=model_proxy.name|lower %}
                         {% url 'questionnaire.views.edit_new' project_name version_name model_name  as url_edit_new %}
-                        <input class="button" name="_view" value="view" title="view {{ model_proxy.name|a_or_an }} {{ model_proxy.name }} document using this customizer" onclick="window.location.href='{{ url_edit_new }}'"/>
+                        <input class="button" name="_view" value="view" title="view a blank {{ model_proxy.name }} document using this customizer" onclick="window.location.href='{{ url_edit_new }}'"/>
                     {% endwith %}
                 {% endif %} {# /can_view #}
             </div> <!-- /.submit -->
