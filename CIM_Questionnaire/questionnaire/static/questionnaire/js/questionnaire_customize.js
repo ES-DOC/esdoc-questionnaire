@@ -34,7 +34,7 @@ function tags(element) {
         var tag_widget  = $(element);
         var tag_type    = $(tag_widget).attr("name").endsWith("standard_categories_tags") ? STANDARD_TAG_TYPE : SCIENTIFIC_TAG_TYPE;
 
-        $(element).tagit({
+        $(tag_widget).tagit({
             allowSpaces : true,
             singleField : true,
             singleFieldDelimiter : "|",
@@ -50,14 +50,38 @@ function tags(element) {
                 var tag_content_widget  = $("textarea[id='"+widget_id.replace(/_tags$/,"_content")+"']");
                 var tag_content         = $.parseJSON($(tag_content_widget).val());
 
-                
                 if (tag_type == STANDARD_TAG_TYPE) {
                     $(tag).find(".tagit-close").hide();
                 }
                 $(tag).find(".tagit-label").before(
-                    "<a class='tagit-edit' onclick='edit_tag(this);'><span class='ui-icon ui-icon-pencil'></span></a>"
+                    "<a class='tagit-edit' title='edit this category' onclick='edit_tag(this);'><span class='ui-icon ui-icon-pencil'></span></a>"
                 );
                 $(tag).find(".tagit-label").attr("title","click to toggle properties belonging to this category");
+                $(tag).click(function(event) {
+                    /* if you really clicked the tag, and not an icon/button on the tag... */
+                    if ($(event.target).attr("class").indexOf("ui-icon") == -1) {
+                        /* toggle its state... */
+                        $(this).toggleClass("ui-state-active");
+                        var tag_label = $(this).find(".tagit-label").text();
+                        /* and that of all corresponding properties... */
+                        $(this).closest(".tab_content").find(".accordion_header input.label[name$='category_name']").each(function() {
+                            if ($(this).val()==tag_label) {
+                                var section = $(this).closest(".accordion_unit");
+                                $(section).toggle();
+                            }
+                        });
+                    }
+                });
+                /*
+                $(tag).find(".tagit-choice").click(function(event){
+                    alert("clicked!");
+
+                    if ($(event.target).attr("class").indexOf("ui-icon") == -1) {
+                        $(this).toggleClass("ui-state-active");
+
+                    }
+                });
+                */
 
                 var tag_just_added = $(tag).hasClass("added");
                 if (tag_just_added) {
@@ -128,7 +152,9 @@ function tags(element) {
                }).dialog("open");
             }
         });
-        $(element).sortable({
+        // now that the tagit widget has been created we can further customize it...
+        var tagit_widget = $(tag_widget).next("ul.tagit:first");
+        $(tagit_widget).sortable({
             axis        : "x",
             items       : "li:not(.tagit-new)",
             placeholder : "sortable_item",
@@ -158,9 +184,9 @@ function tags(element) {
         });
         // rather than set 'readonly' to true (since I still want the functionality),
         // I just hide that part of the widget...
-        $(element).find(".tagit-new").hide();
+        $(tagit_widget).find(".tagit-new").hide();
         // ...and add code to this dummy widget...
-        var add_tag = $(element).nextAll(".add_tag:first");
+        var add_tag = $(tagit_widget).nextAll(".add_tag:first");
         if (tag_type == STANDARD_TAG_TYPE) {
             $(add_tag).hide()
         }
@@ -218,7 +244,6 @@ function edit_tag(edit_tag_icon) {
     var category_to_edit = "";
     $.each(tag_content,function(i,category) {
        var category_fields = category.fields
-       console.log(category_fields.key + " == " + tag_key + " ?");
 
        if ((category_fields.key == tag_key)) {
            category_to_edit = category;
@@ -250,9 +275,11 @@ function edit_tag(edit_tag_icon) {
                 open : function() {
                     // apply all of the JQuery code to _this_ dialog
                     var parent = $(edit_dialog);
-                    init_widget(readonlies,parent);
-                    init_widget(buttons,parent);
-                    init_widget(helps,parent);
+                    // the addition of the 'true' attribute forces initialization,
+                    // even if this dialog is opened multiple times
+                    init_widgets(readonlies, $(parent).find(".readonly"), true);
+                    init_widgets(buttons, $(parent).find("input.button"), true);
+                    init_widgets(helps, $(parent).find(".help_button"), true);
                 },                
                 buttons     : {
                     ok : function() {
