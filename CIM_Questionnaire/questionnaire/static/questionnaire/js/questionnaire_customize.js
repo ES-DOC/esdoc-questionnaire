@@ -232,7 +232,11 @@ function sortable_accordions(element) {
         }
     });
 }
-  
+
+function view_all_categories(view_all_button) {
+    alert($(view_all_button).attr("class"));
+}
+
 function edit_tag(edit_tag_icon) {
     var tag_name        = $(edit_tag_icon).next(".tagit-label").text();
     var tag_key         = slugify(tag_name);

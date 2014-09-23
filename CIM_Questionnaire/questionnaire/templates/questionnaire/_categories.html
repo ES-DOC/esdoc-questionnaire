@@ -2,16 +2,25 @@
 
 <div class="categories">
     <fieldset>
-        {% with field=tags field_label=tags.label field_id=tags.html_name %}
-            {% if field.help_text %}
-                {% include "questionnaire/_help.html" %}
-            {% endif %} {# /field.help_text #}        
-            <span>{{ field_label }}:&nbsp;</span>
-            {{ field }}
-        {% endwith %} {# /field, field_label, field_id #}
+
+        <span>{{ tags.label }}:&nbsp;</span>
+
+        {{ tags }}
 
         <div class="hidden">
             {{content}}
+        </div>
+
+        <input type="button" class="button view_all" value="view all properties" title=onclick="view_all_categories(this);"/>
+
+        <div class="documentation">
+            <p style="text-align: justify; margin-right: 2px;">
+                These categories will appear as tabs within the CIM Editing Form.
+                The tab order can be changed by dragging and dropping the above widgets.
+                Additionally, documentation for each category can be updated by clicking the "edit" icon.
+                Clicking elsewhere on a category widget will toggle the visibility of all properties belonging to that category.
+                Use the "view all" widget above to ensure that all properties are displayed.
+            </p>
         </div>
 
         <div class="add_tag">
