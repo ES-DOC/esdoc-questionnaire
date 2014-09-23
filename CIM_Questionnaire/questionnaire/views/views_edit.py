@@ -116,7 +116,7 @@ def questionnaire_edit_new(request, project_name="", model_name="", version_name
     # b/c vocabularies do not have an "order" attribute (since they can be used by multiple projects/customizations),
     # but the model_customizer does record the desired order of active vocabularies (as a comma-separated list)
     vocabularies = model_customizer.vocabularies.all().prefetch_related("component_proxies")
-    vocabulary_order = [int(order) for order in model_customizer.vocabulary_order.split(',')]
+    vocabulary_order = [int(order) for order in filter(None,model_customizer.vocabulary_order.split(','))]
     vocabularies = sorted(vocabularies, key=lambda vocabulary: vocabulary_order.index(vocabulary.pk))
 
     # now try to get the default customizer set for this project/version/proxy combination...
@@ -246,7 +246,7 @@ def questionnaire_edit_existing(request, project_name="", model_name="", version
     # b/c vocabularies do not have an "order" attribute (since they can be used by multiple projects/customizations),
     # but the model_customizer does record the desired order of active vocabularies (as a comma-separated list)
     vocabularies = model_customizer.vocabularies.all()
-    vocabulary_order = [int(order) for order in model_customizer.vocabulary_order.split(',')]
+    vocabulary_order = [int(order) for order in filter(None,model_customizer.vocabulary_order.split(','))]
     vocabularies = sorted(vocabularies, key=lambda vocabulary: vocabulary_order.index(vocabulary.pk))
 
     # now try to get the default customizer set for this project/version/proxy combination...
