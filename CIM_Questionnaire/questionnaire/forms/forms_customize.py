@@ -194,9 +194,9 @@ class MetadataModelCustomizerForm(MetadataModelCustomizerAbstractForm):
         super(MetadataModelCustomizerForm,self).__init__(*args,**kwargs)
 
         self.fields["vocabularies"].queryset = all_vocabularies
-        update_field_widget_attributes(self.fields["vocabularies"],{"class":"multiselect"})
-        update_field_widget_attributes(self.fields["model_show_hierarchy"],{"class":"enabler"})
-        set_field_widget_attributes(self.fields["model_show_hierarchy"],{"onchange":"enable(this,'true',['model_root_component','model_hierarchy_name']);",})
+        update_field_widget_attributes(self.fields["vocabularies"], {"class" : "multiselect"})
+        update_field_widget_attributes(self.fields["model_show_hierarchy"], {"class" : "enabler"})
+        set_field_widget_attributes(self.fields["model_show_hierarchy"], {"onchange" : "enable(this,'true',['model_root_component']);"})
 
         set_field_widget_attributes(self.fields["description"],{"cols":"60","rows":"4"})
 

@@ -27,8 +27,8 @@
 
             init_widgets(fieldsets,$(parent).find(".collapsible_fieldset"));
             init_widgets_on_show(readonlies,$(parent).find(".readonly"));
-            init_widgets_on_show(enablers,$(parent).find(".enabler"));
 
+            init_widgets(enablers,$(parent).find(".enabler"));
             init_widgets(accordions,$(parent).find(".accordion").not(".fake"));
             init_widgets(sortable_accordions,$(parent).find(".accordion .accordion_header"));
             init_widgets(accordion_buttons,$(parent).find(".subform_toolbar button"));
