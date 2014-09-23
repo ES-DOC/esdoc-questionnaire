@@ -25,8 +25,7 @@
             // do this next, so it can happen while other widgets are loading
             render_msg($("#msg"));
 
-            init_widgets(fieldsets,$(parent).find(".collapsible_fieldset"))
-            init_widgets_on_show(helps,$(parent).find(".help_button"));
+            init_widgets(fieldsets,$(parent).find(".collapsible_fieldset"));
             init_widgets_on_show(readonlies,$(parent).find(".readonly"));
             init_widgets_on_show(enablers,$(parent).find(".enabler"));
 
@@ -38,6 +37,7 @@
             init_widgets(users,$(parent).find("#user"));
             init_widgets(buttons,$(parent).find("input.button"))
             init_widgets(selects,$(parent).find(".multiselect"));
+            init_widgets(helps, $(parent).find(".help_button"));
 
             // some one-offs for the customizer
             $("button.customize_subform").button({
@@ -181,7 +181,29 @@
                     <table width="100%">
                         {% for field in model_customizer_form.get_customizer_fields %}
                             <tr class="{% cycle 'odd' 'even' %} field" name="{{field.html_name}}">
-                                {% include "questionnaire/_field.html" %}
+                                {% if field.name == "default" %}
+                                    {# a one-off for the "default" field #}
+                                    {# to show help_text inline #}
+                                    {# to draw attention to it #}
+                                    {# b/c it's unintuitive #}
+                                    <td>
+                                        <span>{{  field.label }}&nbsp;</span>
+                                        {% if field.help_text %}
+                                            <div class="documentation">
+                                                {{ field.help_text|safe }}
+                                            </div>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {{field}}
+                                        {% if field.errors %}
+                                            {% include "questionnaire/_error.html" %}
+                                        {% endif %} {# / field.errors #}
+                                    </td>
+                                {% else %}
+                                    {# just show all other fields normally #}
+                                    {% include "questionnaire/_field.html" %}
+                                {% endif %} {# /field.name=="default #}
                             </tr>
                         {% endfor %} {# / field in model_customizer_form.get_customizer_fields #}
                     </table>

@@ -293,7 +293,8 @@ class MetadataModelCustomizer(MetadataCustomizer):
     description             = models.TextField(verbose_name="Customization Description",blank=True,null=True)
     description.help_text   = "An explanation of how this customization is intended to be used.  This information is for informational purposes only."
     default                 = models.BooleanField(verbose_name="Is Default Customization",blank=True,default=False)
-    default.help_text       = "Defines the default customization that is used by this project/model combination if no explicit customization is provided."
+    default.help_text       = "Every project / CIM Version / CIM Document Type must have one default customizer.  If this is the first customizer you are creating, please ensure this checkbox is selected."
+
 
     model_title                         = models.CharField(max_length=BIG_STRING,verbose_name="Name that should appear on the Document Form",blank=False,null=True)
     model_description                   = models.TextField(verbose_name="A description of the document",blank=True,null=True)

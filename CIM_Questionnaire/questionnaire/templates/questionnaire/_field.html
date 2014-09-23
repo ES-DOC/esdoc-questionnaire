@@ -1,19 +1,17 @@
 {# this displays a single metadata field (as a table row) #}
 
-<!--<tr class="{% cycle 'odd' 'even' %} field" name="{{field.html_name}}">-->
-    <!-- TODO: DOUBLE-CHECK THAT field_id IS SET APPROPRIATELY -->
-    {% with field_label=field.label field_id=field.html_name %}
-        <td>
-            {% if field.help_text %}
-                {% include "questionnaire/_help.html" %}
-            {% endif %} {# /field.help_text #}
-            <span>{{field_label}}&nbsp;</span>
-        </td>
-        <td>
-            {{field}}
-            {% if field.errors %}
-                {% include "questionnaire/_error.html" %}
-            {% endif %} {# / field.errors #}
-        </td>
-    {% endwith %}
-<!--</tr>-->
+<!-- TODO: DOUBLE-CHECK THAT field_id IS SET APPROPRIATELY -->
+{% with field_label=field.label field_id=field.html_name %}
+    <td>
+        {% if field.help_text %}
+            {% include "questionnaire/_help.html" %}
+        {% endif %} {# /field.help_text #}
+        <span>{{field_label}}&nbsp;</span>
+    </td>
+    <td>
+        {{field}}
+        {% if field.errors %}
+            {% include "questionnaire/_error.html" %}
+        {% endif %} {# / field.errors #}
+    </td>
+{% endwith %}
