@@ -234,7 +234,13 @@ function sortable_accordions(element) {
 }
 
 function view_all_categories(view_all_button) {
-    alert($(view_all_button).attr("class"));
+    var current_tab = $(view_all_button).closest(".tab_content");
+    $(current_tab).find(".categories:first .tagit-choice").each(function() {
+        $(this).removeClass("ui-state-active");
+    });
+    $(current_tab).find(".accordion_unit").each(function() {
+        $(this).show();
+    });
 }
 
 function edit_tag(edit_tag_icon) {
