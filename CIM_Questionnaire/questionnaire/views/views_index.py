@@ -24,9 +24,10 @@ Summary of module goes here
 from django import forms
 from django.forms import *
 
-from questionnaire.views  import *
-from questionnaire.models import *
-from questionnaire.utils  import get_version
+from CIM_Questionnaire.questionnaire.views import *
+from CIM_Questionnaire.questionnaire.models import *
+from CIM_Questionnaire.questionnaire.utils import SUPPORTED_DOCUMENTS
+from CIM_Questionnaire.questionnaire.utils import get_version, remove_form_errors
 
 def questionnaire_index(request):
     """The default view for the CIM Questionnaire.  Provides a choice of active projects to visit."""
@@ -77,6 +78,7 @@ def questionnaire_project_index(request,project_name=""):
 
     all_versions = MetadataVersion.objects.filter(registered=True)
     all_proxies = MetadataModelProxy.objects.filter(stereotype__iexact="document",version__in=all_versions)
+    all_proxies = all_proxies.filter(name__iregex=r'(' + '|'.join(SUPPORTED_DOCUMENTS) + ')')
     all_customizers = MetadataModelCustomizer.objects.filter(project=project,proxy__in=all_proxies)
     all_models = MetadataModel.objects.filter(project=project,is_root=True,proxy__in=all_proxies,is_document=True)
    

@@ -85,7 +85,7 @@ def get_attribute_without_namespace(node,attribute_name):
 # constants #
 #############
 
-MONOPOLY = False
+SUPPORTED_DOCUMENTS = ["modelcomponent", "statisticalmodelcomponent"]
 
 APP_LABEL = "questionnaire"
 
