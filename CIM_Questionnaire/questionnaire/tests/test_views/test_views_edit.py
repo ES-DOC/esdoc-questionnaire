@@ -137,6 +137,35 @@ class Test(TestQuestionnaireBase):
         self.assertEqual(subform_customizer.name, test_customizer.name)
 
 
+    def test_questionnaire_edit_new_no_component_hierarchy(self):
+
+        test_document_type = "modelcomponent"
+
+        self.model_customizer.model_show_hierarchy = False
+        self.model_customizer.save()
+
+        request_url = reverse("edit_new", kwargs = {
+            "project_name" : self.project,
+            "version_name" : self.version,
+            "model_name" : test_document_type,
+        })
+
+        response = self.client.get(request_url, follow=True)
+        context = response.context
+
+        self.assertEqual(response.status_code, 200)
+
+        n_model_forms = len(context["model_formset"].forms)
+        n_components = len(self.vocabulary.component_proxies.all())
+
+        # if model_show_hierarchy was set to True
+        # then I would expect n_model_forms to be greater than n_components
+        self.assertEqual(n_model_forms, n_components)
+
+
+
+
+
 
     # def test_questionnaire_edit_new_get(self):
     #     project_name = "test"

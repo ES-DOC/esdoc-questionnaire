@@ -27,9 +27,10 @@ from mptt.models import MPTTModel, TreeForeignKey
 from uuid import uuid4
 
 from CIM_Questionnaire.questionnaire.models.metadata_serialization import MetadataModelSerialization
-from CIM_Questionnaire.questionnaire.fields import MetadataFieldTypes, EnumerationField
+from CIM_Questionnaire.questionnaire.fields import MetadataFieldTypes, EnumerationField, EMPTY_CHOICE, NULL_CHOICE, OTHER_CHOICE
 from CIM_Questionnaire.questionnaire.utils import APP_LABEL, DEFAULT_VOCABULARY_KEY, DEFAULT_COMPONENT_KEY, LIL_STRING, SMALL_STRING, BIG_STRING, HUGE_STRING, QuestionnaireError
 from CIM_Questionnaire.questionnaire.utils import find_in_sequence
+from CIM_Questionnaire.questionnaire import get_version
 
 
 #############################################
@@ -196,7 +197,9 @@ class MetadataModel(MPTTModel):
             "project" : self.project,
             "version" : self.version,
             "proxy" : self.proxy,
-            "model" : self
+            "model" : self,
+            "questionnaire_version" : get_version(),
+
         }
         serialization_template_path = "questionnaire/serialization/%s.xml" % (self.proxy.name.lower())
         serialized_model = render_to_string(serialization_template_path, serialization_dict )
@@ -229,35 +232,35 @@ class MetadataModel(MPTTModel):
         :param vocabularies
         """
 
+        models = []
         model_parameters = {
             "project" : project,
             'version' : version,
             "proxy" : model_proxy,
         }
-        # setup the root model...
-        model = MetadataModel(**model_parameters)
-        model.vocabulary_key = DEFAULT_VOCABULARY_KEY
-        model.component_key = DEFAULT_COMPONENT_KEY
-        model.is_root = True
 
         if model_customizer.model_show_hierarchy:
-            # TODO: DON'T LIKE DOING THIS HERE (IS THERE A WAY TO NOT INCLUDE THE CUSTOMIZER IN THIS FN?)
+            # setup the root model...
+            model = MetadataModel(**model_parameters)
+            model.vocabulary_key = DEFAULT_VOCABULARY_KEY
+            model.component_key = DEFAULT_COMPONENT_KEY
             model.title = model_customizer.model_root_component
-
-        # it has to go in a list in-case
-        #  is part of a hierarchy
-        # (the formsets assume a hierarchy; if not, it will just be a formset w/ 1 form)
-        models = []
-        models.append(model)
+            model.is_root = True
+            models.append(model)
 
         for vocabulary in vocabularies:
+            if model_customizer.model_show_hierarchy:
+                model_parameters["parent"] = model
+                model_parameters["is_root"] = False
+            else:
+                model_parameters.pop("parent",None)
+                model_parameters["is_root"] = True
             model_parameters["vocabulary_key"] = vocabulary.get_key()
             components = vocabulary.component_proxies.all()
             if components:
                 # recursively go through the components of each vocabulary,
                 # adding corresponding models to the list
                 root_component = components[0].get_root()
-                model_parameters["parent"] = model
                 model_parameters["title"] = u"%s : %s" % (vocabulary.name, root_component.name)
                 create_models_from_components(root_component, model_parameters, models)
 
@@ -483,14 +486,24 @@ class MetadataStandardProperty(MetadataProperty):
         super(MetadataStandardProperty,self).save(*args,**kwargs)
 
     def get_value(self):
+        """
+
+        :return:
+        """
         field_type = self.field_type
+
         if field_type == MetadataFieldTypes.ATOMIC:
             return self.atomic_value
+
         elif field_type == MetadataFieldTypes.ENUMERATION:
-            # TODO
-            pass
+            enumerations = self.enumeration_value.split("|")
+            if OTHER_CHOICE[0] in enumerations:
+                if self.enumeration_other_value:
+                    enumerations.append(u"OTHER: %s" % (self.enumeration_other_value))
+            return enumerations
+
         else: # MetadataFieldTypes.RELATIONSHIP
-            return u"%s" % self.relationship_value
+            return self.relationship_value.all()
 
     def __unicode__(self):
         return u'%s' % (self.name)
