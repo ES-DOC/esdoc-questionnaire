@@ -47,7 +47,11 @@
             init_widgets(panes,$(parent).find(".pane"));
             init_widgets(treeviews,$(parent).find(".treeview"));
 
-
+            {% if not vocabularies %}
+                {% get_default_vocabulary_key as root_vocabulary_key %}
+                {% get_default_component_key as root_component_key %}
+                show_pane("{{ root_vocabulary_key }}_{{ root_component_key }}_pane");
+            {% endif %}
 
             /*
             THIS CODE IS REPLACED BY THE accordion_headers FN ABOVE
@@ -90,7 +94,6 @@
         <div class="documentation">
             <p>
                 Use this form to create or modify a {{ model_customizer.model_title|title }} instance.
-                Fill out the fields for each component on each tab from left to right and on each subform from top to bottom.
                 When you have finished filling in all properties, click the "save" button at the bottom of the page to store a local copy or the "publish" buttom to make the document available for other ES-DOC tools.
                 Invalid entries are indicated using a <span style="color: #ff0000; font-weight: bold;">red</span> font.&nbsp;&nbsp;
                 <a href="/edit/help" target="blank"><b>More detailed instructions</b></a> are available.

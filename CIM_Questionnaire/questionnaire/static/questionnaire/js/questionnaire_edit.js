@@ -202,10 +202,8 @@ function treeviews(element) {
         minExpandLevel  : 1,
         activeVisible   : true,
         onActivate      : function(node) {
-            active_pane_id = node.data.key + "_pane";
-            active_pane = $("#"+active_pane_id);
-            $(active_pane).show();
-            $(active_pane).find(".tabs:first").tabs({"active":PREVIOUSLY_SELECTED_TAB});
+            var pane_key = node.data.key + "_pane";
+            show_pane(pane_key);
         },
         onDeactivate    : function(node) {
             inactive_pane_id = node.data.key + "_pane";
@@ -245,6 +243,12 @@ function treeviews(element) {
     var first_child = root.getChildren()[0];
     first_child.activate(true);
 
+}
+
+function show_pane(pane_key) {
+    var pane = $("#" + pane_key);
+    $(pane).show();
+    $(pane).find(".tabs:first").tabs({ "active" : PREVIOUSLY_SELECTED_TAB });
 }
 
 function inherit(item) {

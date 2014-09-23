@@ -45,6 +45,12 @@
             init_widgets(panes,$(parent).find(".pane"));
             init_widgets(treeviews,$(parent).find(".treeview"));
 
+            {% if not vocabularies %}
+                {% get_default_vocabulary_key as root_vocabulary_key %}
+                {% get_default_component_key as root_component_key %}
+                show_pane("{{ root_vocabulary_key }}_{{ root_component_key }}_pane");
+            {% endif %}
+
             /* disable all add/remove buttons in view */
             $("button.add").hide();
             $("button.remove").hide();
@@ -125,6 +131,9 @@
 
             <fieldset>
 
+                {% get_default_vocabulary_key as root_vocabulary_key %}
+                {% get_default_component_key as root_component_key %}
+
                 {% if vocabularies %}
                     <!-- naughty, naughty developer using tables -->
                     <table border="0" width="100%">
@@ -144,8 +153,6 @@
                                         <div class="treeview">
 					    {% if model_customizer.model_show_hierarchy %}
                                             <ul><!-- style="display: none;">-->
-                                                {% get_default_vocabulary_key as root_vocabulary_key %}
-                                                {% get_default_component_key as root_component_key %}
                                                 <li data="key:'{{root_vocabulary_key}}_{{root_component_key}}'">
                                                     {{model_customizer.model_root_component}}
 					    {% endif %} {# /model_customizer.model_show_hierarchy #}
