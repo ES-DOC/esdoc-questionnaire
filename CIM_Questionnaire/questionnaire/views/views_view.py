@@ -41,6 +41,16 @@ from CIM_Questionnaire.questionnaire.views import *
 
 from CIM_Questionnaire.questionnaire import get_version
 
+def questionnaire_view_new(request, project_name="", model_name="", version_name="", **kwargs):
+
+    # validate the arguments...
+    (validity, project, version, model_proxy, model_customizer, msg) = validate_view_arguments(project_name=project_name, model_name=model_name, version_name=version_name)
+    if not validity:
+        return error(request, msg)
+
+    # and then let the user know that you can't view a new document
+    msg = "The Questionnaire only supports <u>viewing</u> of existing instances."
+    return error(request, msg)
 
 def questionnaire_view_existing(request, project_name="", model_name="", version_name="", model_id="", **kwargs):
 

@@ -59,6 +59,7 @@ urlpatterns = patterns('',
 
     # viewing...
     url(r'^view/help$', 'questionnaire.views.view_help'),
+    url(r'^(?P<project_name>[^/]+)/view/(?P<version_name>[^/]+)/(?P<model_name>[^/]+)/$', 'questionnaire.views.view_new', name="view_new"),
     url(r'^(?P<project_name>[^/]+)/view/(?P<version_name>[^/]+)/(?P<model_name>[^/]+)/(?P<model_id>[^/]+)/$', 'questionnaire.views.view_existing', name="view_existing"),
 
     # ajax...
