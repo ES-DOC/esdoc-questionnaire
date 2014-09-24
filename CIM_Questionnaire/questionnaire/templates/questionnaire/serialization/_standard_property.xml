@@ -1,0 +1,21 @@
+
+<{{ property.name }}>
+
+    {% with property_type=property.field_type %}
+        {% if property_type == "ATOMIC" %}
+            {% with "questionnaire/serialization/_standard_property_atomic.xml" as template %}
+                {% include template %}
+            {% endwith %}
+        {% elif property_type == "ENUMERATION" %}
+            {% with "questionnaire/serialization/_standard_property_enumeration.xml" as template %}
+                {% include template %}
+            {% endwith %}
+        {% elif property_type == "RELATIONSHIP" %}
+            {# TODO: IF IS_REFERENCE...  #}
+            {% with "questionnaire/serialization/_standard_property_relationship.xml" as template %}
+                {% include template %}
+            {% endwith %}
+        {% endif %}
+    {% endwith %} {# /property_type #}
+
+</{{ property.name }}>

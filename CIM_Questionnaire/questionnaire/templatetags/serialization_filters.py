@@ -47,5 +47,26 @@ def get_scientific_property_by_name(model, property_name):
 
 
 @register.filter
+def get_standard_properties_with_stereotypes(model, stereotype_names):
+    stereotype_names_list = stereotype_names.split(',')
+    standard_properties = model.standard_properties.filter(proxy__stereotype__in=stereotype_names_list)
+    return standard_properties
+
+
+@register.filter
+def get_standard_properties_without_stereotypes(model, stereotype_names):
+    stereotype_names_list = stereotype_names.split(',')
+    standard_properties = model.standard_properties.exclude(proxy__stereotype__in=stereotype_names_list)
+    return standard_properties
+
+@register.filter
 def get_url_path(url):
     return os.path.split(url)[0]
+
+
+@register.filter
+def get_vocabulary_from_property(scientific_property):
+    try:
+        return scientific_property.proxy.component.vocabulary
+    except:
+        return None

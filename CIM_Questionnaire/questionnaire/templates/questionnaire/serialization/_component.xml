@@ -1,0 +1,38 @@
+
+{% load serialization_filters %}
+
+{% for property in model|get_standard_properties_without_stereotypes:"attribute" %}
+    {% with "questionnaire/serialization/_standard_property.xml" as template %}
+        {% include template %}
+    {% endwith %}
+{% endfor %} {# /property #}
+
+<componentProperties>
+    {% for property in model.scientific_properties.all %}
+        {% with "questionnaire/serialization/_scientific_property.xml" as template %}
+            {% include template %}
+        {% endwith %}
+    {% endfor %} {# /property #}
+</componentProperties>
+
+{% for child in model.get_children.all %}
+    <childComponent>
+        {% with model=child %}
+            <{{ model.name }}
+                {% for property in model|get_standard_properties_with_stereotypes:"attribute" %}
+                    {{ property.name }}="{{ property.atomic_value }}"
+                {% endfor %}
+            >
+                {% with "questionnaire/serialization/_component.xml" as template %}
+                    {% include template %}
+                {% endwith %}
+            </{{ model.name }}>
+        {% endwith %} {# /model #}
+    </childComponent>
+{% endfor %}
+
+{% if model.is_document %}
+    {% with "questionnaire/serialization/_document.xml" as template %}
+        {%  include template %}
+    {% endwith %}
+{% endif %} {# /is_document #}

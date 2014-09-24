@@ -1,0 +1,5 @@
+{#  property = the scientific property #}
+
+<value>
+    {{ property.get_value.strip }}
+</value>

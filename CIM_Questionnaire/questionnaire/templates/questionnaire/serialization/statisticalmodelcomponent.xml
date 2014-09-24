@@ -2,10 +2,8 @@
 
 {% block content %}
 
-    {% with "questionnaire/serialization/_model.xml" as template %}
+    {% with "questionnaire/serialization/_component.xml" as template %}
         {% include template %}
     {% endwith %}
-
-    {{ model.get_child }}
 
 {% endblock %} {# /content #}

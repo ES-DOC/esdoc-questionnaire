@@ -1,0 +1,32 @@
+{% load serialization_filters %}
+
+{#  property = the scientific property #}
+
+<componentProperty represented="true">
+
+    <shortName>{{ property.proxy.name }}</shortName>
+    <longName>{{ property.proxy.name }}</longName>
+
+    {# TODO: ADD EXTRA PROPERTIES (DESCRIPTION, UNITS, STANDARD_NAME #}
+
+    {% if property.is_enumeration %}
+        {% with "questionnaire/serialization/_scientific_property_enumeration.xml" as template %}
+            {% include template %}
+        {% endwith %}
+    {% else %}
+        {% with "questionnaire/serialization/_scientific_property_atomic.xml" as template %}
+            {% include template %}
+        {% endwith %}
+    {% endif %} {# /is_enumeration #}
+
+
+    {% with vocabulary=property|get_vocabulary_from_property %}
+        <extension>
+            <vocabulary {% if vocabulary.url %} href="{{ vocabulary.url }}" {% endif %}>
+                <name>{{ vocabulary.name }}</name>
+                <version>{{ vocabulary.version }}</version>
+            </vocabulary>
+        </extension>
+    {% endwith %} {# /vocabulary #}
+
+</componentProperty>

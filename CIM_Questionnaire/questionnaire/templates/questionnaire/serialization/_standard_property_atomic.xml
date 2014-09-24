@@ -1,5 +1,1 @@
-{#  property = the standard property #}
-
-<{{ property.name }}>
-    {{ property.value }}
-</{{ property.name }}>
+{{ property.get_value }}

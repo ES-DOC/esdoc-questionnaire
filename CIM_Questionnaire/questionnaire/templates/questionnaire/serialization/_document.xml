@@ -1,6 +1,5 @@
 {% load serialization_filters %}
 
-<!-- this is the start of the document section -->
 <documentID>{{ model.get_id }}</documentID>
 <documentVersion>{{ model.get_major_version }}</documentVersion>
 <documentAuthor>
@@ -10,11 +9,9 @@
         {% endwith %}
     {% endwith %} {# /property #}
 </documentAuthor>
-{# documentStatus is an attribute #}
-{#<documentStatus>#}
-{#    {% with property=model|get_standard_property_by_name:"documentStatus" %}#}
-{#        {{ property.enumeration_value }}#}
-{#    {% endwith %}#}
-{#</documentStatus>#}
-<documentCreationDate>{{model.created|date:"c"}}</documentCreationDate>
-<!-- this is the end of the document section -->
+<documentStatus>
+    {% with property=model|get_standard_property_by_name:"documentStatus" %}
+        {{ property.enumeration_value }}
+    {% endwith %}
+</documentStatus>
+<documentCreationDate>{{ model.created|date:"c" }}</documentCreationDate>
