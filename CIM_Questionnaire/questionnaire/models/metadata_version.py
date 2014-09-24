@@ -22,16 +22,19 @@ Summary of module goes here
 
 from django.db import models
 from django.contrib import messages
+from django.conf import settings
 
+from lxml import etree as et
 import os
 import re
 
-from questionnaire.utils    import *
-from questionnaire.models   import *
-from questionnaire.fields   import *
+from CIM_Questionnaire.questionnaire.models import MetadataModelProxy, MetadataStandardCategoryProxy, MetadataStandardPropertyProxy
+from CIM_Questionnaire.questionnaire.fields import MetadataFieldTypes, MetadataAtomicFieldTypes
+from CIM_Questionnaire.questionnaire.utils import APP_LABEL, LIL_STRING, SMALL_STRING, BIG_STRING, HUGE_STRING
+from CIM_Questionnaire.questionnaire.utils import OverwriteStorage, validate_file_extension, validate_file_schema, xpath_fix, remove_spaces_and_linebreaks
 
 UPLOAD_DIR  = "versions"
-UPLOAD_PATH = os.path.join(APP_LABEL,UPLOAD_DIR)    # this is a relative path (will be concatenated w/ MEDIA_ROOT by FileFIeld)
+UPLOAD_PATH = os.path.join(APP_LABEL,UPLOAD_DIR)    # this is a relative path (will be concatenated w/ MEDIA_ROOT by FileField)
 
 def validate_version_file_extension(value):
     valid_extensions = ["xml"]
@@ -52,7 +55,8 @@ class MetadataVersion(models.Model):
     
     name            = models.CharField(max_length=SMALL_STRING,blank=False,null=False,unique=True)
     registered      = models.BooleanField(default=False)
-    url             = models.URLField(blank=True)
+    url             = models.URLField(blank=False)
+    url.help_text   = "This URL is used as the namespace of serialized documents"
     file            = models.FileField(upload_to=UPLOAD_PATH,validators=[validate_version_file_extension,validate_version_file_schema],storage=OverwriteStorage())
     file.help_text  = "Note that files with the same names will be overwritten"
     categorization  = models.ForeignKey("MetadataCategorization",blank=True,null=True,related_name="versions",on_delete=models.SET_NULL)
@@ -91,17 +95,23 @@ class MetadataVersion(models.Model):
             version_model_proxy_name          = xpath_fix(version_model_proxy,"name/text()")
             version_model_proxy_documentation = xpath_fix(version_model_proxy,"description/text()") or None
             version_model_proxy_stereotype    = xpath_fix(version_model_proxy,"@stereotype") or None
+            version_model_proxy_namespace     = xpath_fix(version_model_proxy,"@namespace") or None
 
             new_model_proxy_kwargs["name"]              = re.sub(r'\.','_',str(version_model_proxy_name[0]))
             if version_model_proxy_documentation:
-                new_model_proxy_kwargs["documentation"] = version_model_proxy_documentation[0]
+                new_model_proxy_kwargs["documentation"] = remove_spaces_and_linebreaks(version_model_proxy_documentation[0])
             if version_model_proxy_stereotype:
                 new_model_proxy_kwargs["stereotype"]    = version_model_proxy_stereotype[0]
+            if version_model_proxy_namespace:
+                new_model_proxy_kwargs["namespace"]    = version_model_proxy_namespace[0]
             new_model_proxy_kwargs["order"]             = i
 
             (new_model_proxy,created_model) = MetadataModelProxy.objects.get_or_create(**new_model_proxy_kwargs)
-	    new_model_proxy_kwargs.pop("documentation",None)
-	    new_model_proxy_kwargs.pop("stereotype",None)
+
+    	    new_model_proxy_kwargs.pop("documentation", None)
+            new_model_proxy_kwargs.pop("stereotype", None)
+            new_model_proxy_kwargs.pop("namespace", None)
+
             if not created_model:
                 recategorization_needed = True
                 # TODO: THIS WILL DELETE ASSOCIATED PROPERTY CUSTOMIZATIONS WHICH IS A REALLY BAD IDEA!
@@ -117,6 +127,7 @@ class MetadataVersion(models.Model):
                 version_property_proxy_type = xpath_fix(version_property_proxy,"type/text()")
                 version_property_proxy_documentation = xpath_fix(version_property_proxy,"description/text()") or None
                 version_property_proxy_is_label = xpath_fix(version_property_proxy,"@is_label") or ["false"]
+                version_property_proxy_stereotype = xpath_fix(version_property_proxy,"@stereotype") or None
                 atomic_type = xpath_fix(version_property_proxy,"atomic/atomic_type/text()") or None
                 enumeration_choices = []
                 relationship_cardinality_min = xpath_fix(version_property_proxy,"relationship/cardinality/@min")
@@ -127,9 +138,15 @@ class MetadataVersion(models.Model):
                 new_standard_property_proxy_kwargs["field_type"] = MetadataFieldTypes.get(version_property_proxy_type[0])
                 new_standard_property_proxy_kwargs["name"] = re.sub(r'\.','_',str(version_property_proxy_name[0]))
                 if version_property_proxy_documentation:
-                    new_standard_property_proxy_kwargs["documentation"] = version_property_proxy_documentation[0]
+                    new_standard_property_proxy_kwargs["documentation"] = remove_spaces_and_linebreaks(version_property_proxy_documentation[0])
+                else:
+                    new_standard_property_proxy_kwargs.pop("documentation", None)
                 new_standard_property_proxy_kwargs["order"] = j
                 new_standard_property_proxy_kwargs["is_label"] = bool(version_property_proxy_is_label[0].lower()=="true")
+                if version_property_proxy_stereotype:
+                    new_standard_property_proxy_kwargs["stereotype"] = version_property_proxy_stereotype[0]
+                else:
+                    new_standard_property_proxy_kwargs.pop("stereotype", None)
                 if atomic_type:
                     atomic_type = atomic_type[0]
                     if atomic_type == u"STRING":
@@ -198,8 +215,8 @@ def project_post_delete(sender, **kwargs):
     version = kwargs.pop("instance",None)
     if version:
         try:
-            self.file.delete(save=False)    # save=False prevents model from re-saving itself
+            version.file.delete(save=False)    # save=False prevents model from re-saving itself
             # TODO: CHECK THAT FILE.URL IS THE RIGHT WAY TO PRINT THIS
-            print "deleted %s" % (self.file.url)
+            print "deleted %s" % (version.file.url)
         except:
             pass

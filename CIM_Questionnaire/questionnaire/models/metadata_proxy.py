@@ -30,8 +30,9 @@ from uuid import uuid4
 
 from CIM_Questionnaire.questionnaire.fields import MetadataFieldTypes, MetadataAtomicFieldTypes
 from CIM_Questionnaire.questionnaire.utils import QuestionnaireError
-from CIM_Questionnaire.questionnaire.utils import APP_LABEL, LIL_STRING, SMALL_STRING, BIG_STRING, HUGE_STRING, CIM_DOCUMENT_TYPES, CIM_STEREOTYPES
+from CIM_Questionnaire.questionnaire.utils import APP_LABEL, LIL_STRING, SMALL_STRING, BIG_STRING, HUGE_STRING, CIM_DOCUMENT_TYPES, CIM_MODEL_STEREOTYPES, CIM_PROPERTY_STEREOTYPES
 
+STANDARD_PROPERTY_STEREOTYPES = ( ("attribute", "attribute"))
 
 class MetadataModelProxy(models.Model):
     class Meta:
@@ -45,7 +46,8 @@ class MetadataModelProxy(models.Model):
         verbose_name_plural = '(DISABLE ADMIN ACCESS SOON) Metadata Model Proxies'
 
     name                    = models.CharField(max_length=SMALL_STRING,blank=False,null=False)
-    stereotype              = models.CharField(max_length=BIG_STRING,blank=True,null=True,choices=[(slugify(stereotype),stereotype) for stereotype in CIM_STEREOTYPES])
+    stereotype              = models.CharField(max_length=BIG_STRING,blank=True,null=True,choices=[(slugify(stereotype),stereotype) for stereotype in CIM_MODEL_STEREOTYPES])
+    namespace               = models.CharField(max_length=LIL_STRING, blank=True, null=True)
     documentation           = models.TextField(blank=True,null=True)
     package                 = models.CharField(max_length=SMALL_STRING,blank=True,null=True)
     order                   = models.PositiveIntegerField(blank=True,null=True)
@@ -108,8 +110,8 @@ class MetadataStandardPropertyProxy(MetadataPropertyProxy):
         verbose_name        = '(DISABLE ADMIN ACCESS SOON) Metadata Standard Property Proxy'
         verbose_name_plural = '(DISABLE ADMIN ACCESS SOON) Metadata Standard Property Proxies'
 
-    model_proxy     = models.ForeignKey("MetadataModelProxy",blank=True,null=True,related_name="standard_properties")
-
+    model_proxy = models.ForeignKey("MetadataModelProxy", blank=True, null=True, related_name="standard_properties")
+    stereotype = models.CharField(max_length=BIG_STRING, blank=True, null=True, choices=[(slugify(stereotype),stereotype) for stereotype in CIM_PROPERTY_STEREOTYPES])
 
     # attributes for ATOMIC fields
     atomic_default  = models.CharField(max_length=BIG_STRING,blank=True)

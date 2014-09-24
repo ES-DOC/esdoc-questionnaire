@@ -1,13 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <version>
     <name>CIM 1.8.1</name>
-    <description>This is the CIM Schema v1.8.8</description>
+    <description>This is the CIM Schema v1.8.1</description>
     <classes>
         
         <class stereotype="document">
             <name>statisticalModelComponent</name>
-            <description>A ModelCompnent is a scientific model; it represents code which models some
-                physical phenomena for a particular length of time.</description>
+            <description>A ModelComponent is a scientific model; it represents code which models some physical phenomena for a particular length of time.</description>
             <attributes>
                 <attribute>
                     <name>purpose</name>
@@ -17,7 +16,7 @@
                         <atomic_type>STRING</atomic_type>
                     </atomic>
                 </attribute>
-                <attribute>
+                <attribute stereotype="attribute">
                     <name>embedded</name>
                     <description>An embedded component cannot exist on its own as an atomic piece of
                         software; instead it is embedded within another (parent) component. When
@@ -228,8 +227,6 @@
             </attributes>
         </class>
         
-        
-        
         <class stereotype="document">
             <name>modelComponent</name>
             <description>A ModelCompnent is a scientific model; it represents code which models some
@@ -243,7 +240,7 @@
                         <atomic_type>STRING</atomic_type>
                     </atomic>
                 </attribute>
-                <attribute>
+                <attribute stereotype="attribute">
                     <name>embedded</name>
                     <description>An embedded component cannot exist on its own as an atomic piece of
                         software; instead it is embedded within another (parent) component. When
@@ -534,6 +531,7 @@
                 </attribute>
             </attributes>
         </class>
+        
         <class>
             <name>license</name>
             <description>A description of a license restricting access to a unit of data or
@@ -577,7 +575,8 @@
                 </attribute>
             </attributes>
         </class>
-        <class>
+        
+        <class namespace="gmd">
             <name>responsibleParty</name>
             <description>A CIM-specific ResponsibleParty. Sub-classes the gmd ResponsibleParty type
                 and adds the attribute "abbreviation."</description>
@@ -620,7 +619,8 @@
                     <description/>
                     <type>ENUMERATION</type>
                     <enumeration multi="true" open="true" nullable="false">
-                        <!-- TODO: GET CHOICES -->
+                        <choice>Principle Investigator</choice>
+                        <choice>Metadata Author</choice>
                     </enumeration>
                 </attribute>
                 <attribute>
@@ -633,6 +633,7 @@
                 </attribute>
             </attributes>
         </class>
+        
         <class>
             <name>citation</name>
             <description>Standardized resource reference</description>
@@ -728,7 +729,8 @@
                 </attribute>
             </attributes>
         </class>
-        <class>
+       
+        <class namespace="gmd">
             <name>onlineResource</name>
             <description>Information about online sources from which the dataset, specification, or
                 community profile name and extended metadata elements can be obtained.</description>
@@ -783,6 +785,7 @@
                 </attribute>
             </attributes>
         </class>
+        
         <class>
             <name>componentLanguage</name>
             <description>Details of the programming language a component is written in. There is an
@@ -810,8 +813,15 @@
                     <description/>
                     <type>ENUMERATION</type>
                     <enumeration multi="false" open="true" nullable="true">
-                        <!-- TODO GET CHOICES -->
-                    </enumeration>
+                        <choice>seconds</choice>
+                        <choice>minutes</choice>
+                        <choice>hours</choice>
+                        <choice>days</choice>
+                        <choice>months</choice>
+                        <choice>years</choice>
+                        <choice>decades</choice>
+                        <choice>centuries</choice>
+                    </enumeration>                    
                 </attribute>
                 <attribute>
                     <name>variableRate</name>

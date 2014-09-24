@@ -1,30 +1,42 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <categorization xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:noNamespaceSchemaLocation="file:/home/likewise-open/WX/allyn.treshansky/Dropbox/WORK/COELACANTH/CIM_editor/site_media/dcf/categorizations/categorization.xsd">
+    xsi:noNamespaceSchemaLocation="categorization.xsd">
     <categories>
         <category>
             <name>Document Properties</name>
-            <description></description>
+            <description/>
             <order>1</order>
             <key>document-properties</key>
-        </category>        
+        </category>
         <category>
             <name>Basic Properties</name>
-            <description></description>
+            <description/>
             <order>2</order>
             <key>basic-properties</key>
         </category>
         <category>
             <name>Component Description</name>
-            <description></description>
+            <description/>
             <order>3</order>
             <key>component-description</key>
         </category>
     </categories>
     <models>
         <model>
-            <name>statisticalmodelcomponent</name>
+            <name>modelComponent</name>
             <fields>
+                <field>
+                    <name>purpose</name>
+                    <category_key>basic-properties</category_key>
+                </field>
+                <field>
+                    <name>embedded</name>
+                    <category_key>component-description</category_key>
+                </field>
+                <field>
+                    <name>couplingFramework</name>
+                    <category_key>component-description</category_key>
+                </field>
                 <field>
                     <name>shortName</name>
                     <category_key>basic-properties</category_key>
@@ -38,82 +50,63 @@
                     <category_key>basic-properties</category_key>
                 </field>
                 <field>
-                    <name>purpose</name>
-                    <category_key>component-description</category_key>
-                </field>         
-                
-                <field>
-                    <name>embedded</name>
-                    <category_key>component-description</category_key>
-                </field>         
-                <field>
                     <name>license</name>
                     <category_key>component-description</category_key>
                 </field>
-                
                 <field>
-                    <name>timing</name>
-                    <category_key>component-description</category_key>
-                </field>         
-                <field>
-                    <name>grid</name>
-                    <category_key>component-description</category_key>
-                </field>         
-                <field>
-                    <name>componentLanguage</name>
-                    <category_key>component-description</category_key>
-                </field>         
-                <field>
-                    <name>couplingFramework</name>
-                    <category_key>component-description</category_key>
-                </field>         
-                <field>
-                    <name>citation</name>
-                    <category_key>component-description</category_key>
-                </field>         
+                    <name>responsibleParty</name>
+                    <category_key>basic-properties</category_key>
+                </field>
                 <field>
                     <name>releaseDate</name>
                     <category_key>component-description</category_key>
-                </field>                
+                </field>
                 <field>
                     <name>previousVersion</name>
                     <category_key>component-description</category_key>
-                </field>                
+                </field>
                 <field>
                     <name>fundingSource</name>
                     <category_key>component-description</category_key>
-                </field>                
+                </field>
+                <field>
+                    <name>citation</name>
+                    <category_key>component-description</category_key>
+                </field>
                 <field>
                     <name>onlineResource</name>
                     <category_key>component-description</category_key>
-                </field>                
+                </field>
                 <field>
-                    <name>responsibleParty</name>
+                    <name>componentLanguage</name>
                     <category_key>component-description</category_key>
-                </field>                
+                </field>
+                <field>
+                    <name>grid</name>
+                    <category_key>component-description</category_key>
+                </field>
+                <field>
+                    <name>composition</name>
+                    <category_key>component-description</category_key>
+                </field>
+                <field>
+                    <name>deployment</name>
+                    <category_key>component-description</category_key>
+                </field>
                 <field>
                     <name>type</name>
                     <category_key>component-description</category_key>
                 </field>
-
                 <field>
-                    <name>documentID</name>
-                    <category_key>document-properties</category_key>
+                    <name>timing</name>
+                    <category_key>component-description</category_key>
                 </field>
                 <field>
-                    <name>documentVersion</name>
-                    <category_key>document-properties</category_key>
+                    <name>activity</name>
+                    <category_key>component-description</category_key>
                 </field>
                 <field>
-                    <name>metadataID</name>
-                    <category_key>document-properties</category_key>
-                </field>
-                <field>
-                    <name>metadataVersion</name>
-                    <category_key>document-properties</category_key>
-                </field>
-                <field>
-                    <name>externalID</name>
+                    <name>documentStatus</name>
                     <category_key>document-properties</category_key>
                 </field>
                 <field>
@@ -123,12 +116,24 @@
                 <field>
                     <name>documentCreationDate</name>
                     <category_key>document-properties</category_key>
-                </field>                
+                </field>
             </fields>
         </model>
         <model>
-            <name>modelcomponent</name>
+            <name>statisticalModelComponent</name>
             <fields>
+                <field>
+                    <name>purpose</name>
+                    <category_key>basic-properties</category_key>
+                </field>
+                <field>
+                    <name>embedded</name>
+                    <category_key>component-description</category_key>
+                </field>
+                <field>
+                    <name>couplingFramework</name>
+                    <category_key>component-description</category_key>
+                </field>
                 <field>
                     <name>shortName</name>
                     <category_key>basic-properties</category_key>
@@ -142,86 +147,63 @@
                     <category_key>basic-properties</category_key>
                 </field>
                 <field>
-                    <name>version</name>
-                    <category_key>basicproperties</category_key>
-                </field>
-                <field>
-                    <name>purpose</name>
-                    <category_key>component-description</category_key>
-                </field>         
-                
-                <field>
-                    <name>embedded</name>
-                    <category_key>component-description</category_key>
-                </field>         
-                <field>
                     <name>license</name>
                     <category_key>component-description</category_key>
                 </field>
-                
                 <field>
-                    <name>timing</name>
-                    <category_key>component-description</category_key>
-                </field>         
-                <field>
-                    <name>grid</name>
-                    <category_key>component-description</category_key>
-                </field>         
-                <field>
-                    <name>componentLanguage</name>
-                    <category_key>component-description</category_key>
-                </field>         
-                <field>
-                    <name>couplingFramework</name>
-                    <category_key>component-description</category_key>
-                </field>         
-                <field>
-                    <name>citation</name>
-                    <category_key>component-description</category_key>
-                </field>         
+                    <name>responsibleParty</name>
+                    <category_key>basic-properties</category_key>
+                </field>
                 <field>
                     <name>releaseDate</name>
                     <category_key>component-description</category_key>
-                </field>                
+                </field>
                 <field>
                     <name>previousVersion</name>
                     <category_key>component-description</category_key>
-                </field>                
+                </field>
                 <field>
                     <name>fundingSource</name>
                     <category_key>component-description</category_key>
-                </field>                
+                </field>
+                <field>
+                    <name>citation</name>
+                    <category_key>component-description</category_key>
+                </field>
                 <field>
                     <name>onlineResource</name>
                     <category_key>component-description</category_key>
-                </field>                
+                </field>
                 <field>
-                    <name>responsibleParty</name>
+                    <name>componentLanguage</name>
                     <category_key>component-description</category_key>
-                </field>                
+                </field>
+                <field>
+                    <name>grid</name>
+                    <category_key>component-description</category_key>
+                </field>
+                <field>
+                    <name>composition</name>
+                    <category_key>component-description</category_key>
+                </field>
+                <field>
+                    <name>deployment</name>
+                    <category_key>component-description</category_key>
+                </field>
                 <field>
                     <name>type</name>
                     <category_key>component-description</category_key>
                 </field>
-                
                 <field>
-                    <name>documentID</name>
-                    <category_key>document-properties</category_key>
+                    <name>timing</name>
+                    <category_key>component-description</category_key>
                 </field>
                 <field>
-                    <name>documentVersion</name>
-                    <category_key>document-properties</category_key>
+                    <name>activity</name>
+                    <category_key>component-description</category_key>
                 </field>
                 <field>
-                    <name>metadataID</name>
-                    <category_key>document-properties</category_key>
-                </field>
-                <field>
-                    <name>metadataVersion</name>
-                    <category_key>document-properties</category_key>
-                </field>
-                <field>
-                    <name>externalID</name>
+                    <name>documentStatus</name>
                     <category_key>document-properties</category_key>
                 </field>
                 <field>
@@ -231,22 +213,76 @@
                 <field>
                     <name>documentCreationDate</name>
                     <category_key>document-properties</category_key>
-                </field>                
+                </field>
             </fields>
         </model>
         <model>
-            <name>responsibleparty</name>
-            <fields>
-                <field>
-                    <name>embedded</name>
-                    <category_key>test</category_key>
-                </field>
-                <field>
-                    <name>shortName</name>
-                    <category_key>test2</category_key>
-                </field>
-            </fields>
+            <name>license</name>
+            <fields/>
+        </model>
+        <model>
+            <name>responsibleParty</name>
+            <fields/>
+        </model>
+        <model>
+            <name>citation</name>
+            <fields/>
+        </model>
+        <model>
+            <name>onlineResource</name>
+            <fields/>
+        </model>
+        <model>
+            <name>componentLanguage</name>
+            <fields/>
+        </model>
+        <model>
+            <name>timing</name>
+            <fields/>
+        </model>
+        <model>
+            <name>contactType</name>
+            <fields/>
+        </model>
+        <model>
+            <name>deployment</name>
+            <fields/>
+        </model>
+        <model>
+            <name>parallelisation</name>
+            <fields/>
+        </model>
+        <model>
+            <name>rank</name>
+            <fields/>
+        </model>
+        <model>
+            <name>platform</name>
+            <fields/>
+        </model>
+        <model>
+            <name>machineCompilerUnit</name>
+            <fields/>
+        </model>
+        <model>
+            <name>machine</name>
+            <fields/>
+        </model>
+        <model>
+            <name>compiler</name>
+            <fields/>
+        </model>
+        <model>
+            <name>simulationRun</name>
+            <fields/>
+        </model>
+        <model>
+            <name>gridspec</name>
+            <fields/>
+        </model>
+        <model>
+            <name>composition</name>
+            <fields/>
         </model>
     </models>
 </categorization>
-

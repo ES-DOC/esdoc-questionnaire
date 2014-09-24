@@ -37,6 +37,7 @@
             </xs:element>
         </xs:sequence>
         <xs:attribute name="stereotype" type="xs:string" use="optional"/>
+        <xs:attribute name="namespace" type="xs:string" use="optional"/>
     </xs:complexType>
 
     <xs:complexType name="AttributeType">
@@ -61,6 +62,7 @@
             </xs:choice>
         </xs:sequence>
         <xs:attribute name="is_label" type="xs:boolean"/>
+        <xs:attribute name="stereotype" type="xs:string" use="optional"/>
     </xs:complexType>
 
     <xs:complexType name="AtomicType">
