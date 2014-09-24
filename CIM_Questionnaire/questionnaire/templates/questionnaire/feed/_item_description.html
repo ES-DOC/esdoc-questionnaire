@@ -5,9 +5,9 @@
 
 {% with model=obj.model %}
     <ul>
+        <li>type: {{ model.proxy|capfirst }}</li>
         <li>project: {{ model.project.title }}</li>
         <li>ontology: {{ model.version }}</li>
-        <li>type: {{ model.proxy|capfirst }}</li>
         <li>publication date: {{ obj.publication_date }}</li>
     </ul>
     <!--<br/>-->
