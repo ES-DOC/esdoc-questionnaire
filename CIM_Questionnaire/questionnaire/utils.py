@@ -85,8 +85,6 @@ def get_attribute_without_namespace(node,attribute_name):
 # constants #
 #############
 
-SUPPORTED_DOCUMENTS = ["modelcomponent", "statisticalmodelcomponent"]
-
 APP_LABEL = "questionnaire"
 
 LIL_STRING   = 128
@@ -97,8 +95,12 @@ HUGE_STRING  = 1024
 #: a serializer to use throughout the app; defined once to avoid too many fn calls
 JSON_SERIALIZER = serializers.get_serializer("json")()
 
-CIM_STEREOTYPES = [
+CIM_MODEL_STEREOTYPES = [
     "document",
+]
+
+CIM_PROPERTY_STEREOTYPES = [
+    "attribute",
 ]
 
 #: the set of document types recognized by the questionnaire
@@ -107,6 +109,8 @@ CIM_DOCUMENT_TYPES = [
     "statisticalmodelcomponent",
     "experiment",
 ]
+
+SUPPORTED_DOCUMENTS = ["modelcomponent", "statisticalmodelcomponent"]
 
 #: keys to use for cases where a model has no vocabulary, or where it is the root component of several vocabularies
 DEFAULT_VOCABULARY_KEY = "DEFAULT_VOCABULARY" #'c6fd2da4-723e-4816-9730-cf591ec8ffb9'
@@ -411,6 +415,13 @@ class OverwriteStorage(FileSystemStorage):
             os.remove(file_path)
             print "deleted existing %s file" % (file_path)
         return name
+
+#######################
+# string manipulation #
+#######################
+
+def remove_spaces_and_linebreaks(str):
+    return ' '.join(str.split())
 
 ####################
 # url manipulation #
