@@ -5,7 +5,7 @@ APP_LABEL     = "questionnaire"
 
 __version_info__ = {
     'major': 0.11,
-    'minor': 1,
+    'minor': 2,
     'patch': 0,
 }
 
