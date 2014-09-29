@@ -1,4 +1,3 @@
-
 {% load serialization_filters %}
 
 {% for property in model|get_standard_properties_without_stereotypes:"attribute,document" %}

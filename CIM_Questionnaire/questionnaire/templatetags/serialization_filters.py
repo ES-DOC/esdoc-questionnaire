@@ -70,3 +70,16 @@ def get_vocabulary_from_property(scientific_property):
         return scientific_property.proxy.component.vocabulary
     except:
         return None
+
+
+@register.filter
+def get_fully_qualified_tagname(property):
+    """
+    concatenates a namespace onto the property name
+    :param property:
+    :return:
+    """
+    if property.proxy.namespace:
+        return u"%s:%s" % (property.proxy.namespace, property.name)
+    else:
+        return u"%s" % (property.name)

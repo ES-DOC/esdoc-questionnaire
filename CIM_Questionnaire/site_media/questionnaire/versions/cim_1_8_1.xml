@@ -581,7 +581,7 @@
             <description>A CIM-specific ResponsibleParty. Sub-classes the gmd ResponsibleParty type
                 and adds the attribute "abbreviation."</description>
             <attributes>
-                <attribute is_label="true">
+                <attribute is_label="true" namespace="gmd">
                     <name>individualName</name>
                     <description/>
                     <type>ATOMIC</type>
