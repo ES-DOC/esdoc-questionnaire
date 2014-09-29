@@ -1,5 +1,11 @@
 CIM Questionnaire
 
+v0.11.2.0
+
+* ability to handle documents without controlled vocabularies
+* ability to customize standard & scientific categories
+* ability to render documents without a "root" component
+
 v0.11.1.0
 
 * ability to save subforms
