@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<version>
+    <name>test</name>
+    <description>This is a pretend CIM version used for testing purposes only. If you are seeing
+        this in the production site, then something has gone horribly wrong.</description>
+
+    <classes>
+        <class stereotype="document">
+            <name>modelComponent</name>
+            <description>A ModelCompnent is nice.</description>
+            <attributes>
+                <attribute is_label="true">
+                    <name>new_string</name>
+                    <description>I am a new string</description>
+                    <type>ATOMIC</type>
+                    <atomic>
+                        <atomic_type>STRING</atomic_type>
+                    </atomic>
+                </attribute>
+                <!--
+                <attribute>
+                    <name>boolean</name>
+                    <description>I am a boolean</description>
+                    <type>ATOMIC</type>
+                    <atomic>
+                        <atomic_type>BOOLEAN</atomic_type>
+                    </atomic>
+                </attribute>
+                -->
+                <attribute>
+                    <name>date</name>
+                    <description>I am a date</description>
+                    <type>ATOMIC</type>
+                    <atomic>
+                        <atomic_type>DATE</atomic_type>
+                    </atomic>
+                </attribute>
+                <attribute>
+                    <name>uncategorized</name>
+                    <description>I am an uncategorized string</description>
+                    <type>ATOMIC</type>
+                    <atomic>
+                        <atomic_type>STRING</atomic_type>
+                    </atomic>
+                </attribute>
+                <attribute>
+                    <name>enumeration</name>
+                    <description>I am an enumreation</description>
+                    <type>ENUMERATION</type>
+                    <enumeration multi="false" nullable="false" open="false">
+                        <choice>one</choice>
+                        <choice>two</choice>
+                        <choice>three</choice>
+                    </enumeration>
+                </attribute>
+                <attribute>
+                    <name>author</name>
+                    <description>I am a relationship</description>
+                    <type>RELATIONSHIP</type>
+                    <relationship>
+                        <cardinality min="0" max="1"/>
+                        <target>responsibleParty</target>
+                    </relationship>
+                </attribute>
+                <attribute>
+                    <name>contact</name>
+                    <description>I am a relationship</description>
+                    <type>RELATIONSHIP</type>
+                    <relationship>
+                        <cardinality min="0" max="*"/>
+                        <target>responsibleParty</target>
+                    </relationship>
+                </attribute>
+            </attributes>
+        </class>
+
+        <class>
+            <name>responsibleParty</name>
+            <description>a stripped-down responsible party to use for testing
+                purposes.</description>
+            <attributes>
+                <attribute is_label="true">
+                    <name>individualName</name>
+                    <description/>
+                    <type>ATOMIC</type>
+                    <atomic>
+                        <atomic_type>STRING</atomic_type>
+                    </atomic>
+                </attribute>
+                <!--
+                <attribute>
+                    <name>contactInfo</name>
+                    <description/>
+                    <type>RELATIONSHIP</type>
+                    <relationship>
+                        <cardinality min="1" max="1"/>
+                        <target>contactType</target>
+                    </relationship>
+                </attribute>
+                -->
+            </attributes>
+        </class>
+
+        <!--
+        <class>
+            <name>contactType</name>
+            <description>a stripped-down contactType just for testing purposes.</description>
+            <attributes>
+                <attribute>
+                    <name>phone</name>
+                    <description/>
+                    <type>ATOMIC</type>
+                    <atomic>
+                        <atomic_type>STRING</atomic_type>
+                    </atomic>
+                </attribute>
+                <attribute>
+                    <name>address</name>
+                    <description/>
+                    <type>ATOMIC</type>
+                    <atomic>
+                        <atomic_type>TEXT</atomic_type>
+                    </atomic>
+                </attribute>
+            </attributes>
+        </class>
+        -->
+
+    </classes>
+</version>
