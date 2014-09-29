@@ -31,7 +31,7 @@ import re
 from CIM_Questionnaire.questionnaire.models import MetadataModelProxy, MetadataStandardCategoryProxy, MetadataStandardPropertyProxy
 from CIM_Questionnaire.questionnaire.fields import MetadataFieldTypes, MetadataAtomicFieldTypes
 from CIM_Questionnaire.questionnaire.utils import APP_LABEL, LIL_STRING, SMALL_STRING, BIG_STRING, HUGE_STRING
-from CIM_Questionnaire.questionnaire.utils import OverwriteStorage, validate_file_extension, validate_file_schema, xpath_fix, remove_spaces_and_linebreaks
+from CIM_Questionnaire.questionnaire.utils import OverwriteStorage, validate_file_extension, validate_file_schema, xpath_fix, remove_spaces_and_linebreaks, get_index
 
 UPLOAD_DIR  = "versions"
 UPLOAD_PATH = os.path.join(APP_LABEL,UPLOAD_DIR)    # this is a relative path (will be concatenated w/ MEDIA_ROOT by FileField)
@@ -48,25 +48,30 @@ class MetadataVersion(models.Model):
     class Meta:
         app_label   = APP_LABEL
         abstract    = False
+        unique_together = ("name", "version")
         # this is one of the few classes that I allow admin access to, so give it pretty names:
         verbose_name        = 'Metadata Version'
         verbose_name_plural = 'Metadata Versions'
 
     
-    name            = models.CharField(max_length=SMALL_STRING,blank=False,null=False,unique=True)
+    name            = models.CharField(max_length=SMALL_STRING, blank=False, null=False)
+    version         = models.CharField(max_length=SMALL_STRING, blank=True, null=True)
     registered      = models.BooleanField(default=False)
     url             = models.URLField(blank=False)
     url.help_text   = "This URL is used as the namespace of serialized documents"
-    file            = models.FileField(upload_to=UPLOAD_PATH,validators=[validate_version_file_extension,validate_version_file_schema],storage=OverwriteStorage())
+    file            = models.FileField(upload_to=UPLOAD_PATH, validators=[validate_version_file_extension,validate_version_file_schema], storage=OverwriteStorage())
     file.help_text  = "Note that files with the same names will be overwritten"
-    categorization  = models.ForeignKey("MetadataCategorization",blank=True,null=True,related_name="versions",on_delete=models.SET_NULL)
-    categorization.help_text = "A version can only have a single categorization."
 
+    categorization  = models.ForeignKey("MetadataCategorization", blank=True, null=True, related_name="versions", on_delete=models.SET_NULL)
+    categorization.help_text = "A version can only have a single categorization."
 
     def __unicode__(self):
 
         if self.name:
-            return u'%s' % (self.name)
+            if self.version:
+                return u"%s [%s]" % (self.name, self.version)
+            else:
+                return u'%s' % (self.name)
         else:
             return u'%s' % (os.path.basename(self.file.name))
 
@@ -76,7 +81,8 @@ class MetadataVersion(models.Model):
         # this also allows me to query the db w/out using the '__iexact' qualifier, which should reduce db hits
         self.name = self.name.lower()
 
-    def register(self,**kwargs):
+    def register(self, **kwargs):
+
         request = kwargs.pop("request",None)
 
         self.file.open()
@@ -87,100 +93,110 @@ class MetadataVersion(models.Model):
 
         recategorization_needed = False
 
-        # TODO: SHOULD I DELETE THE EXISTING PROXIES?
-        new_model_proxy_kwargs = {
-            "version"   : self
-        }
-        for i, version_model_proxy in enumerate(xpath_fix(version_content,"//classes/class")):
-            version_model_proxy_name          = xpath_fix(version_model_proxy,"name/text()")
-            version_model_proxy_documentation = xpath_fix(version_model_proxy,"description/text()") or None
-            version_model_proxy_stereotype    = xpath_fix(version_model_proxy,"@stereotype") or None
-            version_model_proxy_namespace     = xpath_fix(version_model_proxy,"@namespace") or None
+        old_model_proxies = list(self.model_proxies.all())  # list forces qs evaluation immediately
+        new_model_proxies = []
 
-            new_model_proxy_kwargs["name"]              = re.sub(r'\.','_',str(version_model_proxy_name[0]))
-            if version_model_proxy_documentation:
-                new_model_proxy_kwargs["documentation"] = remove_spaces_and_linebreaks(version_model_proxy_documentation[0])
-            if version_model_proxy_stereotype:
-                new_model_proxy_kwargs["stereotype"]    = version_model_proxy_stereotype[0]
-            if version_model_proxy_namespace:
-                new_model_proxy_kwargs["namespace"]    = version_model_proxy_namespace[0]
-            new_model_proxy_kwargs["order"]             = i
+        for i, model_proxy in enumerate(xpath_fix(version_content, "//classes/class")):
 
-            (new_model_proxy,created_model) = MetadataModelProxy.objects.get_or_create(**new_model_proxy_kwargs)
+            model_proxy_version = self
+            model_proxy_name = xpath_fix(model_proxy, "name/text()")[0]
+            model_proxy_stereotype = get_index(xpath_fix(model_proxy, "@stereotype"), 0)
+            model_proxy_namespace = get_index(xpath_fix(model_proxy, "@namespace"), 0)
+            model_proxy_documentation = get_index(xpath_fix(model_proxy, "description/text()"), 0)
+            if model_proxy_documentation:
+                model_proxy_documentation = remove_spaces_and_linebreaks(model_proxy_documentation)
+            else:
+                model_proxy_documentation = u""
 
-    	    new_model_proxy_kwargs.pop("documentation", None)
-            new_model_proxy_kwargs.pop("stereotype", None)
-            new_model_proxy_kwargs.pop("namespace", None)
+            (new_model_proxy, created_model_proxy) = MetadataModelProxy.objects.get_or_create(
+                version = model_proxy_version,
+                name = model_proxy_name,
+            )
 
-            if not created_model:
+            if created_model_proxy:
                 recategorization_needed = True
-                # TODO: THIS WILL DELETE ASSOCIATED PROPERTY CUSTOMIZATIONS WHICH IS A REALLY BAD IDEA!
-                # delete all old properties (going to replace them during this registration)...
-                old_model_proxy_properties = new_model_proxy.standard_properties.all()
-                old_model_proxy_properties.delete()
-           
-            new_standard_property_proxy_kwargs = {
-                "model_proxy"   : new_model_proxy
-            }
-            for j, version_property_proxy in enumerate(xpath_fix(version_model_proxy,"attributes/attribute")):
-                version_property_proxy_name = xpath_fix(version_property_proxy,"name/text()")
-                version_property_proxy_type = xpath_fix(version_property_proxy,"type/text()")
-                version_property_proxy_documentation = xpath_fix(version_property_proxy,"description/text()") or None
-                version_property_proxy_is_label = xpath_fix(version_property_proxy,"@is_label") or ["false"]
-                version_property_proxy_stereotype = xpath_fix(version_property_proxy,"@stereotype") or None
-                atomic_type = xpath_fix(version_property_proxy,"atomic/atomic_type/text()") or None
-                enumeration_choices = []
-                relationship_cardinality_min = xpath_fix(version_property_proxy,"relationship/cardinality/@min")
-                relationship_cardinality_max = xpath_fix(version_property_proxy,"relationship/cardinality/@max")
-                relationship_target_name = xpath_fix(version_property_proxy,"relationship/target/text()")
-                for version_property_proxy_enumeration_choice in xpath_fix(version_property_proxy,"enumeration/choice"):
-                    enumeration_choices.append(xpath_fix(version_property_proxy_enumeration_choice,"text()")[0])
-                new_standard_property_proxy_kwargs["field_type"] = MetadataFieldTypes.get(version_property_proxy_type[0])
-                new_standard_property_proxy_kwargs["name"] = re.sub(r'\.','_',str(version_property_proxy_name[0]))
-                if version_property_proxy_documentation:
-                    new_standard_property_proxy_kwargs["documentation"] = remove_spaces_and_linebreaks(version_property_proxy_documentation[0])
-                else:
-                    new_standard_property_proxy_kwargs.pop("documentation", None)
-                new_standard_property_proxy_kwargs["order"] = j
-                new_standard_property_proxy_kwargs["is_label"] = bool(version_property_proxy_is_label[0].lower()=="true")
-                if version_property_proxy_stereotype:
-                    new_standard_property_proxy_kwargs["stereotype"] = version_property_proxy_stereotype[0]
-                else:
-                    new_standard_property_proxy_kwargs.pop("stereotype", None)
-                if atomic_type:
-                    atomic_type = atomic_type[0]
-                    if atomic_type == u"STRING":
-                        atomic_type = "DEFAULT"
-                    new_standard_property_proxy_kwargs["atomic_type"] = MetadataAtomicFieldTypes.get(atomic_type)
-                else:
-                    new_standard_property_proxy_kwargs.pop("atomic_type",None)
-                new_standard_property_proxy_kwargs["enumeration_choices"]   = "|".join(enumeration_choices)
-                if relationship_cardinality_min and relationship_cardinality_max:
-                    new_standard_property_proxy_kwargs["relationship_cardinality"] = "%s|%s"%(relationship_cardinality_min[0],relationship_cardinality_max[0])
-                if relationship_target_name:
-                    new_standard_property_proxy_kwargs["relationship_target_name"] = relationship_target_name[0]
 
-                (new_standard_property_proxy,created_property) = MetadataStandardPropertyProxy.objects.get_or_create(**new_standard_property_proxy_kwargs)
-                new_standard_property_proxy.save()
-                new_standard_property_proxy_kwargs.pop("documentation",None)
-                new_standard_property_proxy_kwargs.pop("atomic_type",None)
-                new_standard_property_proxy_kwargs.pop("relationship_cardinality",None)
-                new_standard_property_proxy_kwargs.pop("relationship_target_name",None)
-
-
+            new_model_proxy.order = i
+            new_model_proxy.stereotype = model_proxy_stereotype
+            new_model_proxy.namespace = model_proxy_namespace
+            new_model_proxy.documentation = model_proxy_documentation
             new_model_proxy.save()
-        
+            new_model_proxies.append(new_model_proxy)
+
+            old_property_proxies = list(new_model_proxy.standard_properties.all())  # list forces qs evaluation immediately
+            new_property_proxies = []
+
+            for j, property_proxy in enumerate(xpath_fix(model_proxy, "attributes/attribute")):
+
+                property_proxy_name = re.sub(r'\.', '_', str(xpath_fix(property_proxy, "name/text()")[0]))
+                property_proxy_field_type = xpath_fix(property_proxy, "type/text()")[0]
+                property_proxy_is_label = get_index(xpath_fix(property_proxy, "@is_label"), 0)
+                property_proxy_stereotype = get_index(xpath_fix(property_proxy, "@stereotype"), 0)
+                property_proxy_documentation = get_index(xpath_fix(property_proxy, "description/text()"), 0)
+                if property_proxy_documentation:
+                    property_proxy_documentation = remove_spaces_and_linebreaks(property_proxy_documentation)
+                else:
+                    property_proxy_documentation = u""
+                property_proxy_atomic_type = get_index(xpath_fix(property_proxy, "atomic/atomic_type/text()"), 0)
+                if property_proxy_atomic_type:
+                    if property_proxy_atomic_type == u"STRING":
+                        property_proxy_atomic_type = u"DEFAULT"
+                    property_proxy_atomic_type = MetadataAtomicFieldTypes.get(property_proxy_atomic_type)
+                property_proxy_enumeration_choices = []
+                for property_proxy_enumeration_choice in xpath_fix(property_proxy, "enumeration/choice"):
+                    property_proxy_enumeration_choices.append(xpath_fix(property_proxy_enumeration_choice, "text()")[0])
+                property_proxy_relationship_cardinality_min = get_index(xpath_fix(property_proxy, "relationship/cardinality/@min"), 0)
+                property_proxy_relationship_cardinality_max = get_index(xpath_fix(property_proxy, "relationship/cardinality/@max"), 0)
+                property_proxy_relationship_target_name = get_index(xpath_fix(property_proxy, "relationship/target/text()"), 0)
+                if property_proxy_relationship_cardinality_min and property_proxy_relationship_cardinality_max:
+                    property_proxy_relationship_cardinality = u"%s|%s" % (property_proxy_relationship_cardinality_min, property_proxy_relationship_cardinality_max)
+                else:
+                    property_proxy_relationship_cardinality = u""
+
+                (new_property_proxy, created_property) = MetadataStandardPropertyProxy.objects.get_or_create(
+                    model_proxy = new_model_proxy,
+                    name = property_proxy_name,
+                    field_type = property_proxy_field_type
+                )
+
+                if created_property:
+                    recategorization_needed = True
+
+                new_property_proxy.order = j
+                new_property_proxy.is_label = property_proxy_is_label == "true"
+                new_property_proxy.stereotype = property_proxy_stereotype
+                new_property_proxy.documentation = property_proxy_documentation
+                new_property_proxy.atomic_type = property_proxy_atomic_type
+                new_property_proxy.enumeration_choices = "|".join(property_proxy_enumeration_choices)
+                new_property_proxy.relationship_cardinality = property_proxy_relationship_cardinality
+                new_property_proxy.relationship_target_name = property_proxy_relationship_target_name
+                new_property_proxy.save()
+                new_property_proxies.append(new_property_proxy)
+
+            # if there's anything in old_property_proxies not in new_property_proxies, delete it
+            for old_property_proxy in old_property_proxies:
+                if old_property_proxy not in new_property_proxies:
+                    old_property_proxy.delete()
+
+            new_model_proxy.save()  # save again for the m2m relationship
+
+
+        # if there's anything in old_model_proxies not in new_model_proxies, delete it
+        for old_model_proxy in old_model_proxies:
+            if old_model_proxy not in new_model_proxies:
+                old_model_proxy.delete()
+
+
+        # reset whatever's left
         for model_proxy in MetadataModelProxy.objects.filter(version=self):
             for property_proxy in model_proxy.standard_properties.all():
                 property_proxy.reset()
                 property_proxy.save()
-                
+
         if recategorization_needed:
             msg = "Since you are re-registering an existing version, you will also have to re-register the corresponding categorization"
             if request:
                 messages.add_message(request, messages.WARNING, msg)
-            else:
-                print msg
 
         self.registered = True
             

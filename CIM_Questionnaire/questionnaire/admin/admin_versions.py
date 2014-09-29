@@ -51,7 +51,7 @@ unregister_metadata_versions.short_description = "Unregister all of the Metadata
 class MetadataVersionAdminForm(ModelForm):
     class Meta:
         model = MetadataVersion
-        fields = ("file","name","url","categorization","registered","model_proxies",)
+        fields = ("file","name","version","url","categorization","registered","model_proxies",)
         readonly_fields = ("registered","model_proxies")
 
     model_proxies = ModelMultipleChoiceField(label="Models",required=False,queryset=MetadataModelProxy.objects.none())

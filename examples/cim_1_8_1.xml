@@ -194,7 +194,7 @@
                         <target>simulationRun</target>
                     </relationship>
                 </attribute>
-                <attribute>
+                <attribute stereotype="document">
                     <name>documentStatus</name>
                     <description/>
                     <type>ENUMERATION</type>
@@ -204,7 +204,7 @@
                         <choice>in-progress</choice>
                     </enumeration>
                 </attribute>
-                <attribute>
+                <attribute stereotype="document">
                     <name>documentAuthor</name>
                     <description>A contact for the author of this document (as opposed to the author
                         of the artifact being described by this document; ie: the simulation or
@@ -216,7 +216,7 @@
                         <target>responsibleParty</target>
                     </relationship>
                 </attribute>
-                <attribute>
+                <attribute stereotype="document">
                     <name>documentCreationDate</name>
                     <description>The date the document was created.</description>
                     <type>ATOMIC</type>
@@ -499,7 +499,7 @@
                         <target>simulationRun</target>
                     </relationship>
                 </attribute>
-                <attribute>
+                <attribute stereotype="document">
                     <name>documentStatus</name>
                     <description/>
                     <type>ENUMERATION</type>
@@ -509,7 +509,7 @@
                         <choice>in-progress</choice>
                     </enumeration>
                 </attribute>
-                <attribute>
+                <attribute stereotype="document">
                     <name>documentAuthor</name>
                     <description>A contact for the author of this document (as opposed to the author
                         of the artifact being described by this document; ie: the simulation or
@@ -521,7 +521,7 @@
                         <target>responsibleParty</target>
                     </relationship>
                 </attribute>
-                <attribute>
+                <attribute stereotype="document">
                     <name>documentCreationDate</name>
                     <description>The date the document was created.</description>
                     <type>ATOMIC</type>
@@ -1065,7 +1065,7 @@
                         <target>machineCompilerUnit</target>
                     </relationship>
                 </attribute>
-                <attribute>
+                <attribute stereotype="document">
                     <name>documentStatus</name>
                     <description/>
                     <type>ENUMERATION</type>
@@ -1075,7 +1075,7 @@
                         <choice>in-progress</choice>
                     </enumeration>
                 </attribute>
-                <attribute>
+                <attribute stereotype="document">
                     <name>documentAuthor</name>
                     <description>A contact for the author of this document (as opposed to the author
                         of the artifact being described by this document; ie: the simulation or
@@ -1087,7 +1087,7 @@
                         <target>responsibleParty</target>
                     </relationship>
                 </attribute>
-                <attribute>
+                <attribute stereotype="document">
                     <name>documentCreationDate</name>
                     <description>The date the document was created.</description>
                     <type>ATOMIC</type>
@@ -1365,7 +1365,7 @@
                         <target>gridMosaic</target>
                     </relationship>
                 </attribute>
-                <attribute>
+                <attribute stereotype="document">
                     <name>documentStatus</name>
                     <description/>
                     <type>ENUMERATION</type>
@@ -1375,7 +1375,7 @@
                         <choice>in-progress</choice>
                     </enumeration>
                 </attribute>
-                <attribute>
+                <attribute stereotype="document">
                     <name>documentAuthor</name>
                     <description>A contact for the author of this document (as opposed to the author
                         of the artifact being described by this document; ie: the simulation or
@@ -1387,7 +1387,7 @@
                         <target>responsibleParty</target>
                     </relationship>
                 </attribute>
-                <attribute>
+                <attribute stereotype="document">
                     <name>documentCreationDate</name>
                     <description>The date the document was created.</description>
                     <type>ATOMIC</type>
