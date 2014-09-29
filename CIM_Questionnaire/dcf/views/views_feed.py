@@ -29,7 +29,6 @@ from django.template import *
 from django.http import *
 from django.shortcuts import *
 
-
 from dcf.models import *
 from dcf.views.views_error import error as dcf_error
 

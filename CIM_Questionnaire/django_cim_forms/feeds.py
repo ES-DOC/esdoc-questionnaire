@@ -33,7 +33,7 @@ class MetadataFeed(Feed):
 
     def getTitle(self):
         return "CIM Metadata Documents for %s" % self.app_name.capitalize()
-    
+
     def __init__(self):
         super(MetadataFeed,self).__init__()
 
@@ -83,7 +83,7 @@ class MetadataFeed(Feed):
             self.ModelClasses = [possibleClass for possibleClass in PossibleClasses if possibleClass._isCIMDocument]
 
         self.title = self.getTitle()
-        
+
 
 # don't need to wrap feed in a view; I can pass parameters to the get_object() fn
 #def generic_feed_view(request, model_name, app_name="django_cim_forms", model_id=None):
