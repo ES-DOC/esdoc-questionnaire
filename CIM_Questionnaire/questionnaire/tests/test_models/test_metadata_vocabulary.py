@@ -21,9 +21,10 @@ class TestMetadataVocabulary(TestQuestionnaireBase):
     def test_register(self):
 
         test_document_type = "modelcomponent"
+        test_version_url = "http://www.test.com/cim.xsd"
         self.assertIn(test_document_type, CIM_DOCUMENT_TYPES, msg="Unrecognized vocabulary document type: %s" % (test_document_type))
         test_vocabulary_path = os.path.join(VOCABULARY_UPLOAD_PATH, "test_vocabulary_bdl.xml")
-        test_vocabulary = MetadataVocabulary(name="vocabulary", file=test_vocabulary_path, document_type=test_document_type)
+        test_vocabulary = MetadataVocabulary(name="vocabulary", file=test_vocabulary_path, document_type=test_document_type, url=test_version_url)
         test_vocabulary.save()
 
         vocabulary_qs = MetadataVocabulary.objects.all()
@@ -50,7 +51,7 @@ class TestMetadataVocabulary(TestQuestionnaireBase):
         self.assertEqual(len(category_qs), 10)
         self.assertEqual(len(property_qs), 9)
 
-        test_vocabulary_data = {'registered': True, 'document_type': u'modelcomponent', 'name': u'vocabulary'}
+        test_vocabulary_data = {'registered': True, 'document_type': u'modelcomponent', 'name': u'vocabulary', "version" : u"", "url" : test_version_url, }
         actual_vocabulary_data = model_to_data(test_vocabulary)
         self.assertDictEqual(actual_vocabulary_data, test_vocabulary_data, excluded_keys=["id", "file", "last_modified", "created",])
 

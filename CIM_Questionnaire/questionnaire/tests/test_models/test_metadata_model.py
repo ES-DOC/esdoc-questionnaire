@@ -10,6 +10,8 @@
 ####################
 
 import os
+from django.conf import settings
+from lxml import etree as et
 
 from CIM_Questionnaire.questionnaire.tests.base import TestQuestionnaireBase
 
@@ -19,12 +21,12 @@ from CIM_Questionnaire.questionnaire.models.metadata_version import MetadataVers
 from CIM_Questionnaire.questionnaire.models.metadata_categorization import MetadataCategorization
 from CIM_Questionnaire.questionnaire.models.metadata_vocabulary import MetadataVocabulary
 from CIM_Questionnaire.questionnaire.models.metadata_project import MetadataProject
-
+from CIM_Questionnaire.questionnaire.models.metadata_serialization import MetadataModelSerialization
 from CIM_Questionnaire.questionnaire.models.metadata_vocabulary import UPLOAD_PATH as VOCABULARY_UPLOAD_PATH
 from CIM_Questionnaire.questionnaire.models.metadata_version import UPLOAD_PATH as VERSION_UPLOAD_PATH
 from CIM_Questionnaire.questionnaire.models.metadata_categorization import UPLOAD_PATH as CATEGORIZATION_UPLOAD_PATH
 
-from CIM_Questionnaire.questionnaire.utils import DEFAULT_VOCABULARY_KEY, DEFAULT_COMPONENT_KEY
+from CIM_Questionnaire.questionnaire.utils import DEFAULT_VOCABULARY_KEY, DEFAULT_COMPONENT_KEY, get_tag_without_namespace, get_attribute_without_namespace
 
 class TestMetadataModel(TestQuestionnaireBase):
 
@@ -74,6 +76,29 @@ class TestMetadataModel(TestQuestionnaireBase):
         self.cim_version = cim_version
         self.cim_project = cim_project
         self.cim_vocabulary = cim_vocabulary
+
+
+    def tearDown(self):
+        # NO LONGER USING ACTUAL FILES, INSTEAD SERIALIZING TO DB
+
+        pass
+
+        # model = self.model_realization
+        # serialized_model_path = os.path.join(settings.MEDIA_ROOT, "questionnaire/feed", model.project.name.lower(), model.version.name.lower(), model.proxy.name.lower())
+        # serialized_model_path += "/" + model.get_id() + ".xml"
+        # serialized_model_path_root = os.path.join(settings.MEDIA_ROOT, "questionnaire/feed", model.project.name.lower())
+        #
+        # # remove test serialized file
+        # if os.path.exists(serialized_model_path):
+        #     os.remove(serialized_model_path)
+        # # remove any empty directories in the path...
+        # for path, dirs, files in os.walk(serialized_model_path_root, topdown=False):
+        #     try:
+        #         os.rmdir(path)
+        #     except OSError:
+        #         # directory was not empty
+        #         pass
+
 
 
     def test_get_new_realization_set_from_cim(self):
@@ -161,12 +186,12 @@ class TestMetadataModel(TestQuestionnaireBase):
         excluded_fields = ["tree_id", "lft", "rght", "level", "parent",] # ignore mptt fields
         serialized_models = [self.fully_serialize_model(model,exclude=excluded_fields) for model in models]
         test_models_data = [
-            {'is_root': True,  'version': self.version, 'created': None, 'component_key': DEFAULT_COMPONENT_KEY,                                                                                           'description': u'A ModelCompnent is nice.', 'title': u'RootComponent',                       'order': 0, 'project': self.project, 'last_modified': None, 'proxy': test_proxy, 'vocabulary_key': DEFAULT_VOCABULARY_KEY,    'is_document': True, 'active': True, u'id': None, 'name': u'modelComponent'},
-            {'is_root': False, 'version': self.version, 'created': None, 'component_key': MetadataComponentProxy.objects.get(vocabulary=test_vocabulary, name__iexact='testmodel').get_key(),              'description': u'A ModelCompnent is nice.', 'title': u'vocabulary : TestModel',              'order': 0, 'project': self.project, 'last_modified': None, 'proxy': test_proxy, 'vocabulary_key': test_vocabulary.get_key(), 'is_document': True, 'active': True, u'id': None, 'name': u'modelComponent'},
-            {'is_root': False, 'version': self.version, 'created': None, 'component_key': MetadataComponentProxy.objects.get(vocabulary=test_vocabulary, name__iexact='testmodelkeyproperties').get_key(), 'description': u'A ModelCompnent is nice.', 'title': u'vocabulary : TestModelKeyProperties', 'order': 0, 'project': self.project, 'last_modified': None, 'proxy': test_proxy, 'vocabulary_key': test_vocabulary.get_key(), 'is_document': True, 'active': True, u'id': None, 'name': u'modelComponent'},
-            {'is_root': False, 'version': self.version, 'created': None, 'component_key': MetadataComponentProxy.objects.get(vocabulary=test_vocabulary, name__iexact='pretendsubmodel').get_key(),        'description': u'A ModelCompnent is nice.', 'title': u'vocabulary : PretendSubModel',        'order': 0, 'project': self.project, 'last_modified': None, 'proxy': test_proxy, 'vocabulary_key': test_vocabulary.get_key(), 'is_document': True, 'active': True, u'id': None, 'name': u'modelComponent'},
-            {'is_root': False, 'version': self.version, 'created': None, 'component_key': MetadataComponentProxy.objects.get(vocabulary=test_vocabulary, name__iexact='submodel').get_key(),               'description': u'A ModelCompnent is nice.', 'title': u'vocabulary : SubModel',               'order': 0, 'project': self.project, 'last_modified': None, 'proxy': test_proxy, 'vocabulary_key': test_vocabulary.get_key(), 'is_document': True, 'active': True, u'id': None, 'name': u'modelComponent'},
-            {'is_root': False, 'version': self.version, 'created': None, 'component_key': MetadataComponentProxy.objects.get(vocabulary=test_vocabulary, name__iexact='subsubmodel').get_key(),            'description': u'A ModelCompnent is nice.', 'title': u'vocabulary : SubSubModel',            'order': 0, 'project': self.project, 'last_modified': None, 'proxy': test_proxy, 'vocabulary_key': test_vocabulary.get_key(), 'is_document': True, 'active': True, u'id': None, 'name': u'modelComponent'},
+            { "document_version" : u"0.0", "is_published": False, 'is_root': True,  'version': self.version, 'created': None, 'component_key': DEFAULT_COMPONENT_KEY,                                                                                           'description': u'A ModelCompnent is nice.', 'title': u'RootComponent',                       'order': 0, 'project': self.project, 'last_modified': None, 'proxy': test_proxy, 'vocabulary_key': DEFAULT_VOCABULARY_KEY,    'is_document': True, 'active': True, u'id': None, 'name': u'modelComponent'},
+            { "document_version" : u"0.0", "is_published": False, 'is_root': False, 'version': self.version, 'created': None, 'component_key': MetadataComponentProxy.objects.get(vocabulary=test_vocabulary, name__iexact='testmodel').get_key(),              'description': u'A ModelCompnent is nice.', 'title': u'vocabulary : TestModel',              'order': 0, 'project': self.project, 'last_modified': None, 'proxy': test_proxy, 'vocabulary_key': test_vocabulary.get_key(), 'is_document': True, 'active': True, u'id': None, 'name': u'modelComponent'},
+            { "document_version" : u"0.0", "is_published": False, 'is_root': False, 'version': self.version, 'created': None, 'component_key': MetadataComponentProxy.objects.get(vocabulary=test_vocabulary, name__iexact='testmodelkeyproperties').get_key(), 'description': u'A ModelCompnent is nice.', 'title': u'vocabulary : TestModelKeyProperties', 'order': 0, 'project': self.project, 'last_modified': None, 'proxy': test_proxy, 'vocabulary_key': test_vocabulary.get_key(), 'is_document': True, 'active': True, u'id': None, 'name': u'modelComponent'},
+            { "document_version" : u"0.0", "is_published": False, 'is_root': False, 'version': self.version, 'created': None, 'component_key': MetadataComponentProxy.objects.get(vocabulary=test_vocabulary, name__iexact='pretendsubmodel').get_key(),        'description': u'A ModelCompnent is nice.', 'title': u'vocabulary : PretendSubModel',        'order': 0, 'project': self.project, 'last_modified': None, 'proxy': test_proxy, 'vocabulary_key': test_vocabulary.get_key(), 'is_document': True, 'active': True, u'id': None, 'name': u'modelComponent'},
+            { "document_version" : u"0.0", "is_published": False, 'is_root': False, 'version': self.version, 'created': None, 'component_key': MetadataComponentProxy.objects.get(vocabulary=test_vocabulary, name__iexact='submodel').get_key(),               'description': u'A ModelCompnent is nice.', 'title': u'vocabulary : SubModel',               'order': 0, 'project': self.project, 'last_modified': None, 'proxy': test_proxy, 'vocabulary_key': test_vocabulary.get_key(), 'is_document': True, 'active': True, u'id': None, 'name': u'modelComponent'},
+            { "document_version" : u"0.0", "is_published": False, 'is_root': False, 'version': self.version, 'created': None, 'component_key': MetadataComponentProxy.objects.get(vocabulary=test_vocabulary, name__iexact='subsubmodel').get_key(),            'description': u'A ModelCompnent is nice.', 'title': u'vocabulary : SubSubModel',            'order': 0, 'project': self.project, 'last_modified': None, 'proxy': test_proxy, 'vocabulary_key': test_vocabulary.get_key(), 'is_document': True, 'active': True, u'id': None, 'name': u'modelComponent'},
         ]
 
         test_scientific_properties_data = {
@@ -192,7 +217,7 @@ class TestMetadataModel(TestQuestionnaireBase):
         }
 
         for actual_model_data,test_model_data in zip(serialized_models,test_models_data):
-            self.assertDictEqual(actual_model_data,test_model_data)
+            self.assertDictEqual(actual_model_data, test_model_data, excluded_keys=["guid"])
 
         test_scientific_property_data = {}
         for model in models:
@@ -256,12 +281,12 @@ class TestMetadataModel(TestQuestionnaireBase):
         excluded_fields = [ "tree_id", "lft", "rght", "level", "parent", "last_modified", "created", "id", ] # ignore mptt fields & datetime-specific fields & pk field
         serialized_models = [ self.fully_serialize_model(model, exclude=excluded_fields) for model in models ]
         test_models_data = [
-            {'is_root': True,  'version': self.version, 'component_key': DEFAULT_COMPONENT_KEY,                                                                                           'description': u'A ModelCompnent is nice.', 'title': u'RootComponent',                       'order': 0, 'project': self.project,   'proxy': test_proxy, 'vocabulary_key': DEFAULT_VOCABULARY_KEY,    'is_document': True, 'active': True, 'name': u'modelComponent' },
-            {'is_root': False, 'version': self.version, 'component_key': MetadataComponentProxy.objects.get(vocabulary=test_vocabulary, name__iexact='testmodel').get_key(),              'description': u'A ModelCompnent is nice.', 'title': u'vocabulary : TestModel',              'order': 0, 'project': self.project,   'proxy': test_proxy, 'vocabulary_key': test_vocabulary.get_key(), 'is_document': True, 'active': True, 'name': u'modelComponent' },
-            {'is_root': False, 'version': self.version, 'component_key': MetadataComponentProxy.objects.get(vocabulary=test_vocabulary, name__iexact='testmodelkeyproperties').get_key(), 'description': u'A ModelCompnent is nice.', 'title': u'vocabulary : TestModelKeyProperties', 'order': 0, 'project': self.project,   'proxy': test_proxy, 'vocabulary_key': test_vocabulary.get_key(), 'is_document': True, 'active': True, 'name': u'modelComponent' },
-            {'is_root': False, 'version': self.version, 'component_key': MetadataComponentProxy.objects.get(vocabulary=test_vocabulary, name__iexact='pretendsubmodel').get_key(),        'description': u'A ModelCompnent is nice.', 'title': u'vocabulary : PretendSubModel',        'order': 0, 'project': self.project,   'proxy': test_proxy, 'vocabulary_key': test_vocabulary.get_key(), 'is_document': True, 'active': True, 'name': u'modelComponent' },
-            {'is_root': False, 'version': self.version, 'component_key': MetadataComponentProxy.objects.get(vocabulary=test_vocabulary, name__iexact='submodel').get_key(),               'description': u'A ModelCompnent is nice.', 'title': u'vocabulary : SubModel',               'order': 0, 'project': self.project,   'proxy': test_proxy, 'vocabulary_key': test_vocabulary.get_key(), 'is_document': True, 'active': True, 'name': u'modelComponent' },
-            {'is_root': False, 'version': self.version, 'component_key': MetadataComponentProxy.objects.get(vocabulary=test_vocabulary, name__iexact='subsubmodel').get_key(),            'description': u'A ModelCompnent is nice.', 'title': u'vocabulary : SubSubModel',            'order': 0, 'project': self.project,   'proxy': test_proxy, 'vocabulary_key': test_vocabulary.get_key(), 'is_document': True, 'active': True, 'name': u'modelComponent' },
+            { "document_version" : u"0.1", "is_published": False, 'is_root': True,  'version': self.version, 'component_key': DEFAULT_COMPONENT_KEY,                                                                                           'description': u'A ModelCompnent is nice.', 'title': u'RootComponent',                       'order': 0, 'project': self.project,   'proxy': test_proxy, 'vocabulary_key': DEFAULT_VOCABULARY_KEY,    'is_document': True, 'active': True, 'name': u'modelComponent' },
+            { "document_version" : u"0.1", "is_published": False, 'is_root': False, 'version': self.version, 'component_key': MetadataComponentProxy.objects.get(vocabulary=test_vocabulary, name__iexact='testmodel').get_key(),              'description': u'A ModelCompnent is nice.', 'title': u'vocabulary : TestModel',              'order': 0, 'project': self.project,   'proxy': test_proxy, 'vocabulary_key': test_vocabulary.get_key(), 'is_document': True, 'active': True, 'name': u'modelComponent' },
+            { "document_version" : u"0.1", "is_published": False, 'is_root': False, 'version': self.version, 'component_key': MetadataComponentProxy.objects.get(vocabulary=test_vocabulary, name__iexact='testmodelkeyproperties').get_key(), 'description': u'A ModelCompnent is nice.', 'title': u'vocabulary : TestModelKeyProperties', 'order': 0, 'project': self.project,   'proxy': test_proxy, 'vocabulary_key': test_vocabulary.get_key(), 'is_document': True, 'active': True, 'name': u'modelComponent' },
+            { "document_version" : u"0.1", "is_published": False, 'is_root': False, 'version': self.version, 'component_key': MetadataComponentProxy.objects.get(vocabulary=test_vocabulary, name__iexact='pretendsubmodel').get_key(),        'description': u'A ModelCompnent is nice.', 'title': u'vocabulary : PretendSubModel',        'order': 0, 'project': self.project,   'proxy': test_proxy, 'vocabulary_key': test_vocabulary.get_key(), 'is_document': True, 'active': True, 'name': u'modelComponent' },
+            { "document_version" : u"0.1", "is_published": False, 'is_root': False, 'version': self.version, 'component_key': MetadataComponentProxy.objects.get(vocabulary=test_vocabulary, name__iexact='submodel').get_key(),               'description': u'A ModelCompnent is nice.', 'title': u'vocabulary : SubModel',               'order': 0, 'project': self.project,   'proxy': test_proxy, 'vocabulary_key': test_vocabulary.get_key(), 'is_document': True, 'active': True, 'name': u'modelComponent' },
+            { "document_version" : u"0.1", "is_published": False, 'is_root': False, 'version': self.version, 'component_key': MetadataComponentProxy.objects.get(vocabulary=test_vocabulary, name__iexact='subsubmodel').get_key(),            'description': u'A ModelCompnent is nice.', 'title': u'vocabulary : SubSubModel',            'order': 0, 'project': self.project,   'proxy': test_proxy, 'vocabulary_key': test_vocabulary.get_key(), 'is_document': True, 'active': True, 'name': u'modelComponent' },
         ]
 
         test_scientific_properties_data = {
@@ -287,7 +312,7 @@ class TestMetadataModel(TestQuestionnaireBase):
         }
 
         for actual_model_data,test_model_data in zip(serialized_models,test_models_data):
-            self.assertDictEqual(actual_model_data,test_model_data)
+            self.assertDictEqual(actual_model_data, test_model_data, excluded_keys=["guid"])
 
         test_scientific_property_data = {}
         for model in models:
@@ -317,5 +342,45 @@ class TestMetadataModel(TestQuestionnaireBase):
             # except KeyError:
             #     # the root model shouldn't have any scientific_properties
             #     self.assertEqual(model_key,root_model_key)
+
+
+
+    def test_publish_realization(self):
+
+        model = self.model_realization
+
+        self.assertEqual(model.is_published, False)
+        self.assertEqual(model.document_version, "0.1")
+
+        model.publish(force_save=False)
+
+        self.assertEqual(model.document_version, "1.0")
+        self.assertEqual(model.is_published, True)
+
+        serializations_qs = MetadataModelSerialization.objects.filter(model=model)
+
+        self.assertEqual(len(serializations_qs), 0)
+
+        model.publish(force_save=True)
+
+        serializations_qs = MetadataModelSerialization.objects.filter(model=model)
+
+        self.assertEqual(len(serializations_qs), 1)
+
+
+    def test_serialize_realization(self):
+
+        model = self.model_realization
+
+        model.publish(force_save=True)
+        #model.serialize()  # serialization is done when force_save=True
+                            # (doing it this way so version is appropriately updated)
+
+        serialization = MetadataModelSerialization.objects.get(model=model)
+        serialized_model = et.fromstring(str(serialization.content))
+
+        self.assertEqual(get_tag_without_namespace(serialized_model), model.proxy.name)
+        self.assertEqual(get_attribute_without_namespace(serialized_model, "schemaLocation"), model.version.url)
+
 
 
