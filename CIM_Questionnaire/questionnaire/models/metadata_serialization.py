@@ -20,6 +20,8 @@ Summary of module goes here
 
 """
 
+import os
+from django.conf import settings
 from django.db import models
 from django.utils import timezone
 
@@ -53,6 +55,14 @@ class MetadataModelSerialization(models.Model):
         if not self.publication_date:
             self.publication_date = timezone.now()
         super(MetadataModelSerialization, self).save(*args, **kwargs)
+
+    def write(self):
+        serialization_file_name = u"%s_%s.xml" % (self.name, self.version)
+        serialization_path = os.path.join(settings.MEDIA_ROOT, APP_LABEL, "serializations", serialization_file_name)
+        if not os.path.exists(os.path.dirname(serialization_path)):
+            os.makedirs(os.path.dirname(serialization_path))
+        with open(serialization_path, "w") as file:
+            file.write(self.content)
 
     def validate(self):
         # TODO

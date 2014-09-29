@@ -31,7 +31,12 @@ def serialize_metadata_serializations(modeladmin, request, queryset):
         model.serialize(serialization_version=version)
 serialize_metadata_serializations.short_description = "Re-serialize the models corresponding to the selected serializations based on their current state."
 
+def write_metadata_serializations(modeladmin, request, queryset):
+    for serialization in queryset:
+        serialization.write()
+write_metadata_serializations.short_description = "Write out the serializations to file."
+
 class MetadataModelSerializationAdmin(admin.ModelAdmin):
-    actions = [serialize_metadata_serializations,]
+    actions = [serialize_metadata_serializations, write_metadata_serializations]
 
 admin.site.register(MetadataModelSerialization, MetadataModelSerializationAdmin)
