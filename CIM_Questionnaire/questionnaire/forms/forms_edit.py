@@ -658,6 +658,7 @@ class MetadataAbstractStandardPropertyForm(MetadataEditingForm):
         self.customizer = customizer
 
     def clean(self):
+
         super(MetadataAbstractStandardPropertyForm, self).clean()
 
         cleaned_data = self.cleaned_data
@@ -668,7 +669,8 @@ class MetadataAbstractStandardPropertyForm(MetadataEditingForm):
             pass
 
         elif "field_type" != MetadataFieldTypes.ENUMERATION:
-            cleaned_data["enumeration_value"] = u""  # don't try anything fancy w/ enumeration fields
+            #cleaned_data["enumeration_value"] = u""  # don't try anything fancy w/ enumeration fields
+            pass
 
         elif "field_type" != MetadataFieldTypes.RELATIONSHIP:
             pass
