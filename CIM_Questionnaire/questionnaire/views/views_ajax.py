@@ -119,9 +119,6 @@ def ajax_customize_subform(request,**kwargs):
 
     else: # request.method == "POST":
 
-        from CIM_Questionnaire.questionnaire.utils import MONOPOLY
-        MONOPOLY = True
-
         data = request.POST
 
         (validity, model_customizer_form, standard_property_customizer_formset, scientific_property_customizer_formsets) = \

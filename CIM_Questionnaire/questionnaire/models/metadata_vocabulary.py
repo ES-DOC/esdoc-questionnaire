@@ -127,11 +127,10 @@ class MetadataVocabulary(models.Model):
         self.registered = True
 
         # if I re-registered a vocabulary and there were existing customizations associated w/ it
-        # then I better update those cusotmizations so that it has the right content
+        # then I better update those customizations so that it has the right content
         from CIM_Questionnaire.questionnaire.models.metadata_customizer import MetadataCustomizer, MetadataModelCustomizer
         customizers_to_update = MetadataModelCustomizer.objects.filter(vocabularies__in=[self.pk])
         for customizer in customizers_to_update:
-            import ipdb; ipdb.set_trace()
             MetadataCustomizer.update_existing_customizer_set(customizer,[self])
 
 

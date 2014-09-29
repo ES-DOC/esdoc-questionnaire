@@ -115,7 +115,7 @@ class MetadataStandardPropertyProxy(MetadataPropertyProxy):
 
     # attributes for ATOMIC fields
     atomic_default  = models.CharField(max_length=BIG_STRING,blank=True)
-    atomic_type     = models.CharField(max_length=64,blank=False,choices=[(ft.getType(),ft.getName()) for ft in MetadataAtomicFieldTypes],default=MetadataAtomicFieldTypes.DEFAULT.getType())
+    atomic_type     = models.CharField(max_length=64,blank=False,null=True,choices=[(ft.getType(),ft.getName()) for ft in MetadataAtomicFieldTypes],default=MetadataAtomicFieldTypes.DEFAULT.getType())
 
     # attributes for ENUMERATION fields
     enumeration_choices  = models.TextField(blank=True)
@@ -125,7 +125,7 @@ class MetadataStandardPropertyProxy(MetadataPropertyProxy):
 
     # attributes for RELATIONSHIP fields
     relationship_cardinality  = models.CharField(max_length=LIL_STRING,blank=True)
-    relationship_target_name  = models.CharField(max_length=BIG_STRING,blank=True)
+    relationship_target_name  = models.CharField(max_length=BIG_STRING,blank=True,null=True)
     relationship_target_model = models.ForeignKey("MetadataModelProxy",blank=True,null=True)
     
     def __unicode__(self):

@@ -112,6 +112,7 @@ def questionnaire_edit_new(request, project_name="", model_name="", version_name
                 msg += "<br/>Please <a href='mailto:%s'>contact</a> the project for support." % (project.email)
             return questionnaire_error(request, msg)
 
+
     # getting the vocabularies into the right order is a 2-step process
     # b/c vocabularies do not have an "order" attribute (since they can be used by multiple projects/customizations),
     # but the model_customizer does record the desired order of active vocabularies (as a comma-separated list)
@@ -157,7 +158,6 @@ def questionnaire_edit_new(request, project_name="", model_name="", version_name
     model_parent_dictionary = get_model_parent_dictionary(models)
 
     if request.method == "GET":
-
 
         (model_formset, standard_properties_formsets, scientific_properties_formsets) = \
             create_new_edit_forms_from_models(models, model_customizer, standard_properties, standard_property_customizers, scientific_properties, scientific_property_customizers)
