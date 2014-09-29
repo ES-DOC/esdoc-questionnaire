@@ -64,3 +64,8 @@ if __name__ == "__main__":
                 model.component_key = new_component_key
                 model.save()
 
+
+    for model in MetadataModel.objects.all():
+        if not model.guid:
+            model.guid = str(uuid4())
+            model.save()
