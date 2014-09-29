@@ -132,6 +132,7 @@ class MetadataVersion(models.Model):
                 property_proxy_field_type = xpath_fix(property_proxy, "type/text()")[0]
                 property_proxy_is_label = get_index(xpath_fix(property_proxy, "@is_label"), 0)
                 property_proxy_stereotype = get_index(xpath_fix(property_proxy, "@stereotype"), 0)
+                property_proxy_namespace = get_index(xpath_fix(property_proxy, "@namespace"), 0)
                 property_proxy_documentation = get_index(xpath_fix(property_proxy, "description/text()"), 0)
                 if property_proxy_documentation:
                     property_proxy_documentation = remove_spaces_and_linebreaks(property_proxy_documentation)
@@ -165,6 +166,7 @@ class MetadataVersion(models.Model):
                 new_property_proxy.order = j
                 new_property_proxy.is_label = property_proxy_is_label == "true"
                 new_property_proxy.stereotype = property_proxy_stereotype
+                new_property_proxy.namespace = property_proxy_namespace
                 new_property_proxy.documentation = property_proxy_documentation
                 new_property_proxy.atomic_type = property_proxy_atomic_type
                 new_property_proxy.enumeration_choices = "|".join(property_proxy_enumeration_choices)

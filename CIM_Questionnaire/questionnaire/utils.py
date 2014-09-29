@@ -95,6 +95,14 @@ HUGE_STRING  = 1024
 #: a serializer to use throughout the app; defined once to avoid too many fn calls
 JSON_SERIALIZER = serializers.get_serializer("json")()
 
+CIM_NAMESPACES = [
+    "xsi",
+    "gml",
+    "xlink",
+    "gco",
+    "gmd",
+]
+
 CIM_MODEL_STEREOTYPES = [
     "document",
 ]

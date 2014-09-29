@@ -30,7 +30,7 @@ from uuid import uuid4
 
 from CIM_Questionnaire.questionnaire.fields import MetadataFieldTypes, MetadataAtomicFieldTypes
 from CIM_Questionnaire.questionnaire.utils import QuestionnaireError
-from CIM_Questionnaire.questionnaire.utils import APP_LABEL, LIL_STRING, SMALL_STRING, BIG_STRING, HUGE_STRING, CIM_DOCUMENT_TYPES, CIM_MODEL_STEREOTYPES, CIM_PROPERTY_STEREOTYPES
+from CIM_Questionnaire.questionnaire.utils import APP_LABEL, LIL_STRING, SMALL_STRING, BIG_STRING, HUGE_STRING, CIM_DOCUMENT_TYPES, CIM_MODEL_STEREOTYPES, CIM_PROPERTY_STEREOTYPES, CIM_NAMESPACES
 
 STANDARD_PROPERTY_STEREOTYPES = ( ("attribute", "attribute"))
 
@@ -112,6 +112,7 @@ class MetadataStandardPropertyProxy(MetadataPropertyProxy):
 
     model_proxy = models.ForeignKey("MetadataModelProxy", blank=True, null=True, related_name="standard_properties")
     stereotype = models.CharField(max_length=BIG_STRING, blank=True, null=True, choices=[(slugify(stereotype),stereotype) for stereotype in CIM_PROPERTY_STEREOTYPES])
+    namespace = models.CharField(max_length=BIG_STRING, blank=True, null=True, choices=[(slugify(namespace),namespace) for namespace in CIM_NAMESPACES])
 
     # attributes for ATOMIC fields
     atomic_default  = models.CharField(max_length=BIG_STRING,blank=True)
