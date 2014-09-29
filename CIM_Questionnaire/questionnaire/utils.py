@@ -100,7 +100,8 @@ CIM_MODEL_STEREOTYPES = [
 ]
 
 CIM_PROPERTY_STEREOTYPES = [
-    "attribute",
+    "attribute",    # should be serialized as an XML attribute rather than element
+    "document",     # should be included w/ the "documentProperties" of a model, rather than the "standardProperties"
 ]
 
 #: the set of document types recognized by the questionnaire
@@ -548,6 +549,17 @@ def ordered_set(sequence):
     seen_items = set()
     #seen_add = seen.add
     return [item for item in sequence if item not in seen_items and not seen_items.add(item)]
+
+####################################################
+# gets index from list only if exists              #
+# (used to deal w/ XML nodes in registration fns)  #
+####################################################
+
+def get_index(list, i):
+    try:
+        return list[i]
+    except IndexError:
+        return None
 
 ###########################################
 # finds matching item in list             #

@@ -1,5 +1,7 @@
 {% load serialization_filters %}
 
+{# TODO: THESE ARE HARD-CODED #}
+
 <documentID>{{ model.get_id }}</documentID>
 <documentVersion>{{ model.get_major_version }}</documentVersion>
 <documentAuthor>
@@ -12,6 +14,6 @@
 <documentStatus>
     {% with property=model|get_standard_property_by_name:"documentStatus" %}
         {{ property.enumeration_value }}
-    {% endwith %}
+    {% endwith %} {# /property #}
 </documentStatus>
 <documentCreationDate>{{ model.created|date:"c" }}</documentCreationDate>

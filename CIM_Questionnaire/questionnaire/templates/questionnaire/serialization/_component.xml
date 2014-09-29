@@ -1,7 +1,7 @@
 
 {% load serialization_filters %}
 
-{% for property in model|get_standard_properties_without_stereotypes:"attribute" %}
+{% for property in model|get_standard_properties_without_stereotypes:"attribute,document" %}
     {% with "questionnaire/serialization/_standard_property.xml" as template %}
         {% include template %}
     {% endwith %}
