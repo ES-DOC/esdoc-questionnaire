@@ -8,8 +8,6 @@
 
 #questionnaire .sort_vocabularies { display: inline; padding: 4px; }
 
-#questionnaire input.view_all { font-size: 80%; }
-
 .ui-tabs.ui-tabs-vertical > .ui-tabs-nav {
     float: left;
    /* width: 10em;*/
@@ -49,5 +47,3 @@
     position: relative;
     left: -1px;
 }
-
-

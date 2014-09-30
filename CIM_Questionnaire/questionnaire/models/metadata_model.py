@@ -162,6 +162,8 @@ class MetadataModel(MPTTModel):
         if not self.id:
             raise QuestionnaireError("cannot publish an unsaved model")
 
+        # TODO: SHOULD I UPDATE THE MAJOR VERSIONS OF ALL CHILD COMPONENTS?
+        # [https://github.com/ES-DOC/esdoc-questionnaire/issues/15]
         self.document_version = u"%s.%s" % (int(self.get_major_version())+1, 0)
         self.is_published = True
 
