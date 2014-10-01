@@ -303,15 +303,11 @@ class MetadataModelCustomizer(MetadataCustomizer):
     model_show_all_categories.help_text = "Include categories in the editing form for which there are no (visible) attributes associated with"
     model_show_all_properties           = models.BooleanField(verbose_name="Display uncategorized fields?",default=True)
     model_show_all_properties.help_text = "Include attributes in the editing form that have no associated category.  These will show up below any category tabs."
-    # model_show_hierarchy                = models.BooleanField(verbose_name="Include the full component hierarchy",default=True)
-    # model_show_hierarchy.help_text      ="Some CIM SoftwareComponents are comprised of a hierarchy of nested child components.  Checking this option allows that full hierarchy to be edited at once in the CIM Editor."
     model_show_hierarchy                = models.BooleanField(verbose_name="Nest the full component hierarchy within a root component?", default=True)
     model_show_hierarchy.help_text      = "A CIM Document that uses 1 or 0 CVs does not need a root component acting as a <i>parent</i> of all components."
     model_hierarchy_name                = models.CharField(max_length=LIL_STRING, verbose_name="Title of the component hierarchy tree", default="Component Hierarchy", blank=False)
     model_hierarchy_name.help_text      = "What should the title be for widget that navigates the component hierarchy?"
     model_root_component                = models.CharField(max_length=LIL_STRING,verbose_name="Name of the root component",blank=True,validators=[validate_no_spaces],default="RootComponent")
-    #model_root_component.help_text      = "If this component uses mulitple CVs, then the corresponding component hierarchies will be grouped under a single root component.  Please provide the component name here."
-
 
     def __unicode__(self):
     #    return u'%s::%s::%s' % (self.project,self.proxy,self.name)
@@ -555,14 +551,14 @@ class MetadataPropertyCustomizer(MetadataCustomizer):
     field_type  = models.CharField(max_length=LIL_STRING,blank=True,choices=[(ft.getType(),ft.getName()) for ft in MetadataFieldTypes])
 
     # ways to customize _any_ field...
-    displayed           = models.BooleanField(default=True,blank=True,verbose_name="should this property be displayed?")
-    required            = models.BooleanField(default=True,blank=True,verbose_name="is this property required?")
-    editable            = models.BooleanField(default=True,blank=True,verbose_name="can the value of this property be edited?")
-    unique              = models.BooleanField(default=False,blank=True,verbose_name="must the value of this property be unique?")
-    verbose_name        = models.CharField(max_length=LIL_STRING,blank=False,verbose_name="how should this property be labeled (overrides default name)?")
-    default_value       = models.CharField(max_length=BIG_STRING,blank=True,null=True,verbose_name="what is the default value of this property?")
-    documentation       = models.TextField(blank=True,verbose_name="what is the help text to associate with property?")
-    inline_help         = models.BooleanField(default=False,blank=True,verbose_name="should the help text be displayed inline?")
+    displayed           = models.BooleanField(default=True,blank=True,verbose_name="Should this property be displayed?")
+    required            = models.BooleanField(default=True,blank=True,verbose_name="Is this property required?")
+    editable            = models.BooleanField(default=True,blank=True,verbose_name="Can the value of this property be edited?")
+    unique              = models.BooleanField(default=False,blank=True,verbose_name="Must the value of this property be unique?")
+    verbose_name        = models.CharField(max_length=LIL_STRING,blank=False,verbose_name="How should this property be labeled (overrides default name)?")
+    default_value       = models.CharField(max_length=BIG_STRING,blank=True,null=True,verbose_name="What is the default value of this property?")
+    documentation       = models.TextField(blank=True,verbose_name="What is the help text to associate with property?")
+    inline_help         = models.BooleanField(default=False,blank=True,verbose_name="Should the help text be displayed inline?")
     
     
 class MetadataStandardPropertyCustomizer(MetadataPropertyCustomizer):
@@ -581,28 +577,28 @@ class MetadataStandardPropertyCustomizer(MetadataPropertyCustomizer):
     category         = models.ForeignKey("MetadataStandardCategoryCustomizer",blank=True,null=True,related_name="standard_property_customizers")
     category_name    = models.CharField(blank=True,null=True,max_length=BIG_STRING)
 
-    inherited           = models.BooleanField(default=False,blank=True,verbose_name="can this property be inherited by children?")
+    inherited           = models.BooleanField(default=False,blank=True,verbose_name="Can this property be inherited by children?")
     inherited.help_text = "Enabling inheritance will allow the correponding properties of child components to 'inherit' the value of this property.  The editing form will allow users the ability to 'opt-out' of this inheritance."
 
     # ways to customize an atomic field
-    atomic_type           = models.CharField(max_length=BIG_STRING,blank=True,verbose_name="how should this field be rendered?",
+    atomic_type           = models.CharField(max_length=BIG_STRING,blank=True,verbose_name="How should this field be rendered?",
         choices=[(ft.getType(),ft.getName()) for ft in MetadataAtomicFieldTypes],
         default=MetadataAtomicFieldTypes.DEFAULT.getType(),
     )
     atomic_type.help_text = "By default, all fields are rendered as strings.  However, a field can be customized to accept longer snippets of text, dates, email addresses, etc."
-    suggestions           = models.TextField(blank=True,verbose_name="are there any suggestions you would like to offer to users?")
+    suggestions           = models.TextField(blank=True,verbose_name="Are there any suggestions you would like to offer to users?")
     suggestions.help_text = "Please enter a \"|\" separated list.  These suggestions will only take effect for text fields, in the case of Standard Properties, or for text fields or when \"OTHER\" is selected, in the case of Scientific Properties.  They appear as an auto-complete widget and not as a formal enumeration."
 
     # ways to customize an enumeration field
-    enumeration_choices  = EnumerationField(blank=True,null=True,verbose_name="choose the property values that should be presented to users.")
-    enumeration_default  = EnumerationField(blank=True,null=True,verbose_name="choose the default value(s), if any, for this property.")
-    enumeration_open     = models.BooleanField(default=False,blank=True,verbose_name="check if a user can specify a custom property value.")
-    enumeration_multi    = models.BooleanField(default=False,blank=True,verbose_name="check if a user can specify multiple property values.")
-    enumeration_nullable = models.BooleanField(default=False,blank=True,verbose_name="check if a user can specify an explicit \"NONE\" value.")
+    enumeration_choices  = EnumerationField(blank=True,null=True,verbose_name="Choose the property values that should be presented to users.")
+    enumeration_default  = EnumerationField(blank=True,null=True,verbose_name="Choose the default value(s), if any, for this property.")
+    enumeration_open     = models.BooleanField(default=False,blank=True,verbose_name="Check if a user can specify a custom property value.")
+    enumeration_multi    = models.BooleanField(default=False,blank=True,verbose_name="Check if a user can specify multiple property values.")
+    enumeration_nullable = models.BooleanField(default=False,blank=True,verbose_name="Check if a user can specify an explicit \"NONE\" value.")
 
     # ways to customize a relationship field
-    relationship_cardinality   = CardinalityField(blank=True,verbose_name="how many instances (min/max) of this property are allowed?")
-    relationship_show_subform  = models.BooleanField(default=False,blank=True,verbose_name="should this property be rendered in its own subform?")
+    relationship_cardinality   = CardinalityField(blank=True,verbose_name="How many instances (min/max) of this property are allowed?")
+    relationship_show_subform  = models.BooleanField(default=False,blank=True,verbose_name="Should this property be rendered in its own subform?")
     relationship_show_subform.help_text = "Checking this will cause the property to be rendered as a nested subform within the <i>parent</i> form; All properties of this model will be available to view and edit in that subform.\
                                           Unchecking it will cause the attribute to be rendered as a simple select widget.  This option is only available if the \"parent\" customizer has been saved."
     subform_customizer         = models.ForeignKey("MetadataModelCustomizer",blank=True,null=True,related_name="property_customizer")
@@ -700,17 +696,17 @@ class MetadataScientificPropertyCustomizer(MetadataPropertyCustomizer):
     category         = models.ForeignKey("MetadataScientificCategoryCustomizer",blank=True,null=True,related_name="scientific_property_customizers")
     category_name    = models.CharField(blank=True,null=True,max_length=BIG_STRING)
 
-    atomic_type    = models.CharField(max_length=BIG_STRING,blank=True,verbose_name="how should this field be rendered?",
+    atomic_type    = models.CharField(max_length=BIG_STRING,blank=True,verbose_name="How should this field be rendered?",
         choices=[(ft.getType(),ft.getName()) for ft in MetadataAtomicFieldTypes],
         default=MetadataAtomicFieldTypes.DEFAULT.getType(),
     )
-    atomic_default = models.CharField(max_length=BIG_STRING,blank=True,null=True,verbose_name="what is the default value of this property?")
+    atomic_default = models.CharField(max_length=BIG_STRING,blank=True,null=True,verbose_name="What is the default value of this property?")
 
-    enumeration_choices  = EnumerationField(blank=True,null=True,verbose_name="choose the property values that should be presented to users.")
-    enumeration_default  = EnumerationField(blank=True,null=True,verbose_name="choose the default value(s), if any, for this property.")
-    enumeration_open     = models.BooleanField(default=False,blank=True,verbose_name="check if a user can specify a custom property value.")
-    enumeration_multi    = models.BooleanField(default=False,blank=True,verbose_name="check if a user can specify multiple property values.")
-    enumeration_nullable = models.BooleanField(default=False,blank=True,verbose_name="check if a user can specify an explicit \"NONE\" value.")
+    enumeration_choices  = EnumerationField(blank=True,null=True,verbose_name="Choose the property values that should be presented to users.")
+    enumeration_default  = EnumerationField(blank=True,null=True,verbose_name="Choose the default value(s), if any, for this property.")
+    enumeration_open     = models.BooleanField(default=False,blank=True,verbose_name="Check if a user can specify a custom property value.")
+    enumeration_multi    = models.BooleanField(default=False,blank=True,verbose_name="Check if a user can specify multiple property values.")
+    enumeration_nullable = models.BooleanField(default=False,blank=True,verbose_name="Check if a user can specify an explicit \"NONE\" value.")
 
     display_extra_standard_name = models.BooleanField(null=False,blank=False,default=False)
     display_extra_description   = models.BooleanField(null=False,blank=False,default=False)
@@ -799,3 +795,4 @@ class MetadataScientificPropertyCustomizer(MetadataPropertyCustomizer):
 
     def enumerate_choices(self):
         return [(choice,choice) for choice in self.enumeration_choices.split("|")]
+    
