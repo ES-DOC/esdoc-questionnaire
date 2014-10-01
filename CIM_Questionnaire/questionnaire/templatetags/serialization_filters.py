@@ -22,6 +22,7 @@ Summary of module goes here
 import os
 from django import template
 
+from CIM_Questionnaire.questionnaire.models.metadata_proxy import MetadataModelProxy, MetadataScientificCategoryProxy, MetadataScientificPropertyProxy, MetadataStandardCategoryProxy, MetadataStandardPropertyProxy
 from CIM_Questionnaire.questionnaire.models.metadata_model import MetadataModel, MetadataStandardProperty, MetadataScientificProperty
 
 register = template.Library()
@@ -45,6 +46,15 @@ def get_scientific_property_by_name(model, property_name):
             return scientific_property
     return None
 
+@register.filter
+def get_scientific_categories_and_properties_dictionary(scientific_properties):
+    scientific_categories_and_properties_dictionary = {}
+    for scientific_property in scientific_properties:
+        scientific_category_proxy = MetadataScientificCategoryProxy.objects.get(key=scientific_property.category_key, component=scientific_property.proxy.component)
+        if scientific_category_proxy not in scientific_categories_and_properties_dictionary:
+            scientific_categories_and_properties_dictionary[scientific_category_proxy] = []
+        scientific_categories_and_properties_dictionary[scientific_category_proxy].append(scientific_property)
+    return scientific_categories_and_properties_dictionary
 
 @register.filter
 def get_standard_properties_with_stereotypes(model, stereotype_names):
@@ -83,3 +93,4 @@ def get_fully_qualified_tagname(property):
         return u"%s:%s" % (property.proxy.namespace, property.name)
     else:
         return u"%s" % (property.name)
+

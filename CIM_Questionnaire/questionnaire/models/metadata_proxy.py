@@ -34,6 +34,8 @@ from CIM_Questionnaire.questionnaire.utils import APP_LABEL, LIL_STRING, SMALL_S
 
 STANDARD_PROPERTY_STEREOTYPES = ( ("attribute", "attribute"))
 
+DEFAULT_SCIENTIFIC_CATEGORY_KEY = "general-attributes"
+
 class MetadataModelProxy(models.Model):
     class Meta:
         app_label   = APP_LABEL
@@ -239,6 +241,9 @@ class MetadataScientificCategoryProxy(MetadataCategoryProxy):
 
     def has_property(self,scientific_property_proxy):
         return scientific_property_proxy in self.properties.all()
+
+    def is_default_category(self):
+        return self.key == DEFAULT_SCIENTIFIC_CATEGORY_KEY
 
 #@hierarchical
 class MetadataComponentProxy(MPTTModel):

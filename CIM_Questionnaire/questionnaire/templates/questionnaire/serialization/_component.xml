@@ -7,11 +7,25 @@
 {% endfor %} {# /property #}
 
 <componentProperties>
-    {% for property in model.scientific_properties.all %}
-        {% with "questionnaire/serialization/_scientific_property.xml" as template %}
-            {% include template %}
-        {% endwith %}
-    {% endfor %} {# /property #}
+    {% with properties=model.scientific_properties.all %}
+        {% with categories_and_properties=properties|get_scientific_categories_and_properties_dictionary %}
+            {% for category,properties in categories_and_properties.items %}
+                {% if not category.is_default_category %}
+                    <componentProperty represented="true">
+                        <shortName>{{ category.key }}</shortName>
+                        <longName>{{ category.key }}</longName>
+                {% endif %}
+                    {% for property in properties %}
+                        {% with "questionnaire/serialization/_scientific_property.xml" as template %}
+                            {% include template %}
+                        {% endwith %}
+                    {% endfor %}
+                {% if not category.is_default_category %}
+                    </componentProperty>
+                {% endif %}
+            {% endfor %} {# /category,property #}
+        {% endwith %} {# /categories_and_properties #}
+    {% endwith %} {# /properties #}
 </componentProperties>
 
 {% for child in model.get_children.all %}
