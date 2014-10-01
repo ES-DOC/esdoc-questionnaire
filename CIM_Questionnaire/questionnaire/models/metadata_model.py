@@ -241,7 +241,7 @@ class MetadataModel(MPTTModel):
             "proxy" : model_proxy,
         }
 
-        if model_customizer.model_show_hierarchy:
+        if model_customizer.model_show_hierarchy or len(vocabularies) == 0:
             # setup the root model...
             model = MetadataModel(**model_parameters)
             model.vocabulary_key = DEFAULT_VOCABULARY_KEY
