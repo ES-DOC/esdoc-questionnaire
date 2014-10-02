@@ -10,7 +10,7 @@
 ####################
 
 from django.contrib import messages
-
+from django.contrib.auth.models import User
 from django.contrib.sites.models import get_current_site
 from django.core.urlresolvers import reverse
 from django.http import HttpResponseRedirect
@@ -108,8 +108,14 @@ def questionnaire_edit_new(request, project_name="", model_name="", version_name
             return redirect('/login/?next=%s' % (request.path))
         if not (request.user.is_superuser or request.user.metadata_user.is_user_of(project)):
             msg = "User '%s' does not have editing permission for project '%s'." % (request.user, project_name)
-            if project.email:
-                msg += "<br/>Please <a href='mailto:%s'>contact</a> the project for support." % (project.email)
+            # TODO: ONCE PROJECT REGISTRATION IS POSSIBLE BY USERS OTHER THAN SITE ADMIN, REMOVE THIS BLOCK AND RE-INSTATE THE SUBSEQUENT BLOCK
+            try:
+                superuser = User.objects.get(is_superuser=True, is_staff=True, is_active=True)
+                msg += "<br/>Please <a href='mailto:%s'>contact</a> the administrator for support." % (superuser.email)
+            except:
+                pass
+            # if project.email:
+            #     msg += "<br/>Please <a href='mailto:%s'>contact</a> the project for support." % (project.email)
             return questionnaire_error(request, msg)
 
 
@@ -226,8 +232,14 @@ def questionnaire_edit_existing(request, project_name="", model_name="", version
             return redirect('/login/?next=%s' % (request.path))
         if not (request.user.is_superuser or request.user.metadata_user.is_user_of(project)):
             msg = "User '%s' does not have editing permission for project '%s'." % (request.user, project_name)
-            if project.email:
-                msg += "<br/>Please <a href='mailto:%s'>contact</a> the project for support." % (project.email)
+            # TODO: ONCE PROJECT REGISTRATION IS POSSIBLE BY USERS OTHER THAN SITE ADMIN, REMOVE THIS BLOCK AND RE-INSTATE THE SUBSEQUENT BLOCK
+            try:
+                superuser = User.objects.get(is_superuser=True, is_staff=True, is_active=True)
+                msg += "<br/>Please <a href='mailto:%s'>contact</a> the administrator for support." % (superuser.email)
+            except:
+                pass
+            # if project.email:
+            #     msg += "<br/>Please <a href='mailto:%s'>contact</a> the project for support." % (project.email)
             return questionnaire_error(request, msg)
 
     # try to get the requested model...
