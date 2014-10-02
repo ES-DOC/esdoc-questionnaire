@@ -306,9 +306,8 @@
                                                     <table width="90%" border="0">
                                                         <tr valign="center">
                                                             {% for field in form.get_header_fields %}
-                                                                <td width="30%">
-                                                                    <b>{{field.label}}:&nbsp;</b>
-                                                                    {{field}}
+                                                                <td>
+                                                                    <b>{{field.label}}:&nbsp;</b>{{ field }}
                                                                 </td>
                                                             {% endfor %} {# / field in form.get_header_fields #}
                                                         </tr>
@@ -474,12 +473,11 @@
                                                                                 <div class="accordion" prefix="{{formset.prefix}}">
                                                                                     {% for form in formset %}
                                                                                         <h3 class="accordion_header">
-                                                                                            <table width="90%" border="0">
+                                                                                            <table border="0" width="90%">
                                                                                                 <tr valign="center">
                                                                                                     {% for field in form.get_header_fields %}
-                                                                                                        <td width="30%">
-                                                                                                            <b>{{field.label}}:&nbsp;</b>
-                                                                                                            {{field}}
+                                                                                                        <td>
+                                                                                                            <b>{{field.label}}:&nbsp;</b>{{ field }}
                                                                                                         </td>
                                                                                                     {% endfor %} {# / field in form.get_header_fields #}
                                                                                                 </tr>

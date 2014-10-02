@@ -529,13 +529,16 @@ class MetadataStandardPropertyCustomizerForm(MetadataCustomizerForm):
         update_field_widget_attributes(self.fields["order"], {"class": "label", "readonly": "readonly"})
         update_field_widget_attributes(self.fields["field_type"], {"class": "label", "readonly": "readonly"})
 
-
         set_field_widget_attributes(self.fields["documentation"], {"cols": "60", "rows": "4" })
         set_field_widget_attributes(self.fields["suggestions"], {"cols": "60", "rows": "4" })
-        set_field_widget_attributes(self.fields["field_type"], {"size": "12"})
+
+        # specify the widths of header fields...
+        # (some should use most of the available space, others should just use a fixed size)
+        set_field_widget_attributes(self.fields["name"], {"style" : "width: 75%;"})
+        set_field_widget_attributes(self.fields["category_name"], {"style" : "width: 75%;"})
+        set_field_widget_attributes(self.fields["field_type"], {"size" : "12"})
         set_field_widget_attributes(self.fields["order"], {"size": "4"})
 
-    
     def clean(self):
         cleaned_data = self.cleaned_data
 
@@ -757,10 +760,16 @@ class MetadataScientificPropertyCustomizerForm(MetadataCustomizerForm):
 
         update_field_widget_attributes(self.fields["name"],{"class":"label","readonly":"readonly"})
         update_field_widget_attributes(self.fields["category_name"],{"class":"label","readonly":"readonly"})
-        update_field_widget_attributes(self.fields["order"],{"class":"label","readonly":"readonly"})
+        update_field_widget_attributes(self.fields["order"],{"class":"label fixed_width","readonly":"readonly"})
 
         set_field_widget_attributes(self.fields["documentation"],{"cols":"60","rows":"4"})
         set_field_widget_attributes(self.fields["extra_description"],{"rows":"4"})
+
+        # specify the widths of header fields...
+        # (strings should use most of the available space, integers should just use a fixed size of 4)
+        set_field_widget_attributes(self.fields["name"], {"style" : "width: 75%;"})
+        set_field_widget_attributes(self.fields["category_name"], {"style" : "width: 75%;"})
+        set_field_widget_attributes(self.fields["order"], {"size" : "4"})
 
     def clean(self):
         cleaned_data = self.cleaned_data
