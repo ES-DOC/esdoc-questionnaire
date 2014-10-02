@@ -216,6 +216,8 @@ function sortable_accordions(element) {
     $(accordion).sortable({
         axis        : "y",
         items       : "div.accordion_unit",
+        handle      : ".accordion_header",
+        cancel      : ".ui-icon",   // not only does this ensure the icon does not sort, it also resets the "cancel" option which prevented inputs from sorting
         placeholder : "sortable_item",
         start : function(e,ui){
             ui.placeholder.height(ui.item.height());
