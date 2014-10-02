@@ -75,3 +75,10 @@ if __name__ == "__main__":
         if not model.guid:
             model.guid = str(uuid4())
             model.save()
+
+    ModelCustomizerClass = ContentType.objects.get(app_label="questionnaire", model="metadatamodelcustomizer").model_class()
+    for model_customizer in ModelCustomizerClass.objects.all():
+        model_customizer_name = model_customizer.name
+        if " " in model_customizer_name:
+            model_customizer.name = slugify(model_customizer_name)
+            model_customizer.save()

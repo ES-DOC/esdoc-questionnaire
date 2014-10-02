@@ -288,7 +288,7 @@ class MetadataModelCustomizer(MetadataCustomizer):
     vocabularies.help_text  = "Choose which Controlled Vocabularies (in which order) apply to this model."
     vocabulary_order        = models.CommaSeparatedIntegerField(max_length=BIG_STRING,blank=True,null=True)
 
-    name                    = models.CharField(max_length=SMALL_STRING,blank=False,null=False)
+    name                    = models.CharField(max_length=SMALL_STRING,blank=False,null=False,validators=[validate_no_spaces])
     name.help_text          = "A unique name for this customization (ie: \"basic\" or \"advanced\")"
     description             = models.TextField(verbose_name="Customization Description",blank=True,null=True)
     description.help_text   = "An explanation of how this customization is intended to be used.  This information is for informational purposes only."
@@ -795,4 +795,3 @@ class MetadataScientificPropertyCustomizer(MetadataPropertyCustomizer):
 
     def enumerate_choices(self):
         return [(choice,choice) for choice in self.enumeration_choices.split("|")]
-    
