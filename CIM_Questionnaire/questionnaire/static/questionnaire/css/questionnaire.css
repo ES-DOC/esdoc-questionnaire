@@ -89,10 +89,12 @@ body {
 
 /* begin buttons */
 
-#questionnaire .ui-button-text { font-size: inherit !important; } /* forces buttons to be sized relative to their text (otherwise I can't override default JQuery sizes) */
+#questionnaire .ui-button-text,.button { font-size: inherit !important; } /* forces buttons to be sized relative to their text (otherwise I can't override default JQuery sizes) */
 
 #questionnaire div.submit { margin-top: 8px; float: right; }
-#questionnaire div.submit input.button { width: 120px; padding-top: 8px; padding-bottom: 8px; font-weight: bold; border-width: 2px; }
+#questionnaire div.submit .button { width: 120px; padding-top: 8px; padding-bottom: 8px; font-weight: bold; border-width: 2px; }
+
+#questionnaire div.submit a.button .ui-button-text { padding: 0 !important; } /* ensure that anchor tags masquarading as buttons are styled the same as input tags */
 
 #questionnaire .subform_toolbar { padding: 4px; float: right;  }
 #questionnaire .sort_by { position: absolute; z-index: 9999; }

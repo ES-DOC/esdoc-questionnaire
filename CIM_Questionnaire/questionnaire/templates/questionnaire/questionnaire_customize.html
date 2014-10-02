@@ -35,7 +35,7 @@
             init_widgets(tags,$(parent).find(".tags"));
             init_widgets(tabs,$(parent).find(".tabs"));
             init_widgets(users,$(parent).find("#user"));
-            init_widgets(buttons,$(parent).find("input.button"))
+            init_widgets(buttons,$(parent).find("input.button,a.button"))
             init_widgets(selects,$(parent).find(".multiselect"));
             init_widgets(helps, $(parent).find(".help_button"));
 
@@ -577,7 +577,8 @@
                 {% if can_view %}
                     {% with project_name=project.name|lower version_name=version.name|lower model_name=model_proxy.name|lower %}
                         {% url 'questionnaire.views.edit_new' project_name version_name model_name  as url_edit_new %}
-                        <input class="button" name="_view" value="view" title="view a blank {{ model_proxy.name }} document using this customization" onclick="window.location.href='{{ url_edit_new }}'"/>
+{#                        <input class="button" name="_view" value="view" title="view a blank {{ model_proxy.name }} document using this customization" onclick="window.location.href='{{ url_edit_new }}'"/>#}
+                        <a class="button" target="_blank" href="{{ url_edit_new }}" title="view a blank {{ model_proxy.name }} document using this customizer">view</a>
                     {% endwith %}
                 {% endif %} {# /can_view #}
             </div> <!-- /.submit -->
