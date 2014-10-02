@@ -83,7 +83,9 @@ class MetadataModel(MPTTModel):
         app_label   = APP_LABEL
         abstract    = False
 
-#        unique_together = ("proxy","project","version","vocabulary_key","component_key")
+        # TODO: DELETE THESE NEXT TWO LINES
+        verbose_name        = '(DISABLE ADMIN ACCESS SOON) Metadata Model'
+        verbose_name_plural = '(DISABLE ADMIN ACCESS SOON) Metadata Models'
 
     parent = TreeForeignKey('self', null=True, blank=True, related_name='children')
 
@@ -448,6 +450,10 @@ class MetadataStandardProperty(MetadataProperty):
 
         ordering = ['order']
 
+        # TODO: DELETE THESE NEXT TWO LINES
+        verbose_name        = '(DISABLE ADMIN ACCESS SOON) Metadata Standard Property'
+        verbose_name_plural = '(DISABLE ADMIN ACCESS SOON) Metadata Standard Properties'
+
     model        = models.ForeignKey("MetadataModel",blank=False,null=True,related_name="standard_properties")
     proxy        = models.ForeignKey("MetadataStandardPropertyProxy",blank=True,null=True)
 
@@ -517,6 +523,10 @@ class MetadataScientificProperty(MetadataProperty):
         abstract    = False
 
         ordering    = ['order']
+
+        # TODO: DELETE THESE NEXT TWO LINES
+        verbose_name        = '(DISABLE ADMIN ACCESS SOON) Metadata Scientific Property'
+        verbose_name_plural = '(DISABLE ADMIN ACCESS SOON) Metadata Scientific Properties'
 
     model           = models.ForeignKey("MetadataModel",blank=False,null=True,related_name="scientific_properties")
     proxy           = models.ForeignKey("MetadataScientificPropertyProxy",blank=True,null=True)
