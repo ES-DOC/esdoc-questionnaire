@@ -57,11 +57,15 @@ function tags(element) {
                     "<a class='tagit-edit' title='edit this category' onclick='edit_tag(this);'><span class='ui-icon ui-icon-pencil'></span></a>"
                 );
                 $(tag).find(".tagit-label").attr("title","click to toggle properties belonging to this category");
+                // TODO: REVIEW THIS IN THE CONTEXT OF #131
+                //$(tag).toggleClass("ui-state-active"); // counter-intuitively tags should appear disabled (orange on white) when active and enabled (blue on blue) when toggled
                 $(tag).click(function(event) {
                     /* if you really clicked the tag, and not an icon/button on the tag... */
                     if ($(event.target).attr("class").indexOf("ui-icon") == -1) {
                         /* toggle its state... */
-                        $(this).toggleClass("ui-state-active");
+                        // TODO: REVIEW THIS IN THE CONTEXT OF #131
+                        //$(this).toggleClass("ui-state-active");
+                        $(this).toggleClass("ui-state-disabled");
                         var tag_label = $(this).find(".tagit-label").text();
                         /* and that of all corresponding properties... */
                         $(this).closest(".tab_content").find(".accordion_header input.label[name$='category_name']").each(function() {
