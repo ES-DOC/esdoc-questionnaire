@@ -19,6 +19,7 @@ Summary of module goes here
 
 """
 
+import re
 from django import template
 from django.template.defaultfilters import slugify
 
@@ -51,6 +52,19 @@ def a_or_an(string):
     else:
         return "a"
 
+
+pretty_title_re_1 = re.compile('(.)([A-Z][a-z]+)')
+pretty_title_re_2 = re.compile('([a-z0-9])([A-Z])')
+@register.filter
+def pretty_title(string):
+    """
+
+    :param string:
+    :return:
+    """
+    s1 = pretty_title_re_1.sub(r'\1 \2', string)
+    s2 = pretty_title_re_2.sub(r'\1 \2', s1)
+    return s2.title()
 
 @register.filter
 def get_length_of_values(dict):
