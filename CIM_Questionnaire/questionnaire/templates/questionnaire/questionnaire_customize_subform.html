@@ -28,27 +28,27 @@
                 {% endfor %}                                               
             </div> <!-- /.hidden -->
 
-            <fieldset class="collapsible_fieldset">
-                <legend title="click to toggle content">
-                    <span class="title">&nbsp;Customization Details&nbsp;</span>
-                </legend>
-
-                <div class="collapsible_fieldset_content">
-                    <div class="documentation">
-                        <p>
-                            This section contains information relating to the <i>customization</i> itself, as opposed to the form being customized.
-                        </p>
-                    </div> <!-- /.documentation -->
-
-                    <table width="100%">
-                        {% for field in model_customizer_form.get_customizer_fields %}
-                            <tr class="{% cycle 'odd' 'even' %} field" name="{{field.html_name}}">
-                                {% include "questionnaire/_field.html" %}
-                            </tr>
-                        {% endfor %} {# / field in model_customizer_form.get_customizer_fields #}
-                    </table>
-
-                </div> <!-- / .collapsible_fieldset_content -->
+{#            <fieldset class="collapsible_fieldset">#}
+{#                <legend title="click to toggle content">#}
+{#                    <span class="title">&nbsp;Customization Details&nbsp;</span>#}
+{#                </legend>#}
+{##}
+{#                <div class="collapsible_fieldset_content">#}
+{#                    <div class="documentation">#}
+{#                        <p>#}
+{#                            This section contains information relating to the <i>customization</i> itself, as opposed to the form being customized.#}
+{#                        </p>#}
+{#                    </div> <!-- /.documentation -->#}
+{##}
+{#                    <table width="100%">#}
+{#                        {% for field in model_customizer_form.get_customizer_fields %}#}
+{#                            <tr class="{% cycle 'odd' 'even' %} field" name="{{field.html_name}}">#}
+{#                                {% include "questionnaire/_field.html" %}#}
+{#                            </tr>#}
+{#                        {% endfor %} {# / field in model_customizer_form.get_customizer_fields #}
+{#                    </table>#}
+{##}
+{#                </div> <!-- / .collapsible_fieldset_content -->#}
 
             </fieldset> <!-- / .collapsible_fieldset -->
 
