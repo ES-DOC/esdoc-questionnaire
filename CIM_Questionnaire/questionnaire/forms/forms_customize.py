@@ -230,8 +230,7 @@ class MetadataModelCustomizerForm(MetadataModelCustomizerAbstractForm):
             if this_customizer.pk:
                 other_customizers = other_customizers.exclude(pk=this_customizer.pk)
             if other_customizers.count() != 0:
-                raise ValidationError("A default customizer already exists.")
-            
+                raise ValidationError("A default customization already exists.  There can be only one default customization per project.")
         return default
 
     def clean(self):
@@ -906,7 +905,8 @@ def create_customizer_forms_from_data(data,model_customizer,standard_category_cu
         active_vocabularies = model_customizer_form.cleaned_data["vocabularies"]
     else:
         active_vocabularies = MetadataVocabulary.objects.filter(pk__in=model_customizer_form.get_current_field_value("vocabularies"))
-    active_vocabulary_keys = [slugify(vocabulary.name) for vocabulary in active_vocabularies]
+    #active_vocabulary_keys = [slugify(vocabulary.name) for vocabulary in active_vocabularies]
+    active_vocabulary_keys = [vocabulary.get_key() for vocabulary in active_vocabularies]
     validity = [model_customizer_form_validity]
 
     if is_subform and subform_prefix:
