@@ -26,6 +26,17 @@ from django.db import models
 from django.utils import timezone
 
 from CIM_Questionnaire.questionnaire.utils import APP_LABEL, LIL_STRING, SMALL_STRING, BIG_STRING, HUGE_STRING
+from CIM_Questionnaire.questionnaire.utils import EnumeratedType, EnumeratedTypeList
+
+
+
+class MetadataSerializationFormat(EnumeratedType):
+    pass
+
+MetadataSerializationFormats = EnumeratedTypeList([
+    MetadataSerializationFormat("CIM_XML", "CIM XML"),
+    MetadataSerializationFormat("ESDOC_XML", "ES-DOC XML"),
+])
 
 class MetadataModelSerialization(models.Model):
 
@@ -46,6 +57,7 @@ class MetadataModelSerialization(models.Model):
 
     publication_date = models.DateTimeField(blank=True, null=True)
 
+    format = models.CharField(max_length=SMALL_STRING, blank=False, choices=[(ft.getType(), ft.getName()) for ft in MetadataSerializationFormats], default=MetadataSerializationFormats.ESDOC_XML.getType())
     content = models.TextField()
 
     def __unicode__(self):
