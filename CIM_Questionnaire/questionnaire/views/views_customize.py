@@ -248,6 +248,8 @@ def questionnaire_customize_existing(request,project_name="",model_name="",versi
         msg = "Cannot find the <u>customizer</u> '%s' for that project/version/model combination" % (customizer_name)
         return error(request,msg)
 
+    initial_model_customizer_name = model_customizer.name
+
     if request.method == "GET":
 
         (model_customizer_form,standard_property_customizer_formset,scientific_property_customizer_formsets) = \
@@ -263,6 +265,10 @@ def questionnaire_customize_existing(request,project_name="",model_name="",versi
         if all(validity):
 
             model_customizer_instance = save_valid_forms(model_customizer_form,standard_property_customizer_formset,scientific_property_customizer_formsets)
+            subsequent_model_customizer_name = model_customizer_instance.name
+            if initial_model_customizer_name != subsequent_model_customizer_name:
+                model_customizer_instance.rename(subsequent_model_customizer_name)
+                
             request.session["model_id"] = model_customizer_instance.pk
 
             # using Django's built-in messaging framework to pass status messages (as per https://docs.djangoproject.com/en/dev/ref/contrib/messages/)
