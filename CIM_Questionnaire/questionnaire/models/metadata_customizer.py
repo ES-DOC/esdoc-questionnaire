@@ -355,6 +355,22 @@ class MetadataModelCustomizer(MetadataCustomizer):
 
         super(MetadataModelCustomizer,self).save(*args,**kwargs)
 
+    def rename(self, new_name):
+        """
+
+        :param new_name:
+        :return:
+        """
+
+        self.name = new_name
+        self.save()
+
+        standard_property_customizers = self.standard_property_customizers.all()
+        for standard_property_customizer in standard_property_customizers:
+            subform_customizer = standard_property_customizer.subform_customizer
+            if subform_customizer:
+                subform_customizer.rename(new_name)
+
     def get_active_standard_categories(self):
         if self.model_show_all_categories:
             return self.standard_property_category_customizers.all()
