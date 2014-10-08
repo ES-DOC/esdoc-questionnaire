@@ -74,3 +74,29 @@ class TestMetadataCustomizer(TestQuestionnaireBase):
                 test_scientific_property_customizer_qs_from_model = test_customizer.scientific_property_customizers.filter(vocabulary_key=vocabulary_key, component_key=component_key)
                 scientific_property_customizer_qs = scientific_property_customizers[vocabulary_key][component_key]
                 self.assertQuerysetEqual(test_scientific_property_customizer_qs_from_model,scientific_property_customizer_qs)
+
+    def test_rename_customizer_set(self):
+
+        test_customizer = self.test_customizer
+
+        name_1 = "customizer_with_subforms"
+        name_2 = "customizer_with_subforms_new"
+
+        self.assertEqual(test_customizer.name, name_1)
+        for standard_property_customizer in test_customizer.standard_property_customizers.all():
+            subform_customizer = standard_property_customizer.subform_customizer
+            if subform_customizer:
+                self.assertEqual(subform_customizer.name, name_1)
+
+        test_customizer.rename(name_2)
+
+        self.assertEqual(test_customizer.name, name_2)
+        for standard_property_customizer in test_customizer.standard_property_customizers.all():
+            subform_customizer = standard_property_customizer.subform_customizer
+            if subform_customizer:
+                self.assertEqual(subform_customizer.name, name_2)
+
+
+
+
+
