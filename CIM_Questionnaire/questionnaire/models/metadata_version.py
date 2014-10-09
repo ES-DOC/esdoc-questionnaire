@@ -102,6 +102,7 @@ class MetadataVersion(models.Model):
             model_proxy_name = xpath_fix(model_proxy, "name/text()")[0]
             model_proxy_stereotype = get_index(xpath_fix(model_proxy, "@stereotype"), 0)
             model_proxy_namespace = get_index(xpath_fix(model_proxy, "@namespace"), 0)
+            model_proxy_package = get_index(xpath_fix(model_proxy, "@package"), 0)
             model_proxy_documentation = get_index(xpath_fix(model_proxy, "description/text()"), 0)
             if model_proxy_documentation:
                 model_proxy_documentation = remove_spaces_and_linebreaks(model_proxy_documentation)
@@ -119,6 +120,7 @@ class MetadataVersion(models.Model):
             new_model_proxy.order = i
             new_model_proxy.stereotype = model_proxy_stereotype
             new_model_proxy.namespace = model_proxy_namespace
+            new_model_proxy.package = model_proxy_package
             new_model_proxy.documentation = model_proxy_documentation
             new_model_proxy.save()
             new_model_proxies.append(new_model_proxy)

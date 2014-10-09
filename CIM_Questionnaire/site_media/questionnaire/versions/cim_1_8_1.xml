@@ -4,7 +4,7 @@
     <description>This is the CIM Schema v1.8.1</description>
     <classes>
         
-        <class stereotype="document">
+        <class stereotype="document" package="software">
             <name>statisticalModelComponent</name>
             <description>A ModelComponent is a scientific model; it represents code which models some physical phenomena for a particular length of time.</description>
             <attributes>
@@ -227,7 +227,7 @@
             </attributes>
         </class>
         
-        <class stereotype="document">
+        <class stereotype="document" package="software">
             <name>modelComponent</name>
             <description>A ModelCompnent is a scientific model; it represents code which models some
                 physical phenomena for a particular length of time.</description>
@@ -532,7 +532,7 @@
             </attributes>
         </class>
         
-        <class>
+        <class package="shared">
             <name>license</name>
             <description>A description of a license restricting access to a unit of data or
                 software.</description>
@@ -576,7 +576,7 @@
             </attributes>
         </class>
         
-        <class namespace="gmd">
+        <class namespace="gmd" package="shared">
             <name>responsibleParty</name>
             <description>A CIM-specific ResponsibleParty. Sub-classes the gmd ResponsibleParty type
                 and adds the attribute "abbreviation."</description>
@@ -605,7 +605,7 @@
                         <atomic_type>STRING</atomic_type>
                     </atomic>
                 </attribute>
-                <attribute>
+                <attribute namespace="gmd">
                     <name>contactInfo</name>
                     <description/>
                     <type>RELATIONSHIP</type>
@@ -614,7 +614,7 @@
                         <target>contactType</target>
                     </relationship>
                 </attribute>
-                <attribute>
+                <attribute namespace="gmd">
                     <name>role</name>
                     <description/>
                     <type>ENUMERATION</type>
@@ -634,7 +634,7 @@
             </attributes>
         </class>
         
-        <class>
+        <class package="shared">
             <name>citation</name>
             <description>Standardized resource reference</description>
             <attributes>
@@ -730,7 +730,7 @@
             </attributes>
         </class>
        
-        <class namespace="gmd">
+        <class namespace="gmd" package="shared">
             <name>onlineResource</name>
             <description>Information about online sources from which the dataset, specification, or
                 community profile name and extended metadata elements can be obtained.</description>
@@ -786,7 +786,7 @@
             </attributes>
         </class>
         
-        <class>
+        <class package="software">
             <name>componentLanguage</name>
             <description>Details of the programming language a component is written in. There is an
                 assumption that all EntryPoints use the same ComponentLanguage.</description>
@@ -801,7 +801,7 @@
                 </attribute>
             </attributes>
         </class>
-        <class>
+        <class package="software">
             <name>timing</name>
             <description>Provides information about the rate of couplings and connections and/or the
                 timing characteristics of individual components - for example, the start and stop
@@ -858,7 +858,7 @@
                 </attribute>
             </attributes>
         </class>
-        <class>
+        <class package="shared">
             <name>contactType</name>
             <description>Information required enabling contact with the responsible person and/or
                 organisation</description>
@@ -899,7 +899,7 @@
                 </attribute>
             </attributes>
         </class>
-        <class>
+        <class package="software">
             <name>deployment</name>
             <description>Gives information about the technical properties of a component: what
                 machine it was run on, which compilers were used, how it was parallised, etc. A
@@ -961,7 +961,7 @@
                 </attribute>
             </attributes>
         </class>
-        <class>
+        <class package="software">
             <name>parallelisation</name>
             <description>Describes how a deployment has been parallelised across a computing
                 platform.</description>
@@ -983,7 +983,7 @@
                 </attribute>
             </attributes>
         </class>
-        <class>
+        <class package="software">
             <name>rank</name>
             <description/>
             <attributes>
@@ -1017,7 +1017,7 @@
                 </attribute>
             </attributes>
         </class>
-        <class stereotype="document">
+        <class stereotype="document" package="shared">
             <name>platform</name>
             <description>A platform is a description of resources used to deploy a
                 component/simulation. A platform pairs a machine with a (set of) compilers. There is
@@ -1097,7 +1097,7 @@
                 </attribute>
             </attributes>
         </class>
-        <class>
+        <class package="software">
             <name>machineCompilerUnit</name>
             <description>Associates a machine with a [set of] compilers. This is a separate class in
                 case a platform needs to specify more than one machine/compiler pair.</description>
@@ -1122,7 +1122,7 @@
                 </attribute>
             </attributes>
         </class>
-        <class>
+        <class package="software">
             <name>machine</name>
             <description>A description of a machine used by a particular platform.</description>
             <attributes>
@@ -1272,7 +1272,7 @@
                 </attribute>
             </attributes>
         </class>
-        <class>
+        <class package="software">
             <name>compiler</name>
             <description>A description of a compiler used on a particular platform.</description>
             <attributes>
@@ -1335,7 +1335,7 @@
                 </attribute>
             </attributes>
         </class>
-        <class stereotype="document">
+        <class stereotype="document" package="grids">
             <name>gridspec</name>
             <description/>
             <attributes>
@@ -1397,7 +1397,7 @@
                 </attribute>
             </attributes>
         </class>
-        <class>
+        <class package="grids">
             <name>gridMosaic</name>
             <description>The GridMosaic class is used to define the geometry properties of an earth
                 system model grid or an exchange grid. Such a grid definition may then be referenced
@@ -1560,7 +1560,7 @@
                 </attribute>
             </attributes>
         </class>
-        <class>
+        <class package="grids">
             <name>gridExtent</name>
             <description>DataType for recording the geographic extent of a gridMosaic or
                 gridTile.</description>
@@ -1611,7 +1611,7 @@
                 </attribute>
             </attributes>
         </class>
-        <class>
+        <class package="grids">
             <name>gridTile</name>
             <description/>
             <attributes>
@@ -1929,7 +1929,7 @@
 
             </attributes>
         </class>
-        <class>
+        <class package="grids">
             <name>verticalCoordList</name>
             <description>There are some specific attributes that are associated with vertical
                 coordinates. </description>
@@ -2011,7 +2011,7 @@
         </class>
 
 
-        <class>
+        <class package="grids">
             <name>simpleGridGeometry</name>
             <description>This class may be used to encode the parameters needed to define a simple
                 grid, i.e. a grid based on repeating square or rectangular grid cells.</description>
@@ -2090,7 +2090,7 @@
         </class>
 
 
-        <class>
+        <class package="grids">
             <name>coordlist</name>
             <description>The CoordList type may be used to specify a list of coordinates, typically
                 for the purpose of defining coordinates along the X, Y or Z axes. The length of the
@@ -2143,7 +2143,7 @@
 
 
 
-        <class>
+        <class package="grids">
             <name>gridCellArray</name>
             <description>Simple data type for encapsulating an array of grid cell
                 definitions.</description>
@@ -2160,7 +2160,7 @@
             </attributes>
         </class>
 
-        <class>
+        <class package="grids">
             <name>gridCell</name>
             <description>This abstract base class is used to model various types of grid cells.
                 Every GridCell object has its boundary defined by at least 3 vertices, though 4 will
@@ -2214,7 +2214,7 @@
         </class>
 
 
-        <class>
+        <class package="grids">
             <name>gridCellRefArray</name>
             <description>Simple data type for encapsulating an array of grid cell reference
                 definitions.</description>
@@ -2231,7 +2231,7 @@
             </attributes>
         </class>
 
-        <class>
+        <class package="grids">
             <name>gridCellRef</name>
             <description>This data type is used to encode a reference to a grid cell defined as part
                 of some other grid tile, which itself may be part of the same or an entirely
@@ -2298,7 +2298,7 @@
         </class>
 
 
-        <class namespace="gml">
+        <class namespace="gml" package="shared">
             <name>measureType</name>
             <description/>
             <attributes>
@@ -2322,7 +2322,7 @@
             </attributes>
         </class>
 
-        <class>
+        <class package="software">
             <name>composition</name>
             <description>The set of Couplings used by a Component. Couplings can only occur between
                 child components. That is, a composition must belong to an ancestor component of the
@@ -2348,7 +2348,7 @@
             </attributes>
         </class>
 
-        <class>
+        <class package="software">
             <name>coupling</name>
             <description>A coupling represents a set of Connections between a source and target
                 component. Couplings can be complete or incomplete. If they are complete then they
@@ -2504,7 +2504,7 @@
 
 
 
-        <class>
+        <class package="software">
             <name>connection</name>
             <description>A Connection represents a link from a source DataSource to a target
                 DataSource. These can either be ComponentProperties (ie: the values come from an
@@ -2650,7 +2650,7 @@
 
         </class>
 
-        <class>
+        <class package="software">
             <name>timeLag</name>
             <description>The coupling field used in the target at a given time corresponds to a
                 field produced by the source at a previous time. This lag specifies the difference
@@ -2684,7 +2684,7 @@
 
 
 
-        <class>
+        <class package="software">
             <name>spatialRegridding</name>
             <description>Characteristics of the scheme used to interpolate a field from one grid
                 (source grid) to another (target grid). Documents should use either the
@@ -2728,7 +2728,7 @@
         </class>
 
 
-        <class>
+        <class package="software">
             <name>spatialRegriddingUserMethod</name>
             <description>Allows users to bypass the SpatialRegriddingStandardMethod and instead
                 provide a set of weights and addresses for regridding via a file.</description>
@@ -2753,7 +2753,7 @@
             </attributes>
         </class>
 
-        <class>
+        <class package="software">
             <name>timeTransformation</name>
             <description>Characteristics of the scheme used to interpolate a field from one grid
                 (source grid) to another (target grid) </description>
@@ -2780,7 +2780,7 @@
             </attributes>
         </class>
 
-        <class>
+        <class package="software">
             <name>couplingEndPoint</name>
             <description>The source/target of a coupling. This is a DataSource (a SoftwareComponent
                 or DataObject). This is a separate class in order to associate an instanceID with
@@ -2811,7 +2811,7 @@
         </class>
 
 
-        <class>
+        <class package="software">
             <name>connectionEndPoint</name>
             <description>The source/target of a connetion. This is a DataSource (a ComponnetProperty
                 or DataContent). This is a separate class in order to associate an instanceID with
@@ -2844,7 +2844,7 @@
 
         <!-- TODO THIS POINT FORWARD -->
 
-        <class namespace="gml">
+        <class namespace="gml"  package="grids">
             <name>pointType</name>
             <description/>
             <attributes>
@@ -2860,7 +2860,7 @@
         </class>
 
 
-        <class>
+        <class package="software">
             <name>priming</name>
             <description/>
             <attributes>
@@ -2875,7 +2875,7 @@
             </attributes>
         </class>
         
-        <class namespace="gml">
+        <class namespace="gml" package="grids">
             <name>crsPropertyType</name>
             <description/>
             <attributes>
@@ -2892,7 +2892,7 @@
 
 
 
-        <class stereotype="document">
+        <class stereotype="document" package="activity">
             <name>simulationRun</name>
             <description/>
             <attributes>
@@ -2908,7 +2908,7 @@
         </class>
 
 
-        <class stereotype="document">
+        <class stereotype="document" package="software">
             <name>processorComponent</name>
             <description/>
             <attributes>
@@ -2923,7 +2923,7 @@
             </attributes>
         </class>
 
-        <class stereotype="document">
+        <class stereotype="document" package="data">
             <name>dataObject</name>
             <description/>
             <attributes>
