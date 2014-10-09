@@ -6,7 +6,7 @@
 <documentVersion>{{ model.get_major_version }}</documentVersion>
 <documentAuthor>
     {% with property=model|get_standard_property_by_name:"documentAuthor" %}
-        {% with "questionnaire/serialization/_standard_property_relationship.xml" as template %}
+        {% with "questionnaire/serialization/ESDOC_XML/_standard_property_relationship.xml" as template %}
             {% include template %}
         {% endwith %}
     {% endwith %} {# /property #}

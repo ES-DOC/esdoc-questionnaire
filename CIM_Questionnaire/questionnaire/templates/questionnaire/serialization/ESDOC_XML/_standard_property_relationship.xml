@@ -1,7 +1,7 @@
 {% for value in property.get_value %}
 
     {% with model=value %}
-        {% with "questionnaire/serialization/_component.xml" as template %}
+        {% with "questionnaire/serialization/ESDOC_XML/_component.xml" as template %}
             {% include template %}
         {% endwith %}
     {% endwith %} {# /model #}

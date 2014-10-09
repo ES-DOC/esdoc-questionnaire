@@ -1,7 +1,7 @@
 {% load serialization_filters %}
 
 {% for property in model|get_standard_properties_without_stereotypes:"attribute,document" %}
-    {% with "questionnaire/serialization/_standard_property.xml" as template %}
+    {% with "questionnaire/serialization/ESDOC_XML/_standard_property.xml" as template %}
         {% include template %}
     {% endwith %}
 {% endfor %} {# /property #}
@@ -16,7 +16,7 @@
                         <longName>{{ category.key }}</longName>
                 {% endif %}
                     {% for property in properties %}
-                        {% with "questionnaire/serialization/_scientific_property.xml" as template %}
+                        {% with "questionnaire/serialization/ESDOC_XML/_scientific_property.xml" as template %}
                             {% include template %}
                         {% endwith %}
                     {% endfor %}
@@ -36,7 +36,7 @@
                     {{ property.name }}="{{ property.atomic_value }}"
                 {% endfor %}
             >
-                {% with "questionnaire/serialization/_component.xml" as template %}
+                {% with "questionnaire/serialization/ESDOC_XML/_component.xml" as template %}
                     {% include template %}
                 {% endwith %}
             </{{ model.name }}>
@@ -45,7 +45,7 @@
 {% endfor %}
 
 {% if model.is_document %}
-    {% with "questionnaire/serialization/_document.xml" as template %}
+    {% with "questionnaire/serialization/ESDOC_XML/_document.xml" as template %}
         {%  include template %}
     {% endwith %}
 {% endif %} {# /is_document #}

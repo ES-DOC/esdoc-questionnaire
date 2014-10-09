@@ -1,9 +1,0 @@
-{% extends "questionnaire/serialization/base.xml" %}
-
-{% block content %}
-
-    {% with "questionnaire/serialization/_component.xml" as template %}
-        {% include template %}
-    {% endwith %}
-
-{% endblock %} {# /content #}

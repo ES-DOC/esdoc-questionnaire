@@ -10,11 +10,11 @@
     {# TODO: ADD EXTRA PROPERTIES (DESCRIPTION, UNITS, STANDARD_NAME #}
 
     {% if property.is_enumeration %}
-        {% with "questionnaire/serialization/_scientific_property_enumeration.xml" as template %}
+        {% with "questionnaire/serialization/ESDOC_XML/_scientific_property_enumeration.xml" as template %}
             {% include template %}
         {% endwith %}
     {% else %}
-        {% with "questionnaire/serialization/_scientific_property_atomic.xml" as template %}
+        {% with "questionnaire/serialization/ESDOC_XML/_scientific_property_atomic.xml" as template %}
             {% include template %}
         {% endwith %}
     {% endif %} {# /is_enumeration #}
