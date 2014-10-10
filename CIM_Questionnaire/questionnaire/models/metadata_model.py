@@ -26,7 +26,7 @@ from django.utils import timezone
 from mptt.models import MPTTModel, TreeForeignKey
 from uuid import uuid4
 
-from CIM_Questionnaire.questionnaire.models.metadata_serialization import MetadataModelSerialization
+from CIM_Questionnaire.questionnaire.models.metadata_serialization import MetadataModelSerialization, MetadataSerializationFormats
 from CIM_Questionnaire.questionnaire.fields import MetadataFieldTypes, EnumerationField, EMPTY_CHOICE, NULL_CHOICE, OTHER_CHOICE
 from CIM_Questionnaire.questionnaire.utils import APP_LABEL, DEFAULT_VOCABULARY_KEY, DEFAULT_COMPONENT_KEY, LIL_STRING, SMALL_STRING, BIG_STRING, HUGE_STRING, QuestionnaireError
 from CIM_Questionnaire.questionnaire.utils import find_in_sequence
@@ -195,9 +195,10 @@ class MetadataModel(MPTTModel):
     #     with open(serialized_model_path, 'w') as file:
     #         file.write(serialized_model)
 
-    def serialize(self,serialization_version=None):
+    def serialize(self,serialization_version=None, serialization_format=MetadataSerializationFormats.ESDOC_XML):
 
         serialization_dict = {
+            "format" : MetadataSerializationFormats.ESDOC_XML,
             "project" : self.project,
             "version" : self.version,
             "proxy" : self.proxy,
@@ -205,7 +206,7 @@ class MetadataModel(MPTTModel):
             "questionnaire_version" : get_version(),
 
         }
-        serialization_template_path = "questionnaire/serialization/%s.xml" % (self.proxy.name.lower())
+        serialization_template_path = "questionnaire/serialization/%s/%s.xml" % (serialization_format.getType(), self.proxy.name.lower())
         serialized_model = render_to_string(serialization_template_path, serialization_dict )
 
         new_serialization_kwargs = {
