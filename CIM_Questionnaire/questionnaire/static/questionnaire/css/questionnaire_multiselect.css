@@ -12,3 +12,8 @@
 .multiselect_content .sortable_item         { display: block; margin: 1px 0px 1px 0px; }
 
 .other  { width: 400px; text-align: left; margin-top: 2px; margin-bottom: 2px; }
+
+
+/* b/c multiselects are added explicitly via jquery, modifying their style based on the init fns doesn't always work */
+/* so here I am ensuring that fields marked as non-editable that are replaced w/ multiselects have their non-editable style copied over */
+button.multiselect_header.ui-state-disabled { background: url(../img/disabled_ui_background.png) repeat-x 50% 50%; }

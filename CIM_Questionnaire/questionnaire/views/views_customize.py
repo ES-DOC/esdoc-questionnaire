@@ -268,7 +268,7 @@ def questionnaire_customize_existing(request,project_name="",model_name="",versi
             subsequent_model_customizer_name = model_customizer_instance.name
             if initial_model_customizer_name != subsequent_model_customizer_name:
                 model_customizer_instance.rename(subsequent_model_customizer_name)
-                
+
             request.session["model_id"] = model_customizer_instance.pk
 
             # using Django's built-in messaging framework to pass status messages (as per https://docs.djangoproject.com/en/dev/ref/contrib/messages/)

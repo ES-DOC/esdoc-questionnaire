@@ -28,7 +28,6 @@
             init_widgets_on_show(fieldsets,$(parent).find(".collapsible_fieldset"))
             init_widgets_on_show(tabs,$(parent).find(".tabs"));
             init_widgets_on_show(helps,$(parent).find(".help_button"));
-            init_widgets_on_show(readonlies,$(parent).find(".readonly"));
             init_widgets_on_show(dates,$(parent).find(".datetime,.date"));
             init_widgets_on_show(accordions,$(parent).find(".accordion").not(".fake"));
             init_widgets_on_show(dynamic_accordions,$(parent).find(".accordion .accordion_header"));
@@ -37,11 +36,12 @@
             /* TODO: accordion_headers
             init_widgets_on_show(accordion_headers,$(parent).find(".scientific_property"));
             */
-            init_widgets_on_show(selects,$(parent).find(".multiselect"));
             init_widgets_on_show(enumerations,$(parent).find(".multiselect.open,.multiselect.nullable"));
             init_widgets_on_show(autocompletes,$(parent).find(".autocomplete"));
             init_widgets_on_show(enablers,$(parent).find(".enabler"))
 
+            init_widgets(selects,$(parent).find(".multiselect"));
+            init_widgets(readonlies,$(parent).find(".readonly"));
             init_widgets(users,$(parent).find("#user"));
             init_widgets(buttons,$(parent).find("input.button"))
             init_widgets(panes,$(parent).find(".pane"));

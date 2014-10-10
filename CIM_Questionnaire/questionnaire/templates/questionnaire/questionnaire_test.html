@@ -3,6 +3,12 @@
 {% load questionnaire_filters %}
 
 {% block scripts %}
+
+    <script language="javascript" type="text/javascript" src="{{ STATIC_URL }}questionnaire/js/ext/jquery.dynatree.min.js"></script>
+    <!-- TODO: ENCOUNTERED BUG IN jquery.formset.min.js [http://code.google.com/p/django-dynamic-formset/issues/detail?id=54] -->
+    <!-- MODIFIED LOCAL CODE TO FIX THIS; SHOULD SEND PATCH -->
+    <script language="javascript" type="text/javascript" src="{{ STATIC_URL }}questionnaire/js/ext/jquery.formset.js"></script>
+    <script language="javascript" type="text/javascript" src="{{ STATIC_URL }}questionnaire/js/questionnaire_edit.js"></script>
     <script language="javascript">
 
     /* just setup a minimum of jquery-ui functionality */
@@ -13,8 +19,14 @@
 
             var parent = document.body;
 
+            // do this first so that the dialogs appear near the top of the page
             init_dialogs(parent);
-            init_errors(parent);
+
+            // do this next, so it can happen while other widgets are loading
+            render_msg($("#msg"));
+
+            init_widgets(selects, $(parent).find(".multiselect"));
+            init_widgets(readonlies, $(parent).find(".readonly"));
 
         }
     );
@@ -22,6 +34,15 @@
     </script>
 
 {% endblock %} {# /scripts #}
+
+{% block style %}
+    <style>
+
+        button.multiselect_header.ui-state-disabled { background: url(/static/questionnaire/img/disabled_ui_background.png) repeat-x 50% 50%; }
+
+
+    </style>
+{% endblock %} {#  /style #}
 
 {% block title %}
 
@@ -42,22 +63,38 @@
 
     </div>
 
-    TEST!
 
     <form method="POST" action="">
 
         {% csrf_token %}
 
-        {{ form.as_table }}
+        <table>
+            <tr class="field">
+                <td>
+                    <select
+                        id="id_DEFAULT_VOCABULARY_DEFAULT_COMPONENT_standard_properties-20-enumeration_value"
+                        class="multiselect required readonly"
+                        readonly="readonly"
+                        name="DEFAULT_VOCABULARY_DEFAULT_COMPONENT_standard_properties-20-enumeration_value"
+        {#                disabled=""#}
+                        >
+                        <option selected="selected" value="">----------</option>
+                        <option value="complete">complete</option>
+                        <option value="incomplete">incomplete</option>
+                        <option value="in-progress">in-progress</option>
+                    </select>
+                </td>
+            </tr>
+        </table>
 
-        <div class="submit">
-            <input class="button"  name="save"  type="submit"   value="save"/>
-        </div> <!-- /.submit -->
-        <div style="clear: both;">&nbsp;</div>
+
+{#        <div class="submit">#}
+{#            <input class="button"  name="save"  type="submit"   value="save"/>#}
+{#        </div> <!-- /.submit -->#}
+{#        <div style="clear: both;">&nbsp;</div>#}
 
     </form>
 
-    TEST!
 
 {% endblock %} {# /content #}
 
