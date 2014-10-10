@@ -1,19 +1,23 @@
 {% load serialization_filters %}
 
-{# TODO: THESE ARE HARD-CODED #}
-
-<documentID>{{ model.get_id }}</documentID>
-<documentVersion>{{ model.get_major_version }}</documentVersion>
-<documentAuthor>
-    {% with property=model|get_standard_property_by_name:"documentAuthor" %}
-        {% with "questionnaire/serialization/ESDOC_XML/_standard_property_relationship.xml" as template %}
-            {% include template %}
-        {% endwith %}
-    {% endwith %} {# /property #}
-</documentAuthor>
-<documentStatus>
-    {% with property=model|get_standard_property_by_name:"documentStatus" %}
-        {{ property.enumeration_value }}
-    {% endwith %} {# /property #}
-</documentStatus>
-<documentCreationDate>{{ model.created|date:"c" }}</documentCreationDate>
+<meta ontologyTypeKey="cim.1.shared.DocMetaInfo">
+    <author ontologyTypeKey="cim.1.shared.ResponsibleParty">
+    I AM HERE
+        {% with property=model|get_standard_property_by_name:"documentAuthor" %}
+            {% with "questionnaire/serialization/ESDOC_XML/_standard_property_relationship.xml" as template %}
+                {% include template %}
+            {% endwith %}
+        {% endwith %} {# /property #}
+    </author>
+    <createDate>{{ model.created|date:"c" }}</createDate>
+    <encodings>
+        <encoding>XML</encoding>
+    </encodings>
+    <id>{{ model.get_id }}</id>
+    <institute>???</institute>
+    <language>en</language>
+    <project>{{ project.name }}</project>
+    <source>CIM Questionnaire</source>
+    <type>{{ proxy|get_ontology_type_key }}</type>
+    <version>{{ model.get_major_version }}</version>
+</meta>
