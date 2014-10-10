@@ -94,3 +94,53 @@ def get_fully_qualified_tagname(property):
     else:
         return u"%s" % (property.name)
 
+@register.filter
+def get_ontology_type_key(proxy):
+    """
+    returns the ES-DOC type for this proxy
+    :param property:
+    :return:
+    """
+
+    return "cim.1.%s.%s" % (proxy.package,proxy.name[0].upper()+proxy.name[1:])
+
+PLURAL_MAP = {
+    'cactus' : 'cacti',
+}
+VOWELS = set('aeiou')
+
+@register.filter
+def get_plural(word):
+
+    if not word:
+        return u""
+
+    plural = PLURAL_MAP.get(word)
+    if plural:
+        return plural
+
+    root = word
+    try:
+        if word[-1] == 'y' and word[-2] not in VOWELS:
+            root = word[:-1]
+            suffix = 'ies'
+        elif word[-1] == 's':
+            if word[-2] in VOWELS:
+                if word[-3:] == 'ius':
+                    root = word[:-2]
+                    suffix = 'i'
+                else:
+                    root = word[:-1]
+                    suffix = 'ses'
+            else:
+                suffix = 'es'
+        elif word[-2:] in ('ch', 'sh'):
+            suffix = 'es'
+        else:
+            suffix = 's'
+    except IndexError:
+        suffix = 's'
+
+    plural = root + suffix
+    return plural
+

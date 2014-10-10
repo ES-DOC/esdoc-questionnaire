@@ -4,25 +4,42 @@
 {#{% with tagname=property|get_fully_qualified_tagname %}#}
 {% with tagname=property.name %}
 
-    <{{ tagname }}>
+    {% with property_type=property.field_type %}
 
-        {% with property_type=property.field_type %}
-            {% if property_type == "ATOMIC" %}
+        {% if property_type == "ATOMIC" %}
+            <{{ tagname }}>
                 {% with "questionnaire/serialization/ESDOC_XML/_standard_property_atomic.xml" as template %}
                     {% include template %}
                 {% endwith %}
-            {% elif property_type == "ENUMERATION" %}
+            </{{ tagname }}>
+        {% elif property_type == "ENUMERATION" %}
+            <{{ tagname }}>
                 {% with "questionnaire/serialization/ESDOC_XML/_standard_property_enumeration.xml" as template %}
                     {% include template %}
                 {% endwith %}
-            {% elif property_type == "RELATIONSHIP" %}
-                {# TODO: IF IS_REFERENCE...  #}
-                {% with "questionnaire/serialization/ESDOC_XML/_standard_property_relationship.xml" as template %}
-                    {% include template %}
-                {% endwith %}
-            {% endif %}
-        {% endwith %} {# /property_type #}
+            </{{ tagname }}>
+        {% elif property_type == "RELATIONSHIP" %}
 
-    </{{ tagname }}>
+            {% if property.proxy.is_multiple %}
+                <{{ tagname|get_plural }}>
+            {% endif %} {# /is_multiple #}
+
+            {% for value in property.get_value %}
+                {# TODO: IF IS_REFERENCE...  #}
+                <{{ tagname }}>
+                    {% with model=value %}
+                        {% with "questionnaire/serialization/ESDOC_XML/_component.xml" as template %}
+                            {% include template %}
+                        {% endwith %}
+                    {% endwith %} {# /model #}
+                </{{ tagname }}>
+            {% endfor %} {# /value #}
+
+            {% if property.proxy.is_multiple %}
+                </{{ tagname|get_plural }}>
+            {% endif %} {# /is_multiple #}
+
+        {% endif %}
+    {% endwith %} {# /property_type #}
 
 {% endwith %} {# /tagname #}

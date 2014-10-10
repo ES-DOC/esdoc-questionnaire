@@ -135,6 +135,17 @@ class MetadataStandardPropertyProxy(MetadataPropertyProxy):
         return u'%s' % (self.name)
         #return u'%s::%s' % (self.model_proxy,self.name)
 
+    def get_relationship_cardinality_min(self):
+        min, max = self.relationship_cardinality.split("|")
+        return min
+
+    def get_relationship_cardinality_max(self):
+        min, max = self.relationship_cardinality.split("|")
+        return max
+
+    def is_multiple(self):
+        return self.get_relationship_cardinality_max() != 1
+
     def reset(self):
 
         if self.field_type == MetadataFieldTypes.ATOMIC:
