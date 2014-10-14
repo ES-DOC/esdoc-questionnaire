@@ -109,11 +109,7 @@ def questionnaire_edit_new(request, project_name="", model_name="", version_name
         if not (request.user.is_superuser or request.user.metadata_user.is_user_of(project)):
             msg = "User '%s' does not have editing permission for project '%s'." % (request.user, project_name)
             # TODO: ONCE PROJECT REGISTRATION IS POSSIBLE BY USERS OTHER THAN SITE ADMIN, REMOVE THIS BLOCK AND RE-INSTATE THE SUBSEQUENT BLOCK
-            try:
-                superuser = User.objects.get(is_superuser=True, is_staff=True, is_active=True)
-                msg += "<br/>Please <a href='mailto:%s'>contact</a> the administrator for support." % (superuser.email)
-            except:
-                pass
+            msg += "<br/>Please <a href='mailto:es-doc-support@list.woc.noaa.gov'>contact</a> ES-DOC for support."
             # if project.email:
             #     msg += "<br/>Please <a href='mailto:%s'>contact</a> the project for support." % (project.email)
             return questionnaire_error(request, msg)
@@ -233,11 +229,7 @@ def questionnaire_edit_existing(request, project_name="", model_name="", version
         if not (request.user.is_superuser or request.user.metadata_user.is_user_of(project)):
             msg = "User '%s' does not have editing permission for project '%s'." % (request.user, project_name)
             # TODO: ONCE PROJECT REGISTRATION IS POSSIBLE BY USERS OTHER THAN SITE ADMIN, REMOVE THIS BLOCK AND RE-INSTATE THE SUBSEQUENT BLOCK
-            try:
-                superuser = User.objects.get(is_superuser=True, is_staff=True, is_active=True)
-                msg += "<br/>Please <a href='mailto:%s'>contact</a> the administrator for support." % (superuser.email)
-            except:
-                pass
+            msg += "<br/>Please <a href='mailto:es-doc-support@list.woc.noaa.gov'>contact</a> ES-DOC for support."
             # if project.email:
             #     msg += "<br/>Please <a href='mailto:%s'>contact</a> the project for support." % (project.email)
             return questionnaire_error(request, msg)
