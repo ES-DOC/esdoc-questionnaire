@@ -2,7 +2,7 @@
 
 {% block content %}
 
-    {% with "questionnaire/serialization/ESDOC_XML/_component.xml" as template %}
+    {% with "questionnaire/serialization/ESDOC_XML/_model.xml" as template %}
         {% include template %}
     {% endwith %}
 

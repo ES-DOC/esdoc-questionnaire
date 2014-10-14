@@ -6,50 +6,72 @@
     {% endwith %}
 {% endfor %} {# /property #}
 
-<properties>
-    {% with properties=model.scientific_properties.all %}
-        {% with categories_and_properties=properties|get_scientific_categories_and_properties_dictionary %}
-            {% for category,properties in categories_and_properties.items %}
-                {% if not category.is_default_category %}
-                    <property ontologyTypeKey="cim.1.software.ComponentProperty">
-                        <isRepresented>True</isRepresented>
-                        <shortName>{{ category.key }}</shortName>
-                        <longName>{{ category.key }}</longName>
-                {% endif %}
-                    {% for property in properties %}
-                        {% with "questionnaire/serialization/ESDOC_XML/_scientific_property.xml" as template %}
-                            {% include template %}
-                        {% endwith %}
-                    {% endfor %}
-                {% if not category.is_default_category %}
-                    </property>
-                {% endif %}
-            {% endfor %} {# /category,property #}
-        {% endwith %} {# /categories_and_properties #}
-    {% endwith %} {# /properties #}
-</properties>
+{% with properties=model.scientific_properties.all %}
 
-<subComponents>
-    {% for child in model.get_children.all %}
-        {% if child.active %}
-            <subComponent>
-                {% with model=child %}
-                    <{{ model.name }}
-    {#                    {% for property in model|get_standard_properties_with_stereotypes:"attribute" %}#}
-    {#                        {{ property.name }}="{{ property.atomic_value }}"#}
-    {#                    {% endfor %}#}
-                    >
-                        {% with "questionnaire/serialization/ESDOC_XML/_component.xml" as template %}
-                            {% include template %}
-                        {% endwith %}
-                    </{{ model.name }}>
-                {% endwith %} {# /model #}
-            </subComponent>
-        {% else %}
-            <!-- inactive sub-component -->
-        {% endif %} {# /child.active #}
-    {% endfor %}
-</subComponents>
+    {% if properties %} {# this should only be true for models that use CVs (ie: SoftwareComponents #}
+
+        <properties>
+            {% with categories_and_properties=properties|get_scientific_categories_and_properties_dictionary %}
+                {% for category,properties in categories_and_properties.items %}
+                    {% if not category.is_default_category %}
+                        <property ontologyTypeKey="cim.1.software.ComponentProperty">
+                            <isRepresented>True</isRepresented>
+                            <shortName>{{ category.key }}</shortName>
+                            <longName>{{ category.key }}</longName>
+                    {% endif %}
+                        {% for property in properties %}
+                            {% with "questionnaire/serialization/ESDOC_XML/_scientific_property.xml" as template %}
+                                {% include template %}
+                            {% endwith %}
+                        {% endfor %}
+                    {% if not category.is_default_category %}
+                        </property>
+                    {% endif %}
+                {% endfor %} {# /category,property #}
+            {% endwith %} {# /categories_and_properties #}
+        </properties>
+
+    {% else %}
+
+        <!-- this model has no scientific properties -->
+
+    {% endif %} {# /properties #}
+
+{% endwith %} {# /properties #}
+
+{% with children=model.get_children.all %}
+
+    {% if children %}
+
+    <subComponents>
+        {% for child in children %}
+            {% if child.active %}
+                <subComponent>
+                    {% with model=child %}
+                        <{{ model.name }}
+        {#                    {% for property in model|get_standard_properties_with_stereotypes:"attribute" %}#}
+        {#                        {{ property.name }}="{{ property.atomic_value }}"#}
+        {#                    {% endfor %}#}
+                        >
+                            {% with "questionnaire/serialization/ESDOC_XML/_model.xml" as template %}
+                                {% include template %}
+                            {% endwith %}
+                        </{{ model.name }}>
+                    {% endwith %} {# /model #}
+                </subComponent>
+            {% else %}
+                <!-- inactive sub-component -->
+            {% endif %} {# /child.active #}
+        {% endfor %}
+    </subComponents>
+
+    {% else %}
+
+        <!-- this model has no children -->
+
+    {% endif %} {# /children #}
+
+{% endwith %} {# /children #}
 
 {% if model.is_document %}
     {% with "questionnaire/serialization/ESDOC_XML/_document.xml" as template %}
