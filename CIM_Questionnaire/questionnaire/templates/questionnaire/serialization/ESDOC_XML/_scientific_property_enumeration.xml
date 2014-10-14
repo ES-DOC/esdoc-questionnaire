@@ -1,6 +1,0 @@
-{#  property = the scientific property #}
-
-
-{% for value in property.get_value %}
-    <value>{{ value }}</value>
-{% endfor %}

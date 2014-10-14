@@ -10,15 +10,22 @@
     {# TODO: ADD EXTRA PROPERTIES (DESCRIPTION, UNITS, STANDARD_NAME #}
 
     {% if property.is_enumeration %}
-        {% with "questionnaire/serialization/ESDOC_XML/_scientific_property_enumeration.xml" as template %}
-            {% include template %}
-        {% endwith %}
-    {% else %}
-        {% with "questionnaire/serialization/ESDOC_XML/_scientific_property_atomic.xml" as template %}
-            {% include template %}
-        {% endwith %}
-    {% endif %} {# /is_enumeration #}
 
+        <value>
+            {% for value in property.get_value %}
+                <!-- separating values by "|" rather than in explicit tags -->
+                <!-- <value>{{ value }}</value> -->
+                {{ value }} {% if not forloop.last %} | {% endif %}
+            {% endfor %}
+        </value>
+
+    {% else %}
+
+        <value>
+            {{ property.get_value.strip }}
+        </value>
+
+    {% endif %} {# /is_enumeration #}
 
     {% with vocabulary=property|get_vocabulary_from_property %}
         <extension>
