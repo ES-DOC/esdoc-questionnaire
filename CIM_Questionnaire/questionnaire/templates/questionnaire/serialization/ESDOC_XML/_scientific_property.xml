@@ -2,22 +2,19 @@
 
 {#  property = the scientific property #}
 
-<componentProperty represented="true">
+<property ontologyTypeKey="cim.1.software.ComponentProperty">
 
+    <isRepresented>True</isRepresented>
     <shortName>{{ property.proxy.name }}</shortName>
     <longName>{{ property.proxy.name }}</longName>
 
-    {# TODO: ADD EXTRA PROPERTIES (DESCRIPTION, UNITS, STANDARD_NAME #}
-
     {% if property.is_enumeration %}
 
-        <value>
+        <values>
             {% for value in property.get_value %}
-                <!-- separating values by "|" rather than in explicit tags -->
-                <!-- <value>{{ value }}</value> -->
-                {{ value }} {% if not forloop.last %} | {% endif %}
+                <value>{{ value }}</value>
             {% endfor %}
-        </value>
+        </values>
 
     {% else %}
 
@@ -26,6 +23,8 @@
         </value>
 
     {% endif %} {# /is_enumeration #}
+
+    {# TODO: ADD EXTRA PROPERTIES (DESCRIPTION, UNITS, STANDARD_NAME #}
 
     {% with vocabulary=property|get_vocabulary_from_property %}
         <extension>
@@ -36,4 +35,4 @@
         </extension>
     {% endwith %} {# /vocabulary #}
 
-</componentProperty>
+</property>

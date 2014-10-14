@@ -6,12 +6,13 @@
     {% endwith %}
 {% endfor %} {# /property #}
 
-<componentProperties>
+<properties>
     {% with properties=model.scientific_properties.all %}
         {% with categories_and_properties=properties|get_scientific_categories_and_properties_dictionary %}
             {% for category,properties in categories_and_properties.items %}
                 {% if not category.is_default_category %}
-                    <componentProperty represented="true">
+                    <property ontologyTypeKey="cim.1.software.ComponentProperty">
+                        <isRepresented>True</isRepresented>
                         <shortName>{{ category.key }}</shortName>
                         <longName>{{ category.key }}</longName>
                 {% endif %}
@@ -21,12 +22,12 @@
                         {% endwith %}
                     {% endfor %}
                 {% if not category.is_default_category %}
-                    </componentProperty>
+                    </property>
                 {% endif %}
             {% endfor %} {# /category,property #}
         {% endwith %} {# /categories_and_properties #}
     {% endwith %} {# /properties #}
-</componentProperties>
+</properties>
 
 <subComponents>
     {% for child in model.get_children.all %}
