@@ -308,12 +308,18 @@ def questionnaire_edit_existing(request, project_name="", model_name="", version
         (model_formset, standard_properties_formsets, scientific_properties_formsets) = \
             create_existing_edit_forms_from_models(models, model_customizer, standard_properties, standard_property_customizers, scientific_properties, scientific_property_customizers)
 
+        # print "GET: "
+        # print [mm.active for mm in models]
+
     else: # request.method == "POST":
 
         data = request.POST
 
         (validity, model_formset, standard_properties_formsets, scientific_properties_formsets) = \
             create_edit_forms_from_data(data,models,model_customizer,standard_properties, standard_property_customizers, scientific_properties, scientific_property_customizers)
+
+        # print "POST: "
+        # print [mm.active for mm in models]
 
         if all(validity):
 
@@ -334,6 +340,9 @@ def questionnaire_edit_existing(request, project_name="", model_name="", version
 
             # using Django's built-in messaging framework to pass status messages (as per https://docs.djangoproject.com/en/dev/ref/contrib/messages/)
             messages.add_message(request, messages.SUCCESS, "Successfully saved instances.")
+
+            # print "POST (AFTER SAVE): "
+            # print [mm.active for mm in model_instances]
 
         else:
 

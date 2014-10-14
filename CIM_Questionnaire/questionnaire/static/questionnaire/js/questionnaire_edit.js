@@ -210,32 +210,53 @@ function treeviews(element) {
             inactive_pane = $("#"+inactive_pane_id);
             $(inactive_pane).hide();
             PREVIOUSLY_SELECTED_TAB = $(inactive_pane).find(".tabs:first").tabs("option","active");
-        },
+        }
+        ,
         onSelect        : function(flag,node) {
+
             selected_nodes = $(element).dynatree("getSelectedNodes");
-            $(element).find(".dynatree-partsel:not(.dynatree-selected)").each(function() {
+            $(element).find(".dynatree-partsel:not(.dynatree-selected)").each(function () {
                 var node = $.ui.dynatree.getNode(this);
                 selected_nodes.push(node);
             })
 
-            node.tree.visit(function(node) {
-               pane_id = node.data.key + "_pane" ;
-               pane = $("#"+pane_id);
-               if ($.inArray(node,selected_nodes)>-1) {
+            node.tree.visit(function (node) {
+                pane_id = node.data.key + "_pane";
+                pane = $("#" + pane_id);
+                if ($.inArray(node, selected_nodes) > -1) {
                     $(pane).removeClass("ui-state-disabled");
-                    $(pane).find("input[name$='-active']").prop("checked",true)
-               }
-               else {
-                   $(pane).addClass("ui-state-disabled");
-                   $(pane).find("input[name$='-active']").prop("checked",false)
-               }
+                    $(pane).find("input[name$='-active']").prop("checked", true)
+                }
+                else {
+                    $(pane).addClass("ui-state-disabled");
+                    $(pane).find("input[name$='-active']").prop("checked", false)
+                }
             });
         }
     });
     root = $(element).dynatree("getRoot");
+
     root.visit(function(node) {
-        // TODO: DON'T SELECT EVERYTHING BY DEFAULT
-        node.select(true);
+        pane_id = node.data.key + "_pane";
+        pane = $("#"+pane_id);
+
+        active_checkbox = $(pane).find("input[name$='-active']")
+
+//        if ($(active_checkbox).is(":checked")) {
+//            console.log(pane_id + " is selected");
+//            node.select(true);
+//        }
+//        else {
+//            console.log(pane_id + " is NOT selected");
+//        }
+//        else {
+//            node.select(false);
+//        }
+//        alert(pane_id + ": " + $(active_checkbox).is(":checked"));
+//        node.select($(active_checkbox).is(":checked"));
+        node.select(true)
+//        node.select(false)
+//        node.activate($(active_checkbox).is(":checked"))
         node.expand(true);
     });
     // root is actually a built-in parent of the tree, and not the first item in my list

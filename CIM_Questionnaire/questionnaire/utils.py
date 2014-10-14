@@ -203,8 +203,9 @@ def validate_no_reserved_words(value):
     RESERVED_WORDS = [
         # cannot have projects w/ these names, else the URLs won't make sense...
         "admin", "ajax", "customize", "edit", "help", "index", "login", "logout",
-        "questionnaire", "register", "static", "site_media", "test", "user",
+        "questionnaire", "register", "static", "site_media", "user",
         "mindmaps", "view",
+        "test",
     ]
 
     if value.lower() in RESERVED_WORDS:

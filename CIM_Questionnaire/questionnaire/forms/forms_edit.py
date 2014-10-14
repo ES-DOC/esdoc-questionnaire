@@ -226,7 +226,9 @@ class MetadataModelForm(MetadataModelAbstractForm):
     cached_fields = []
 
     _header_fields = ["title",]
-    _hidden_fields = ["proxy", "project", "version", "is_document", "is_root", "vocabulary_key", "component_key", "active", "name", "description", "order", ]
+    _hidden_fields = ["proxy", "active", "project", "version", "is_document", "is_root", "vocabulary_key", "component_key", "name", "description", "order", ]
+
+    active = BooleanField(required=False)   # allow checked or unchecked as per https://docs.djangoproject.com/en/1.4/ref/forms/fields/#booleanfield
 
     def has_changed(self):
         return True
@@ -254,6 +256,8 @@ class MetadataModelSubForm(MetadataModelAbstractForm):
 
     _header_fields = ["title",]
     _hidden_fields = ["proxy", "project", "version", "is_document", "is_root", "vocabulary_key", "component_key", "active", "name", "description", "order", ]
+
+    active = BooleanField(required=False)   # allow checked or unchecked as per https://docs.djangoproject.com/en/1.4/ref/forms/fields/#booleanfield
 
     def __init__(self,*args,**kwargs):
         super(MetadataModelSubForm,self).__init__(*args,**kwargs)
@@ -449,6 +453,7 @@ class MetadataAbstractStandardPropertyForm(MetadataEditingForm):
         #        pass
 
         proxy_pk = int(self.get_current_field_value("proxy"))
+
         field_type = self.get_current_field_value("field_type")
         is_label = self.get_current_field_value("is_label", False)
 

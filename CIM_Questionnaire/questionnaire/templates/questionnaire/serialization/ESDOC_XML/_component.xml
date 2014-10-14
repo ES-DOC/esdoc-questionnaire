@@ -30,19 +30,23 @@
 
 <subComponents>
     {% for child in model.get_children.all %}
-        <subComponent>
-            {% with model=child %}
-                <{{ model.name }}
-{#                    {% for property in model|get_standard_properties_with_stereotypes:"attribute" %}#}
-{#                        {{ property.name }}="{{ property.atomic_value }}"#}
-{#                    {% endfor %}#}
-                >
-                    {% with "questionnaire/serialization/ESDOC_XML/_component.xml" as template %}
-                        {% include template %}
-                    {% endwith %}
-                </{{ model.name }}>
-            {% endwith %} {# /model #}
-        </subComponent>
+        {% if child.active %}
+            <subComponent>
+                {% with model=child %}
+                    <{{ model.name }}
+    {#                    {% for property in model|get_standard_properties_with_stereotypes:"attribute" %}#}
+    {#                        {{ property.name }}="{{ property.atomic_value }}"#}
+    {#                    {% endfor %}#}
+                    >
+                        {% with "questionnaire/serialization/ESDOC_XML/_component.xml" as template %}
+                            {% include template %}
+                        {% endwith %}
+                    </{{ model.name }}>
+                {% endwith %} {# /model #}
+            </subComponent>
+        {% else %}
+            <!-- inactive sub-component -->
+        {% endif %} {# /child.active #}
     {% endfor %}
 </subComponents>
 

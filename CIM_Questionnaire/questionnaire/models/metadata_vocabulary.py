@@ -211,9 +211,6 @@ class MetadataVocabulary(models.Model):
                     #values = "|".join(property_proxy_values)
                 )
 
-                if property_proxy_category.name.lower() == "calibrationphase":
-                    import ipdb; ipdb.set_trace()
-
                 new_property_proxy.documentation = property_proxy_documentation
                 new_property_proxy.order = j
                 # TODO: SHOULD I CREATE A NEW PROXY IF THE VALUES ARE CHANGED?
