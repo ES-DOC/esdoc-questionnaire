@@ -248,6 +248,9 @@ def questionnaire_edit_existing(request, project_name="", model_name="", version
     except MetadataModel.DoesNotExist:
         msg = "Cannot find the specified model.  Please try again."
         return questionnaire_error(request,msg)
+    except ValueError:
+        msg = "Invalid search terms.  Please try again."
+        return questionnaire_error(request,msg)
     if not model.is_root:
         # TODO: DEAL W/ THIS USE-CASE
         msg = "Currently only root models can be viewed.  Please try again."
