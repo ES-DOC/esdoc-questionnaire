@@ -7,17 +7,21 @@
     {% with property_type=property.field_type %}
 
         {% if property_type == "ATOMIC" %}
+
             <{{ tagname }}>
                 {{ property.get_value }}
             </{{ tagname }}>
+
         {% elif property_type == "ENUMERATION" %}
+
             <{{ tagname }}>
                 {% for value in property.get_value %}
                     <!-- separating values by "|" rather than in explicit tags -->
-                    <!-- <value>{{ value }}</value> -->
+                    {# <value>{{ value }}</value> #}
                     {{ value }} {% if not forloop.last %} | {% endif %}
                 {% endfor %}
             </{{ tagname }}>
+
         {% elif property_type == "RELATIONSHIP" %}
 
             {% if property.proxy.is_multiple %}
@@ -27,8 +31,8 @@
             {% for value in property.get_value %}
                 {# TODO: IF IS_REFERENCE...  #}
                 <{{ tagname }}>
-                    {% with model=value %}
-                        {% with "questionnaire/serialization/ESDOC_XML/_component.xml" as template %}
+                    {% with model=value model_type=value.name.lower %}
+                        {% with "questionnaire/serialization/ESDOC_XML/_model.xml" as template %}
                             {% include template %}
                         {% endwith %}
                     {% endwith %} {# /model #}
