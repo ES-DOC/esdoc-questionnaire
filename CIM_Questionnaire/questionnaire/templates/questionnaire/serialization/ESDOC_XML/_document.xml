@@ -2,7 +2,6 @@
 
 <meta ontologyTypeKey="cim.1.shared.DocMetaInfo">
     <author ontologyTypeKey="cim.1.shared.ResponsibleParty">
-    I AM HERE
         {% with property=model|get_standard_property_by_name:"documentAuthor" %}
             {% with "questionnaire/serialization/ESDOC_XML/_standard_property_relationship.xml" as template %}
                 {% include template %}
