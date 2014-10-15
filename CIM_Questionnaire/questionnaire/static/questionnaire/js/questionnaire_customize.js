@@ -238,7 +238,7 @@ function sortable_accordions(element) {
 function view_all_categories(view_all_button) {
     var current_tab = $(view_all_button).closest(".tab_content");
     $(current_tab).find(".categories:first .tagit-choice").each(function() {
-        $(this).removeClass("ui-state-active");
+        $(this).removeClass("ui-state-disabled");
     });
     $(current_tab).find(".accordion_unit").each(function() {
         $(this).show();
