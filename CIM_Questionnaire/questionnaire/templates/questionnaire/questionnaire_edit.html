@@ -36,11 +36,12 @@
             /* TODO: accordion_headers
             init_widgets_on_show(accordion_headers,$(parent).find(".scientific_property"));
             */
-            init_widgets_on_show(enumerations,$(parent).find(".multiselect.open,.multiselect.nullable"));
+
             init_widgets_on_show(autocompletes,$(parent).find(".autocomplete"));
             init_widgets_on_show(enablers,$(parent).find(".enabler"))
 
             init_widgets(selects,$(parent).find(".multiselect"));
+            init_widgets(enumerations,$(parent).find(".multiselect.open,.multiselect.nullable"));
             init_widgets(readonlies,$(parent).find(".readonly"));
             init_widgets(users,$(parent).find("#user"));
             init_widgets(buttons,$(parent).find("input.button"))

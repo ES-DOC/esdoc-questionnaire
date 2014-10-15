@@ -66,7 +66,7 @@
     {% with user_is_default=request.user|is_member_of:project user_is_user=request.user|is_user_of:project user_is_admin=request.user|is_admin_of:project %}
 
     <div class="title">
-        <b>{{project.title|title}}</b> CIM Questionnaire
+        <b>{{project.title}}</b> CIM Questionnaire
     </div> <!-- /.title -->
 
     <div class="documentation">
