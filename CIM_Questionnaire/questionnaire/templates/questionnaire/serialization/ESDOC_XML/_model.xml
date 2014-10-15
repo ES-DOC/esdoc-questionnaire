@@ -46,19 +46,20 @@
     <subComponents>
         {% for child in children %}
             {% if child.active %}
-                <subComponent>
-                    {% with model=child %}
-                        <{{ model.name }}
-        {#                    {% for property in model|get_standard_properties_with_stereotypes:"attribute" %}#}
-        {#                        {{ property.name }}="{{ property.atomic_value }}"#}
-        {#                    {% endfor %}#}
-                        >
+                {% with model=child %}
+                    <subComponent ontologyTypeKey="{{ model.proxy|get_ontology_type_key }}">
+
+{#                        <{{ model.name }}#}
+{#                              {% for property in model|get_standard_properties_with_stereotypes:"attribute" %}#}
+{#                                  {{ property.name }}="{{ property.atomic_value }}"#}
+{#                              {% endfor %}#}
+{#                        >#}
                             {% with "questionnaire/serialization/ESDOC_XML/_model.xml" as template %}
                                 {% include template %}
                             {% endwith %}
-                        </{{ model.name }}>
-                    {% endwith %} {# /model #}
-                </subComponent>
+{#                        </{{ model.name }}>#}
+                    </subComponent>
+                {% endwith %} {# /model #}
             {% else %}
                 <!-- inactive sub-component -->
             {% endif %} {# /child.active #}
