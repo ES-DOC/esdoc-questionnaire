@@ -181,9 +181,11 @@ function enumerations(element) {
         }
 
         else if (values.indexOf("_OTHER") != -1) {
+            console.log("selected  other");
             $(other).show();
         }
         else {
+            console.log("didin't select other");
             $(other).hide();
         }
 
@@ -317,7 +319,7 @@ function inherit(item) {
             $(child_pane_keys).each(function() {
                 var child_pane = $(".pane[id='"+this+"']");
                 var child_item = $(child_pane).find("tr.field[name='"+item_name+"']").find("input:first,textarea:first");
-                if ($(child_item).next(".inheritance_options").find(".enable_inheritance").is(":checked")) {
+                if ($(child_item).nextAll(".inheritance_options:first").find(".enable_inheritance").is(":checked")) {
                     $(child_item).val(item_value);
                     if ($(child_item).hasClass("enumeration_other")) {
                         $(child_item).show();
