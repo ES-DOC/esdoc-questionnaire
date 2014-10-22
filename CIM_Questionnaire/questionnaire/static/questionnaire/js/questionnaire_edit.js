@@ -280,7 +280,6 @@ function inherit(item) {
     if ($(inheritance_options).find(".enable_inheritance").is(":checked")) {
 
         var tree_widget = $("#component_tree").find(".treeview");
-        console.log("calling inherit")
         if (!($(tree_widget).hasClass("initialized_treeviews"))) {
             /* only carry on if the treeview has already been setup */
             return false;
@@ -303,8 +302,10 @@ function inherit(item) {
             var item_value = $(item).is(":checked");
             $(child_pane_keys).each(function() {
                 var child_pane = $(".pane[id='"+this+"']");
-                var child_item = $(child_pane).find("tr.field[name='"+item_name+"']").find("input:first");
-                if ($(child_item).next(".inheritance_options").find(".enable_inheritance").is(":checked")) {
+                var child_field = $(child_pane).find("tr.field[name='"+item_name+"']");
+                var child_inheritance_options = $(child_field).find("td:nth-child(1) .inheritance_options")
+                var child_item = $(child_field).find("td:nth-child(2) input:first")
+                if ($(child_inheritance_options).find(".enable_inheritance").is(":checked")) {
                     $(child_item).prop("checked",item_value);
                 }
             });
