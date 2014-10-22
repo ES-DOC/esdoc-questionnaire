@@ -276,20 +276,27 @@ function show_pane(pane_key) {
 
 function inherit(item) {
 
-    inheritance_options = $(item).nextAll(".inheritance_options:first");
+    var inheritance_options = $(item).closest(".field").find(".inheritance_options:first");
     if ($(inheritance_options).find(".enable_inheritance").is(":checked")) {
-        var item_name = $(item).closest("tr.field").attr("name");
+
+        var tree_widget = $("#component_tree").find(".treeview");
+        console.log("calling inherit")
+        if (!($(tree_widget).hasClass("initialized_treeviews"))) {
+            /* only carry on if the treeview has already been setup */
+            return false;
+        }
+        var tree = $(tree_widget).dynatree("getTree");
 
         var current_pane = $(item).closest(".pane");
         var current_component_key = $(current_pane).attr("id").replace(/_pane$/,"")
-
-        var tree = $("#component_tree").find(".treeview").dynatree("getTree");
         var current_component_node = tree.getNodeByKey(current_component_key);
 
         var child_pane_keys  = [];
         current_component_node.visit(function(node) {
             child_pane_keys.push(node.data.key+"_pane")
         });
+
+        var item_name = $(item).closest("tr.field").attr("name");
 
         if ($(item).attr("type") == "checkbox") {
             // checkbox
@@ -304,22 +311,23 @@ function inherit(item) {
         }
         else if ($(item).prop("tagName").toLowerCase()=="select") {
             // TODO
-            /*
             if ($(item).attr("multiple")) {
-                alert("inherit multiple select")
+                console.log("inherit multiple select")
             }
             else {
-                alert("inherit single select");
+                console.log("inherit single select");
+                var item_value = $(item).val()
             }
-            */
         }
         else {
             // text input or textarea
             var item_value = $(item).val();
             $(child_pane_keys).each(function() {
                 var child_pane = $(".pane[id='"+this+"']");
-                var child_item = $(child_pane).find("tr.field[name='"+item_name+"']").find("input:first,textarea:first");
-                if ($(child_item).nextAll(".inheritance_options:first").find(".enable_inheritance").is(":checked")) {
+                var child_field = $(child_pane).find("tr.field[name='"+item_name+"']");
+                var child_inheritance_options = $(child_field).find("td:nth-child(1) .inheritance_options")
+                var child_item = $(child_field).find("td:nth-child(2) input:first, textarea:first")
+                if ($(child_inheritance_options).find(".enable_inheritance").is(":checked")) {
                     $(child_item).val(item_value);
                     if ($(child_item).hasClass("enumeration_other")) {
                         $(child_item).show();
