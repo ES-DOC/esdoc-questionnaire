@@ -195,7 +195,7 @@ class MetadataModel(MPTTModel):
     #     with open(serialized_model_path, 'w') as file:
     #         file.write(serialized_model)
 
-    def serialize(self,serialization_version=None, serialization_format=MetadataSerializationFormats.ESDOC_XML):
+    def serialize(self, serialization_version=None, serialization_format=MetadataSerializationFormats.ESDOC_XML):
 
         serialization_dict = {
             "format" : MetadataSerializationFormats.ESDOC_XML,
@@ -212,6 +212,7 @@ class MetadataModel(MPTTModel):
         new_serialization_kwargs = {
             "model" : self,
             "name" : self.guid,
+            "format" : serialization_format,
         }
         if serialization_version:
             new_serialization_kwargs["version"] = serialization_version

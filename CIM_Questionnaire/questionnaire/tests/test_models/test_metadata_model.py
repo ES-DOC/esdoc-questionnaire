@@ -21,7 +21,7 @@ from CIM_Questionnaire.questionnaire.models.metadata_version import MetadataVers
 from CIM_Questionnaire.questionnaire.models.metadata_categorization import MetadataCategorization
 from CIM_Questionnaire.questionnaire.models.metadata_vocabulary import MetadataVocabulary
 from CIM_Questionnaire.questionnaire.models.metadata_project import MetadataProject
-from CIM_Questionnaire.questionnaire.models.metadata_serialization import MetadataModelSerialization
+from CIM_Questionnaire.questionnaire.models.metadata_serialization import MetadataModelSerialization, MetadataSerializationFormats
 from CIM_Questionnaire.questionnaire.models.metadata_vocabulary import UPLOAD_PATH as VOCABULARY_UPLOAD_PATH
 from CIM_Questionnaire.questionnaire.models.metadata_version import UPLOAD_PATH as VERSION_UPLOAD_PATH
 from CIM_Questionnaire.questionnaire.models.metadata_categorization import UPLOAD_PATH as CATEGORIZATION_UPLOAD_PATH
@@ -380,7 +380,9 @@ class TestMetadataModel(TestQuestionnaireBase):
         serialized_model = et.fromstring(str(serialization.content))
 
         self.assertEqual(get_tag_without_namespace(serialized_model), model.proxy.name)
-        self.assertEqual(get_attribute_without_namespace(serialized_model, "schemaLocation"), model.version.url)
+        if serialization.format != MetadataSerializationFormats.ESDOC_XML:
+            # ESDOC doesn't use schemas; only check this if another format is used
+            self.assertEqual(get_attribute_without_namespace(serialized_model, "schemaLocation"), model.version.url)
 
 
 
