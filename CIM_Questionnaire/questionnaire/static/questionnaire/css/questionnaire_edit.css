@@ -41,7 +41,7 @@
 
 #questionnaire .readonly { background: #dcdad5 !important }
 
-#questionnaire .inheritance_options { display: inline; background-color: #B9E0E3; padding: 2px; margin: 2px; }
+#questionnaire .inheritance_options { float: right; background-color: #B9E0E3; padding: 2px; margin: 2px; }
 
 #questionnaire button.ui-datepicker-trigger { font-size: 11px; margin-left: 4px; }
 
