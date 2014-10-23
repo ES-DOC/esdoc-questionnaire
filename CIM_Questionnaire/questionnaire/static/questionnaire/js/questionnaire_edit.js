@@ -313,11 +313,22 @@ function inherit(item) {
         else if ($(item).prop("tagName").toLowerCase()=="select") {
             // TODO
             if ($(item).attr("multiple")) {
-                console.log("inherit multiple select")
+                console.log("inherit multiple select");
             }
             else {
                 console.log("inherit single select");
-                var item_value = $(item).val()
+                var item_value = $(item).val();
+                $(child_pane_keys).each(function() {
+                    var child_pane = $(".pane[id='"+this+"']");
+                    var child_field = $(child_pane).find("tr.field[name='"+item_name+"']");
+                    var child_inheritance_options = $(child_field).find("td:nth-child(1) .inheritance_options")
+                    var child_item = $(child_field).find("td:nth-child(2) .multiselect_content:first")
+                    console.log("found child item (multiselect) w/ class = " + $(child_item).attr("class"));
+                    if ($(child_inheritance_options).find(".enable_inheritance").is(":checked")) {
+                        console.log("going to set child item: " + $(child_item).find("input[value='"+item_value+"']").attr("type"));
+                        $(child_item).find("input[value='" + item_value + "']").prop("checked", true);
+                    }
+                });
             }
         }
         else {
