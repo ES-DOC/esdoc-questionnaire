@@ -67,9 +67,10 @@
 
         <fieldset>
 
-<div class='instructions'>
-This menu lists projects that have registered with the CIM Questionnaire.  To view sample CIM Instances please select "Downscaling" and then click the "submit" button.
-</div>
+            <div class='instructions'>
+                This menu lists projects that have registered with the CIM Questionnaire.  To view sample CIM Instances please select "Downscaling" and then click the "submit" button.
+            </div>
+
             <table width="100%">
                 {% for field in form %}
                     <tr class="{% cycle 'odd' 'even' %} field" name="{{field.html_name}}">
