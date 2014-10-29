@@ -7,13 +7,9 @@ from django.http        import *
 
 from django.core.urlresolvers   import reverse
 from django.contrib             import messages
-#from django.contrib.messages    import get_messages
 
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.sites.models    import get_current_site
-
-from profiling          import encode_profile as profile
-from profiling          import profile_memory as profile_memory
 
 from django.views.decorators.debug import sensitive_post_parameters
 
