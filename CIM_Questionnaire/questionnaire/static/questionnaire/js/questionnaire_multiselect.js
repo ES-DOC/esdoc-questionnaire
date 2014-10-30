@@ -226,8 +226,6 @@ $.widget("questionnaire.multiselect", {
             });
 
             $(widget_choice).change(function(event) {
-                alert("I've changed!")
-
                 if (options.multiple) {
                     $(this).toggleClass("selected");
                 }

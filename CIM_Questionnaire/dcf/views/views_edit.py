@@ -27,10 +27,6 @@ from django.http import *
 from django.shortcuts import *
 from django.contrib.sites.models    import get_current_site
 
-
-from profiling          import encode_profile as profile_usage
-from profiling          import profile_memory as profile_memory
-
 from dcf.utils  import *
 from dcf.models import *
 from dcf.forms  import *
