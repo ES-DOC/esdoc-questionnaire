@@ -18,10 +18,17 @@ DEBUG_TOOLBAR = parser.getboolean('debug','debug_toolbar') # this enables django
 DEBUG_PROFILING = parser.getboolean('debug','debug_profiling')
 
 ADMINS = (
-# ('name', 'email')
+#    ( parser.get('admin', 'name'), parser.get('admin', 'email'))
 )
 
 MANAGERS = ADMINS
+
+
+EMAIL_HOST = parser.get('email', 'host')
+EMAIL_PORT = parser.get('email', 'port')
+EMAIL_HOST_USER = parser.get('email', 'username')
+EMAIL_HOST_PASSWORD = parser.get('email', 'password')
+EMAIL_USE_TLS = True
 
 # DB SETTINGS
 DATABASES = {

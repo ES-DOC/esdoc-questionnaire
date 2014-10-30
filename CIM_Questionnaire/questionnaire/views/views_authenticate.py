@@ -20,11 +20,17 @@ Summary of module goes here
 
 """
 
-from django.contrib.auth        import authenticate, login, logout
-
+from django.core.urlresolvers import reverse
+from django.contrib import messages
+from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
-from django.utils.html  import mark_safe
-from django             import forms
+from django.shortcuts import redirect, render_to_response
+from django.core.mail import send_mail
+from django.http import HttpResponseRedirect
+from django.utils.html import mark_safe
+from django.conf import settings
+from django import forms
+
 
 from questionnaire.utils  import *
 from questionnaire.views  import *
@@ -178,6 +184,7 @@ def questionnaire_register(request):
             login(request,authenticate(username=new_username,password=new_user_pwd))
 
             if next:
+                print "going to %s" % next
                 return HttpResponseRedirect(next)
             else:
                 return HttpResponseRedirect("/user/%s"%(new_username))
@@ -189,10 +196,43 @@ def questionnaire_register(request):
 
     # gather all the extra information required by the template
     dict = {
-        "site"                  : get_current_site(request),
-        "form"                  : registration_form,
+        "site" : get_current_site(request),
+        "form" : registration_form,
+        "next" : next,
         "questionnaire_version" : get_version(),
     }
 
 
     return render_to_response('questionnaire/questionnaire_register.html', dict, context_instance=RequestContext(request))
+
+
+def questionnaire_join(request, project, permissions=['default']):
+
+    if request.method == "POST":
+
+        current_user = request.user
+
+        _msg = "User '%s' wants to join project '%s' with the following permissions: %s" % (current_user.username, project.name, ", ".join([u"'%s'"%permission for permission in permissions]))
+        _from = settings.EMAIL_HOST_USER
+        _to = [ settings.EMAIL_HOST_USER ]
+
+        # TODO: REWRITE THIS IN A SEPARATE THREAD
+
+        try:
+            send_mail("ES-DOC Questionnaire project join request", _msg,_from,_to,fail_silently=False)
+            messages.add_message(request, messages.SUCCESS, "Successfully sent request.")
+        except:
+            messages.add_message(request, messages.ERROR, "Unable to send request.")
+
+        index_url = reverse("index")
+        return HttpResponseRedirect(index_url)
+
+
+    # gather all the extra information required by the template
+    dict = {
+        "site" : get_current_site(request),
+        "project" : project,
+        "questionnaire_version" : get_version(),
+    }
+
+    return render_to_response('questionnaire/questionnaire_join.html', dict, context_instance=RequestContext(request))
