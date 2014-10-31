@@ -211,15 +211,17 @@ def questionnaire_join(request, project, permissions=['default']):
     if request.method == "POST":
 
         current_user = request.user
+        site = get_current_site(request)
 
-        _msg = "User '%s' wants to join project '%s' with the following permissions: %s" % (current_user.username, project.name, ", ".join([u"'%s'"%permission for permission in permissions]))
+        _msg = "User '%s' wants to join project '%s' with the following permissions: %s.\n(Request sent from site: %s.)" % \
+               (current_user.username, project.name, ", ".join([u"'%s'"%permission for permission in permissions]), site.name)
         _from = settings.EMAIL_HOST_USER
         _to = [ settings.EMAIL_HOST_USER ]
 
         # TODO: REWRITE THIS IN A SEPARATE THREAD
 
         try:
-            send_mail("ES-DOC Questionnaire project join request", _msg,_from,_to,fail_silently=False)
+            send_mail("ES-DOC Questionnaire project join request", _msg, _from, _to, fail_silently=False)
             messages.add_message(request, messages.SUCCESS, "Successfully sent request.")
         except:
             messages.add_message(request, messages.ERROR, "Unable to send request.")
