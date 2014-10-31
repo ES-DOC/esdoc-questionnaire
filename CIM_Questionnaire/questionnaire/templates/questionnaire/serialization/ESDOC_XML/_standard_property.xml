@@ -16,7 +16,7 @@
 
             <{{ tagname }}>
                 {% for value in property.get_value %}
-                    <!-- separating values by "|" rather than in explicit tags -->
+                    {# separating values by "|" rather than in explicit tags #}
                     {# <value>{{ value }}</value> #}
                     {{ value }} {% if not forloop.last %} | {% endif %}
                 {% endfor %}
