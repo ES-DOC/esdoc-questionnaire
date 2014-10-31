@@ -31,8 +31,8 @@ register = template.Library()
 def get_institute_code(model):
     """
     this is a one-off for pyesdoc serializations which require this
-    :param model:
-    :return:
+    :param model: the model whose institute code is being requested
+    :return: the responsibleParty -> organisationName if available (otherwise None)
     """
     try:
         responsible_party = get_standard_property_by_name(model, "responsibleParty").relationship_value.all()[0]
