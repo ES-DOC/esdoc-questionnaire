@@ -56,6 +56,8 @@ TIME_ZONE = 'America/Denver'
 # http://www.i18nguy.com/unicode/language-identifiers.html
 LANGUAGE_CODE = 'en-us'
 
+# this is overwritten in questionnaire.__init__.py
+SITE_NAME = parser.get('site','name')
 SITE_ID = 1
 
 # If you set this to False, Django will make some optimizations so as not
