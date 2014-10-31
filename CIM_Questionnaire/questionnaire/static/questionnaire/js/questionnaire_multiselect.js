@@ -270,7 +270,7 @@ $.widget("questionnaire.multiselect", {
         $(widget).append(header);
         $(widget).append(content);
         $(widget).insertAfter(element);
-        //$(element).hide();
+        $(element).hide();
 
         // and some fine-tuning...
         if (options.sortable) {
