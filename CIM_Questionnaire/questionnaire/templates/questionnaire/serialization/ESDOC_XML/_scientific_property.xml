@@ -18,9 +18,7 @@
 
     {% else %}
 
-        <value>
-            {{ property.get_value.strip }}
-        </value>
+        <value>{{ property.get_value.strip }}</value>
 
     {% endif %} {# /is_enumeration #}
 
