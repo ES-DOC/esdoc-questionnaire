@@ -74,13 +74,13 @@ class MetadataUserForm(ModelForm):
     class Meta:
         model   = MetadataUser
         fields  = [
-                    "first_name","last_name","email","projects",
+                    # "first_name","last_name","email","projects",
+                    "first_name","last_name","email",
                   ]
 
-    first_name   = CharField(label="First Name",required=False,validators=[valiate_no_bad_chars,])
-    last_name    = CharField(label="Last Name",required=False,validators=[valiate_no_bad_chars,])
-    email        = EmailField(label="Email",required=False,validators=[valiate_no_bad_chars,])
-
+    first_name = CharField(label="First Name",required=False,validators=[valiate_no_bad_chars,])
+    last_name  = CharField(label="Last Name",required=False,validators=[valiate_no_bad_chars,])
+    email      = EmailField(label="Email",required=False,validators=[valiate_no_bad_chars,])
 
     def __init__(self,*args,**kwargs):
         super(MetadataUserForm,self).__init__(*args,**kwargs)
@@ -90,10 +90,10 @@ class MetadataUserForm(ModelForm):
 
         self.fields["first_name"].initial = user.first_name
         self.fields["last_name"].initial  = user.last_name
-        self.fields["projects"].help_text = None
-        self.fields["projects"].help_text = "Please contact the project to become a project member.  (Project contact details can be found on their landing page.)"
-
-        update_field_widget_attributes(self.fields["projects"],{"readonly":"readonly"})
+        # self.fields["projects"].help_text = None
+        # self.fields["projects"].help_text = "Please contact the project to become a project member.  (Project contact details can be found on their landing page.)"
+        #
+        # update_field_widget_attributes(self.fields["projects"],{"readonly":"readonly"})
 
     def save(self,commit=True):
         first_name = self.cleaned_data["first_name"]
