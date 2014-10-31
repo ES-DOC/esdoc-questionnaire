@@ -28,6 +28,20 @@ from CIM_Questionnaire.questionnaire.models.metadata_model import MetadataModel,
 register = template.Library()
 
 @register.filter
+def get_institute_code(model):
+    """
+    this is a one-off for pyesdoc serializations which require this
+    :param model:
+    :return:
+    """
+    try:
+        responsible_party = get_standard_property_by_name(model, "responsibleParty").relationship_value.all()[0]
+        institute = get_standard_property_by_name(responsible_party, "organisationName")
+        return institute.atomic_value
+    except AttributeError:
+        return None
+
+@register.filter
 def get_standard_property_by_name(model, property_name):
     property_name_lower = property_name.lower()
     standard_properties = model.standard_properties.all()

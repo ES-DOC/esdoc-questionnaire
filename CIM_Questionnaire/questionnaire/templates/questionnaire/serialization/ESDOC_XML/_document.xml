@@ -13,7 +13,7 @@
         <encoding>XML</encoding>
     </encodings>
     <id>{{ model.get_id }}</id>
-    <institute>???</institute>
+    <institute>{{ model|get_institute_code }}</institute>
     <language>en</language>
     <project>{{ project.name }}</project>
     <source>CIM Questionnaire</source>
