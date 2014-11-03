@@ -17,6 +17,6 @@
     <language>en</language>
     <project>{{ project.name }}</project>
     <source>CIM Questionnaire</source>
-    <type>{{ proxy|get_ontology_type_key }}</type>
+    <type>{{ model|get_ontology_type_key }}</type>
     <version>{{ model.get_major_version }}</version>
 </meta>

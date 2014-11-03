@@ -47,7 +47,7 @@
         {% for child in children %}
             {% if child.active %}
                 {% with model=child %}
-                    <subComponent ontologyTypeKey="{{ model.proxy|get_ontology_type_key }}">
+                    <subComponent ontologyTypeKey="{{ model|get_ontology_type_key }}">
 
 {#                        <{{ model.name }}#}
 {#                              {% for property in model|get_standard_properties_with_stereotypes:"attribute" %}#}

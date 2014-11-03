@@ -121,14 +121,15 @@ def get_fully_qualified_tagname(property):
         return u"%s" % (property.name)
 
 @register.filter
-def get_ontology_type_key(proxy):
+def get_ontology_type_key(model):
     """
     returns the ES-DOC type for this proxy
     :param property:
     :return:
     """
-
-    return "cim.1.%s.%s" % (proxy.package,proxy.name[0].upper()+proxy.name[1:])
+    proxy = model.proxy
+    ontology_type_key = "cim.1.%s.%s" % (proxy.package, proxy.name[0].upper()+proxy.name[1:])
+    return ontology_type_key
 
 PLURAL_MAP = {
     'cactus' : 'cacti',
