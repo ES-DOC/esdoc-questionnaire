@@ -34,12 +34,24 @@ def get_institute_code(model):
     :param model: the model whose institute code is being requested
     :return: the responsibleParty -> organisationName if available (otherwise None)
     """
-    try:
-        responsible_party = get_standard_property_by_name(model, "responsibleParty").relationship_value.all()[0]
-        institute = get_standard_property_by_name(responsible_party, "organisationName")
+    document_author_property = get_standard_property_by_name(model, "documentAuthor")
+    if document_author_property:
+        document_author = document_author_property.relationship_value.all()[0]
+        institute = get_standard_property_by_name(document_author, "organisationName")
         return institute.atomic_value
-    except AttributeError:
-        return None
+    else:
+        parent_property_set = model.metadatastandardproperty_set.all()
+        if parent_property_set:
+            parent_model = parent_property_set[0].model
+            return get_institute_code(parent_model)
+        else:
+            return None
+    # try:
+    #     document_author = get_standard_property_by_name(model, "documentAuthor").relationship_value.all()[0]
+    #     institute = get_standard_property_by_name(document_author, "organisationName")
+    #     return institute.atomic_value
+    # except AttributeError:
+    #     return None
 
 @register.filter
 def get_standard_property_by_name(model, property_name):
