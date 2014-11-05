@@ -1,7 +1,6 @@
 __author__="allyn.treshansky"
 __date__ ="$Sep 30, 2013 3:11:26 PM$"
 
-
 from views_error        import questionnaire_error as error
 from views_help         import questionnaire_help  as help
 from views_ajax         import ajax_customize_category, ajax_customize_subform, ajax_select_realization

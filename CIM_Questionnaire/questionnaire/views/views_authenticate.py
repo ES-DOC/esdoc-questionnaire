@@ -70,7 +70,7 @@ def questionnaire_login(request):
             
             if remote_form.is_valid():
                 provider_id  = remote_form.cleaned_data["providers"]
-                provider     = MetadataOpenIDProvider.objects.get(id=provider_id)
+                provider     = QuestionnaireProvider.objects.get(id=provider_id)
                 username     = remote_form.cleaned_data["username"]
                 provider_url = provider.url.replace("{username}",username)
                 return HttpResponseRedirect(provider_url)
@@ -115,16 +115,16 @@ def questionnaire_user(request,user_name=""):
         user            = User.objects.get(username=user_name)
     except User.DoesNotExist:
         msg = "Unable to locate user '%s'" % (user_name)
-        return questionnaire_error(request,msg)
+        return error(request,msg)
     if user.is_superuser:
         msg = "You can't edit details of the site administrator.  Sheesh."
-        return questionnaire_error(request,msg)
+        return error(request,msg)
     metadata_user = user.metadata_user
 
     current_user = request.user
     if current_user.username != user_name and not current_user.is_superuser:
         msg = "You do not have permission to edit this user."
-        return questionnaire_error(request,msg)
+        return error(request,msg)
 
     if request.method == "POST":
 

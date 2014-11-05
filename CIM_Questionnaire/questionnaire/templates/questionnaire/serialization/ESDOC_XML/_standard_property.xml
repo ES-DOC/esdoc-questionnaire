@@ -8,19 +8,10 @@
 
         {% if property_type == "ATOMIC" %}
 
-            <{{ tagname }}>
-                {{ property.get_value }}
-            </{{ tagname }}>
+            <{{ tagname }}>{{ property.get_value }}</{{ tagname }}>
 
         {% elif property_type == "ENUMERATION" %}
-
-            <{{ tagname }}>
-                {% for value in property.get_value %}
-                    <!-- separating values by "|" rather than in explicit tags -->
-                    {# <value>{{ value }}</value> #}
-                    {{ value }} {% if not forloop.last %} | {% endif %}
-                {% endfor %}
-            </{{ tagname }}>
+            <{{ tagname }}>{# separating values by "|" rather than in explicit tags #}{% for value in property.get_value %}{{ value }}{% if not forloop.last %} | {% endif %}{% endfor %}</{{ tagname }}>
 
         {% elif property_type == "RELATIONSHIP" %}
 

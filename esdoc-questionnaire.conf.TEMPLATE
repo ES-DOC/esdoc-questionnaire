@@ -6,6 +6,15 @@ password=
 host=127.0.0.1
 port=5432
 
+[email]
+host=smtp.gmail.com
+port=
+username=
+password=
+
+[site]
+name=localhost
+
 [settings]
 secret_key=
 static_root=static/

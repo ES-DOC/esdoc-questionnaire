@@ -70,7 +70,13 @@
         </p>
     </div>
       
-    <form method="POST" action=".">
+    {% if next %} {# keep the next parameter through any unsuccessful attempts #}
+        <form method="POST" action="/register/?next={{next}}">
+    {% else %}
+        <form method="POST" action="/register/">
+    {% endif %} {# /next #}
+
+    {#<form method="POST" action=".">#}
         {% csrf_token %}
 
         <fieldset>

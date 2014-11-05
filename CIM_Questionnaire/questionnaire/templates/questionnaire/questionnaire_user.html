@@ -31,11 +31,11 @@
             // do this last b/c some of the xpath depends on changes made by the above fns...
             init_errors(parent);
 
-            // specific to user...
-            $("select[name='projects']").each(function() {
-                $(this).addClass("ui-state-disabled");
-                $(this).prop("disabled","true");
-            });
+{#            // specific to user...#}
+{#            $("select[name='projects']").each(function() {#}
+{#                $(this).addClass("ui-state-disabled");#}
+{#                $(this).prop("disabled","true");#}
+{#            });#}
         }
     );
 
@@ -49,6 +49,7 @@
 
         #questionnaire .form_container          { overflow: auto;  width: 1600px; }
         #questionnaire fieldset                 { float: left; margin: 8px; width: 620px; }
+
 
     </style>
 
@@ -66,7 +67,10 @@
 
     <div class="documentation">
         <p>
-            Information about the user: <b>{{user}}</b>.  Only {{user}} or the administrator can change these.
+            Information about the user: <b>{{user}}</b>.
+        </p>
+        <p>
+            Only {{user}} or the administrator can change these.
         </p>
     </div> <!-- /.documentation -->
 
@@ -94,6 +98,29 @@
                             {% include "questionnaire/_field.html" %}
                         </tr>
                     {% endfor %} {# / field in user_form #}
+                    <tr>
+                        {# add a one-off listing of projects  #}
+                        <td colspan="100">
+                            <fieldset>
+                                <legend>
+                                    <span>&nbsp;Project Membership&nbsp;</span>
+                                </legend>
+                                <table width="100%">
+                                    {% for project in user.metadata_user.projects.all %}
+                                        <tr class="{% cycle 'odd' 'even' %}">
+                                            <td>
+                                                <a href="/{{ project.name }}">{{ project.title }}</a>
+                                                {% if project.description %}
+                                                    : {{ project.description }}
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                    {% endfor %} {# /project #}
+                                </table>
+                            </fieldset> <!-- /.projects -->
+                        </td>
+                    </tr>
+
                 </table>
                 <div style="clear: both;">&nbsp;</div>
                     <div class="submit">

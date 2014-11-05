@@ -3,7 +3,7 @@
 {% load serialization_filters %}
 
 {% spaceless %}
-    <{{ proxy.name }} ontologyTypeKey="{{ proxy|get_ontology_type_key }}"
+    <{{ proxy.name }} ontologyTypeKey="{{ model|get_ontology_type_key }}"
 {#        {% for property in model|get_standard_properties_with_stereotypes:"attribute" %}#}
 {#            {{ property.name }}="{{ property.atomic_value }}"#}
 {#        {% endfor %}#}

@@ -1,0 +1,79 @@
+{% extends "questionnaire/questionnaire_base.html" %}
+
+{% load questionnaire_filters %}
+
+{# this template is very similar to questionnaire_error #}
+{# but it adds a 'join' button #}
+
+{% block scripts %}
+
+    <script language="javascript">
+
+    /* just setup the minimum of jquery-ui functionality */
+    $(document).ready(
+        function() {
+
+            var parent = document.body;
+
+            // do this first so that the dialogs appear near the top of the page
+            init_dialogs(parent);
+
+            init_widgets(users,$(parent).find("#user"));
+            init_widgets(helps,$(parent).find(".help_button"));
+            init_widgets(buttons,$(parent).find(".button"));
+            
+        }
+    );
+
+    </script>
+
+{% endblock %} {# /scripts #}
+
+{% block style %}
+    <style type="text/css">
+
+        #questionnaire .msg  { text-align: center; font-weight: bold; padding: 8px; }
+        #questionnaire .msg a { color: #000000; }
+        #questionnaire .join { margin: 12px; padding: 2px; }
+
+    </style>
+
+{% endblock %} {# /style #}
+
+{% block title %}
+
+    CIM Questionnaire Access Denied
+
+{% endblock %} {# /title #}
+
+{% block content %}
+
+    <div class="title">
+        {#{{ project.title }} Access Denied#}
+        CIM Questionnaire Access Denied
+    </div> <!-- /.title -->
+
+    <fieldset>
+
+        <form method="POST" action=".">
+
+            {% csrf_token %}
+
+            <div class="msg">
+
+                You do not have permission to edit this instance of the CIM Questionnaire for the <a href="/{{ project.name|lower }}">{{ project.title }} project</a>.
+
+                <div class="join">
+                    <input class="button"  name="join"  type="submit"  value="Join {{ project.title }} Project"/>
+                </div> <!-- /.join -->
+
+                Your request will be sent to the project administrator for review.
+
+            </div> <!-- /.msg -->
+
+        </form>
+
+    </fieldset>
+
+
+{% endblock %} {# /content #}

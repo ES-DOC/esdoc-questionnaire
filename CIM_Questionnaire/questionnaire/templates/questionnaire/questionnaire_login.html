@@ -62,7 +62,7 @@
                 welcome: <a href="/user/{{ user }}"><b>{{ user }}</b></a>&nbsp; <a class="button" title="logout" href="{% url 'logout' %}?next={{ request.path }}">logout</a>
             {% endwith %} {# /user #}
         {% else %}
-            <a title="register" class="button" href="/register">register</a>
+            <a title="register" class="button" href="/register?next={{ next }}">register</a>
             {# obviously don't need login button on login page #}
             {# <a title="login" class="button" href="/login">login</a> #}
         {% endif %}
