@@ -21,13 +21,24 @@ Summary of module goes here
 """
 
 
-from django import forms
 from django.forms import *
 
-from CIM_Questionnaire.questionnaire.views import *
-from CIM_Questionnaire.questionnaire.models import *
+from django.core.urlresolvers import reverse
+from django.contrib.sites.models import get_current_site
+from django.shortcuts import render_to_response, redirect
+from django.http import HttpResponseRedirect
+from django.template import RequestContext
+from django.contrib import messages
+
+from CIM_Questionnaire.questionnaire.models.metadata_project import MetadataProject
+from CIM_Questionnaire.questionnaire.models.metadata_proxy import MetadataModelProxy
+from CIM_Questionnaire.questionnaire.models.metadata_version import MetadataVersion
+from CIM_Questionnaire.questionnaire.models.metadata_customizer import MetadataModelCustomizer
+from CIM_Questionnaire.questionnaire.models.metadata_model import MetadataModel
+from CIM_Questionnaire.questionnaire.views.views_error import questionnaire_error
 from CIM_Questionnaire.questionnaire.utils import SUPPORTED_DOCUMENTS
-from CIM_Questionnaire.questionnaire.utils import get_version, remove_form_errors
+from CIM_Questionnaire.questionnaire.utils import remove_form_errors
+from CIM_Questionnaire.questionnaire import get_version
 
 def questionnaire_index(request):
     """The default view for the CIM Questionnaire.  Provides a choice of active projects to visit."""
@@ -74,7 +85,7 @@ def questionnaire_project_index(request,project_name=""):
         project = MetadataProject.objects.get(name__iexact=project_name,active=True)
     except MetadataProject.DoesNotExist:
         msg = "Could not find an active project named '%s'." % (project_name)
-        return error(request,msg)
+        return questionnaire_error(request,msg)
 
     all_versions = MetadataVersion.objects.filter(registered=True)
     all_proxies = MetadataModelProxy.objects.filter(stereotype__iexact="document",version__in=all_versions)

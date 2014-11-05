@@ -20,10 +20,13 @@ Summary of module goes here
 
 """
 
-from questionnaire.utils    import *
-from questionnaire.models   import *
-from questionnaire.forms    import *
-from questionnaire.views    import *
+from django.contrib.sites.models import get_current_site
+from django.shortcuts import render_to_response
+from django.http import HttpResponseRedirect
+from django.template import RequestContext
+from django.contrib import messages
+
+from CIM_Questionnaire.questionnaire import get_version
 
 def test(request):
 

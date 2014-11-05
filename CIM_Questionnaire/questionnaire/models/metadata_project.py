@@ -24,8 +24,8 @@ from django.db import models
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.auth.models import Group, Permission
 
-from questionnaire.utils  import *
-from questionnaire.models import *
+from CIM_Questionnaire.questionnaire import APP_LABEL
+from CIM_Questionnaire.questionnaire.utils import validate_no_spaces, validate_no_reserved_words
 
 # THIS IS THE SET OF GROUPS & CORRESPONDING PERMISSIONS THAT EVERY PROJECT HAS:
 GROUP_PERMISSIONS = {

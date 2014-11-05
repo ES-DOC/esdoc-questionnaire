@@ -20,8 +20,10 @@ Summary of module goes here
 
 """
 
-from questionnaire.views import *
-from questionnaire.utils import get_version
+from django.shortcuts import render_to_response
+from django.template import RequestContext
+from django.contrib.sites.models import get_current_site
+from CIM_Questionnaire.questionnaire import get_version
 
 def questionnaire_help(request):
 

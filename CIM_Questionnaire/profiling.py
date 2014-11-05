@@ -22,18 +22,11 @@ Summary of module goes here
 
 import hotshot
 import hotshot.stats
-
 import os
 import time
-import settings
-import tempfile
 
-from functools import wraps
-
-try:
-    PROFILE_LOG_BASE = settings.PROFILE_LOG_BASE[0] # rel gives a tuple
-except:
-    PROFILE_LOG_BASE = tempfile.gettempdir()
+from django.conf import settings
+from questionnaire import APP_LABEL
 
 def encode_profile(log_file):
     """Profile some callable.
@@ -49,28 +42,31 @@ def encode_profile(log_file):
     multiple trials.
     """
 
-    if not os.path.isabs(log_file):
-        log_file = os.path.join(PROFILE_LOG_BASE, log_file)
-
+    log_file = os.path.join(settings.MEDIA_ROOT,APP_LABEL,"profiles",log_file)
+    if not os.path.exists(os.path.dirname(log_file)):
+        os.makedirs(os.path.dirname(log_file))
 
     def _outer(f):
+
         def _inner(*args, **kwargs):
-            # Add a timestamp to the profile output when the callable
-            # is actually called.
+
+            # Add a timestamp to the profile output
             (base, ext) = os.path.splitext(log_file)
             base = base + "_" + time.strftime("%Y-%m-%d-T%H%M%S", time.gmtime())
             final_log_file = base + ext
 
             prof = hotshot.Profile(final_log_file)
+
             try:
                 ret = prof.runcall(f, *args, **kwargs)
             finally:
                 prof.close()
             print "created profile: %s" % final_log_file
+
             return ret
 
         # only profile in DEBUG mode
-        if settings.PROFILE and settings.DEBUG:
+        if settings.DEBUG and settings.DEBUG_PROFILING:
             return _inner
         else:
             return f
@@ -85,51 +81,3 @@ def decode_profile(profile):
     stats.print_stats(20)
 
 
-###############################
-# memory profiling            #
-###############################
-
-from guppy  import hpy
-hpy = hpy()
-#SETUP_HPY = False  # defined in settings.py
-
-def setup_hpy(reset=False):
-    print "setting up heapy..."
-    if (not settings.SETUP_HPY) or (reset) :
-        print "resetting it"
-        hpy.setrelheap()
-        settings.SETUP_HPY = True
-    else:
-        print "not resetting it"
-
-def profile_memory(log_file):
-
-    if not os.path.isabs(log_file):
-        log_file = os.path.join(PROFILE_LOG_BASE, log_file)
-
-    def _outer(fn):
-        def _inner(request, *args, **kwargs):
-
-            # only profile in DEBUG mode
-            if settings.PROFILE and settings.DEBUG:
-                # before fn call...
-                (base, ext) = os.path.splitext(log_file)
-#                base = base + "_" + time.strftime("%Y-%m-%d-T%H%M%S", time.gmtime())
-                final_log_file = base + ext
-                setup_hpy()
-
-            # fn call..
-            retval = fn(request, *args, **kwargs)
-
-            if settings.PROFILE and settings.DEBUG:
-                # after fn call...
-                hp = hpy.heap()
-                with open(final_log_file,'w') as f:
-                    f.write(str(hp))
-                f.closed
-
-            return retval
-
-        return wraps(fn)(_inner)
-
-    return _outer

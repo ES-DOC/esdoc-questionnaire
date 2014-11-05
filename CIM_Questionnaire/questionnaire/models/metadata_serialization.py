@@ -29,7 +29,6 @@ from CIM_Questionnaire.questionnaire.utils import APP_LABEL, LIL_STRING, SMALL_S
 from CIM_Questionnaire.questionnaire.utils import EnumeratedType, EnumeratedTypeList
 
 
-
 class MetadataSerializationFormat(EnumeratedType):
     pass
 

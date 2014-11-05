@@ -24,15 +24,9 @@ from CIM_Questionnaire.questionnaire.models.metadata_proxy import MetadataModelP
 from CIM_Questionnaire.questionnaire.models.metadata_customizer import MetadataCustomizer, MetadataModelCustomizer
 from CIM_Questionnaire.questionnaire.models.metadata_model import MetadataModel, MetadataStandardProperty, MetadataScientificProperty
 from CIM_Questionnaire.questionnaire.models.metadata_model import get_model_parent_dictionary
-
 from CIM_Questionnaire.questionnaire.forms.forms_edit import create_new_edit_forms_from_models, create_existing_edit_forms_from_models, create_edit_forms_from_data, save_valid_forms
-
 from CIM_Questionnaire.questionnaire.views.views_error import questionnaire_error
-
-#from CIM_Questionnaire.questionnaire.views import *
-
 from CIM_Questionnaire.questionnaire.utils import get_joined_keys_dict
-
 from CIM_Questionnaire.questionnaire import get_version
 
 __author__ = "allyn.treshansky"

@@ -1,17 +1,6 @@
 __author__="allyn.treshansky"
 __date__ ="$Sep 30, 2013 3:11:26 PM$"
 
-from django.template    import *
-from django.shortcuts   import *
-from django.http        import *
-
-from django.core.urlresolvers   import reverse
-from django.contrib             import messages
-
-from django.contrib.auth.decorators import login_required, permission_required
-from django.contrib.sites.models    import get_current_site
-
-from django.views.decorators.debug import sensitive_post_parameters
 
 from views_error        import questionnaire_error as error
 from views_help         import questionnaire_help  as help

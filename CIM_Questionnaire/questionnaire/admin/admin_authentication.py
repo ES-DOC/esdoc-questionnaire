@@ -25,7 +25,7 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.models import User
 
-from questionnaire.models import MetadataUser, MetadataProvider
+from CIM_Questionnaire.questionnaire.models.metadata_authentication import MetadataUser, MetadataOpenIDProvider
 
 class MetadataUserInline(admin.StackedInline):
     model = MetadataUser
@@ -60,9 +60,9 @@ class MetadataAdmin(UserAdmin):
 admin.site.unregister(User)
 admin.site.register(User, MetadataAdmin)
 
-class MetadataProviderAdmin(admin.ModelAdmin):
+class MetadataOpenIDProviderAdmin(admin.ModelAdmin):
     fields = ('name','title','url','icon','image_tag','active')
     readonly_fields = ('image_tag',)
 
 
-admin.site.register(MetadataProvider,MetadataProviderAdmin)
+admin.site.register(MetadataOpenIDProvider, MetadataOpenIDProviderAdmin)

@@ -20,14 +20,20 @@ Summary of module goes here
 
 """
 
-from django.db      import models
+from django.db import models
 from django.contrib import messages
+from django.conf import settings
+from lxml import etree as et
 
 import os
 import re
 
-from questionnaire.utils    import *
-from questionnaire.models   import *
+from CIM_Questionnaire.questionnaire import APP_LABEL
+from CIM_Questionnaire.questionnaire.models.metadata_proxy import MetadataModelProxy, MetadataStandardPropertyProxy, MetadataStandardCategoryProxy
+from CIM_Questionnaire.questionnaire.utils import LIL_STRING, SMALL_STRING, BIG_STRING, HUGE_STRING
+from CIM_Questionnaire.questionnaire.utils import OverwriteStorage
+from CIM_Questionnaire.questionnaire.utils import validate_file_extension, validate_file_schema, xpath_fix
+
 
 UPLOAD_DIR  = "categorizations"
 UPLOAD_PATH = os.path.join(APP_LABEL,UPLOAD_DIR)    # this is a relative path (will be concatenated w/ MEDIA_ROOT by FileFIeld)
@@ -153,9 +159,9 @@ def project_post_delete(sender, **kwargs):
     categorization = kwargs.pop("instance",None)
     if categorization:
         try:
-            self.file.delete(save=False)    # save=False prevents model from re-saving itself
+            categorization.file.delete(save=False)    # save=False prevents model from re-saving itself
             # TODO: CHECK THAT FILE.URL IS THE RIGHT WAY TO PRINT THIS
-            print "deleted %s" % (self.file.url)
+            print "deleted %s" % (categorization.file.url)
         except:
             pass
 

@@ -20,16 +20,21 @@ Summary of module goes here
 
 """
 
-from django.contrib.auth        import authenticate, login, logout
-
+from django.http import HttpResponseRedirect
+from django.shortcuts import render_to_response
+from django.template import RequestContext
+from django.contrib import messages
+from django.views.decorators.debug import sensitive_post_parameters
+from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
-from django.utils.html  import mark_safe
-from django             import forms
+from django.contrib.sites.models import get_current_site
 
-from questionnaire.utils  import *
-from questionnaire.views  import *
-from questionnaire.forms  import *
-from questionnaire.models import *
+from CIM_Questionnaire.questionnaire.models.metadata_authentication import MetadataOpenIDProvider
+from CIM_Questionnaire.questionnaire.forms.forms_authentication import LocalAuthenticationForm, RemoteAuthenticationForm, MetadataUserForm, MetadataRegistrationForm, MetadataPasswordForm
+from CIM_Questionnaire.questionnaire.views.views_error import questionnaire_error
+from CIM_Questionnaire.questionnaire.utils import remove_form_errors
+from CIM_Questionnaire.questionnaire import get_version
+
 
 def questionnaire_login(request):
 
@@ -65,7 +70,7 @@ def questionnaire_login(request):
             
             if remote_form.is_valid():
                 provider_id  = remote_form.cleaned_data["providers"]
-                provider     = QuestionnaireProvider.objects.get(id=provider_id)
+                provider     = MetadataOpenIDProvider.objects.get(id=provider_id)
                 username     = remote_form.cleaned_data["username"]
                 provider_url = provider.url.replace("{username}",username)
                 return HttpResponseRedirect(provider_url)
@@ -110,16 +115,16 @@ def questionnaire_user(request,user_name=""):
         user            = User.objects.get(username=user_name)
     except User.DoesNotExist:
         msg = "Unable to locate user '%s'" % (user_name)
-        return error(request,msg)
+        return questionnaire_error(request,msg)
     if user.is_superuser:
         msg = "You can't edit details of the site administrator.  Sheesh."
-        return error(request,msg)
+        return questionnaire_error(request,msg)
     metadata_user = user.metadata_user
 
     current_user = request.user
     if current_user.username != user_name and not current_user.is_superuser:
         msg = "You do not have permission to edit this user."
-        return error(request,msg)
+        return questionnaire_error(request,msg)
 
     if request.method == "POST":
 

@@ -23,8 +23,8 @@ Summary of module goes here
 from django.db import models
 from django.contrib import messages
 from django.conf import settings
-
 from lxml import etree as et
+
 import os
 import re
 
