@@ -13,7 +13,7 @@ class Test(TestQuestionnaireBase):
 
         kwargs = {
             "project_name" : self.project.name.lower(),
-            "version_name" : self.version.name.lower(),
+            "version_key" : self.version.get_key(),
             "model_name" : self.model_realization.name.lower(),
             "model_guid" : self.model_realization.guid,
         }
@@ -34,7 +34,7 @@ class Test(TestQuestionnaireBase):
         self.assertEqual(validity, False)
 
         invalid_kwargs = kwargs.copy()
-        invalid_kwargs.update( { "version_name" : "invalid" } )
+        invalid_kwargs.update( { "version_key" : "invalid" } )
         (validity, project, version, model, msg) = validate_view_arguments(**invalid_kwargs)
         self.assertEqual(validity, False)
 
@@ -83,22 +83,22 @@ class Test(TestQuestionnaireBase):
         self.assertEqual(response.status_code, 400)
 
         # valid request
-        request_url = reverse("feed_project_version", kwargs={ "project_name" : self.project.name, "version_name" : self.version.name } )
+        request_url = reverse("feed_project_version", kwargs={ "project_name" : self.project.name, "version_key" : self.version.get_key() } )
         response = self.client.get(request_url)
         self.assertEqual(response.status_code, 200)
 
         # invalid request
-        request_url = reverse("feed_project_version", kwargs={ "project_name" : self.project.name, "version_name" : "invalid" } )
+        request_url = reverse("feed_project_version", kwargs={ "project_name" : self.project.name, "version_key" : "invalid" } )
         response = self.client.get(request_url)
         self.assertEqual(response.status_code, 400)
 
         # valid request
-        request_url = reverse("feed_project_version_proxy", kwargs={ "project_name" : self.project.name, "version_name" : self.version.name, "model_name" : self.model_realization.proxy.name })
+        request_url = reverse("feed_project_version_proxy", kwargs={ "project_name" : self.project.name, "version_key" : self.version.get_key(), "model_name" : self.model_realization.proxy.name })
         response = self.client.get(request_url)
         self.assertEqual(response.status_code, 200)
 
         # invalid request
-        request_url = reverse("feed_project_version_proxy", kwargs={ "project_name" : self.project.name, "version_name" : self.version.name, "model_name" : "invalid" })
+        request_url = reverse("feed_project_version_proxy", kwargs={ "project_name" : self.project.name, "version_key" : self.version.get_key(), "model_name" : "invalid" })
         response = self.client.get(request_url)
         self.assertEqual(response.status_code, 400)
 

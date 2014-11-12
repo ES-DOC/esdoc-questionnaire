@@ -209,7 +209,7 @@ class TestQuestionnaireBase(TestCase):
         test_categorization.save()
 
         test_version_path = os.path.join(VERSION_UPLOAD_PATH, "test_version.xml")
-        test_version = MetadataVersion(name="version", file=test_version_path, categorization=test_categorization, url="www.namespace.com/test/cim.xsd")
+        test_version = MetadataVersion(name="version", version="1.0", file=test_version_path, categorization=test_categorization, url="www.namespace.com/test/cim.xsd")
         test_version.save()
 
         test_version.register()
@@ -268,12 +268,12 @@ class TestQuestionnaireBase(TestCase):
     def get_new_customizer_forms(self,*args,**kwargs):
 
         project_name = kwargs.pop("project_name", self.project.name.lower())
-        version_name = kwargs.pop("version_name", self.version.name.lower())
+        version_key = kwargs.pop("version_key", self.version.get_key())
         model_name = kwargs.pop("model_name", self.model_realization.name.lower())
 
         request_url = reverse("customize_new", kwargs = {
             "project_name" : project_name,
-            "version_name" : version_name,
+            "version_key" : version_key,
             "model_name" : model_name,
         })
 
@@ -319,12 +319,12 @@ class TestQuestionnaireBase(TestCase):
     def get_new_edit_forms(self,*args,**kwargs):
 
         project_name = kwargs.pop("project_name", self.project.name.lower())
-        version_name = kwargs.pop("version_name", self.version.name.lower())
+        version_key = kwargs.pop("version_key", self.version.get_key())
         model_name = kwargs.pop("model_name", self.model_realization.name.lower())
 
         request_url = reverse("edit_new", kwargs = {
             "project_name" : project_name,
-            "version_name" : version_name,
+            "version_key" : version_key,
             "model_name" : model_name,
         })
 
@@ -377,11 +377,11 @@ class TestQuestionnaireBase(TestCase):
         customizer_name = "customizer_with_subforms"
 
         project_name = project.name.lower()
-        version_name = version.name.lower()
+        version_key = version.get_key()
         model_name = proxy.name.lower()
 
         (model_customizer_form, standard_property_customizer_formset, scientific_property_customizer_formsets) = \
-            self.get_new_customizer_forms(project_name=project_name, version_name=version_name, model_name=model_name)
+            self.get_new_customizer_forms(project_name=project_name, version_key=version_key, model_name=model_name)
 
         customizer_forms_data = get_data_from_customizer_forms(model_customizer_form, standard_property_customizer_formset, scientific_property_customizer_formsets)
 
@@ -393,7 +393,7 @@ class TestQuestionnaireBase(TestCase):
 
         request_url = reverse("customize_new", kwargs = {
             "project_name" : project_name,
-            "version_name" : version_name,
+            "version_key" : version_key,
             "model_name" : model_name,
         })
 

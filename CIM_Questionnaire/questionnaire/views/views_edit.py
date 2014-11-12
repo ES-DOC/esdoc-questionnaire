@@ -16,7 +16,7 @@ from django.core.urlresolvers import reverse
 from django.http import HttpResponseRedirect
 from django.shortcuts import redirect, render_to_response
 from django.template import RequestContext
-
+from django.core.cache import get_cache
 
 from CIM_Questionnaire.questionnaire.models.metadata_project import MetadataProject
 from CIM_Questionnaire.questionnaire.models.metadata_version import MetadataVersion
@@ -24,30 +24,22 @@ from CIM_Questionnaire.questionnaire.models.metadata_proxy import MetadataModelP
 from CIM_Questionnaire.questionnaire.models.metadata_customizer import MetadataCustomizer, MetadataModelCustomizer
 from CIM_Questionnaire.questionnaire.models.metadata_model import MetadataModel, MetadataStandardProperty, MetadataScientificProperty
 from CIM_Questionnaire.questionnaire.models.metadata_model import get_model_parent_dictionary
-
 from CIM_Questionnaire.questionnaire.forms.forms_edit import create_new_edit_forms_from_models, create_existing_edit_forms_from_models, create_edit_forms_from_data, save_valid_forms
-
 from CIM_Questionnaire.questionnaire.views.views_error import questionnaire_error
-from CIM_Questionnaire.questionnaire.views.views_authenticate import questionnaire_join
-
-#from CIM_Questionnaire.questionnaire.views import *
-
 from CIM_Questionnaire.questionnaire.utils import get_joined_keys_dict
-
 from CIM_Questionnaire.questionnaire import get_version
 
 __author__ = "allyn.treshansky"
 __date__ = "Sep 30, 2013 3:04:42 PM"
 
 
-def validate_view_arguments(project_name="", model_name="", version_name=""):
+def validate_view_arguments(project_name="", model_name="", version_key=""):
     """Ensures that the arguments passed to an edit view are valid (ie: resolve to active projects, models, versions)"""
 
     (validity, project, version, model_proxy, model_customizer, msg) = \
         (True, None, None, None, None, "")
 
     project_name_lower = project_name.lower()
-    version_name_lower = version_name.lower()
 
     # try to get the project...
     try:
@@ -64,9 +56,9 @@ def validate_view_arguments(project_name="", model_name="", version_name=""):
 
     # try to get the version...
     try:
-        version = MetadataVersion.objects.get(name=version_name_lower,registered=True)
+        version = MetadataVersion.objects.get(key=version_key, registered=True)
     except MetadataVersion.DoesNotExist:
-        msg = "Cannot find the <u>version</u> '%s'.  Has it been registered?" % (version_name)
+        msg = "Cannot find the <u>version</u> '%s'.  Has it been registered?" % (version_key)
         validity = False
         return (validity, project, version, model_proxy, model_customizer, msg)
 
@@ -74,7 +66,7 @@ def validate_view_arguments(project_name="", model_name="", version_name=""):
     try:
         model_proxy = MetadataModelProxy.objects.get(version=version,name__iexact=model_name)
     except MetadataModelProxy.DoesNotExist:
-        msg = "Cannot find the <u>model</u> '%s' in the <u>version</u> '%s'." % (model_name,version_name)
+        msg = "Cannot find the <u>model</u> '%s' in the <u>version</u> '%s'." % (model_name, version)
         validity = False
         return (validity, project, version, model_proxy, model_customizer, msg)
     if not model_proxy.is_document():
@@ -93,10 +85,10 @@ def validate_view_arguments(project_name="", model_name="", version_name=""):
     return (validity, project, version, model_proxy, model_customizer, msg)
 
 
-def questionnaire_edit_new(request, project_name="", model_name="", version_name="", **kwargs):
+def questionnaire_edit_new(request, project_name="", model_name="", version_key="", **kwargs):
 
     # validate the arguments...
-    (validity, project, version, model_proxy, model_customizer, msg) = validate_view_arguments(project_name=project_name, model_name=model_name, version_name=version_name)
+    (validity, project, version, model_proxy, model_customizer, msg) = validate_view_arguments(project_name=project_name, model_name=model_name, version_key=version_key)
     if not validity:
         return questionnaire_error(request, msg)
     request.session["checked_arguments"] = True
@@ -160,6 +152,21 @@ def questionnaire_edit_new(request, project_name="", model_name="", version_name
 
     model_parent_dictionary = get_model_parent_dictionary(models)
 
+
+    # # TODO: UNABLE TO PICKLE COMPLEX FORM
+    # # TODO: SO PICKLING THE MODELS BEHIND THE FORMS
+    # # TODO: GET THIS WORKING PROPERLY
+    # # cache stuff
+    # session_id = request.session.session_key
+    # models_to_cache = {
+    #     session_id + "_models" : models,
+    #     session_id + "_standard_properties" : standard_properties,
+    #     session_id + "_scientific_properties" : scientific_properties,
+    # }
+    # cache = get_cache("default")
+    # for key, value in models_to_cache.iteritems():
+    #     cache.set(key, value)
+
     if request.method == "GET":
 
         (model_formset, standard_properties_formsets, scientific_properties_formsets) = \
@@ -169,6 +176,7 @@ def questionnaire_edit_new(request, project_name="", model_name="", version_name
 
         data = request.POST
 
+        import ipdb; ipdb.set_trace()
         (validity, model_formset, standard_properties_formsets, scientific_properties_formsets) = \
             create_edit_forms_from_data(data, models, model_customizer, standard_properties, standard_property_customizers, scientific_properties, scientific_property_customizers)
 
@@ -186,7 +194,7 @@ def questionnaire_edit_new(request, project_name="", model_name="", version_name
             edit_existing_url = reverse("edit_existing",kwargs={
                 "project_name" : project_name,
                 "model_name"   : model_name,
-                "version_name" : version_name,
+                "version_key" : version_key,
                 "model_id"     : root_model_id,
             })
             return HttpResponseRedirect(edit_existing_url)
@@ -213,10 +221,10 @@ def questionnaire_edit_new(request, project_name="", model_name="", version_name
     return render_to_response('questionnaire/questionnaire_edit.html', dict, context_instance=RequestContext(request))
 
 
-def questionnaire_edit_existing(request, project_name="", model_name="", version_name="", model_id="", **kwargs):
+def questionnaire_edit_existing(request, project_name="", model_name="", version_key="", model_id="", **kwargs):
 
     # validate the arguments...
-    (validity,project,version,model_proxy,model_customizer,msg) = validate_view_arguments(project_name=project_name,model_name=model_name,version_name=version_name)
+    (validity,project,version,model_proxy,model_customizer,msg) = validate_view_arguments(project_name=project_name,model_name=model_name,version_key=version_key)
     if not validity:
         return questionnaire_error(request,msg)
     request.session["checked_arguments"] = True

@@ -49,7 +49,7 @@ class TestMetadataModel(TestQuestionnaireBase):
         self.assertEqual(len(vocabulary_qs), 2)
 
         cim_version_path = os.path.join(VERSION_UPLOAD_PATH, "test_cim_1_8_1.xml")
-        cim_version = MetadataVersion(name="cim", file=cim_version_path)
+        cim_version = MetadataVersion(name="cim", version="1.8.1", file=cim_version_path)
         cim_version.save()
         version_qs = MetadataVersion.objects.all()
         self.assertEqual(len(version_qs), 2)

@@ -2,6 +2,11 @@ __author__ = 'ben.koziol'
 
 from CIM_Questionnaire.questionnaire.tests.base import TestQuestionnaireBase
 
+from CIM_Questionnaire.questionnaire.forms.forms_edit import create_model_form_data, MetadataModelFormSetFactory
+from CIM_Questionnaire.questionnaire.models.metadata_customizer import MetadataCustomizer
+from CIM_Questionnaire.questionnaire.models.metadata_model import MetadataModel
+from CIM_Questionnaire.questionnaire.models.metadata_proxy import MetadataModelProxy
+
 from CIM_Questionnaire.questionnaire.utils import *
 
 class SampleType(EnumeratedType):
@@ -101,3 +106,40 @@ class Test(TestQuestionnaireBase):
         # unicode key types are wanted
         for key in ret.iterkeys():
             self.assertIsInstance(key, unicode)
+
+    def test_get_form_by_prefix(self):
+        # since I'm testing actual forms, I do need to perform setup here
+        super(Test, self).setUp()
+
+        test_document_type = "modelcomponent"
+
+        test_proxy = MetadataModelProxy.objects.get(version=self.version, name__iexact=test_document_type)
+
+        test_vocabularies = self.project.vocabularies.filter(document_type__iexact=test_document_type)
+
+        test_customizer = self.create_customizer_set_with_subforms(self.project, self.version, test_proxy)
+        (model_customizer, standard_category_customizers, standard_property_customizers, nested_scientific_category_customizers, nested_scientific_property_customizers) = \
+            MetadataCustomizer.get_existing_customizer_set(test_customizer, test_vocabularies)
+
+        (model_proxy, standard_property_proxies, scientific_property_proxies) = MetadataModelProxy.get_proxy_set(test_proxy, vocabularies=test_vocabularies)
+
+        (models, standard_properties, scientific_properties) = \
+            MetadataModel.get_new_realization_set(self.project, self.version, model_proxy, standard_property_proxies, scientific_property_proxies, test_customizer, test_vocabularies)
+
+        models_data = [create_model_form_data(model, model_customizer) for model in models]
+
+        model_keys = [model.get_model_key() for model in models]
+
+        model_formset = MetadataModelFormSetFactory(
+            initial = models_data,
+            extra = len(models_data),
+            prefixes = model_keys,
+            customizer = model_customizer,
+        )
+
+        for model_key in model_keys:
+            model_form = get_form_by_prefix(model_formset, model_key)
+            self.assertIsNotNone(model_form)
+        invalid_model_form = get_form_by_prefix(model_formset, "invalid_key")
+        self.assertIsNone(invalid_model_form)
+

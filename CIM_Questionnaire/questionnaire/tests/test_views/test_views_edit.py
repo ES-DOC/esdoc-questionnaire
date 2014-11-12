@@ -20,7 +20,7 @@ class Test(TestQuestionnaireBase):
 
         kwargs = {
             "project_name" : self.project.name.lower(),
-            "version_name" : self.version.name.lower(),
+            "version_key" : self.version.get_key(),
             "model_name" : self.model_realization.name.lower(),
         }
 
@@ -33,7 +33,7 @@ class Test(TestQuestionnaireBase):
         self.assertEqual(validity,False)
 
         invalid_kwargs = kwargs.copy()
-        invalid_kwargs.update({"version_name":"invalid"})
+        invalid_kwargs.update({"version_key":"invalid"})
         (validity,project,version,model_proxy,model_customizer,msg) = validate_view_arguments(**invalid_kwargs)
         self.assertEqual(validity,False)
 
@@ -77,7 +77,7 @@ class Test(TestQuestionnaireBase):
 
         request_url = reverse("edit_new", kwargs = {
             "project_name" : self.project,
-            "version_name" : self.version,
+            "version_key" : self.version.get_key(),
             "model_name" : test_document_type,
         })
 
@@ -149,7 +149,7 @@ class Test(TestQuestionnaireBase):
 
         request_url = reverse("edit_new", kwargs = {
             "project_name" : self.project,
-            "version_name" : self.version,
+            "version_key" : self.version.get_key(),
             "model_name" : test_document_type,
         })
 

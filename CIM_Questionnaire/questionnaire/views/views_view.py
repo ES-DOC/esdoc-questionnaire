@@ -30,7 +30,6 @@ from CIM_Questionnaire.questionnaire.models.metadata_model import MetadataModel
 from CIM_Questionnaire.questionnaire.forms.forms_edit import create_existing_edit_forms_from_models
 from CIM_Questionnaire.questionnaire.views.views_edit import validate_view_arguments
 from CIM_Questionnaire.questionnaire.views.views_error import questionnaire_error
-
 from CIM_Questionnaire.questionnaire import get_version
 
 def questionnaire_view_new(request, project_name="", model_name="", version_name="", **kwargs):

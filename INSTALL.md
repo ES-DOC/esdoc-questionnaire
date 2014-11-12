@@ -12,6 +12,7 @@ The system must have the following Python packages installed:
 * libXML (pip install lxml)
 * pytz (pip install pytz)
 * mptt (pip install django-mptt)
+* python-memcached (pip install python-memcached)
 * PIL (pip install pillow)
 * A PostGres database is recommended.  However, Django also supports MySQL and SQLite3.
     * To use PostGres you must install psycopg2.
@@ -33,6 +34,19 @@ password=
 host=127.0.0.1
 port=5432
 
+[cache]
+host=127.0.0.1
+port=112111
+
+[email]
+host=smtp.gmail.com
+port=
+username=
+password=
+
+[site]
+name=localhost
+
 [settings]
 secret_key=
 static_root=static/
@@ -53,6 +67,7 @@ pip install django-openid-auth python-openid
 pip install django_mptt
 pip install pytz
 pip install south
+pip install python-memcached (may require `sudo get-apt install memcacehd`)
 ```
 
 ## INITIALIZATION

@@ -36,7 +36,7 @@ class MetadataFeed(Feed):
     title_template = "questionnaire/feed/_item_title.html"
     description_template = "questionnaire/feed/_item_description.html"
 
-    def get_object(self, request, project_name=None, version_name=None, model_name=None):
+    def get_object(self, request, project_name=None, version_key=None, model_name=None):
 
         """
         get_object parses the request sent from urls.py
@@ -64,11 +64,11 @@ class MetadataFeed(Feed):
 
             self.title += " project=%s" % (self.project.title)
 
-            if version_name:
+            if version_key:
                 try:
-                    self.version = MetadataVersion.objects.get(name__iexact=version_name, registered=True)
+                    self.version = MetadataVersion.objects.get(key=version_key, registered=True)
                 except MetadataVersion.DoesNotExist:
-                    msg = "Cannot find the <u>version</u> '%s'.  Has it been registered?" % (version_name)
+                    msg = "Cannot find the <u>version</u> '%s'.  Has it been registered?" % (version_key)
                     return questionnaire_error(request, msg)
 
                 self.title += ", version=%s" % (self.version.name)
@@ -77,7 +77,7 @@ class MetadataFeed(Feed):
                     try:
                         self.proxy = MetadataModelProxy.objects.get(version=self.version, name__iexact=model_name)
                     except MetadataModelProxy.DoesNotExist:
-                        msg = "Cannot find the <u>model</u> '%s' in the <u>version</u> '%s'." % (model_name,version_name)
+                        msg = "Cannot find the <u>model</u> '%s' in the <u>version</u> '%s'." % (model_name,self.version)
                         return questionnaire_error(request, msg)
                     if not self.proxy.is_document():
                         msg = "<u>%s</u> is not a recognized document type in the CIM." % model_name
@@ -114,7 +114,7 @@ class MetadataFeed(Feed):
         model = item.model
         url_args = [
             model.project.name.lower(),  # project
-            model.version.name.lower(),  # version
+            model.version.get_key(),  # version
             model.proxy.name.lower(),    # model_type
             item.name,                  # serialization_name
             item.version,   # serialization_version
@@ -128,7 +128,7 @@ class MetadataFeed(Feed):
 #########################
 
 
-def validate_view_arguments(project_name="", version_name="", model_name="", model_guid=None, model_version=None):
+def validate_view_arguments(project_name="", version_key="", model_name="", model_guid=None, model_version=None):
     """
     Ensures that the arguments passed to a view are valid (ie: resolve to active projects, models, versions)
     """
@@ -137,7 +137,6 @@ def validate_view_arguments(project_name="", version_name="", model_name="", mod
         (True, None, None, None, "")
 
     project_name_lower = project_name.lower()
-    version_name_lower = version_name.lower()
 
     # try to get the project...
     try:
@@ -154,9 +153,9 @@ def validate_view_arguments(project_name="", version_name="", model_name="", mod
 
     # try to get the version...
     try:
-        version = MetadataVersion.objects.get(name=version_name_lower, registered=True)
+        version = MetadataVersion.objects.get(key=version_key, registered=True)
     except MetadataVersion.DoesNotExist:
-        msg = "Cannot find the <u>version</u> '%s'.  Has it been registered?" % (version_name)
+        msg = "Cannot find the <u>version</u> '%s'.  Has it been registered?" % (version_key)
         validity = False
         return (validity, project, version, model, msg)
 
@@ -164,7 +163,7 @@ def validate_view_arguments(project_name="", version_name="", model_name="", mod
     try:
         proxy = MetadataModelProxy.objects.get(version=version, name__iexact=model_name)
     except MetadataModelProxy.DoesNotExist:
-        msg = "Cannot find the <u>model</u> '%s' in the <u>version</u> '%s'." % (model_name, version_name)
+        msg = "Cannot find the <u>model</u> '%s' in the <u>version</u> '%s'." % (model_name, version)
         validity = False
         return (validity, project, version, model, msg)
     if not proxy.is_document():
@@ -222,12 +221,12 @@ def validate_view_arguments(project_name="", version_name="", model_name="", mod
 #     return HttpResponse(serialized_model, content_type="text/xml")
 
 
-def questionnaire_serialize(request, project_name=None, version_name=None, model_name=None, model_guid=None, model_version=None):
+def questionnaire_serialize(request, project_name=None, version_key=None, model_name=None, model_guid=None, model_version=None):
 
     # validate arguments...
     # (if this view is invoked from the above feed, these checks are superfluous)
     # (but if a user accesses this view directly, they are needed)
-    (validity, project, version, model, msg) = validate_view_arguments(project_name=project_name, version_name=version_name, model_name=model_name, model_guid=model_guid, model_version=model_version)
+    (validity, project, version, model, msg) = validate_view_arguments(project_name=project_name, version_key=version_key, model_name=model_name, model_guid=model_guid, model_version=model_version)
     if not validity:
         return questionnaire_error(request, msg)
 
@@ -237,7 +236,5 @@ def questionnaire_serialize(request, project_name=None, version_name=None, model
         serialization = serializations.get(version=model_version)
     else:
         serialization = serializations[0]
-
-
 
     return HttpResponse(serialization.content, content_type="text/xml")

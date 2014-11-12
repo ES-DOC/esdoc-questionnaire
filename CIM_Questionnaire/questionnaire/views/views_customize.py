@@ -21,12 +21,11 @@ Summary of module goes here
 
 """
 
-from django.http import HttpResponseRedirect
+from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render_to_response, redirect
 from django.core.urlresolvers import reverse
 from django.template import RequestContext
 from django.contrib import messages
-
 from django.contrib.sites.models import get_current_site
 from django.core.exceptions import FieldError, MultipleObjectsReturned
 from django.db.models.fields import *
@@ -40,19 +39,14 @@ from CIM_Questionnaire.questionnaire.models.metadata_proxy import MetadataModelP
 
 from CIM_Questionnaire.questionnaire.models.metadata_customizer import MetadataCustomizer, MetadataModelCustomizer
 from CIM_Questionnaire.questionnaire.models.metadata_customizer import find_category_by_key
-
 from CIM_Questionnaire.questionnaire.forms.forms_customize import create_model_customizer_form_data, create_standard_property_customizer_form_data, create_scientific_property_customizer_form_data
 from CIM_Questionnaire.questionnaire.forms.forms_customize import create_new_customizer_forms_from_models, create_existing_customizer_forms_from_models, create_customizer_forms_from_data
 from CIM_Questionnaire.questionnaire.forms.forms_customize import save_valid_forms
-
-#from CIM_Questionnaire.questionnaire.views.views_error import questionnaire_error as questionnaire_error_view
 from CIM_Questionnaire.questionnaire.views.views_error import questionnaire_error
-
 from CIM_Questionnaire.questionnaire import get_version
+from CIM_Questionnaire.profiling import encode_profile as profile
 
-from CIM_Questionnaire.profiling import encode_profile as profile2
-
-def validate_view_arguments(project_name="", model_name="", version_name=""):
+def validate_view_arguments(project_name="", model_name="", version_key=""):
     """Ensures that the arguments passed to a customize view are valid (ie: resolve to active projects, models, versions)"""
 
     (validity,project,version,model_proxy,msg) = (True,None,None,None,"")
@@ -73,13 +67,13 @@ def validate_view_arguments(project_name="", model_name="", version_name=""):
 
     # try to get the version...
     try:
-        version = MetadataVersion.objects.get(name__iexact=version_name,registered=True)
+        version = MetadataVersion.objects.get(key=version_key,registered=True)
     except MetadataVersion.DoesNotExist:
-        msg = "Cannot find the <u>version</u> '%s'.  Has it been registered?" % (version_name)
+        msg = "Cannot find the <u>version</u> '%s'.  Has it been registered?" % (version_key)
         validity = False
         return (validity,project,version,model_proxy,msg)
     if version.categorization is None:
-        msg = "The <u>version</u> '%s' has no categorization associated with it." % (version_name)
+        msg = "The <u>version</u> '%s' has no categorization associated with it." % (version)
         validity = False
         return (validity,project,version,model_proxy,msg)
 
@@ -87,17 +81,17 @@ def validate_view_arguments(project_name="", model_name="", version_name=""):
     try:
         model_proxy = MetadataModelProxy.objects.get(version=version,name__iexact=model_name)
     except MetadataModelProxy.DoesNotExist:
-        msg = "Cannot find the <u>model</u> '%s' in the <u>version</u> '%s'." % (model_name,version_name)
+        msg = "Cannot find the <u>model</u> '%s' in the <u>version</u> '%s'." % (model_name,version)
         validity = False
         return (validity,project,version,model_proxy,msg)
 
     return (validity,project,version,model_proxy,msg)
 
-@profile2("questionnaire_customize_new.prof")
-def questionnaire_customize_new(request,project_name="",model_name="",version_name="",**kwargs):
+#@profile("questionnaire_customize_new.prof")
+def questionnaire_customize_new(request,project_name="",model_name="",version_key="",**kwargs):
 
     # validate the arguments...
-    (validity,project,version,model_proxy,msg) = validate_view_arguments(project_name=project_name,model_name=model_name,version_name=version_name)
+    (validity,project,version,model_proxy,msg) = validate_view_arguments(project_name=project_name,model_name=model_name,version_key=version_key)
     if not validity:
         return questionnaire_error(request,msg)
     request.session["checked_arguments"] = True
@@ -125,7 +119,9 @@ def questionnaire_customize_new(request,project_name="",model_name="",version_na
     INITIAL_PARAMETER_LENGTH=len(customizer_parameters)
 
     # check if the user added any parameters to the request...
-    for (key,value) in request.GET.iteritems():
+    request_parameters = request.GET.copy()
+    request_parameters.pop("profile", None)
+    for (key,value) in request_parameters.iteritems():
         value = re.sub('[\"\']', '', value) # strip out any quotes
         field_type = type(MetadataModelCustomizer.get_field(key))
         if field_type == BooleanField:
@@ -151,7 +147,7 @@ def questionnaire_customize_new(request,project_name="",model_name="",version_na
             customize_existing_url = reverse("customize_existing",kwargs={
                 "project_name"    : project_name,
                 "model_name"      : model_name,
-                "version_name"    : version_name,
+                "version_key"    : version_key,
                 "customizer_name" : existing_model_customizer_instance.name,
             })
             return HttpResponseRedirect(customize_existing_url)
@@ -194,7 +190,7 @@ def questionnaire_customize_new(request,project_name="",model_name="",version_na
             customize_existing_url = reverse("customize_existing",kwargs={
                 "project_name"      : project_name,
                 "model_name"        : model_name,
-                "version_name"      : version_name,
+                "version_key"      : version_key,
                 "customizer_name"   : model_customizer_instance.name,
             })
             return HttpResponseRedirect(customize_existing_url)
@@ -218,10 +214,10 @@ def questionnaire_customize_new(request,project_name="",model_name="",version_na
     return render_to_response('questionnaire/questionnaire_customize.html', dict, context_instance=RequestContext(request))
 
 
-def questionnaire_customize_existing(request,project_name="",model_name="",version_name="",customizer_name="",**kwargs):
+def questionnaire_customize_existing(request,project_name="",model_name="",version_key="",customizer_name="",**kwargs):
 
     # validate the arguments...
-    (validity,project,version,model_proxy,msg) = validate_view_arguments(project_name=project_name,model_name=model_name,version_name=version_name)
+    (validity,project,version,model_proxy,msg) = validate_view_arguments(project_name=project_name,model_name=model_name,version_key=version_key)
     if not validity:
         return questionnaire_error(request,msg)
     request.session["checked_arguments"] = True

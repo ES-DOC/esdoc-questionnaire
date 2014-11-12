@@ -174,10 +174,9 @@ def validate_no_spaces(value):
     if ' ' in value:
         raise ValidationError(u"Value may not contain spaces.")
 
-
 def valiate_no_bad_chars(value):
-    INVALID_CHARS       = "< > % # % { } [ ] $"
-    INVALID_CHARS_REGEX = "[<>&#%{}\[\]\$]"
+    INVALID_CHARS       = "< > % # % { } [ ] $ |"
+    INVALID_CHARS_REGEX = "[<>&#%{}\[\]\$\|]"
 
     if re.search(INVALID_CHARS_REGEX,value):
         raise ValidationError(u"value may not contain any of the following characters: '%s'" % (INVALID_CHARS))#not contain any of the following invalid characters: '%'" % (value,INVALID_CHARS))
@@ -272,6 +271,18 @@ def get_forms_by_field(formset,field_name,field_value):
         if form.get_current_field_value(field_name) == field_value:
             forms.append(form)
     return forms
+
+def get_form_by_prefix(formset, prefix):
+    """
+    returns the form in a formset w/ a prefix of prefix
+    :param formset: formset to check
+    :param prefix: value of prefix to look for
+    :return: matching form or none
+    """
+    for form in formset:
+        if form.prefix == prefix:
+            return form
+    return None
 
 def remove_form_errors(form):
     form.errors["__all__"] = form.error_class()

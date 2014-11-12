@@ -136,9 +136,9 @@ def questionnaire_project_index(request,project_name=""):
                 proxy = admin_form.cleaned_data["proxies"]
                 customization = admin_form.cleaned_data["customizations"]
                 if customization:
-                    url = "/%s/customize/%s/%s?name=%s" % (project_name.lower(),version.name.lower(),proxy.name.lower(),customization.name)
+                    url = "/%s/customize/%s/%s?name=%s" % (project_name.lower(),version.get_key(),proxy.name.lower(),customization.name)
                 else:
-                    url = "/%s/customize/%s/%s" % (project_name.lower(),version.name.lower(),proxy.name.lower())
+                    url = "/%s/customize/%s/%s" % (project_name.lower(),version.get_key(),proxy.name.lower())
                 return redirect(url)
             
         elif "user_submit" in request.POST:
@@ -150,9 +150,9 @@ def questionnaire_project_index(request,project_name=""):
                 proxy = user_form.cleaned_data["proxies"]
                 model = user_form.cleaned_data["models"]
                 if model:
-                    url = "/%s/edit/%s/%s/%s" % (project_name.lower(),version.name.lower(),proxy.name.lower(),model.pk)
+                    url = "/%s/edit/%s/%s/%s" % (project_name.lower(),version.get_key(),proxy.name.lower(),model.pk)
                 else:
-                    url = "/%s/edit/%s/%s" % (project_name.lower(),version.name.lower(),proxy.name.lower())
+                    url = "/%s/edit/%s/%s" % (project_name.lower(),version.get_key(),proxy.name.lower())
                 return redirect(url)
 
         elif "default_submit" in request.POST:
@@ -163,7 +163,7 @@ def questionnaire_project_index(request,project_name=""):
                 version = default_form.cleaned_data["versions"]
                 proxy = default_form.cleaned_data["proxies"]
                 model = default_form.cleaned_data["models"]
-                url = "/%s/view/%s/%s/%s" % (project_name.lower(),version.name.lower(),proxy.name.lower(),model.pk)
+                url = "/%s/view/%s/%s/%s" % (project_name.lower(),version.get_key(),proxy.name.lower(),model.pk)
                 return redirect(url)
 
         else:

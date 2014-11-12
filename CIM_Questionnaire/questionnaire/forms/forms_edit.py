@@ -42,7 +42,7 @@ from CIM_Questionnaire.questionnaire.forms import MetadataEditingForm
 from CIM_Questionnaire.questionnaire.fields import MetadataFieldTypes, MetadataAtomicFieldTypes, CachedModelChoiceField, METADATA_ATOMICFIELD_MAP, EMPTY_CHOICE, NULL_CHOICE, OTHER_CHOICE
 
 from CIM_Questionnaire.questionnaire.utils import QuestionnaireError, find_in_sequence, update_field_widget_attributes
-from CIM_Questionnaire.questionnaire.utils import get_initial_data, find_in_sequence, update_field_widget_attributes, set_field_widget_attributes, get_data_from_formset, get_data_from_form
+from CIM_Questionnaire.questionnaire.utils import get_initial_data, find_in_sequence, update_field_widget_attributes, set_field_widget_attributes, get_data_from_formset, get_data_from_form, get_form_by_prefix
 from CIM_Questionnaire.questionnaire.utils import LIL_STRING, SMALL_STRING, BIG_STRING, HUGE_STRING
 
 from CIM_Questionnaire.questionnaire.utils import model_to_data, DEFAULT_VOCABULARY_KEY, DEFAULT_COMPONENT_KEY
@@ -113,6 +113,46 @@ class MetadataModelFormSet(BaseModelFormSet):
             cached_field.choice_cache = choices
 
         return form
+
+    def get_loaded_forms(self):
+        loaded_forms = []
+        for i in range(0, self.total_form_count()):
+            form = self.forms[i]
+            if form.is_loaded():
+                loaded_forms.append(form)
+        return loaded_forms
+
+    def is_valid(self, prefixes_to_check=None):
+        """
+        Returns True if the forms in the formset are valid
+        if 'prefixes_to_check' is not None, only the forms w/ those prefixes are checked
+        otherwise all forms are checked
+        """
+
+        if not self.is_bound:
+            return False
+        # We loop over every form.errors here rather than short circuiting on the
+        # first failure to make sure validation gets triggered for every specified form
+        forms_valid = True
+        err = self.errors
+
+        if prefixes_to_check:
+            for prefix in prefixes_to_check:
+                form = get_form_by_prefix(self, prefix)
+                if self.can_delete:
+                    if self._should_delete_form(form):
+                        continue
+                forms_valid &= form.is_valid()
+
+        else:
+            for i in range(0, self.total_form_count()):
+                form = self.forms[i]
+                if self.can_delete:
+                    if self._should_delete_form(form):
+                        continue
+                forms_valid &= form.is_valid()
+
+        return forms_valid and not bool(self.non_form_errors())
 
 class MetadataModelSubFormSet(BaseModelFormSet):
 
@@ -185,6 +225,8 @@ class MetadataModelAbstractForm(MetadataEditingForm):
     class Meta:
         abstract = True
 
+    loaded = BooleanField(initial=False)
+
     def __init__(self,*args,**kwargs):
         # customizer was passed in via curry() in the factory function below
         customizer = kwargs.pop("customizer",None)
@@ -209,6 +251,13 @@ class MetadataModelAbstractForm(MetadataEditingForm):
         # (but in the case of this class, MetadataModelForm, it's _all_ done in the template)
 
         pass
+
+    def is_loaded(self):
+        try:
+            loaded = self.get_current_field_value("loaded")
+            return loaded == "on"
+        except KeyError:
+            return False
 
 
 class MetadataModelForm(MetadataModelAbstractForm):
@@ -239,6 +288,19 @@ class MetadataModelForm(MetadataModelAbstractForm):
         super(MetadataModelForm,self).__init__(*args,**kwargs)
 
         set_field_widget_attributes(self.fields["title"],{"size":64})
+
+    def get_model_key(self):
+        return self.prefix
+
+    def get_vocabulary_key(self):
+        split_prefix = self.prefix.split('_')
+        n_splits = len(split_prefix)
+        return "_".join(split_prefix[:(n_splits/2)])
+
+    def get_component_key(self):
+        split_prefix = self.prefix.split('_')
+        n_splits = len(split_prefix)
+        return "_".join(split_prefix[(n_splits/2):])
 
 class MetadataModelSubForm(MetadataModelAbstractForm):
 
@@ -539,10 +601,11 @@ class MetadataAbstractStandardPropertyForm(MetadataEditingForm):
 
         if customizer.field_type == MetadataFieldTypes.ATOMIC:
             atomic_type = customizer.atomic_type
-            if atomic_type and atomic_type != MetadataAtomicFieldTypes.DEFAULT:
-                custom_widget_class = METADATA_ATOMICFIELD_MAP[atomic_type][0]
-                custom_widget_args  = METADATA_ATOMICFIELD_MAP[atomic_type][1]
-                self.fields["atomic_value"].widget = custom_widget_class(**custom_widget_args)
+            if atomic_type:
+                if atomic_type != MetadataAtomicFieldTypes.DEFAULT:
+                    custom_widget_class = METADATA_ATOMICFIELD_MAP[atomic_type][0]
+                    custom_widget_args  = METADATA_ATOMICFIELD_MAP[atomic_type][1]
+                    self.fields["atomic_value"].widget = custom_widget_class(**custom_widget_args)
                 update_field_widget_attributes(self.fields["atomic_value"],{"class":atomic_type.lower()})
 
         elif customizer.field_type == MetadataFieldTypes.ENUMERATION:
@@ -1049,10 +1112,11 @@ class MetadataScientificPropertyForm(MetadataEditingForm):
 
         if not customizer.is_enumeration:
             atomic_type = customizer.atomic_type
-            if atomic_type and atomic_type != MetadataAtomicFieldTypes.DEFAULT:
-                custom_widget_class = METADATA_ATOMICFIELD_MAP[atomic_type][0]
-                custom_widget_args  = METADATA_ATOMICFIELD_MAP[atomic_type][1]
-                self.fields["atomic_value"].widget = custom_widget_class(**custom_widget_args)
+            if atomic_type:
+                if atomic_type != MetadataAtomicFieldTypes.DEFAULT:
+                    custom_widget_class = METADATA_ATOMICFIELD_MAP[atomic_type][0]
+                    custom_widget_args  = METADATA_ATOMICFIELD_MAP[atomic_type][1]
+                    self.fields["atomic_value"].widget = custom_widget_class(**custom_widget_args)
                 update_field_widget_attributes(self.fields["atomic_value"],{"class":atomic_type.lower()})
 
         else:
@@ -1383,19 +1447,20 @@ def create_edit_forms_from_data(data, models, model_customizer, standard_propert
         prefixes = model_keys,
         customizer = model_customizer,
     )
+    loaded_model_forms = model_formset.get_loaded_forms()
+    loaded_model_keys = [model_form.prefix for model_form in loaded_model_forms]
 
-    model_formset_validity = model_formset.is_valid()
+    model_formset_validity = model_formset.is_valid(prefixes_to_check=loaded_model_keys)
     if model_formset_validity:
         # force model_formset to save instances even if they haven't changed
         #model_instances = model_formset.save(commit=False)
-        model_instances = [model_form.save(commit=False) for model_form in model_formset.forms]
+        model_instances = [model_form.save(commit=False) for model_form in loaded_model_forms]
     validity = [model_formset_validity]
 
     standard_properties_formsets = {}
     scientific_properties_formsets = {}
 
-
-    for (i, model_key) in enumerate(model_keys):
+    for (i, model_key) in enumerate(loaded_model_keys):
 
         standard_properties_formsets[model_key] = MetadataStandardPropertyInlineFormSetFactory(
             instance = model_instances[i] if model_formset_validity else models[i],

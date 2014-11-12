@@ -82,3 +82,8 @@ if __name__ == "__main__":
         if " " in model_customizer_name:
             model_customizer.name = slugify(model_customizer_name)
             model_customizer.save()
+
+    VersionClass = ContentType.objects.get(app_label="questionnaire", model="metadataversion").model_class()
+    for version in VersionClass.objects.all():
+        version.key = version.get_key()
+        version.save()

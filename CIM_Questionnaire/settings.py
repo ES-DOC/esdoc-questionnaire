@@ -134,6 +134,8 @@ MIDDLEWARE_CLASSES = (
     # 'django.middleware.clickjacking.XFrameOptionsMiddleware',
     # openid requirement
     #'django_authopenid.middleware.OpenIDMiddleware',
+    # profiling
+    'pyinstrument.middleware.ProfilerMiddleware',
 )
 
 AUTHENTICATION_BACKENDS = (
@@ -181,9 +183,6 @@ INSTALLED_APPS = (
     # testing / debugging / profiling apps are added conditionally below
     # db migration...
     'south',
-#    # openid authentication...
-#    #'django_openid_auth',
-#    #'django_authopenid',
     # time-zone aware stuff...
     'pytz',
     # efficient hierarchies of models...
@@ -230,6 +229,25 @@ SESSION_SERIALIZER = 'django.contrib.sessions.serializers.JSONSerializer'
 # EVENTUALLY, I SHOULD MOVE TO CACHE: https://docs.djangoproject.com/en/dev/topics/cache/
 SESSION_ENGINE = 'django.contrib.sessions.backends.signed_cookies'
 SESSION_COOKIE_HTTPONLY = True
+
+DEFAULT_CACHE_PORT = "11211" # (standard memcached port)
+
+if parser.has_option("cache", "host"):
+    CACHE_HOST = parser.get('cache', 'host')
+else:
+    CACHE_HOST = parser.get('database', 'host')
+if parser.has_option("cache", "port"):
+    CACHE_PORT = parser.get('cache', 'port')
+else:
+    CACHE_PORT = DEFAULT_CACHE_PORT
+
+CACHES = {
+    'default' : {
+        'TIMEOUT' : 60,
+        'BACKEND' : 'django.core.cache.backends.memcached.MemcachedCache',
+        'LOCATION' : CACHE_HOST + ":" + CACHE_PORT,
+    }
+}
 
 ################################################
 # fixing known django / south / postgres issue #

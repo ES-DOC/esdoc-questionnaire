@@ -189,7 +189,7 @@ class MetadataCustomizer(models.Model):
 
 
     @classmethod
-    def get_existing_customizer_set(cls,model_customizer,vocabularies):
+    def get_existing_customizer_set(cls, model_customizer, vocabularies=[]):
         """retrieves the full set of customizations used by a particular model_customizer w/ a specified list of vocabs"""
 
         standard_category_customizers = model_customizer.standard_property_category_customizers.all().prefetch_related("standard_property_customizers")

@@ -30,7 +30,7 @@ from django.contrib.auth.models import User
 from django.contrib.sites.models import get_current_site
 
 from CIM_Questionnaire.questionnaire.models.metadata_authentication import MetadataOpenIDProvider
-from CIM_Questionnaire.questionnaire.forms.forms_authentication import LocalAuthenticationForm, RemoteAuthenticationForm, MetadataUserForm, MetadataRegistrationForm, MetadataPasswordForm
+from CIM_Questionnaire.questionnaire.forms.forms_authentication import MetadataUserForm, MetadataRegistrationForm, MetadataPasswordForm, LocalAuthenticationForm #, RemoteAuthenticationForm
 from CIM_Questionnaire.questionnaire.views.views_error import questionnaire_error
 from CIM_Questionnaire.questionnaire.utils import remove_form_errors
 from CIM_Questionnaire.questionnaire import get_version
@@ -45,11 +45,11 @@ def questionnaire_login(request):
     if request.method == "POST":
 
         local_form  = LocalAuthenticationForm(data=request.POST,prefix="local")
-        remote_form = RemoteAuthenticationForm(request.POST,prefix="remote")
+        # remote_form = RemoteAuthenticationForm(request.POST,prefix="remote")
 
         if 'local' in request.POST:
 
-            remove_form_errors(remote_form)
+            # remove_form_errors(remote_form)
 
             if local_form.is_valid():
                 username = local_form.cleaned_data["username"]
@@ -64,28 +64,28 @@ def questionnaire_login(request):
                         else:
                             return HttpResponseRedirect("/")
                      
-        elif "remote" in request.POST:
-
-            remove_form_errors(local_form)
-            
-            if remote_form.is_valid():
-                provider_id  = remote_form.cleaned_data["providers"]
-                provider     = QuestionnaireProvider.objects.get(id=provider_id)
-                username     = remote_form.cleaned_data["username"]
-                provider_url = provider.url.replace("{username}",username)
-                return HttpResponseRedirect(provider_url)
-                print provider_url
-                # goto provider_url and get authentication
-
-                if next:
-                    return HttpResponseRedirect(next)
-                else:
-                    return HttpResponseRedirect("/")
+        # elif "remote" in request.POST:
+        #
+        #     remove_form_errors(local_form)
+        #
+        #     if remote_form.is_valid():
+        #         provider_id  = remote_form.cleaned_data["providers"]
+        #         provider     = MetadataOpenIDProvider.objects.get(id=provider_id)
+        #         username     = remote_form.cleaned_data["username"]
+        #         provider_url = provider.url.replace("{username}",username)
+        #         return HttpResponseRedirect(provider_url)
+        #         print provider_url
+        #         # goto provider_url and get authentication
+        #
+        #         if next:
+        #             return HttpResponseRedirect(next)
+        #         else:
+        #             return HttpResponseRedirect("/")
 
     else:   # request.method == "GET"
 
         local_form  = LocalAuthenticationForm(prefix="local")
-        remote_form = RemoteAuthenticationForm(prefix="remote")
+        # remote_form = RemoteAuthenticationForm(prefix="remote")
 
     # TODO: THIS HAS BEEN COMMENTED OUT UNTIL OPENID IS COMPLETELY WORKING
     #forms = [remote_form,local_form]
@@ -115,16 +115,16 @@ def questionnaire_user(request,user_name=""):
         user            = User.objects.get(username=user_name)
     except User.DoesNotExist:
         msg = "Unable to locate user '%s'" % (user_name)
-        return error(request,msg)
+        return questionnaire_error(request,msg)
     if user.is_superuser:
         msg = "You can't edit details of the site administrator.  Sheesh."
-        return error(request,msg)
+        return questionnaire_error(request,msg)
     metadata_user = user.metadata_user
 
     current_user = request.user
     if current_user.username != user_name and not current_user.is_superuser:
         msg = "You do not have permission to edit this user."
-        return error(request,msg)
+        return questionnaire_error(request,msg)
 
     if request.method == "POST":
 

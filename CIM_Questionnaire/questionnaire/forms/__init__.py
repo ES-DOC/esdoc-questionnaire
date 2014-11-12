@@ -3,7 +3,7 @@ __date__ ="$Dec 28, 2013 4:55:24 PM$"
 
 from django.forms import *
 
-from questionnaire.utils import *
+from CIM_Questionnaire.questionnaire.utils import QuestionnaireError
 
 
 class MetadataForm(ModelForm):
@@ -86,7 +86,7 @@ class MetadataEditingForm(MetadataForm):
             msg = "Unable to locate field '%s' in form." % (field_name)
             raise QuestionnaireError(msg)
         
-from forms_authentication   import  MetadataUserForm, MetadataPasswordForm, MetadataRegistrationForm, LocalAuthenticationForm, RemoteAuthenticationForm
-from forms_customize        import  MetadataModelCustomizerForm, MetadataStandardPropertyCustomizerInlineFormSetFactory, MetadataScientificPropertyCustomizerInlineFormSetFactory
-from forms_categorize       import  MetadataStandardCategoryCustomizerForm, MetadataScientificCategoryCustomizerForm
-from forms_edit             import  MetadataModelFormSetFactory, MetadataStandardPropertyInlineFormSetFactory, MetadataScientificPropertyInlineFormSetFactory
+# from forms_authentication   import  MetadataUserForm, MetadataPasswordForm, MetadataRegistrationForm, LocalAuthenticationForm, RemoteAuthenticationForm
+# from forms_customize        import  MetadataModelCustomizerForm, MetadataStandardPropertyCustomizerInlineFormSetFactory, MetadataScientificPropertyCustomizerInlineFormSetFactory
+# from forms_categorize       import  MetadataStandardCategoryCustomizerForm, MetadataScientificCategoryCustomizerForm
+# from forms_edit             import  MetadataModelFormSetFactory, MetadataStandardPropertyInlineFormSetFactory, MetadataScientificPropertyInlineFormSetFactory

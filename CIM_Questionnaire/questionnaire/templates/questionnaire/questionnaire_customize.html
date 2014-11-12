@@ -123,7 +123,7 @@
     <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}questionnaire/css/questionnaire_customize.css" />
 
     <style type="text/css">
-        #questionniare .no_float    { float: none important! }
+        #questionniare .no_float    { float: none important!; }
     </style>
 
 {% endblock %} {# / style #}
@@ -430,8 +430,8 @@
                                                                                 {{component.name}} <span style="font-size: small;">({{formsets|get_number_of_properties_from_key:component_key}})</span>
                                                                             </a>
                                                                         </li>
-                                                                    {% endwith %} {# / component_key #}
-                                                                {% endfor %} {# / component #}
+                                                                    {% endwith %} {# / component_key
+                                                                {% endfor %} {# / component
                                                             </ul>
 
                                                             {% for component in vocabulary.component_proxies.all %}
@@ -442,17 +442,17 @@
                                                                             {% with tag_field_name=vocabulary_key|add:'_'|add:component_key|add:'_scientific_categories_tags' content_field_name=vocabulary_key|add:'_'|add:component_key|add:'_scientific_categories_content' %}
                                                                                 {% with tags=model_customizer_form|get_field_by_name:tag_field_name content=model_customizer_form|get_field_by_name:content_field_name %}
                                                                                     {% include "questionnaire/_categories.html" %}
-                                                                                {% endwith %} {# / tags, content #}
-                                                                            {% endwith %} {# / tag_field_name, content_field_name #}
+                                                                                {% endwith %} {# / tags, content
+                                                                            {% endwith %} {# / tag_field_name, content_field_name
 
                                                                             <!-- this section is pretty similar to the "_formset.html" template -->
                                                                             <!-- but those are intended for the editing form -->
                                                                             <!-- the titles, etc. of the accordions are different for the customization form -->
                                                                             {% with formset=formsets|get_value_from_key:component_key %}
 
-                                                                                
+
                                                                                 {{ formset.management_form }}
-                                                                                {# formset.non_form_errors #}
+                                                                                formset.non_form_errors
 
                                                                                 {% if formset.forms %}
 
@@ -468,7 +468,7 @@
                                                                                     </span> <!-- /.subform_toolbar -->
                                                                                     <div style="clear: both;">&nbsp;</div>
 
-                                                                                {% endif %} {# / formset.forms #}
+                                                                                {% endif %} {# / formset.forms
 
                                                                                 <div class="accordion" prefix="{{formset.prefix}}">
                                                                                     {% for form in formset %}
@@ -479,23 +479,23 @@
                                                                                                         <td>
                                                                                                             <b>{{field.label}}:&nbsp;</b>{{ field }}
                                                                                                         </td>
-                                                                                                    {% endfor %} {# / field in form.get_header_fields #}
+                                                                                                    {% endfor %} {# / field in form.get_header_fields
                                                                                                 </tr>
                                                                                             </table>
                                                                                         </h3> <!-- /.accordion_header -->
 
                                                                                         <div class="accordion_content">
-                                                                                            <div class="form"> {# wrapping everything in a div.form so I can group together fields belonging to the same model #}
+                                                                                            <div class="form"> {# wrapping everything in a div.form so I can group together fields belonging to the same model
 
                                                                                                 <div class="hidden">
-                                                                                                    {# the fields I explicitly set to hidden #}
+                                                                                                    the fields I explicitly set to hidden
                                                                                                     {% for field in form.get_hidden_fields %}
                                                                                                         {{ field }}
-                                                                                                    {% endfor %} {# /field #}
-                                                                                                    {# and the fields that are hidden by default #}
+                                                                                                    {% endfor %} {# /field
+                                                                                                    and the fields that are hidden by default
                                                                                                     {% for hidden_field in form.hidden_fields %}
                                                                                                         {{ hidden_field }}
-                                                                                                    {% endfor %} {# /hidden_field #}
+                                                                                                    {% endfor %} {# /hidden_field
                                                                                                 </div>
 
                                                                                                 <table width="100%">
@@ -503,7 +503,7 @@
                                                                                                         <tr class="{% cycle 'odd' 'even' %} field" name="{{field.html_name}}">
                                                                                                             {% include "questionnaire/_field.html" %}
                                                                                                         </tr>
-                                                                                                    {% endfor %} {# / field in form.get_fields #}
+                                                                                                    {% endfor %} {# / field in form.get_fields
                                                                                                     <tr>
                                                                                                         <td colspan="2">
                                                                                                             <fieldset class="collapsible_fieldset extra_attributes">
@@ -525,7 +525,7 @@
                                                                                                                         </tr>
                                                                                                                         {% for label,fields in form.get_extra_fieldsets.items %}
                                                                                                                             <tr class="{% cycle 'even' 'odd' %} field">
-                                                                                                                                <td width="25%">                                                                                                                                    
+                                                                                                                                <td width="25%">
                                                                                                                                     {{label}}
                                                                                                                                 </td>
                                                                                                                                 {% for field in fields %}
@@ -533,11 +533,11 @@
                                                                                                                                         {{field}}
                                                                                                                                         {% if field.errors %}
                                                                                                                                             {% include "questionnaire/_error.html" %}
-                                                                                                                                        {% endif %} {# / field.errors #}
+                                                                                                                                        {% endif %} {# / field.errors
                                                                                                                                     </td>
                                                                                                                                 {% endfor %}
                                                                                                                             </tr>
-                                                                                                                        {% endfor %} {# / field in form.get_extra_fieldsets #}
+                                                                                                                        {% endfor %} {# / field in form.get_extra_fieldsets
                                                                                                                     </table>
                                                                                                                 </div><!-- /.collapsible_fielset_content -->
                                                                                                             </fieldset>
@@ -547,15 +547,15 @@
 
                                                                                             </div> <!-- /.form -->
                                                                                         </div> <!-- /.accordion_content -->
-                                                                                    {% endfor %} {# /form in formset #}
+                                                                                    {% endfor %} {# /form in formset
                                                                                 </div>
 
-                                                                            {% endwith %} {# / formset #}
-                                                                        
+                                                                            {% endwith %} {# / formset
+
                                                                         </div> <!-- /.tab_content -->
                                                                     </div> <!-- /#tab_scientific_properties_{{vocabulary_key}}_{{component_key}} -->
-                                                                {% endwith %} {# / component_key #}
-                                                            {% endfor %} {# / component #}
+                                                                {% endwith %} {# / component_key
+                                                            {% endfor %} {# / component
                                                         </div> <!-- /.tabs -->
                                                     </div> <!-- /.tab_content -->
                                                 </div> <!-- /#tab_scientific_properties_{{vocabulary_key}} -->

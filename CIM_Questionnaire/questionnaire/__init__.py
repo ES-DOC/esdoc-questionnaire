@@ -5,11 +5,15 @@ from django.conf import settings
 
 from django.contrib.sites.models import Site
 
-try:
-    site = Site.objects.get(name=settings.SITE_NAME)
-    settings.SITE_ID = site.pk
-except Site.DoesNotExist:
-    pass
+#TODO: PUT THIS CODE BACK SOMEHOW
+# try:
+#     site = Site.objects.get(name=settings.SITE_NAME)
+#     settings.SITE_ID = site.pk
+# # except Site.DoesNotExist:
+# #     pass
+# except:
+#     settings.SITE_ID = 1
+
 
 APP_LABEL = "questionnaire"
 
