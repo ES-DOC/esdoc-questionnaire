@@ -225,7 +225,7 @@ class MetadataModelAbstractForm(MetadataEditingForm):
     class Meta:
         abstract = True
 
-    loaded = BooleanField(initial=False)
+    loaded = BooleanField(initial=False, required=False)
 
     def __init__(self,*args,**kwargs):
         # customizer was passed in via curry() in the factory function below
