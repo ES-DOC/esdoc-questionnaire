@@ -26,7 +26,6 @@ from django.shortcuts import render_to_response, redirect
 from django.core.urlresolvers import reverse
 from django.template import RequestContext
 from django.contrib import messages
-
 from django.contrib.sites.models    import get_current_site
 from django.core.exceptions import FieldError, MultipleObjectsReturned
 from django.db.models.fields import *
@@ -36,17 +35,14 @@ import re
 from CIM_Questionnaire.questionnaire.models.metadata_project import MetadataProject
 from CIM_Questionnaire.questionnaire.models.metadata_version import MetadataVersion
 from CIM_Questionnaire.questionnaire.models.metadata_proxy import MetadataModelProxy
-
-
 from CIM_Questionnaire.questionnaire.models.metadata_customizer import MetadataCustomizer, MetadataModelCustomizer
-from CIM_Questionnaire.questionnaire.models.metadata_customizer import find_category_by_key
 
 from CIM_Questionnaire.questionnaire.forms.forms_customize import create_model_customizer_form_data, create_standard_property_customizer_form_data, create_scientific_property_customizer_form_data
 from CIM_Questionnaire.questionnaire.forms.forms_customize import create_new_customizer_forms_from_models, create_existing_customizer_forms_from_models, create_customizer_forms_from_data
 from CIM_Questionnaire.questionnaire.forms.forms_customize import save_valid_forms
 
-#from CIM_Questionnaire.questionnaire.views.views_error import questionnaire_error as questionnaire_error_view
-from CIM_Questionnaire.questionnaire.views import *
+from CIM_Questionnaire.questionnaire.views.views_error import questionnaire_error
+from CIM_Questionnaire.questionnaire.views.views_authenticate import questionnaire_join
 
 from CIM_Questionnaire.questionnaire import get_version
 
@@ -97,23 +93,20 @@ def questionnaire_customize_new(request,project_name="",model_name="",version_na
     # validate the arguments...
     (validity,project,version,model_proxy,msg) = validate_view_arguments(project_name=project_name,model_name=model_name,version_name=version_name)
     if not validity:
-        return error(request,msg)
+        return questionnaire_error(request,msg)
     request.session["checked_arguments"] = True
 
     # get the relevant vocabularies...
     vocabularies = project.vocabularies.filter(document_type__iexact=model_name)
 
     # check authentication...
-    # (not using @login_required b/c some projects ignore authentication)
+    # (not using "@login_required" b/c some projects ignore authentication)
     if project.authenticated:
         current_user = request.user
         if not current_user.is_authenticated():
-            return redirect('/login/?next=%s'%(request.path))
+            return redirect('/login/?next=%s' % (request.path))
         if not (request.user.is_superuser or request.user.metadata_user.is_admin_of(project)):
-            msg = "User '%s' does not have permission to edit customizations for project '%s'." % (request.user,project_name)
-            if project.email:
-                msg += "<br/>Please <a href='mailto:%s'>contact</a> the project for support." % (project.email)
-            return error(request,msg)
+            return questionnaire_join(request, project, ["default", "user", "admin"])
 
     customizer_parameters = {
         "project" : project,
@@ -156,15 +149,15 @@ def questionnaire_customize_new(request,project_name="",model_name="",version_na
         except FieldError:
             # raise an error if some of the filter parameters were invalid
             msg = "Unable to find a MetadataModelCustomizer with the following parameters: %s" % (", ").join([u'%s=%s' % (key, value) for (key, value) in customizer_parameters.iteritems()])
-            return error(request,msg)
+            return questionnaire_error(request,msg)
         except MultipleObjectsReturned:
             # raise an error if those filter params weren't enough to uniquely identify a customizer
             msg = "Unable to find a <i>single</i> MetadataModelCustomizer with the following parameters: %s" % (", ").join([u'%s=%s' % (key, value) for (key, value) in customizer_parameters.iteritems()])
-            return error(request,msg)
+            return questionnaire_error(request,msg)
         except MetadataModelCustomizer.DoesNotExist:
             # raise an error if there was no matching query
             msg = "Unable to find any MetadataModelCustomizer with the following parameters: %s" % (", ").join([u'%s=%s' % (key, value) for (key, value) in customizer_parameters.iteritems()])
-            return error(request,msg)
+            return questionnaire_error(request,msg)
 
     # create the customizer set
     (model_customizer, standard_category_customizers, standard_property_customizers, scientific_category_customizers, scientific_property_customizers) = \
@@ -221,23 +214,20 @@ def questionnaire_customize_existing(request,project_name="",model_name="",versi
     # validate the arguments...
     (validity,project,version,model_proxy,msg) = validate_view_arguments(project_name=project_name,model_name=model_name,version_name=version_name)
     if not validity:
-        return error(request,msg)
+        return questionnaire_error(request,msg)
     request.session["checked_arguments"] = True
 
     # get the relevant vocabularies...
     vocabularies = project.vocabularies.filter(document_type__iexact=model_name)
 
     # check authentication...
-    # (not using @login_required b/c some projects ignore authentication)
+    # (not using "@login_required" b/c some projects ignore authentication)
     if project.authenticated:
         current_user = request.user
         if not current_user.is_authenticated():
-            return redirect('/login/?next=%s'%(request.path))
+            return redirect('/login/?next=%s' % (request.path))
         if not (request.user.is_superuser or request.user.metadata_user.is_admin_of(project)):
-            msg = "User '%s' does not have permission to edit customizations for project '%s'." % (request.user,project_name)
-            if project.email:
-                msg += "<br/>Please <a href='mailto:%s'>contact</a> the project for support." % (project.email)
-            return error(request,msg)
+            return questionnaire_join(request, project, ["default", "user", "admin"])
 
     # try to get the customizer set...
     try:
@@ -246,7 +236,7 @@ def questionnaire_customize_existing(request,project_name="",model_name="",versi
             MetadataCustomizer.get_existing_customizer_set(model_customizer,vocabularies)
     except MetadataModelCustomizer.DoesNotExist:
         msg = "Cannot find the <u>customizer</u> '%s' for that project/version/model combination" % (customizer_name)
-        return error(request,msg)
+        return questionnaire_error(request,msg)
 
     initial_model_customizer_name = model_customizer.name
 
