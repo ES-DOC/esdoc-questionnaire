@@ -46,6 +46,9 @@ DATABASES = {
 # See https://docs.djangoproject.com/en/1.5/ref/settings/#allowed-hosts
 ALLOWED_HOSTS = []
 
+# SITE_ID is overwritten by DynamicSitesMiddleware on a per-request basis
+DEFAULT_SITE_ID = 1
+
 # Local time zone for this installation. Choices can be found here:
 # http://en.wikipedia.org/wiki/List_of_tz_zones_by_name
 # although not all choices may be available on all operating systems.
@@ -55,10 +58,6 @@ TIME_ZONE = 'America/Denver'
 # Language code for this installation. All choices can be found here:
 # http://www.i18nguy.com/unicode/language-identifiers.html
 LANGUAGE_CODE = 'en-us'
-
-# this is overwritten in questionnaire.__init__.py
-SITE_NAME = parser.get('site','name')
-SITE_ID = 1
 
 # If you set this to False, Django will make some optimizations so as not
 # to load the internationalization machinery.
@@ -126,6 +125,8 @@ else:
 
 MIDDLEWARE_CLASSES = (
     'django.contrib.sessions.middleware.SessionMiddleware',
+    # allows site to be set dynamically based on request URL
+    'questionnaire.middleware.dynamic_sites.DynamicSitesMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -221,6 +222,9 @@ for optional_app in OPTIONAL_INSTALLED_APPS:
        #MIDDLEWARE_CLASSES += optional_app.get("middleware", ())
        MIDDLEWARE_CLASSES = MIDDLEWARE_CLASSES[0:-1] + optional_app.get("middleware",()) + (MIDDLEWARE_CLASSES[-1],)
 
+#################
+# caching, etc. #
+#################
 
 SESSION_SERIALIZER = 'django.contrib.sessions.serializers.JSONSerializer'
 

@@ -43,9 +43,6 @@ port=
 username=
 password=
 
-[site]
-name=localhost
-
 [settings]
 secret_key=
 static_root=static/
