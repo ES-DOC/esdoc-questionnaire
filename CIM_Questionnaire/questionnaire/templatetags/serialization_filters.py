@@ -23,7 +23,7 @@ import os
 from django import template
 
 from CIM_Questionnaire.questionnaire.models.metadata_proxy import MetadataModelProxy, MetadataScientificCategoryProxy, MetadataScientificPropertyProxy, MetadataStandardCategoryProxy, MetadataStandardPropertyProxy
-from CIM_Questionnaire.questionnaire.models.metadata_model import MetadataModel, MetadataStandardProperty, MetadataScientificProperty
+#from CIM_Questionnaire.questionnaire.models.metadata_model import MetadataModel, MetadataStandardProperty, MetadataScientificProperty
 
 register = template.Library()
 

@@ -21,8 +21,6 @@ Summary of module goes here
 
 from django import template
 
-from CIM_Questionnaire.questionnaire.models.metadata_model import MetadataModel, MetadataStandardProperty, MetadataScientificProperty
-
 register = template.Library()
 
 @register.filter
