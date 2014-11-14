@@ -10,7 +10,6 @@
 ####################
 
 from django.contrib import messages
-from django.contrib.auth.models import User
 from django.contrib.sites.models import get_current_site
 from django.core.urlresolvers import reverse
 from django.http import HttpResponseRedirect

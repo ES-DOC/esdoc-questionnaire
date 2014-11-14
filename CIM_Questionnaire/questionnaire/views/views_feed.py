@@ -19,8 +19,8 @@ __date__ ="Dec 18, 2013 1:32:37 PM"
 Summary of module goes here
 
 """
-import os
-from django.conf import settings
+# import os
+# from django.conf import settings
 from django.contrib.syndication.views import Feed, FeedDoesNotExist
 from django.utils.feedgenerator import Atom1Feed
 from django.http import HttpResponse
