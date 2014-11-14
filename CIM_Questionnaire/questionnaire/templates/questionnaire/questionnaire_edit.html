@@ -25,6 +25,28 @@
             // do this next, so it can happen while other widgets are loading
             render_msg($("#msg"));
 
+<<<<<<< HEAD
+=======
+            init_widgets_on_show(fieldsets,$(parent).find(".collapsible_fieldset"))
+            init_widgets_on_show(tabs,$(parent).find(".tabs"));
+
+            init_widgets_on_show(dates,$(parent).find(".datetime,.date"));
+            init_widgets_on_show(accordions,$(parent).find(".accordion").not(".fake"));
+            init_widgets_on_show(dynamic_accordions,$(parent).find(".accordion .accordion_header"));
+            init_widgets_on_show(accordion_buttons,$(parent).find(".subform_toolbar button"));
+            init_widgets_on_show(dynamic_accordion_buttons,$(parent).find("button.add,button.remove,button.replace"));
+            /* TODO: accordion_headers
+            init_widgets_on_show(accordion_headers,$(parent).find(".scientific_property"));
+            */
+
+            init_widgets(helps,$(parent).find(".help_button"));
+            init_widgets_on_show(autocompletes,$(parent).find(".autocomplete"));
+            init_widgets_on_show(enablers,$(parent).find(".enabler"))
+
+            init_widgets(selects,$(parent).find(".multiselect"));
+            init_widgets(enumerations,$(parent).find(".multiselect.open,.multiselect.nullable"));
+            init_widgets(readonlies,$(parent).find(".readonly"));
+>>>>>>> devel
             init_widgets(users,$(parent).find("#user"));
             init_widgets(buttons,$(parent).find("input.button"))
             init_widgets(panes,$(parent).find(".pane"));
