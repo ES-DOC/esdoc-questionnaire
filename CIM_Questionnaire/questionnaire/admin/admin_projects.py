@@ -23,6 +23,6 @@ Summary of module goes here
 
 from django.contrib import admin
 
-from questionnaire.models import MetadataProject
+from CIM_Questionnaire.questionnaire.models.metadata_project import MetadataProject
 
 admin.site.register(MetadataProject)

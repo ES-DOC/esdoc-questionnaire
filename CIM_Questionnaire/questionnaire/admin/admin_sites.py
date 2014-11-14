@@ -29,7 +29,7 @@ from django.contrib.sites.models import Site
 
 from django.contrib.admin.sites import AlreadyRegistered
 
-from questionnaire.models import MetadataSite
+from CIM_Questionnaire.questionnaire.models.metadata_site import MetadataSite
 
 class MetadataSiteAdminForm(ModelForm):
     class Meta:

@@ -24,8 +24,8 @@ from django.contrib import admin
 
 from django.forms import *
 
-from questionnaire.models import MetadataVersion, MetadataModelProxy
-from questionnaire.utils import *
+from CIM_Questionnaire.questionnaire.models.metadata_version import MetadataVersion, MetadataModelProxy
+from CIM_Questionnaire.questionnaire.utils import update_field_widget_attributes
 
 def register_metadata_versions(modeladmin, request, queryset):
     for version in queryset:

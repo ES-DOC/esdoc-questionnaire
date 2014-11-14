@@ -22,7 +22,7 @@ Summary of module goes here
 
 from django.contrib import admin
 
-from CIM_Questionnaire.questionnaire.models import MetadataModel, MetadataModelSerialization
+from CIM_Questionnaire.questionnaire.models import MetadataModelSerialization
 
 def serialize_metadata_serializations(modeladmin, request, queryset):
     for serialization in queryset:
