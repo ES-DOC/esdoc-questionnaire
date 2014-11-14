@@ -31,8 +31,8 @@ from django.utils import timezone
 from CIM_Questionnaire.questionnaire.models.metadata_vocabulary import MetadataVocabulary
 from CIM_Questionnaire.questionnaire.models.metadata_proxy import MetadataScientificPropertyProxy, MetadataScientificCategoryProxy
 from CIM_Questionnaire.questionnaire.fields import MetadataFieldTypes, MetadataAtomicFieldTypes, EnumerationField, CardinalityField, MetadataUnitTypes
-from CIM_Questionnaire.questionnaire.utils import LIL_STRING, SMALL_STRING, BIG_STRING, HUGE_STRING, QuestionnaireError
-from CIM_Questionnaire.questionnaire.utils import find_in_sequence, validate_no_spaces, validate_no_reserved_words, valiate_no_bad_chars
+from CIM_Questionnaire.questionnaire.utils import LIL_STRING, SMALL_STRING, BIG_STRING, HUGE_STRING, BAD_CHARS_LIST, QuestionnaireError
+from CIM_Questionnaire.questionnaire.utils import find_in_sequence, validate_no_spaces, validate_no_reserved_words, validate_no_bad_chars
 
 from CIM_Questionnaire.questionnaire import APP_LABEL
 
@@ -288,8 +288,8 @@ class MetadataModelCustomizer(MetadataCustomizer):
     vocabularies.help_text  = "Choose which Controlled Vocabularies (in which order) apply to this model."
     vocabulary_order        = models.CommaSeparatedIntegerField(max_length=BIG_STRING,blank=True,null=True)
 
-    name                    = models.CharField(max_length=SMALL_STRING,blank=False,null=False,validators=[validate_no_spaces])
-    name.help_text          = "A unique name for this customization (ie: \"basic\" or \"advanced\")"
+    name                    = models.CharField(max_length=SMALL_STRING,blank=False,null=False,validators=[validate_no_spaces, validate_no_bad_chars])
+    name.help_text          = "A unique name for this customization.  Spaces or the following characters are not allowed: \"%s\"." % BAD_CHARS_LIST
     description             = models.TextField(verbose_name="Customization Description",blank=True,null=True)
     description.help_text   = "An explanation of how this customization is intended to be used.  This information is for informational purposes only."
     default                 = models.BooleanField(verbose_name="Is Default Customization?",blank=True,default=False)

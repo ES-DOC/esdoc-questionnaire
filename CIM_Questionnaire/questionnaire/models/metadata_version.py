@@ -31,7 +31,7 @@ import re
 from CIM_Questionnaire.questionnaire.models import MetadataModelProxy, MetadataStandardCategoryProxy, MetadataStandardPropertyProxy
 from CIM_Questionnaire.questionnaire.fields import MetadataFieldTypes, MetadataAtomicFieldTypes
 from CIM_Questionnaire.questionnaire.utils import APP_LABEL, LIL_STRING, SMALL_STRING, BIG_STRING, HUGE_STRING
-from CIM_Questionnaire.questionnaire.utils import OverwriteStorage, validate_file_extension, validate_file_schema, validate_no_spaces, valiate_no_bad_chars, xpath_fix, remove_spaces_and_linebreaks, get_index
+from CIM_Questionnaire.questionnaire.utils import OverwriteStorage, validate_file_extension, validate_file_schema, validate_no_spaces, validate_no_bad_chars, xpath_fix, remove_spaces_and_linebreaks, get_index
 
 UPLOAD_DIR  = "versions"
 UPLOAD_PATH = os.path.join(APP_LABEL,UPLOAD_DIR)    # this is a relative path (will be concatenated w/ MEDIA_ROOT by FileField)
@@ -53,8 +53,8 @@ class MetadataVersion(models.Model):
         verbose_name        = 'Metadata Version'
         verbose_name_plural = 'Metadata Versions'
 
-    name = models.CharField(max_length=SMALL_STRING, blank=False, null=False, validators=[validate_no_spaces, valiate_no_bad_chars])
-    version = models.CharField(max_length=SMALL_STRING, blank=False, null=False, validators=[validate_no_spaces, valiate_no_bad_chars])
+    name = models.CharField(max_length=SMALL_STRING, blank=False, null=False, validators=[validate_no_spaces, validate_no_bad_chars])
+    version = models.CharField(max_length=SMALL_STRING, blank=False, null=False, validators=[validate_no_spaces, validate_no_bad_chars])
     key = models.CharField(max_length=SMALL_STRING, blank=False, null=False, editable=False)
 
     url = models.URLField(blank=False)

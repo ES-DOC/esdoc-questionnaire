@@ -174,12 +174,13 @@ def validate_no_spaces(value):
     if ' ' in value:
         raise ValidationError(u"Value may not contain spaces.")
 
-def valiate_no_bad_chars(value):
-    INVALID_CHARS       = "< > % # % { } [ ] $ |"
-    INVALID_CHARS_REGEX = "[<>&#%{}\[\]\$\|]"
+BAD_CHARS = "\ / < > % # % { } [ ] $ |"
+BAD_CHARS_REGEX = "[\\\/<>&#%{}\[\]\$\|]"
+BAD_CHARS_LIST = ", ".join(BAD_CHARS.split(' '))
+def validate_no_bad_chars(value):
 
-    if re.search(INVALID_CHARS_REGEX,value):
-        raise ValidationError(u"value may not contain any of the following characters: '%s'" % (INVALID_CHARS))#not contain any of the following invalid characters: '%'" % (value,INVALID_CHARS))
+    if re.search(BAD_CHARS_REGEX,value):
+        raise ValidationError(u"value may not contain any of the following characters: '%s'" % (BAD_CHARS))
 
 
 def validate_password(value):
