@@ -35,8 +35,6 @@ import urllib
 from django.core import serializers
 from lxml import etree as et
 
-from CIM_Questionnaire.questionnaire import get_version # used by other modules
-
 def xpath_fix(node, xpath):
     """Helper function to address lxml smart strings memory leakage issue.
 

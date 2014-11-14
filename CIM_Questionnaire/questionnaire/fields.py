@@ -28,9 +28,8 @@ import django.forms.widgets
 
 from django.db import models
 from django.db.models.fields import *
-from django.template.defaultfilters import slugify
 
-from south.modelsinspector import introspector, add_introspection_rules
+from south.modelsinspector import introspector
 
 from CIM_Questionnaire.questionnaire.utils import *
 
