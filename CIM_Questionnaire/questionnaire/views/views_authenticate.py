@@ -22,14 +22,16 @@ Summary of module goes here
 
 from django.http import HttpResponseRedirect
 from django.shortcuts import render_to_response
+from django.core.urlresolvers import reverse
+from django.core.mail import send_mail
 from django.template import RequestContext
 from django.contrib import messages
 from django.views.decorators.debug import sensitive_post_parameters
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 from django.contrib.sites.models import get_current_site
+from django.conf import settings
 
-from CIM_Questionnaire.questionnaire.models.metadata_authentication import MetadataOpenIDProvider
 from CIM_Questionnaire.questionnaire.forms.forms_authentication import MetadataUserForm, MetadataRegistrationForm, MetadataPasswordForm, LocalAuthenticationForm #, RemoteAuthenticationForm
 from CIM_Questionnaire.questionnaire.views.views_error import questionnaire_error
 from CIM_Questionnaire.questionnaire.utils import remove_form_errors
@@ -201,3 +203,37 @@ def questionnaire_register(request):
 
 
     return render_to_response('questionnaire/questionnaire_register.html', dict, context_instance=RequestContext(request))
+
+
+def questionnaire_join(request, project, permissions=['default']):
+
+    if request.method == "POST":
+
+        current_user = request.user
+        site = get_current_site(request)
+
+        _msg = "User '%s' wants to join project '%s' with the following permissions: %s.\n(Request sent from site: %s.)" % \
+               (current_user.username, project.name, ", ".join([u"'%s'"%permission for permission in permissions]), site.name)
+        _from = settings.EMAIL_HOST_USER
+        _to = [ settings.EMAIL_HOST_USER ]
+
+        # TODO: REWRITE THIS IN A SEPARATE THREAD
+
+        try:
+            send_mail("ES-DOC Questionnaire project join request", _msg, _from, _to, fail_silently=False)
+            messages.add_message(request, messages.SUCCESS, "Successfully sent request.")
+        except:
+            messages.add_message(request, messages.ERROR, "Unable to send request.")
+
+        index_url = reverse("index")
+        return HttpResponseRedirect(index_url)
+
+
+    # gather all the extra information required by the template
+    dict = {
+        "site" : get_current_site(request),
+        "project" : project,
+        "questionnaire_version" : get_version(),
+    }
+
+    return render_to_response('questionnaire/questionnaire_join.html', dict, context_instance=RequestContext(request))

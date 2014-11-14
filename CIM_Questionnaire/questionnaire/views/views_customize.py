@@ -40,7 +40,7 @@ from CIM_Questionnaire.questionnaire.models.metadata_customizer import MetadataC
 from CIM_Questionnaire.questionnaire.forms.forms_customize import create_new_customizer_forms_from_models, create_existing_customizer_forms_from_models, create_customizer_forms_from_data
 from CIM_Questionnaire.questionnaire.forms.forms_customize import save_valid_forms
 from CIM_Questionnaire.questionnaire.views.views_error import questionnaire_error
-
+from CIM_Questionnaire.questionnaire.views.views_authenticate import questionnaire_join
 from CIM_Questionnaire.questionnaire import get_version
 
 def validate_view_arguments(project_name="", model_name="", version_key=""):
@@ -97,16 +97,14 @@ def questionnaire_customize_new(request, project_name="", model_name="", version
     vocabularies = project.vocabularies.filter(document_type__iexact=model_name)
 
     # check authentication...
-    # (not using @login_required b/c some projects ignore authentication)
+    # (not using "@login_required" b/c some projects ignore authentication)
     if project.authenticated:
         current_user = request.user
         if not current_user.is_authenticated():
-            return redirect('/login/?next=%s'%(request.path))
+            return redirect('/login/?next=%s' % (request.path))
         if not (request.user.is_superuser or request.user.metadata_user.is_admin_of(project)):
-            msg = "User '%s' does not have permission to edit customizations for project '%s'." % (request.user,project_name)
-            if project.email:
-                msg += "<br/>Please <a href='mailto:%s'>contact</a> the project for support." % (project.email)
-            return questionnaire_error(request,msg)
+            return questionnaire_join(request, project, ["default", "user", "admin"])
+
 
     customizer_parameters = {
         "project" : project,
@@ -223,16 +221,13 @@ def questionnaire_customize_existing(request, project_name="", model_name="", ve
     vocabularies = project.vocabularies.filter(document_type__iexact=model_name)
 
     # check authentication...
-    # (not using @login_required b/c some projects ignore authentication)
+    # (not using "@login_required" b/c some projects ignore authentication)
     if project.authenticated:
         current_user = request.user
         if not current_user.is_authenticated():
-            return redirect('/login/?next=%s'%(request.path))
+            return redirect('/login/?next=%s' % (request.path))
         if not (request.user.is_superuser or request.user.metadata_user.is_admin_of(project)):
-            msg = "User '%s' does not have permission to edit customizations for project '%s'." % (request.user,project_name)
-            if project.email:
-                msg += "<br/>Please <a href='mailto:%s'>contact</a> the project for support." % (project.email)
-            return questionnaire_error(request,msg)
+            return questionnaire_join(request, project, ["default", "user", "admin"])
 
     # try to get the customizer set...
     try:

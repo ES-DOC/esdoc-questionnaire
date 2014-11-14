@@ -26,6 +26,7 @@ from CIM_Questionnaire.questionnaire.models.metadata_model import MetadataModel,
 from CIM_Questionnaire.questionnaire.models.metadata_model import get_model_parent_dictionary
 from CIM_Questionnaire.questionnaire.forms.forms_edit import create_new_edit_forms_from_models, create_existing_edit_forms_from_models, create_edit_forms_from_data, save_valid_forms
 from CIM_Questionnaire.questionnaire.views.views_error import questionnaire_error
+from CIM_Questionnaire.questionnaire.views.views_authenticate import questionnaire_join
 from CIM_Questionnaire.questionnaire.utils import get_joined_keys_dict
 from CIM_Questionnaire.questionnaire import get_version
 
@@ -99,14 +100,8 @@ def questionnaire_edit_new(request, project_name="", model_name="", version_key=
         current_user = request.user
         if not current_user.is_authenticated():
             return redirect('/login/?next=%s' % (request.path))
-        if not (request.user.is_superuser or request.user.metadata_user.is_user_of(project)):
-            msg = "User '%s' does not have editing permission for project '%s'." % (request.user, project_name)
-            # TODO: ONCE PROJECT REGISTRATION IS POSSIBLE BY USERS OTHER THAN SITE ADMIN, REMOVE THIS BLOCK AND RE-INSTATE THE SUBSEQUENT BLOCK
-            msg += "<br/>Please <a href='mailto:es-doc-support@list.woc.noaa.gov'>contact</a> ES-DOC for support."
-            # if project.email:
-            #     msg += "<br/>Please <a href='mailto:%s'>contact</a> the project for support." % (project.email)
-            return questionnaire_error(request, msg)
-
+        if not (request.user.is_superuser or request.user.metadata_user.is_admin_of(project)):
+            return questionnaire_join(request, project, ["default", "user",])
 
     # getting the vocabularies into the right order is a 2-step process
     # b/c vocabularies do not have an "order" attribute (since they can be used by multiple projects/customizations),
@@ -234,13 +229,9 @@ def questionnaire_edit_existing(request, project_name="", model_name="", version
         current_user = request.user
         if not current_user.is_authenticated():
             return redirect('/login/?next=%s' % (request.path))
-        if not (request.user.is_superuser or request.user.metadata_user.is_user_of(project)):
-            msg = "User '%s' does not have editing permission for project '%s'." % (request.user, project_name)
-            # TODO: ONCE PROJECT REGISTRATION IS POSSIBLE BY USERS OTHER THAN SITE ADMIN, REMOVE THIS BLOCK AND RE-INSTATE THE SUBSEQUENT BLOCK
-            msg += "<br/>Please <a href='mailto:es-doc-support@list.woc.noaa.gov'>contact</a> ES-DOC for support."
-            # if project.email:
-            #     msg += "<br/>Please <a href='mailto:%s'>contact</a> the project for support." % (project.email)
-            return questionnaire_error(request, msg)
+        if not (request.user.is_superuser or request.user.metadata_user.is_admin_of(project)):
+            return questionnaire_join(request, project, ["default", "user",])
+
 
     # try to get the requested model...
     try:

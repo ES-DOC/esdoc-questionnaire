@@ -28,6 +28,7 @@ from CIM_Questionnaire.questionnaire import APP_LABEL
 from CIM_Questionnaire.questionnaire.utils import LIL_STRING, SMALL_STRING, BIG_STRING, HUGE_STRING
 from CIM_Questionnaire.questionnaire.utils import QuestionnaireError
 from CIM_Questionnaire.questionnaire.utils import validate_no_spaces
+
 class MetadataUser(models.Model):
 
     class Meta:
