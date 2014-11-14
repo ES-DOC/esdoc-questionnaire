@@ -33,7 +33,7 @@ from django.forms.models import modelformset_factory, inlineformset_factory
 from django.utils.functional import curry
 
 from CIM_Questionnaire.questionnaire.models.metadata_model import MetadataModel, MetadataStandardProperty, MetadataScientificProperty
-from CIM_Questionnaire.questionnaire.models.metadata_proxy import MetadataModelProxy, MetadataStandardPropertyProxy, MetadataScientificPropertyProxy
+from CIM_Questionnaire.questionnaire.models.metadata_proxy import MetadataStandardPropertyProxy, MetadataScientificPropertyProxy
 from CIM_Questionnaire.questionnaire.models.metadata_customizer import MetadataCustomizer
 from CIM_Questionnaire.questionnaire.models.metadata_vocabulary import MetadataVocabulary
 
@@ -41,11 +41,8 @@ from CIM_Questionnaire.questionnaire.forms import MetadataEditingForm
 
 from CIM_Questionnaire.questionnaire.fields import MetadataFieldTypes, MetadataAtomicFieldTypes, CachedModelChoiceField, METADATA_ATOMICFIELD_MAP, EMPTY_CHOICE, NULL_CHOICE, OTHER_CHOICE
 
-from CIM_Questionnaire.questionnaire.utils import QuestionnaireError, find_in_sequence, update_field_widget_attributes
-from CIM_Questionnaire.questionnaire.utils import get_initial_data, find_in_sequence, update_field_widget_attributes, set_field_widget_attributes, get_data_from_formset, get_data_from_form, get_form_by_prefix
-from CIM_Questionnaire.questionnaire.utils import LIL_STRING, SMALL_STRING, BIG_STRING, HUGE_STRING
-
-from CIM_Questionnaire.questionnaire.utils import model_to_data, DEFAULT_VOCABULARY_KEY, DEFAULT_COMPONENT_KEY
+from CIM_Questionnaire.questionnaire.utils import QuestionnaireError
+from CIM_Questionnaire.questionnaire.utils import get_initial_data, model_to_data, find_in_sequence, update_field_widget_attributes, set_field_widget_attributes, get_data_from_formset, get_data_from_form, get_form_by_prefix
 
 def create_model_form_data(model,model_customizer):
 
@@ -1550,11 +1547,17 @@ def create_edit_subforms_from_data(data, models, model_customizer, standard_prop
 
 
 def save_valid_model_formset(model_formset, model_parent_dictionary={}):
+
+    loaded_model_forms = model_formset.get_loaded_forms()
+    loaded_model_keys = [model_form.prefix for model_form in loaded_model_forms]
+
+    # I AM HERE
+
     # force model_formset to save instances even if they haven't changed
     #model_instances = model_formset.save(commit=True)
     # TODO: MAKE THE commit KWARG CONDITIONAL ON WHETHER THE FORM CHANGED (OR IS NEW) TO CUT DOWN ON DB HITS
     # (NOTE, I'LL HAVE TO CHANGE THE LOOP BELOW ONCE I'VE DONE THIS)
-    model_instances = [model_form.save(commit=True) for model_form in model_formset.forms]
+    model_instances = [model_form.save(commit=True) for model_form in loaded_model_forms]
 
     for model_instance in model_instances:
         try:

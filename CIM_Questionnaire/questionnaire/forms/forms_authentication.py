@@ -24,10 +24,9 @@ from django.forms import *
 
 from django.contrib.auth.forms  import PasswordChangeForm, AdminPasswordChangeForm, AuthenticationForm, UserCreationForm
 
-from django.utils.html          import mark_safe
+# from django.utils.html          import mark_safe
 
 from CIM_Questionnaire.questionnaire.models.metadata_authentication import MetadataUser, MetadataOpenIDProvider
-from CIM_Questionnaire.questionnaire.utils import LIL_STRING, SMALL_STRING, BIG_STRING, HUGE_STRING
 from CIM_Questionnaire.questionnaire.utils import update_field_widget_attributes, validate_password, validate_no_bad_chars
 
 class LocalAuthenticationForm(AuthenticationForm):

@@ -22,8 +22,8 @@ Summary of module goes here
 
 from django.forms import *
 
-from questionnaire.utils        import *
-from questionnaire.models       import *
+from CIM_Questionnaire.questionnaire.models.metadata_customizer import MetadataStandardCategoryCustomizer, MetadataScientificCategoryCustomizer
+from CIM_Questionnaire.questionnaire.utils import update_field_widget_attributes, set_field_widget_attributes
 
 class MetadataStandardCategoryCustomizerForm(ModelForm):
 
