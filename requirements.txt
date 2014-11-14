@@ -1,5 +1,4 @@
 Django==1.6.5
-Pillow==2.5.1
 Psycopg2==2.5.1
 South==0.8.4
 django-mptt==0.6.0

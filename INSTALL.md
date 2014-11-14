@@ -13,7 +13,6 @@ The system must have the following Python packages installed:
 * pytz (pip install pytz)
 * mptt (pip install django-mptt)
 * python-memcached (pip install python-memcached)
-* PIL (pip install pillow)
 * A PostGres database is recommended.  However, Django also supports MySQL and SQLite3.
     * To use PostGres you must install psycopg2.
 
