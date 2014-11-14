@@ -30,10 +30,8 @@ import re
 
 from CIM_Questionnaire.questionnaire import APP_LABEL
 from CIM_Questionnaire.questionnaire.models.metadata_proxy import MetadataModelProxy, MetadataStandardPropertyProxy, MetadataStandardCategoryProxy
+from CIM_Questionnaire.questionnaire.utils import validate_file_extension, validate_file_schema, xpath_fix, OverwriteStorage
 from CIM_Questionnaire.questionnaire.utils import LIL_STRING, SMALL_STRING, BIG_STRING, HUGE_STRING
-from CIM_Questionnaire.questionnaire.utils import OverwriteStorage
-from CIM_Questionnaire.questionnaire.utils import validate_file_extension, validate_file_schema, xpath_fix
-
 
 UPLOAD_DIR  = "categorizations"
 UPLOAD_PATH = os.path.join(APP_LABEL,UPLOAD_DIR)    # this is a relative path (will be concatenated w/ MEDIA_ROOT by FileFIeld)

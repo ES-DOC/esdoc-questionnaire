@@ -29,14 +29,11 @@ from django.conf import settings
 from uuid import uuid4
 
 import os
-import re
 
 from CIM_Questionnaire.questionnaire.models.metadata_proxy import MetadataComponentProxy, MetadataScientificCategoryProxy, MetadataScientificPropertyProxy
 from CIM_Questionnaire.questionnaire.utils import validate_file_extension, validate_file_schema, validate_no_spaces, xpath_fix
 from CIM_Questionnaire.questionnaire.utils import HUGE_STRING, BIG_STRING, SMALL_STRING, LIL_STRING, CIM_DOCUMENT_TYPES
 from CIM_Questionnaire.questionnaire.utils import QuestionnaireError, OverwriteStorage
-
-
 from CIM_Questionnaire.questionnaire import APP_LABEL
 
 UPLOAD_DIR  = "vocabularies"

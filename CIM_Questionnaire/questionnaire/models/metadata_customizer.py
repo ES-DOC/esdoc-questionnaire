@@ -29,11 +29,10 @@ from collections import OrderedDict
 from django.utils import timezone
 
 from CIM_Questionnaire.questionnaire.models.metadata_vocabulary import MetadataVocabulary
-from CIM_Questionnaire.questionnaire.models.metadata_proxy import MetadataScientificPropertyProxy, MetadataScientificCategoryProxy
+#from CIM_Questionnaire.questionnaire.models.metadata_proxy import MetadataScientificPropertyProxy, MetadataScientificCategoryProxy
 from CIM_Questionnaire.questionnaire.fields import MetadataFieldTypes, MetadataAtomicFieldTypes, EnumerationField, CardinalityField, MetadataUnitTypes
 from CIM_Questionnaire.questionnaire.utils import LIL_STRING, SMALL_STRING, BIG_STRING, HUGE_STRING, BAD_CHARS_LIST, QuestionnaireError
-from CIM_Questionnaire.questionnaire.utils import find_in_sequence, validate_no_spaces, validate_no_reserved_words, validate_no_bad_chars
-
+from CIM_Questionnaire.questionnaire.utils import find_in_sequence, validate_no_spaces, validate_no_bad_chars
 from CIM_Questionnaire.questionnaire import APP_LABEL
 
 class MetadataCustomizer(models.Model):
