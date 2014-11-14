@@ -176,7 +176,6 @@ def questionnaire_edit_new(request, project_name="", model_name="", version_key=
 
         data = request.POST
 
-        import ipdb; ipdb.set_trace()
         (validity, model_formset, standard_properties_formsets, scientific_properties_formsets) = \
             create_edit_forms_from_data(data, models, model_customizer, standard_properties, standard_property_customizers, scientific_properties, scientific_property_customizers)
 
@@ -224,7 +223,7 @@ def questionnaire_edit_new(request, project_name="", model_name="", version_key=
 def questionnaire_edit_existing(request, project_name="", model_name="", version_key="", model_id="", **kwargs):
 
     # validate the arguments...
-    (validity,project,version,model_proxy,model_customizer,msg) = validate_view_arguments(project_name=project_name,model_name=model_name,version_key=version_key)
+    (validity, project, version, model_proxy, model_customizer, msg) = validate_view_arguments(project_name=project_name,model_name=model_name,version_key=version_key)
     if not validity:
         return questionnaire_error(request,msg)
     request.session["checked_arguments"] = True
@@ -256,6 +255,9 @@ def questionnaire_edit_existing(request, project_name="", model_name="", version
         # TODO: DEAL W/ THIS USE-CASE
         msg = "Currently only root models can be viewed.  Please try again."
         return questionnaire_error(request,msg)
+
+    import ipdb; ipdb.set_trace()
+
     models = model.get_descendants(include_self=True)
 
     # getting the vocabularies into the right order is a 2-step process

@@ -32,10 +32,10 @@ from CIM_Questionnaire.questionnaire.views.views_edit import validate_view_argum
 from CIM_Questionnaire.questionnaire.views.views_error import questionnaire_error
 from CIM_Questionnaire.questionnaire import get_version
 
-def questionnaire_view_new(request, project_name="", model_name="", version_name="", **kwargs):
+def questionnaire_view_new(request, project_name="", model_name="", version_key="", **kwargs):
 
     # validate the arguments...
-    (validity, project, version, model_proxy, model_customizer, msg) = validate_view_arguments(project_name=project_name, model_name=model_name, version_name=version_name)
+    (validity, project, version, model_proxy, model_customizer, msg) = validate_view_arguments(project_name=project_name, model_name=model_name, version_key=version_key)
     if not validity:
         return questionnaire_error(request, msg)
 
@@ -43,10 +43,10 @@ def questionnaire_view_new(request, project_name="", model_name="", version_name
     msg = "The Questionnaire only supports <u>viewing</u> of existing instances."
     return questionnaire_error(request, msg)
 
-def questionnaire_view_existing(request, project_name="", model_name="", version_name="", model_id="", **kwargs):
+def questionnaire_view_existing(request, project_name="", model_name="", version_key="", model_id="", **kwargs):
 
     # validate the arguments...
-    (validity,project,version,model_proxy,model_customizer,msg) = validate_view_arguments(project_name=project_name,model_name=model_name,version_name=version_name)
+    (validity,project,version,model_proxy,model_customizer,msg) = validate_view_arguments(project_name=project_name,model_name=model_name,version_key=version_key)
     if not validity:
         return questionnaire_error(request,msg)
     request.session["checked_arguments"] = True
