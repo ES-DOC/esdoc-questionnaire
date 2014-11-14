@@ -196,8 +196,9 @@ def questionnaire_register(request):
 
     # gather all the extra information required by the template
     dict = {
-        "site"                  : get_current_site(request),
-        "form"                  : registration_form,
+        "site" : get_current_site(request),
+        "form" : registration_form,
+        "next" : next,
         "questionnaire_version" : get_version(),
     }
 
