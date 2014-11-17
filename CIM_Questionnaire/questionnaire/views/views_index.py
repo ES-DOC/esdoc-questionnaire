@@ -87,11 +87,11 @@ def questionnaire_project_index(request,project_name=""):
         msg = "Could not find an active project named '%s'." % (project_name)
         return questionnaire_error(request,msg)
 
-    all_versions = MetadataVersion.objects.filter(registered=True)
-    all_proxies = MetadataModelProxy.objects.filter(stereotype__iexact="document",version__in=all_versions)
+    all_versions = MetadataVersion.objects.filter(registered=True).order_by("key")
+    all_proxies = MetadataModelProxy.objects.filter(stereotype__iexact="document",version__in=all_versions).order_by("name")
     all_proxies = all_proxies.filter(name__iregex=r'(' + '|'.join(SUPPORTED_DOCUMENTS) + ')')
-    all_customizers = MetadataModelCustomizer.objects.filter(project=project,proxy__in=all_proxies)
-    all_models = MetadataModel.objects.filter(project=project,is_root=True,proxy__in=all_proxies,is_document=True)
+    all_customizers = MetadataModelCustomizer.objects.filter(project=project,proxy__in=all_proxies).order_by("name")
+    all_models = MetadataModel.objects.filter(project=project,is_root=True,proxy__in=all_proxies,is_document=True).order_by("name")
    
     class _AdminIndexForm(forms.Form):
 
