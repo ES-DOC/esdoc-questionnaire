@@ -297,7 +297,7 @@ class MetadataModelCustomizer(MetadataCustomizer):
 
     model_title                         = models.CharField(max_length=BIG_STRING,verbose_name="Name that should appear on the Document Form",blank=False,null=True)
     model_description                   = models.TextField(verbose_name="A description of the document",blank=True,null=True)
-    model_description.help_text         = "This text will appear as documentation in the editing form.  Inline HTML formatting is permitted."
+    model_description.help_text         = "This text will appear as documentation in the editing form.  Inline HTML formatting is permitted.  The initial documentation comes from the CIM Schema."
     model_show_all_categories           = models.BooleanField(verbose_name="Display empty categories?",default=False)
     model_show_all_categories.help_text = "Include categories in the editing form for which there are no (visible) attributes associated with"
     model_show_all_properties           = models.BooleanField(verbose_name="Display uncategorized fields?",default=True)
