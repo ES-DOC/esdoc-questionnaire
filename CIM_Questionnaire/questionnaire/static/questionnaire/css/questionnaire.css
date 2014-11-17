@@ -127,6 +127,17 @@ body {
 .hidden   { display: none; }
 .hidden * { display: none; }
 
+input::-webkit-outer-spin-button, input::-webkit-inner-spin-button {
+    /* display: none; <- Crashes Chrome on hover */
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+input[type='number'] {
+    -moz-appearance:textfield;
+    margin: 0;
+}
+
 /* begin fixing JQuery widgets */
 
 .ui-multiselect-checkboxes span { margin-left: 4px !important; }
