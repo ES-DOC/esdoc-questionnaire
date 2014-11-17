@@ -572,7 +572,7 @@ class MetadataPropertyCustomizer(MetadataCustomizer):
     unique              = models.BooleanField(default=False,blank=True,verbose_name="Must the value of this property be unique?")
     verbose_name        = models.CharField(max_length=LIL_STRING,blank=False,verbose_name="How should this property be labeled (overrides default name)?")
     default_value       = models.CharField(max_length=BIG_STRING,blank=True,null=True,verbose_name="What is the default value of this property?")
-    documentation       = models.TextField(blank=True,verbose_name="What is the help text to associate with property?")
+    documentation       = models.TextField(blank=True,verbose_name="What is the help text to associate with property?  The initial documentation comes from the CIM Schema or a CIM Controlled Vocabulary.")
     inline_help         = models.BooleanField(default=False,blank=True,verbose_name="Should the help text be displayed inline?")
     
     
