@@ -91,8 +91,16 @@ def questionnaire_project_index(request,project_name=""):
     all_proxies = MetadataModelProxy.objects.filter(stereotype__iexact="document",version__in=all_versions).order_by("name")
     all_proxies = all_proxies.filter(name__iregex=r'(' + '|'.join(SUPPORTED_DOCUMENTS) + ')')
     all_customizers = MetadataModelCustomizer.objects.filter(project=project,proxy__in=all_proxies).order_by("name")
-    all_models = MetadataModel.objects.filter(project=project,is_root=True,proxy__in=all_proxies,is_document=True).order_by("name")
-   
+    # a bit of SQL-fu to get models in the right order
+    # (thanks to http://blog.mathieu-leplatre.info/django-create-a-queryset-from-a-list-preserving-order.html)
+    all_models_unordered = MetadataModel.objects.filter(project=project, is_root=True, is_document=True, proxy__in=all_proxies)
+    all_models_ordered_pk = [model.pk for model in sorted(all_models_unordered, key=lambda m: u"%s"%m)]
+    order_by_unicode_name_query = u"CASE %s END" % " ".join([u"WHEN id=%s THEN %s" % (pk, i) for i,pk in enumerate(all_models_ordered_pk)])
+    all_models = MetadataModel.objects.filter(pk__in=all_models_ordered_pk).extra(
+        select = {"ordering" : order_by_unicode_name_query},
+        order_by = ["ordering",]
+    )
+
     class _AdminIndexForm(forms.Form):
 
         versions        = ModelChoiceField(queryset=all_versions,label="Metadata Version",required=True)
