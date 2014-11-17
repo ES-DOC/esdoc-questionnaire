@@ -102,79 +102,85 @@ def questionnaire_edit_new(request, project_name="", model_name="", version_key=
         if not (request.user.is_superuser or request.user.metadata_user.is_admin_of(project)):
             return questionnaire_join(request, project, ["default", "user",])
 
-    # getting the vocabularies into the right order is a 2-step process
+
+    # get the vocabularies...
+    # getting them in the right order is a 2-step process
     # b/c vocabularies do not have an "order" attribute (since they can be used by multiple projects/customizations),
     # but the model_customizer does record the desired order of active vocabularies (as a comma-separated list)
     vocabularies = model_customizer.vocabularies.all().prefetch_related("component_proxies")
-    vocabulary_order = [int(order) for order in filter(None,model_customizer.vocabulary_order.split(','))]
+    vocabulary_order = [int(order) for order in filter(None, model_customizer.vocabulary_order.split(','))]
     vocabularies = sorted(vocabularies, key=lambda vocabulary: vocabulary_order.index(vocabulary.pk))
 
-    # now try to get the default customizer set for this project/version/proxy combination...
-    (model_customizer, standard_category_customizers, standard_property_customizers, nested_scientific_category_customizers, nested_scientific_property_customizers) = \
-            MetadataCustomizer.get_existing_customizer_set(model_customizer, vocabularies)
+    # prepare the cache...
+    session_id = request.session.session_key
+    cached_customizer_set_key = u"%s_customizer_set" % session_id
+    cached_proxy_set_key = u"%s_proxy_set" % session_id
+    cached_realization_set_key = u"%s_realization_set" % session_id
+    cache = get_cache("default")
 
-    # (also get the proxies b/c I'll need them when setting up properties below)
-    # note that the proxies need to be sorted according to the customizers (which are ordered by default),
-    # so that when I pass an iterator of customizers to the formsets, they will match the underlying form that is created for each property
-    standard_property_proxies = [standard_property_customizer.proxy for standard_property_customizer in standard_property_customizers]
+    # if the cache has already been filled (likely if this is a POST, unlikely if this is a GET),
+    # then use the cached values; otherwise, get/create them here and then cache them
+    customizer_set = cache.get(cached_customizer_set_key)
+    proxy_set = cache.get(cached_proxy_set_key)
+    realization_set = cache.get(cached_realization_set_key)
+    if not customizer_set:
 
-    scientific_property_customizers = get_joined_keys_dict(nested_scientific_property_customizers)
-    scientific_property_proxies = { key : [spc.proxy for spc in value] for key,value in  scientific_property_customizers.items() }
+        (model_customizer, standard_category_customizers, standard_property_customizers, nested_scientific_category_customizers, nested_scientific_property_customizers) = \
+                MetadataCustomizer.get_existing_customizer_set(model_customizer, vocabularies)
 
+        customizer_set = {
+            "model_customizer": model_customizer,
+            "standard_category_customizers": standard_category_customizers,
+            "standard_property_customizers": standard_property_customizers,
+            "scientific_category_customizers": get_joined_keys_dict(nested_scientific_category_customizers),
+            "scientific_property_customizers": get_joined_keys_dict(nested_scientific_property_customizers),
+        }
 
-    # TODO: may have to include _all_ properties in the forms (and just hide them in the template) so that they are there when I save things
+        cache.set(cached_customizer_set_key, customizer_set)
 
-    model_parameters = {
-        "project": project,
-        "version": version,
-        "proxy": model_proxy,
-    }
-    INITIAL_PARAMETER_LENGTH = len(model_parameters)
+    if not proxy_set:
 
-    # TODO: check if the user added any parameters to the request; if so, pass those parameters to "questionnaire_edit_existing()"
-    # TODO: HAVE TO DO THIS DIFFERENTLY THAN WITH CUSTOMIZERS (see "views_customize.py"), SINCE FIELDS ARE FKS TO PROPERTIES
-    for (key,value) in request.GET.iteritems():
-        pass
-    if len(model_parameters) > INITIAL_PARAMETER_LENGTH:
-        pass
+        standard_property_proxies = [standard_property_customizer.proxy for standard_property_customizer in customizer_set["standard_property_customizers"]]
+        scientific_property_proxies = { key : [spc.proxy for spc in value] for key,value in  customizer_set["scientific_property_customizers"].items() }
+        proxy_set = {
+            "standard_property_proxies": standard_property_proxies,
+            "scientific_property_proxies": scientific_property_proxies,
+        }
 
-    # create the realization set
-    # TODO: DON'T LIKE HAVING TO PASS MODEL_CUSTOMIZER, SINCE I WANT ALL CUSTOMIZATION FUNCTIONALITY TO BE FORM-SPECIFIC
-    # TODO: BUT I HAVE TO SET THE ROOT VOCAB & COMPONENT KEY IN THIS FN
-    (models, standard_properties, scientific_properties) = \
-        MetadataModel.get_new_realization_set(project, version, model_proxy, standard_property_proxies, scientific_property_proxies, model_customizer, vocabularies)
+        cache.set(cached_proxy_set_key, proxy_set)
 
-    model_parent_dictionary = get_model_parent_dictionary(models)
+    if not realization_set:
 
+        # TODO: DON'T LIKE HAVING TO PASS MODEL_CUSTOMIZER, SINCE I WANT ALL CUSTOMIZATION FUNCTIONALITY TO BE FORM-SPECIFIC
+        # TODO: BUT I HAVE TO SET THE ROOT VOCAB & COMPONENT KEY IN THIS FN
+        (models, standard_properties, scientific_properties) = \
+            MetadataModel.get_new_realization_set(project, version, model_proxy, proxy_set["standard_property_proxies"], proxy_set["scientific_property_proxies"], customizer_set["model_customizer"], vocabularies)
 
-    # # TODO: UNABLE TO PICKLE COMPLEX FORM
-    # # TODO: SO PICKLING THE MODELS BEHIND THE FORMS
-    # # TODO: GET THIS WORKING PROPERLY
-    # # cache stuff
-    # session_id = request.session.session_key
-    # models_to_cache = {
-    #     session_id + "_models" : models,
-    #     session_id + "_standard_properties" : standard_properties,
-    #     session_id + "_scientific_properties" : scientific_properties,
-    # }
-    # cache = get_cache("default")
-    # for key, value in models_to_cache.iteritems():
-    #     cache.set(key, value)
+        realization_set = {
+            "models": models,
+            "standard_properties": standard_properties,
+            "scientific_properties": scientific_properties,
+        }
+
+        cache.set(cached_realization_set_key, realization_set)
+
+    # now build the forms...
 
     if request.method == "GET":
 
         (model_formset, standard_properties_formsets, scientific_properties_formsets) = \
-            create_new_edit_forms_from_models(models, model_customizer, standard_properties, standard_property_customizers, scientific_properties, scientific_property_customizers)
+            create_new_edit_forms_from_models(realization_set["models"], customizer_set["model_customizer"], realization_set["standard_properties"], customizer_set["standard_property_customizers"], realization_set["scientific_properties"], customizer_set["scientific_property_customizers"])
 
     else: # request.method == "POST":
 
         data = request.POST
 
         (validity, model_formset, standard_properties_formsets, scientific_properties_formsets) = \
-            create_edit_forms_from_data(data, models, model_customizer, standard_properties, standard_property_customizers, scientific_properties, scientific_property_customizers)
+            create_edit_forms_from_data(data, realization_set["models"], customizer_set["model_customizer"], realization_set["standard_properties"], customizer_set["standard_property_customizers"], realization_set["scientific_properties"], customizer_set["scientific_property_customizers"])
 
         if all(validity):
 
+            model_parent_dictionary = get_model_parent_dictionary(realization_set["models"])
             model_instances = save_valid_forms(model_formset, standard_properties_formsets, scientific_properties_formsets, model_parent_dictionary=model_parent_dictionary)
             assert(len(model_instances) > 0)
             root_model_id = model_instances[0].get_root().pk
@@ -208,6 +214,7 @@ def questionnaire_edit_new(request, project_name="", model_name="", version_key=
         "standard_properties_formsets": standard_properties_formsets,
         "scientific_properties_formsets": scientific_properties_formsets,
         "questionnaire_version": get_version(),  # used in the footer
+        "session_id": session_id,
         "can_publish": False,  # only models that have already been saved can be published
     }
 

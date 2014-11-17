@@ -119,6 +119,7 @@ class MetadataModelFormSet(BaseModelFormSet):
                 loaded_forms.append(form)
         return loaded_forms
 
+
     def is_valid(self, prefixes_to_check=None):
         """
         Returns True if the forms in the formset are valid
@@ -255,7 +256,9 @@ class MetadataModelAbstractForm(MetadataEditingForm):
             return loaded == "on"
         except KeyError:
             return False
-
+    #
+    # def is_valid(self):
+    #     super(MetadataAbstractStandardPropertyForm, self).is_valid()
 
 class MetadataModelForm(MetadataModelAbstractForm):
 
@@ -1447,6 +1450,7 @@ def create_edit_forms_from_data(data, models, model_customizer, standard_propert
     loaded_model_forms = model_formset.get_loaded_forms()
     loaded_model_keys = [model_form.prefix for model_form in loaded_model_forms]
 
+    import ipdb; ipdb.set_trace()
     model_formset_validity = model_formset.is_valid(prefixes_to_check=loaded_model_keys)
     if model_formset_validity:
         # force model_formset to save instances even if they haven't changed

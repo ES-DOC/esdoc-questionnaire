@@ -23,7 +23,7 @@ Summary of module goes here
 from django.http import HttpResponse
 from django.template.loader import render_to_string
 from django.shortcuts import render_to_response
-
+from django.core.cache import get_cache
 from django.template.context import RequestContext
 
 from CIM_Questionnaire.questionnaire.forms.forms_edit import create_new_edit_forms_from_models
@@ -190,49 +190,72 @@ def api_get_form_section(request, project_name, section_key, **kwargs):
     if not validity:
         return questionnaire_error(request,msg)
 
-    # get the customizers...
+    # finally get the vocabularies...
+    # (okay, I know that I may have only specified 1 or 0 vocabularies
+    # but for now I still need to recreate the forms in their entirety - meaning all vocabularies)
     try:
         model_customizer = MetadataModelCustomizer.objects.get(project=project, version=version, proxy=model_proxy, default=True)
     except MetadataModelCustomizer.DoesNotExist:
         msg = "There is no default customization associated with this project/model/version."
         return questionnaire_error(request, msg)
-    # okay, I know that I may have only specified 1 or 0 vocabularies
-    # but for now I still need to recreate the forms in their entirety (meaning all vocabularies)
-    # later, when I cache things, I can do away with this extra complexity
     vocabularies = model_customizer.vocabularies.all()
-    # if vocabulary:
-    #     vocabularies = [vocabulary]
-    # else:
-    #     vocabularies = []
 
-    (model_customizer, standard_category_customizers, standard_property_customizers, nested_scientific_category_customizers, nested_scientific_property_customizers) = \
+    # see if things have been cached...
+    if request.method == "GET":
+        session_id = request.GET.get("session_id")
+    else: # request.method == "POST"
+        session_id = request.POST.get("session_id")
+    cached_customization_set_key = u"%s_customizer_set" % session_id
+    cached_proxy_set_key = u"%s_proxy_set" % session_id
+    cached_realization_set_key = u"%s_realization_set" % session_id
+    cache = get_cache("default")
+    customization_set = cache.get(cached_customization_set_key)
+    proxy_set = cache.get(cached_proxy_set_key)
+    realization_set = cache.get(cached_realization_set_key)
+
+    if not customization_set:
+
+        (model_customizer, standard_category_customizers, standard_property_customizers, nested_scientific_category_customizers, nested_scientific_property_customizers) = \
             MetadataCustomizer.get_existing_customizer_set(model_customizer, vocabularies)
-    standard_property_proxies = [standard_property_customizer.proxy for standard_property_customizer in standard_property_customizers]
-    scientific_property_customizers = get_joined_keys_dict(nested_scientific_property_customizers)
-    scientific_property_proxies = { key : [spc.proxy for spc in value] for key,value in  scientific_property_customizers.items() }
 
-    # TODO: USE EITHER CACHED MODELS OR CACHED FORMS
-    # TODO: CACHED FORMS DO NOT PICKLE OUT-OF-THE-BOX
-    # TODO: CAN CACHE MODELS BUT DON'T KNOW ENOUGH ABOUT SESSIONS TO GET THE CORRECT MODELS BACK FROM THE CACHE ON A SUBSEQUENT VIEW
+        customization_set = {
+            "model_customizer": model_customizer,
+            "standard_category_customizers": standard_category_customizers,
+            "standard_property_customizers": standard_property_customizers,
+            "scientific_category_customizers": get_joined_keys_dict(nested_scientific_category_customizers),
+            "scientific_property_customizers": get_joined_keys_dict(nested_scientific_property_customizers),
+        }
+
+    if not proxy_set:
+
+        standard_property_proxies = [standard_property_customizer.proxy for standard_property_customizer in customization_set["standard_property_customizers"]]
+        scientific_property_proxies = { key : [spc.proxy for spc in value] for key,value in  customization_set["scientific_property_customizers"].items() }
+
+        proxy_set = {
+            "standard_property_proxies": standard_property_proxies,
+            "scientific_property_proxies": scientific_property_proxies,
+        }
+
+    if not realization_set:
+
+        # TODO: HANDLE THE CASE FOR EXISTING MODELS...
+
+        # TODO: DON'T LIKE HAVING TO PASS MODEL_CUSTOMIZER, SINCE I WANT ALL CUSTOMIZATION FUNCTIONALITY TO BE FORM-SPECIFIC
+        # TODO: BUT I HAVE TO SET THE ROOT VOCAB & COMPONENT KEY IN THIS FN
+        (models, standard_properties, scientific_properties) = \
+            MetadataModel.get_new_realization_set(project, version, model_proxy, proxy_set["standard_property_proxies"], proxy_set["scientific_property_proxies"], customization_set["model_customizer"], vocabularies)
+
+        realization_set = {
+            "models": models,
+            "standard_properties": standard_properties,
+            "scientific_properties": scientific_properties,
+        }
+
 
     # TODO: HANDLE THE CASE FOR EXISTING MODELS...
-    (models, standard_properties, scientific_properties) = \
-        MetadataModel.get_new_realization_set(project, version, model_proxy, standard_property_proxies, scientific_property_proxies, model_customizer, vocabularies)
-
     (model_formset, standard_properties_formsets, scientific_properties_formsets) = \
-        create_new_edit_forms_from_models(models, model_customizer, standard_properties, standard_property_customizers, scientific_properties, scientific_property_customizers)
+        create_new_edit_forms_from_models(realization_set["models"], customization_set["model_customizer"], realization_set["standard_properties"], customization_set["standard_property_customizers"], realization_set["scientific_properties"], customization_set["scientific_property_customizers"])
 
-    msg = "<i>you asked for:</i>" \
-          "<table border='1'>" \
-            "<tr><td>project</td><td>%s</td></tr>" \
-            "<tr><td>version</td><td>%s</td></tr>" \
-            "<tr><td>model</td><td>%s</td></tr>" \
-            "<tr><td>vocabulary</td><td>%s</td></tr>" \
-            "<tr><td>component</td><td>%s</td></tr>" \
-            "<tr><td>property_type</td><td>%s</td></tr>" \
-            "<tr><td>category</td><td>%s</td></tr>" \
-            "<tr><td>property</td><td>%s</td></tr>" \
-          "</table>" % (project, version, model_proxy, vocabulary, component_proxy, property_type, category_proxy, property_proxy)
 
 
     # TODO: JUST PASS THESE THINGS IN AS NEEDED FOR THE DIFFERENT SECTIONS ACCORDING TO THE BIG IF/ELSE BLOCK BELOW
@@ -243,8 +266,8 @@ def api_get_form_section(request, project_name, section_key, **kwargs):
     model_form = get_form_by_prefix(model_formset, model_key)
     standard_property_formset = standard_properties_formsets[model_key]
     scientific_property_formset = scientific_properties_formsets[model_key]
-    active_standard_categories_and_properties = model_customizer.get_active_standard_categories_and_properties
-    active_scientific_categories_and_properties = model_customizer.get_active_scientific_categories_and_properties_by_key(model_key)
+    active_standard_categories_and_properties = customization_set["model_customizer"].get_active_standard_categories_and_properties
+    active_scientific_categories_and_properties = customization_set["model_customizer"].get_active_scientific_categories_and_properties_by_key(model_key)
 
     dict = {
         "vocabularies": vocabularies,

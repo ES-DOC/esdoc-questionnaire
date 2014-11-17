@@ -25,10 +25,20 @@ import hotshot.stats
 import os
 import time
 
-from django.conf import settings
-from questionnaire import APP_LABEL
+from django.http import HttpResponse
 
-def encode_profile(log_file):
+from django.conf import settings
+
+def view_profile(request, profile_file):
+    profile_path = os.path.join(settings.MEDIA_ROOT, "profiles", profile_file)
+
+    stats = hotshot.stats.load(profile_path)
+    stats.strip_dirs()
+    stats.sort_stats("time", "calls")
+
+    return HttpResponse(stats.print_stats(20))
+
+def encode_profile(log_file, timestamp=True):
     """Profile some callable.
 
     This decorator uses the hotshot profiler to profile some callable (like
@@ -42,7 +52,7 @@ def encode_profile(log_file):
     multiple trials.
     """
 
-    log_file = os.path.join(settings.MEDIA_ROOT,APP_LABEL,"profiles",log_file)
+    log_file = os.path.join(settings.MEDIA_ROOT,"profiles",log_file)
     if not os.path.exists(os.path.dirname(log_file)):
         os.makedirs(os.path.dirname(log_file))
 
@@ -50,10 +60,13 @@ def encode_profile(log_file):
 
         def _inner(*args, **kwargs):
 
-            # Add a timestamp to the profile output
-            (base, ext) = os.path.splitext(log_file)
-            base = base + "_" + time.strftime("%Y-%m-%d-T%H%M%S", time.gmtime())
-            final_log_file = base + ext
+            if timestamp:
+                # Add a timestamp to the profile output
+                (base, ext) = os.path.splitext(log_file)
+                base = base + "_" + time.strftime("%Y-%m-%d-T%H%M%S", time.gmtime())
+                final_log_file = base + ext
+            else:
+                final_log_file = log_file
 
             prof = hotshot.Profile(final_log_file)
 

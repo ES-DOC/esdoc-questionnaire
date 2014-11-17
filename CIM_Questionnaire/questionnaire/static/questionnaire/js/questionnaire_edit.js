@@ -274,9 +274,11 @@ function show_pane(pane_key) {
         toastr.info("loading...")
 
         var project_name = $("#_project_name").val()
+        var session_id = $("#_session_id").val()
         var section_key = $(pane).attr("data-section-key");
 
         var url = window.document.location.protocol + "//" + window.document.location.host + "/api/" + project_name + "/get_form_section/" + section_key;
+        url += "?session_id=" + session_id;
 
         $.ajax({
             url: url,
