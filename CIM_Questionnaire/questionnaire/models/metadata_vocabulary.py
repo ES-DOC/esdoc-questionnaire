@@ -25,9 +25,9 @@ from django.db import models
 from django.template.defaultfilters import slugify
 from lxml import etree as et
 from django.conf import settings
+from django.contrib import messages
 
 from uuid import uuid4
-
 import os
 
 from CIM_Questionnaire.questionnaire.models.metadata_proxy import MetadataComponentProxy, MetadataScientificCategoryProxy, MetadataScientificPropertyProxy
@@ -105,9 +105,15 @@ class MetadataVocabulary(models.Model):
 
         request = kwargs.pop("request",None)
 
-        self.file.open()
-        vocabulary_content = et.parse(self.file)
-        self.file.close()
+        try:
+            self.file.open()
+            vocabulary_content = et.parse(self.file)
+            self.file.close()
+        except IOError:
+            msg = "Error opening file: %s" % self.file
+            if request:
+                messages.add_message(request, messages.ERROR, msg)
+                return
 
         self.old_component_proxies = list(self.component_proxies.all())  # list forces qs evaluation immediately
         self.new_component_proxies = []

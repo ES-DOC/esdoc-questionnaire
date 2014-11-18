@@ -74,9 +74,17 @@ class MetadataCategorization(models.Model):
 
     def register(self,**kwargs):
         request = kwargs.pop("request",None)
-        self.file.open()
-        categorization_content = et.parse(self.file)
-        self.file.close()
+
+        try:
+            self.file.open()
+            categorization_content = et.parse(self.file)
+            self.file.close()
+        except IOError:
+            msg = "Error opening file: %s" % self.file
+            if request:
+                messages.add_message(request, messages.ERROR, msg)
+                return
+
 
         versions = self.versions.all()
         if not versions:

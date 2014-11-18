@@ -112,11 +112,15 @@ class MetadataVersion(models.Model):
 
         request = kwargs.pop("request",None)
 
-        self.file.open()
         try:
+            self.file.open()
             version_content = et.parse(self.file)
-        finally:
             self.file.close()
+        except IOError:
+            msg = "Error opening file: %s" % self.file
+            if request:
+                messages.add_message(request, messages.ERROR, msg)
+                return
 
         recategorization_needed = False
 
