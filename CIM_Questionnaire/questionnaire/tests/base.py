@@ -77,6 +77,9 @@ class TestQuestionnaireBase(TestCase):
         # client for all tests (this is better-suited for testing views than the above factory b/c, among other things, it has sessions, cookies, etc.)
         self.client = Client()#enforce_csrf_checks=True)
 
+        # SETUP TEST SITE
+        # TODO...
+
         # SETUP DEFAULT TEST USER & SUPERUSER
         test_user = User.objects.create_user("test", "a@b.com", "test")
         test_superuser = User.objects.create_superuser("admin", "a@b.com", "admin")
@@ -250,12 +253,11 @@ class TestQuestionnaireBase(TestCase):
 
 
     def create_static_project(self,**kwargs):
-        vocabularies = kwargs.pop("vocabularies",[self.vocabulary])
+        vocabularies = kwargs.pop("vocabularies", [self.vocabulary])
         test_project = MetadataProject(name="project", title="Test Project", active=True, authenticated=False)
         test_project.save()
         for vocabulary in vocabularies:
-            test_project.vocabularies.add(vocabulary)
-        test_project.save()
+            test_project.add_vocabulary(vocabulary)
         self.project = test_project
 
 

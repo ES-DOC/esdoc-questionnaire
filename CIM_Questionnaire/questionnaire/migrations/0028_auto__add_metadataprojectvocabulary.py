@@ -18,6 +18,17 @@ class Migration(SchemaMigration):
         db.send_create_signal('questionnaire', ['MetadataProjectVocabulary'])
 
         # MODIFIED BY AT
+        # if run in the Django Test Framework, then ContentType entries won't be created until after _all_ migrations have finished
+        # (see http://andrewingram.net/2012/dec/common-pitfalls-django-south/)
+        from django.contrib.contenttypes.management import update_contenttypes
+        from django.contrib.auth.management import create_permissions
+        from django.db.models import get_app, get_models
+        app = get_app("questionnaire")
+        update_contenttypes(app, get_models(), verbosity=0)
+        create_permissions(app, get_models(), 0)
+        # END MODIFIED BY AT
+
+        # MODIFIED BY AT
         # moving data from default relationship table to new 'through' relationship table
         # (see http://stackoverflow.com/questions/7878605/how-to-migrate-with-south-when-using-through-for-a-manytomany-field)
         MetadataProjectClass = ContentType.objects.get(app_label="questionnaire", model="metadataproject").model_class()
@@ -32,8 +43,6 @@ class Migration(SchemaMigration):
         # MODIFIED BY AT
         # moving data from new 'through' relationship table to default relationship table
         # (see http://stackoverflow.com/questions/7878605/how-to-migrate-with-south-when-using-through-for-a-manytomany-field)
-        MetadataProjectClass = ContentType.objects.get(app_label="questionnaire", model="metadataproject").model_class()
-        MetadataVocabularyClass = ContentType.objects.get(app_label="questionnaire", model="metadatavocabulary").model_class()
         MetadataProjectVocabularyClass = ContentType.objects.get(app_label="questionnaire", model="metadataprojectvocabulary").model_class()
         for metadata_project_vocabulary in MetadataProjectVocabularyClass.objects.all():
             metadata_project = metadata_project_vocabulary.project
