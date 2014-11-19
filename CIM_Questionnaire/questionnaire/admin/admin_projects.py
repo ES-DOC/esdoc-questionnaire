@@ -22,7 +22,15 @@ Summary of module goes here
 
 
 from django.contrib import admin
+from django.forms import ModelForm
 
-from CIM_Questionnaire.questionnaire.models.metadata_project import MetadataProject
+from CIM_Questionnaire.questionnaire.models.metadata_project import MetadataProject, MetadataProjectVocabulary
 
-admin.site.register(MetadataProject)
+class MetadataProjectVocabularyInline(admin.TabularInline):
+    model = MetadataProjectVocabulary
+    extra = 1
+
+class MetadataProjectAdmin(admin.ModelAdmin):
+    inlines = (MetadataProjectVocabularyInline,)
+
+admin.site.register(MetadataProject, MetadataProjectAdmin)
