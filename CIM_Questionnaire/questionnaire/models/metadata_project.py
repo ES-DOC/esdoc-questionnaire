@@ -24,8 +24,9 @@ from django.db import models
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.auth.models import Group, Permission
 
-from questionnaire.utils  import *
-from questionnaire.models import *
+from CIM_Questionnaire.questionnaire import APP_LABEL
+from CIM_Questionnaire.questionnaire.models.metadata_customizer import MetadataCustomizer, MetadataModelCustomizer
+from CIM_Questionnaire.questionnaire.utils import validate_no_spaces, validate_no_reserved_words
 
 # THIS IS THE SET OF GROUPS & CORRESPONDING PERMISSIONS THAT EVERY PROJECT HAS:
 GROUP_PERMISSIONS = {
@@ -36,8 +37,8 @@ GROUP_PERMISSIONS = {
 
 class MetadataProject(models.Model):
     class Meta:
-        app_label           = APP_LABEL
-        abstract            = False
+        app_label = APP_LABEL
+        abstract = False
 
         # this is one of the few classes that I allow admin access to, so give it pretty names:
         verbose_name        = 'Metadata Project'
@@ -48,17 +49,12 @@ class MetadataProject(models.Model):
     description   = models.TextField(blank=True)
     url           = models.URLField(blank=True)
     providers     = models.ManyToManyField("MetadataOpenIDProvider",blank=True)
-    vocabularies  = models.ManyToManyField("MetadataVocabulary",blank=True,null=True)
+    vocabularies  = models.ManyToManyField("MetadataVocabulary", blank=True, null=True, through="MetadataProjectVocabulary") # note my use of the 'through' kwarg; this is to detect changes in the vocabularies m2m relationship
     active        = models.BooleanField(blank=False,null=False,default=True)
     authenticated = models.BooleanField(blank=False,null=False,default=False)
     email         = models.EmailField(blank=True,null=True,verbose_name="Contact Email")
 
     def __unicode__(self):
-#        # TODO: WAS THIS RESPONSIBLE FOR THE ERROR IN THE URL STRING?
-#        if self.title:
-#            return u'%s' % self.title
-#        else:
-#            return u'%s' % self.name
         return u'%s' % self.name
 
     def clean(self):
@@ -94,7 +90,7 @@ class MetadataProject(models.Model):
         return permission
 
 from django.dispatch import receiver
-from django.db.models.signals import post_save, post_delete
+from django.db.models.signals import post_save, post_delete, m2m_changed
 
 @receiver(post_save, sender=MetadataProject)
 def project_post_save(sender, **kwargs):
@@ -118,4 +114,50 @@ def project_post_delete(sender, **kwargs):
             permission.delete()
         for group in groups:
             group.delete()
-            
+
+
+# a known Django bug prevents this signal from being fired from the admin
+# see https://code.djangoproject.com/ticket/16073
+# so I just track the changes myself (see MetadataProjectVocabulary below used as the 'through' table for the vocabularies field)
+# @receiver(m2m_changed, sender=MetadataProject.vocabularies.through)
+# def project_vocabularies_changed(sender, **kwargs):
+# pass
+
+
+# NOTE THAT SETTING UP THIS CLASS REQUIRED ME TO OVERWRITE SOME OF THE MIGRATION CODE
+# (see questionnaire/migrations/0026...)
+class MetadataProjectVocabulary(models.Model):
+    class Meta:
+        app_label = APP_LABEL
+        abstract = False
+        unique_together = ("project", "vocabulary")
+
+    project = models.ForeignKey("MetadataProject")
+    vocabulary = models.ForeignKey("MetadataVocabulary")
+
+    # TODO: IS THERE ANY WAY TO TRIGGER AN UPDATE OF CUSTOMIZERS & REALIZATIONS
+    # TODO: ONLY WHEN _ALL_ MetadataProjectVocabularies HAVE BEEN SAVED/DELETED?
+
+    def save(self, *args, **kwargs):
+        super(MetadataProjectVocabulary, self).save(*args, **kwargs)
+        new_vocabulary = self.vocabulary
+        customizers_to_update = MetadataModelCustomizer.objects.filter(project=self.project, proxy__name__iexact=new_vocabulary.document_type)
+        for customizer_to_update in customizers_to_update:
+            vocabularies = list(customizer_to_update.vocabularies.all())
+            vocabularies.append(new_vocabulary)
+            MetadataCustomizer.update_existing_customizer_set(customizer_to_update, vocabularies)
+        # TODO: DO THE SAME THING FOR REALIZATIONS?
+
+    def delete(self, *args, **kwargs):
+        super(MetadataProjectVocabulary, self).delete(*args, **kwargs)
+        old_vocabulary = self.vocabulary
+        customizers_to_update = MetadataModelCustomizer.objects.filter(project=self.project, proxy__name__iexact=old_vocabulary.document_type)
+        for customizer_to_update in customizers_to_update:
+            vocabularies = list(customizer_to_update.vocabularies.all())
+            try:
+                vocabularies.remove(old_vocabulary)
+                MetadataCustomizer.update_existing_customizer_set(customizer_to_update, vocabularies)
+            except ValueError:
+                # old_vocabulary wasn't active in the customizer so no need to update it
+                pass
+        # TODO: DO THE SAME THING FOR REALIZATIONS?
