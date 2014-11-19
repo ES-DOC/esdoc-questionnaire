@@ -47,7 +47,8 @@ class TestMetadataSite(TestQuestionnaireBase):
 
         test_metadata_site_pk = self.test_metadata_site.pk
         self.test_site.delete()
-        self.assertRaises(MetadataSite.DoesNotExist, MetadataSite.objects.get, pk=test_metadata_site_pk )
+        with self.assertRaises(MetadataSite.DoesNotExist):
+            MetadataSite.objects.get(pk=test_metadata_site_pk)
 
     def test_get_metadata_site_type(self):
 

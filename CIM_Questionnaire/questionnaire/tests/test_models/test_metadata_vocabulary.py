@@ -86,9 +86,9 @@ class TestMetadataVocabulary(TestQuestionnaireBase):
         ]
         categories_data = [model_to_data(category) for category in category_qs]
         for actual_category_data, test_category_data in zip(categories_data, test_categories_data):
-            self.assertDictEqual(actual_category_data, test_category_data, excluded_keys=["id", "last_modified", "created","description"]) # description can be an empty string or None,
-                                                                                                                                           # depending on whether this went through forms or not
-                                                                                                                                           # for this test, I don't actually care
+            self.assertDictEqual(actual_category_data, test_category_data, excluded_keys=["id", "last_modified", "created", "description"]) # description can be an empty string or None,
+                                                                                                                                                # depending on whether this went through forms or not
+                                                                                                                                                # for this test, I don't actually care
 
         category_testmodel_generalattributes = MetadataScientificCategoryProxy.objects.get(component=component_testmodel, name__iexact="general attributes")
         category_testmodelkeyproperties_generalattributes = MetadataScientificCategoryProxy.objects.get(component=component_testmodelkeyproperties, name__iexact="general attributes")

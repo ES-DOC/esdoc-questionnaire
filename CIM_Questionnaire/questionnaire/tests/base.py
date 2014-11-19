@@ -248,14 +248,12 @@ class TestQuestionnaireBase(TestCase):
 
         self.vocabulary = test_vocabulary
 
-
-    def create_static_project(self,**kwargs):
-        vocabularies = kwargs.pop("vocabularies",[self.vocabulary])
+    def create_static_project(self, **kwargs):
+        vocabularies = kwargs.pop("vocabularies", [self.vocabulary])
         test_project = MetadataProject(name="project", title="Test Project", active=True, authenticated=False)
         test_project.save()
         for vocabulary in vocabularies:
-            test_project.vocabularies.add(vocabulary)
-        test_project.save()
+            test_project.add_vocabulary(vocabulary)
         self.project = test_project
 
 

@@ -62,8 +62,7 @@ class TestMetadataModel(TestQuestionnaireBase):
 
         cim_version.categorization = cim_categorization
         cim_version.save()
-        cim_project.vocabularies.add(cim_vocabulary)
-        cim_project.save()
+        cim_project.add_vocabulary(cim_vocabulary)
         cim_version.register()
         cim_version.save()
         cim_categorization.register()

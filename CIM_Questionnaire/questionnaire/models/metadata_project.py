@@ -26,7 +26,7 @@ from django.contrib.auth.models import Group, Permission
 
 from CIM_Questionnaire.questionnaire import APP_LABEL
 from CIM_Questionnaire.questionnaire.models.metadata_customizer import MetadataCustomizer, MetadataModelCustomizer
-from CIM_Questionnaire.questionnaire.utils import validate_no_spaces, validate_no_reserved_words
+from CIM_Questionnaire.questionnaire.utils import validate_no_spaces, validate_no_reserved_words, QuestionnaireError
 
 # THIS IS THE SET OF GROUPS & CORRESPONDING PERMISSIONS THAT EVERY PROJECT HAS:
 GROUP_PERMISSIONS = {
@@ -88,6 +88,18 @@ class MetadataProject(models.Model):
             permission = Permission(name=permission_description,codename=permission_codename,content_type=content_type)
             permission.save()
         return permission
+
+    def add_vocabulary(self, vocabulary):
+        project_vocabulary_relationship = MetadataProjectVocabulary(project=self, vocabulary = vocabulary)
+        project_vocabulary_relationship.save()
+
+    def remove_vocabulary(self, vocabulary):
+        try:
+            project_vocabulary_relationship = MetadataProjectVocabulary.objects.get(project=self, vocabulary=vocabulary)
+            project_vocabulary_relationship.delete()
+        except MetadataProjectVocabulary.DoesNotExist:
+            msg = "Vocabulary %s is not associated w/ project %s" % (vocabulary, self)
+            raise QuestionnaireError(msg)
 
 from django.dispatch import receiver
 from django.db.models.signals import post_save, post_delete, m2m_changed
