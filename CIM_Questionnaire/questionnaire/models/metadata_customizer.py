@@ -133,7 +133,7 @@ class MetadataCustomizer(models.Model):
         return (model_customizer,standard_category_customizers,standard_property_customizers,scientific_category_customizers,scientific_property_customizers)
 
     @classmethod
-    def update_existing_customizer_set(cls,model_customizer,vocabularies):
+    def update_existing_customizer_set(cls, model_customizer, vocabularies):
         # TODO: RIGHT NOW THIS WORKS BY UPDATING SCIENTIFIC CATEGORIES/PROPERTIES (IF VOCABULARY IS RE-REGISTERED)
         # TODO: IT SHOULD ALSO WORK W/ STANDARD CATEGORIES/PROPERTIES (IF VERSION IS RE-REGISTERED)
 
@@ -279,20 +279,20 @@ class MetadataModelCustomizer(MetadataCustomizer):
         verbose_name        = '(DISABLE ADMIN ACCESS SOON) Metadata Model Customizer'
         verbose_name_plural = '(DISABLE ADMIN ACCESS SOON) Metadata Model Customizers'
 
-    proxy                   = models.ForeignKey("MetadataModelProxy",blank=True,null=True)
+    proxy                  = models.ForeignKey("MetadataModelProxy",blank=True,null=True)
 
-    project                 = models.ForeignKey("MetadataProject",blank=True,null=True,related_name="model_customizers")
-    version                 = models.ForeignKey("MetadataVersion",blank=True,null=True,related_name="model_customizers")
-    vocabularies            = models.ManyToManyField("MetadataVocabulary",blank=True,null=True) # cannot set 'limit_choices_to' here, instead setting 'queryset' on form
-    vocabularies.help_text  = "Choose which Controlled Vocabularies (in which order) apply to this model."
-    vocabulary_order        = models.CommaSeparatedIntegerField(max_length=BIG_STRING,blank=True,null=True)
+    project                = models.ForeignKey("MetadataProject",blank=True,null=True,related_name="model_customizers")
+    version                = models.ForeignKey("MetadataVersion",blank=True,null=True,related_name="model_customizers")
+    vocabularies           = models.ManyToManyField("MetadataVocabulary",blank=True,null=True) # cannot set 'limit_choices_to' here, instead setting 'queryset' on form
+    vocabularies.help_text = "Choose which Controlled Vocabularies (in which order) apply to this model."
+    vocabulary_order       = models.CommaSeparatedIntegerField(max_length=BIG_STRING,blank=True,null=True)
 
-    name                    = models.CharField(max_length=SMALL_STRING,blank=False,null=False,validators=[validate_no_spaces, validate_no_bad_chars])
-    name.help_text          = "A unique name for this customization.  Spaces or the following characters are not allowed: \"%s\"." % BAD_CHARS_LIST
-    description             = models.TextField(verbose_name="Customization Description",blank=True,null=True)
-    description.help_text   = "An explanation of how this customization is intended to be used.  This information is for informational purposes only."
-    default                 = models.BooleanField(verbose_name="Is Default Customization?",blank=True,default=False)
-    default.help_text       = "Every Questionnaire instance must have one default customization.  If this is the first customization you are creating, please ensure this checkbox is selected."
+    name                   = models.CharField(max_length=SMALL_STRING,blank=False,null=False,validators=[validate_no_spaces, validate_no_bad_chars])
+    name.help_text         = "A unique name for this customization.  Spaces or the following characters are not allowed: \"%s\"." % BAD_CHARS_LIST
+    description            = models.TextField(verbose_name="Customization Description",blank=True,null=True)
+    description.help_text  = "An explanation of how this customization is intended to be used.  This information is for informational purposes only."
+    default                = models.BooleanField(verbose_name="Is Default Customization?",blank=True,default=False)
+    default.help_text      = "Every Questionnaire instance must have one default customization.  If this is the first customization you are creating, please ensure this checkbox is selected."
 
 
     model_title                         = models.CharField(max_length=BIG_STRING,verbose_name="Name that should appear on the Document Form",blank=False,null=True)

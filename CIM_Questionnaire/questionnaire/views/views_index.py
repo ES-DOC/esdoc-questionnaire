@@ -95,7 +95,7 @@ def questionnaire_project_index(request,project_name=""):
     # (thanks to http://blog.mathieu-leplatre.info/django-create-a-queryset-from-a-list-preserving-order.html)
     all_models_unordered = MetadataModel.objects.filter(project=project, is_root=True, is_document=True, proxy__in=all_proxies)
     all_models_ordered_by_unicode_name_list = [model.pk for model in sorted(all_models_unordered, key=lambda m: u"%s"%m)]
-    order_by_unicode_name_query = u"CASE %s END" % " ".join([u"WHEN id=%s THEN %s" % (pk, i) for i,pk in enumerate(all_models_ordered_pk)])
+    order_by_unicode_name_query = u"CASE %s END" % " ".join([u"WHEN id=%s THEN %s" % (pk, i) for i, pk in enumerate(all_models_ordered_by_unicode_name_list)])
     all_models = MetadataModel.objects.filter(pk__in=all_models_ordered_by_unicode_name_list).extra(
         select = {"ordering" : order_by_unicode_name_query},
         order_by = ["ordering",]
