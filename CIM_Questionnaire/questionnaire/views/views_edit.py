@@ -21,7 +21,7 @@ from CIM_Questionnaire.questionnaire.models.metadata_project import MetadataProj
 from CIM_Questionnaire.questionnaire.models.metadata_version import MetadataVersion
 from CIM_Questionnaire.questionnaire.models.metadata_proxy import MetadataModelProxy
 from CIM_Questionnaire.questionnaire.models.metadata_customizer import MetadataCustomizer, MetadataModelCustomizer
-from CIM_Questionnaire.questionnaire.models.metadata_model import MetadataModel, MetadataStandardProperty, MetadataScientificProperty
+from CIM_Questionnaire.questionnaire.models.metadata_model import MetadataModel
 from CIM_Questionnaire.questionnaire.models.metadata_model import get_model_parent_dictionary
 from CIM_Questionnaire.questionnaire.forms.forms_edit import create_new_edit_forms_from_models, create_existing_edit_forms_from_models, create_edit_forms_from_data, save_valid_forms
 from CIM_Questionnaire.questionnaire.views.views_error import questionnaire_error
@@ -45,12 +45,12 @@ def validate_view_arguments(project_name="", model_name="", version_key=""):
     try:
         project = MetadataProject.objects.get(name=project_name_lower)
     except MetadataProject.DoesNotExist:
-        msg = "Cannot find the <u>project</u> '%s'.  Has it been registered?" % (project_name)
+        msg = "Cannot find the <u>project</u> '%s'.  Has it been registered?" % project_name
         validity = False
         return (validity, project, version, model_proxy, model_customizer, msg)
 
     if not project.active:
-        msg = "Project '%s' is inactive." % (project_name)
+        msg = "Project '%s' is inactive." % project_name
         validity = False
         return (validity, project, version, model_proxy, model_customizer, msg)
 
@@ -58,13 +58,13 @@ def validate_view_arguments(project_name="", model_name="", version_key=""):
     try:
         version = MetadataVersion.objects.get(key=version_key, registered=True)
     except MetadataVersion.DoesNotExist:
-        msg = "Cannot find the <u>version</u> '%s'.  Has it been registered?" % (version_key)
+        msg = "Cannot find the <u>version</u> '%s'.  Has it been registered?" % version_key
         validity = False
         return (validity, project, version, model_proxy, model_customizer, msg)
 
     # try to get the model (proxy)...
     try:
-        model_proxy = MetadataModelProxy.objects.get(version=version,name__iexact=model_name)
+        model_proxy = MetadataModelProxy.objects.get(version=version, name__iexact=model_name)
     except MetadataModelProxy.DoesNotExist:
         msg = "Cannot find the <u>model</u> '%s' in the <u>version</u> '%s'." % (model_name, version)
         validity = False
@@ -98,10 +98,9 @@ def questionnaire_edit_new(request, project_name="", model_name="", version_key=
     if project.authenticated:
         current_user = request.user
         if not current_user.is_authenticated():
-            return redirect('/login/?next=%s' % (request.path))
-        if not (request.user.is_superuser or request.user.metadata_user.is_admin_of(project)):
-            return questionnaire_join(request, project, ["default", "user",])
-
+            return redirect('/login/?next=%s' % request.path)
+        if not (request.user.is_superuser or request.user.metadata_user.is_user_of(project)):
+            return questionnaire_join(request, project, ["default", "user", ])
 
     # get the vocabularies...
     # getting them in the right order is a 2-step process
@@ -119,14 +118,14 @@ def questionnaire_edit_new(request, project_name="", model_name="", version_key=
     cache = get_cache("default")
 
     # if the cache has already been filled (likely if this is a POST, unlikely if this is a GET),
-    # then use the cached values; otherwise, get/create them here and then cache them
+    # then use the cached values; otherwise, get/create them here and _then_ cache them
     customizer_set = cache.get(cached_customizer_set_key)
     proxy_set = cache.get(cached_proxy_set_key)
     realization_set = cache.get(cached_realization_set_key)
     if not customizer_set:
 
         (model_customizer, standard_category_customizers, standard_property_customizers, nested_scientific_category_customizers, nested_scientific_property_customizers) = \
-                MetadataCustomizer.get_existing_customizer_set(model_customizer, vocabularies)
+            MetadataCustomizer.get_existing_customizer_set(model_customizer, vocabularies)
 
         customizer_set = {
             "model_customizer": model_customizer,
@@ -141,7 +140,8 @@ def questionnaire_edit_new(request, project_name="", model_name="", version_key=
     if not proxy_set:
 
         standard_property_proxies = [standard_property_customizer.proxy for standard_property_customizer in customizer_set["standard_property_customizers"]]
-        scientific_property_proxies = { key : [spc.proxy for spc in value] for key,value in  customizer_set["scientific_property_customizers"].items() }
+        scientific_property_proxies = {key: [spc.proxy for spc in value] for key, value in customizer_set["scientific_property_customizers"].items()}
+
         proxy_set = {
             "standard_property_proxies": standard_property_proxies,
             "scientific_property_proxies": scientific_property_proxies,
@@ -171,12 +171,13 @@ def questionnaire_edit_new(request, project_name="", model_name="", version_key=
         (model_formset, standard_properties_formsets, scientific_properties_formsets) = \
             create_new_edit_forms_from_models(realization_set["models"], customizer_set["model_customizer"], realization_set["standard_properties"], customizer_set["standard_property_customizers"], realization_set["scientific_properties"], customizer_set["scientific_property_customizers"])
 
-    else: # request.method == "POST":
+    else:  # request.method == "POST":
 
-        data = request.POST
+        import ipdb; ipdb.set_trace()
 
         (validity, model_formset, standard_properties_formsets, scientific_properties_formsets) = \
-            create_edit_forms_from_data(data, realization_set["models"], customizer_set["model_customizer"], realization_set["standard_properties"], customizer_set["standard_property_customizers"], realization_set["scientific_properties"], customizer_set["scientific_property_customizers"])
+            create_edit_forms_from_data(request.POST, realization_set["models"], customizer_set["model_customizer"], realization_set["standard_properties"], customizer_set["standard_property_customizers"], realization_set["scientific_properties"], customizer_set["scientific_property_customizers"])
+
 
         if all(validity):
 
@@ -184,17 +185,18 @@ def questionnaire_edit_new(request, project_name="", model_name="", version_key=
             model_instances = save_valid_forms(model_formset, standard_properties_formsets, scientific_properties_formsets, model_parent_dictionary=model_parent_dictionary)
             assert(len(model_instances) > 0)
             root_model_id = model_instances[0].get_root().pk
+
             # this is used for other fns that might need to know what the view returns
             # (such as those in the testing framework)
             request.session["root_model_id"] = root_model_id
 
             # using Django's built-in messaging framework to pass status messages (as per https://docs.djangoproject.com/en/dev/ref/contrib/messages/)
             messages.add_message(request, messages.SUCCESS, "Successfully saved model instances")
-            edit_existing_url = reverse("edit_existing",kwargs={
-                "project_name" : project_name,
-                "model_name"   : model_name,
-                "version_key" : version_key,
-                "model_id"     : root_model_id,
+            edit_existing_url = reverse("edit_existing", kwargs={
+                "project_name": project_name,
+                "model_name": model_name,
+                "version_key": version_key,
+                "model_id": root_model_id,
             })
             return HttpResponseRedirect(edit_existing_url)
 
@@ -203,7 +205,7 @@ def questionnaire_edit_new(request, project_name="", model_name="", version_key=
             # using Django's built-in messaging framework to pass status messages (as per https://docs.djangoproject.com/en/dev/ref/contrib/messages/)
             messages.add_message(request, messages.ERROR, "Error saving model instances")
 
-    dict = {
+    _dict = {
         "site": get_current_site(request),  # provide a special message if this is not the production site
         "project": project,  # used for generating URLs in the footer, and in the title
         "version": version,  # used for generating URLs in the footer
@@ -218,15 +220,15 @@ def questionnaire_edit_new(request, project_name="", model_name="", version_key=
         "can_publish": False,  # only models that have already been saved can be published
     }
 
-    return render_to_response('questionnaire/questionnaire_edit.html', dict, context_instance=RequestContext(request))
+    return render_to_response('questionnaire/questionnaire_edit.html', _dict, context_instance=RequestContext(request))
 
 
 def questionnaire_edit_existing(request, project_name="", model_name="", version_key="", model_id="", **kwargs):
 
     # validate the arguments...
-    (validity, project, version, model_proxy, model_customizer, msg) = validate_view_arguments(project_name=project_name,model_name=model_name,version_key=version_key)
+    (validity, project, version, model_proxy, model_customizer, msg) = validate_view_arguments(project_name=project_name, model_name=model_name, version_key=version_key)
     if not validity:
-        return questionnaire_error(request,msg)
+        return questionnaire_error(request, msg)
     request.session["checked_arguments"] = True
 
     # check authentication...
@@ -234,26 +236,23 @@ def questionnaire_edit_existing(request, project_name="", model_name="", version
     if project.authenticated:
         current_user = request.user
         if not current_user.is_authenticated():
-            return redirect('/login/?next=%s' % (request.path))
+            return redirect('/login/?next=%s' % request.path)
         if not (request.user.is_superuser or request.user.metadata_user.is_admin_of(project)):
-            return questionnaire_join(request, project, ["default", "user",])
-
+            return questionnaire_join(request, project, ["default", "user", ])
 
     # try to get the requested model...
     try:
-        model = MetadataModel.objects.get(pk=model_id,name__iexact=model_name,project=project,version=version,proxy=model_proxy)
+        model = MetadataModel.objects.get(pk=model_id, name__iexact=model_name, project=project, version=version, proxy=model_proxy)
     except MetadataModel.DoesNotExist:
         msg = "Cannot find the specified model.  Please try again."
-        return questionnaire_error(request,msg)
+        return questionnaire_error(request, msg)
     except ValueError:
         msg = "Invalid search terms.  Please try again."
-        return questionnaire_error(request,msg)
+        return questionnaire_error(request, msg)
     if not model.is_root:
         # TODO: DEAL W/ THIS USE-CASE
         msg = "Currently only root models can be viewed.  Please try again."
-        return questionnaire_error(request,msg)
-
-    import ipdb; ipdb.set_trace()
+        return questionnaire_error(request, msg)
 
     models = model.get_descendants(include_self=True)
 
@@ -266,7 +265,7 @@ def questionnaire_edit_existing(request, project_name="", model_name="", version
 
     # now try to get the default customizer set for this project/version/proxy combination...
     (model_customizer, standard_category_customizers, standard_property_customizers, nested_scientific_category_customizers, nested_scientific_property_customizers) = \
-            MetadataCustomizer.get_existing_customizer_set(model_customizer, vocabularies)
+        MetadataCustomizer.get_existing_customizer_set(model_customizer, vocabularies)
     scientific_property_customizers = get_joined_keys_dict(nested_scientific_property_customizers)
 
     # create the realization set
@@ -275,7 +274,7 @@ def questionnaire_edit_existing(request, project_name="", model_name="", version
 
     # this is used for other fns that might need to know what the view returns
     # (such as those in the testing framework)
-    assert(len(models)>0)
+    assert(len(models) > 0)
     root_model_id = models[0].get_root().pk
     request.session["root_model_id"] = root_model_id
 
@@ -284,7 +283,7 @@ def questionnaire_edit_existing(request, project_name="", model_name="", version
         model_key = model.get_model_key()
         standard_property_list = standard_properties[model_key]
         standard_properties_to_remove = []
-        for standard_property, standard_property_customizer in zip(standard_property_list,standard_property_customizers):
+        for standard_property, standard_property_customizer in zip(standard_property_list, standard_property_customizers):
             if not standard_property_customizer.displayed:
                 # this list is actually a queryset, so remove doesn't work
                 #standard_property_list.remove(standard_property)
@@ -296,7 +295,7 @@ def questionnaire_edit_existing(request, project_name="", model_name="", version
             scientific_property_customizers[model_key] = []
         scientific_property_list = scientific_properties[model_key]
         scientific_properties_to_remove = []
-        for scientific_property, scientific_property_customizer in zip(scientific_property_list,scientific_property_customizers[model_key]):
+        for scientific_property, scientific_property_customizer in zip(scientific_property_list, scientific_property_customizers[model_key]):
             if not scientific_property_customizer.displayed:
                 # (as above) this list is actually a queryset, so remove doesn't work
                 #scientific_property_list.remove(scientific_property)
@@ -314,7 +313,7 @@ def questionnaire_edit_existing(request, project_name="", model_name="", version
         # print "GET: "
         # print [mm.active for mm in models]
 
-    else: # request.method == "POST":
+    else:  # request.method == "POST":
 
         data = request.POST
 
@@ -326,7 +325,7 @@ def questionnaire_edit_existing(request, project_name="", model_name="", version
 
         if all(validity):
 
-            model_instances = save_valid_forms(model_formset,standard_properties_formsets,scientific_properties_formsets, model_parent_dictionary=model_parent_dictionary)
+            model_instances = save_valid_forms(model_formset, standard_properties_formsets, scientific_properties_formsets, model_parent_dictionary=model_parent_dictionary)
             assert(len(model_instances) > 0)
             assert(root_model_id == model_instances[0].get_root().pk)
             # already set this above, just double-check that it hasn't changed
@@ -353,7 +352,7 @@ def questionnaire_edit_existing(request, project_name="", model_name="", version
             messages.add_message(request, messages.ERROR, "Error saving model instances")
 
     # gather all the extra information required by the template
-    dict = {
+    _dict = {
         "site": get_current_site(request),  # provide a special message if this is not the production site
         "project": project,  # used for generating URLs in the footer, and in the title
         "version": version,  # used for generating URLs in the footer
@@ -367,17 +366,16 @@ def questionnaire_edit_existing(request, project_name="", model_name="", version
         "can_publish": True,  # only models that have already been saved can be published
     }
 
-
-    return render_to_response('questionnaire/questionnaire_edit.html', dict, context_instance=RequestContext(request))
+    return render_to_response('questionnaire/questionnaire_edit.html', _dict, context_instance=RequestContext(request))
 
 
 def questionnaire_edit_help(request):
 
     # gather all the extra information required by the template
-    dict = {
-        "site"                  : get_current_site(request),
-        "questionnaire_version" : get_version(),
+    _dict = {
+        "site": get_current_site(request),
+        "questionnaire_version": get_version(),
     }
 
-    return render_to_response('questionnaire/questionnaire_edit_instructions.html', dict, context_instance=RequestContext(request))
+    return render_to_response('questionnaire/questionnaire_edit_instructions.html', _dict, context_instance=RequestContext(request))
 

@@ -375,26 +375,27 @@ def get_data_from_form(form, existing_data={}):
     return data
 
 
-def get_data_from_formset(formset):
+def get_data_from_formset(formset, existing_data={}):
     data = {}
-    existing_data = {}
+    current_data = {}
 
     for form in formset:
-        existing_data.clear()
+        current_data.clear()
+        current_data.update(existing_data)
 
         # in general, this is only needed when calling this fn outside of the interface
         # ie: in the testing framework
         # (the hidden pk & fk fields do not get passed in via the queryset for existing model formsets)
         pk_field_name = formset.model._meta.pk.name
-        existing_data[pk_field_name] = form.fields[pk_field_name].initial
-        if isinstance(formset,BaseInlineFormSet):
+        current_data[pk_field_name] = form.fields[pk_field_name].initial
+        if isinstance(formset, BaseInlineFormSet):
             fk_field_name = formset.fk.name
-            existing_data[fk_field_name] = form.fields[fk_field_name].initial
+            current_data[fk_field_name] = form.fields[fk_field_name].initial
 
         if formset.can_delete:
-            existing_data["DELETE"] = False
+            current_data["DELETE"] = False
 
-        form_data = get_data_from_form(form, existing_data)
+        form_data = get_data_from_form(form, current_data)
         data.update(form_data)
 
     formset_prefix = formset.prefix
@@ -403,7 +404,7 @@ def get_data_from_formset(formset):
         initial_forms_key = u"%s-INITIAL_FORMS" % (formset_prefix)
     else:
         total_forms_key = u"TOTAL_FORMS"
-        initial_forms_key = u"INITIALFORMS"
+        initial_forms_key = u"INITIAL_FORMS"
     data[total_forms_key] = formset.total_form_count()
     data[initial_forms_key] = formset.initial_form_count()
 

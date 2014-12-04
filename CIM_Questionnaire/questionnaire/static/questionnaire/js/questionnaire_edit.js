@@ -320,6 +320,9 @@ function show_pane(pane_key) {
                     $(pane).addClass("loaded");
                     // and for the django view...
                     $(pane).find("input#id_"+pane_key+"-loaded").prop('checked', true);
+                    /* TODO: SINCE I'M LOADING AN ENTIRE PANE, JUST SET ALL LOADED FLAGS TO TRUE */
+                    /* TODO: IN THE LONGTERM, THOUGH, I OUGHT TO BE MORE PRECISE HERE */
+                    $(pane).find("input[name$='-loaded']").prop("checked", true);
 
                 });
             toastr.clear();
@@ -498,6 +501,8 @@ function add_subform(row) {
                                         update_field_names(row,old_prefix,new_prefix);
                                         /* insert data */
                                         populate_form(row,parsed_data);
+                                        /* make sure that all 'loaded' fields are set to true */
+                                        $(row).find("input[name$='-loaded']").prop("checked", true);
                                         /* update label */
                                         $(row).find(".accordion_header:first .label").html(new_label);
 
