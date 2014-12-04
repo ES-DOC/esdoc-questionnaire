@@ -66,11 +66,12 @@
                             {% for hidden_field in model_subform.hidden_fields %}
                                 {{ hidden_field }}
                             {% endfor %}  {# /hidden_field #}
-                        </div> <!-- /.hidden -->
 
-                {# and a special form-only (ie: not part of the underlying model) field #}
-                {# which lets me check which forms to deal w/ on the formset methods in python #}
-                {{ model_subform.loaded }}
+                            {# and a special form-only (ie: not part of the underlying model) field #}
+                            {# which lets me check which forms to deal w/ on the formset methods in python #}
+                            {{ model_subform.loaded }}
+
+                        </div> <!-- /.hidden -->
 
                         {%  with active_standard_properties=model_customizer.get_active_standard_properties %}
 
