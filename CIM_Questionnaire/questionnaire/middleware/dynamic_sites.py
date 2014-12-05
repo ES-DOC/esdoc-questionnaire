@@ -39,11 +39,10 @@ class DynamicSitesMiddleware(object):
         try:
             current_site = Site.objects.get(domain=domain)
         except Site.DoesNotExist:
-            msg = "Unable to locate domain '%s' in Sites.  Please update the database." % domain
             # rather than raising an error, just use site w/ a pk=1 (as per settings.DEFAULT_SITE_ID)
+            #msg = "Unable to locate domain '%s' in Sites.  Please update the database." % domain
             #raise QuestionnaireError(msg)
-            print msg
-            
+
             current_site = Site.objects.get(id=settings.DEFAULT_SITE_ID)
 
         request.current_site = current_site
