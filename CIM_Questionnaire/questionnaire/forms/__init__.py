@@ -10,9 +10,3 @@
 
 __author__ = "allyn.treshansky"
 __date__ = "Dec 01, 2014 3:00:00 PM"
-
-"""
-.. module:: __init__
-
-Summary of module goes here
-"""

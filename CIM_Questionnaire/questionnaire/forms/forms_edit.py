@@ -244,6 +244,7 @@ def create_existing_edit_forms_from_models(models, model_customizer, standard_pr
     model_keys = [model.get_model_key() for model in models]
 
     model_formset = MetadataModelFormSetFactory(
+        extra=len(models),
         queryset=models,
         prefixes=model_keys,
         customizer=model_customizer,
