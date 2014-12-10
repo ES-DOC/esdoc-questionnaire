@@ -181,29 +181,7 @@
                     <table width="100%">
                         {% for field in model_customizer_form.get_customizer_fields %}
                             <tr class="{% cycle 'odd' 'even' %} field" name="{{field.html_name}}">
-                                {% if field.name == "default" %}
-                                    {# a one-off for the "default" field #}
-                                    {# to show help_text inline #}
-                                    {# to draw attention to it #}
-                                    {# b/c it's unintuitive #}
-                                    <td>
-                                        <span>{{  field.label }}&nbsp;</span>
-                                        {% if field.help_text %}
-                                            <div class="documentation">
-                                                {{ field.help_text|safe }}
-                                            </div>
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {{field}}
-                                        {% if field.errors %}
-                                            {% include "questionnaire/_error.html" %}
-                                        {% endif %} {# / field.errors #}
-                                    </td>
-                                {% else %}
-                                    {# just show all other fields normally #}
-                                    {% include "questionnaire/_field.html" %}
-                                {% endif %} {# /field.name=="default #}
+                                {% include "questionnaire/_field.html" %}
                             </tr>
                         {% endfor %} {# / field in model_customizer_form.get_customizer_fields #}
                     </table>

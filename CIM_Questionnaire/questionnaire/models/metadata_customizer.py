@@ -291,8 +291,7 @@ class MetadataModelCustomizer(MetadataCustomizer):
     name.help_text         = "A unique name for this customization.  Spaces or the following characters are not allowed: \"%s\"." % BAD_CHARS_LIST
     description            = models.TextField(verbose_name="Customization Description",blank=True,null=True)
     description.help_text  = "An explanation of how this customization is intended to be used.  This information is for informational purposes only."
-    default                = models.BooleanField(verbose_name="Is Default Customization?",blank=True,default=False)
-    default.help_text      = "Every Questionnaire instance must have one default customization.  If this is the first customization you are creating, please ensure this checkbox is selected."
+    default                = models.BooleanField(blank=True,default=False,verbose_name="Is Default Customization?<div class='documentation'>Every Questionnaire instance must have one default customization.  If this is the first customization you are creating, please ensure this checkbox is selected.</div>")
 
 
     model_title                         = models.CharField(max_length=BIG_STRING,verbose_name="Name that should appear on the Document Form",blank=False,null=True)
@@ -572,7 +571,7 @@ class MetadataPropertyCustomizer(MetadataCustomizer):
     unique              = models.BooleanField(default=False,blank=True,verbose_name="Must the value of this property be unique?")
     verbose_name        = models.CharField(max_length=LIL_STRING,blank=False,verbose_name="How should this property be labeled (overrides default name)?")
     default_value       = models.CharField(max_length=BIG_STRING,blank=True,null=True,verbose_name="What is the default value of this property?")
-    documentation       = models.TextField(blank=True,verbose_name="What is the help text to associate with property?<br/><em>The initial documentation comes from the CIM Schema or a CIM Controlled Vocabulary.</em>")
+    documentation       = models.TextField(blank=True,verbose_name="What is the help text to associate with property?<div class='documentation'>The initial documentation comes from the CIM Schema or a CIM Controlled Vocabulary.</div>")
     inline_help         = models.BooleanField(default=False,blank=True,verbose_name="Should the help text be displayed inline?")
     
     
