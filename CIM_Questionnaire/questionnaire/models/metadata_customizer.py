@@ -615,7 +615,7 @@ class MetadataStandardPropertyCustomizer(MetadataPropertyCustomizer):
     relationship_cardinality   = CardinalityField(blank=True,verbose_name="How many instances (min/max) of this property are allowed?")
     relationship_show_subform  = models.BooleanField(default=False,blank=True,verbose_name="Should this property be rendered in its own subform?")
     relationship_show_subform.help_text = "Checking this will cause the property to be rendered as a nested subform within the <i>parent</i> form; All properties of this model will be available to view and edit in that subform.\
-                                          Unchecking it will cause the attribute to be rendered as a simple select widget.  This option is only available if the \"parent\" customizer has been saved."
+                                          Unchecking it will cause the attribute to be rendered as a simple select widget."
     subform_customizer         = models.ForeignKey("MetadataModelCustomizer",blank=True,null=True,related_name="property_customizer")
 
     def __unicode__(self):
