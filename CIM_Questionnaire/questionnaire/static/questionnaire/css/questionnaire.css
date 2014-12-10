@@ -127,13 +127,17 @@ body {
 .hidden   { display: none; }
 .hidden * { display: none; }
 
-input::-webkit-outer-spin-button, input::-webkit-inner-spin-button {
+/* some browsers (firefox) add spin buttons to integer fields */
+/* prevent this from happening in accordion_headers */
+/* b/c it makes the headers too big and clutters them up */
+
+.accordion_header input::-webkit-outer-spin-button, input::-webkit-inner-spin-button {
     /* display: none; <- Crashes Chrome on hover */
     -webkit-appearance: none;
     margin: 0;
 }
 
-input[type='number'] {
+.accordion_header input[type='number'] {
     -moz-appearance:textfield;
     margin: 0;
 }
