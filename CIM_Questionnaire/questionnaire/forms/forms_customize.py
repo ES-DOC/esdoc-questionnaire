@@ -43,7 +43,7 @@ from CIM_Questionnaire.questionnaire.fields import MetadataFieldTypes, EMPTY_CHO
 from CIM_Questionnaire.questionnaire.utils import set_field_widget_attributes, update_field_widget_attributes, get_data_from_form, get_data_from_formset
 
 
-from CIM_Questionnaire.questionnaire.forms.base import MetadataForm
+from CIM_Questionnaire.questionnaire.forms.forms_base import MetadataForm
 
 class MetadataCustomizerForm(MetadataForm):
 
