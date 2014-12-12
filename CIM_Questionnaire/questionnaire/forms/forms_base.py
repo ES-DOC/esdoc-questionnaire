@@ -12,7 +12,7 @@ __author__ = "allyn.treshansky"
 __date__ = "Dec 01, 2014 3:00:00 PM"
 
 """
-.. module:: base
+.. module:: forms_base
 
 Base classes for CIM Questionnaire form creation & manipulation
 """
