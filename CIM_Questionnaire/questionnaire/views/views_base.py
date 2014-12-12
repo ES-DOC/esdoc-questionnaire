@@ -75,7 +75,7 @@ def validate_view_authentication(project, user):
     pass
 
 
-def get_cached_existing_customizer_set(session_id, model_customizer, vocabularies):
+def get_cached_existing_customization_set(session_id, model_customizer, vocabularies):
     """
 
     :param session_id:

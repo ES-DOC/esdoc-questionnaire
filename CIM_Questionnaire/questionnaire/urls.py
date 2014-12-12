@@ -1,23 +1,20 @@
-
 ####################
-#   CIM_Questionnaire
-#   Copyright (c) 2013 CoG. All rights reserved.
+#   ES-DOC CIM Questionnaire
+#   Copyright (c) 2014 ES-DOC. All rights reserved.
 #
-#   Developed by: Earth System CoG
 #   University of Colorado, Boulder
 #   http://cires.colorado.edu/
 #
 #   This project is distributed according to the terms of the MIT license [http://www.opensource.org/licenses/MIT].
 ####################
 
-__author__="allyn.treshansky"
-__date__ ="Jan 14, 2014 4:51:41 PM"
+__author__ = "allyn.treshansky"
+__date__ = "Dec 01, 2014 3:00:00 PM"
 
 """
 .. module:: urls
 
-Summary of module goes here
-
+All URL patterns for questionnaire app.
 """
 
 from django.conf.urls import patterns, url
@@ -74,7 +71,9 @@ urlpatterns = patterns('',
     url(r'^ajax/select_realization/$', 'questionnaire.views.ajax_select_realization', name="select_realization"),
 
     # new ajax / restful api...
-    url(r'^api/(?P<project_name>[^/]+)/get_form_section/(?P<section_key>[^/]+)/$', 'questionnaire.views.views_api.api_get_form_section', name="api_get_form_section"),
+    #url(r'^api/(?P<project_name>[^/]+)/get_form_section/(?P<section_key>[^/]+)/$', 'questionnaire.views.views_api.api_get_form_section', name="api_get_form_section"),
+    url(r'^api/(?P<project_name>[^/]+)/get_new_edit_form_section/(?P<section_key>[^/]+)/$', 'questionnaire.views.views_api.api_get_new_edit_form_section', name="api_get_new_edit_form_section"),
+    url(r'^api/(?P<project_name>[^/]+)/get_existing_edit_form_section/(?P<model_id>[^/]+)/(?P<section_key>[^/]+)/$', 'questionnaire.views.views_api.api_get_existing_edit_form_section', name="api_get_existing_edit_form_section"),
 
     # atom feeds...
     url(r'^feed/$', MetadataFeed(), name="feed"),

@@ -12,6 +12,9 @@
     <script language="javascript" type="text/javascript" src="{{ STATIC_URL }}questionnaire/js/questionnaire_edit.js"></script>
     <script language="javascript">
 
+    {# no need for an if-block here; users can only view existing realizations #}
+    var get_form_section_view = "get_existing_edit_form_section/{{ root_model_id }}";
+
     /* just setup a minimum of jquery-ui functionality */
     $(document).ready(
         function() {

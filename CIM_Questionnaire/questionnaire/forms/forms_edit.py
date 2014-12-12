@@ -21,7 +21,7 @@ from django.forms import ValidationError
 from django.forms.formsets import ManagementForm, TOTAL_FORM_COUNT, INITIAL_FORM_COUNT, MAX_NUM_FORM_COUNT
 from django.utils.translation import ugettext
 
-from CIM_Questionnaire.questionnaire.forms.base import MetadataForm, MetadataFormSet, MetadataInlineFormSet
+from CIM_Questionnaire.questionnaire.forms.forms_base import MetadataForm, MetadataFormSet, MetadataInlineFormSet
 from CIM_Questionnaire.questionnaire.models.metadata_model import MetadataModel
 from CIM_Questionnaire.questionnaire.fields import MetadataFieldTypes
 from CIM_Questionnaire.questionnaire.utils import get_data_from_formset
@@ -111,8 +111,20 @@ class MetadataEditingFormSet(MetadataFormSet):
         return total_forms
 
     def initial_form_count(self):
-        # Use the length of the initial data if it's there, 0 otherwise.
-        return len(self.initial) if self.initial else 0
+        # a MetadataFormset can be created in 3 ways:
+        # 1) via new models, in which case "initial" will have been passed
+        # 2) via an existing queryset, in which case "queryset" will have been passed
+        # 3) via data, in which case "data" will have been passed
+        # _however_ data may be missing depending on whether or not the form(s) were loaded
+        # b/c of that an extra "initial" argument is passed to the factory fns to handle unloaded forms
+        # so I need to check the length of queryset if and otherwise initial; I never have to check data
+
+        if self.queryset:
+            return len(self.queryset)
+        elif self.initial:
+            return len(self.initial)
+        else:
+            return 0
 
 
 class MetadataEditingInlineFormSet(MetadataInlineFormSet):
@@ -176,8 +188,20 @@ class MetadataEditingInlineFormSet(MetadataInlineFormSet):
         return total_forms
 
     def initial_form_count(self):
-        # Use the length of the initial data if it's there, 0 otherwise.
-        return len(self.initial) if self.initial else 0
+        # a MetadataInlineFormset can be created in 3 ways:
+        # 1) via new models, in which case "initial" will have been passed
+        # 2) via an existing queryset, in which case "queryset" will have been passed
+        # 3) via data, in which case "data" will have been passed
+        # _however_ data may be missing depending on whether or not the form(s) were loaded
+        # b/c of that an extra "initial" argument is passed to the factory fns to handle unloaded forms
+        # so I need to check the length of queryset if and otherwise initial; I never have to check data
+
+        if self.queryset:
+            return len(self.queryset)
+        elif self.initial:
+            return len(self.initial)
+        else:
+            return 0
 
 
 def create_new_edit_forms_from_models(models, model_customizer, standard_properties, standard_property_customizers, scientific_properties,scientific_property_customizers):
@@ -244,10 +268,9 @@ def create_existing_edit_forms_from_models(models, model_customizer, standard_pr
     model_keys = [model.get_model_key() for model in models]
 
     model_formset = MetadataModelFormSetFactory(
-        extra=len(models),
         queryset=models,
-        prefixes=model_keys,
         customizer=model_customizer,
+        prefixes=model_keys,
     )
 
     standard_properties_formsets = {}
@@ -256,9 +279,9 @@ def create_existing_edit_forms_from_models(models, model_customizer, standard_pr
 
         standard_properties_formsets[model_key] = MetadataStandardPropertyInlineFormSetFactory(
             instance=model,
-            prefix=model_key,
             queryset=standard_properties[model_key],
             customizers=standard_property_customizers,
+            prefix=model_key,
         )
 
         # TODO: JUST A LIL HACK UNTIL I CAN FIGURE OUT WHERE TO SETUP THIS LOGIC
@@ -267,9 +290,9 @@ def create_existing_edit_forms_from_models(models, model_customizer, standard_pr
 
         scientific_properties_formsets[model_key] = MetadataScientificPropertyInlineFormSetFactory(
             instance=model,
-            prefix=model_key,
             queryset=scientific_properties[model_key],
             customizers=scientific_property_customizers[model_key],
+            prefix=model_key,
         )
 
     return (model_formset, standard_properties_formsets, scientific_properties_formsets)
@@ -285,8 +308,8 @@ def create_new_edit_subforms_from_models(models, model_customizer, standard_prop
 
     models_data = [create_model_form_data(model, model_customizer) for model in models]
     model_formset = MetadataModelSubFormSetFactory(
+        extra=len(models),
         initial=models_data,
-        extra=len(models_data),
         prefix=subform_prefix,
         customizer=model_customizer,
         min=subform_min,
@@ -394,6 +417,7 @@ def create_edit_forms_from_data(data, models, model_customizer, standard_propert
     models_data = [create_model_form_data(model, model_customizer) for model in models]
 
     model_formset = MetadataModelFormSetFactory(
+        extra=len(models),
         data=data,
         initial=models_data,  # look at this; I'm passing initial AND data (this is to provide default values to unloaded forms)
         prefixes=model_keys,

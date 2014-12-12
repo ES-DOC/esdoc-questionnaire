@@ -277,7 +277,9 @@ function show_pane(pane_key) {
         var session_id = $("#_session_id").val()
         var section_key = $(pane).attr("data-section-key");
 
-        var url = window.document.location.protocol + "//" + window.document.location.host + "/api/" + project_name + "/get_form_section/" + section_key;
+        /* get_form_section_view is the name of the AJAX view to return the particular type of form (new vs existing, edit vs customize) */
+        /* for this template; it is set in the template header */
+        var url = window.document.location.protocol + "//" + window.document.location.host + "/api/" + project_name + "/" + get_form_section_view+ "/" + section_key;
         url += "?session_id=" + session_id;
 
         $.ajax({

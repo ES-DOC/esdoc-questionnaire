@@ -171,6 +171,7 @@ class MetadataForm(ModelForm):
                     raise KeyError(msg)
         return ret
 
+
 class MetadataFormSet(BaseModelFormSet):
 
     def get_loaded_forms(self):
@@ -286,7 +287,6 @@ class MetadataInlineFormSet(BaseInlineFormSet):
             self.clean()
         except ValidationError as e:
             self._non_form_errors = self.error_class(e.messages)
-
 
     def is_valid(self, loaded_prefixes=[]):
 

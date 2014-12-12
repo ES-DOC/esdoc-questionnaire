@@ -13,6 +13,12 @@
     <script language="javascript" type="text/javascript" src="{{ STATIC_URL }}questionnaire/js/questionnaire_edit.js"></script>
     <script language="javascript">
 
+    {% if can_publish %}
+    var get_form_section_view = "get_existing_edit_form_section/{{ root_model_id }}";
+    {% else %}
+    var get_form_section_view = "get_new_edit_form_section";
+    {% endif %}
+
     /* just setup a minimum of jquery-ui functionality */
     $(document).ready(
         function() {

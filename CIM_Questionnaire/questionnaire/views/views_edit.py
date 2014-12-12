@@ -31,7 +31,7 @@ from CIM_Questionnaire.questionnaire.forms.forms_edit import create_new_edit_for
 from CIM_Questionnaire.questionnaire.views.views_authenticate import questionnaire_join
 from CIM_Questionnaire.questionnaire.views.views_error import questionnaire_error
 from CIM_Questionnaire.questionnaire.views.views_base import validate_view_arguments
-from CIM_Questionnaire.questionnaire.views.views_base import get_cached_existing_customizer_set, get_cached_proxy_set, get_cached_new_realization_set, get_cached_existing_realization_set
+from CIM_Questionnaire.questionnaire.views.views_base import get_cached_existing_customization_set, get_cached_proxy_set, get_cached_new_realization_set, get_cached_existing_realization_set
 from CIM_Questionnaire.questionnaire import get_version
 
 
@@ -83,7 +83,7 @@ def questionnaire_edit_new(request, project_name="", model_name="", version_key=
 
     # get (or set) items from the cache...
     session_id = request.session.session_key
-    customizer_set = get_cached_existing_customizer_set(session_id, model_customizer, vocabularies)
+    customizer_set = get_cached_existing_customization_set(session_id, model_customizer, vocabularies)
     proxy_set = get_cached_proxy_set(session_id, customizer_set)
     realization_set = get_cached_new_realization_set(session_id, customizer_set, proxy_set, vocabularies)
 
@@ -180,7 +180,7 @@ def questionnaire_edit_existing(request, project_name="", model_name="", version
 
     # get (or set) items from the cache...
     session_id = request.session.session_key
-    customizer_set = get_cached_existing_customizer_set(session_id, model_customizer, vocabularies)
+    customizer_set = get_cached_existing_customization_set(session_id, model_customizer, vocabularies)
     proxy_set = get_cached_proxy_set(session_id, customizer_set)
     realization_set = get_cached_existing_realization_set(session_id, model.get_descendants(include_self=True), customizer_set, proxy_set, vocabularies)
 
@@ -222,6 +222,8 @@ def questionnaire_edit_existing(request, project_name="", model_name="", version
         (model_formset, standard_properties_formsets, scientific_properties_formsets) = \
             create_existing_edit_forms_from_models(realization_set["models"], customizer_set["model_customizer"], realization_set["standard_properties"], customizer_set["standard_property_customizers"], realization_set["scientific_properties"], customizer_set["scientific_property_customizers"])
 
+        import ipdb; ipdb.set_trace()
+
     else:  # request.method == "POST":
 
         data = request.POST
@@ -260,6 +262,7 @@ def questionnaire_edit_existing(request, project_name="", model_name="", version
         "scientific_properties_formsets": scientific_properties_formsets,
         "questionnaire_version": get_version(),  # used in the footer
         "session_id": session_id,
+        "root_model_id": root_model_id,
         "can_publish": True,  # only models that have already been saved can be published
     }
 
