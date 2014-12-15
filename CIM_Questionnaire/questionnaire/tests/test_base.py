@@ -1,9 +1,12 @@
 import os
 import json
 
+from django.test.client import RequestFactory
+
 from django.test import TestCase, Client
 from django.test.utils import CaptureQueriesContext
 from django.db import connection, connections, DEFAULT_DB_ALIAS
+from django.core.cache import get_cache
 
 from django.core.urlresolvers import reverse
 from django.contrib import messages
@@ -70,84 +73,135 @@ class TestQuestionnaireBase(TestCase):
     """
 
     # maxDiff = None  # display full errors regardless of size
+    fixtures = ['questionnaire_testdata.json']
+
+    def test_fixtures_loaded(self):
+
+        # update fixtures by running `python CIM_Questionnaire/manage.py dumpdata questionnaire --indent=4 > CIM_Questionnaire/questionnaire/questionnaire_testdata.json`
+        # TODO: TEST THAT CONTENT IS AS EXPECTED
+        # NOTE THAT LOADING THE FIXTURES RELIES ON MODELS BEING ENTERED IN THE CORRECT ORDER
+        # IF I GET A DeserializationError THEN TRY CHECKING THE ORDER OF MODELS IN THE JSON FILE
+
+        pass
 
     def setUp(self):
 
-        # self.factory = RequestFactory()
-        # client for all tests (this is better-suited for testing views than the above factory b/c, among other things, it has sessions, cookies, etc.)
-        self.client = Client()#enforce_csrf_checks=True)
+        self.cache = get_cache("default")
+        self.cache.clear()
 
-        # SETUP TEST SITE
-        # TODO...
+        # factory is useful for creating simple requests
+        self.factory = RequestFactory()
+        # client is better-suited for most tests, though, b/c, among other things, it has sessions, cookies, etc.
+        self.client = Client()  # enforce_csrf_checks=True)
 
-        # SETUP DEFAULT TEST USER & SUPERUSER
-        test_user = User.objects.create_user("test", "a@b.com", "test")
-        test_superuser = User.objects.create_superuser("admin", "a@b.com", "admin")
-        user_qs = User.objects.all()
-        self.assertEqual(len(user_qs),2)
-        self.assertIsNotNone(get_metadata_user(test_user), msg="MetadataUser not created after the User.objects.create_user() fn")
-        self.client.login(username=test_superuser.username, password=test_superuser.password)
-        self.user = test_user
-        self.super_user = test_superuser
+        self.cim_1_8_1_version = MetadataVersion.objects.get(name="cim", version="1.8.1")
+        self.model_component_proxy = MetadataModelProxy.objects.get(version=self.cim_1_8_1_version, name__iexact="modelcomponent")
+        self.statistical_model_component_proxy = MetadataModelProxy.objects.get(version=self.cim_1_8_1_version, name__iexact="statisticalmodelcomponent")
 
-        # REPLACED ALL OF THIS W/ create_static_x() FNS BELOW
-        self.create_static_content()
+        self.atmosphere_vocabulary = MetadataVocabulary.objects.get(name__iexact="atmosphere")
+        self.landsurface_vocabulary = MetadataVocabulary.objects.get(name__iexact="landsurface")
+        self.statisticaldownscaling_vocabulary = MetadataVocabulary.objects.get(name__iexact="statisticaldownscaling")
 
-        test_document_type = "modelcomponent"
+        self.downscaling_project = MetadataProject.objects.get(name="downscaling")
+        self.downscaling_model_component_customizer = MetadataModelCustomizer.objects.get(project=self.downscaling_project, proxy=self.model_component_proxy, name="default")
+        self.downscaling_model_comopnent_vocabularies = self.downscaling_model_component_customizer.vocabularies.all()
 
-        proxy_to_test = self.version.model_proxies.get(name__iexact=test_document_type)
-        vocabularies_to_test = self.project.vocabularies.filter(document_type__iexact=test_document_type)
+        (model_customizer, standard_category_customizers, standard_property_customizers, nested_scientific_category_customizers, nested_scientific_property_customizers) = \
+            MetadataCustomizer.get_existing_customizer_set(self.downscaling_model_component_customizer, self.downscaling_model_comopnent_vocabularies)
 
-        # SETUP DEFAULT CUSTOMIZERS
-        (test_model_customizer, test_standard_category_customizers, test_standard_property_customizers, test_scientific_category_customizers, test_scientific_property_customizers) = \
-            MetadataCustomizer.get_new_customizer_set(self.project, self.version, proxy_to_test, vocabularies_to_test)
-        # add some one-off customizations as if this had been filled out in the form...
-        test_model_customizer.name = "customizer"
-        test_model_customizer.default = True
-        for standard_property_customizer in test_standard_property_customizers:
-            if standard_property_customizer.category is None:
-                # TODO: REMOVE THIS AS SOON AS I'VE FIXED ISSUE #71
-                standard_property_customizer.displayed = False
-        MetadataCustomizer.save_customizer_set(test_model_customizer, test_standard_category_customizers, test_standard_property_customizers, test_scientific_category_customizers, test_scientific_property_customizers)
-        model_customizer_qs = MetadataModelCustomizer.objects.all()
-        standard_category_customizer_qs = MetadataStandardCategoryCustomizer.objects.all()
-        scientific_category_customizer_qs = MetadataScientificCategoryCustomizer.objects.all()
-        standard_property_customizer_qs = MetadataStandardPropertyCustomizer.objects.all()
-        scientific_property_customizer_qs = MetadataScientificPropertyCustomizer.objects.all()
-        self.assertEqual(len(model_customizer_qs), 1)
-        self.assertEqual(len(standard_category_customizer_qs), 3)
-        self.assertEqual(len(scientific_category_customizer_qs), 10)
-        self.assertEqual(len(standard_property_customizer_qs), 7)
-        self.assertEqual(len(scientific_property_customizer_qs), 9)
-        self.model_customizer = test_model_customizer
+        self.downscaling_model_component_customizer_set = {
+            "model_customizer": model_customizer,
+            "standard_category_customizers": standard_category_customizers,
+            "standard_property_customizers": standard_property_customizers,
+            "scientific_category_customizers": get_joined_keys_dict(nested_scientific_category_customizers),
+            "scientific_property_customizers": get_joined_keys_dict(nested_scientific_property_customizers),
+        }
 
-        # SETUP DEFAULT REALIZATIONS
-        reordered_test_standard_property_proxies = [standard_property_customizer.proxy for standard_property_customizer in test_standard_property_customizers]
-        reordered_test_scientific_property_customizers = get_joined_keys_dict(test_scientific_property_customizers)
-        reordered_test_scientific_property_proxies = { key : [spc.proxy for spc in value] for key,value in reordered_test_scientific_property_customizers.items() }
+        self.downscaling_model_component_proxy_set = {
+            "model_proxy": self.model_component_proxy,
+            "standard_property_proxies": [standard_property_customizer.proxy for standard_property_customizer in self.downscaling_model_component_customizer_set["standard_property_customizers"]],
+            "scientific_property_proxies": {key: [spc.proxy for spc in value] for key, value in self.downscaling_model_component_customizer_set["scientific_property_customizers"].items()},
+        }
 
+        downscaling_model_component_realizations = MetadataModel.objects.get(project=self.downscaling_project, pk=1).get_descendants(include_self=True)
+        (models, standard_properties, scientific_properties) = \
+            MetadataModel.get_existing_realization_set(downscaling_model_component_realizations, self.downscaling_model_component_customizer_set["model_customizer"], vocabularies=self.downscaling_model_comopnent_vocabularies)
+
+        self.downscaling_model_component_realization_set = {
+            "models": models,
+            "standard_properties": standard_properties,
+            "scientific_properties": scientific_properties,
+        }
+
+        #
+        # # SETUP DEFAULT TEST USER & SUPERUSER
+        # test_user = User.objects.create_user("test", "a@b.com", "test")
+        # test_superuser = User.objects.create_superuser("admin", "a@b.com", "admin")
+        # user_qs = User.objects.all()
+        # self.assertEqual(len(user_qs), 2)
+        # self.assertIsNotNone(get_metadata_user(test_user), msg="MetadataUser not created after the User.objects.create_user() fn")
+        # self.client.login(username=test_superuser.username, password=test_superuser.password)
+        # self.user = test_user
+        # self.super_user = test_superuser
+        #
+        # # REPLACED ALL OF THIS W/ create_static_x() FNS BELOW
+        # self.create_static_content()
+        #
+        # test_document_type = "modelcomponent"
+        #
+        # proxy_to_test = self.version.model_proxies.get(name__iexact=test_document_type)
+        # vocabularies_to_test = self.project.vocabularies.filter(document_type__iexact=test_document_type)
+        #
+        # # SETUP DEFAULT CUSTOMIZERS
+        # (test_model_customizer, test_standard_category_customizers, test_standard_property_customizers, test_scientific_category_customizers, test_scientific_property_customizers) = \
+        #     MetadataCustomizer.get_new_customizer_set(self.project, self.version, proxy_to_test, vocabularies_to_test)
+        # # add some one-off customizations as if this had been filled out in the form...
+        # test_model_customizer.name = "customizer"
+        # test_model_customizer.default = True
+        # for standard_property_customizer in test_standard_property_customizers:
+        #     if standard_property_customizer.category is None:
+        #         # TODO: REMOVE THIS AS SOON AS I'VE FIXED ISSUE #71
+        #         standard_property_customizer.displayed = False
+        # MetadataCustomizer.save_customizer_set(test_model_customizer, test_standard_category_customizers, test_standard_property_customizers, test_scientific_category_customizers, test_scientific_property_customizers)
+        # model_customizer_qs = MetadataModelCustomizer.objects.all()
+        # standard_category_customizer_qs = MetadataStandardCategoryCustomizer.objects.all()
+        # scientific_category_customizer_qs = MetadataScientificCategoryCustomizer.objects.all()
+        # standard_property_customizer_qs = MetadataStandardPropertyCustomizer.objects.all()
+        # scientific_property_customizer_qs = MetadataScientificPropertyCustomizer.objects.all()
+        # self.assertEqual(len(model_customizer_qs), 1)
+        # self.assertEqual(len(standard_category_customizer_qs), 3)
+        # self.assertEqual(len(scientific_category_customizer_qs), 10)
+        # self.assertEqual(len(standard_property_customizer_qs), 7)
+        # self.assertEqual(len(scientific_property_customizer_qs), 9)
+        # self.model_customizer = test_model_customizer
+        #
+        # # SETUP DEFAULT REALIZATIONS
         # reordered_test_standard_property_proxies = [standard_property_customizer.proxy for standard_property_customizer in test_standard_property_customizers]
-        # reordered_test_scientific_property_proxies = {}
-        # for vocabulary_key,scientific_property_customizer_dict in test_scientific_property_customizers.iteritems():
-        #     for component_key,scientific_property_customizer_list in scientific_property_customizer_dict.iteritems():
-        #         model_key = u"%s_%s" % (vocabulary_key, component_key)
-        #         reordered_test_scientific_property_proxies[model_key] = [scientific_property_customizer.proxy for scientific_property_customizer in scientific_property_customizer_list]
-        (test_models, test_standard_properties, test_scientific_properties) = \
-            MetadataModel.get_new_realization_set(self.project, self.version, proxy_to_test, reordered_test_standard_property_proxies, reordered_test_scientific_property_proxies, test_model_customizer, vocabularies_to_test)
-        MetadataModel.save_realization_set(test_models,test_standard_properties,test_scientific_properties)
-        model_qs = MetadataModel.objects.all()
-        standard_property_qs = MetadataStandardProperty.objects.all()
-        scientific_property_qs = MetadataScientificProperty.objects.all()
-        self.assertEqual(len(model_qs), 6)
-        self.assertEqual(len(standard_property_qs), 42)
-        self.assertEqual(len(scientific_property_qs), 9)
-        self.model_realization = test_models[0].get_root()
+        # reordered_test_scientific_property_customizers = get_joined_keys_dict(test_scientific_property_customizers)
+        # reordered_test_scientific_property_proxies = { key : [spc.proxy for spc in value] for key,value in reordered_test_scientific_property_customizers.items() }
+        #
+        # # reordered_test_standard_property_proxies = [standard_property_customizer.proxy for standard_property_customizer in test_standard_property_customizers]
+        # # reordered_test_scientific_property_proxies = {}
+        # # for vocabulary_key,scientific_property_customizer_dict in test_scientific_property_customizers.iteritems():
+        # #     for component_key,scientific_property_customizer_list in scientific_property_customizer_dict.iteritems():
+        # #         model_key = u"%s_%s" % (vocabulary_key, component_key)
+        # #         reordered_test_scientific_property_proxies[model_key] = [scientific_property_customizer.proxy for scientific_property_customizer in scientific_property_customizer_list]
+        # (test_models, test_standard_properties, test_scientific_properties) = \
+        #     MetadataModel.get_new_realization_set(self.project, self.version, proxy_to_test, reordered_test_standard_property_proxies, reordered_test_scientific_property_proxies, test_model_customizer, vocabularies_to_test)
+        # MetadataModel.save_realization_set(test_models,test_standard_properties,test_scientific_properties)
+        # model_qs = MetadataModel.objects.all()
+        # standard_property_qs = MetadataStandardProperty.objects.all()
+        # scientific_property_qs = MetadataScientificProperty.objects.all()
+        # self.assertEqual(len(model_qs), 6)
+        # self.assertEqual(len(standard_property_qs), 42)
+        # self.assertEqual(len(scientific_property_qs), 9)
+        # self.model_realization = test_models[0].get_root()
 
-
-    # def tearDown(self):
-    #     # this is for resetting things that are not db-related (ie: files, etc.)
-    #     # but it's not needed for the db since each test is run in its own transaction
-    #     pass
+    def tearDown(self):
+        # this is for resetting things that are not db-related (ie: files, etc.)
+        # but it's not needed for the db since each test is run in its own transaction
+        # TODO CLEAR CACHE
+        pass
 
 
     ##############################

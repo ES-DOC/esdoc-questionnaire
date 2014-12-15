@@ -19,10 +19,10 @@ Tests for custom middleware.  This includes dynamic_sites
 
 from django.core.urlresolvers import reverse
 from django.test.client import RequestFactory
-from django.contrib.sites.models import Site, get_current_site
 from django.conf import settings
+from django.contrib.sites.models import Site, get_current_site
 from CIM_Questionnaire.questionnaire.middleware.dynamic_sites import DynamicSitesMiddleware
-from CIM_Questionnaire.questionnaire.tests.base import TestQuestionnaireBase
+from CIM_Questionnaire.questionnaire.tests.test_base import TestQuestionnaireBase
 
 
 class Test(TestQuestionnaireBase):
@@ -30,11 +30,7 @@ class Test(TestQuestionnaireBase):
     def setUp(self):
         # no need for any questionnaire-specific stuff
         #super(Test,self).setUp()
-
-        self.factory = RequestFactory()
-
-        # just testing middleware; don't need a _real_ request
-        self.test_request = self.factory.get(reverse("questionnaire_test"))
+        pass
 
     def tearDown(self):
         # no need for any questionnaire-specific stuff
@@ -43,10 +39,15 @@ class Test(TestQuestionnaireBase):
 
     def test_dynamic_sites(self):
 
+        # just testing middleware; don't need a _real_ request...
+        factory = RequestFactory()
+        test_request = factory.get(reverse("questionnaire_test"))
+
         dynamic_sites_middleware = DynamicSitesMiddleware()
 
-        dynamic_sites_middleware.process_request(self.test_request)
-        current_site = get_current_site(self.test_request)
+        dynamic_sites_middleware.process_request(test_request)
+
+        current_site = get_current_site(test_request)
         example_site = Site.objects.get(pk=settings.SITE_ID)
 
         self.assertEqual(current_site, example_site)
@@ -54,8 +55,9 @@ class Test(TestQuestionnaireBase):
         test_site = Site(name="test_site", domain="testserver")
         test_site.save()
 
-        dynamic_sites_middleware.process_request(self.test_request)
-        current_site = get_current_site(self.test_request)
+        dynamic_sites_middleware.process_request(test_request)
+
+        current_site = get_current_site(test_request)
 
         self.assertEqual(current_site, test_site)
         self.assertNotEqual(current_site, example_site)
