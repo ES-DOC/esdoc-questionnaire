@@ -95,6 +95,7 @@ class TestQuestionnaireBase(TestCase):
         self.client = Client()  # enforce_csrf_checks=True)
 
         self.cim_1_8_1_version = MetadataVersion.objects.get(name="cim", version="1.8.1")
+        self.cim_1_8_1_categorization = self.cim_1_8_1_version.categorization
         self.model_component_proxy = MetadataModelProxy.objects.get(version=self.cim_1_8_1_version, name__iexact="modelcomponent")
         self.statistical_model_component_proxy = MetadataModelProxy.objects.get(version=self.cim_1_8_1_version, name__iexact="statisticalmodelcomponent")
 
@@ -103,11 +104,11 @@ class TestQuestionnaireBase(TestCase):
         self.statisticaldownscaling_vocabulary = MetadataVocabulary.objects.get(name__iexact="statisticaldownscaling")
 
         self.downscaling_project = MetadataProject.objects.get(name="downscaling")
-        self.downscaling_model_component_customizer = MetadataModelCustomizer.objects.get(project=self.downscaling_project, proxy=self.model_component_proxy, name="default")
-        self.downscaling_model_comopnent_vocabularies = self.downscaling_model_component_customizer.vocabularies.all()
+        downscaling_model_component_customizer = MetadataModelCustomizer.objects.get(project=self.downscaling_project, proxy=self.model_component_proxy, name="default")
+        self.downscaling_model_comopnent_vocabularies = downscaling_model_component_customizer.vocabularies.all()
 
         (model_customizer, standard_category_customizers, standard_property_customizers, nested_scientific_category_customizers, nested_scientific_property_customizers) = \
-            MetadataCustomizer.get_existing_customizer_set(self.downscaling_model_component_customizer, self.downscaling_model_comopnent_vocabularies)
+            MetadataCustomizer.get_existing_customizer_set(downscaling_model_component_customizer, self.downscaling_model_comopnent_vocabularies)
 
         self.downscaling_model_component_customizer_set = {
             "model_customizer": model_customizer,
