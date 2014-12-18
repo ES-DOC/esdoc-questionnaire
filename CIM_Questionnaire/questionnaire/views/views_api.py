@@ -22,7 +22,7 @@ These are accessed from AJAX
 from django.shortcuts import render_to_response
 from django.template.context import RequestContext
 from CIM_Questionnaire.questionnaire.forms.forms_edit import create_new_edit_forms_from_models, create_existing_edit_forms_from_models
-from CIM_Questionnaire.questionnaire.models.metadata_customizer import MetadataCustomizer, MetadataModelCustomizer, MetadataStandardPropertyCustomizer, MetadataScientificPropertyCustomizer
+from CIM_Questionnaire.questionnaire.models.metadata_customizer import MetadataModelCustomizer, MetadataStandardPropertyCustomizer, MetadataScientificPropertyCustomizer
 from CIM_Questionnaire.questionnaire.models.metadata_model import MetadataModel
 from CIM_Questionnaire.questionnaire.models.metadata_project import MetadataProject
 from CIM_Questionnaire.questionnaire.models.metadata_proxy import MetadataModelProxy, MetadataComponentProxy, MetadataStandardCategoryProxy, MetadataScientificCategoryProxy, MetadataStandardPropertyProxy, MetadataScientificPropertyProxy
@@ -51,7 +51,7 @@ def validate_section_key(section_key):
     #
     # ]
 
-    (validity, version, model_proxy, vocabulary, component_proxy, property_type, category_proxy, property_proxy, msg ) = \
+    (validity, version, model_proxy, vocabulary, component_proxy, property_type, category_proxy, property_proxy, msg) = \
         (True, None, None, None, None, None, None, None, "")
 
     section_keys = section_key.split('|')
@@ -172,7 +172,7 @@ def validate_section_key(section_key):
 # TODO: GET THESE FNS TO WORK W/ CACHED INSTANCE OF FORMS RATHER THAN RE-CREATING THEM EACH TIME
 
 
-def validate_edit_view_arguments(request, project_name, section_key):
+def validate_edit_view_arguments(project_name, section_key):
 
     (validity, version, model_proxy, vocabulary, component_proxy, property_type, category_proxy, property_proxy, model_customizer, vocabularies, msg) = \
         (True, None, None, None, None, None, None, None, None, [], "")
@@ -241,7 +241,7 @@ def api_get_new_edit_form_section(request, project_name, section_key, **kwargs):
     # check the arguments to the view,
     # and parse the section key
     (validity, version, model_proxy, vocabulary, component_proxy, property_type, category_proxy, property_proxy, model_customizer, vocabularies, msg) = \
-        validate_edit_view_arguments(request, project_name, section_key)
+        validate_edit_view_arguments(project_name, section_key)
     if not validity:
         return questionnaire_error(request, msg)
 
@@ -287,7 +287,7 @@ def api_get_existing_edit_form_section(request, project_name, section_key, model
     # check the arguments to the view,
     # and parse the section key
     (validity, version, model_proxy, vocabulary, component_proxy, property_type, category_proxy, property_proxy, model_customizer, vocabularies, msg) = \
-        validate_edit_view_arguments(request, project_name, section_key)
+        validate_edit_view_arguments(project_name, section_key)
     if not validity:
         return questionnaire_error(request, msg)
 

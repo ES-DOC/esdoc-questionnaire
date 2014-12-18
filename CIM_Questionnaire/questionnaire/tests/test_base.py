@@ -77,7 +77,8 @@ class TestQuestionnaireBase(TestCase):
 
     def test_fixtures_loaded(self):
 
-        # update fixtures by running `python CIM_Questionnaire/manage.py dumpdata questionnaire --indent=4 > CIM_Questionnaire/questionnaire/questionnaire_testdata.json`
+        # update fixtures by running
+        # `python CIM_Questionnaire/manage.py dumpdata questionnaire --indent=4 > CIM_Questionnaire/questionnaire/questionnaire_testdata.json`
         # TODO: TEST THAT CONTENT IS AS EXPECTED
         # NOTE THAT LOADING THE FIXTURES RELIES ON MODELS BEING ENTERED IN THE CORRECT ORDER
         # IF I GET A DeserializationError THEN TRY CHECKING THE ORDER OF MODELS IN THE JSON FILE
@@ -97,7 +98,6 @@ class TestQuestionnaireBase(TestCase):
         self.cim_1_8_1_version = MetadataVersion.objects.get(name="cim", version="1.8.1")
         self.cim_1_8_1_categorization = self.cim_1_8_1_version.categorization
         self.model_component_proxy = MetadataModelProxy.objects.get(version=self.cim_1_8_1_version, name__iexact="modelcomponent")
-        self.statistical_model_component_proxy = MetadataModelProxy.objects.get(version=self.cim_1_8_1_version, name__iexact="statisticalmodelcomponent")
 
         self.atmosphere_vocabulary = MetadataVocabulary.objects.get(name__iexact="atmosphere")
         self.landsurface_vocabulary = MetadataVocabulary.objects.get(name__iexact="landsurface")
@@ -105,10 +105,10 @@ class TestQuestionnaireBase(TestCase):
 
         self.downscaling_project = MetadataProject.objects.get(name="downscaling")
         downscaling_model_component_customizer = MetadataModelCustomizer.objects.get(project=self.downscaling_project, proxy=self.model_component_proxy, name="default")
-        self.downscaling_model_comopnent_vocabularies = downscaling_model_component_customizer.vocabularies.all()
+        self.downscaling_model_component_vocabularies = downscaling_model_component_customizer.vocabularies.all()
 
         (model_customizer, standard_category_customizers, standard_property_customizers, nested_scientific_category_customizers, nested_scientific_property_customizers) = \
-            MetadataCustomizer.get_existing_customizer_set(downscaling_model_component_customizer, self.downscaling_model_comopnent_vocabularies)
+            MetadataCustomizer.get_existing_customizer_set(downscaling_model_component_customizer, self.downscaling_model_component_vocabularies)
 
         self.downscaling_model_component_customizer_set = {
             "model_customizer": model_customizer,
@@ -126,7 +126,7 @@ class TestQuestionnaireBase(TestCase):
 
         downscaling_model_component_realizations = MetadataModel.objects.get(project=self.downscaling_project, pk=1).get_descendants(include_self=True)
         (models, standard_properties, scientific_properties) = \
-            MetadataModel.get_existing_realization_set(downscaling_model_component_realizations, self.downscaling_model_component_customizer_set["model_customizer"], vocabularies=self.downscaling_model_comopnent_vocabularies)
+            MetadataModel.get_existing_realization_set(downscaling_model_component_realizations, self.downscaling_model_component_customizer_set["model_customizer"], vocabularies=self.downscaling_model_component_vocabularies)
 
         self.downscaling_model_component_realization_set = {
             "models": models,

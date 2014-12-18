@@ -191,8 +191,10 @@ class MetadataCustomizer(models.Model):
     def get_existing_customizer_set(cls, model_customizer, vocabularies=[]):
         """retrieves the full set of customizations used by a particular model_customizer w/ a specified list of vocabs"""
 
-        standard_category_customizers = model_customizer.standard_property_category_customizers.all().prefetch_related("standard_property_customizers")
-        standard_property_customizers = model_customizer.standard_property_customizers.all().select_related("proxy").order_by("category__order","order")
+        standard_category_customizers = model_customizer.standard_property_category_customizers.all()
+        standard_property_customizers = model_customizer.standard_property_customizers.all().order_by("category__order", "order")
+        #standard_category_customizers = model_customizer.standard_property_category_customizers.all().prefetch_related("standard_property_customizers")
+        #standard_property_customizers = model_customizer.standard_property_customizers.all().select_related("proxy").order_by("category__order","order")
 
         scientific_category_customizers = {}
         scientific_property_customizers = {}
@@ -202,9 +204,18 @@ class MetadataCustomizer(models.Model):
             scientific_property_customizers[vocabulary_key] = {}
             for component in vocabulary.component_proxies.all():
                 component_key = component.get_key()
-                scientific_category_customizers[vocabulary_key][component_key] = model_customizer.scientific_property_category_customizers.filter(vocabulary_key=vocabulary_key,component_key=component_key).select_related("project","model_customizer")
-                scientific_property_customizers[vocabulary_key][component_key] = model_customizer.scientific_property_customizers.filter(vocabulary_key=vocabulary_key,component_key=component_key).select_related("proxy","proxy__category","category").order_by("category__order","order")
-
+                scientific_category_customizers[vocabulary_key][component_key] = \
+                    model_customizer.scientific_property_category_customizers.filter(
+                        vocabulary_key=vocabulary_key,
+                        component_key=component_key
+                    #).select_related("project","model_customizer")
+                    )
+                scientific_property_customizers[vocabulary_key][component_key] = \
+                    model_customizer.scientific_property_customizers.filter(
+                        vocabulary_key=vocabulary_key,
+                        component_key=component_key
+                    #).select_related("proxy","proxy__category","category")
+                    ).order_by("category__order", "order")
         return (model_customizer,standard_category_customizers,standard_property_customizers,scientific_category_customizers,scientific_property_customizers)
 
     @classmethod

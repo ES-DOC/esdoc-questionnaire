@@ -143,6 +143,7 @@ def questionnaire_edit_existing(request, project_name="", model_name="", version
 
     # validate the arguments...
     # TODO: ONLY DO THESE CHECKS IF "checked arguments" IS FALSE
+
     (validity, project, version, model_proxy, model_customizer, msg) = validate_edit_view_arguments(project_name=project_name, model_name=model_name, version_key=version_key)
     if not validity:
         return questionnaire_error(request, msg)
@@ -221,8 +222,6 @@ def questionnaire_edit_existing(request, project_name="", model_name="", version
 
         (model_formset, standard_properties_formsets, scientific_properties_formsets) = \
             create_existing_edit_forms_from_models(realization_set["models"], customizer_set["model_customizer"], realization_set["standard_properties"], customizer_set["standard_property_customizers"], realization_set["scientific_properties"], customizer_set["scientific_property_customizers"])
-
-        import ipdb; ipdb.set_trace()
 
     else:  # request.method == "POST":
 
