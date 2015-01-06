@@ -7,14 +7,15 @@ The following instructions describe how to install the CIM Questionnaire on a Un
 The system must have the following Python packages installed:
 
 * Python 2.7.2+
-* Django 1.6.5
-* South
-* libXML (pip install lxml)
-* pytz (pip install pytz)
-* mptt (pip install django-mptt)
+* Django 1.6.5 (pip install django==1.6.5)
 * python-memcached (pip install python-memcached)
+* mptt (pip install django-mptt)
+* pytz (pip install pytz)
+* South (pip install south)
+* libXML (pip install lxml; may require libxml2-dev and/or libxslt1-dev)
 * A PostGres database is recommended.  However, Django also supports MySQL and SQLite3.
     * To use PostGres you must install psycopg2.
+* to run w/ profiling install pyinstrument
 
 ## DOWNLOAD
 
@@ -35,7 +36,7 @@ port=5432
 
 [cache]
 host=127.0.0.1
-port=112111
+port=11211
 
 [email]
 host=smtp.gmail.com
@@ -52,6 +53,8 @@ debug=true
 debug_toolbar=false
 debug_profiling=false
 ```
+
+* a Django secret key can be generated at: http://www.miniwebtool.com/django-secret-key-generator/
 
 * start a virtual python environment (recommended)
 
