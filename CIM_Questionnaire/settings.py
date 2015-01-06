@@ -1,14 +1,31 @@
-# Django settings for CIM_Questionnaire project.
+####################
+#   ES-DOC CIM Questionnaire
+#   Copyright (c) 2014 ES-DOC. All rights reserved.
+#
+#   University of Colorado, Boulder
+#   http://cires.colorado.edu/
+#
+#   This project is distributed according to the terms of the MIT license [http://www.opensource.org/licenses/MIT].
+####################
+
+__author__ = "allyn.treshansky"
+__date__ = "Dec 01, 2014 3:00:00 PM"
+
+"""
+.. module:: settings
+
+Django settings for CIM_Questionnaire project.
+"""
+
 from ConfigParser import SafeConfigParser
 from django.conf.global_settings import TEMPLATE_CONTEXT_PROCESSORS
 import os
-
 
 rel = lambda *x: os.path.join(os.path.abspath(os.path.dirname(__file__)), *x)
 
 # Path to the configuration file containing secret values.
 # TODO: EITHER MOVE THE LOCATOIN OF THE CONF FILE OR MAKE ITS NAME UNIQUE (TO HANDLE CONCURRENT DEPLOYMENTS)
-CONF_PATH = os.path.join(os.path.expanduser('~'), '.config', 'esdoc-questionnaire-test.conf')
+CONF_PATH = os.path.join(os.path.expanduser('~'), '.config', 'esdoc-questionnaire.conf')
 
 parser = SafeConfigParser()
 parser.read(CONF_PATH)
@@ -22,7 +39,6 @@ ADMINS = (
 )
 
 MANAGERS = ADMINS
-
 
 EMAIL_HOST = parser.get('email', 'host')
 EMAIL_PORT = parser.get('email', 'port')
@@ -78,7 +94,6 @@ MEDIA_ROOT = rel('site_media/')
 # trailing slash.
 # Examples: "http://example.com/media/", "http://media.example.com/"
 MEDIA_URL = '/site_media/'
-
 
 # Absolute path to the directory static files should be collected to.
 # Don't put anything in this directory yourself; store your static files
@@ -144,7 +159,6 @@ AUTHENTICATION_BACKENDS = (
     #'django_openid_auth.auth.OpenIDBackend',
 )
 
-
 ROOT_URLCONF = 'urls'
 
 TEMPLATE_DIRS = (
@@ -193,7 +207,7 @@ INSTALLED_APPS = (
     # viewing remote mindmaps...
     'mindmaps',
     # old apps from DCMIP-2012...
-    #'django_cim_forms', 'django_cim_forms.cim_1_5', 'dycore',
+    'django_cim_forms', 'django_cim_forms.cim_1_5', 'dycore',
     # old apps from QED...
     #'dcf', 'dcf.cim_1_8_1',
 )
@@ -210,11 +224,11 @@ OPTIONAL_INSTALLED_APPS = [
 
 for optional_app in OPTIONAL_INSTALLED_APPS:
     if optional_app.get("condition",False):
-        #try:
-#           __import__(optional_app["import"])
-#       except ImportError:
-#           pass
-#       else:
+    #     try:
+    #         __import__(optional_app["import"])
+    #     except ImportError:
+    #         pass
+    # else:
         INSTALLED_APPS += optional_app.get("app", ())
         # django is pretty ridiculous
         # the order of entries in middleware is very important
@@ -227,7 +241,7 @@ for optional_app in OPTIONAL_INSTALLED_APPS:
 #################
 
 SESSION_SERIALIZER = 'django.contrib.sessions.serializers.JSONSerializer'
-SESSION_SAVE_EVERY_REQUEST = True
+SESSION_SAVE_EVERY_REQUEST = True  # forces session to have key even if it has been unchanged (session keys are used to prefix cache instances)
 
 # TODO: THIS IS STORING SESSION VARIABLES VIA COOKIES
 # OTHER OPTIONS ARE FILE, DB (DEFAULT), OR CACHE
