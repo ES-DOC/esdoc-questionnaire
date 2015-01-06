@@ -8,17 +8,17 @@ rel = lambda *x: os.path.join(os.path.abspath(os.path.dirname(__file__)), *x)
 
 # Path to the configuration file containing secret values.
 # TODO: EITHER MOVE THE LOCATOIN OF THE CONF FILE OR MAKE ITS NAME UNIQUE (TO HANDLE CONCURRENT DEPLOYMENTS)
-CONF_PATH = os.path.join(os.path.expanduser('~'), '.config', 'esdoc-questionnaire.conf')
+CONF_PATH = os.path.join(os.path.expanduser('~'), '.config', 'esdoc-questionnaire-test.conf')
 
 parser = SafeConfigParser()
 parser.read(CONF_PATH)
 
-DEBUG = parser.getboolean('debug','debug')
-DEBUG_TOOLBAR = parser.getboolean('debug','debug_toolbar') # this enables django-debug-toolbar (look in project-level "urls.py" for more info)
-DEBUG_PROFILING = parser.getboolean('debug','debug_profiling')
+DEBUG = parser.getboolean('debug', 'debug')
+DEBUG_TOOLBAR = parser.getboolean('debug', 'debug_toolbar')  # this enables django-debug-toolbar (look in project-level "urls.py" for more info)
+DEBUG_PROFILING = parser.getboolean('debug', 'debug_profiling')
 
 ADMINS = (
-#    ( parser.get('admin', 'name'), parser.get('admin', 'email'))
+    #( parser.get('admin', 'name'), parser.get('admin', 'email'))
 )
 
 MANAGERS = ADMINS
@@ -33,12 +33,12 @@ EMAIL_USE_TLS = True
 # DB SETTINGS
 DATABASES = {
     'default': {
-        'ENGINE'    : parser.get('database', 'engine'), # Add 'postgresql_psycopg2', 'mysql', 'sqlite3' or 'oracle'.
-        'NAME'      : parser.get('database', 'name'),                      # Or path to database file if using sqlite3.
-        'USER'      : parser.get('database', 'user'),
-        'PASSWORD'  : parser.get('database', 'password', raw=True),
-        'HOST'      : parser.get('database', 'host'),                              # Empty for localhost through domain sockets or '127.0.0.1' for localhost through TCP.
-        'PORT'      : parser.get('database', 'port'),                                   # Set to empty string for default.
+        'ENGINE': parser.get('database', 'engine'),
+        'NAME': parser.get('database', 'name'),
+        'USER': parser.get('database', 'user'),
+        'PASSWORD': parser.get('database', 'password', raw=True),
+        'HOST': parser.get('database', 'host'),
+        'PORT': parser.get('database', 'port'),
     }
 }
 
@@ -102,7 +102,7 @@ STATICFILES_DIRS = (
 STATICFILES_FINDERS = (
     'django.contrib.staticfiles.finders.FileSystemFinder',
     'django.contrib.staticfiles.finders.AppDirectoriesFinder',
-#    'django.contrib.staticfiles.finders.DefaultStorageFinder',
+    #'django.contrib.staticfiles.finders.DefaultStorageFinder',
 )
 
 # Make this unique, and don't share it with anybody.
@@ -157,17 +157,17 @@ TEMPLATE_DIRS = (
 
 # makes 'request' object available in templates
 TEMPLATE_CONTEXT_PROCESSORS += (
-     'django.core.context_processors.request',
-     # requirement of messaging framework...
-     'django.contrib.messages.context_processors.messages',
-     # requirement of openid
-     #'django_authopenid.context_processors.authopenid',
+    'django.core.context_processors.request',
+    # requirement of messaging framework...
+    'django.contrib.messages.context_processors.messages',
+    # requirement of openid
+    #'django_authopenid.context_processors.authopenid',
 )
 
 # login page
 LOGIN_URL = '/login'
 # page to redirect after successfull authentication, if 'next' parameter is not provided
-LOGIN_REDIRECT_URL='/' 
+LOGIN_REDIRECT_URL = '/'
 
 # Python dotted path to the WSGI application used by Django's runserver.
 WSGI_APPLICATION = 'wsgi.application'
@@ -193,40 +193,41 @@ INSTALLED_APPS = (
     # viewing remote mindmaps...
     'mindmaps',
     # old apps from DCMIP-2012...
-    'django_cim_forms', 'django_cim_forms.cim_1_5', 'dycore',
+    #'django_cim_forms', 'django_cim_forms.cim_1_5', 'dycore',
     # old apps from QED...
-#    'dcf', 'dcf.cim_1_8_1',
+    #'dcf', 'dcf.cim_1_8_1',
 )
 
 OPTIONAL_INSTALLED_APPS = [
     # list of apps that are installed conditionally
     {
-        "condition"  : DEBUG_TOOLBAR,
-        "import"     : "debug_toolbar",
-        "app"        : ("debug_toolbar", "template_timings_panel", ),   # TODO: CHANGE THIS TO "debug_toolbar.apps.DebugToolbarConfig' IF UPGRADING TO DJANGO 1.7
-        "middleware" : ("debug_toolbar.middleware.DebugToolbarMiddleware",),
+        "condition": DEBUG_TOOLBAR,
+        "import": "debug_toolbar",
+        "app": ("debug_toolbar", "template_timings_panel", ),   # TODO: CHANGE THIS TO "debug_toolbar.apps.DebugToolbarConfig' IF UPGRADING TO DJANGO 1.7
+        "middleware": ("debug_toolbar.middleware.DebugToolbarMiddleware",),
     },
 ]
 
 for optional_app in OPTIONAL_INSTALLED_APPS:
-   if optional_app.get("condition",False):
-#       try:
+    if optional_app.get("condition",False):
+        #try:
 #           __import__(optional_app["import"])
 #       except ImportError:
 #           pass
 #       else:
-       INSTALLED_APPS += optional_app.get("app",())
-       # django is pretty ridiculous
-       # the order of entries in middleware is very important
-       # so rather than append this middleware, insert it as the next-to-last one
-       #MIDDLEWARE_CLASSES += optional_app.get("middleware", ())
-       MIDDLEWARE_CLASSES = MIDDLEWARE_CLASSES[0:-1] + optional_app.get("middleware",()) + (MIDDLEWARE_CLASSES[-1],)
+        INSTALLED_APPS += optional_app.get("app", ())
+        # django is pretty ridiculous
+        # the order of entries in middleware is very important
+        # so rather than append this middleware, insert it as the next-to-last one
+        #MIDDLEWARE_CLASSES += optional_app.get("middleware", ())
+        MIDDLEWARE_CLASSES = MIDDLEWARE_CLASSES[0:-1] + optional_app.get("middleware", ()) + (MIDDLEWARE_CLASSES[-1],)
 
 #################
 # caching, etc. #
 #################
 
 SESSION_SERIALIZER = 'django.contrib.sessions.serializers.JSONSerializer'
+SESSION_SAVE_EVERY_REQUEST = True
 
 # TODO: THIS IS STORING SESSION VARIABLES VIA COOKIES
 # OTHER OPTIONS ARE FILE, DB (DEFAULT), OR CACHE
@@ -234,7 +235,7 @@ SESSION_SERIALIZER = 'django.contrib.sessions.serializers.JSONSerializer'
 SESSION_ENGINE = 'django.contrib.sessions.backends.signed_cookies'
 SESSION_COOKIE_HTTPONLY = True
 
-DEFAULT_CACHE_PORT = "11211" # (standard memcached port)
+DEFAULT_CACHE_PORT = "11211"  # (standard memcached port)
 
 if parser.has_option("cache", "host"):
     CACHE_HOST = parser.get('cache', 'host')
@@ -247,9 +248,9 @@ else:
 
 CACHES = {
     'default' : {
-        'TIMEOUT' : 60,
-        'BACKEND' : 'django.core.cache.backends.memcached.MemcachedCache',
-        'LOCATION' : CACHE_HOST + ":" + CACHE_PORT,
+        'TIMEOUT': 60,
+        'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
+        'LOCATION': CACHE_HOST + ":" + CACHE_PORT,
     }
 }
 
@@ -318,11 +319,19 @@ LOGGING = {
     }
 }
 
+###########
+# testing #
+###########
+
+# don't automatically update migrations during testing
+# this allows me to load fixtures easily
+# however, it also means I have to recreate those fixtures as migrations change or are added
+# (see http://south.readthedocs.org/en/latest/settings.html#south-tests-migrate for more info)
+#SOUTH_TESTS_MIGRATE = False
 
 #########################
 # debugging & profiling #
 #########################
-
 
 if DEBUG_TOOLBAR:
 
@@ -359,7 +368,7 @@ if DEBUG_TOOLBAR:
         'debug_toolbar.panels.headers.HeadersPanel',
         'debug_toolbar.panels.request.RequestPanel',
         'debug_toolbar.panels.sql.SQLPanel',
-        "template_timings_panel.panels.TemplateTimings.TemplateTimings",    # this is a 3rd party panel
+        "template_timings_panel.panels.TemplateTimings.TemplateTimings",  # this is a 3rd party panel
         #'debug_toolbar.panels.staticfiles.StaticFilesPanel',
         'debug_toolbar.panels.templates.TemplatesPanel',
         'debug_toolbar.panels.cache.CachePanel',
@@ -372,13 +381,12 @@ if DEBUG_TOOLBAR:
 # tools for usage & memory profiling #
 ######################################
 
-PROFILE 	 = False
+PROFILE = False
 PROFILE_LOG_BASE = rel('profiles/')
-SETUP_HPY 	 = False
+SETUP_HPY = False
 
 ##################################
 # DJANGO_CIM_FORMS ATOM_FEED_DIR #
 ##################################
 
 ATOM_FEED_DIR = rel('django_cim_forms/feed')
-
