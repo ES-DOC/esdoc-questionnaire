@@ -55,7 +55,7 @@ class MetadataProject(models.Model):
     email         = models.EmailField(blank=True,null=True,verbose_name="Contact Email")
 
     def __unicode__(self):
-        return u'%s' % self.name
+        return u'%s' % self.title
 
     def clean(self):
         # force name to be lowercase
