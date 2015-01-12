@@ -31,8 +31,8 @@ def create_model_form_data(model, model_customizer):
 
     model_form_data = model_to_data(
         model,
-        exclude= ["tree_id", "lft", "rght", "level", "parent", ],  # ignore mptt fields
-        include= {
+        exclude=["tree_id", "lft", "rght", "level", "parent", ],  # ignore mptt fields
+        include={
             "last_modified": time.strftime("%c"),
             "loaded": False,
         }
@@ -93,16 +93,17 @@ class MetadataModelForm(MetadataAbstractModelForm):
         model = MetadataModel
         fields = [
             # hidden fields...
-            "proxy", "project", "version", "is_document", "is_root", "vocabulary_key", "component_key", "active", "name", "description", "order",
+            "proxy", "project", "version", "is_document", "is_root", "vocabulary_key", "component_key", "active", "name", "description", "order", "id",
             # header fields...
             "title",
         ]
 
-    # set of fields that will be the same for all members of a formset; allows me to cache the query (for relationship fields)
+    # set of fields that will be the same for all members of a formset;
+    # allows me to cache the query (for relationship fields)
     cached_fields = []
 
     _header_fields = ["title", ]
-    _hidden_fields = ["proxy", "active", "project", "version", "is_document", "is_root", "vocabulary_key", "component_key", "name", "description", "order", ]
+    _hidden_fields = ["proxy", "active", "project", "version", "is_document", "is_root", "vocabulary_key", "component_key", "name", "description", "order", "id", ]
 
     active = BooleanField(required=False)   # allow checked or unchecked as per https://docs.djangoproject.com/en/1.4/ref/forms/fields/#booleanfield
 
@@ -148,50 +149,11 @@ class MetadataModelSubForm(MetadataAbstractModelForm):
 
 class MetadataModelFormSet(MetadataEditingFormSet):
 
-    def _construct_form(self, i, **kwargs):
+    def add_prefix(self, index):
+        return "%s" % self.prefixes_list[index]
 
-        assert self.prefix_iterator
-        form_prefix = next(self.prefix_iterator)
-        kwargs["prefix"] = form_prefix
-
-        # this section rewrites the original fn from BaseModelFormSet b/c I am using a separate prefix for each form
-        # (see django.forms.models.BaseModelFormSet._construct_form
-        if self.is_bound and i < self.initial_form_count():
-            # Import goes here instead of module-level because importing
-            # django.db has side effects
-            from django.db import connections
-            pk_key = "%s-%s" % (form_prefix, self.model._meta.pk.name)    # THIS IS THE DIFFERENT BIT!
-            pk = self.data[pk_key]
-            pk_field = self.model._meta.pk
-            pk = pk_field.get_db_prep_lookup('exact', pk,
-                connection=connections[self.get_queryset().db])
-            if isinstance(pk, list):
-                pk = pk[0]
-            kwargs['instance'] = self._existing_object(pk)
-        if i < self.initial_form_count() and not kwargs.get('instance'):
-            kwargs['instance'] = self.get_queryset()[i]
-        if i >= self.initial_form_count() and self.initial_extra:
-            # Set initial values for extra forms
-            try:
-                kwargs['initial'] = self.initial_extra[i-self.initial_form_count()]
-            except IndexError:
-                pass
-        form = super(MetadataModelFormSet, self)._construct_form(i, **kwargs)
-        # end section
-
-        # this speeds up loading time
-        # (see "cached_fields" attribute in the form class below)
-        for cached_field_name in form.cached_fields:
-            cached_field = form.fields[cached_field_name]
-            cached_field_key = u"%s_%s" % (self.prefix, cached_field_name)
-            cached_field.cache_choices = True
-            choices = getattr(self, '_cached_choices_%s' % cached_field_key, None)
-            if choices is None:
-                choices = list(cached_field.choices)
-                setattr(self, '_cached_choices_%s' % cached_field_key, choices)
-            cached_field.choice_cache = choices
-
-        return form
+    # note that there is no _construct_form() fn
+    # instead, I have overloaded the parent class
 
 
 class MetadataModelSubFormSet(MetadataEditingFormSet):
@@ -279,6 +241,7 @@ def MetadataModelFormSetFactory(*args, **kwargs):
 
     if _prefixes:
         _formset.prefix_iterator = iter(_prefixes)
+        _formset.prefixes_list = _prefixes
 
     if _initial:
         _formset.number_of_models = len(_initial)
@@ -318,7 +281,7 @@ def MetadataModelSubFormSetFactory(*args, **kwargs):
         "form": MetadataModelSubForm,
         # TODO: "min_num", and "validate_min" IS ONLY VALID FOR DJANGO 1.7+
         # (that's why I explicitly add it below)
-        # "min_num"      : _min,
+        # "min_num" : _min,
         #"validate_min" : True,
         "max_num": None if _max == u"*" else _max,   # (a value of None implies no limit)
         "validate_max": True,

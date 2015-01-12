@@ -64,7 +64,6 @@ class MetadataForm(ModelForm):
 
     def _clean_fields(self, loaded=True):
         for name, field in self.fields.items():
-
             if name == "loaded":
                 value = loaded
             else:
@@ -80,10 +79,11 @@ class MetadataForm(ModelForm):
                         # IN SOME CASES I HAVE TO PASS "None" TO CREATE_<WHATEVER>_INLINEFORMSET_DATA AS THE FK MODEL
                         # THAT IS AS IT SHOULD BE (I EXCLUDE IT FROM model_to_dict ANYWAY)
                         # AND I RESET IT LATER ON IN THE SAVE PROCESS
-                        try:
-                            assert name == "model"
-                        except:
-                            import ipdb; ipdb.set_trace()
+                        import ipdb; ipdb.set_trace()
+                        # try:
+                        #     assert name == "model"
+                        # except:
+                        #     import ipdb; ipdb.set_trace()
                         value = None
             try:
                 if isinstance(field, FileField):
@@ -173,6 +173,24 @@ class MetadataForm(ModelForm):
 
 
 class MetadataFormSet(BaseModelFormSet):
+
+    # def _construct_form(self, i, **kwargs):
+    #
+    #     form = super(MetadataFormSet, self)._construct_form(i, **kwargs)
+    #
+    #     # this speeds up loading time
+    #     # (see "cached_fields" attribute in the form class below)
+    #     for cached_field_name in form.cached_fields:
+    #         cached_field = form.fields[cached_field_name]
+    #         cached_field_key = u"%s_%s" % (self.prefix, cached_field_name)
+    #         cached_field.cache_choices = True
+    #         choices = getattr(self, '_cached_choices_%s' % cached_field_key, None)
+    #         if choices is None:
+    #             choices = list(cached_field.choices)
+    #             setattr(self, '_cached_choices_%s' % cached_field_key, choices)
+    #         cached_field.choice_cache = choices
+    #
+    #     return form
 
     def get_loaded_forms(self):
         loaded_forms = []

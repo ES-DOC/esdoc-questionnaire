@@ -18,13 +18,13 @@ Base classes for CIM Questionnaire edit form creation & manipulation
 """
 
 from django.forms import ValidationError
-from django.forms.formsets import ManagementForm, TOTAL_FORM_COUNT, INITIAL_FORM_COUNT, MAX_NUM_FORM_COUNT
+from django.forms.formsets import BaseFormSet, ManagementForm, TOTAL_FORM_COUNT, INITIAL_FORM_COUNT, MAX_NUM_FORM_COUNT
 from django.utils.translation import ugettext
 
 from CIM_Questionnaire.questionnaire.forms.forms_base import MetadataForm, MetadataFormSet, MetadataInlineFormSet
 from CIM_Questionnaire.questionnaire.models.metadata_model import MetadataModel
 from CIM_Questionnaire.questionnaire.fields import MetadataFieldTypes
-from CIM_Questionnaire.questionnaire.utils import get_data_from_formset
+from CIM_Questionnaire.questionnaire.utils import get_data_from_formset, QuestionnaireError
 
 
 class MetadataEditingForm(MetadataForm):
@@ -53,6 +53,56 @@ class MetadataEditingForm(MetadataForm):
 class MetadataEditingFormSet(MetadataFormSet):
 
     number_of_properties = 0       # lets me keep track of the number of forms w/out having to actually render them
+
+    def _construct_form(self, i, **kwargs):
+
+        if self.is_bound and i < self.initial_form_count():
+            # Import goes here instead of module-level because importing
+            # django.db has side effects.
+            from django.db import connections
+            pk_field = self.model._meta.pk
+            pk_name = "%s" % pk_field.name
+            pk_key = "%s-%s" % (self.add_prefix(i), pk_name)
+            # HERE IS THE DIFFERENT BIT
+            # (OH, AND THE ABOVE 3 VARIABLES AHVE BEEN MOVED AROUND AND SIMPLIFIED A BIT JUST TO MAKE THE CODE NICER)
+            # (AND DON'T FORGET THAT add_prefix HAS BEEN CHANGED AS NEEDED FOR MetadataModelFormSet)
+            try:
+                pk = self.data[pk_key]
+            except KeyError:  # MultiValueDictKeyError:
+                # if I am here then the pk_key was not found in data
+                # given that this is a bound form,
+                # this is probably b/c the form is unloaded
+                # double-check this...
+                initial = self.initial_extra[i]
+                if initial["loaded"] == False:
+                    # ...and get the pk another way
+                    pk = initial[pk_name]
+                else:
+                    # ...if it failed for some other reason, though, raise an error
+                    msg = "Unable to determine pk from form w/ prefix %s" % self.add_prefix(i)
+                    raise QuestionnaireError(msg)
+            # HERE ENDS THE DIFFERENT BIT
+            pk = pk_field.get_db_prep_lookup('exact', pk,
+                connection=connections[self.get_queryset().db])
+            if isinstance(pk, list):
+                pk = pk[0]
+            kwargs['instance'] = self._existing_object(pk)
+        if i < self.initial_form_count() and not kwargs.get('instance'):
+            kwargs['instance'] = self.get_queryset()[i]
+        if i >= self.initial_form_count() and self.initial_extra:
+            # Set initial values for extra forms
+            try:
+                kwargs['initial'] = self.initial_extra[i-self.initial_form_count()]
+            except IndexError:
+                pass
+
+        # rather than call _construct_form() from super() here (which winds up calling BaseModelFormset),
+        # I explicitly call it from BaseFormSet;
+        # the former repeates the above "get instance" code w/out handling loaded & unloaded forms
+        # since I've already done that, I just want to call the code that builds the actual form
+        #form =super(MetadataEditingFormSet, self)._construct_form(i, **kwargs)
+        form = BaseFormSet._construct_form(self, i, **kwargs)
+        return form
 
     @property
     def management_form(self):
@@ -83,6 +133,7 @@ class MetadataEditingFormSet(MetadataFormSet):
                 )
         else:
             form = ManagementForm(auto_id=self.auto_id, prefix=self.prefix, initial=initial)
+
         return form
 
     # if these formsets are not loaded,
@@ -117,12 +168,14 @@ class MetadataEditingFormSet(MetadataFormSet):
         # 3) via data, in which case "data" will have been passed
         # _however_ data may be missing depending on whether or not the form(s) were loaded
         # b/c of that an extra "initial" argument is passed to the factory fns to handle unloaded forms
-        # so I need to check the length of queryset if and otherwise initial; I never have to check data
+        # FOR BOUND FORMS, THAT ARGUMENT IS STORED IN self.initial_extra (THIS TOOK A WHILE TO FIGURE OUT)
 
         if self.queryset:
             return len(self.queryset)
         elif self.initial:
             return len(self.initial)
+        elif self.initial_extra:
+            return len(self.initial_extra)
         else:
             return 0
 
@@ -275,7 +328,7 @@ def create_existing_edit_forms_from_models(models, model_customizer, standard_pr
 
     standard_properties_formsets = {}
     scientific_properties_formsets = {}
-    for model_key, model in zip(model_keys,models):
+    for model_key, model in zip(model_keys, models):
 
         standard_properties_formsets[model_key] = MetadataStandardPropertyInlineFormSetFactory(
             instance=model,
@@ -470,6 +523,8 @@ def create_edit_forms_from_data(data, models, model_customizer, standard_propert
             standard_properties_post_data[standard_properties_formset.add_prefix(INITIAL_FORM_COUNT)] = standard_properties_formset.initial_form_count()
             standard_properties_post_data[standard_properties_formset.add_prefix(MAX_NUM_FORM_COUNT)] = standard_properties_formset.absolute_max
 
+        import ipdb; ipdb.set_trace()
+
         validity += [standard_properties_formset.is_valid(loaded_prefixes=[form.prefix for form in standard_properties_formset.forms if loaded])]
 
         standard_properties_formsets[model_key] = standard_properties_formset
@@ -612,15 +667,15 @@ def create_edit_subforms_from_data(data, models, model_customizer, standard_prop
     return (validity, model_formset, standard_properties_formsets, scientific_properties_formsets)
 
 
-def get_data_from_edit_forms(model_formset, standard_properties_formsets, scientific_properties_formsets, simulate_post=False):
+def get_data_from_edit_forms(model_formset, standard_properties_formsets, scientific_properties_formsets, simulate_post=False, existing_data={}):
 
     data = {}
 
-    model_formset_data = get_data_from_formset(model_formset)
+    model_formset_data = get_data_from_formset(model_formset, existing_data=existing_data)
     data.update(model_formset_data)
 
     for standard_property_formset in standard_properties_formsets.values():
-        standard_property_formset_data = get_data_from_formset(standard_property_formset)
+        standard_property_formset_data = get_data_from_formset(standard_property_formset, existing_data=existing_data)
         data.update(standard_property_formset_data)
 
         for standard_property_form in standard_property_formset:
@@ -631,11 +686,11 @@ def get_data_from_edit_forms(model_formset, standard_properties_formsets, scient
                 (subform_customizer, model_subformset, standard_properties_subformsets, scientific_properties_subformsets) = \
                     standard_property_form.get_subform_tuple()
 
-                subform_data = get_data_from_edit_forms(model_subformset, standard_properties_subformsets, scientific_properties_subformsets, simulate_post=simulate_post)
+                subform_data = get_data_from_edit_forms(model_subformset, standard_properties_subformsets, scientific_properties_subformsets, simulate_post=simulate_post, existing_data=existing_data)
                 data.update(subform_data)
 
     for scientific_property_formset in scientific_properties_formsets.values():
-        scientific_property_formset_data = get_data_from_formset(scientific_property_formset)
+        scientific_property_formset_data = get_data_from_formset(scientific_property_formset, existing_data=existing_data)
         data.update(scientific_property_formset_data)
 
     # THIS BIT IS REQUIRED TO SIMULATE POST DATA TO VIEWS

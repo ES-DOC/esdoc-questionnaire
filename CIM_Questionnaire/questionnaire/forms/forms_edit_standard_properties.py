@@ -250,7 +250,6 @@ class MetadataAbstractStandardPropertyForm(MetadataEditingForm):
 
         elif customizer.field_type == MetadataFieldTypes.RELATIONSHIP:
             if customizer.relationship_show_subform:
-
                 # TODO: BEGIN THE REALLY HORRIBLE UGLY PIECE OF CODE I DON'T LIKE
                 subform_customizer = customizer.subform_customizer
 
