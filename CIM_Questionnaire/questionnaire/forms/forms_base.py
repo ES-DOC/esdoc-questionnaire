@@ -75,15 +75,15 @@ class MetadataForm(ModelForm):
                     try:
                         value = self.initial[name]
                     except KeyError:
-                        # TODO: IS THIS REALLY THE CORRECT BEHAVIOR?
                         # IN SOME CASES I HAVE TO PASS "None" TO CREATE_<WHATEVER>_INLINEFORMSET_DATA AS THE FK MODEL
                         # THAT IS AS IT SHOULD BE (I EXCLUDE IT FROM model_to_dict ANYWAY)
                         # AND I RESET IT LATER ON IN THE SAVE PROCESS
-                        import ipdb; ipdb.set_trace()
                         # try:
                         #     assert name == "model"
                         # except:
                         #     import ipdb; ipdb.set_trace()
+                        # TODO: IS THIS REALLY THE CORRECT BEHAVIOR?
+                        print "IF YOU ARE HERE THEN YOU SHOULD DOUBLE-CHECK WHAT'S GOING ON IN IN MetadataForm._clean_fields()"
                         value = None
             try:
                 if isinstance(field, FileField):
@@ -129,9 +129,12 @@ class MetadataForm(ModelForm):
         return self.is_bound and not bool(self._errors)
 
     def get_fields_from_list(self, field_names_list):
-        # I _think_ that iterating over self causes _all_ fields to be evaluated
-        # which is expensive (especially w/ relationship fields)
-        #fields = [field for field in self if field.name in field_names_list]
+        """
+        returns the fields corresponding to the names in field_names_list
+        note that getting them explicitly as keys is more efficient than looping through self
+        :param field_names_list:
+        :return: fields corresponding to the names in field_names_list
+        """
         fields = [self[field_name] for field_name in field_names_list]
         return fields
 
@@ -173,24 +176,6 @@ class MetadataForm(ModelForm):
 
 
 class MetadataFormSet(BaseModelFormSet):
-
-    # def _construct_form(self, i, **kwargs):
-    #
-    #     form = super(MetadataFormSet, self)._construct_form(i, **kwargs)
-    #
-    #     # this speeds up loading time
-    #     # (see "cached_fields" attribute in the form class below)
-    #     for cached_field_name in form.cached_fields:
-    #         cached_field = form.fields[cached_field_name]
-    #         cached_field_key = u"%s_%s" % (self.prefix, cached_field_name)
-    #         cached_field.cache_choices = True
-    #         choices = getattr(self, '_cached_choices_%s' % cached_field_key, None)
-    #         if choices is None:
-    #             choices = list(cached_field.choices)
-    #             setattr(self, '_cached_choices_%s' % cached_field_key, choices)
-    #         cached_field.choice_cache = choices
-    #
-    #     return form
 
     def get_loaded_forms(self):
         loaded_forms = []

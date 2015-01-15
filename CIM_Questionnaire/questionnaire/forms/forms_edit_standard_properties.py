@@ -117,7 +117,7 @@ class MetadataAbstractStandardPropertyForm(MetadataEditingForm):
 
     cached_fields = []
     _value_fields = ["atomic_value", "enumeration_value", "enumeration_other_value", "relationship_value", ]
-    _hidden_fields = ["proxy", "field_type", "name", "order", "is_label", ]
+    _hidden_fields = ["proxy", "field_type", "name", "order", "is_label", "id", ]
 
     # TODO: FILTER THESE BY PROJECT & VERSION?
     proxy = CachedModelChoiceField(queryset=MetadataStandardPropertyProxy.objects.all())
@@ -395,7 +395,7 @@ class MetadataStandardPropertyForm(MetadataAbstractStandardPropertyForm):
         model = MetadataStandardProperty
         fields = [
             # hidden fields...
-            "proxy", "field_type", "name", "order", "is_label",
+            "proxy", "field_type", "name", "order", "is_label", "id",
             # value fields...
             "atomic_value", "enumeration_value", "enumeration_other_value", "relationship_value",
         ]
@@ -404,7 +404,7 @@ class MetadataStandardPropertyForm(MetadataAbstractStandardPropertyForm):
     cached_fields = []
 
     _value_fields = ["atomic_value", "enumeration_value", "enumeration_other_value", "relationship_value", ]
-    _hidden_fields = ["proxy", "field_type", "name", "order", "is_label", ]
+    _hidden_fields = ["proxy", "field_type", "name", "order", "is_label", "id", ]
 
     def has_changed(self):
         # StandardProperties at this "top-level" (ie: not in a subform) should always be saved
@@ -420,7 +420,7 @@ class MetadataStandardPropertySubForm(MetadataAbstractStandardPropertyForm):
         model = MetadataStandardProperty
         fields = [
             # hidden fields...
-            "proxy", "field_type", "name", "order", "is_label",
+            "proxy", "field_type", "name", "order", "is_label", "id",
             # value fields...
             "atomic_value", "enumeration_value", "enumeration_other_value", "relationship_value",
         ]
@@ -429,7 +429,7 @@ class MetadataStandardPropertySubForm(MetadataAbstractStandardPropertyForm):
     cached_fields = []
 
     _value_fields = ["atomic_value", "enumeration_value", "enumeration_other_value", "relationship_value", ]
-    _hidden_fields = ["proxy", "field_type", "name", "order", "is_label", ]
+    _hidden_fields = ["proxy", "field_type", "name", "order", "is_label", "id", ]
 
     def __init__(self, *args, **kwargs):
 
@@ -463,75 +463,75 @@ class MetadataStandardPropertySubForm(MetadataAbstractStandardPropertyForm):
 
 class MetadataStandardPropertyInlineFormSet(MetadataEditingInlineFormSet):
 
-    def _construct_form(self, i, **kwargs):
-
-        if self.is_bound and i < self.initial_form_count():
-            # Import goes here instead of module-level because importing
-            # django.db has side effects.
-            from django.db import connections
-            pk_key = "%s-%s" % (self.add_prefix(i), self.model._meta.pk.name)
-            pk = self.data[pk_key]
-            pk_field = self.model._meta.pk
-            pk = pk_field.get_db_prep_lookup('exact', pk,
-                connection=connections[self.get_queryset().db])
-            if isinstance(pk, list):
-                pk = pk[0]
-            kwargs['instance'] = self._existing_object(pk)
-        if i < self.initial_form_count() and not kwargs.get('instance'):
-
-            try:
-                kwargs['instance'] = self.get_queryset()[i]
-            except IndexError:
-                # if this formset has changed based on add/delete via AJAX
-                # then the underlying queryset may not have updated
-                # if so - since I've already worked out the pk above - just get the model directly
-                kwargs['instance'] = MetadataStandardProperty.objects.get(pk=pk)
-
-        if i >= self.initial_form_count() and self.initial_extra:
-            # Set initial values for extra forms
-            try:
-                kwargs['initial'] = self.initial_extra[i-self.initial_form_count()]
-            except IndexError:
-                pass
-        form = super(MetadataStandardPropertyInlineFormSet, self)._construct_form(i, **kwargs)
-
-        if self.save_as_new:
-            # Remove the primary key from the form's data, we are only
-            # creating new instances
-            form.data[form.add_prefix(self._pk_field.name)] = None
-
-            # Remove the foreign key from the form's data
-            form.data[form.add_prefix(self.fk.name)] = None
-
-        # Set the fk value here so that the form can do its validation.
-        setattr(form.instance, self.fk.get_attname(), self.instance.pk)
-
-        # this speeds up loading time
-        # (see "cached_fields" attribute in the form class)
-        for cached_field_name in form.cached_fields:
-            cached_field = form.fields[cached_field_name]
-            cached_field_key = u"%s_%s" % (self.prefix, cached_field_name)
-            cached_field.cache_choices = True
-
-            if hasattr(cached_field,"_choices"):
-                # it's a ChoiceField or something similar
-                cached_choices = getattr(self, '_cached_choices_%s' % (cached_field_key), None)
-                if cached_choices is None:
-                    cached_choices = list(cached_field.choices)
-                    setattr(self, "_cached_choices_%s" % (cached_field_key), cached_choices)
-                cached_field.choices = cached_choices
-
-            # this is not working for modelchoicefields
-            # instead I use a custom "CachedModelChoiceField" directly in the form
-            # elif hasattr(cached_field,"_queryset"):
-            #     # it's a ModelChoiceField or something similar
-            #     cached_queryset = getattr(self, '_cached_queryset_%s' % (cached_field_key), None)
-            #     if cached_queryset is None:
-            #         cached_queryset = cached_field.queryset
-            #         setattr(self, "_cached_queryset_%s" % (cached_field_key), cached_queryset)
-            #     cached_field.queryset = cached_queryset
-
-        return form
+    # def _construct_form(self, i, **kwargs):
+    #
+    #     if self.is_bound and i < self.initial_form_count():
+    #         # Import goes here instead of module-level because importing
+    #         # django.db has side effects.
+    #         from django.db import connections
+    #         pk_key = "%s-%s" % (self.add_prefix(i), self.model._meta.pk.name)
+    #         pk = self.data[pk_key]
+    #         pk_field = self.model._meta.pk
+    #         pk = pk_field.get_db_prep_lookup('exact', pk,
+    #             connection=connections[self.get_queryset().db])
+    #         if isinstance(pk, list):
+    #             pk = pk[0]
+    #         kwargs['instance'] = self._existing_object(pk)
+    #     if i < self.initial_form_count() and not kwargs.get('instance'):
+    #
+    #         try:
+    #             kwargs['instance'] = self.get_queryset()[i]
+    #         except IndexError:
+    #             # if this formset has changed based on add/delete via AJAX
+    #             # then the underlying queryset may not have updated
+    #             # if so - since I've already worked out the pk above - just get the model directly
+    #             kwargs['instance'] = MetadataStandardProperty.objects.get(pk=pk)
+    #
+    #     if i >= self.initial_form_count() and self.initial_extra:
+    #         # Set initial values for extra forms
+    #         try:
+    #             kwargs['initial'] = self.initial_extra[i-self.initial_form_count()]
+    #         except IndexError:
+    #             pass
+    #     form = super(MetadataStandardPropertyInlineFormSet, self)._construct_form(i, **kwargs)
+    #
+    #     if self.save_as_new:
+    #         # Remove the primary key from the form's data, we are only
+    #         # creating new instances
+    #         form.data[form.add_prefix(self._pk_field.name)] = None
+    #
+    #         # Remove the foreign key from the form's data
+    #         form.data[form.add_prefix(self.fk.name)] = None
+    #
+    #     # Set the fk value here so that the form can do its validation.
+    #     setattr(form.instance, self.fk.get_attname(), self.instance.pk)
+    #
+    #     # this speeds up loading time
+    #     # (see "cached_fields" attribute in the form class)
+    #     for cached_field_name in form.cached_fields:
+    #         cached_field = form.fields[cached_field_name]
+    #         cached_field_key = u"%s_%s" % (self.prefix, cached_field_name)
+    #         cached_field.cache_choices = True
+    #
+    #         if hasattr(cached_field,"_choices"):
+    #             # it's a ChoiceField or something similar
+    #             cached_choices = getattr(self, '_cached_choices_%s' % (cached_field_key), None)
+    #             if cached_choices is None:
+    #                 cached_choices = list(cached_field.choices)
+    #                 setattr(self, "_cached_choices_%s" % (cached_field_key), cached_choices)
+    #             cached_field.choices = cached_choices
+    #
+    #         # this is not working for modelchoicefields
+    #         # instead I use a custom "CachedModelChoiceField" directly in the form
+    #         # elif hasattr(cached_field,"_queryset"):
+    #         #     # it's a ModelChoiceField or something similar
+    #         #     cached_queryset = getattr(self, '_cached_queryset_%s' % (cached_field_key), None)
+    #         #     if cached_queryset is None:
+    #         #         cached_queryset = cached_field.queryset
+    #         #         setattr(self, "_cached_queryset_%s" % (cached_field_key), cached_queryset)
+    #         #     cached_field.queryset = cached_queryset
+    #
+    #     return form
 
     def force_clean(self):
         for form in self.forms:
@@ -557,7 +557,7 @@ def MetadataStandardPropertyInlineFormSetFactory(*args, **kwargs):
     new_kwargs.update(kwargs)
 
     _formset = inlineformset_factory(MetadataModel, MetadataStandardProperty, *args, **new_kwargs)
-    _formset.form = staticmethod(curry(MetadataStandardPropertySubForm, customizers=_customizers, parent=_instance))
+    _formset.form = staticmethod(curry(MetadataStandardPropertyForm, customizers=_customizers, parent=_instance))
 
     if _initial:
         _formset.number_of_properties = len(_initial)

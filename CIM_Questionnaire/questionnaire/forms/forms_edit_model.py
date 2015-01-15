@@ -24,7 +24,7 @@ from django.forms.models import modelformset_factory
 
 from CIM_Questionnaire.questionnaire.forms.forms_edit import MetadataEditingForm, MetadataEditingFormSet
 from CIM_Questionnaire.questionnaire.models.metadata_model import MetadataModel
-from CIM_Questionnaire.questionnaire.utils import get_initial_data, model_to_data, find_in_sequence, update_field_widget_attributes, set_field_widget_attributes, get_data_from_formset, get_data_from_form, get_form_by_prefix
+from CIM_Questionnaire.questionnaire.utils import model_to_data, find_in_sequence, set_field_widget_attributes
 
 
 def create_model_form_data(model, model_customizer):
@@ -49,7 +49,7 @@ def save_valid_model_formset(model_formset, model_parent_dictionary={}):
 
     # just save everything, regardless of whether it was loaded or not
     # (all of the logic of dealing w/ non-loaded forms is dealt with in the creation & validation fns)
-    #loaded_model_forms = model_formset.get_loaded_forms()
+    # loaded_model_forms = model_formset.get_loaded_forms()
     model_forms = model_formset.forms
 
     # force model_formset to save instances even if they haven't changed
@@ -138,7 +138,7 @@ class MetadataModelSubForm(MetadataAbstractModelForm):
             "title",
         ]
 
-    # set of fields that will be the same for all members of a formset; allows me to cache the query (for relationship fields)
+    # set of fields that will be the same for all members of a formset; allows me to cache the query
     cached_fields = []
 
     _header_fields = ["title", ]
@@ -194,7 +194,7 @@ class MetadataModelSubFormSet(MetadataEditingFormSet):
         form = super(MetadataModelSubFormSet, self)._construct_form(i, **kwargs)
 
         # this speeds up loading time
-        # (see "cached_fields" attribute in the form class below)
+        # (see "cached_fields" attribute in the form classes)
         for cached_field_name in form.cached_fields:
             cached_field = form.fields[cached_field_name]
             cached_field_key = u"%s_%s" % (self.prefix, cached_field_name)
@@ -282,7 +282,7 @@ def MetadataModelSubFormSetFactory(*args, **kwargs):
         # TODO: "min_num", and "validate_min" IS ONLY VALID FOR DJANGO 1.7+
         # (that's why I explicitly add it below)
         # "min_num" : _min,
-        #"validate_min" : True,
+        # "validate_min" : True,
         "max_num": None if _max == u"*" else _max,   # (a value of None implies no limit)
         "validate_max": True,
     }

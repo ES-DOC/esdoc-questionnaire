@@ -81,6 +81,12 @@ class MetadataEditingFormSet(MetadataFormSet):
                     # ...if it failed for some other reason, though, raise an error
                     msg = "Unable to determine pk from form w/ prefix %s" % self.add_prefix(i)
                     raise QuestionnaireError(msg)
+            if not pk:
+                # since I am including the "id" field (for other reasons)
+                # if this is a _new_ rather than _existing_ model
+                # then that field will be blank and will be cleaned as u''
+                # convert that to None, so that get_db_prep_lookup below returns None
+                pk = None
             # HERE ENDS THE DIFFERENT BIT
             pk = pk_field.get_db_prep_lookup('exact', pk,
                 connection=connections[self.get_queryset().db])
@@ -100,7 +106,6 @@ class MetadataEditingFormSet(MetadataFormSet):
         # I explicitly call it from BaseFormSet;
         # the former repeates the above "get instance" code w/out handling loaded & unloaded forms
         # since I've already done that, I just want to call the code that builds the actual form
-        #form =super(MetadataEditingFormSet, self)._construct_form(i, **kwargs)
         form = BaseFormSet._construct_form(self, i, **kwargs)
         return form
 
@@ -168,13 +173,13 @@ class MetadataEditingFormSet(MetadataFormSet):
         # 3) via data, in which case "data" will have been passed
         # _however_ data may be missing depending on whether or not the form(s) were loaded
         # b/c of that an extra "initial" argument is passed to the factory fns to handle unloaded forms
-        # FOR BOUND FORMS, THAT ARGUMENT IS STORED IN self.initial_extra (THIS TOOK A WHILE TO FIGURE OUT)
+        # FOR BOUND FORMS, THAT ARGUMENT IS STORED IN self.initial_extra (THIS TOOK A WHILE TO FIGURE OUT!)
 
         if self.queryset:
             return len(self.queryset)
         elif self.initial:
             return len(self.initial)
-        elif self.initial_extra:
+        elif self.is_bound and self.initial_extra:
             return len(self.initial_extra)
         else:
             return 0
@@ -183,6 +188,83 @@ class MetadataEditingFormSet(MetadataFormSet):
 class MetadataEditingInlineFormSet(MetadataInlineFormSet):
 
     number_of_properties = 0       # lets me keep track of the number of forms w/out having to actually render them
+
+    def _construct_form(self, i, **kwargs):
+
+        if self.is_bound and i < self.initial_form_count():
+            # Import goes here instead of module-level because importing
+            # django.db has side effects.
+            from django.db import connections
+            pk_field = self.model._meta.pk
+            pk_name = "%s" % pk_field.name
+            pk_key = "%s-%s" % (self.add_prefix(i), pk_name)
+            # HERE IS THE DIFFERENT BIT
+            # (OH, AND THE ABOVE 3 VARIABLES AHVE BEEN MOVED AROUND AND SIMPLIFIED A BIT JUST TO MAKE THE CODE NICER)
+            # (AND DON'T FORGET THAT add_prefix HAS BEEN CHANGED AS NEEDED FOR MetadataModelFormSet)
+            try:
+                pk = self.data[pk_key]
+            except KeyError:  # MultiValueDictKeyError:
+                # if I am here then the pk_key was not found in data
+                # given that this is a bound form,
+                # this is probably b/c the form is unloaded
+                # double-check this...
+                initial = self.initial_extra[i]
+                if initial["loaded"] == False:
+                    # ...and get the pk another way
+                    pk = initial[pk_name]
+                else:
+                    # ...if it failed for some other reason, though, raise an error
+                    msg = "Unable to determine pk from form w/ prefix %s" % self.add_prefix(i)
+                    raise QuestionnaireError(msg)
+            if not pk:
+                # since I am including the "id" field (for other reasons)
+                # if this is a _new_ rather than _existing_ model
+                # then that field will be blank and will be cleaned as u''
+                # convert that to None, so that get_db_prep_lookup below returns None
+                pk = None
+            # HERE ENDS THE DIFFERENT BIT
+            pk = pk_field.get_db_prep_lookup('exact', pk,
+                connection=connections[self.get_queryset().db])
+            if isinstance(pk, list):
+                pk = pk[0]
+            kwargs['instance'] = self._existing_object(pk)
+        if i < self.initial_form_count() and not kwargs.get('instance'):
+
+            try:
+                kwargs['instance'] = self.get_queryset()[i]
+            except IndexError:
+                # if this formset has changed based on add/delete via AJAX
+                # then the underlying queryset may not have updated
+                # if so - since I've already worked out the pk above - just get the model directly
+                # (note that in the case of new models, pk will be None and this will return an empty model)
+                model_class = self.model
+                kwargs['instance'] = model_class.objects.get(pk=pk)
+
+        if i >= self.initial_form_count() and self.initial_extra:
+            # Set initial values for extra forms
+            try:
+                kwargs['initial'] = self.initial_extra[i-self.initial_form_count()]
+            except IndexError:
+                pass
+
+        # rather than call _construct_form() from super() here (which winds up calling BaseModelFormset),
+        # I explicitly call it from BaseFormSet;
+        # the former repeates the above "get instance" code w/out handling loaded & unloaded forms
+        # since I've already done that, I just want to call the code that builds the actual form
+        form = BaseFormSet._construct_form(self, i, **kwargs)
+
+        if self.save_as_new:
+            # Remove the primary key from the form's data, we are only
+            # creating new instances
+            form.data[form.add_prefix(self._pk_field.name)] = None
+
+            # Remove the foreign key from the form's data
+            form.data[form.add_prefix(self.fk.name)] = None
+
+        # Set the fk value here so that the form can do its validation.
+        setattr(form.instance, self.fk.get_attname(), self.instance.pk)
+
+        return form
 
     @property
     def management_form(self):
@@ -247,12 +329,14 @@ class MetadataEditingInlineFormSet(MetadataInlineFormSet):
         # 3) via data, in which case "data" will have been passed
         # _however_ data may be missing depending on whether or not the form(s) were loaded
         # b/c of that an extra "initial" argument is passed to the factory fns to handle unloaded forms
-        # so I need to check the length of queryset if and otherwise initial; I never have to check data
+        # FOR BOUND FORMS, THAT ARGUMENT IS STORED IN self.initial_extra (THIS TOOK A WHILE TO FIGURE OUT!)
 
         if self.queryset:
             return len(self.queryset)
         elif self.initial:
             return len(self.initial)
+        elif self.is_bound and self.initial_extra:
+            return len(self.initial_extra)
         else:
             return 0
 
@@ -271,6 +355,7 @@ def create_new_edit_forms_from_models(models, model_customizer, standard_propert
         extra=len(models_data),
         prefixes=model_keys,
         customizer=model_customizer,
+
     )
 
     standard_properties_formsets = {}
@@ -314,9 +399,9 @@ def create_new_edit_forms_from_models(models, model_customizer, standard_propert
 
 def create_existing_edit_forms_from_models(models, model_customizer, standard_properties, standard_property_customizers, scientific_properties, scientific_property_customizers):
 
-    from .forms_edit_model import create_model_form_data, MetadataModelFormSetFactory
-    from .forms_edit_standard_properties import create_standard_property_form_data, MetadataStandardPropertyInlineFormSetFactory
-    from .forms_edit_scientific_properties import create_scientific_property_form_data, MetadataScientificPropertyInlineFormSetFactory
+    from .forms_edit_model import MetadataModelFormSetFactory
+    from .forms_edit_standard_properties import MetadataStandardPropertyInlineFormSetFactory
+    from .forms_edit_scientific_properties import MetadataScientificPropertyInlineFormSetFactory
 
     model_keys = [model.get_model_key() for model in models]
 
@@ -472,7 +557,7 @@ def create_edit_forms_from_data(data, models, model_customizer, standard_propert
     model_formset = MetadataModelFormSetFactory(
         extra=len(models),
         data=data,
-        initial=models_data,  # look at this; I'm passing initial AND data (this is to provide default values to unloaded forms)
+        initial=models_data,  # passing initial AND data (provides values for unloaded forms)
         prefixes=model_keys,
         customizer=model_customizer,
     )
@@ -500,7 +585,7 @@ def create_edit_forms_from_data(data, models, model_customizer, standard_propert
         if not loaded:
             # re-create initial data in case there will be no corresponding post data...
             standard_properties_initial_data = [
-                # TODO: THE 1st ARGUMENT IS MEANT TO BE model BUT IT ISN'T USED
+                # TODO: THE 1st ARGUMENT IS MEANT TO BE model BUT IT ISN'T USED, RIGHT?
                 # TODO: SO I CAN GET AWAY W/ PASSING None
                 # TODO: REWRITE THIS FN TO NOT TAKE model
                 create_standard_property_form_data(None, standard_property, standard_property_customizer)
@@ -513,7 +598,7 @@ def create_edit_forms_from_data(data, models, model_customizer, standard_propert
             instance=model_instances[i] if model_formset_validity else models[i],
             prefix=model_key,
             data=standard_properties_post_data,
-            initial=standard_properties_initial_data,  # look at this; I'm passing initial AND data (this is to provide default values to unloaded forms)
+            initial=standard_properties_initial_data,  # passing initial AND data (provides values for unloaded forms)
             customizers=standard_property_customizers,
         )
 
@@ -522,8 +607,6 @@ def create_edit_forms_from_data(data, models, model_customizer, standard_propert
             standard_properties_post_data[standard_properties_formset.add_prefix(TOTAL_FORM_COUNT)] = standard_properties_formset.total_form_count()
             standard_properties_post_data[standard_properties_formset.add_prefix(INITIAL_FORM_COUNT)] = standard_properties_formset.initial_form_count()
             standard_properties_post_data[standard_properties_formset.add_prefix(MAX_NUM_FORM_COUNT)] = standard_properties_formset.absolute_max
-
-        import ipdb; ipdb.set_trace()
 
         validity += [standard_properties_formset.is_valid(loaded_prefixes=[form.prefix for form in standard_properties_formset.forms if loaded])]
 
@@ -541,7 +624,7 @@ def create_edit_forms_from_data(data, models, model_customizer, standard_propert
         if not loaded:
             # re-create initial data in case there will be no corresponding post data...
             scientific_properties_initial_data = [
-                # TODO: THE 1st ARGUMENT IS MEANT TO BE model BUT IT ISN'T USED
+                # TODO: THE 1st ARGUMENT IS MEANT TO BE model BUT IT ISN'T USED, RIGHT?
                 # TODO: SO I CAN GET AWAY W/ PASSING None
                 # TODO: REWRITE THIS FN TO NOT TAKE model
                 create_scientific_property_form_data(None, scientific_property, scientific_property_customizer)
@@ -554,7 +637,7 @@ def create_edit_forms_from_data(data, models, model_customizer, standard_propert
             instance=model_instances[i] if model_formset_validity else models[i],
             prefix=model_key,
             data=scientific_properties_post_data,
-            initial=scientific_properties_initial_data,  # look at this; I'm passing initial AND data (this is to provide default values to unloaded forms)
+            initial=scientific_properties_initial_data,  # passing initial AND data (provides values for unloaded forms)
             customizers=scientific_property_customizers[model_key],
         )
 
@@ -618,10 +701,9 @@ def create_edit_subforms_from_data(data, models, model_customizer, standard_prop
         loaded = subform_prefix in loaded_model_prefixes
 
         standard_properties_data = [
-            # TODO: THE 1st ARGUMENT IS MEANT TO BE model BUT IT ISN'T USED
+            # TODO: THE 1st ARGUMENT IS MEANT TO BE model BUT IT ISN'T USED, RIGHT?
             # TODO: SO I CAN GET AWAY W/ PASSING None
             # TODO: REWRITE THIS FN TO NOT TAKE model
-
             create_standard_property_form_data(None, standard_property, standard_property_customizer)
             for standard_property, standard_property_customizer in
             zip(standard_properties[subform_key], standard_property_customizers)
@@ -632,7 +714,7 @@ def create_edit_subforms_from_data(data, models, model_customizer, standard_prop
             instance=model_instances[i] if model_formset_validity else model_form.instance,
             prefix=subform_prefix,
             data=data,
-            initial=standard_properties_data,  # look at this; I'm passing initial AND data (this is to provide default values to unloaded forms)
+            initial=standard_properties_data,  # passing initial AND data (provides values for unloaded forms)
             customizers=standard_property_customizers,
         )
 
@@ -644,7 +726,7 @@ def create_edit_subforms_from_data(data, models, model_customizer, standard_prop
             scientific_property_customizers[subform_prefix] = []
 
         scientific_properties_data = [
-            # TODO: THE 1st ARGUMENT IS MEANT TO BE model BUT IT ISN'T USED
+            # TODO: THE 1st ARGUMENT IS MEANT TO BE model BUT IT ISN'T USED, RIGHT?
             # TODO: SO I CAN GET AWAY W/ PASSING None
             # TODO: REWRITE THIS FN TO NOT TAKE model
             create_scientific_property_form_data(None, scientific_property, scientific_property_customizer)
@@ -657,7 +739,7 @@ def create_edit_subforms_from_data(data, models, model_customizer, standard_prop
             instance=model_instances[i] if model_formset_validity else model_form.instance,
             prefix=subform_prefix,
             data=data,
-            initial=scientific_properties_data,  # look at this; I'm passing initial AND data (this is to provide default values to unloaded forms)
+            initial=scientific_properties_data,  # passing initial AND data (provides values for unloaded forms)
             customizers=scientific_property_customizers[subform_prefix],
         )
 

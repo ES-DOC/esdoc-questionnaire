@@ -191,30 +191,32 @@ class MetadataScientificPropertyForm(MetadataEditingForm):
 
 class MetadataScientificPropertyInlineFormSet(MetadataEditingInlineFormSet):
 
-    def _construct_form(self, i, **kwargs):
+    pass
 
-        # no longer dealing w/ iterators and keeping everything in order
-        # instead using find_in_sequence in the __init__ method
-        # if self.customizers:
-        #     try:
-        #         kwargs["customizer"] = next(self.customizers)
-        #     except StopIteration:
-        #         # don't worry about not having a customizer for the extra form
-        #         pass
-
-        form = super(MetadataScientificPropertyInlineFormSet, self)._construct_form(i, **kwargs)
-
-        for cached_field_name in form.cached_fields:
-            cached_field = form.fields[cached_field_name]
-            cached_field_key = u"%s_%s" % (self.prefix, cached_field_name)
-            cached_field.cache_choices = True
-            choices = getattr(self, '_cached_choices_%s' % cached_field_key, None)
-            if choices is None:
-                choices = list(cached_field.choices)
-                setattr(self, '_cached_choices_%s' % cached_field_key, choices)
-            cached_field.choice_cache = choices
-
-        return form
+    # def _construct_form(self, i, **kwargs):
+    #
+    #     # no longer dealing w/ iterators and keeping everything in order
+    #     # instead using find_in_sequence in the __init__ method
+    #     # if self.customizers:
+    #     #     try:
+    #     #         kwargs["customizer"] = next(self.customizers)
+    #     #     except StopIteration:
+    #     #         # don't worry about not having a customizer for the extra form
+    #     #         pass
+    #
+    #     form = super(MetadataScientificPropertyInlineFormSet, self)._construct_form(i, **kwargs)
+    #
+    #     for cached_field_name in form.cached_fields:
+    #         cached_field = form.fields[cached_field_name]
+    #         cached_field_key = u"%s_%s" % (self.prefix, cached_field_name)
+    #         cached_field.cache_choices = True
+    #         choices = getattr(self, '_cached_choices_%s' % cached_field_key, None)
+    #         if choices is None:
+    #             choices = list(cached_field.choices)
+    #             setattr(self, '_cached_choices_%s' % cached_field_key, choices)
+    #         cached_field.choice_cache = choices
+    #
+    #     return form
 
 
 def MetadataScientificPropertyInlineFormSetFactory(*args, **kwargs):
@@ -231,7 +233,7 @@ def MetadataScientificPropertyInlineFormSetFactory(*args, **kwargs):
         "extra": kwargs.pop("extra", 0),
         "formset": MetadataScientificPropertyInlineFormSet,
         "form": MetadataScientificPropertyForm,
-        "fk_name": "model"  # required in-case there are more than 1 fk's to "metadatamodel"; this is the one that is relevant for this inline form
+        "fk_name": "model"  # if there's more than 1 fk to MetadataModel, this is the relevant one for this inline form
     }
     new_kwargs.update(kwargs)
 
