@@ -24,19 +24,17 @@ from django.forms import CheckboxInput, DateInput, DateTimeInput, NumberInput, E
 from django.forms.fields import CharField, MultipleChoiceField, MultiValueField
 from django.forms.widgets import MultiWidget
 from django.forms.models import ModelChoiceIterator
-
 from south.modelsinspector import introspector
-
 from CIM_Questionnaire.questionnaire.utils import EnumeratedType, EnumeratedTypeList, BIG_STRING
+
+######################
+# enumeration fields #
+######################
 
 EMPTY_CHOICE = [("", "----------")]
 NULL_CHOICE = [("_NONE", "---NONE---")]
 OTHER_CHOICE = [("_OTHER", "---OTHER---")]
 
-
-#################################
-# fields used in the customizer #
-#################################
 
 class EnumerationFormField(MultipleChoiceField):
 
@@ -138,12 +136,20 @@ class EnumerationField(models.TextField):
         args, kwargs = introspector(self)
         return (field_class_path, args, kwargs)
 
+######################
+# cardinality fields #
+######################
+
+MIN_CHOICES = [(str(i), str(i)) for i in range(0, 11)]
+MAX_CHOICES = [('*', '*')]+[(str(i), str(i)) for i in range(0, 11)][1:]
+
 
 class CardinalityFormFieldWidget(MultiWidget):
+
     def __init__(self, *args, **kwargs):
         widgets = (
-            Select(choices=[(str(i), str(i)) for i in range(0, 11)]),
-            Select(choices=[('*', '*')]+[(str(i), str(i)) for i in range(0, 11)][1:]),
+            Select(choices=MIN_CHOICES),
+            Select(choices=MAX_CHOICES),
         )
         super(CardinalityFormFieldWidget, self).__init__(widgets, *args, **kwargs)
 
@@ -169,14 +175,21 @@ class CardinalityFormField(MultiValueField):
         return "|".join(data_list)
 
     def clean(self, value):
-        min = value[0] or ""
-        max = value[1] or ""
-        
-        if (min > max) and (max != "*"):
-            msg = "min must be less than or equal to max"
+
+        _min = value[0] or ""
+        _max = value[1] or ""
+
+        _min_choice_keys = [choice[0] for choice in MIN_CHOICES]
+        _max_choice_keys = [choice[0] for choice in MAX_CHOICES]
+        if _min not in _min_choice_keys or _max not in _max_choice_keys:
+            msg = "Invalid min/max chosen."
             raise ValidationError(msg)
 
-        return "|".join([min, max])
+        if (_min > _max) and (_max != "*"):
+            msg = "Min must be less than or equal to max."
+            raise ValidationError(msg)
+
+        return "|".join([_min, _max])
 
 
 class CardinalityField(models.CharField):
@@ -197,7 +210,7 @@ class CardinalityField(models.CharField):
             
     def south_field_triple(self):
         field_class_path = self.__class__.__module__ + "." + self.__class__.__name__
-        args,kwargs = introspector(self)
+        args, kwargs = introspector(self)
         return (field_class_path, args, kwargs)
 
 

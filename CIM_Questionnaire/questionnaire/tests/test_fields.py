@@ -22,7 +22,8 @@ from django.core.management.color import no_style
 from django.forms.models import ModelForm
 
 from CIM_Questionnaire.questionnaire.tests.test_base import TestQuestionnaireBase
-from CIM_Questionnaire.questionnaire.utils import APP_LABEL, BIG_STRING, HUGE_STRING
+from CIM_Questionnaire.questionnaire.forms.forms_base import MetadataForm
+from CIM_Questionnaire.questionnaire.utils import APP_LABEL, BIG_STRING, HUGE_STRING, model_to_data, get_data_from_form
 from CIM_Questionnaire.questionnaire.fields import *
 
 
@@ -65,6 +66,16 @@ class FieldModel(models.Model):
         finally:
             cursor.close()
 
+    def get_form_data(self):
+        form_data = model_to_data(
+            self,
+            exclude=[],
+            include={
+                "loaded": True,  # here is not the place to test loaded/unloaded forms
+            }
+        )
+        return form_data
+
 
 ######################################################################################
 # these next few models & forms are used for testing custom field types              #
@@ -74,12 +85,12 @@ class FieldModel(models.Model):
 
 class EnumerationFieldModel(FieldModel):
 
-    name = models.CharField(blank=True, null=True, max_length=BIG_STRING)
+    name = models.CharField(blank=True, null=True, max_length=BIG_STRING, unique=True)
     enumeration_value = EnumerationField(blank=True, null=True)
     enumeration_other_value = models.CharField(max_length=HUGE_STRING, blank=True, null=True)
 
 
-class EnumerationFieldForm(ModelForm):
+class EnumerationFieldForm(MetadataForm):
 
     class Meta:
         model = EnumerationFieldModel
@@ -87,16 +98,16 @@ class EnumerationFieldForm(ModelForm):
     pass
 
 
-class CardinalityField(FieldModel):
+class CardinalityFieldModel(FieldModel):
 
-    name = models.CharField(blank=True, null=True, max_length=BIG_STRING)
+    name = models.CharField(blank=True, null=True, max_length=BIG_STRING, unique=True)
     cardinality = CardinalityField(blank=True)
 
 
-class CardinalityFieldForm(ModelForm):
+class CardinalityFieldForm(MetadataForm):
 
     class Meta:
-        model = CardinalityField
+        model = CardinalityFieldModel
 
     pass
 
@@ -109,6 +120,7 @@ class Test(TestQuestionnaireBase):
 
     field_models = {
         "enumeration_field_model": EnumerationFieldModel,
+        "cardinality_field_model": CardinalityFieldModel,
     }
 
     def setUp(self):
@@ -143,3 +155,60 @@ class Test(TestQuestionnaireBase):
         enumeration_field_model = EnumerationFieldModel(name="test")
 
         pass
+
+    def test_cardinality_field(self):
+
+        cardinality_name = "cardinality_test"
+
+        cardinality_0_to_1 = [u"0", u"1"]  # valid cardinality
+        cardinality_0_to_many = [u"0", u"*"]  # valid cardinality
+        cardinality_5_to_1 = [u"5", u"1"]  # invalid cardinality; working through forms should catch it
+        cardinality_100_to_foo = [u"100", u"foo"]  # invalid cardinality; working through forms should catch it
+        cardinality_none = [None, None]  # invalid cardinality; working through forms should catch it
+
+        # testing creation of cardinality fields through forms rather than models
+
+        cardinality_field_model = CardinalityFieldModel(name=",".join(cardinality_0_to_1), cardinality=cardinality_0_to_1)
+        cardinality_form_data = cardinality_field_model.get_form_data()
+        cardinality_form = CardinalityFieldForm(initial=cardinality_form_data, prefix=cardinality_name)
+        post_data = get_data_from_form(cardinality_form)
+        cardinality_form = CardinalityFieldForm(data=post_data, initial=cardinality_form_data, prefix=cardinality_name)
+        validity = cardinality_form.is_valid(loaded=cardinality_form.get_current_field_value("loaded"))
+        self.assertTrue(validity)
+        cardinality_field_model = cardinality_form.save()
+        self.assertEqual(cardinality_field_model.cardinality.split("|"), cardinality_0_to_1)
+
+        cardinality_field_model = CardinalityFieldModel(name=",".join(cardinality_0_to_many), cardinality=cardinality_0_to_many)
+        cardinality_form_data = cardinality_field_model.get_form_data()
+        cardinality_form = CardinalityFieldForm(initial=cardinality_form_data, prefix=cardinality_name)
+        post_data = get_data_from_form(cardinality_form)
+        cardinality_form = CardinalityFieldForm(data=post_data, initial=cardinality_form_data, prefix=cardinality_name)
+        validity = cardinality_form.is_valid(loaded=cardinality_form.get_current_field_value("loaded"))
+        self.assertTrue(validity)
+        cardinality_field_model = cardinality_form.save()
+        self.assertEqual(cardinality_field_model.cardinality.split("|"), cardinality_0_to_many)
+
+        cardinality_field_model = CardinalityFieldModel(name=",".join(cardinality_5_to_1), cardinality=cardinality_5_to_1)
+        cardinality_form_data = cardinality_field_model.get_form_data()
+        cardinality_form = CardinalityFieldForm(initial=cardinality_form_data, prefix=cardinality_name)
+        post_data = get_data_from_form(cardinality_form)
+        cardinality_form = CardinalityFieldForm(data=post_data, initial=cardinality_form_data, prefix=cardinality_name)
+        validity = cardinality_form.is_valid(loaded=cardinality_form.get_current_field_value("loaded"))
+        self.assertFalse(validity)
+
+        cardinality_field_model = CardinalityFieldModel(name=",".join(cardinality_100_to_foo), cardinality=cardinality_100_to_foo)
+        cardinality_form_data = cardinality_field_model.get_form_data()
+        cardinality_form = CardinalityFieldForm(initial=cardinality_form_data, prefix=cardinality_name)
+        post_data = get_data_from_form(cardinality_form)
+        cardinality_form = CardinalityFieldForm(data=post_data, initial=cardinality_form_data, prefix=cardinality_name)
+        validity = cardinality_form.is_valid(loaded=cardinality_form.get_current_field_value("loaded"))
+        self.assertFalse(validity)
+
+        import ipdb; ipdb.set_trace()
+        cardinality_field_model = CardinalityFieldModel(name="cardinality_none")  # cardinality=cardinality_none
+        cardinality_form_data = cardinality_field_model.get_form_data()
+        cardinality_form = CardinalityFieldForm(initial=cardinality_form_data, prefix=cardinality_name)
+        post_data = get_data_from_form(cardinality_form)
+        cardinality_form = CardinalityFieldForm(data=post_data, initial=cardinality_form_data, prefix=cardinality_name)
+        validity = cardinality_form.is_valid(loaded=cardinality_form.get_current_field_value("loaded"))
+        self.assertFalse(validity)

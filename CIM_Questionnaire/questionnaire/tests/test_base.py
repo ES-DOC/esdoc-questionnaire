@@ -72,7 +72,7 @@ class TestQuestionnaireBase(TestCase):
      to play with in child classes
     """
 
-    # maxDiff = None  # display full errors regardless of size
+    maxDiff = None  # display full errors regardless of size
     fixtures = ['questionnaire_testdata.json']
 
     def test_fixtures_loaded(self):
