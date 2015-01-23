@@ -1,15 +1,20 @@
 import os
 import json
+import pprint
 
 from django.test.client import RequestFactory
-
 from django.test import TestCase, Client
 from django.test.utils import CaptureQueriesContext
-from django.db import connection, connections, DEFAULT_DB_ALIAS
+from unittest.util import safe_repr
+from difflib import ndiff
+
 from django.core.cache import get_cache
+from django.db import connection, connections, DEFAULT_DB_ALIAS
+from django.db.models.query import QuerySet
 
 from django.core.urlresolvers import reverse
 from django.contrib import messages
+
 from django.contrib.auth.models import User
 
 from CIM_Questionnaire.questionnaire.views import *
@@ -220,15 +225,43 @@ class TestQuestionnaireBase(TestCase):
             list(sorted(qs2, key=pk))
         )
 
-
     def assertDictEqual(self, d1, d2, excluded_keys=[]):
         """Overrides super.assertDictEqual fn to remove certain keys from either list before the comparison"""
+
+        self.assertIsInstance(d1, dict, 'First argument is not a dictionary')
+        self.assertIsInstance(d2, dict, 'Second argument is not a dictionary')
+
         d1_copy = d1.copy()
         d2_copy = d2.copy()
         for key_to_exclude in excluded_keys:
-            d1_copy.pop(key_to_exclude,None)
-            d2_copy.pop(key_to_exclude,None)
-        return super(TestQuestionnaireBase, self).assertDictEqual(d1_copy, d2_copy)
+            d1_copy.pop(key_to_exclude, None)
+            d2_copy.pop(key_to_exclude, None)
+
+        msg = '%s != %s' % (safe_repr(d1_copy, True), safe_repr(d2_copy, True))
+        diff = ('\n' + '\n'.join(ndiff(
+            pprint.pformat(d1_copy).splitlines(),
+            pprint.pformat(d2_copy).splitlines())))
+        msg = self._truncateMessage(msg, diff)
+
+        d1_keys = d1_copy.keys()
+        d2_keys = d2_copy.keys()
+        self.assertListEqual(d1_keys, d2_keys, msg=msg)
+
+        for key in d1_keys:
+            d1_value = d1_copy[key]
+            d2_value = d2_copy[key]
+            # I am doing this instead of just calling super()
+            # b/c Django doesn't consider querysets to be equal even if they point to the same thing
+            # (see http://stackoverflow.com/questions/16058571/comparing-querysets-in-django-testcase)
+            d1_type = type(d1_value)
+            d2_type = type(d2_value)
+            self.assertEqual(d1_type, d2_type, msg=msg)
+            if d1_type == QuerySet:
+                self.assertQuerysetEqual(d1_value, d2_value)
+            else:
+                self.assertEqual(d1_value, d2_value)
+
+        #return super(TestQuestionnaireBase, self).assertDictEqual(d1_copy, d2_copy)
 
 
     def assertFileExists(self, file_path, **kwargs):
