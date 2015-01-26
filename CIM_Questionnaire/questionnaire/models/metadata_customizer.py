@@ -192,7 +192,7 @@ class MetadataCustomizer(models.Model):
         """retrieves the full set of customizations used by a particular model_customizer w/ a specified list of vocabs"""
 
         standard_category_customizers = model_customizer.standard_property_category_customizers.all()
-        standard_property_customizers = model_customizer.standard_property_customizers.all().order_by("category__order", "order")
+        standard_property_customizers = model_customizer.standard_property_customizers.all()
         #standard_category_customizers = model_customizer.standard_property_category_customizers.all().prefetch_related("standard_property_customizers")
         #standard_property_customizers = model_customizer.standard_property_customizers.all().select_related("proxy").order_by("category__order","order")
 

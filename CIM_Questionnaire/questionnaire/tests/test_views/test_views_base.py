@@ -62,20 +62,20 @@ class Test(TestQuestionnaireBase):
     def test_get_cached_existing_customization_set(self):
 
         query_limit_create_from_models = FuzzyInt(0, 140)
-        query_limit_load_from_cache = FuzzyInt(0, 1)
+        query_limit_load_from_cache = FuzzyInt(0, 2)
 
         test_session_id_1 = "test"          # dummy session_id; should result in creating from models
         test_session_id_2 = "test"          # same dummy session_id; should result in loading from cache
         test_session_id_3 = "another_test"  # different session_id; should result in creating from models
 
         with self.assertNumQueries(query_limit_create_from_models):
-            customization_set_1 = get_cached_existing_customization_set(test_session_id_1, self.downscaling_model_component_customizer_set["model_customizer"], self.downscaling_model_comopnent_vocabularies)
+            customization_set_1 = get_cached_existing_customization_set(test_session_id_1, self.downscaling_model_component_customizer_set["model_customizer"], self.downscaling_model_component_vocabularies)
 
         with self.assertNumQueries(query_limit_load_from_cache):
-            customization_set_2 = get_cached_existing_customization_set(test_session_id_2, self.downscaling_model_component_customizer_set["model_customizer"], self.downscaling_model_comopnent_vocabularies)
+            customization_set_2 = get_cached_existing_customization_set(test_session_id_2, self.downscaling_model_component_customizer_set["model_customizer"], self.downscaling_model_component_vocabularies)
 
         with self.assertNumQueries(query_limit_create_from_models):
-            customization_set_3 = get_cached_existing_customization_set(test_session_id_3, self.downscaling_model_component_customizer_set["model_customizer"], self.downscaling_model_comopnent_vocabularies)
+            customization_set_3 = get_cached_existing_customization_set(test_session_id_3, self.downscaling_model_component_customizer_set["model_customizer"], self.downscaling_model_component_vocabularies)
 
         self.assertIsNotNone(customization_set_1)
         self.assertIsNotNone(customization_set_2)
@@ -131,20 +131,20 @@ class Test(TestQuestionnaireBase):
     def test_get_cached_new_realization_set(self):
 
         query_limit_create_from_models = FuzzyInt(0, 185)
-        query_limit_load_from_cache = FuzzyInt(0, 1)
+        query_limit_load_from_cache = FuzzyInt(0, 15)
 
         test_session_id_1 = "test"          # dummy session_id; should result in creating from models
         test_session_id_2 = "test"          # same dummy session_id; should result in loading from cache
         test_session_id_3 = "another_test"  # different session_id; should result in creating from models
 
         with self.assertNumQueries(query_limit_create_from_models):
-            realization_set_1 = get_cached_new_realization_set(test_session_id_1, self.downscaling_model_component_customizer_set, self.downscaling_model_component_proxy_set, self.downscaling_model_comopnent_vocabularies)
+            realization_set_1 = get_cached_new_realization_set(test_session_id_1, self.downscaling_model_component_customizer_set, self.downscaling_model_component_proxy_set, self.downscaling_model_component_vocabularies)
 
         with self.assertNumQueries(query_limit_load_from_cache):
-            realization_set_2 = get_cached_new_realization_set(test_session_id_2, self.downscaling_model_component_customizer_set, self.downscaling_model_component_proxy_set, self.downscaling_model_comopnent_vocabularies)
+            realization_set_2 = get_cached_new_realization_set(test_session_id_2, self.downscaling_model_component_customizer_set, self.downscaling_model_component_proxy_set, self.downscaling_model_component_vocabularies)
 
         with self.assertNumQueries(query_limit_create_from_models):
-            realization_set_3 = get_cached_new_realization_set(test_session_id_3, self.downscaling_model_component_customizer_set, self.downscaling_model_component_proxy_set, self.downscaling_model_comopnent_vocabularies)
+            realization_set_3 = get_cached_new_realization_set(test_session_id_3, self.downscaling_model_component_customizer_set, self.downscaling_model_component_proxy_set, self.downscaling_model_component_vocabularies)
 
         self.assertIsNotNone(realization_set_1)
         self.assertIsNotNone(realization_set_2)
@@ -169,13 +169,13 @@ class Test(TestQuestionnaireBase):
         realizations = self.downscaling_model_component_realization_set["models"]
 
         with self.assertNumQueries(query_limit_create_from_models):
-            realization_set_1 = get_cached_existing_realization_set(test_session_id_1, realizations, self.downscaling_model_component_customizer_set, self.downscaling_model_component_proxy_set, self.downscaling_model_comopnent_vocabularies)
+            realization_set_1 = get_cached_existing_realization_set(test_session_id_1, realizations, self.downscaling_model_component_customizer_set, self.downscaling_model_component_proxy_set, self.downscaling_model_component_vocabularies)
 
         with self.assertNumQueries(query_limit_load_from_cache):
-            realization_set_2 = get_cached_existing_realization_set(test_session_id_2, realizations, self.downscaling_model_component_customizer_set, self.downscaling_model_component_proxy_set, self.downscaling_model_comopnent_vocabularies)
+            realization_set_2 = get_cached_existing_realization_set(test_session_id_2, realizations, self.downscaling_model_component_customizer_set, self.downscaling_model_component_proxy_set, self.downscaling_model_component_vocabularies)
 
         with self.assertNumQueries(query_limit_create_from_models):
-            realization_set_3 = get_cached_existing_realization_set(test_session_id_3, realizations, self.downscaling_model_component_customizer_set, self.downscaling_model_component_proxy_set, self.downscaling_model_comopnent_vocabularies)
+            realization_set_3 = get_cached_existing_realization_set(test_session_id_3, realizations, self.downscaling_model_component_customizer_set, self.downscaling_model_component_proxy_set, self.downscaling_model_component_vocabularies)
 
         self.assertIsNotNone(realization_set_1)
         self.assertIsNotNone(realization_set_2)
@@ -183,7 +183,24 @@ class Test(TestQuestionnaireBase):
 
         self.assertEqual(realization_set_1["models"], realization_set_2["models"])
         self.assertEqual(realization_set_2["models"], realization_set_3["models"])
+
         self.assertDictEqual(realization_set_1["standard_properties"], realization_set_2["standard_properties"])
         self.assertDictEqual(realization_set_2["standard_properties"], realization_set_3["standard_properties"])
         self.assertDictEqual(realization_set_1["scientific_properties"], realization_set_2["scientific_properties"])
         self.assertDictEqual(realization_set_2["scientific_properties"], realization_set_3["scientific_properties"])
+
+    def test_cache_ordering(self):
+
+        test_session_id = "test"
+
+        test_model_customizer = self.downscaling_model_component_customizer_set["model_customizer"]
+        test_vocabularies = self.downscaling_model_component_vocabularies
+
+        customizer_set = get_cached_existing_customization_set(test_session_id, test_model_customizer, test_vocabularies)
+        proxy_set = get_cached_proxy_set(test_session_id, customizer_set)
+        realization_set = get_cached_new_realization_set(test_session_id, customizer_set, proxy_set, test_vocabularies)
+
+        standard_property_customizers = customizer_set["standard_property_customizers"]
+        for k, v in realization_set["standard_properties"].iteritems():
+            for standard_property_customizer, standard_property in zip(standard_property_customizers, v):
+                self.assertEqual(standard_property_customizer.proxy, standard_property.proxy)
