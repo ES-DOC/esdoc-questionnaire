@@ -18,6 +18,9 @@ Tests the edit views
 """
 
 from django.core.urlresolvers import reverse
+from django.contrib import messages
+from CIM_Questionnaire.questionnaire.forms.forms_edit import get_data_from_edit_forms
+from CIM_Questionnaire.questionnaire.models.metadata_model import MetadataModel
 from CIM_Questionnaire.questionnaire.models.metadata_proxy import MetadataModelProxy
 from CIM_Questionnaire.questionnaire.tests.test_base import TestQuestionnaireBase
 from CIM_Questionnaire.questionnaire.utils import FuzzyInt
@@ -92,15 +95,15 @@ class Test(TestQuestionnaireBase):
 
     def test_questionnaire_edit_new_default_GET(self):
 
-        query_limit = FuzzyInt(0, 66)
+        query_limit = FuzzyInt(0, 535)
         with self.assertNumQueries(query_limit):
             request_url = reverse("edit_new", kwargs={
                 "project_name": self.downscaling_project.name,
                 "version_key": self.cim_1_8_1_version.get_key(),
                 "model_name": self.downscaling_model_component_proxy_set["model_proxy"].name,
             })
+            response = self.client.get(request_url)
 
-        response = self.client.get(request_url)
         self.assertEqual(response.status_code, 200)
 
         context = response.context
@@ -117,7 +120,7 @@ class Test(TestQuestionnaireBase):
 
         test_realization = self.downscaling_model_component_realization_set["models"][0].get_root()
 
-        query_limit = FuzzyInt(0, 66)
+        query_limit = FuzzyInt(0, 535)
         with self.assertNumQueries(query_limit):
             request_url = reverse("edit_existing", kwargs={
                 "project_name": self.downscaling_project.name,
@@ -125,8 +128,8 @@ class Test(TestQuestionnaireBase):
                 "model_name": self.downscaling_model_component_proxy_set["model_proxy"].name,
                 "model_id": test_realization.pk,
             })
+            response = self.client.get(request_url)
 
-        response = self.client.get(request_url)
         self.assertEqual(response.status_code, 200)
 
         context = response.context
@@ -139,8 +142,116 @@ class Test(TestQuestionnaireBase):
         self.assertEqual(len(standard_properties_formsets), number_of_compopnents + 1)
         self.assertEqual(len(scientific_properties_formsets), number_of_compopnents + 1)
 
+    def test_questionnaire_edit_new_default_POST(self):
+
+        query_limit = FuzzyInt(0, 535)
+        with self.assertNumQueries(query_limit):
+            request_url = reverse("edit_new", kwargs={
+                "project_name": self.downscaling_project.name,
+                "version_key": self.cim_1_8_1_version.get_key(),
+                "model_name": self.downscaling_model_component_proxy_set["model_proxy"].name,
+            })
+            response = self.client.get(request_url)
+
+        self.assertEqual(response.status_code, 200)
+
+        context = response.context
+        model_formset = context["model_formset"]
+        standard_properties_formsets = context["standard_properties_formsets"]
+        scientific_properties_formsets = context["scientific_properties_formsets"]
+
+        # simulate one of the forms being loaded...
+        model_formset.forms[0].load()
+
+        post_data = get_data_from_edit_forms(model_formset, standard_properties_formsets, scientific_properties_formsets, simulate_post=True)
+
+        # TODO: 7500 IS WAY TOO BIG!
+        query_limit = FuzzyInt(0, 7500)
+        with self.assertNumQueries(query_limit):
+            request_url = reverse("edit_new", kwargs={
+                "project_name": self.downscaling_project.name,
+                "version_key": self.cim_1_8_1_version.get_key(),
+                "model_name": self.downscaling_model_component_proxy_set["model_proxy"].name,
+            })
+            response = self.client.post(request_url, post_data, follow=True)  # "follow=True" ensures the context setup in the initial view gets retained in the redirected view [http://stackoverflow.com/questions/16143149/django-testing-check-messages-for-a-view-that-redirects]
+
+        session_variables = self.client.session
+        message_variables = [m for m in list(response.context["messages"])]
+
+        self.assertIn("root_model_id", session_variables)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(message_variables[0].tags, messages.DEFAULT_TAGS[messages.SUCCESS])
+
+        existing_root_model_id = self.downscaling_model_component_realization_set["models"][0].get_root().pk
+        new_root_model_id = session_variables.get("root_model_id")
+        self.assertNotEqual(existing_root_model_id, new_root_model_id)
+
+        realizations = MetadataModel.objects.get(pk=new_root_model_id).get_descendants(include_self=True)
+        (models, standard_properties, scientific_properties) = \
+            MetadataModel.get_existing_realization_set(realizations, self.downscaling_model_component_customizer_set["model_customizer"], vocabularies=self.downscaling_model_component_vocabularies)
+
+        number_of_compopnents = sum([len(vocabulary.component_proxies.all()) for vocabulary in self.downscaling_model_component_vocabularies])
+        self.assertEqual(len(models), number_of_compopnents + 1)
+        self.assertEqual(len(standard_properties), number_of_compopnents + 1)
+        self.assertEqual(len(scientific_properties), number_of_compopnents + 1)
+
+    def test_questionnaire_edit_existing_default_POST(self):
+
+        test_realization = self.downscaling_model_component_realization_set["models"][0].get_root()
+
+        query_limit = FuzzyInt(0, 500)
+        with self.assertNumQueries(query_limit):
+            request_url = reverse("edit_existing", kwargs={
+                "project_name": self.downscaling_project.name,
+                "version_key": self.cim_1_8_1_version.get_key(),
+                "model_name": self.downscaling_model_component_proxy_set["model_proxy"].name,
+                "model_id": test_realization.pk,
+            })
+            response = self.client.get(request_url)
+
+        self.assertEqual(response.status_code, 200)
+
+        context = response.context
+        model_formset = context["model_formset"]
+        standard_properties_formsets = context["standard_properties_formsets"]
+        scientific_properties_formsets = context["scientific_properties_formsets"]
+
+        # simulate one of the forms being loaded...
+        model_formset.forms[0].load()
+
+        post_data = get_data_from_edit_forms(model_formset, standard_properties_formsets, scientific_properties_formsets, simulate_post=True, existing_data={"loaded": True})
+
+        # TODO: 7500 IS WAY TOO BIG!
+        query_limit = FuzzyInt(0, 7500)
+        with self.assertNumQueries(query_limit):
+            request_url = reverse("edit_existing", kwargs={
+                "project_name": self.downscaling_project.name,
+                "version_key": self.cim_1_8_1_version.get_key(),
+                "model_name": self.downscaling_model_component_proxy_set["model_proxy"].name,
+                "model_id": test_realization.pk,
+            })
+            response = self.client.post(request_url, post_data, follow=True)  # "follow=True" ensures the context setup in the initial view gets retained in the redirected view [http://stackoverflow.com/questions/16143149/django-testing-check-messages-for-a-view-that-redirects]
+
+        session_variables = self.client.session
+        message_variables = [m for m in list(response.context["messages"])]
+
+        self.assertIn("root_model_id", session_variables)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(message_variables[0].tags, messages.DEFAULT_TAGS[messages.SUCCESS])
+
+        new_root_model_id = session_variables.get("root_model_id")
+        self.assertEqual(test_realization.pk, new_root_model_id)
+
+        realizations = MetadataModel.objects.get(pk=new_root_model_id).get_descendants(include_self=True)
+        (models, standard_properties, scientific_properties) = \
+            MetadataModel.get_existing_realization_set(realizations, self.downscaling_model_component_customizer_set["model_customizer"], vocabularies=self.downscaling_model_component_vocabularies)
+
+        number_of_compopnents = sum([len(vocabulary.component_proxies.all()) for vocabulary in self.downscaling_model_component_vocabularies])
+        self.assertEqual(len(models), number_of_compopnents + 1)
+        self.assertEqual(len(standard_properties), number_of_compopnents + 1)
+        self.assertEqual(len(scientific_properties), number_of_compopnents + 1)
+
     # TODO:
-    # TEST PUTS
     # TEST W/ SUBFORMS
     # TEST W/ NO HIERARCHY
 
@@ -250,4 +361,3 @@ class Test(TestQuestionnaireBase):
     #     # then I would expect n_model_forms to be greater than n_components
     #     self.assertEqual(n_model_forms, n_components)
     #
-

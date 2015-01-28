@@ -27,6 +27,8 @@ from CIM_Questionnaire.questionnaire.fields import MetadataFieldTypes
 from CIM_Questionnaire.questionnaire.utils import get_data_from_formset, QuestionnaireError
 
 
+MANAGEMENT_FORM_FIELD_NAMES = [TOTAL_FORM_COUNT, INITIAL_FORM_COUNT, MAX_NUM_FORM_COUNT]
+
 class MetadataEditingForm(MetadataForm):
 
     customizer = None
@@ -64,7 +66,7 @@ class MetadataEditingFormSet(MetadataFormSet):
             pk_name = "%s" % pk_field.name
             pk_key = "%s-%s" % (self.add_prefix(i), pk_name)
             # HERE IS THE DIFFERENT BIT
-            # (OH, AND THE ABOVE 3 VARIABLES AHVE BEEN MOVED AROUND AND SIMPLIFIED A BIT JUST TO MAKE THE CODE NICER)
+            # (OH, AND THE ABOVE 3 VARIABLES HAVE BEEN MOVED AROUND AND SIMPLIFIED A BIT JUST TO MAKE THE CODE NICER)
             # (AND DON'T FORGET THAT add_prefix HAS BEEN CHANGED AS NEEDED FOR MetadataModelFormSet)
             try:
                 pk = self.data[pk_key]
@@ -77,6 +79,7 @@ class MetadataEditingFormSet(MetadataFormSet):
                 if initial["loaded"] == False:
                     # ...and get the pk another way
                     pk = initial[pk_name]
+                    kwargs["initial"] = initial
                 else:
                     # ...if it failed for some other reason, though, raise an error
                     msg = "Unable to determine pk from form w/ prefix %s" % self.add_prefix(i)
@@ -92,9 +95,16 @@ class MetadataEditingFormSet(MetadataFormSet):
                 connection=connections[self.get_queryset().db])
             if isinstance(pk, list):
                 pk = pk[0]
-            kwargs['instance'] = self._existing_object(pk)
-        if i < self.initial_form_count() and not kwargs.get('instance'):
+            kwargs["instance"] = self._existing_object(pk)
+        # I LIED; HERE IS ONE MORE DIFFERENT BIT
+        # this bit of code exists in case instance has not been set
+        # but the above changes will set it to None in the case of new models
+        # so get() below will return None; I want to check not that "instance" is None
+        # but that it hasn't been set (ie: is not in kwargs)
+        # if i < self.initial_form_count() and not kwargs.get('instance'):
+        if i < self.initial_form_count() and "instance" not in kwargs:
             kwargs['instance'] = self.get_queryset()[i]
+        # HERE ENDS THE ONE MORE DIFFERENT BIT
         if i >= self.initial_form_count() and self.initial_extra:
             # Set initial values for extra forms
             try:
@@ -112,7 +122,6 @@ class MetadataEditingFormSet(MetadataFormSet):
     @property
     def management_form(self):
         """Returns the ManagementForm instance for this FormSet."""
-
         initial_forms = self.initial_form_count()
         total_forms = initial_forms + self.extra
         # Allow all existing related objects/inlines to be displayed,
@@ -212,6 +221,7 @@ class MetadataEditingInlineFormSet(MetadataInlineFormSet):
                 if initial["loaded"] == False:
                     # ...and get the pk another way
                     pk = initial[pk_name]
+                    kwargs["initial"] = initial
                 else:
                     # ...if it failed for some other reason, though, raise an error
                     msg = "Unable to determine pk from form w/ prefix %s" % self.add_prefix(i)
@@ -228,8 +238,9 @@ class MetadataEditingInlineFormSet(MetadataInlineFormSet):
             if isinstance(pk, list):
                 pk = pk[0]
             kwargs['instance'] = self._existing_object(pk)
-        if i < self.initial_form_count() and not kwargs.get('instance'):
-
+        # SAME LOGIC HERE AS IN MetadataEditingFormSet ABOVE
+        # if i < self.initial_form_count() and not kwargs.get('instance'):
+        if i < self.initial_form_count() and "instance" not in kwargs:
             try:
                 kwargs['instance'] = self.get_queryset()[i]
             except IndexError:
@@ -237,6 +248,7 @@ class MetadataEditingInlineFormSet(MetadataInlineFormSet):
                 # then the underlying queryset may not have updated
                 # if so - since I've already worked out the pk above - just get the model directly
                 # (note that in the case of new models, pk will be None and this will return an empty model)
+                # (which is the desired behavior anyway - see this same bit of code for MetadataEditingFormSet)
                 model_class = self.model
                 kwargs['instance'] = model_class.objects.get(pk=pk)
 
@@ -776,15 +788,26 @@ def get_data_from_edit_forms(model_formset, standard_properties_formsets, scient
         data.update(scientific_property_formset_data)
 
     # THIS BIT IS REQUIRED TO SIMULATE POST DATA TO VIEWS
-    # (IN DJANGO IF A FIELD HAS NO VALUE IT DOES NOT GET INCLUDED UPON FORM SUBMISSION)
-    # HOWEVER, WHEN USING THIS FN IN TESTING - WHERE I DO NOT INTEND TO USE THE RETURNED DATA AS A POST -
-    # I RUN INTO PROBLEMS B/C THE get_data_from_form / get_data_from_formset SEARCHES FOR DATA FROM ALL FORM FIELDS
-    # SO IF I RUN get_data_from_edit_forms WITH THE INTENTION OF USING IT AS A POST,
-    # I NEED TO ENSURE THAT I CLEAN THE DATA BEFORE SENDING THE POST
+    # (IN DJANGO, IF A FIELD HAS NO VALUE IT DOES NOT GET INCLUDED UPON FORM SUBMISSION)
+    # (IN THE QUESTIONNAIRE, IF A FIELD HAS NOT BEEN LOADED, IT DOES NOT GET INCLUDED UPON FORM SUBMISSION)
+    # however, when using this fn in testing I run into problems w/c get_data_from_form / get_data_from_formset
+    # returns data from all fields; so if I call get_data_from_edit_forms w/ the intention of using it as a POST
+    # I have to clean the data dictionary before sending the POST
+
     if simulate_post:
         data_copy = data.copy()
+        loaded_model_forms = model_formset.get_loaded_forms()
+        loaded_model_prefixes = [model_form.prefix for model_form in loaded_model_forms]
         for key, value in data.iteritems():
-            if value == None:
+            if any(key == u"%s-%s" % (model_formset.prefix, management_form_field_name) for management_form_field_name in MANAGEMENT_FORM_FIELD_NAMES):
+                # but don't get rid of management form stuff
+                continue
+            if not any(key.startswith(loaded_key) for loaded_key in loaded_model_prefixes):
+                # if this item doesn't begin w/ one of the loaded_prefixes, then it must be unloaded
+                # which means it shouldn't appear in the POST
+                data_copy.pop(key)
+            elif value == None:
+                # if this item has no value, then it shouldn't appear in the POST
                 data_copy.pop(key)
         return data_copy
     else:

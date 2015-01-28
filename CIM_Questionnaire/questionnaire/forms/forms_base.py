@@ -18,6 +18,7 @@ Base classes for CIM Questionnaire form creation & manipulation
 """
 
 from django.forms import ValidationError
+from django.forms.models import InlineForeignKeyField
 from django.utils.translation import ungettext
 from django.forms.fields import BooleanField, FileField
 from django.forms.models import ModelForm, BaseModelFormSet, BaseInlineFormSet
@@ -78,12 +79,9 @@ class MetadataForm(ModelForm):
                         # IN SOME CASES I HAVE TO PASS "None" TO CREATE_<WHATEVER>_INLINEFORMSET_DATA AS THE FK MODEL
                         # THAT IS AS IT SHOULD BE (I EXCLUDE IT FROM model_to_dict ANYWAY)
                         # AND I RESET IT LATER ON IN THE SAVE PROCESS
-                        # try:
-                        #     assert name == "model"
-                        # except:
-                        #     import ipdb; ipdb.set_trace()
-                        # TODO: IS THIS REALLY THE CORRECT BEHAVIOR?
-                        print "IF YOU ARE HERE THEN YOU SHOULD DOUBLE-CHECK WHAT'S GOING ON IN IN MetadataForm._clean_fields()"
+                        if not isinstance(self.fields[name], InlineForeignKeyField):
+                            # TODO: IS THIS REALLY THE CORRECT BEHAVIOR?
+                            print "IF YOU ARE HERE THEN YOU SHOULD DOUBLE-CHECK WHAT'S GOING ON IN IN MetadataForm._clean_fields()"
                         value = None
             try:
                 if isinstance(field, FileField):

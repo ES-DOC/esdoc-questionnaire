@@ -230,7 +230,6 @@ def questionnaire_edit_existing(request, project_name="", model_name="", version
             create_edit_forms_from_data(data, realization_set["models"], customizer_set["model_customizer"], realization_set["standard_properties"], customizer_set["standard_property_customizers"], realization_set["scientific_properties"], customizer_set["scientific_property_customizers"])
 
         if all(validity):
-
             model_parent_dictionary = get_model_parent_dictionary(realization_set["models"])
             model_instances = save_valid_forms(model_formset, standard_properties_formsets, scientific_properties_formsets, model_parent_dictionary=model_parent_dictionary)
             root_model = model_instances[0].get_root()
