@@ -36,9 +36,12 @@ def get_institute_code(model):
     """
     document_author_property = get_standard_property_by_name(model, "documentAuthor")
     if document_author_property:
-        document_author = document_author_property.relationship_value.all()[0]
-        institute = get_standard_property_by_name(document_author, "organisationName")
-        return institute.atomic_value
+        document_authors = document_author_property.relationship_value.all()
+        if len(document_authors) != 0:
+            institute = get_standard_property_by_name(document_authors[0], "organisationName")
+            return institute.atomic_value
+        else:
+            return None
     else:
         parent_property_set = model.metadatastandardproperty_set.all()
         if parent_property_set:

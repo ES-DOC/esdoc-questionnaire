@@ -13,7 +13,11 @@
         <encoding>XML</encoding>
     </encodings>
     <id>{{ model.get_id }}</id>
-    <institute>{{ model|get_institute_code }}</institute>
+    {% with institute_code=model|get_institute_code %}
+        {% if institute_code %}
+            <institute>{{ institute_code }}</institute>
+        {% endif %} {# /institute_code #}
+    {% endwith %} {# /institute_code #}
     <language>en</language>
     <project>{{ project.name }}</project>
     <source>CIM Questionnaire</source>
