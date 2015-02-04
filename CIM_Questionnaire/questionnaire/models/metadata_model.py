@@ -162,25 +162,31 @@ class MetadataModel(MPTTModel):
         :return:
         """
         standard_properties = self.standard_properties.all()
-        for standard_property_customization in model_customization.standard_property_customizers.all():
-            if standard_property_customization.displayed:
-                standard_property_proxy = standard_property_customization.proxy
-                standard_property = find_in_sequence(lambda sp: sp.proxy == standard_property_proxy, standard_properties)
-                if standard_property:
-                    if standard_property.field_type == "RELATIONSHIP":
-                        for submodel in standard_property.relationship_value.all():
-                            submodel_customizer = standard_property_customization.subform_customizer
-                            if submodel_customizer:
-                                submodel.update(submodel_customizer)
-                else:
-                    new_standard_property = MetadataStandardProperty(
-                        proxy=standard_property_proxy,
-                        model=self,
-                    )
-                    new_standard_property.reset()
-                    new_standard_property.save()
-                    # TODO: DOES THIS WORK FOR ALL TYPES OF STANDARD_PROPERTIES?
-                    pass
+        standard_property_customizations = model_customization.standard_property_customizers.all()
+        for standard_property_customization in standard_property_customizations:
+            standard_property_proxy = standard_property_customization.proxy
+            standard_property = find_in_sequence(lambda sp: sp.proxy == standard_property_proxy, standard_properties)
+            if standard_property:
+                if standard_property.field_type == "RELATIONSHIP":
+                    for submodel in standard_property.relationship_value.all():
+                        submodel_customizer = standard_property_customization.subform_customizer
+                        if submodel_customizer:
+                            submodel.update(submodel_customizer)
+
+            if standard_property_customization.displayed and not standard_property:
+                # if it should be displayed and is missing...
+                new_standard_property = MetadataStandardProperty(
+                    proxy=standard_property_proxy,
+                    model=self,
+                )
+                new_standard_property.reset()
+                new_standard_property.save()
+
+            elif not standard_property_customization.displayed and standard_property:
+                # if it should not be displayed but exists...
+                standard_property.delete()
+
+        # TODO: DOES THIS WORK FOR ALL TYPES OF STANDARD_PROPERTIES?
 
     def get_id(self):
         return self.guid
