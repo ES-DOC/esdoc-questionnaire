@@ -113,11 +113,18 @@ class MetadataModel(MPTTModel):
     order           = models.PositiveIntegerField(blank=True, null=True)
 
     def __unicode__(self):
+        label = self.get_label()
+        if label:
+            return u"%s : %s" % (self.name, label)
+        else:
+            return u'%s' % self.name
+
+    def get_label(self):
         label_property = find_in_sequence(lambda property: property.is_label == True, self.standard_properties.all())
         if label_property:
-            return u"%s : %s" % (self.name, label_property.get_value())
+            return u"%s" % label_property.get_value()
         else:
-            return u'%s' % (self.name)
+            return None
 
     def get_model_key(self):
         return u"%s_%s" % (self.vocabulary_key, self.component_key)

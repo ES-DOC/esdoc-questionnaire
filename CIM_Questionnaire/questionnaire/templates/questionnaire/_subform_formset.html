@@ -38,7 +38,7 @@
                         <tr valign="center">
                             <td>
                                 <b>{{ model_customizer.model_title }}:&nbsp;</b>
-                                <span class="label">{{ model_subform.instance }}</span> {#  assuming __unicode__ method works, this should return a useful string #}
+                                <span class="label">{{ model_subform.instance.get_label }}</span>
                             </td>
                         </tr>
                     </table>
