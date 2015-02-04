@@ -155,6 +155,33 @@ class MetadataModel(MPTTModel):
         self.last_modified = timezone.now()
         super(MetadataModel, self).save(*args, **kwargs)
 
+    def update(self, model_customization):
+        """
+        looks through the customization and checks if any properties are set to display that do not already exist in this instance
+        :param model_customization:
+        :return:
+        """
+        standard_properties = self.standard_properties.all()
+        for standard_property_customization in model_customization.standard_property_customizers.all():
+            if standard_property_customization.displayed:
+                standard_property_proxy = standard_property_customization.proxy
+                standard_property = find_in_sequence(lambda sp: sp.proxy == standard_property_proxy, standard_properties)
+                if standard_property:
+                    if standard_property.field_type == "RELATIONSHIP":
+                        for submodel in standard_property.relationship_value.all():
+                            submodel_customizer = standard_property_customization.subform_customizer
+                            if submodel_customizer:
+                                submodel.update(submodel_customizer)
+                else:
+                    new_standard_property = MetadataStandardProperty(
+                        proxy=standard_property_proxy,
+                        model=self,
+                    )
+                    new_standard_property.reset()
+                    new_standard_property.save()
+                    # TODO: DOES THIS WORK FOR ALL TYPES OF STANDARD_PROPERTIES?
+                    pass
+
     def get_id(self):
         return self.guid
 
