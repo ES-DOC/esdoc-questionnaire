@@ -36,6 +36,7 @@ import re
 from CIM_Questionnaire.questionnaire.models.metadata_project import MetadataProject
 from CIM_Questionnaire.questionnaire.models.metadata_version import MetadataVersion
 from CIM_Questionnaire.questionnaire.models.metadata_proxy import MetadataModelProxy
+from CIM_Questionnaire.questionnaire.models.metadata_model import MetadataModel
 from CIM_Questionnaire.questionnaire.models.metadata_customizer import MetadataCustomizer, MetadataModelCustomizer
 from CIM_Questionnaire.questionnaire.forms.forms_customize import create_new_customizer_forms_from_models, create_existing_customizer_forms_from_models, create_customizer_forms_from_data
 from CIM_Questionnaire.questionnaire.forms.forms_customize import save_valid_forms
@@ -258,6 +259,16 @@ def questionnaire_customize_existing(request, project_name="", model_name="", ve
             subsequent_model_customizer_name = model_customizer_instance.name
             if initial_model_customizer_name != subsequent_model_customizer_name:
                 model_customizer_instance.rename(subsequent_model_customizer_name)
+
+            # if there are existing instances which will use this customization, I need to check to see if they require new bits
+            if model_customizer_instance.default:
+                existing_realizations = MetadataModel.objects.filter(
+                    project=model_customizer_instance.project,
+                    proxy=model_customizer_instance.proxy,
+                    is_document=True,
+                )
+                for existing_realization in existing_realizations:
+                    existing_realization.update(model_customizer_instance)
 
             request.session["model_id"] = model_customizer_instance.pk
 
