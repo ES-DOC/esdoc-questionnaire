@@ -17,6 +17,7 @@ __date__ = "Dec 01, 2014 3:00:00 PM"
 Special fields used for CIM Questionnaire
 """
 
+from django.conf import settings
 from django.db import models
 from django.db.models.fields import smart_text
 from django.forms import Select, SelectMultiple, ValidationError, ModelChoiceField
@@ -24,8 +25,45 @@ from django.forms import CheckboxInput, DateInput, DateTimeInput, NumberInput, E
 from django.forms.fields import CharField, MultipleChoiceField, MultiValueField
 from django.forms.widgets import MultiWidget
 from django.forms.models import ModelChoiceIterator
+from django.core.files.storage import FileSystemStorage
+
 from south.modelsinspector import introspector
+
+import os
+
 from CIM_Questionnaire.questionnaire.utils import EnumeratedType, EnumeratedTypeList, BIG_STRING
+
+###########################
+# storage for file fields #
+###########################
+
+
+class OverwriteStorage(FileSystemStorage):
+
+    def get_available_name(self, name):
+        """Returns a filename that's free on the target storage system, and
+        available for new content to be written to.
+
+        Found at http://djangosnippets.org/snippets/976/
+
+        This file storage solves overwrite on upload problem. Another
+        proposed solution was to override the save method on the model
+        like so (from https://code.djangoproject.com/ticket/11663):
+
+        def save(self, *args, **kwargs):
+            try:
+                this = MyModelName.objects.get(id=self.id)
+                if this.MyImageFieldName != self.MyImageFieldName:
+                    this.MyImageFieldName.delete()
+            except: pass
+            super(MyModelName, self).save(*args, **kwargs)
+        """
+        # If the filename already exists, remove it as if it was a true file system
+        if self.exists(name):
+            file_path = os.path.join(settings.MEDIA_ROOT, name)
+            os.remove(file_path)
+            print "deleted existing %s file" % file_path
+        return name
 
 ######################
 # enumeration fields #
