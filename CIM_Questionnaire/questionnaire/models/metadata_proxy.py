@@ -144,7 +144,8 @@ class MetadataStandardPropertyProxy(MetadataPropertyProxy):
         return max
 
     def is_multiple(self):
-        return self.get_relationship_cardinality_max() != 1
+        _max = self.get_relationship_cardinality_max()
+        return _max == u'*' or int(_max) != 1
 
     def reset(self):
 
