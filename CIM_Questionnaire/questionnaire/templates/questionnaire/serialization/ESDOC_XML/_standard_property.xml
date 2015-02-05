@@ -15,33 +15,26 @@
 
         {% elif property_type == "RELATIONSHIP" %}
 
-            {% with values=property.get_value %}
-                {% if values %}
 
-                    {% if property.proxy.is_multiple %}
-                        <{{ tagname|get_plural }}>
-                    {% endif %} {# /is_multiple #}
+            {% if property.proxy.is_multiple %}
+                <{{ tagname|get_plural }}>
+            {% endif %} {# /is_multiple #}
 
-                    {% for value in values %}
+            {% for value in property.get_value %}
+                {# TODO: IF IS_REFERENCE... #}
+                <{{ tagname }}>
+                    {% with model=value model_type=value.name.lower %}
+                        {% with "questionnaire/serialization/ESDOC_XML/_model.xml" as template %}
+                            {% include template %}
+                        {% endwith %}
+                    {% endwith %} {# /model #}
+                </{{ tagname }}>
+            {% endfor %} {# /value #}
 
-                        {# TODO: IF IS_REFERENCE...  #}
-                        <{{ tagname }}>
-                            {% with model=value model_type=value.name.lower %}
-                                {% with "questionnaire/serialization/ESDOC_XML/_model.xml" as template %}
-                                    {% include template %}
-                                {% endwith %}
-                            {% endwith %} {# /model #}
-                        </{{ tagname }}>
-
-                    {% endfor %} {# /value #}
-
-                    {% if property.proxy.is_multiple %}
-                        </{{ tagname|get_plural }}>
-                    {% endif %} {# /is_multiple #}
-
-                {% endif %} {# /values #}
-            {% endwith %} {# /values #}
-
+            {% if property.proxy.is_multiple %}
+                </{{ tagname|get_plural }}>
+            {% endif %} {# /is_multiple #}
+            
         {% endif %} {# /property_type #}
     {% endwith %} {# /property_type #}
 
