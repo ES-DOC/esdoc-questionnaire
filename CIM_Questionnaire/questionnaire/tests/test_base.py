@@ -110,10 +110,14 @@ class TestQuestionnaireBase(TestCase):
 
         self.downscaling_project = MetadataProject.objects.get(name="downscaling")
         downscaling_model_component_customizer = MetadataModelCustomizer.objects.get(project=self.downscaling_project, proxy=self.model_component_proxy, name="default")
+        downscaling_model_component_customizer_with_subforms = MetadataModelCustomizer.objects.get(project=self.downscaling_project, proxy=self.model_component_proxy, name="subforms")
         self.downscaling_model_component_vocabularies = downscaling_model_component_customizer.vocabularies.all()
 
         (model_customizer, standard_category_customizers, standard_property_customizers, nested_scientific_category_customizers, nested_scientific_property_customizers) = \
             MetadataCustomizer.get_existing_customizer_set(downscaling_model_component_customizer, self.downscaling_model_component_vocabularies)
+
+        (model_customizer_with_subforms, standard_category_customizers_with_subforms, standard_property_customizers_with_subforms, nested_scientific_category_customizers_with_subforms, nested_scientific_property_customizers_with_subforms) = \
+            MetadataCustomizer.get_existing_customizer_set(downscaling_model_component_customizer_with_subforms, self.downscaling_model_component_vocabularies)
 
         self.downscaling_model_component_customizer_set = {
             "model_customizer": model_customizer,
@@ -121,6 +125,14 @@ class TestQuestionnaireBase(TestCase):
             "standard_property_customizers": standard_property_customizers,
             "scientific_category_customizers": get_joined_keys_dict(nested_scientific_category_customizers),
             "scientific_property_customizers": get_joined_keys_dict(nested_scientific_property_customizers),
+        }
+
+        self.downscaling_model_component_customizer_set_with_subforms = {
+            "model_customizer": model_customizer_with_subforms,
+            "standard_category_customizers": standard_category_customizers_with_subforms,
+            "standard_property_customizers": standard_property_customizers_with_subforms,
+            "scientific_category_customizers": get_joined_keys_dict(nested_scientific_category_customizers_with_subforms),
+            "scientific_property_customizers": get_joined_keys_dict(nested_scientific_property_customizers_with_subforms),
         }
 
         self.downscaling_model_component_proxy_set = {
@@ -245,7 +257,7 @@ class TestQuestionnaireBase(TestCase):
 
         d1_keys = d1_copy.keys()
         d2_keys = d2_copy.keys()
-        self.assertListEqual(d1_keys, d2_keys, msg=msg)
+        self.assertSetEqual(set(d1_keys), set(d2_keys), msg=msg)  # comparing as a set b/c order is irrelevant
 
         for key in d1_keys:
             d1_value = d1_copy[key]
@@ -255,7 +267,15 @@ class TestQuestionnaireBase(TestCase):
             # (see http://stackoverflow.com/questions/16058571/comparing-querysets-in-django-testcase)
             d1_type = type(d1_value)
             d2_type = type(d2_value)
-            self.assertEqual(d1_type, d2_type, msg=msg)
+
+            try:
+                self.assertEqual(d1_type, d2_type, msg=msg)
+            except AssertionError:
+                # I need a quick check just in case I am comparing different types of strings
+                string_types = [str, unicode, ]
+                if not (d1_type in string_types and d2_type in string_types):
+                    raise AssertionError(msg)
+
             if d1_type == QuerySet:
                 self.assertQuerysetEqual(d1_value, d2_value)
             else:

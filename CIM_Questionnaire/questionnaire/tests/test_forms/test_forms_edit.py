@@ -23,7 +23,6 @@ from CIM_Questionnaire.questionnaire.forms.forms_edit_standard_properties import
 from CIM_Questionnaire.questionnaire.forms.forms_edit_scientific_properties import *
 
 from CIM_Questionnaire.questionnaire.views.views_base import get_cached_existing_customization_set, get_cached_new_realization_set, get_cached_existing_realization_set
-from CIM_Questionnaire.questionnaire.utils import remove_non_loaded_data, remove_null_data
 from CIM_Questionnaire.questionnaire.tests.test_base import TestQuestionnaireBase
 
 
