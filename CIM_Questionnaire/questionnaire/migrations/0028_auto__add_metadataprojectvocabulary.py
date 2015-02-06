@@ -3,8 +3,9 @@ from south.utils import datetime_utils as datetime
 from south.db import db
 from south.v2 import SchemaMigration
 from django.db import models
-
+from django.db.utils import ProgrammingError
 from django.contrib.contenttypes.models import ContentType
+from django.db.transaction import rollback
 
 class Migration(SchemaMigration):
 

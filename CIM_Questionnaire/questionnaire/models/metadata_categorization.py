@@ -30,7 +30,8 @@ import re
 
 from CIM_Questionnaire.questionnaire import APP_LABEL
 from CIM_Questionnaire.questionnaire.models.metadata_proxy import MetadataModelProxy, MetadataStandardPropertyProxy, MetadataStandardCategoryProxy
-from CIM_Questionnaire.questionnaire.utils import validate_file_extension, validate_file_schema, xpath_fix, OverwriteStorage
+from CIM_Questionnaire.questionnaire.fields import OverwriteStorage
+from CIM_Questionnaire.questionnaire.utils import validate_file_extension, validate_file_schema, xpath_fix
 from CIM_Questionnaire.questionnaire.utils import LIL_STRING, SMALL_STRING, BIG_STRING, HUGE_STRING
 
 UPLOAD_DIR  = "categorizations"

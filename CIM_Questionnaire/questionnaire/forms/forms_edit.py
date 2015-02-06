@@ -24,10 +24,8 @@ from django.utils.translation import ugettext
 from CIM_Questionnaire.questionnaire.forms.forms_base import MetadataForm, MetadataFormSet, MetadataInlineFormSet
 from CIM_Questionnaire.questionnaire.models.metadata_model import MetadataModel
 from CIM_Questionnaire.questionnaire.fields import MetadataFieldTypes
-from CIM_Questionnaire.questionnaire.utils import get_data_from_formset, QuestionnaireError
+from CIM_Questionnaire.questionnaire.utils import get_data_from_formset, remove_non_loaded_data, remove_null_data, QuestionnaireError
 
-
-MANAGEMENT_FORM_FIELD_NAMES = [TOTAL_FORM_COUNT, INITIAL_FORM_COUNT, MAX_NUM_FORM_COUNT]
 
 class MetadataEditingForm(MetadataForm):
 
@@ -768,7 +766,7 @@ def get_data_from_edit_forms(model_formset, standard_properties_formsets, scient
     model_formset_data = get_data_from_formset(model_formset, existing_data=existing_data)
     data.update(model_formset_data)
 
-    for standard_property_formset in standard_properties_formsets.values():
+    for i, standard_property_formset in enumerate(standard_properties_formsets.values()):
         standard_property_formset_data = get_data_from_formset(standard_property_formset, existing_data=existing_data)
         data.update(standard_property_formset_data)
 
@@ -795,23 +793,12 @@ def get_data_from_edit_forms(model_formset, standard_properties_formsets, scient
     # I have to clean the data dictionary before sending the POST
 
     if simulate_post:
-        data_copy = data.copy()
         loaded_model_forms = model_formset.get_loaded_forms()
         loaded_model_prefixes = [model_form.prefix for model_form in loaded_model_forms]
-        for key, value in data.iteritems():
-            if any(key == u"%s-%s" % (model_formset.prefix, management_form_field_name) for management_form_field_name in MANAGEMENT_FORM_FIELD_NAMES):
-                # but don't get rid of management form stuff
-                continue
-            if not any(key.startswith(loaded_key) for loaded_key in loaded_model_prefixes):
-                # if this item doesn't begin w/ one of the loaded_prefixes, then it must be unloaded
-                # which means it shouldn't appear in the POST
-                data_copy.pop(key)
-            elif value == None:
-                # if this item has no value, then it shouldn't appear in the POST
-                data_copy.pop(key)
-        return data_copy
-    else:
-        return data
+        data = remove_non_loaded_data(data, loaded_model_prefixes, model_formset.prefix)
+        data = remove_null_data(data)
+
+    return data
 
 
 def get_data_from_existing_edit_forms(model_formset, standard_properties_formsets, scientific_properties_formsets):
@@ -840,12 +827,9 @@ def get_data_from_existing_edit_forms(model_formset, standard_properties_formset
         scientific_property_formset_data = get_data_from_formset(scientific_property_formset)
         data.update(scientific_property_formset_data)
 
-    data_copy = data.copy()
-    for key, value in data.iteritems():
-        if value == None:
-            data_copy.pop(key)
+    data = remove_null_data(data)
 
-    return data_copy
+    return data
 
 
 def save_valid_forms(model_formset, standard_properties_formsets, scientific_properties_formsets, model_parent_dictionary={}):
