@@ -1,0 +1,11 @@
+{% load questionnaire_filters %}
+
+
+<li>
+   <a href="#tab_{{model_form.prefix}}_scientificproperties">
+        Scientific Properties
+        <span style="font-size: small;">
+            ({{active_scientific_categories_and_properties|get_length_of_values}})
+        </span>
+    </a>
+</li>

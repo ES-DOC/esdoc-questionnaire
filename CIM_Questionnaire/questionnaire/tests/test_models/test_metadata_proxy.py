@@ -15,6 +15,7 @@ from CIM_Questionnaire.questionnaire.models.metadata_proxy import MetadataModelP
 
 class TestMetadataProxy(TestQuestionnaireBase):
 
+    # TODO: ADD TEST FOR is_multiple
 
     def check_property_order(self, property_list):
         """ Ensures that the lists returned by the fns below are ordered according to category then property """

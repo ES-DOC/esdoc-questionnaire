@@ -29,11 +29,10 @@ from collections import OrderedDict
 from django.utils import timezone
 
 from CIM_Questionnaire.questionnaire.models.metadata_vocabulary import MetadataVocabulary
-from CIM_Questionnaire.questionnaire.models.metadata_proxy import MetadataScientificPropertyProxy, MetadataScientificCategoryProxy
+#from CIM_Questionnaire.questionnaire.models.metadata_proxy import MetadataScientificPropertyProxy, MetadataScientificCategoryProxy
 from CIM_Questionnaire.questionnaire.fields import MetadataFieldTypes, MetadataAtomicFieldTypes, EnumerationField, CardinalityField, MetadataUnitTypes
-from CIM_Questionnaire.questionnaire.utils import LIL_STRING, SMALL_STRING, BIG_STRING, HUGE_STRING, QuestionnaireError
-from CIM_Questionnaire.questionnaire.utils import find_in_sequence, validate_no_spaces, validate_no_reserved_words, valiate_no_bad_chars
-
+from CIM_Questionnaire.questionnaire.utils import LIL_STRING, SMALL_STRING, BIG_STRING, HUGE_STRING, BAD_CHARS_LIST, QuestionnaireError
+from CIM_Questionnaire.questionnaire.utils import find_in_sequence, validate_no_spaces, validate_no_bad_chars
 from CIM_Questionnaire.questionnaire import APP_LABEL
 
 class MetadataCustomizer(models.Model):
@@ -134,7 +133,7 @@ class MetadataCustomizer(models.Model):
         return (model_customizer,standard_category_customizers,standard_property_customizers,scientific_category_customizers,scientific_property_customizers)
 
     @classmethod
-    def update_existing_customizer_set(cls,model_customizer,vocabularies):
+    def update_existing_customizer_set(cls, model_customizer, vocabularies):
         # TODO: RIGHT NOW THIS WORKS BY UPDATING SCIENTIFIC CATEGORIES/PROPERTIES (IF VOCABULARY IS RE-REGISTERED)
         # TODO: IT SHOULD ALSO WORK W/ STANDARD CATEGORIES/PROPERTIES (IF VERSION IS RE-REGISTERED)
 
@@ -189,11 +188,13 @@ class MetadataCustomizer(models.Model):
 
 
     @classmethod
-    def get_existing_customizer_set(cls,model_customizer,vocabularies):
+    def get_existing_customizer_set(cls, model_customizer, vocabularies=[]):
         """retrieves the full set of customizations used by a particular model_customizer w/ a specified list of vocabs"""
 
-        standard_category_customizers = model_customizer.standard_property_category_customizers.all().prefetch_related("standard_property_customizers")
-        standard_property_customizers = model_customizer.standard_property_customizers.all().select_related("proxy").order_by("category__order","order")
+        standard_category_customizers = model_customizer.standard_property_category_customizers.all()
+        standard_property_customizers = model_customizer.standard_property_customizers.all()
+        #standard_category_customizers = model_customizer.standard_property_category_customizers.all().prefetch_related("standard_property_customizers")
+        #standard_property_customizers = model_customizer.standard_property_customizers.all().select_related("proxy").order_by("category__order","order")
 
         scientific_category_customizers = {}
         scientific_property_customizers = {}
@@ -203,9 +204,18 @@ class MetadataCustomizer(models.Model):
             scientific_property_customizers[vocabulary_key] = {}
             for component in vocabulary.component_proxies.all():
                 component_key = component.get_key()
-                scientific_category_customizers[vocabulary_key][component_key] = model_customizer.scientific_property_category_customizers.filter(vocabulary_key=vocabulary_key,component_key=component_key).select_related("project","model_customizer")
-                scientific_property_customizers[vocabulary_key][component_key] = model_customizer.scientific_property_customizers.filter(vocabulary_key=vocabulary_key,component_key=component_key).select_related("proxy","proxy__category","category").order_by("category__order","order")
-
+                scientific_category_customizers[vocabulary_key][component_key] = \
+                    model_customizer.scientific_property_category_customizers.filter(
+                        vocabulary_key=vocabulary_key,
+                        component_key=component_key
+                    #).select_related("project","model_customizer")
+                    )
+                scientific_property_customizers[vocabulary_key][component_key] = \
+                    model_customizer.scientific_property_customizers.filter(
+                        vocabulary_key=vocabulary_key,
+                        component_key=component_key
+                    #).select_related("proxy","proxy__category","category")
+                    ).order_by("category__order", "order")
         return (model_customizer,standard_category_customizers,standard_property_customizers,scientific_category_customizers,scientific_property_customizers)
 
     @classmethod
@@ -280,25 +290,24 @@ class MetadataModelCustomizer(MetadataCustomizer):
         verbose_name        = '(DISABLE ADMIN ACCESS SOON) Metadata Model Customizer'
         verbose_name_plural = '(DISABLE ADMIN ACCESS SOON) Metadata Model Customizers'
 
-    proxy                   = models.ForeignKey("MetadataModelProxy",blank=True,null=True)
+    proxy                  = models.ForeignKey("MetadataModelProxy",blank=True,null=True)
 
-    project                 = models.ForeignKey("MetadataProject",blank=True,null=True,related_name="model_customizers")
-    version                 = models.ForeignKey("MetadataVersion",blank=True,null=True,related_name="model_customizers")
-    vocabularies            = models.ManyToManyField("MetadataVocabulary",blank=True,null=True) # cannot set 'limit_choices_to' here, instead setting 'queryset' on form
-    vocabularies.help_text  = "Choose which Controlled Vocabularies (in which order) apply to this model."
-    vocabulary_order        = models.CommaSeparatedIntegerField(max_length=BIG_STRING,blank=True,null=True)
+    project                = models.ForeignKey("MetadataProject",blank=True,null=True,related_name="model_customizers")
+    version                = models.ForeignKey("MetadataVersion",blank=True,null=True,related_name="model_customizers")
+    vocabularies           = models.ManyToManyField("MetadataVocabulary",blank=True,null=True) # cannot set 'limit_choices_to' here, instead setting 'queryset' on form
+    vocabularies.help_text = "Choose which Controlled Vocabularies (in which order) apply to this model."
+    vocabulary_order       = models.CommaSeparatedIntegerField(max_length=BIG_STRING,blank=True,null=True)
 
-    name                    = models.CharField(max_length=SMALL_STRING,blank=False,null=False,validators=[validate_no_spaces])
-    name.help_text          = "A unique name for this customization (ie: \"basic\" or \"advanced\")"
-    description             = models.TextField(verbose_name="Customization Description",blank=True,null=True)
-    description.help_text   = "An explanation of how this customization is intended to be used.  This information is for informational purposes only."
-    default                 = models.BooleanField(verbose_name="Is Default Customization?",blank=True,default=False)
-    default.help_text       = "Every Questionnaire instance must have one default customization.  If this is the first customization you are creating, please ensure this checkbox is selected."
+    name                   = models.CharField(max_length=SMALL_STRING,blank=False,null=False,validators=[validate_no_spaces, validate_no_bad_chars])
+    name.help_text         = "A unique name for this customization.  Spaces or the following characters are not allowed: \"%s\"." % BAD_CHARS_LIST
+    description            = models.TextField(verbose_name="Customization Description",blank=True,null=True)
+    description.help_text  = "An explanation of how this customization is intended to be used.  This information is for informational purposes only."
+    default                = models.BooleanField(blank=True,default=False,verbose_name="Is Default Customization?<div class='documentation'>Every Questionnaire instance must have one default customization.  If this is the first customization you are creating, please ensure this checkbox is selected.</div>")
 
 
     model_title                         = models.CharField(max_length=BIG_STRING,verbose_name="Name that should appear on the Document Form",blank=False,null=True)
     model_description                   = models.TextField(verbose_name="A description of the document",blank=True,null=True)
-    model_description.help_text         = "This text will appear as documentation in the editing form.  Inline HTML formatting is permitted."
+    model_description.help_text         = "This text will appear as documentation in the editing form.  Inline HTML formatting is permitted.  The initial documentation comes from the CIM Schema."
     model_show_all_categories           = models.BooleanField(verbose_name="Display empty categories?",default=False)
     model_show_all_categories.help_text = "Include categories in the editing form for which there are no (visible) attributes associated with"
     model_show_all_properties           = models.BooleanField(verbose_name="Display uncategorized fields?",default=True)
@@ -573,7 +582,7 @@ class MetadataPropertyCustomizer(MetadataCustomizer):
     unique              = models.BooleanField(default=False,blank=True,verbose_name="Must the value of this property be unique?")
     verbose_name        = models.CharField(max_length=LIL_STRING,blank=False,verbose_name="How should this property be labeled (overrides default name)?")
     default_value       = models.CharField(max_length=BIG_STRING,blank=True,null=True,verbose_name="What is the default value of this property?")
-    documentation       = models.TextField(blank=True,verbose_name="What is the help text to associate with property?")
+    documentation       = models.TextField(blank=True,verbose_name="What is the help text to associate with property?<div class='documentation'>The initial documentation comes from the CIM Schema or a CIM Controlled Vocabulary.</div>")
     inline_help         = models.BooleanField(default=False,blank=True,verbose_name="Should the help text be displayed inline?")
     
     
@@ -616,7 +625,7 @@ class MetadataStandardPropertyCustomizer(MetadataPropertyCustomizer):
     relationship_cardinality   = CardinalityField(blank=True,verbose_name="How many instances (min/max) of this property are allowed?")
     relationship_show_subform  = models.BooleanField(default=False,blank=True,verbose_name="Should this property be rendered in its own subform?")
     relationship_show_subform.help_text = "Checking this will cause the property to be rendered as a nested subform within the <i>parent</i> form; All properties of this model will be available to view and edit in that subform.\
-                                          Unchecking it will cause the attribute to be rendered as a simple select widget.  This option is only available if the \"parent\" customizer has been saved."
+                                          Unchecking it will cause the attribute to be rendered as a simple select widget."
     subform_customizer         = models.ForeignKey("MetadataModelCustomizer",blank=True,null=True,related_name="property_customizer")
 
     def __unicode__(self):

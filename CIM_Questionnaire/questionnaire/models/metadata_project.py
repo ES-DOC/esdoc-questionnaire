@@ -49,13 +49,13 @@ class MetadataProject(models.Model):
     description   = models.TextField(blank=True)
     url           = models.URLField(blank=True)
     providers     = models.ManyToManyField("MetadataOpenIDProvider",blank=True)
-    vocabularies  = models.ManyToManyField("MetadataVocabulary", blank=True, null=True, through="MetadataProjectVocabulary") # note my use of the 'through' kwarg; this is to detect changes in the vocabularies m2m relationship
+    vocabularies  = models.ManyToManyField("MetadataVocabulary", blank=True, null=True, through="MetadataProjectVocabulary")  # note my use of the 'through' kwarg; this is to detect changes in the vocabularies m2m relationship
     active        = models.BooleanField(blank=False,null=False,default=True)
     authenticated = models.BooleanField(blank=False,null=False,default=False)
     email         = models.EmailField(blank=True,null=True,verbose_name="Contact Email")
 
     def __unicode__(self):
-        return u'%s' % self.name
+        return u'%s' % self.title
 
     def clean(self):
         # force name to be lowercase
@@ -133,11 +133,11 @@ def project_post_delete(sender, **kwargs):
 # so I just track the changes myself (see MetadataProjectVocabulary below used as the 'through' table for the vocabularies field)
 # @receiver(m2m_changed, sender=MetadataProject.vocabularies.through)
 # def project_vocabularies_changed(sender, **kwargs):
-# pass
+#     pass
 
 
 # NOTE THAT SETTING UP THIS CLASS REQUIRED ME TO OVERWRITE SOME OF THE MIGRATION CODE
-# (see questionnaire/migrations/0026...)
+# (see questionnaire/migrations/0028...)
 class MetadataProjectVocabulary(models.Model):
     class Meta:
         app_label = APP_LABEL
@@ -145,7 +145,7 @@ class MetadataProjectVocabulary(models.Model):
         unique_together = ("project", "vocabulary")
 
     project = models.ForeignKey("MetadataProject")
-    vocabulary = models.ForeignKey("MetadataVocabulary")
+    vocabulary = models.ForeignKey("MetadataVocabulary", related_name="")  # TODO: DOUBLE-CHECK THIS
 
     # TODO: IS THERE ANY WAY TO TRIGGER AN UPDATE OF CUSTOMIZERS & REALIZATIONS
     # TODO: ONLY WHEN _ALL_ MetadataProjectVocabularies HAVE BEEN SAVED/DELETED?
@@ -172,4 +172,5 @@ class MetadataProjectVocabulary(models.Model):
             except ValueError:
                 # old_vocabulary wasn't active in the customizer so no need to update it
                 pass
+
         # TODO: DO THE SAME THING FOR REALIZATIONS?

@@ -20,10 +20,11 @@ Summary of module goes here
 
 """
 
-from questionnaire.utils    import *
-from questionnaire.models   import *
-from questionnaire.forms    import *
-from questionnaire.views    import *
+from django.contrib.sites.models import get_current_site
+from django.shortcuts import render_to_response
+from django.template import RequestContext
+
+from CIM_Questionnaire.questionnaire import get_version
 
 def test(request):
 
@@ -36,7 +37,6 @@ def test(request):
     dict = {
         "site" : get_current_site(request),
         "questionnaire_version" : get_version(),
-        #"form" : form,
     }
 
     return render_to_response('questionnaire/questionnaire_test.html', dict, context_instance=RequestContext(request))

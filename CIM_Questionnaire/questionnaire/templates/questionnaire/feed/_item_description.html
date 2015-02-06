@@ -11,6 +11,7 @@
         <li>publication date: {{ obj.publication_date }}</li>
     </ul>
     <!--<br/>-->
+    <b>name:&nbsp;</b> {{ model.get_label }}<br/>
     {% with description=model|get_standard_property_by_name:"description" %}
         <b>description:&nbsp;</b> {{ description.get_value }}
     {% endwith %} {# /description #}

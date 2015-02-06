@@ -76,6 +76,6 @@
 
 {% if model.is_document %}
     {% with "questionnaire/serialization/ESDOC_XML/_document.xml" as template %}
-        {%  include template %}
+        {% include template %}
     {% endwith %}
 {% endif %} {# /is_document #}

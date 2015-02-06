@@ -123,7 +123,7 @@
     <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}questionnaire/css/questionnaire_customize.css" />
 
     <style type="text/css">
-        #questionniare .no_float    { float: none important! }
+        #questionniare .no_float    { float: none important!; }
     </style>
 
 {% endblock %} {# / style #}
@@ -181,29 +181,7 @@
                     <table width="100%">
                         {% for field in model_customizer_form.get_customizer_fields %}
                             <tr class="{% cycle 'odd' 'even' %} field" name="{{field.html_name}}">
-                                {% if field.name == "default" %}
-                                    {# a one-off for the "default" field #}
-                                    {# to show help_text inline #}
-                                    {# to draw attention to it #}
-                                    {# b/c it's unintuitive #}
-                                    <td>
-                                        <span>{{  field.label }}&nbsp;</span>
-                                        {% if field.help_text %}
-                                            <div class="documentation">
-                                                {{ field.help_text|safe }}
-                                            </div>
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {{field}}
-                                        {% if field.errors %}
-                                            {% include "questionnaire/_error.html" %}
-                                        {% endif %} {# / field.errors #}
-                                    </td>
-                                {% else %}
-                                    {# just show all other fields normally #}
-                                    {% include "questionnaire/_field.html" %}
-                                {% endif %} {# /field.name=="default #}
+                                {% include "questionnaire/_field.html" %}
                             </tr>
                         {% endfor %} {# / field in model_customizer_form.get_customizer_fields #}
                     </table>
@@ -357,6 +335,9 @@
                                                                                     </td>
                                                                                     <td>
                                                                                         {{field}}
+                                                                                        <span class="documentation">
+                                                                                            Before customizing a subform, be sure to save the current customization.
+                                                                                        </span>
                                                                                         <br/>
                                                                                         <button type="button"
                                                                                                 class="customize_subform"
@@ -450,7 +431,7 @@
                                                                             <!-- the titles, etc. of the accordions are different for the customization form -->
                                                                             {% with formset=formsets|get_value_from_key:component_key %}
 
-                                                                                
+
                                                                                 {{ formset.management_form }}
                                                                                 {# formset.non_form_errors #}
 
@@ -488,11 +469,11 @@
                                                                                             <div class="form"> {# wrapping everything in a div.form so I can group together fields belonging to the same model #}
 
                                                                                                 <div class="hidden">
-                                                                                                    {# the fields I explicitly set to hidden #}
+                                                                                                    the fields I explicitly set to hidden
                                                                                                     {% for field in form.get_hidden_fields %}
                                                                                                         {{ field }}
                                                                                                     {% endfor %} {# /field #}
-                                                                                                    {# and the fields that are hidden by default #}
+                                                                                                    and the fields that are hidden by default
                                                                                                     {% for hidden_field in form.hidden_fields %}
                                                                                                         {{ hidden_field }}
                                                                                                     {% endfor %} {# /hidden_field #}
@@ -525,7 +506,7 @@
                                                                                                                         </tr>
                                                                                                                         {% for label,fields in form.get_extra_fieldsets.items %}
                                                                                                                             <tr class="{% cycle 'even' 'odd' %} field">
-                                                                                                                                <td width="25%">                                                                                                                                    
+                                                                                                                                <td width="25%">
                                                                                                                                     {{label}}
                                                                                                                                 </td>
                                                                                                                                 {% for field in fields %}
@@ -551,7 +532,7 @@
                                                                                 </div>
 
                                                                             {% endwith %} {# / formset #}
-                                                                        
+
                                                                         </div> <!-- /.tab_content -->
                                                                     </div> <!-- /#tab_scientific_properties_{{vocabulary_key}}_{{component_key}} -->
                                                                 {% endwith %} {# / component_key #}

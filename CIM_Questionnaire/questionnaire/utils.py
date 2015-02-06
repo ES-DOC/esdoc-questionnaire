@@ -16,26 +16,22 @@ __date__ = "Dec 9, 2013 4:33:11 PM"
 """
 .. module:: utils
 
-Summary of module goes here
-
+Utility fns used by all modules
 """
 
 from django.core.exceptions import ValidationError
-from django.core.files.storage import FileSystemStorage
-from django.conf import settings
 
 from django.forms import model_to_dict
+from django.forms.formsets import TOTAL_FORM_COUNT, INITIAL_FORM_COUNT, MAX_NUM_FORM_COUNT
 from django.forms.models import BaseModelFormSet, BaseInlineFormSet
 from django.forms.fields import MultiValueField
 
-import os
 import re
 import urllib
 
 from django.core import serializers
 from lxml import etree as et
 
-from CIM_Questionnaire.questionnaire import get_version # used by other modules
 
 def xpath_fix(node, xpath):
     """Helper function to address lxml smart strings memory leakage issue.
@@ -54,6 +50,7 @@ def xpath_fix(node, xpath):
 
     return node.xpath(xpath, smart_strings=False)
 
+
 def get_tag_without_namespace(node):
     """
     gets tag from lxml element but w/out embedded namespace
@@ -64,6 +61,7 @@ def get_tag_without_namespace(node):
     """
     full_tag = node.tag
     return full_tag.split("}")[-1]
+
 
 def get_attribute_without_namespace(node,attribute_name):
     """
@@ -87,10 +85,10 @@ def get_attribute_without_namespace(node,attribute_name):
 
 APP_LABEL = "questionnaire"
 
-LIL_STRING   = 128
+LIL_STRING = 128
 SMALL_STRING = 256
-BIG_STRING   = 512
-HUGE_STRING  = 1024
+BIG_STRING = 512
+HUGE_STRING = 1024
 
 #: a serializer to use throughout the app; defined once to avoid too many fn calls
 JSON_SERIALIZER = serializers.get_serializer("json")()
@@ -119,15 +117,26 @@ CIM_DOCUMENT_TYPES = [
     "experiment",
 ]
 
-SUPPORTED_DOCUMENTS = ["modelcomponent", "statisticalmodelcomponent"]
+#: the set of document types that can be fully processed (ie: end-to-end) by the questionnaire
+SUPPORTED_DOCUMENTS = [
+    "modelcomponent",
+    "statisticalmodelcomponent",
+]
 
 #: keys to use for cases where a model has no vocabulary, or where it is the root component of several vocabularies
-DEFAULT_VOCABULARY_KEY = "DEFAULT_VOCABULARY" #'c6fd2da4-723e-4816-9730-cf591ec8ffb9'
-DEFAULT_COMPONENT_KEY = "DEFAULT_COMPONENT" #'445af81a-3bb5-4be4-b01d-347cbf464e4e'
+DEFAULT_VOCABULARY_KEY = "DEFAULT_VOCABULARY"
+DEFAULT_COMPONENT_KEY = "DEFAULT_COMPONENT"
+
+MANAGEMENT_FORM_FIELD_NAMES = [
+    TOTAL_FORM_COUNT,
+    INITIAL_FORM_COUNT,
+    MAX_NUM_FORM_COUNT
+]
 
 ##############
 # assertions #
 ##############
+
 
 def assert_no_string_nones(dct):
     """
@@ -163,6 +172,7 @@ class QuestionnaireError(Exception):
 # validators #
 ##############
 
+
 def validate_no_spaces(value):
     """
     validator function to use with charFields;
@@ -174,23 +184,25 @@ def validate_no_spaces(value):
     if ' ' in value:
         raise ValidationError(u"Value may not contain spaces.")
 
+BAD_CHARS = "\ / < > % # % { } [ ] $ |"
+BAD_CHARS_REGEX = "[\\\/<>&#%{}\[\]\$\|]"
+BAD_CHARS_LIST = ", ".join(BAD_CHARS.split(' '))
 
-def valiate_no_bad_chars(value):
-    INVALID_CHARS       = "< > % # % { } [ ] $"
-    INVALID_CHARS_REGEX = "[<>&#%{}\[\]\$]"
 
-    if re.search(INVALID_CHARS_REGEX,value):
-        raise ValidationError(u"value may not contain any of the following characters: '%s'" % (INVALID_CHARS))#not contain any of the following invalid characters: '%'" % (value,INVALID_CHARS))
+def validate_no_bad_chars(value):
+
+    if re.search(BAD_CHARS_REGEX,value):
+        raise ValidationError(u"value may not contain any of the following characters: '%s'" % (BAD_CHARS))
 
 
 def validate_password(value):
     # passwords have a minimum length...
     PASSWORD_LENGTH = 6
     if len(value) < PASSWORD_LENGTH:
-        raise ValidationError("A password must contain at least %s characters" % (PASSWORD_LENGTH))
+        raise ValidationError("A password must contain at least %s characters" % PASSWORD_LENGTH)
     # and a mixture of letters and non-letters...
     if not (re.match(r'^.*[A-Za-z]', value) and
-            re.match(r'^.*[0-9!@#$%^&*()\-_=+.,?:;></\\\[\]\{\}]',value)):
+            re.match(r'^.*[0-9!@#$%^&*()\-_=+.,?:;></\\\[\]\{\}]', value)):
         raise ValidationError("A password must contain both letters and non-letters")
 
 
@@ -202,14 +214,17 @@ def validate_no_reserved_words(value):
     
     RESERVED_WORDS = [
         # cannot have projects w/ these names, else the URLs won't make sense...
-        "admin", "ajax", "customize", "edit", "help", "index", "login", "logout",
-        "questionnaire", "register", "static", "site_media", "user",
-        "mindmaps", "view",
+        "admin", "static", "site_media",
+        "index", "login", "logout", "register", "user",
+        "questionnaire", "mindmaps",
+        "customize", "edit", "view", "help",
+        "ajax", "api",
         "test",
     ]
 
     if value.lower() in RESERVED_WORDS:
         raise ValidationError(u"'%s' is a reserved word" % value)
+
 
 def validate_file_extension(value,valid_extensions):
     """
@@ -246,6 +261,7 @@ def validate_file_schema(value,schema_path):
 # form/field manipulation #
 ###########################
 
+
 def get_form_by_field(formset,field_name,field_value):
     """
     returns the 1st form in a formset whose specified field has the specified value
@@ -258,6 +274,7 @@ def get_form_by_field(formset,field_name,field_value):
         if form.get_current_field_value(field_name) == field_value:
             return form
     return None
+
 
 def get_forms_by_field(formset,field_name,field_value):
     """
@@ -272,6 +289,20 @@ def get_forms_by_field(formset,field_name,field_value):
         if form.get_current_field_value(field_name) == field_value:
             forms.append(form)
     return forms
+
+
+def get_form_by_prefix(formset, prefix):
+    """
+    returns the form in a formset w/ a prefix of prefix
+    :param formset: formset to check
+    :param prefix: value of prefix to look for
+    :return: matching form or none
+    """
+    for form in formset:
+        if form.prefix == prefix:
+            return form
+    return None
+
 
 def remove_form_errors(form):
     form.errors["__all__"] = form.error_class()
@@ -301,13 +332,14 @@ def update_field_widget_attributes(field,widget_attributes):
 # model_to_dict IGNORES FOREIGNKEY FIELDS & MANYTOMANY FIELDS
 # THIS FN WILL UPDATE THE MODEL_DATA ACCORDING TO THE "update_fields" ARGUMENT
 def get_initial_data(model, update_fields={}):
-    dict = model_to_dict(model)
-    dict.update(update_fields)
-    for key, value in dict.iteritems():
-        if isinstance(value,tuple):
+    _dict = model_to_dict(model)
+    _dict.update(update_fields)
+    for key, value in _dict.iteritems():
+        if isinstance(value, tuple):
             # TODO: SOMETIMES THIS RETURNS A TUPLE INSTEAD OF A STRING, NOT SURE WHY
-            dict[key] = value[0]
-    return dict
+            _dict[key] = value[0]
+    return _dict
+
 
 # TODO: REPLACE THE ABOVE FN W/ THIS FN IN CODE
 def model_to_data(model, exclude=[], include={}):
@@ -318,6 +350,7 @@ def model_to_data(model, exclude=[], include={}):
         if key in exclude:
             model_data.pop(key)
     return model_data
+
 
 def model_to_data_old(model, exclude=[], include={}):
     """
@@ -334,28 +367,34 @@ def model_to_data_old(model, exclude=[], include={}):
     return model_data
 
 
-
 def get_data_from_form(form, existing_data={}):
 
     data = {}
 
     form_prefix = form.prefix
     for field_name, field in form.fields.iteritems():
-        if field_name in existing_data:
-            field_value = existing_data[field_name]
-        else:
-            field_value = form.get_current_field_value(field_name)
+        try:
+            if field_name in existing_data:
+                field_value = existing_data[field_name]
+            else:
+                field_value = form.get_current_field_value(field_name)
+        except:
+            if field_name in existing_data:
+                field_value = existing_data[field_name]
+            else:
+                field_value = form.get_current_field_value(field_name)
 
         if form_prefix:
-            field_key = u"%s-%s" % (form_prefix,field_name)
+            field_key = u"%s-%s" % (form_prefix, field_name)
         else:
-            field_key = u"%s" % (field_name)
+            field_key = u"%s" % field_name
 
         # this checks if I am dealing w/ a MultiValueField
         # Django automatically separates this into its constituent fields when gathering data via POST
-        # this fn has to do this manually b/c it's called outside of the standard GET/POST view paradigm
+        # this fn has to do this manually b/c it's usually called outside of the standard GET/POST view paradigm
+        # (ie: via the testing framework)
         # TODO: AM I SURE THAT THE FIELD_VALUE WILL ALWAYS BE A LIST AND NOT A TUPLE?
-        if isinstance(field,MultiValueField) and isinstance(field_value,list):
+        if isinstance(field, MultiValueField) and isinstance(field_value, list):
             for i, v in enumerate(field_value):
                 data[u"%s_%s" % (field_key, i)] = v
         else:
@@ -365,70 +404,69 @@ def get_data_from_form(form, existing_data={}):
     return data
 
 
-def get_data_from_formset(formset):
+def get_data_from_formset(formset, existing_data={}):
     data = {}
-    existing_data = {}
+    current_data = {}
 
     for form in formset:
-        existing_data.clear()
+        current_data.clear()
+        current_data.update(existing_data)
 
         # in general, this is only needed when calling this fn outside of the interface
         # ie: in the testing framework
         # (the hidden pk & fk fields do not get passed in via the queryset for existing model formsets)
         pk_field_name = formset.model._meta.pk.name
-        existing_data[pk_field_name] = form.fields[pk_field_name].initial
-        if isinstance(formset,BaseInlineFormSet):
+        current_data[pk_field_name] = form.fields[pk_field_name].initial
+        if isinstance(formset, BaseInlineFormSet):
             fk_field_name = formset.fk.name
-            existing_data[fk_field_name] = form.fields[fk_field_name].initial
+            current_data[fk_field_name] = form.fields[fk_field_name].initial
 
         if formset.can_delete:
-            existing_data["DELETE"] = False
+            current_data["DELETE"] = False
 
-        form_data = get_data_from_form(form, existing_data)
+        form_data = get_data_from_form(form, current_data)
         data.update(form_data)
 
     formset_prefix = formset.prefix
     if formset_prefix:
-        total_forms_key = u"%s-TOTAL_FORMS" % (formset_prefix)
-        initial_forms_key = u"%s-INITIAL_FORMS" % (formset_prefix)
+        total_forms_key = u"%s-TOTAL_FORMS" % formset_prefix
+        initial_forms_key = u"%s-INITIAL_FORMS" % formset_prefix
     else:
         total_forms_key = u"TOTAL_FORMS"
-        initial_forms_key = u"INITIALFORMS"
+        initial_forms_key = u"INITIAL_FORMS"
     data[total_forms_key] = formset.total_form_count()
     data[initial_forms_key] = formset.initial_form_count()
 
     return data
 
-class OverwriteStorage(FileSystemStorage):
 
-    def get_available_name(self, name):
-        """Returns a filename that's free on the target storage system, and
-        available for new content to be written to.
+def remove_non_loaded_data(data, loaded_prefixes, management_form_prefix):
+    # it is much easier to work out which forms w/in a formset are loaded than which are non-loaded
+    # so even though this removes the non-loaded data, I pass it the loaded prefixes
+    data_copy = data.copy()
+    for key, value in data.iteritems():
+        if any(key == u"%s-%s" % (management_form_prefix, management_form_field_name) for management_form_field_name in MANAGEMENT_FORM_FIELD_NAMES):
+            # but don't get rid of management form stuff
+            continue
+        if not any(key.startswith(loaded_key) for loaded_key in loaded_prefixes):
+            # if this item doesn't begin w/ one of the loaded_prefixes, then it must be unloaded
+            # which means it shouldn't appear in the POST
+            data_copy.pop(key)
+    return data_copy
 
-        Found at http://djangosnippets.org/snippets/976/
 
-        This file storage solves overwrite on upload problem. Another
-        proposed solution was to override the save method on the model
-        like so (from https://code.djangoproject.com/ticket/11663):
+def remove_null_data(data):
+    data_copy = data.copy()
+    for key, value in data.iteritems():
+        if value == None:
+            data_copy.pop(key)
+    return data_copy
 
-        def save(self, *args, **kwargs):
-            try:
-                this = MyModelName.objects.get(id=self.id)
-                if this.MyImageFieldName != self.MyImageFieldName:
-                    this.MyImageFieldName.delete()
-            except: pass
-            super(MyModelName, self).save(*args, **kwargs)
-        """
-        # If the filename already exists, remove it as if it was a true file system
-        if self.exists(name):
-            file_path = os.path.join(settings.MEDIA_ROOT,name)
-            os.remove(file_path)
-            print "deleted existing %s file" % (file_path)
-        return name
 
 #######################
 # string manipulation #
 #######################
+
 
 def remove_spaces_and_linebreaks(str):
     return ' '.join(str.split())
@@ -436,6 +474,7 @@ def remove_spaces_and_linebreaks(str):
 ####################
 # url manipulation #
 ####################
+
 
 def add_parameters_to_url(path, **kwargs):
     """
@@ -447,12 +486,13 @@ def add_parameters_to_url(path, **kwargs):
 # enumerated types #
 ####################
 
+
 class EnumeratedType(object):
 
     def __init__(self, type=None, name=None, cls=None):
-        self._type  = type  # the key of this type
-        self._name  = name  # the pretty name of this type
-        self._class = cls   # the Python class used by this type (not always relevant)
+        self._type = type  # the key of this type
+        self._name = name  # the pretty name of this type
+        self._class = cls  # the Python class used by this type (not always relevant)
 
     def getType(self):
         return self._type
@@ -468,15 +508,15 @@ class EnumeratedType(object):
         return name
 
     # comparisons are made via the _type attribute...
-    def __eq__(self,other):
-        if isinstance(other,self.__class__):
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
             # comparing two enumeratedtypes
             return self.getType() == other.getType()
         else:
             # comparing an enumeratedtype with a string
             return self.getType() == other
 
-    def __ne__(self,other):
+    def __ne__(self, other):
         return not self.__eq__(other)
 
 
@@ -486,19 +526,20 @@ class EnumeratedTypeError(Exception):
     def __str__(self):
         return "EnumeratedTypeError: " + self.msg
 
+
 # this used to be based on deque to preserve FIFO order...
 # but since I changed to adding fields to this list as needed in class's __init__() fn,
 # that doesn't make much sense; so I'm basing it on a simple list
 # and adding an ordering fn
 class EnumeratedTypeList(list):
 
-    def __getattr__(self,type):
+    def __getattr__(self, type):
         for et in self:
             if et.getType() == type:
                 return et
         raise EnumeratedTypeError("unable to find %s" % str(type))
 
-    def get(self,type):
+    def get(self, type):
         for et in self:
             if et.getType() == type:
                 return et
@@ -507,7 +548,7 @@ class EnumeratedTypeList(list):
     # a method for sorting these lists
     # order is a list of EnumeratatedType._types
     @classmethod
-    def comparator(cls,et,etOrderList):
+    def comparator(cls, et, etOrderList):
         etType = et.getType()
         if etType in etOrderList:
             # if the type being compared is in the orderList, return it's position
@@ -518,6 +559,7 @@ class EnumeratedTypeList(list):
 #################
 # FuzzyIntegers #
 #################
+
 
 # this is a very clever idea for comparing integers against min/max bounds
 # credit goes to http://lukeplant.me.uk/blog/posts/fuzzy-testing-with-assertnumqueries/
@@ -540,19 +582,20 @@ class FuzzyInt(int):
 # deal w/ hierarchies of components #
 #####################################
 
-import mptt
 from mptt.fields import TreeForeignKey
 
+
+# TODO: I DON'T THINK THIS DECORATOR IS BEING USED ANYMORE
 def hierarchical(cls):
     TreeForeignKey(cls, null=True, blank=True, related_name='bens_children').contribute_to_class(cls,'parent')
     #ForeignKey(cls, null=True, blank=True,related_name="children").contribute_to_class(cls,'parent')
-    #mptt.register(cls)
     return cls
 
 ######################################
 # removes duplicates from a sequence #
 # but preserves order                #
 ######################################
+
 
 def ordered_set(sequence):
     seen_items = set()
@@ -563,6 +606,7 @@ def ordered_set(sequence):
 # gets index from list only if exists              #
 # (used to deal w/ XML nodes in registration fns)  #
 ####################################################
+
 
 def get_index(list, i):
     try:
@@ -576,11 +620,12 @@ def get_index(list, i):
 # b/c it doesn't traverse the whole list) #
 ###########################################
 
+
 def find_in_sequence(fn, sequence):
-  for item in sequence:
-    if fn(item)==True:
-      return item
-  return None
+    for item in sequence:
+        if fn(item) == True:
+            return item
+    return None
 
 
 ########################
@@ -605,13 +650,18 @@ def get_joined_keys_dict(dct):
             ret[u'{0}_{1}'.format(k, k2)] = v2
     return ret
 
+###########################
+# iterate through options #
+###########################
 
 from collections import namedtuple
 import itertools
 
+
 def itr_row(key, sequence):
     for element in sequence:
         yield ({key: element})
+
 
 def itr_product_keywords(keywords, as_namedtuple=False):
     if as_namedtuple:
@@ -660,7 +710,4 @@ def itr_product_keywords(keywords, as_namedtuple=False):
 #                   else:
 #                       raise
 #             import ipdb; ipdb.set_trace()
-#
-
-################################################
 

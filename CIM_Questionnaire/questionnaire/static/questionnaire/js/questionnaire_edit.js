@@ -204,8 +204,7 @@ function treeviews(element) {
         minExpandLevel  : 1,
         activeVisible   : true,
         onActivate      : function(node) {
-            var pane_key = node.data.key + "_pane";
-            show_pane(pane_key);
+            show_pane(node.data.key);
         },
         onDeactivate    : function(node) {
             inactive_pane_id = node.data.key + "_pane";
@@ -215,7 +214,6 @@ function treeviews(element) {
         }
         ,
         onSelect        : function(flag,node) {
-
             selected_nodes = $(element).dynatree("getSelectedNodes");
             $(element).find(".dynatree-partsel:not(.dynatree-selected)").each(function () {
                 var node = $.ui.dynatree.getNode(this);
@@ -269,8 +267,73 @@ function treeviews(element) {
 }
 
 function show_pane(pane_key) {
-    var pane = $("#" + pane_key);
+    var pane = $("#" + pane_key + "_pane");
+
+    if (!$(pane).hasClass("loaded")) {
+
+        toastr.info("loading...")
+
+        var project_name = $("#_project_name").val()
+        var session_id = $("#_session_id").val()
+        var section_key = $(pane).attr("data-section-key");
+
+        /* get_form_section_view is the name of the AJAX view to return the particular type of form (new vs existing, edit vs customize) */
+        /* for this template; it is set in the template header */
+        var url = window.document.location.protocol + "//" + window.document.location.host + "/api/" + project_name + "/" + get_form_section_view+ "/" + section_key;
+        url += "?session_id=" + session_id;
+
+        $.ajax({
+            url: url,
+            type: "GET",
+            success: function (data) {
+
+                $(pane).html(data);
+                $(pane).ready(function () {
+
+                    var parent = $(pane);
+                    init_widgets(tabs, $(parent).find(".tabs"));
+                    init_widgets(helps, $(parent).find(".help_button"));
+                    init_widgets(dates, $(parent).find(".datetime, .date"));
+                    init_widgets(expanders, $(parent).find(".default, .character"));
+                    init_widgets(selects, $(parent).find(".multiselect"));
+                    init_widgets(buttons, $(parent).find("input.button"))
+                    init_widgets(enumerations, $(parent).find(".multiselect.open,.multiselect.nullable"));
+                    init_widgets(accordions, $(parent).find(".accordion").not(".fake"));
+                    init_widgets(dynamic_accordions, $(parent).find(".accordion .accordion_header"));
+                    init_widgets(accordion_buttons, $(parent).find(".subform_toolbar button"));
+                    init_widgets(dynamic_accordion_buttons, $(parent).find("button.add, button.remove, button.replace"));
+                    init_widgets(fieldsets, $(parent).find(".collapsible_fieldset"))
+
+//            init_widgets_on_show(accordions,$(parent).find(".accordion").not(".fake"));
+//            init_widgets_on_show(dynamic_accordions,$(parent).find(".accordion .accordion_header"));
+//            init_widgets_on_show(accordion_buttons,$(parent).find(".subform_toolbar button"));
+//            init_widgets_on_show(dynamic_accordion_buttons,$(parent).find("button.add,button.remove,button.replace"));
+//            /* TODO: accordion_headers
+//            init_widgets_on_show(accordion_headers,$(parent).find(".scientific_property"));
+//            */
+//
+//            init_widgets_on_show(autocompletes,$(parent).find(".autocomplete"));
+//            init_widgets_on_show(enablers,$(parent).find(".enabler"))
+//
+//            init_widgets(enumerations,$(parent).find(".multiselect.open,.multiselect.nullable"));
+//            init_widgets(readonlies,$(parent).find(".readonly"));
+
+                    // identify the section as loaded for js...
+                    $(pane).addClass("loaded");
+                    // and for the django view...
+                    $(pane).find("input#id_"+pane_key+"-loaded").prop('checked', true);
+                    /* TODO: SINCE I'M LOADING AN ENTIRE PANE, JUST SET ALL LOADED FLAGS TO TRUE */
+                    /* TODO: IN THE LONGTERM, THOUGH, I OUGHT TO BE MORE PRECISE HERE */
+                    $(pane).find("input[name$='-loaded']").prop("checked", true);
+
+                });
+            toastr.clear();
+            }
+        });
+
+    }
     $(pane).show();
+    /* make sure that whichever sub-tab had been selected gets activated once this pane is displayed */
     $(pane).find(".tabs:first").tabs({ "active" : PREVIOUSLY_SELECTED_TAB });
 }
 
@@ -440,6 +503,8 @@ function add_subform(row) {
                                         update_field_names(row,old_prefix,new_prefix);
                                         /* insert data */
                                         populate_form(row,parsed_data);
+                                        /* make sure that all 'loaded' fields are set to true */
+                                        $(row).find("input[name$='-loaded']").prop("checked", true);
                                         /* update label */
                                         $(row).find(".accordion_header:first .label").html(new_label);
 

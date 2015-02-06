@@ -1,0 +1,54 @@
+{% load questionnaire_filters %}
+
+{% with property_customizer=property_form.get_customizer %}
+
+    <h3 class="accordion_header">
+        <table width="90%" border="0">
+            <tr valign="center">
+                <td>
+                    <b>name:&nbsp;</b>
+                    <input style="width: 75%;" class="label" type="text" readonly="readonly" name="{{property_form.prefix}}-scientific_property_name" value="{{property_customizer.verbose_name}}" maxlength="256">
+                </td>
+                <td>
+                    <b>value:&nbsp;</b>
+                    <input style="width: 75%;" class="label" type="text" readonly="readonly" name="{{property_form.prefix}}-scientific_property_value" maxlength="256">
+                </td>
+            </tr>
+        </table>
+    </h3> <!-- /.accordion_header -->
+
+    <div class="accordion_content">
+        <div class="form"> {# wrapping everything in a div.form so I can group together fields belonging to the same model #}
+
+            <div class="scientific_property">
+
+                <table width="100%">
+                    <tr class="odd">
+
+                        {% include "questionnaire/_scientific_property_field.html" %}
+
+                        <td class="hidden"> <!-- seems weird to have a td I don't display, but it seemed weirder to have content outside of the table -->
+                            <div class="hidden">
+                                {# the fields I explicitly set to hidden #}
+                                {% for field in property_form.get_hidden_fields %}
+                                    {{ field }}
+                                {% endfor %} {# /field #}
+                                {# and the fields that are hidden by default #}
+                                {% for hidden_field in property_form.hidden_fields %}
+                                    {{ hidden_field }}
+                                {% endfor %} {# /hidden_field #}
+                            </div> <!-- /.hidden -->
+                        </td> <!-- /.hidden -->
+
+                    </tr>
+                </table>
+            </div> <!-- .scientific_property -->
+
+            {% if property_customizer.display_extra_attributes %}
+                {% include "questionnaire/_scientific_property_extra_fields.html" %}
+            {% endif %} {# /show_extra_attributes #}
+
+        </div> <!-- /.form -->
+    </div> <!-- /.accordion_content -->
+
+{% endwith %} {# property_customizer #}

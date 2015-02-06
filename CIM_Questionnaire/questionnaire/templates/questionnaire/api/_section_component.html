@@ -1,0 +1,81 @@
+{% extends "questionnaire/api/_section.html" %}
+
+{% load questionnaire_filters %}
+
+{% get_default_vocabulary_key as root_vocabulary_key %}
+{% get_default_component_key as root_component_key %}
+
+{% block content %}
+
+    {% with section_parameters.model_form as model_form %}
+
+{# placeholder element already has 'pane' class; no need to repeat it here #}
+{#        <div class="pane" id="{{ model_form.prefix }}_pane">#}
+            <fieldset>
+                <legend>
+                    <span class="title">
+                        {% for field in model_form.get_header_fields %}
+                            {{ field }}
+                        {% endfor %} {# /field #}
+                    </span>
+                </legend>
+
+            <div class="hidden">
+                {# the fields I explicitly set to hidden #}
+                {% for field in model_form.get_hidden_fields %}
+                    {{ field }}
+                {% endfor %} {# /field #}
+                {# and the fields that are hidden by default #}
+                {% for hidden_field in model_form.hidden_fields %}
+                    {{ hidden_field }}
+                {% endfor %}  {# /hidden_field #}
+                {# and a special form-only (ie: not part of the underlying model) field #}
+                {# which lets me check which forms to deal w/ on the formset methods in python #}
+                {{ model_form.loaded }}
+            </div> <!-- /.hidden -->
+
+            {% with active_scientific_categories_and_properties=section_parameters.active_scientific_categories_and_properties %}
+                {% with active_standard_categories_and_properties=section_parameters.active_standard_categories_and_properties %}
+
+                    <div class="tabs">
+                        <ul>
+                            {% for category_customizer,property_customizers in active_standard_categories_and_properties.items %}
+                                {% include "questionnaire/api/_section_standard_category_header.html" %}
+                            {% endfor %}
+                            {% include "questionnaire/api/_section_scientific_category_top_level_header.html" %}
+                        </ul>
+
+                        {% with standard_property_formset=section_parameters.standard_property_formset %}
+
+                            {{ standard_property_formset.management_form }}
+                            {{ standard_property_formset.non_form_errors }}
+
+                            {% for category_customizer,property_customizers in active_standard_categories_and_properties.items %}
+                                {% include "questionnaire/api/_section_standard_category_content.html" %}
+                            {% endfor %}
+
+                        {% endwith %} {# /standard_property_formset #}
+
+                        {% with  scientific_property_formset=section_parameters.scientific_property_formset %}
+                            {# standard_property deals w/ 1 form at a time #}
+                            {# hence, inserting the management_form and non_form_errors at this top-level #}
+                            {# but I deal w/ scientific properties as a whole formset #}
+                            {# so those things go in the template(s) below #}
+                            {% include "questionnaire/api/_section_scientific_category_top_level_content.html" %}
+                        {% endwith %}
+
+                    </div>
+
+                {% endwith %} {# /active_standard_categories_and_properties #}
+            {% endwith %} {# /active_scientific_categories_and_properties #}
+
+
+            </fieldset>
+
+{# see comment above; no need to repeat 'pane' class #}
+{#        </div> <!-- /.pane --> #}
+
+    {% endwith %}
+
+{% endblock %} {# /content #}
+

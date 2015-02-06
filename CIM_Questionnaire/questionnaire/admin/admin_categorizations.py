@@ -25,8 +25,10 @@ from django.forms import *
 
 from django.contrib import admin
 
-from questionnaire.models import MetadataCategorization, MetadataStandardCategoryProxy
-from questionnaire.utils  import *
+from CIM_Questionnaire.questionnaire.models.metadata_categorization import MetadataCategorization, MetadataStandardCategoryProxy
+
+from CIM_Questionnaire.questionnaire.utils import update_field_widget_attributes
+
 def register_metadata_categorization(modeladmin, request, queryset):
     for categorization in queryset:
         # passing 'request' kwarg in-case I need to pass messages back to the admin

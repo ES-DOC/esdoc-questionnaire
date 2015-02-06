@@ -18,20 +18,20 @@ from CIM_Questionnaire.questionnaire.utils import FuzzyInt
 
 class Test(TestQuestionnaireBase):
 
-    def get_request_url(self,project_name="test",version_name="test",model_name="test",customizer_name=""):
+    def get_request_url(self,project_name="test",version_key="test",model_name="test",customizer_name=""):
         """Return a URL suitable for client and factory testing."""
 
         if customizer_name:
-            request_url = u"/%s/customize/%s/%s/%s/" % (project_name,version_name,model_name,customizer_name)
+            request_url = u"/%s/customize/%s/%s/%s/" % (project_name,version_key,model_name,customizer_name)
         else:
-            request_url = u"/%s/customize/%s/%s/" % (project_name,version_name,model_name)
+            request_url = u"/%s/customize/%s/%s/" % (project_name,version_key,model_name)
         return request_url
 
     def test_validate_view_arguments(self):
 
         kwargs = {
             "project_name" : self.project.name.lower(),
-            "version_name" : self.version.name.lower(),
+            "version_key" : self.version.get_key(),
             "model_name" : self.model_customizer.proxy.name.lower(),
         }
 
@@ -47,7 +47,7 @@ class Test(TestQuestionnaireBase):
 
         # can't find version
         invalid_kwargs = kwargs.copy()
-        invalid_kwargs.update({"version_name":"invalid"})
+        invalid_kwargs.update({"version_key":"invalid"})
         (validity,project,version,model_proxy,msg) = validate_view_arguments(**invalid_kwargs)
         self.assertEqual(validity,False)
 

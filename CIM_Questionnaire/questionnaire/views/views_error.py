@@ -22,10 +22,9 @@ Summary of module goes here
 from django.template import RequestContext
 from django.http import HttpResponse
 from django.shortcuts import loader
+from django.contrib.sites.models import get_current_site
 
-from django.contrib.sites.models    import get_current_site
-
-from CIM_Questionnaire.questionnaire.utils import get_version
+from CIM_Questionnaire.questionnaire import get_version
 
 def questionnaire_error(request,error_msg="",status_code=400):
 

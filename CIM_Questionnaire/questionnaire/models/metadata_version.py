@@ -23,15 +23,15 @@ Summary of module goes here
 from django.db import models
 from django.contrib import messages
 from django.conf import settings
-
 from lxml import etree as et
+
 import os
 import re
 
 from CIM_Questionnaire.questionnaire.models import MetadataModelProxy, MetadataStandardCategoryProxy, MetadataStandardPropertyProxy
-from CIM_Questionnaire.questionnaire.fields import MetadataFieldTypes, MetadataAtomicFieldTypes
+from CIM_Questionnaire.questionnaire.fields import MetadataFieldTypes, MetadataAtomicFieldTypes, OverwriteStorage
 from CIM_Questionnaire.questionnaire.utils import APP_LABEL, LIL_STRING, SMALL_STRING, BIG_STRING, HUGE_STRING
-from CIM_Questionnaire.questionnaire.utils import OverwriteStorage, validate_file_extension, validate_file_schema, xpath_fix, remove_spaces_and_linebreaks, get_index
+from CIM_Questionnaire.questionnaire.utils import validate_file_extension, validate_file_schema, validate_no_spaces, validate_no_bad_chars, xpath_fix, remove_spaces_and_linebreaks, get_index
 
 UPLOAD_DIR  = "versions"
 UPLOAD_PATH = os.path.join(APP_LABEL,UPLOAD_DIR)    # this is a relative path (will be concatenated w/ MEDIA_ROOT by FileField)
@@ -53,17 +53,40 @@ class MetadataVersion(models.Model):
         verbose_name        = 'Metadata Version'
         verbose_name_plural = 'Metadata Versions'
 
-    
-    name            = models.CharField(max_length=SMALL_STRING, blank=False, null=False)
-    version         = models.CharField(max_length=SMALL_STRING, blank=True, null=True)
-    registered      = models.BooleanField(default=False)
-    url             = models.URLField(blank=False)
-    url.help_text   = "This URL is used as the namespace of serialized documents"
-    file            = models.FileField(upload_to=UPLOAD_PATH, validators=[validate_version_file_extension,validate_version_file_schema], storage=OverwriteStorage())
-    file.help_text  = "Note that files with the same names will be overwritten"
+    name = models.CharField(max_length=SMALL_STRING, blank=False, null=False, validators=[validate_no_spaces, validate_no_bad_chars])
+    version = models.CharField(max_length=SMALL_STRING, blank=False, null=False, validators=[validate_no_spaces, validate_no_bad_chars])
+    key = models.CharField(max_length=SMALL_STRING, blank=False, null=False, editable=False)
 
+    url = models.URLField(blank=False)
+    url.help_text = "This URL is used as the namespace of serialized documents"
+    file = models.FileField(upload_to=UPLOAD_PATH, validators=[validate_version_file_extension,validate_version_file_schema], storage=OverwriteStorage())
+    file.help_text = "Note that files with the same names will be overwritten"
     categorization  = models.ForeignKey("MetadataCategorization", blank=True, null=True, related_name="versions", on_delete=models.SET_NULL)
     categorization.help_text = "A version can only have a single categorization."
+
+    registered = models.BooleanField(default=False)
+
+    def __init__(self, *args, **kwargs):
+        super(MetadataVersion, self).__init__(*args, **kwargs)
+        self._original_key = self.get_key()
+
+    def save(self, *args, **kwargs):
+        _current_key = self.get_key()
+        if _current_key != self._original_key:
+            self.key = self.get_key()
+        super(MetadataVersion, self).save(*args, **kwargs)
+        self._original_key = self.key
+
+
+
+    # def save(self, *args, **kwargs):
+    #     if self.pk:
+    #         existing_version = MetadataVersion.objects.get(pk=self.pk)
+    #         if existing_version.name != self.name or existing_version.version != self.version
+    #             self.key = u"%s_%s" % (self.name, self.version)
+    #     else:
+    #         self.key = u"%s_%s" % (self.name, self.version)
+    #     super(MetadataVersion, self).save(*args, **kwargs)
 
     def __unicode__(self):
 
@@ -81,15 +104,23 @@ class MetadataVersion(models.Model):
         # this also allows me to query the db w/out using the '__iexact' qualifier, which should reduce db hits
         self.name = self.name.lower()
 
+    def get_key(self):
+        return u"%s_%s" % (self.name, self.version)
+
+
     def register(self, **kwargs):
 
         request = kwargs.pop("request",None)
 
-        self.file.open()
         try:
+            self.file.open()
             version_content = et.parse(self.file)
-        finally:
             self.file.close()
+        except IOError:
+            msg = "Error opening file: %s" % self.file
+            if request:
+                messages.add_message(request, messages.ERROR, msg)
+                return
 
         recategorization_needed = False
 

@@ -22,7 +22,7 @@ Summary of module goes here
 
 from django.contrib import admin
 
-from questionnaire.models import MetadataVocabulary
+from CIM_Questionnaire.questionnaire.models.metadata_vocabulary import MetadataVocabulary
 
 def register_metadata_vocabularies(modeladmin, request, queryset):
     for vocabulary in queryset:

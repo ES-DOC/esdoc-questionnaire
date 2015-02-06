@@ -6,7 +6,7 @@
         {% if field.help_text %}
             {% include "questionnaire/_help.html" %}
         {% endif %} {# /field.help_text #}
-        <span>{{field_label}}&nbsp;</span>
+        <span>{{field_label|safe}}&nbsp;</span>
     </td>
     <td>
         {{field}}

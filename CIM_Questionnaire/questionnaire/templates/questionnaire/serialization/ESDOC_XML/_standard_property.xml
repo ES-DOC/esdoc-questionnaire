@@ -15,12 +15,13 @@
 
         {% elif property_type == "RELATIONSHIP" %}
 
+
             {% if property.proxy.is_multiple %}
                 <{{ tagname|get_plural }}>
             {% endif %} {# /is_multiple #}
 
             {% for value in property.get_value %}
-                {# TODO: IF IS_REFERENCE...  #}
+                {# TODO: IF IS_REFERENCE... #}
                 <{{ tagname }}>
                     {% with model=value model_type=value.name.lower %}
                         {% with "questionnaire/serialization/ESDOC_XML/_model.xml" as template %}
@@ -33,8 +34,8 @@
             {% if property.proxy.is_multiple %}
                 </{{ tagname|get_plural }}>
             {% endif %} {# /is_multiple #}
-
-        {% endif %}
+            
+        {% endif %} {# /property_type #}
     {% endwith %} {# /property_type #}
 
 {% endwith %} {# /tagname #}

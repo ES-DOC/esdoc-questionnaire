@@ -21,8 +21,9 @@ Summary of module goes here
 """
 
 from django.contrib import admin
-from CIM_Questionnaire.questionnaire.models.metadata_project import MetadataProject, MetadataProjectVocabulary
+from django.forms import ModelForm
 
+from CIM_Questionnaire.questionnaire.models.metadata_project import MetadataProject, MetadataProjectVocabulary
 
 class MetadataProjectVocabularyInline(admin.TabularInline):
     model = MetadataProjectVocabulary

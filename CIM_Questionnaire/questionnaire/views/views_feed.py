@@ -1,26 +1,22 @@
-
 ####################
-#   CIM_Questionnaire
-#   Copyright (c) 2013 CoG. All rights reserved.
+#   ES-DOC CIM Questionnaire
+#   Copyright (c) 2014 ES-DOC. All rights reserved.
 #
-#   Developed by: Earth System CoG
 #   University of Colorado, Boulder
 #   http://cires.colorado.edu/
 #
 #   This project is distributed according to the terms of the MIT license [http://www.opensource.org/licenses/MIT].
 ####################
 
-__author__="allyn.treshansky"
-__date__ ="Dec 18, 2013 1:32:37 PM"
+__author__ = "allyn.treshansky"
+__date__ = "Dec 01, 2014 3:00:00 PM"
 
 """
 .. module:: questionnaire_feed
 
-Summary of module goes here
-
+Views for ATOM feed
 """
-import os
-from django.conf import settings
+
 from django.contrib.syndication.views import Feed, FeedDoesNotExist
 from django.utils.feedgenerator import Atom1Feed
 from django.http import HttpResponse
@@ -29,15 +25,15 @@ from django.core.urlresolvers import reverse
 from CIM_Questionnaire.questionnaire.models import MetadataProject, MetadataVersion, MetadataModelProxy, MetadataModel, MetadataModelSerialization
 from CIM_Questionnaire.questionnaire.views.views_error import questionnaire_error
 
+
 class MetadataFeed(Feed):
 
     feed_type = Atom1Feed
-    link = "/feed/" # (not sure how this is used)
+    link = "/feed/"  # (not sure how this is used)
     title_template = "questionnaire/feed/_item_title.html"
     description_template = "questionnaire/feed/_item_description.html"
 
-    def get_object(self, request, project_name=None, version_name=None, model_name=None):
-
+    def get_object(self, request, project_name=None, version_key=None, model_name=None):
         """
         get_object parses the request sent from urls.py
         it sets some internal variables so that items() knows which models to expose
@@ -55,36 +51,34 @@ class MetadataFeed(Feed):
             try:
                 self.project = MetadataProject.objects.get(name__iexact=project_name)
             except MetadataProject.DoesNotExist:
-                return HttpResponse("hi")
-                msg = "Cannot find the <u>project</u> '%s'.  Has it been registered?" % (project_name)
+                msg = "Cannot find the <u>project</u> '%s'.  Has it been registered?" % project_name
                 return questionnaire_error(request, msg)
             if not self.project.active:
-                msg = "Project '%s' is inactive." % (project_name)
+                msg = "Project '%s' is inactive." % project_name
                 return questionnaire_error(request, msg)
 
-            self.title += " project=%s" % (self.project.title)
+            self.title += " project=%s" % self.project.title
 
-            if version_name:
+            if version_key:
                 try:
-                    self.version = MetadataVersion.objects.get(name__iexact=version_name, registered=True)
+                    self.version = MetadataVersion.objects.get(key=version_key, registered=True)
                 except MetadataVersion.DoesNotExist:
-                    msg = "Cannot find the <u>version</u> '%s'.  Has it been registered?" % (version_name)
+                    msg = "Cannot find the <u>version</u> '%s'.  Has it been registered?" % (version_key)
                     return questionnaire_error(request, msg)
 
-                self.title += ", version=%s" % (self.version.name)
+                self.title += ", version=%s" % self.version.name
 
                 if model_name:
                     try:
                         self.proxy = MetadataModelProxy.objects.get(version=self.version, name__iexact=model_name)
                     except MetadataModelProxy.DoesNotExist:
-                        msg = "Cannot find the <u>model</u> '%s' in the <u>version</u> '%s'." % (model_name,version_name)
+                        msg = "Cannot find the <u>model</u> '%s' in the <u>version</u> '%s'." % (model_name,self.version)
                         return questionnaire_error(request, msg)
                     if not self.proxy.is_document():
                         msg = "<u>%s</u> is not a recognized document type in the CIM." % model_name
                         return questionnaire_error(request, msg)
 
-                    self.title += ", document_type=%s" % (self.proxy.name.title())
-
+                    self.title += ", document_type=%s" % self.proxy.name.title()
 
     def items(self):
         """
@@ -114,10 +108,10 @@ class MetadataFeed(Feed):
         model = item.model
         url_args = [
             model.project.name.lower(),  # project
-            model.version.name.lower(),  # version
-            model.proxy.name.lower(),    # model_type
-            item.name,                  # serialization_name
-            item.version,   # serialization_version
+            model.version.get_key(),  # version
+            model.proxy.name.lower(),  # model_type
+            item.name,  # serialization_name
+            item.version,  # serialization_version
         ]
         item_url = reverse("serialize_specific_version", args=url_args)
         return item_url
@@ -128,7 +122,7 @@ class MetadataFeed(Feed):
 #########################
 
 
-def validate_view_arguments(project_name="", version_name="", model_name="", model_guid=None, model_version=None):
+def validate_view_arguments(project_name="", version_key="", model_name="", model_guid=None, model_version=None):
     """
     Ensures that the arguments passed to a view are valid (ie: resolve to active projects, models, versions)
     """
@@ -137,26 +131,25 @@ def validate_view_arguments(project_name="", version_name="", model_name="", mod
         (True, None, None, None, "")
 
     project_name_lower = project_name.lower()
-    version_name_lower = version_name.lower()
 
     # try to get the project...
     try:
         project = MetadataProject.objects.get(name=project_name_lower)
     except MetadataProject.DoesNotExist:
-        msg = "Cannot find the <u>project</u> '%s'.  Has it been registered?" % (project_name)
+        msg = "Cannot find the <u>project</u> '%s'.  Has it been registered?" % project_name
         validity = False
         return (validity, project, version, model, msg)
 
     if not project.active:
-        msg = "Project '%s' is inactive." % (project_name)
+        msg = "Project '%s' is inactive." % project_name
         validity = False
         return (validity, project, version, model, msg)
 
     # try to get the version...
     try:
-        version = MetadataVersion.objects.get(name=version_name_lower, registered=True)
+        version = MetadataVersion.objects.get(key=version_key, registered=True)
     except MetadataVersion.DoesNotExist:
-        msg = "Cannot find the <u>version</u> '%s'.  Has it been registered?" % (version_name)
+        msg = "Cannot find the <u>version</u> '%s'.  Has it been registered?" % version_key
         validity = False
         return (validity, project, version, model, msg)
 
@@ -164,7 +157,7 @@ def validate_view_arguments(project_name="", version_name="", model_name="", mod
     try:
         proxy = MetadataModelProxy.objects.get(version=version, name__iexact=model_name)
     except MetadataModelProxy.DoesNotExist:
-        msg = "Cannot find the <u>model</u> '%s' in the <u>version</u> '%s'." % (model_name, version_name)
+        msg = "Cannot find the <u>model</u> '%s' in the <u>version</u> '%s'." % (model_name, version)
         validity = False
         return (validity, project, version, model, msg)
     if not proxy.is_document():
@@ -222,12 +215,12 @@ def validate_view_arguments(project_name="", version_name="", model_name="", mod
 #     return HttpResponse(serialized_model, content_type="text/xml")
 
 
-def questionnaire_serialize(request, project_name=None, version_name=None, model_name=None, model_guid=None, model_version=None):
+def questionnaire_serialize(request, project_name=None, version_key=None, model_name=None, model_guid=None, model_version=None):
 
     # validate arguments...
     # (if this view is invoked from the above feed, these checks are superfluous)
     # (but if a user accesses this view directly, they are needed)
-    (validity, project, version, model, msg) = validate_view_arguments(project_name=project_name, version_name=version_name, model_name=model_name, model_guid=model_guid, model_version=model_version)
+    (validity, project, version, model, msg) = validate_view_arguments(project_name=project_name, version_key=version_key, model_name=model_name, model_guid=model_guid, model_version=model_version)
     if not validity:
         return questionnaire_error(request, msg)
 
@@ -237,7 +230,5 @@ def questionnaire_serialize(request, project_name=None, version_name=None, model
         serialization = serializations.get(version=model_version)
     else:
         serialization = serializations[0]
-
-
 
     return HttpResponse(serialization.content, content_type="text/xml")

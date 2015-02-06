@@ -21,43 +21,34 @@ Summary of module goes here
 """
 
 from django.contrib.sites.models import get_current_site
-from django.core.urlresolvers import reverse
 from django.http import HttpResponseRedirect
-from django.shortcuts import redirect, render_to_response
+from django.shortcuts import render_to_response, redirect
 from django.template import RequestContext
 
-
-from CIM_Questionnaire.questionnaire.models.metadata_project import MetadataProject
-from CIM_Questionnaire.questionnaire.models.metadata_version import MetadataVersion
-from CIM_Questionnaire.questionnaire.models.metadata_proxy import MetadataModelProxy
-from CIM_Questionnaire.questionnaire.models.metadata_customizer import MetadataCustomizer, MetadataModelCustomizer, MetadataStandardPropertyCustomizer, MetadataScientificPropertyCustomizer
-from CIM_Questionnaire.questionnaire.models.metadata_model import MetadataModel, MetadataStandardProperty, MetadataScientificProperty
-
-from CIM_Questionnaire.questionnaire.forms.forms_edit import create_new_edit_forms_from_models, create_existing_edit_forms_from_models, create_edit_forms_from_data, save_valid_forms
-
+from CIM_Questionnaire.questionnaire.models.metadata_customizer import MetadataCustomizer
+from CIM_Questionnaire.questionnaire.models.metadata_model import MetadataModel
+from CIM_Questionnaire.questionnaire.forms.forms_edit import create_existing_edit_forms_from_models
 from CIM_Questionnaire.questionnaire.views.views_edit import validate_view_arguments
 from CIM_Questionnaire.questionnaire.views.views_error import questionnaire_error
-from CIM_Questionnaire.questionnaire.views import *
-
 from CIM_Questionnaire.questionnaire import get_version
 
-def questionnaire_view_new(request, project_name="", model_name="", version_name="", **kwargs):
+def questionnaire_view_new(request, project_name="", model_name="", version_key="", **kwargs):
 
     # validate the arguments...
-    (validity, project, version, model_proxy, model_customizer, msg) = validate_view_arguments(project_name=project_name, model_name=model_name, version_name=version_name)
+    (validity, project, version, model_proxy, model_customizer, msg) = validate_view_arguments(project_name=project_name, model_name=model_name, version_key=version_key)
     if not validity:
-        return error(request, msg)
+        return questionnaire_error(request, msg)
 
     # and then let the user know that you can't view a new document
     msg = "The Questionnaire only supports <u>viewing</u> of existing instances."
-    return error(request, msg)
+    return questionnaire_error(request, msg)
 
-def questionnaire_view_existing(request, project_name="", model_name="", version_name="", model_id="", **kwargs):
+def questionnaire_view_existing(request, project_name="", model_name="", version_key="", model_id="", **kwargs):
 
     # validate the arguments...
-    (validity,project,version,model_proxy,model_customizer,msg) = validate_view_arguments(project_name=project_name,model_name=model_name,version_name=version_name)
+    (validity,project,version,model_proxy,model_customizer,msg) = validate_view_arguments(project_name=project_name,model_name=model_name,version_key=version_key)
     if not validity:
-        return error(request,msg)
+        return questionnaire_error(request,msg)
     request.session["checked_arguments"] = True
 
     # don't check authentication

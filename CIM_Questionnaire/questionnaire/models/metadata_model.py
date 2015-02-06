@@ -113,11 +113,18 @@ class MetadataModel(MPTTModel):
     order           = models.PositiveIntegerField(blank=True, null=True)
 
     def __unicode__(self):
+        label = self.get_label()
+        if label:
+            return u"%s : %s" % (self.name, label)
+        else:
+            return u'%s' % self.name
+
+    def get_label(self):
         label_property = find_in_sequence(lambda property: property.is_label == True, self.standard_properties.all())
         if label_property:
-            return u"%s : %s" % (self.name, label_property.get_value())
+            return u"%s" % label_property.get_value()
         else:
-            return u'%s' % (self.name)
+            return None
 
     def get_model_key(self):
         return u"%s_%s" % (self.vocabulary_key, self.component_key)
@@ -147,6 +154,39 @@ class MetadataModel(MPTTModel):
         self.document_version = u"%s.%s" % (self.get_major_version(), int(self.get_minor_version())+1)
         self.last_modified = timezone.now()
         super(MetadataModel, self).save(*args, **kwargs)
+
+    def update(self, model_customization):
+        """
+        looks through the customization and checks if any properties are set to display that do not already exist in this instance
+        :param model_customization:
+        :return:
+        """
+        standard_properties = self.standard_properties.all()
+        standard_property_customizations = model_customization.standard_property_customizers.all()
+        for standard_property_customization in standard_property_customizations:
+            standard_property_proxy = standard_property_customization.proxy
+            standard_property = find_in_sequence(lambda sp: sp.proxy == standard_property_proxy, standard_properties)
+            if standard_property:
+                if standard_property.field_type == "RELATIONSHIP":
+                    for submodel in standard_property.relationship_value.all():
+                        submodel_customizer = standard_property_customization.subform_customizer
+                        if submodel_customizer:
+                            submodel.update(submodel_customizer)
+
+            if standard_property_customization.displayed and not standard_property:
+                # if it should be displayed and is missing...
+                new_standard_property = MetadataStandardProperty(
+                    proxy=standard_property_proxy,
+                    model=self,
+                )
+                new_standard_property.reset()
+                new_standard_property.save()
+
+            elif not standard_property_customization.displayed and standard_property:
+                # if it should not be displayed but exists...
+                standard_property.delete()
+
+        # TODO: DOES THIS WORK FOR ALL TYPES OF STANDARD_PROPERTIES?
 
     def get_id(self):
         return self.guid

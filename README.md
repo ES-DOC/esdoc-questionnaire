@@ -29,8 +29,7 @@ What are the contents of esdoc-questionnaire ?
 --------------------------------------
 
     \CIM_Questionnaire	Django project root
-    \dist		distribution tarballs
-    \examples		sample data to play with
+    \examples	sample data to play with
 
 
 Further Information ?

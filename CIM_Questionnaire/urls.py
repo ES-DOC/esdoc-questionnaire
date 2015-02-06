@@ -8,7 +8,9 @@ urlpatterns = patterns('',
     # ORDER IS IMPORTANT!
 
     # media (when NOT served through the Apache web server)...
-    url(r'^site_media/(?P<path>.*)$', 'django.views.static.serve', {'document_root': settings.MEDIA_ROOT} ),
+    url(r'^site_media/profiles/(?P<profile_file>.+)$', 'profiling.view_profile'),
+    url(r'^site_media/(?P<path>.*)$', 'django.views.static.serve', {'document_root': settings.MEDIA_ROOT, "show_indexes" : True } ),
+    #url(r'^site_media/(?P<path>.*)$', 'django.views.static.serve', {'document_root': settings.MEDIA_ROOT} ),
 
     # admin...
     url(r'^admin/',     include(admin.site.urls)),

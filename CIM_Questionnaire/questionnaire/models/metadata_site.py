@@ -23,7 +23,9 @@ Summary of module goes here
 from django.db import models
 from django.contrib.sites.models import Site
 
-from questionnaire.utils import *
+from CIM_Questionnaire.questionnaire.utils import EnumeratedType, EnumeratedTypeList, QuestionnaireError
+from CIM_Questionnaire.questionnaire.utils import LIL_STRING, SMALL_STRING, BIG_STRING, HUGE_STRING
+from CIM_Questionnaire.questionnaire import APP_LABEL
 
 
 class MetadataSiteType(EnumeratedType):
@@ -76,7 +78,7 @@ def site_post_save(sender, **kwargs):
                 pass
             else:
                 msg = "Unable to create site profile for %s" % (site)
-                raise MetadataError(msg)
+                raise QuestionnaireError(msg)
 
 def get_metadata_site(site):
     try:

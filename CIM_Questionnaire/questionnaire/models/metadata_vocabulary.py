@@ -25,18 +25,16 @@ from django.db import models
 from django.template.defaultfilters import slugify
 from lxml import etree as et
 from django.conf import settings
+from django.contrib import messages
 
 from uuid import uuid4
-
 import os
-import re
 
 from CIM_Questionnaire.questionnaire.models.metadata_proxy import MetadataComponentProxy, MetadataScientificCategoryProxy, MetadataScientificPropertyProxy
+from CIM_Questionnaire.questionnaire.fields import OverwriteStorage
 from CIM_Questionnaire.questionnaire.utils import validate_file_extension, validate_file_schema, validate_no_spaces, xpath_fix
 from CIM_Questionnaire.questionnaire.utils import HUGE_STRING, BIG_STRING, SMALL_STRING, LIL_STRING, CIM_DOCUMENT_TYPES
-from CIM_Questionnaire.questionnaire.utils import QuestionnaireError, OverwriteStorage
-
-
+from CIM_Questionnaire.questionnaire.utils import QuestionnaireError
 from CIM_Questionnaire.questionnaire import APP_LABEL
 
 UPLOAD_DIR  = "vocabularies"
@@ -53,20 +51,20 @@ def validate_vocabulary_file_schema(value):
 
 class MetadataVocabulary(models.Model):
     class Meta:
-        app_label   = APP_LABEL
-        abstract    = False
+        app_label = APP_LABEL
+        abstract = False
         unique_together = ("name", "version")
         # this is one of the few classes that I allow admin access to, so give it pretty names:
-        verbose_name        = 'Metadata Vocabulary'
+        verbose_name = 'Metadata Vocabulary'
         verbose_name_plural = 'Metadata Vocabularies'
 
-    name            = models.CharField(max_length=SMALL_STRING, blank=False, null=False, validators=[validate_no_spaces,])
-    version         = models.CharField(max_length=LIL_STRING, blank=False, null=False )
-    url             = models.URLField(blank=True, null=True)
-    registered      = models.BooleanField(default=False)
-    file            = models.FileField(upload_to=UPLOAD_PATH,validators=[validate_vocabulary_file_extension,],storage=OverwriteStorage())
-    file.help_text  = "Note that files with the same names will be overwritten"
-    document_type   = models.CharField(max_length=64,blank=False,choices=[(document_type,document_type) for document_type in CIM_DOCUMENT_TYPES])
+    name           = models.CharField(max_length=SMALL_STRING, blank=False, null=False, validators=[validate_no_spaces,])
+    version        = models.CharField(max_length=LIL_STRING, blank=False, null=False )
+    url            = models.URLField(blank=True, null=True)
+    registered     = models.BooleanField(default=False)
+    file           = models.FileField(upload_to=UPLOAD_PATH,validators=[validate_vocabulary_file_extension,],storage=OverwriteStorage())
+    file.help_text = "Note that files with the same names will be overwritten"
+    document_type  = models.CharField(max_length=64,blank=False,choices=[(document_type,document_type) for document_type in CIM_DOCUMENT_TYPES])
 
     guid = models.CharField(blank=True, null=True, max_length=LIL_STRING, unique=True, editable=False)
 
@@ -99,18 +97,24 @@ class MetadataVocabulary(models.Model):
 
         super(MetadataVocabulary, self).save(*args, **kwargs)
 
-    def register(self,**kwargs):
+    def register(self, **kwargs):
 
         if not self.document_type:
             msg = "unable to register a vocabulary without an associated document_type"
             print "error: %s" % msg
             raise QuestionnaireError(msg)
 
-        request = kwargs.pop("request",None)
+        request = kwargs.pop("request", None)
 
-        self.file.open()
-        vocabulary_content = et.parse(self.file)
-        self.file.close()
+        try:
+            self.file.open()
+            vocabulary_content = et.parse(self.file)
+            self.file.close()
+        except IOError:
+            msg = "Error opening file: %s" % self.file
+            if request:
+                messages.add_message(request, messages.ERROR, msg)
+                return
 
         self.old_component_proxies = list(self.component_proxies.all())  # list forces qs evaluation immediately
         self.new_component_proxies = []
@@ -131,12 +135,14 @@ class MetadataVocabulary(models.Model):
         from CIM_Questionnaire.questionnaire.models.metadata_customizer import MetadataCustomizer, MetadataModelCustomizer
         customizers_to_update = MetadataModelCustomizer.objects.filter(vocabularies__in=[self.pk])
         for customizer in customizers_to_update:
-            MetadataCustomizer.update_existing_customizer_set(customizer,[self])
+            MetadataCustomizer.update_existing_customizer_set(customizer, [self])
 
 
-    def unregister(self,**kwargs):
-        request = kwargs.pop("request",None)
-        print "TODO!!!!"
+    def unregister(self, **kwargs):
+        request = kwargs.pop("request", None)
+        msg = "Unregister is unsupported"
+        if request:
+            messages.add_message(request, messages.ERROR, msg)
         self.registered = False
 
     def create_component_proxy(self,component_proxy_node,parent_component_proxy=None):
@@ -216,7 +222,7 @@ class MetadataVocabulary(models.Model):
                 # TODO: SHOULD I CREATE A NEW PROXY IF THE VALUES ARE CHANGED?
                 # TODO: OR JUST ADD NEW VALUES HERE?
                 # TODO: DOUBLE-CHECK THAT VALUES ARE ADDED CORRECTLY
-                new_property_proxy.values =  "|".join(property_proxy_values)
+                new_property_proxy.values = "|".join(property_proxy_values)
                 new_property_proxy.save()
                 new_property_proxies.append(new_property_proxy)
 
