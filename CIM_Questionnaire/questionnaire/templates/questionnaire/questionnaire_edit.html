@@ -40,7 +40,7 @@
             {% if not vocabularies %}
                 {% get_default_vocabulary_key as root_vocabulary_key %}
                 {% get_default_component_key as root_component_key %}
-                show_pane("{{ root_vocabulary_key }}_{{ root_component_key }}_pane");
+                show_pane("{{ root_vocabulary_key }}_{{ root_component_key }}");
             {% endif %}
 
             /*
