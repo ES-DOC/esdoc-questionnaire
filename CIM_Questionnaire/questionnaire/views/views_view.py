@@ -21,49 +21,73 @@ Summary of module goes here
 """
 
 from django.contrib.sites.models import get_current_site
-from django.http import HttpResponseRedirect
-from django.shortcuts import render_to_response, redirect
+from django.shortcuts import render_to_response
 from django.template import RequestContext
 
-from CIM_Questionnaire.questionnaire.models.metadata_customizer import MetadataCustomizer
 from CIM_Questionnaire.questionnaire.models.metadata_model import MetadataModel
+from CIM_Questionnaire.questionnaire.models.metadata_customizer import MetadataModelCustomizer, MetadataScientificPropertyCustomizer
 from CIM_Questionnaire.questionnaire.forms.forms_edit import create_existing_edit_forms_from_models
-from CIM_Questionnaire.questionnaire.views.views_edit import validate_view_arguments
+from CIM_Questionnaire.questionnaire.views.views_base import validate_view_arguments
+from CIM_Questionnaire.questionnaire.views.views_base import get_cached_existing_customization_set, get_cached_proxy_set, get_cached_new_realization_set, get_cached_existing_realization_set
 from CIM_Questionnaire.questionnaire.views.views_error import questionnaire_error
 from CIM_Questionnaire.questionnaire import get_version
+
+
+def validate_view_view_arguments(project_name="", model_name="", version_key=""):
+
+    (validity, project, version, model_proxy, msg) = \
+        validate_view_arguments(project_name=project_name, model_name=model_name, version_key=version_key)
+
+    model_customizer = None
+
+    if not validity:
+        return (validity, project, version, model_proxy, model_customizer, msg)
+
+    # try to get the default model customizer for this project/version/proxy combination...
+    try:
+        model_customizer = MetadataModelCustomizer.objects.prefetch_related("vocabularies").get(project=project, version=version, proxy=model_proxy, default=True)
+    except MetadataModelCustomizer.DoesNotExist:
+        msg = "There is no default customization associated with this project/model/version."
+        validity = False
+        return (validity, project, version, model_proxy, model_customizer, msg)
+
+    return (validity, project, version, model_proxy, model_customizer, msg)
+
 
 def questionnaire_view_new(request, project_name="", model_name="", version_key="", **kwargs):
 
     # validate the arguments...
-    (validity, project, version, model_proxy, model_customizer, msg) = validate_view_arguments(project_name=project_name, model_name=model_name, version_key=version_key)
+    (validity, project, version, model_proxy, model_customizer, msg) = \
+        validate_view_view_arguments(project_name=project_name, model_name=model_name, version_key=version_key)
     if not validity:
         return questionnaire_error(request, msg)
 
     # and then let the user know that you can't view a new document
-    msg = "The Questionnaire only supports <u>viewing</u> of existing instances."
+    msg = "The Questionnaire only supports viewing of <i>existing</i> instances."
     return questionnaire_error(request, msg)
+
 
 def questionnaire_view_existing(request, project_name="", model_name="", version_key="", model_id="", **kwargs):
 
     # validate the arguments...
-    (validity,project,version,model_proxy,model_customizer,msg) = validate_view_arguments(project_name=project_name,model_name=model_name,version_key=version_key)
+    (validity, project, version, model_proxy, model_customizer, msg) = \
+        validate_view_view_arguments(project_name=project_name, model_name=model_name, version_key=version_key)
     if not validity:
-        return questionnaire_error(request,msg)
+        return questionnaire_error(request, msg)
     request.session["checked_arguments"] = True
 
-    # don't check authentication
+    # don't bother checking authentication; all users can view instances
 
     # try to get the requested model...
     try:
-        model = MetadataModel.objects.get(pk=model_id,name__iexact=model_name,project=project,version=version,proxy=model_proxy)
+        model = MetadataModel.objects.get(pk=model_id, project=project, version=version, proxy=model_proxy)
     except MetadataModel.DoesNotExist:
         msg = "Cannot find the specified model.  Please try again."
-        return questionnaire_error(request,msg)
+        return questionnaire_error(request, msg)
     if not model.is_root:
         # TODO: DEAL W/ THIS USE-CASE
         msg = "Currently only root models can be viewed.  Please try again."
-        return questionnaire_error(request,msg)
-    models = model.get_descendants(include_self=True)
+        return questionnaire_error(request, msg)
 
     # getting the vocabularies into the right order is a 2-step process
     # b/c vocabularies do not have an "order" attribute (since they can be used by multiple projects/customizations),
@@ -72,29 +96,25 @@ def questionnaire_view_existing(request, project_name="", model_name="", version
     vocabulary_order = [int(order) for order in filter(None,model_customizer.vocabulary_order.split(','))]
     vocabularies = sorted(vocabularies, key=lambda vocabulary: vocabulary_order.index(vocabulary.pk))
 
-    # now try to get the default customizer set for this project/version/proxy combination...
+    # get (or set) items from the cache...
+    session_id = request.session.session_key
+    customizer_set = get_cached_existing_customization_set(session_id, model_customizer, vocabularies)
+    proxy_set = get_cached_proxy_set(session_id, customizer_set)
+    realization_set = get_cached_existing_realization_set(session_id, model.get_descendants(include_self=True), customizer_set, proxy_set, vocabularies)
 
-    (model_customizer,standard_category_customizers,standard_property_customizers,nested_scientific_category_customizers,nested_scientific_property_customizers) = \
-            MetadataCustomizer.get_existing_customizer_set(model_customizer,vocabularies)
-
-    scientific_property_customizers = {}
-    for vocabulary_key,scientific_property_customizer_dict in nested_scientific_property_customizers.iteritems():
-        for component_key,scientific_property_customizer_list in scientific_property_customizer_dict.iteritems():
-            model_key = u"%s_%s" % (vocabulary_key, component_key)
-            # I have to restructure this; in the customizer views it makes sense to store these as a dictionary of dictionary
-            # but here, they should only be one level deep (hence the use of "nested_" above
-            scientific_property_customizers[model_key] = scientific_property_customizer_list
-
-    # create the realization set
-    (models, standard_properties, scientific_properties) = \
-        MetadataModel.get_existing_realization_set(models, model_customizer, vocabularies=vocabularies)
+    # this is used for other fns that might need to know what the view returns
+    # (such as those in the testing framework)
+    root_model_id = realization_set["models"][0].get_root().pk
+    request.session["root_model_id"] = root_model_id
 
     # clean it up a bit based on properties that have been customized not to be displayed
-    for model in models:
+    # TODO: THIS MUST BE THE PLACE THAT CECELIA'S ERROR IS HAPPENING
+    # TODO: WHY DON'T I PASS THESE REDUCED LISTS TO THE FORM FNS?
+    for model in realization_set["models"]:
         model_key = model.get_model_key()
-        standard_property_list = standard_properties[model_key]
+        standard_property_list = realization_set["standard_properties"][model_key]
         standard_properties_to_remove = []
-        for standard_property, standard_property_customizer in zip(standard_property_list,standard_property_customizers):
+        for standard_property, standard_property_customizer in zip(standard_property_list, customizer_set["standard_property_customizers"]):
             if not standard_property_customizer.displayed:
                 # this list is actually a queryset, so remove doesn't work
                 #standard_property_list.remove(standard_property)
@@ -102,11 +122,11 @@ def questionnaire_view_existing(request, project_name="", model_name="", version
                 standard_properties_to_remove.append(standard_property.pk)
         standard_property_list.exclude(id__in=standard_properties_to_remove)
         # TODO: JUST A LIL HACK UNTIL I CAN FIGURE OUT WHERE TO SETUP THIS LOGIC
-        if model_key not in scientific_property_customizers:
-            scientific_property_customizers[model_key] = []
-        scientific_property_list = scientific_properties[model_key]
+        if model_key not in customizer_set["scientific_property_customizers"]:
+            customizer_set["scientific_property_customizers"][model_key] = MetadataScientificPropertyCustomizer.objects.none()
+        scientific_property_list = customizer_set["scientific_property_customizers"][model_key]
         scientific_properties_to_remove = []
-        for scientific_property, scientific_property_customizer in zip(scientific_property_list,scientific_property_customizers[model_key]):
+        for scientific_property, scientific_property_customizer in zip(scientific_property_list, customizer_set["scientific_property_customizers"][model_key]):
             if not scientific_property_customizer.displayed:
                 # (as above) this list is actually a queryset, so remove doesn't work
                 #scientific_property_list.remove(scientific_property)
@@ -114,51 +134,38 @@ def questionnaire_view_existing(request, project_name="", model_name="", version
                 scientific_properties_to_remove.append(scientific_property.pk)
         scientific_property_list.exclude(id__in=scientific_properties_to_remove)
 
-    model_parent_dictionary = {}
-    for model in models:
-        if model.parent:
-            model_parent_dictionary[model.get_model_key()] = model.parent.get_model_key()
-        else:
-            model_parent_dictionary[model.get_model_key()] = None
-
-
-    # this is used for other fns that might need to know what the view returns
-    # (such as those in the testing framework)
-    assert(len(models)>0)
-    root_model_id = models[0].get_root().pk
-    request.session["root_model_id"] = root_model_id
-
-    if request.method == "GET" or request.method == "POST": # IN THE VIEW YOU CAN'T SEND A POST, SO JUST IGNORE IT
-
+    if request.method == "GET" or request.method == "POST":  # IN THE VIEW YOU CAN'T SEND A POST, SO JUST IGNORE IT
 
         (model_formset, standard_properties_formsets, scientific_properties_formsets) = \
-            create_existing_edit_forms_from_models(models, model_customizer, standard_properties, standard_property_customizers, scientific_properties, scientific_property_customizers)
+            create_existing_edit_forms_from_models(realization_set["models"], customizer_set["model_customizer"], realization_set["standard_properties"], customizer_set["standard_property_customizers"], realization_set["scientific_properties"], customizer_set["scientific_property_customizers"])
 
     # gather all the extra information required by the template
-    dict = {
+    _dict = {
         "site": get_current_site(request),  # provide a special message if this is not the production site
         "project": project,  # used for generating URLs in the footer, and in the title
         "version": version,  # used for generating URLs in the footer
         "model_proxy": model_proxy,  # used for generating URLs in the footer
         "vocabularies": vocabularies,
-        "model_customizer": model_customizer,
+        "model_customizer": customizer_set["model_customizer"],
         "model_formset": model_formset,
         "standard_properties_formsets": standard_properties_formsets,
         "scientific_properties_formsets": scientific_properties_formsets,
         "questionnaire_version": get_version(),  # used in the footer
+        "session_id": session_id,
+        "root_model_id": root_model_id,
         "can_publish": True,  # only models that have already been saved can be published
     }
 
-    return render_to_response('questionnaire/questionnaire_view.html', dict, context_instance=RequestContext(request))
+    return render_to_response('questionnaire/questionnaire_view.html', _dict, context_instance=RequestContext(request))
 
 
 def questionnaire_view_help(request):
 
     # gather all the extra information required by the template
-    dict = {
-        "site"                          : get_current_site(request),
-        "questionnaire_version"         : get_version(),
+    _dict = {
+        "site": get_current_site(request),
+        "questionnaire_version": get_version(),
     }
 
-    return render_to_response('questionnaire/questionnaire_edit_instructions.html', dict, context_instance=RequestContext(request))
+    return render_to_response('questionnaire/questionnaire_edit_instructions.html', _dict, context_instance=RequestContext(request))
 
