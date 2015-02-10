@@ -45,9 +45,15 @@ from CIM_Questionnaire.questionnaire.utils import set_field_widget_attributes, u
 
 from CIM_Questionnaire.questionnaire.forms.forms_base import MetadataForm
 
+
 class MetadataCustomizerForm(MetadataForm):
 
-    pass
+    def __init__(self, *args, **kwargs):
+        initial = kwargs.pop("initial",None) or {}
+        initial["loaded"] = True
+        kwargs["initial"] = initial
+        super(MetadataCustomizerForm, self).__init__(*args, **kwargs)
+
 
 def save_valid_forms(model_customizer_form, standard_property_customizer_formset, scientific_property_customizer_formsets):
 
