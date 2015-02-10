@@ -117,7 +117,7 @@ def questionnaire_view_existing(request, project_name="", model_name="", version
         for standard_property, standard_property_customizer in zip(standard_property_list, customizer_set["standard_property_customizers"]):
             if not standard_property_customizer.displayed:
                 # this list is actually a queryset, so remove doesn't work
-                #standard_property_list.remove(standard_property)
+                # standard_property_list.remove(standard_property)
                 # instead, I have to use exclude
                 standard_properties_to_remove.append(standard_property.pk)
         standard_property_list.exclude(id__in=standard_properties_to_remove)
@@ -129,7 +129,7 @@ def questionnaire_view_existing(request, project_name="", model_name="", version
         for scientific_property, scientific_property_customizer in zip(scientific_property_list, customizer_set["scientific_property_customizers"][model_key]):
             if not scientific_property_customizer.displayed:
                 # (as above) this list is actually a queryset, so remove doesn't work
-                #scientific_property_list.remove(scientific_property)
+                # scientific_property_list.remove(scientific_property)
                 # instead, I have to use exclude
                 scientific_properties_to_remove.append(scientific_property.pk)
         scientific_property_list.exclude(id__in=scientific_properties_to_remove)
