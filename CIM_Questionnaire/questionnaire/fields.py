@@ -214,8 +214,11 @@ class CardinalityFormField(MultiValueField):
 
     def clean(self, value):
 
-        _min = value[0] or ""
-        _max = value[1] or ""
+        _min = value[0]
+        _max = value[1]
+
+        if not _min and not _max:
+            return "|"
 
         _min_choice_keys = [choice[0] for choice in MIN_CHOICES]
         _max_choice_keys = [choice[0] for choice in MAX_CHOICES]
