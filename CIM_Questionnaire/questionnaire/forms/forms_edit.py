@@ -704,7 +704,6 @@ def create_edit_subforms_from_data(data, models, model_customizer, standard_prop
     scientific_properties_formsets = {}
 
     for (i, model_form) in enumerate(model_formset.forms):
-        import ipdb; ipdb.set_trace()
         subform_prefix = model_form.prefix
         subform_key = u"%s_%s-%s" % (model_form.get_current_field_value("vocabulary_key"), model_form.get_current_field_value("component_key"), i)
 
