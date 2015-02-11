@@ -704,21 +704,44 @@ def create_edit_subforms_from_data(data, models, model_customizer, standard_prop
     scientific_properties_formsets = {}
 
     for (i, model_form) in enumerate(model_formset.forms):
-
+        import ipdb; ipdb.set_trace()
         subform_prefix = model_form.prefix
         subform_key = u"%s_%s-%s" % (model_form.get_current_field_value("vocabulary_key"), model_form.get_current_field_value("component_key"), i)
 
         loaded = subform_prefix in loaded_model_prefixes
 
-        standard_properties_data = [
-            # TODO: THE 1st ARGUMENT IS MEANT TO BE model BUT IT ISN'T USED, RIGHT?
-            # TODO: SO I CAN GET AWAY W/ PASSING None
-            # TODO: REWRITE THIS FN TO NOT TAKE model
-            create_standard_property_form_data(None, standard_property, standard_property_customizer)
-            for standard_property, standard_property_customizer in
-            zip(standard_properties[subform_key], standard_property_customizers)
-            if standard_property_customizer.displayed
-        ]
+        # BEGIN v0.12.0.0 CHANGES
+        # THIS CODE NEEDS TO BE SLIGHTLY DIFFERENT THAN create_edit_forms_from_data
+        # B/C THE STANDARD_PROPERTIES MAY HAVE BEEN ADDED/CHANGED VIA AJAX
+        # THIS MEANS THAT THEY WILL NOT BE IN THE standard_properties DICTIONARY
+        # SO TRYING TO ACCESS subform_key FROM THAT DICTIONARY WILL FAIL
+        # THE SAME HAPPENS TO BE TRUE OF models BUT THAT IS A LIST RATHER THAN A DICTIONARY
+        # AND THE MISSING BIT IS JUST HANDLED AS PART OF DATA (SINCE LOADED IS TRUE)
+
+        # standard_properties_data = [
+        #     # TODO: THE 1st ARGUMENT IS MEANT TO BE model BUT IT ISN'T USED, RIGHT?
+        #     # TODO: SO I CAN GET AWAY W/ PASSING None
+        #     # TODO: REWRITE THIS FN TO NOT TAKE model
+        #     create_standard_property_form_data(None, standard_property, standard_property_customizer)
+        #     for standard_property, standard_property_customizer in
+        #     zip(standard_properties[subform_key], standard_property_customizers)
+        #     if standard_property_customizer.displayed
+        # ]
+
+        if subform_key in standard_properties:
+            standard_properties_data = [
+                # TODO: REWRITE THIS FN TO NOT TAKE model
+                create_standard_property_form_data(None, standard_property, standard_property_customizer)
+                for standard_property, standard_property_customizer in
+                zip(standard_properties[subform_key], standard_property_customizers)
+                if standard_property_customizer.displayed
+            ]
+        else:
+            # okay, so if this _was_ added by AJAX, then no initial data is needed
+            # b/c it should all be in the POST
+            standard_properties_data = [{}, ]
+
+        # END v0.12.0.0 CHANGES
 
         standard_properties_formsets[subform_prefix] = MetadataStandardPropertyInlineSubFormSetFactory(
             instance=model_instances[i] if model_formset_validity else model_form.instance,
@@ -735,15 +758,20 @@ def create_edit_subforms_from_data(data, models, model_customizer, standard_prop
         if subform_prefix not in scientific_property_customizers:
             scientific_property_customizers[subform_prefix] = []
 
-        scientific_properties_data = [
-            # TODO: THE 1st ARGUMENT IS MEANT TO BE model BUT IT ISN'T USED, RIGHT?
-            # TODO: SO I CAN GET AWAY W/ PASSING None
-            # TODO: REWRITE THIS FN TO NOT TAKE model
-            create_scientific_property_form_data(None, scientific_property, scientific_property_customizer)
-            for scientific_property, scientific_property_customizer in
-            zip(scientific_properties[subform_key], scientific_property_customizers[subform_prefix])
-            if scientific_property_customizer.displayed
-        ]
+        # BEGIN CHANGES FOR v0.12.0.0
+        if subform_key in scientific_properties:
+            scientific_properties_data = [
+                # TODO: REWRITE THIS FN TO NOT TAKE model
+                create_scientific_property_form_data(None, scientific_property, scientific_property_customizer)
+                for scientific_property, scientific_property_customizer in
+                zip(scientific_properties[subform_key], scientific_property_customizers[subform_prefix])
+                if scientific_property_customizer.displayed
+            ]
+        else:
+            # okay, so if this _was_ added by AJAX, then no initial data is needed
+            # b/c it should all be in the POST
+            scientific_properties_data = [{}, ]
+        # END CHANGES FOR v0.12.0.0
 
         scientific_properties_formsets[subform_prefix] = MetadataScientificPropertyInlineFormSetFactory(
             instance=model_instances[i] if model_formset_validity else model_form.instance,

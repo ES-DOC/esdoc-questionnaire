@@ -365,17 +365,33 @@ def ajax_select_realization(request,**kwargs):
                 (model_formset, standard_properties_formsets, scientific_properties_formsets) = \
                     create_existing_edit_subforms_from_models(models, model_customizer, standard_properties, standard_property_customizers, scientific_properties, scientific_property_customizers, subform_prefix=prefix, subform_min=subform_min, subform_max=subform_max, increment_prefix=n_forms)
 
+            # get the data that will be used to populate the form...
             data = get_data_from_existing_edit_forms(model_formset,standard_properties_formsets,scientific_properties_formsets)
 
+            # now clean it up a bit...
+
             # no need to use the management form, since I'm only ever adding a single form
-            fields_to_remove_from_data = [u"%s-%s" % (model_formset.prefix,field_key) for field_key in model_formset.management_form.fields.keys()]
+            fields_to_remove_from_data = [u"%s-%s" % (model_formset.prefix, field_key) for field_key in model_formset.management_form.fields.keys()]
             for field_to_remove_from_data in fields_to_remove_from_data:
                 if field_to_remove_from_data in data:
                     data.pop(field_to_remove_from_data)
+
             # but do need to pass the prefix to make sure that js updates all added fields appropriately
             adjusted_prefix = model_formset.forms[0].prefix
             data["prefix"] = adjusted_prefix
             data["label"] = u"%s" % (models[0])
+
+            # also I will only be in the function if I clicked add/replace from w/in a loaded subform
+            # therefore, this form must also be loaded (so that I can update things appropriately)
+            # by default most forms have "loaded" set to "False" and then JS sets the loaded field at some point
+            # but this situation is different
+            for key in data.keys():
+                if key.endswith("-loaded"):
+                    data[key] = "on"    # rather than pass True, I am passing 'on'
+                                        # b/c that is what the actual Django form returns
+                                        # plus, since this gets translated to JSON it would have turned the boolean True into a string
+
+            # ...okay, I'm done cleaning up the data
 
             # finally return a JSON version of all of the fields used in this subform
             json_data = json.dumps(data)
