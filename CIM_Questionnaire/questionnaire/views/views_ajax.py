@@ -222,17 +222,18 @@ def ajax_customize_category(request,category_id="",**kwargs):
     rendered_form = render_to_string("questionnaire/questionnaire_category.html", dictionary=dict, context_instance=RequestContext(request))
     return HttpResponse(rendered_form,content_type='text/html')
 
-def ajax_select_realization(request,**kwargs):
+
+def ajax_select_realization(request, **kwargs):
 
     # I can get all of the info I need (version/proxy/project) from the customizer
     # (I still need to check for existing properties (using property_id) to exclude items from the queryset below)
     customizer_id = request.GET.get('c', None)
     standard_property_id = request.GET.get("s", None)
-    prefix = request.GET.get("p",None)
-    parent_vocabulary_key = request.GET.get("p_v_k","")
-    parent_component_key  = request.GET.get("p_c_k","")
-    n_forms = int(request.GET.get("n","0"))
-    realizations_to_exclude = request.GET.get("e",[])
+    prefix = request.GET.get("p", None)
+    parent_vocabulary_key = request.GET.get("p_v_k", "")
+    parent_component_key  = request.GET.get("p_c_k", "")
+    n_forms = int(request.GET.get("n", "0"))
+    realizations_to_exclude = request.GET.get("e", [])
     if realizations_to_exclude:
         realizations_to_exclude = realizations_to_exclude.split(",")
     if n_forms > 0:
@@ -248,32 +249,30 @@ def ajax_select_realization(request,**kwargs):
     realization_customizer = parent_standard_property_customizer.subform_customizer
 
     realization_parameters = {
-        "project" : realization_customizer.project,
-        "proxy"   : realization_customizer.proxy,
+        "project": realization_customizer.project,
+        "proxy": realization_customizer.proxy,
     }
     realization_qs = MetadataModel.objects.filter(**realization_parameters).exclude(id__in=realizations_to_exclude)
-    realization_choices = [(realization.pk,u"%s"%realization) for realization in realization_qs]
+    realization_choices = [(realization.pk, u"%s" % realization) for realization in realization_qs]
     empty_pk = -1
-    empty_choice = [(empty_pk,"create a new instance")]
+    empty_choice = [(empty_pk, "create a new instance")]
 
     class _RealizationSelectForm(forms.Form):
-        realizations = ChoiceField(choices=empty_choice+realization_choices,required=True,label=realization_customizer.model_title)
-        #realizations = ModelChoiceField(queryset=realization_qs,label=realization_customizer.model_title, required=True, empty_label="NONE")
+        realizations = ChoiceField(choices=empty_choice+realization_choices, required=True, label=realization_customizer.model_title)
 
         def __init__(self, *args, **kwargs):
-            super(_RealizationSelectForm,self).__init__(*args, **kwargs)
-            update_field_widget_attributes(self.fields["realizations"], {"class" : "multiselect"})
-            update_field_widget_attributes(self.fields["realizations"], {"class" : "required"})
+            super(_RealizationSelectForm, self).__init__(*args, **kwargs)
+            update_field_widget_attributes(self.fields["realizations"], {"class": "multiselect"})
+            update_field_widget_attributes(self.fields["realizations"], {"class": "required"})
 
     if request.method == "GET":
 
         form = _RealizationSelectForm()
 
         msg = None
-        status = 200 # return successful response for GET (don't actually process this in the AJAX JQuery call)
+        status = 200  # return successful response for GET (don't actually process this in the AJAX JQuery call)
 
-
-    else: # request.method == "POST"
+    else:  # request.method == "POST"
 
         data = request.POST
         form = _RealizationSelectForm(data)
@@ -285,8 +284,8 @@ def ajax_select_realization(request,**kwargs):
             realization_pk = int(form.cleaned_data["realizations"])
 
             # get the full customizer set for this project/version/proxy combination...
-            (model_customizer,standard_category_customizers,standard_property_customizers,nested_scientific_category_customizers,nested_scientific_property_customizers) = \
-                MetadataCustomizer.get_existing_customizer_set(realization_customizer,MetadataVocabulary.objects.none())
+            (model_customizer, standard_category_customizers, standard_property_customizers, nested_scientific_category_customizers, nested_scientific_property_customizers) = \
+                MetadataCustomizer.get_existing_customizer_set(realization_customizer, MetadataVocabulary.objects.none())
             # (also get the proxies b/c I'll need them when setting up new properties below)
             standard_property_proxies = [standard_property_customizer.proxy for standard_property_customizer in standard_property_customizers]
             scientific_property_proxies = {}
@@ -307,7 +306,7 @@ def ajax_select_realization(request,**kwargs):
 
             else:
 
-                realizations = MetadataModel.objects.filter(pk=realization_pk)    # I have to pass an actual queryset (not a list) to formset constructors or else all hell will break loose
+                realizations = MetadataModel.objects.filter(pk=realization_pk)  # I have to pass an actual queryset (not a list) to formset constructors or else all hell will break loose
                 realization = realizations[0]
 
                 # get the full realization set...
@@ -315,10 +314,10 @@ def ajax_select_realization(request,**kwargs):
                     MetadataModel.get_existing_subrealization_set(realizations, model_customizer)
 
             # clean it up a bit based on properties that have been customized not to be displayed
-            for i,model in enumerate(models):
+            for i, model in enumerate(models):
 
                 model_key = model.get_model_key()
-                submodel_key = model.get_model_key() + "-%s" % (i)
+                submodel_key = model.get_model_key() + "-%s" % i
 
                 standard_property_list = standard_properties[submodel_key]
                 standard_properties_to_remove = []
@@ -365,8 +364,21 @@ def ajax_select_realization(request,**kwargs):
                 (model_formset, standard_properties_formsets, scientific_properties_formsets) = \
                     create_existing_edit_subforms_from_models(models, model_customizer, standard_properties, standard_property_customizers, scientific_properties, scientific_property_customizers, subform_prefix=prefix, subform_min=subform_min, subform_max=subform_max, increment_prefix=n_forms)
 
+            # b/c I will only be in this function if I clicked add/replace from w/in a loaded subform,
+            # these forms must also be loaded (so that I can update things appropriately)
+            # by default most forms have "loaded" set to "False" and then JS sets the loaded field at some point
+            # but this situation is different
+            for model_form in model_formset.forms:
+                model_form.load()
+            for standard_property_formset in standard_properties_formsets.values():
+                for standard_property_form in standard_property_formset:
+                    standard_property_form.load()
+            for scientific_propery_formset in scientific_properties_formsets.values():
+                for scientific_propery_form in scientific_propery_formset:
+                    scientific_propery_form.load()
+
             # get the data that will be used to populate the form...
-            data = get_data_from_existing_edit_forms(model_formset,standard_properties_formsets,scientific_properties_formsets)
+            data = get_data_from_existing_edit_forms(model_formset, standard_properties_formsets, scientific_properties_formsets)
 
             # now clean it up a bit...
 
@@ -379,28 +391,17 @@ def ajax_select_realization(request,**kwargs):
             # but do need to pass the prefix to make sure that js updates all added fields appropriately
             adjusted_prefix = model_formset.forms[0].prefix
             data["prefix"] = adjusted_prefix
-            data["label"] = u"%s" % (models[0])
-
-            # also I will only be in the function if I clicked add/replace from w/in a loaded subform
-            # therefore, this form must also be loaded (so that I can update things appropriately)
-            # by default most forms have "loaded" set to "False" and then JS sets the loaded field at some point
-            # but this situation is different
-            for key in data.keys():
-                if key.endswith("-loaded"):
-                    data[key] = "on"    # rather than pass True, I am passing 'on'
-                                        # b/c that is what the actual Django form returns
-                                        # plus, since this gets translated to JSON it would have turned the boolean True into a string
+            data["label"] = u"%s" % models[0].get_label()
 
             # ...okay, I'm done cleaning up the data
 
             # finally return a JSON version of all of the fields used in this subform
             json_data = json.dumps(data)
-            response = HttpResponse(json_data,content_type="text/html",status=status)
+            response = HttpResponse(json_data, content_type="text/html", status=status)
             return response
 
-
         else:
-            msg = u"Error selecting %s" % (realization_customizer.model_title)
+            msg = u"Error selecting %s" % realization_customizer.model_title
             # okay, I'm overloading things a bit here
             # the problem is that if I actually send a "400" code, then AJAX (correctly) interprets that as an error
             # and all sorts of problems ensure
@@ -416,16 +417,16 @@ def ajax_select_realization(request,**kwargs):
         # (though it will be missing on calls from w/in testing framework)
         csrf_token_value = None
 
-    dict = {
-        "STATIC_URL" : "/static/",
-        "site" : get_current_site(request),
-        "csrf_token_value" : csrf_token_value,
-        "form" : form,
-        "questionnaire_version" : get_version(),
+    _dict = {
+        "STATIC_URL": "/static/",
+        "site": get_current_site(request),
+        "csrf_token_value": csrf_token_value,
+        "form": form,
+        "questionnaire_version": get_version(),
     }
 
-    rendered_form = render_to_string("questionnaire/questionnaire_select_realization.html", dictionary=dict, context_instance=RequestContext(request))
-    response = HttpResponse(rendered_form,content_type='text/html',status=status)
+    rendered_form = render_to_string("questionnaire/questionnaire_select_realization.html", dictionary=_dict, context_instance=RequestContext(request))
+    response = HttpResponse(rendered_form, content_type='text/html', status=status)
     response["msg"] = msg
 
     return response

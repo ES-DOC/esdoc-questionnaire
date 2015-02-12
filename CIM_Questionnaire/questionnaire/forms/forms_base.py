@@ -48,7 +48,10 @@ class MetadataForm(ModelForm):
     def is_loaded(self):
         try:
             loaded = self.get_current_field_value("loaded")
-            return loaded == "on" or loaded == True
+            # True is what it ought to be,
+            # "true" is what AJAX converts it to,
+            # "on" is what Django seems to be using for some Django-is-stupid reason
+            return loaded == True or loaded == "true" or loaded == "on"
         except KeyError:
             return False
 
