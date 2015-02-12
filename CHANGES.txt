@@ -1,4 +1,32 @@
-CIM Questionnaire
+CIM Questionnaire Change History
+
+For full release notes, please see https://earthsystemcog.org/projects/es-doc-models/releases_questionnaire
+
+v0.12.0.0
+
+* restructured testing framework to use fixtures
+* optimized editor form by only loading content on-demand
+
+v0.11.3.4
+
+* fixed the way that subform cardinality is determined
+
+v0.11.3.3
+
+* accordion headers for subforms no longer have repeated text
+
+v0.11.3.2
+
+* serialization to XML is not broken by missing elements
+
+v0.11.3.1
+
+* update existing customizations as CVs are added/removed from projects
+
+v0.11.3.0
+
+* ability to export pyesdoc-compatible XML documents
+* improved the category customizer sections
 
 v0.11.2.0
 
