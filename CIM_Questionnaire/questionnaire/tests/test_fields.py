@@ -98,6 +98,9 @@ class EnumerationFieldModel(FieldModel):
     multi = models.NullBooleanField(default=False, null=True)
     nullable = models.NullBooleanField(default=False, null=True)
 
+    def __unicode__(self):
+        return u"%s" % self.name
+
 
 class EnumerationFieldForm(MetadataForm):
 
@@ -132,6 +135,9 @@ class CardinalityFieldModel(FieldModel):
     name = models.CharField(blank=True, null=True, max_length=BIG_STRING, unique=True)
 
     cardinality = CardinalityField(blank=True)
+
+    def __unicode__(self):
+        return u"%s" % self.name
 
 
 class CardinalityFieldForm(MetadataForm):
@@ -211,15 +217,6 @@ class Test(TestQuestionnaireBase):
         validity = enumeration_form.is_valid(loaded=enumeration_form.get_current_field_value("loaded"))
         self.assertFalse(validity)
 
-
-
-        import ipdb; ipdb.set_trace()
-
-
-
-
-        pass
-
     def test_cardinality_field(self):
 
         cardinality_name = "cardinality_test"
@@ -268,10 +265,13 @@ class Test(TestQuestionnaireBase):
         validity = cardinality_form.is_valid(loaded=cardinality_form.get_current_field_value("loaded"))
         self.assertFalse(validity)
 
-        cardinality_field_model = CardinalityFieldModel(name="cardinality_none")  # cardinality=cardinality_none
+        cardinality_field_model = CardinalityFieldModel(name="cardinality_none", cardinality=cardinality_none)
         cardinality_form_data = cardinality_field_model.get_form_data()
         cardinality_form = CardinalityFieldForm(initial=cardinality_form_data, prefix=cardinality_name)
         post_data = get_data_from_form(cardinality_form)
         cardinality_form = CardinalityFieldForm(data=post_data, initial=cardinality_form_data, prefix=cardinality_name)
         validity = cardinality_form.is_valid(loaded=cardinality_form.get_current_field_value("loaded"))
-        self.assertFalse(validity)
+        self.assertTrue(validity)
+
+        cardinality_field_model = cardinality_form.save()
+        self.assertEqual(cardinality_field_model.cardinality, "|")
