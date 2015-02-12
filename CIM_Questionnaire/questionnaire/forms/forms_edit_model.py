@@ -217,6 +217,47 @@ class MetadataModelSubFormSet(MetadataEditingFormSet):
         # b/c that uses None instead of "*"
         return self.max
 
+    def save_existing_objects(self, commit=True):
+        """
+        Overloads the base fn in order to prevent deleted subforms from _actually_ deleting underlying instances;
+        This is b/c deleting a subform is meant to delete the _relationship_ not the _instances_;
+        (which, btw, takes place in 'save_valid_standard_properties_formset')
+        :param commit:
+        :return:
+        """
+        self.changed_objects = []
+        self.deleted_objects = []
+        if not self.initial_forms:
+            return []
+
+        saved_instances = []
+        forms_to_delete = self.deleted_forms
+        for form in self.initial_forms:
+            pk_name = self._pk_field.name
+            raw_pk_value = form._raw_value(pk_name)
+
+            # clean() for different types of PK fields can sometimes return
+            # the model instance, and sometimes the PK. Handle either.
+            pk_value = form.fields[pk_name].clean(raw_pk_value)
+            pk_value = getattr(pk_value, 'pk', pk_value)
+
+            obj = self._existing_object(pk_value)
+            if form in forms_to_delete:
+                # HERE BEGINS THE DIFFERENT BIT
+                # don't actually delete the form or instance
+                # self.deleted_objects.append(obj)
+                # obj.delete()
+                # but do store a placeholder in "saved_instances"
+                # so that the looping in "create_edit_subforms_from_data" doesn't get out of sync
+                saved_instances.append(None)
+                # HERE ENDS THE DIFFERENT BIT
+                continue
+            if form.has_changed():
+                self.changed_objects.append((obj, form.changed_data))
+                saved_instances.append(self.save_existing(form, obj, commit=commit))
+                if not commit:
+                    self.saved_forms.append(form)
+        return saved_instances
 
 def MetadataModelFormSetFactory(*args, **kwargs):
     _DEFAULT_PREFIX = "form"

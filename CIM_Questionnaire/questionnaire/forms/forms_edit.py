@@ -704,6 +704,16 @@ def create_edit_subforms_from_data(data, models, model_customizer, standard_prop
     scientific_properties_formsets = {}
 
     for (i, model_form) in enumerate(model_formset.forms):
+
+        if model_formset._should_delete_form(model_form):
+            # it might seem like I want to just ignore properties if the parent model is going to be removed
+            # but I still need to stick them in the appropriate dictionary
+            # (so that they are there - to be ignored - for other fns such as save_valid_subforms)
+            # I do, however, want to avoid trying to access an instance, hence the following flag:
+            ignore_model = True
+        else:
+            ignore_model = False
+
         subform_prefix = model_form.prefix
         subform_key = u"%s_%s-%s" % (model_form.get_current_field_value("vocabulary_key"), model_form.get_current_field_value("component_key"), i)
 
@@ -743,7 +753,7 @@ def create_edit_subforms_from_data(data, models, model_customizer, standard_prop
         # END v0.12.0.0 CHANGES
 
         standard_properties_formsets[subform_prefix] = MetadataStandardPropertyInlineSubFormSetFactory(
-            instance=model_instances[i] if model_formset_validity else model_form.instance,
+            instance=model_instances[i] if model_formset_validity and not ignore_model else model_form.instance,
             prefix=subform_prefix,
             data=data,
             initial=standard_properties_data,  # passing initial AND data (provides values for unloaded forms)
@@ -773,7 +783,7 @@ def create_edit_subforms_from_data(data, models, model_customizer, standard_prop
         # END CHANGES FOR v0.12.0.0
 
         scientific_properties_formsets[subform_prefix] = MetadataScientificPropertyInlineFormSetFactory(
-            instance=model_instances[i] if model_formset_validity else model_form.instance,
+            instance=model_instances[i] if model_formset_validity and not ignore_model else model_form.instance,
             prefix=subform_prefix,
             data=data,
             initial=scientific_properties_data,  # passing initial AND data (provides values for unloaded forms)

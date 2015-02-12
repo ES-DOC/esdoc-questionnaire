@@ -96,14 +96,20 @@ def save_valid_standard_properties_formset(standard_properties_formset):
                     any([form.has_changed() for form in scientific_properties_subformsets[property_key]]),
                 ])
 
-                model_subform_removed = model_subform.get_current_field_value("DELETE",False)
-                if model_subform_removed == "TRUE" or model_subform_removed == "on":
-                    model_subform_pk = model_subform.get_current_field_value("id")
-                    if model_subform_pk:
-                        standard_property_instance.relationship_value.remove(MetadataModel.objects.get(pk=model_subform_pk))
+                if model_subformset._should_delete_form(model_subform):
+                    # I am assuming that if this form is not bound to an existing instance
+                    # that passing it to remove will have no effect
+                    standard_property_instance.relationship_value.remove(model_subform.instance)
+
                 elif subform_has_changed:
                     subform_model_instance = save_valid_subforms(model_subform,standard_properties_subformsets[property_key], scientific_properties_subformsets[property_key])
                     standard_property_instance.relationship_value.add(subform_model_instance)
+                # TODO: FOR SOME REASON, relationship_value IS EMPTY AT THE START OF THIS FN
+                # SO WHAT SHOULD I DO IF THE FORM HASN'T CHANGED (currently it seems to always be returning True)?
+                # SHOULD I ADD THE FOLLOWING SORT OF CODE?
+                # else:
+                #     standard_property_instance.relationship_value.add(model_subform.instance)
+
             standard_property_instance.save()
         standard_property_instances.append(standard_property_instance)
 
