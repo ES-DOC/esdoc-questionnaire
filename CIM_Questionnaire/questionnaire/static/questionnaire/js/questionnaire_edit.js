@@ -295,6 +295,7 @@ function show_pane(pane_key) {
                     init_widgets(helps, $(parent).find(".help_button"));
                     init_widgets(dates, $(parent).find(".datetime, .date"));
                     init_widgets(expanders, $(parent).find(".default, .character"));
+                    init_widgets(autocompletes, $(parent).find(".autocomplete"));
                     init_widgets(selects, $(parent).find(".multiselect"));
                     init_widgets(buttons, $(parent).find("input.button"))
                     init_widgets(enumerations, $(parent).find(".multiselect.open,.multiselect.nullable"));
