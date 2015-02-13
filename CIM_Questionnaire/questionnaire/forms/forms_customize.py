@@ -43,7 +43,17 @@ from CIM_Questionnaire.questionnaire.fields import MetadataFieldTypes, EMPTY_CHO
 from CIM_Questionnaire.questionnaire.utils import set_field_widget_attributes, update_field_widget_attributes, get_data_from_form, get_data_from_formset
 
 
-from CIM_Questionnaire.questionnaire.forms import MetadataCustomizerForm
+from CIM_Questionnaire.questionnaire.forms.forms_base import MetadataForm
+
+
+class MetadataCustomizerForm(MetadataForm):
+
+    def __init__(self, *args, **kwargs):
+        initial = kwargs.pop("initial",None) or {}
+        initial["loaded"] = True
+        kwargs["initial"] = initial
+        super(MetadataCustomizerForm, self).__init__(*args, **kwargs)
+
 
 def save_valid_forms(model_customizer_form, standard_property_customizer_formset, scientific_property_customizer_formsets):
 

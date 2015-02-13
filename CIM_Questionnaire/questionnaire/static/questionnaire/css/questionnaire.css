@@ -127,6 +127,21 @@ body {
 .hidden   { display: none; }
 .hidden * { display: none; }
 
+/* some browsers (firefox) add spin buttons to integer fields */
+/* prevent this from happening in accordion_headers */
+/* b/c it makes the headers too big and clutters them up */
+
+.accordion_header input::-webkit-outer-spin-button, input::-webkit-inner-spin-button {
+    /* display: none; <- Crashes Chrome on hover */
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.accordion_header input[type='number'] {
+    -moz-appearance:textfield;
+    margin: 0;
+}
+
 /* begin fixing JQuery widgets */
 
 .ui-multiselect-checkboxes span { margin-left: 4px !important; }
@@ -135,7 +150,6 @@ button.ui-multiselect           { margin-top:  4px !important; }
 .ui-menu li a { color: inherit;} /* no idea why this is not the default color?!? */
 
 .ui-accordion-header .ui-icon { float: left; margin-top: 4px; margin-right: 4px; }  /* fixes icon forcing content onto newline */
-.ui-accordoin-header.ui-state-active { background-color: green !important;}
 
 .tagit { border: 2px solid #358C92; background: #ffffff; min-height: 2em; padding: 6px !important;}
 .tagit .tagit-choice .tagit-edit { cursor: pointer; float: left; margin-right: 4px; margin-left: -4px; }
@@ -145,12 +159,12 @@ button.ui-multiselect           { margin-top:  4px !important; }
 
 .sortable_item { border: 1px dashed #cccccc; }
 
-/*
-#dcf ul.tagit li.tagit-choice .tagit-edit { cursor: pointer; float: left; margin-right: 2px; margin-left: -4px; }
-#dcf ul.tagit li.tagit-choice .tagit-show { cursor: pointer; float: left; margin-right: 2px; margin-left: -4px; }
-#dcf ul.tagit li.tagit-choice .tagit-show-label { width: 16px; height: 16px;  }
-#dcf ul.tagit li.tagit-choice.unselected { color: red; }
-*/
+input.default , input.character {
+  width: 400px;
+  min-width: 200px;
+  max-width: 800px;
+  transition: width 0.3s;
+}
 
 /* end fixing JQuery widgets */
 
@@ -183,3 +197,11 @@ button.ui-multiselect           { margin-top:  4px !important; }
 #questionnaire .instructions { font-style: italic; border: 2px solid #FF8800; padding: 4px; background: #F3E2A9; }
 
 /* end one-off help text during development */
+
+/* toast notifications */
+
+.toast_center_center {
+    top: 50%; left: 50%; margin-left: -150px;
+}
+
+/* end toast notifications */

@@ -24,12 +24,14 @@ from django.db import models
 from django.contrib import messages
 from django.conf import settings
 from lxml import etree as et
+
 import os
 import re
 
 from CIM_Questionnaire.questionnaire import APP_LABEL
-from CIM_Questionnaire.questionnaire.models.metadata_proxy import MetadataModelProxy, MetadataStandardCategoryProxy, MetadataStandardPropertyProxy
-from CIM_Questionnaire.questionnaire.utils import validate_file_schema, validate_file_extension, xpath_fix, OverwriteStorage
+from CIM_Questionnaire.questionnaire.models.metadata_proxy import MetadataModelProxy, MetadataStandardPropertyProxy, MetadataStandardCategoryProxy
+from CIM_Questionnaire.questionnaire.fields import OverwriteStorage
+from CIM_Questionnaire.questionnaire.utils import validate_file_extension, validate_file_schema, xpath_fix
 from CIM_Questionnaire.questionnaire.utils import LIL_STRING, SMALL_STRING, BIG_STRING, HUGE_STRING
 
 UPLOAD_DIR  = "categorizations"
@@ -73,9 +75,17 @@ class MetadataCategorization(models.Model):
 
     def register(self,**kwargs):
         request = kwargs.pop("request",None)
-        self.file.open()
-        categorization_content = et.parse(self.file)
-        self.file.close()
+
+        try:
+            self.file.open()
+            categorization_content = et.parse(self.file)
+            self.file.close()
+        except IOError:
+            msg = "Error opening file: %s" % self.file
+            if request:
+                messages.add_message(request, messages.ERROR, msg)
+                return
+
 
         versions = self.versions.all()
         if not versions:

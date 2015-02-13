@@ -259,27 +259,27 @@ class MetadataScientificCategoryProxy(MetadataCategoryProxy):
 
 #@hierarchical
 class MetadataComponentProxy(MPTTModel):
-    name                    = models.CharField(max_length=SMALL_STRING,blank=False,null=False)
-    documentation           = models.TextField(blank=True,null=True)
-    order                   = models.PositiveIntegerField(blank=True,null=True)
-    vocabulary              = models.ForeignKey("MetadataVocabulary",blank=False,null=True,related_name="component_proxies")
+    name          = models.CharField(max_length=SMALL_STRING, blank=False, null=False)
+    documentation = models.TextField(blank=True, null=True)
+    order         = models.PositiveIntegerField(blank=True, null=True)
+    vocabulary    = models.ForeignKey("MetadataVocabulary", blank=False, null=True, related_name="component_proxies")
 
-    guid   = models.CharField(blank=True, null=True, max_length=LIL_STRING, unique=True, editable=False)
+    guid = models.CharField(blank=True, null=True, max_length=LIL_STRING, unique=True, editable=False)
 
     parent = TreeForeignKey('self', null=True, blank=True, related_name='children')
 
     class Meta:
-        app_label   = APP_LABEL
-        abstract    = False
-        unique_together = ("vocabulary","name")
+        app_label = APP_LABEL
+        abstract = False
+        unique_together = ("vocabulary", "name")
         ordering = ['order']
 
         # TODO: DELETE THESE NEXT TWO LINES
-        verbose_name        = '(DISABLE ADMIN ACCESS SOON) Metadata Component Proxy'
+        verbose_name = '(DISABLE ADMIN ACCESS SOON) Metadata Component Proxy'
         verbose_name_plural = '(DISABLE ADMIN ACCESS SOON) Metadata Component Proxies'
 
     def __unicode__(self):
-        return u'%s'%(self.name)
+        return u'%s' % (self.name)
         #return u'%s::%s' % (self.vocabulary,self.name)
 
     def get_key(self):

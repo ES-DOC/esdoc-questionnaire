@@ -21,7 +21,6 @@ Summary of module goes here
 
 import re
 from django import template
-from django.template.defaultfilters import slugify
 
 from django.contrib.sites.models import Site
 from django.contrib.auth.models  import User

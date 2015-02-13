@@ -22,8 +22,12 @@ Summary of module goes here
 
 from django.db import models
 from django.contrib.auth.models import User
+from django.conf import settings
 
-from questionnaire.utils import *
+from CIM_Questionnaire.questionnaire import APP_LABEL
+from CIM_Questionnaire.questionnaire.utils import LIL_STRING, SMALL_STRING, BIG_STRING, HUGE_STRING
+from CIM_Questionnaire.questionnaire.utils import QuestionnaireError
+from CIM_Questionnaire.questionnaire.utils import validate_no_spaces
 
 class MetadataUser(models.Model):
 
@@ -107,7 +111,7 @@ def user_post_save(sender, **kwargs):
                 pass
             else:
                 msg = "Unable to create user profile for %s" % (user)
-                raise MetadataError(msg)
+                raise QuestionnaireError(msg)
 
 
 ### THIS IS A KNOWN BUG IN DJANGO [https://code.djangoproject.com/ticket/16073]

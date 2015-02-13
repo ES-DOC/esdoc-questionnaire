@@ -24,11 +24,10 @@ from django.forms import *
 
 from django.contrib.auth.forms  import PasswordChangeForm, AdminPasswordChangeForm, AuthenticationForm, UserCreationForm
 
-from django.utils.html          import mark_safe
+# from django.utils.html          import mark_safe
 
-from questionnaire.utils        import *
-from questionnaire.models       import *
-
+from CIM_Questionnaire.questionnaire.models.metadata_authentication import MetadataUser, MetadataOpenIDProvider
+from CIM_Questionnaire.questionnaire.utils import update_field_widget_attributes, validate_password, validate_no_bad_chars
 
 class LocalAuthenticationForm(AuthenticationForm):
 
@@ -37,19 +36,19 @@ class LocalAuthenticationForm(AuthenticationForm):
         return "local account"
 
 
-class RemoteAuthenticationForm(forms.Form):
-    providers  = ChoiceField(choices=[None,None]) # this is overwritten in __init__, to dynamically load choices
-    username   = CharField(max_length=SMALL_STRING,label="Username (if needed)",required=False)
-
-    def __init__(self,*args,**kwargs):
-        super(RemoteAuthenticationForm,self).__init__(*args,**kwargs)
-        CHOICES = [(provider.id,mark_safe(u"<img align='center' title='%s' height='32px' src='%s'/>"%(provider.title,provider.icon.url))) for provider in MetadataProvider.objects.filter(active=True)]
-        self.fields["providers"] = ChoiceField(choices=CHOICES,widget=RadioSelect())
-        update_field_widget_attributes(self.fields["providers"],{"class":"provider_choice"})
-
-    @classmethod
-    def get_title(cls):
-        return "open-id"
+# class RemoteAuthenticationForm(forms.Form):
+#     providers  = ChoiceField(choices=[None,None]) # this is overwritten in __init__, to dynamically load choices
+#     username   = CharField(max_length=SMALL_STRING,label="Username (if needed)",required=False)
+#
+#     def __init__(self,*args,**kwargs):
+#         super(RemoteAuthenticationForm,self).__init__(*args,**kwargs)
+#         CHOICES = [(provider.id,mark_safe(u"<img align='center' title='%s' height='32px' src='%s'/>"%(provider.title,provider.icon.url))) for provider in MetadataOpenIDProvider.objects.filter(active=True)]
+#         self.fields["providers"] = ChoiceField(choices=CHOICES,widget=RadioSelect())
+#         update_field_widget_attributes(self.fields["providers"],{"class":"provider_choice"})
+#
+#     @classmethod
+#     def get_title(cls):
+#         return "open-id"
 
 
 class MetadataPasswordForm(AdminPasswordChangeForm):
@@ -78,9 +77,9 @@ class MetadataUserForm(ModelForm):
                     "first_name","last_name","email",
                   ]
 
-    first_name = CharField(label="First Name",required=False,validators=[valiate_no_bad_chars,])
-    last_name  = CharField(label="Last Name",required=False,validators=[valiate_no_bad_chars,])
-    email      = EmailField(label="Email",required=False,validators=[valiate_no_bad_chars,])
+    first_name = CharField(label="First Name",required=False,validators=[validate_no_bad_chars,])
+    last_name  = CharField(label="Last Name",required=False,validators=[validate_no_bad_chars,])
+    email      = EmailField(label="Email",required=False,validators=[validate_no_bad_chars,])
 
     def __init__(self,*args,**kwargs):
         super(MetadataUserForm,self).__init__(*args,**kwargs)

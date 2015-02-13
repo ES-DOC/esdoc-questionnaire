@@ -51,11 +51,12 @@
                         <input class="hidden" type="text" name="min" value="{{ model_subformset.get_min }}"/>
                         <input class="hidden" type="text" name="max" value="{{ model_subformset.get_max }}"/>
                         <button class="remove" type="button" style="float: right; margin: 4px;" onclick="remove_subform(this);" title="remove this {{model_customizer.model_title}}">remove</button>
-                        {{ model_subform.DELETE }}
                         <br/> <!-- not sure why "<div style='clear: both;'/>" doesn't work here -->
                     </div>
 
                     <div class="form" style="clear: right;"> {# wrapping everything in a div.form so I can group together fields belonging to the same model #}
+
+                        {{ model_subform.DELETE }}
 
                         <div class="hidden">
                             {# the fields I explicitly set to hidden #}
@@ -66,6 +67,11 @@
                             {% for hidden_field in model_subform.hidden_fields %}
                                 {{ hidden_field }}
                             {% endfor %}  {# /hidden_field #}
+
+                            {# and a special form-only (ie: not part of the underlying model) field #}
+                            {# which lets me check which forms to deal w/ on the formset methods in python #}
+                            {{ model_subform.loaded }}
+
                         </div> <!-- /.hidden -->
 
                         {%  with active_standard_properties=model_customizer.get_active_standard_properties %}

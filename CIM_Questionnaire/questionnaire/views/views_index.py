@@ -21,13 +21,24 @@ Summary of module goes here
 """
 
 
-from django import forms
 from django.forms import *
 
-from CIM_Questionnaire.questionnaire.views import *
-from CIM_Questionnaire.questionnaire.models import *
+from django.core.urlresolvers import reverse
+from django.contrib.sites.models import get_current_site
+from django.shortcuts import render_to_response, redirect
+from django.http import HttpResponseRedirect
+from django.template import RequestContext
+from django.contrib import messages
+
+from CIM_Questionnaire.questionnaire.models.metadata_project import MetadataProject
+from CIM_Questionnaire.questionnaire.models.metadata_proxy import MetadataModelProxy
+from CIM_Questionnaire.questionnaire.models.metadata_version import MetadataVersion
+from CIM_Questionnaire.questionnaire.models.metadata_customizer import MetadataModelCustomizer
+from CIM_Questionnaire.questionnaire.models.metadata_model import MetadataModel
+from CIM_Questionnaire.questionnaire.views.views_error import questionnaire_error
 from CIM_Questionnaire.questionnaire.utils import SUPPORTED_DOCUMENTS
-from CIM_Questionnaire.questionnaire.utils import get_version, remove_form_errors
+from CIM_Questionnaire.questionnaire.utils import remove_form_errors
+from CIM_Questionnaire.questionnaire import get_version
 
 def questionnaire_index(request):
     """The default view for the CIM Questionnaire.  Provides a choice of active projects to visit."""
@@ -74,14 +85,22 @@ def questionnaire_project_index(request,project_name=""):
         project = MetadataProject.objects.get(name__iexact=project_name,active=True)
     except MetadataProject.DoesNotExist:
         msg = "Could not find an active project named '%s'." % (project_name)
-        return error(request,msg)
+        return questionnaire_error(request,msg)
 
-    all_versions = MetadataVersion.objects.filter(registered=True)
-    all_proxies = MetadataModelProxy.objects.filter(stereotype__iexact="document",version__in=all_versions)
+    all_versions = MetadataVersion.objects.filter(registered=True).order_by("key")
+    all_proxies = MetadataModelProxy.objects.filter(stereotype__iexact="document",version__in=all_versions).order_by("name")
     all_proxies = all_proxies.filter(name__iregex=r'(' + '|'.join(SUPPORTED_DOCUMENTS) + ')')
-    all_customizers = MetadataModelCustomizer.objects.filter(project=project,proxy__in=all_proxies)
-    all_models = MetadataModel.objects.filter(project=project,is_root=True,proxy__in=all_proxies,is_document=True)
-   
+    all_customizers = MetadataModelCustomizer.objects.filter(project=project,proxy__in=all_proxies).order_by("name")
+    # a bit of SQL-fu to get models in the right order
+    # (thanks to http://blog.mathieu-leplatre.info/django-create-a-queryset-from-a-list-preserving-order.html)
+    all_models_unordered = MetadataModel.objects.filter(project=project, is_root=True, is_document=True, proxy__in=all_proxies)
+    all_models_ordered_by_unicode_name_list = [model.pk for model in sorted(all_models_unordered, key=lambda m: u"%s"%m)]
+    order_by_unicode_name_query = u"CASE %s END" % " ".join([u"WHEN id=%s THEN %s" % (pk, i) for i, pk in enumerate(all_models_ordered_by_unicode_name_list)])
+    all_models = MetadataModel.objects.filter(pk__in=all_models_ordered_by_unicode_name_list).extra(
+        select = {"ordering" : order_by_unicode_name_query},
+        order_by = ["ordering",]
+    )
+
     class _AdminIndexForm(forms.Form):
 
         versions        = ModelChoiceField(queryset=all_versions,label="Metadata Version",required=True)
@@ -125,9 +144,9 @@ def questionnaire_project_index(request,project_name=""):
                 proxy = admin_form.cleaned_data["proxies"]
                 customization = admin_form.cleaned_data["customizations"]
                 if customization:
-                    url = "/%s/customize/%s/%s?name=%s" % (project_name.lower(),version.name.lower(),proxy.name.lower(),customization.name)
+                    url = "/%s/customize/%s/%s?name=%s" % (project_name.lower(),version.get_key(),proxy.name.lower(),customization.name)
                 else:
-                    url = "/%s/customize/%s/%s" % (project_name.lower(),version.name.lower(),proxy.name.lower())
+                    url = "/%s/customize/%s/%s" % (project_name.lower(),version.get_key(),proxy.name.lower())
                 return redirect(url)
             
         elif "user_submit" in request.POST:
@@ -139,9 +158,9 @@ def questionnaire_project_index(request,project_name=""):
                 proxy = user_form.cleaned_data["proxies"]
                 model = user_form.cleaned_data["models"]
                 if model:
-                    url = "/%s/edit/%s/%s/%s" % (project_name.lower(),version.name.lower(),proxy.name.lower(),model.pk)
+                    url = "/%s/edit/%s/%s/%s" % (project_name.lower(),version.get_key(),proxy.name.lower(),model.pk)
                 else:
-                    url = "/%s/edit/%s/%s" % (project_name.lower(),version.name.lower(),proxy.name.lower())
+                    url = "/%s/edit/%s/%s" % (project_name.lower(),version.get_key(),proxy.name.lower())
                 return redirect(url)
 
         elif "default_submit" in request.POST:
@@ -152,7 +171,7 @@ def questionnaire_project_index(request,project_name=""):
                 version = default_form.cleaned_data["versions"]
                 proxy = default_form.cleaned_data["proxies"]
                 model = default_form.cleaned_data["models"]
-                url = "/%s/view/%s/%s/%s" % (project_name.lower(),version.name.lower(),proxy.name.lower(),model.pk)
+                url = "/%s/view/%s/%s/%s" % (project_name.lower(),version.get_key(),proxy.name.lower(),model.pk)
                 return redirect(url)
 
         else:

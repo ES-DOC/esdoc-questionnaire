@@ -6,16 +6,14 @@
 __author__="allyn.treshansky"
 __date__ ="$Oct 1, 2013 11:28:06 AM$"
 
-#if __name__ == "__main__":
-#    print "Hello World";
+if __name__ == "__main__":
 
-import sys
 
-from profiling import decode_profile as parse
+    import hotshot.stats
+    import sys
 
-try:
-    profile = sys.argv[1]
-    parse(profile)
-except IndexError:
-    print "Error: Please specify a profile."
-
+    import ipdb; ipdb.set_trace()
+    stats = hotshot.stats.load(sys.argv[1])
+    #stats.strip_dirs()
+    stats.sort_stats('time', 'calls')
+    stats.print_stats(20)

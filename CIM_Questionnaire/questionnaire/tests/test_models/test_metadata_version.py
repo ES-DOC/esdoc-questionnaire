@@ -18,7 +18,7 @@ class TestMetadataVersion(TestQuestionnaireBase):
     def test_register(self):
 
         test_version_path = os.path.join(VERSION_UPLOAD_PATH, "test_version.xml")
-        test_version = MetadataVersion(name="version", file=test_version_path, url="http://www.test.com/version.xsd")
+        test_version = MetadataVersion(name="version", version="1.0", file=test_version_path, url="http://www.test.com/version.xsd")
         test_version.save()
 
         version_qs = MetadataVersion.objects.all()

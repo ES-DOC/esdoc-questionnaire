@@ -104,6 +104,12 @@ function readonlies(element) {
    });
 }
 
+
+function expanders(element) {
+    /* make a TextInput widget expand (up to some maximum) to fit the value */
+    $(element).autosizeInput({})
+}
+
 function accordion_buttons(element) {
 
     if ($(element).hasClass("expand")) {

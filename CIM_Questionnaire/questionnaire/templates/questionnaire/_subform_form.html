@@ -37,7 +37,13 @@
                         {% for hidden_field in model_subform.hidden_fields %}
                             {{ hidden_field }}
                         {% endfor %}  {# /hidden_field #}
+
+                        {# and a special form-only (ie: not part of the underlying model) field #}
+                        {# which lets me check which forms to deal w/ on the formset methods in python #}
+                        {{ model_subform.loaded }}
+
                     </div> <!-- /.hidden -->
+
 
                     {# TODO: PURPOSEFULLY IGNORING SCIENTIFIC_PROPERTIES_FORMSETS FOR SUBFORMS FOR NOW #}
                     {% with scientific_properties_subformset=property_form.get_scientific_properties_subformsets|get_value_from_key:model_subform.prefix %}
