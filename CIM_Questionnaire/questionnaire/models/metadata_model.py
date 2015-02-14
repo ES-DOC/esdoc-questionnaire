@@ -237,30 +237,29 @@ class MetadataModel(MPTTModel):
 
     def serialize(self, serialization_version=None, serialization_format=MetadataSerializationFormats.ESDOC_XML):
 
-        serialization_dict = {
-            "format" : MetadataSerializationFormats.ESDOC_XML,
-            "project" : self.project,
-            "version" : self.version,
-            "proxy" : self.proxy,
-            "model" : self,
-            "questionnaire_version" : get_version(),
+        if not serialization_version:
+            serialization_version = self.get_major_version()
 
+        (serialization, created_serialization) = MetadataModelSerialization.objects.get_or_create(
+            model=self,
+            name=self.guid,
+            format=serialization_format,
+            version=serialization_version
+        )
+
+        serialization_dict = {
+            "format": MetadataSerializationFormats.ESDOC_XML,
+            "project": self.project,
+            "version": self.version,
+            "proxy": self.proxy,
+            "model": self,
+            "serialization_version": serialization_version,
+            "questionnaire_version": get_version(),
         }
         serialization_template_path = "questionnaire/serialization/%s/%s.xml" % (serialization_format.getType(), self.proxy.name.lower())
-        serialized_model = render_to_string(serialization_template_path, serialization_dict )
-
-        new_serialization_kwargs = {
-            "model" : self,
-            "name" : self.guid,
-            "format" : serialization_format,
-        }
-        if serialization_version:
-            new_serialization_kwargs["version"] = serialization_version
-        else:
-            new_serialization_kwargs["version"] = self.get_major_version()
-        (serialization, created_serialization) = MetadataModelSerialization.objects.get_or_create(**new_serialization_kwargs)
-
+        serialized_model = render_to_string(serialization_template_path, serialization_dict)
         serialization.content = serialized_model
+
         if created_serialization:
             serialization.publication_date = timezone.now()
 
