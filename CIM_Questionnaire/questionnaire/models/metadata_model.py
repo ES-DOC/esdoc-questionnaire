@@ -552,7 +552,7 @@ class MetadataStandardProperty(MetadataProperty):
                     enumerations.append(u"OTHER: %s" % (self.enumeration_other_value))
             return enumerations
 
-        else: # MetadataFieldTypes.RELATIONSHIP
+        else:  # MetadataFieldTypes.RELATIONSHIP
             return self.relationship_value.all()
 
     def __unicode__(self):
@@ -608,7 +608,17 @@ class MetadataScientificProperty(MetadataProperty):
 
     def get_value(self):
         if not self.is_enumeration:
+
             return self.atomic_value
-        else: # is_enumeration
-            # TODO
-            pass
+
+        else:  # is_enumeration
+
+            enumerations = self.enumeration_value.split("|")
+
+            if not any(enumerations):  # if enumerations == [u'']
+                return None
+
+            if OTHER_CHOICE[0] in enumerations:
+                enumerations.append(u"OTHER: %s" % self.enumeration_other_value)
+
+            return enumerations

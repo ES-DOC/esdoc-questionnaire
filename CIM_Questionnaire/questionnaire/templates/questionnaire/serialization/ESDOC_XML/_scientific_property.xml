@@ -12,7 +12,7 @@
 
         <values>
             {% for value in property.get_value %}
-                <value>{{ value }}</value>
+                <value>{{ value.strip }}</value>
             {% endfor %}
         </values>
 
