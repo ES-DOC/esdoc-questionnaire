@@ -240,8 +240,10 @@ def questionnaire_edit_existing(request, project_name="", model_name="", version
 
             if "_publish" in data:
                 root_model.publish(force_save=True)
+                messages.add_message(request, messages.SUCCESS, "Successfully saved and published instances.")
 
-            messages.add_message(request, messages.SUCCESS, "Successfully saved instances.")
+            else:
+                messages.add_message(request, messages.SUCCESS, "Successfully saved instances.")
 
         else:
 
