@@ -6,6 +6,7 @@
 #358C92 titles  (dk teal)
 */
 
+
 body {
     /* taken from CoG for now */
     margin: 0;
@@ -14,6 +15,10 @@ body {
     font-family: "Lucida Grande","DejaVu Sans","Bitstream Vera Sans",Verdana,Arial,sans-serif;
     color: #333;
     background: #FFFFFF;
+    /* forcing the default style to be "position: relative" ensures that dialog boxes */
+    /* don't randomly jump to the bottom of the page, as per ticket #239 */
+    /* TODO: in the long-term, I should upgrade JQuery and remove this */
+    position: relative;
 }
 
 * {
