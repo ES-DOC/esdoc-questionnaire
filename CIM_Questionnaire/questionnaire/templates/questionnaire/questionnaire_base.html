@@ -164,7 +164,7 @@
                                 {% endwith %} {# /user #}
                             {% else %}
                                 <a title="register" class="button" href="/register?next={{ next }}">register</a>
-                                <a title="login" class="button" href="/login?next={{ next }}">login</a>
+                                <a title="login" class="button" href="/login?next={{ request.path }}">login</a>
                             {% endif %}
                         </div>
                     {% endblock %} {# /#user #}
