@@ -232,11 +232,15 @@ class MetadataAbstractStandardPropertyForm(MetadataEditingForm):
         if customizer.field_type == MetadataFieldTypes.ATOMIC:
             atomic_type = customizer.atomic_type
             if atomic_type:
+                atomic_field = self.fields["atomic_value"]
                 if atomic_type != MetadataAtomicFieldTypes.DEFAULT:
                     custom_widget_class = METADATA_ATOMICFIELD_MAP[atomic_type][0]
                     custom_widget_args = METADATA_ATOMICFIELD_MAP[atomic_type][1]
-                    self.fields["atomic_value"].widget = custom_widget_class(**custom_widget_args)
-                update_field_widget_attributes(self.fields["atomic_value"], {"class":atomic_type.lower()})
+                    atomic_field.widget = custom_widget_class(**custom_widget_args)
+                    if atomic_type == MetadataAtomicFieldTypes.TEXT:
+                        # force TextInput to be a pretty size, as per #82
+                        set_field_widget_attributes(atomic_field, {"cols": "40", "rows": "5", })
+                update_field_widget_attributes(atomic_field, {"class": atomic_type.lower()})
 
         elif customizer.field_type == MetadataFieldTypes.ENUMERATION:
             custom_widget_attributes = {"class": "multiselect"}
