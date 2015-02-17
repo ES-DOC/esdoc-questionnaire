@@ -1,5 +1,8 @@
 Fixtures used for testing go here.
+
 When creating fixtures use the following command:
 `manage.py dumpdata --indent 4 questionnaire > <fixture file>.json`
-The resultant file will contain models in a random order; You may have to re-order models for tests to work;
-In particular, versions, categorizations, vocabularies, projects, & projectvocabularies must come 1st;
+
+The resultant file will contain models in a random order [see https://code.djangoproject.com/ticket/6726];
+You may have to re-order models for tests to work:
+versions, categorizations, vocabularies, projects, & projectvocabularies must come 1st;
