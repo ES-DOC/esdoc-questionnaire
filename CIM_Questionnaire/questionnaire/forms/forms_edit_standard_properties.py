@@ -110,7 +110,17 @@ def save_valid_standard_properties_formset(standard_properties_formset):
                 # else:
                 #     standard_property_instance.relationship_value.add(model_subform.instance)
 
-            standard_property_instance.save()
+            # standard_property_instance.save()  # I'm saving below in all cases; no need to do this twice
+
+        # TODO: UNLOADED INLINE_FORMSETS ARE NOT SAVING THE FK FIELD APPROPRIATELY
+        # THIS MAKES NO SENSE, B/C THE INDIVIDUAL INSTANCES DO HAVE THE "model" FIELD SET
+        # BUT THAT CORRESPONDING MetadataModel HAS NO VALUES FOR "standard_properties"
+        # RE-SETTING IT AND RE-SAVING IT SEEMS TO DO THE TRICK
+        fk_field_name = standard_properties_formset.fk.name
+        fk_model = getattr(standard_property_instance, fk_field_name)
+        setattr(standard_property_instance, fk_field_name, fk_model)
+        standard_property_instance.save()
+
         standard_property_instances.append(standard_property_instance)
 
     return standard_property_instances

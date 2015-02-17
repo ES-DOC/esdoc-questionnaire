@@ -269,6 +269,8 @@ class MetadataEditingInlineFormSet(MetadataInlineFormSet):
             form.data[form.add_prefix(self._pk_field.name)] = None
 
             # Remove the foreign key from the form's data
+            # TODO: WHY IS THIS HAPPENING?
+            # TODO: I ASSUME B/C INLINE_FORMSETS AUTOMATICALLY HANDLE FK FIELDS?
             form.data[form.add_prefix(self.fk.name)] = None
 
         # Set the fk value here so that the form can do its validation.
@@ -878,9 +880,11 @@ def save_valid_forms(model_formset, standard_properties_formsets, scientific_pro
     model_instances = save_valid_model_formset(model_formset, model_parent_dictionary=model_parent_dictionary)
 
     for standard_properties_formset in standard_properties_formsets.values():
+        # standard_property_instances = save_valid_standard_properties_formset(standard_properties_formset)
         save_valid_standard_properties_formset(standard_properties_formset)
 
     for scientific_properties_formset in scientific_properties_formsets.values():
+        # scientific_property_instances = save_valid_scientific_properties_formset(scientific_properties_formset)
         save_valid_scientific_properties_formset(scientific_properties_formset)
 
     return model_instances
