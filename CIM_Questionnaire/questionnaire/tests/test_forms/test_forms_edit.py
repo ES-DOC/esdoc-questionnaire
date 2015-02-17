@@ -210,6 +210,8 @@ class Test(TestQuestionnaireBase):
 
         self.assertEqual(all(validity), True)
 
+    # TODO: TEST THAT ALL FORMSETS ARE IN THE CORRECT (ie: SAME AS REALIZATIONS) ORDER
+
     #
     # def test_metadata_model_formset_factory_from_models(self):
     #
