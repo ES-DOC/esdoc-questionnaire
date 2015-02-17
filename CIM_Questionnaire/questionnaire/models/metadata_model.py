@@ -542,16 +542,31 @@ class MetadataStandardProperty(MetadataProperty):
         field_type = self.field_type
 
         if field_type == MetadataFieldTypes.ATOMIC:
+
             return self.atomic_value
 
         elif field_type == MetadataFieldTypes.ENUMERATION:
+
             enumerations = self.enumeration_value.split("|")
-            if OTHER_CHOICE[0] in enumerations:
+
+            if not any(enumerations):  # if enumerations == [u'']
+                return None
+
+            if NULL_CHOICE[0][0] in enumerations:
+                enumerations.remove(NULL_CHOICE[0][0])
+                enumerations.append(u"NONE")
+
+            if OTHER_CHOICE[0][0] in enumerations:
+                enumerations.remove(OTHER_CHOICE[0][0])
                 if self.enumeration_other_value:
-                    enumerations.append(u"OTHER: %s" % (self.enumeration_other_value))
+                    enumerations.append(u"OTHER: %s" % self.enumeration_other_value)
+                else:
+                    enumerations.append(u"OTHER")
+
             return enumerations
 
         else:  # MetadataFieldTypes.RELATIONSHIP
+
             return self.relationship_value.all()
 
     def __unicode__(self):
@@ -617,7 +632,15 @@ class MetadataScientificProperty(MetadataProperty):
             if not any(enumerations):  # if enumerations == [u'']
                 return None
 
-            if OTHER_CHOICE[0] in enumerations:
-                enumerations.append(u"OTHER: %s" % self.enumeration_other_value)
+            if NULL_CHOICE[0][0] in enumerations:
+                enumerations.remove(NULL_CHOICE[0][0])
+                enumerations.append(u"NONE")
+
+            if OTHER_CHOICE[0][0] in enumerations:
+                enumerations.remove(OTHER_CHOICE[0][0])
+                if self.enumeration_other_value:
+                    enumerations.append(u"OTHER: %s" % self.enumeration_other_value)
+                else:
+                    enumerations.append(u"OTHER")
 
             return enumerations
