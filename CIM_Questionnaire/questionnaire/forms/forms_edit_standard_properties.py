@@ -158,7 +158,7 @@ class MetadataAbstractStandardPropertyForm(MetadataEditingForm):
         if customizers:
             proxy_pk = int(self.get_current_field_value("proxy"))
             customizer = find_in_sequence(lambda c: c.proxy.pk == proxy_pk, customizers)
-            assert(customizer.name == self.get_current_field_value("name"))   # this is new code; just make sure it works
+            assert(customizer.name == self.get_current_field_value("name"))  # this is new code; just make sure it works
         else:
             customizer = None
 

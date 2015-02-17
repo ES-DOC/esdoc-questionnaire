@@ -108,6 +108,7 @@ class MetadataScientificPropertyForm(MetadataEditingForm):
         if customizers:
             proxy_pk = int(self.get_current_field_value("proxy"))
             customizer = find_in_sequence(lambda c: c.proxy.pk == proxy_pk, customizers)
+            assert(customizer.name == self.get_current_field_value("name"))  # this is new code; just make sure it works
         else:
             customizer = None
 
@@ -200,6 +201,14 @@ class MetadataScientificPropertyForm(MetadataEditingForm):
             return value_fields[0]
         except:
             return None
+
+    def has_changed(self):
+        # ScientificPropertyForms for now should always be saved, as w/ top-level StandardPropertyForms
+        # if I do not override has_changed, then the call to formset.save_existing_forms
+        # (which happens when saving an unloaded formset), will only return some of the forms
+        # and the loop in save_valid_scientific_properties_formset will be out-of-sync
+        # see ticket #246 for more info
+        return True
 
 
 class MetadataScientificPropertyInlineFormSet(MetadataEditingInlineFormSet):
