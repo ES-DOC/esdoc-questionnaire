@@ -2,10 +2,18 @@ CIM Questionnaire Change History
 
 For full release notes, please see https://earthsystemcog.org/projects/es-doc-models/releases_questionnaire
 
+v0.12.1.0
+
+* fixed errors in serialization
+* fixed errors w/ saving non-loaded property formsets
+
 v0.12.0.0
 
 * restructured testing framework to use fixtures
 * optimized editor form by only loading content on-demand
+* improved help text as needed
+* support for dynamic sites
+* added "version" attribute to MetadataVersion
 
 v0.11.3.4
 
