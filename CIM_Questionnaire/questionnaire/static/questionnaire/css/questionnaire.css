@@ -189,7 +189,7 @@ input.default , input.character {
 
 #questionnaire .error_wrapper               { display: inline; background-color: #FF6666; padding: 2px; margin-left: 4px; }
 #questionnaire .error_wrapper .errorlist    { display: inline; list-style-type: none; text-align: center; padding: 0px; margin: 0px; }
-#questionnaire .error_wrapper .errorlist li { display: inline; background-color: #FF6666; padding-left: 1px; padding-right: 1px; }
+#questionnaire .error_wrapper .errorlist li { display: inline; background-color: #FF6666; padding-right: 1em; }
 #questionnaire fieldset.error { border-color: #FF6666; }
 #questionnaire fieldset.error > legend span.title { color: #FF6666; }
 #questionnaire fieldset.error > legend:hover span.title { color: #f7f7f7; }
