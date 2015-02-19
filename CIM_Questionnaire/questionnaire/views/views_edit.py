@@ -108,7 +108,7 @@ def questionnaire_edit_new(request, project_name="", model_name="", version_key=
             # (such as those in the testing framework)
             request.session["root_model_id"] = root_model_id
 
-            messages.add_message(request, messages.SUCCESS, "Successfully saved model instances")
+            messages.add_message(request, messages.SUCCESS, "Successfully saved model instance(s)")
             edit_existing_url = reverse("edit_existing", kwargs={
                 "project_name": project_name,
                 "model_name": model_name,
@@ -119,7 +119,7 @@ def questionnaire_edit_new(request, project_name="", model_name="", version_key=
 
         else:
 
-            messages.add_message(request, messages.ERROR, "Error saving model instances")
+            messages.add_message(request, messages.ERROR, "Error saving model instance(s)")
 
     _dict = {
         "site": get_current_site(request),  # provide a special message if this is not the production site
@@ -240,12 +240,14 @@ def questionnaire_edit_existing(request, project_name="", model_name="", version
 
             if "_publish" in data:
                 root_model.publish(force_save=True)
+                messages.add_message(request, messages.SUCCESS, "Successfully saved and published instance(s).")
 
-            messages.add_message(request, messages.SUCCESS, "Successfully saved instances.")
+            else:
+                messages.add_message(request, messages.SUCCESS, "Successfully saved instance(s).")
 
         else:
 
-            messages.add_message(request, messages.ERROR, "Error saving model instances")
+            messages.add_message(request, messages.ERROR, "Error saving model instance(s)")
 
     # gather all the extra information required by the template
     _dict = {

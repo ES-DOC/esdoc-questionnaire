@@ -110,7 +110,17 @@ def save_valid_standard_properties_formset(standard_properties_formset):
                 # else:
                 #     standard_property_instance.relationship_value.add(model_subform.instance)
 
-            standard_property_instance.save()
+            # standard_property_instance.save()  # I'm saving below in all cases; no need to do this twice
+
+        # TODO: UNLOADED INLINE_FORMSETS ARE NOT SAVING THE FK FIELD APPROPRIATELY
+        # THIS MAKES NO SENSE, B/C THE INDIVIDUAL INSTANCES DO HAVE THE "model" FIELD SET
+        # BUT THAT CORRESPONDING MetadataModel HAS NO VALUES FOR "standard_properties"
+        # RE-SETTING IT AND RE-SAVING IT SEEMS TO DO THE TRICK
+        fk_field_name = standard_properties_formset.fk.name
+        fk_model = getattr(standard_property_instance, fk_field_name)
+        setattr(standard_property_instance, fk_field_name, fk_model)
+        standard_property_instance.save()
+
         standard_property_instances.append(standard_property_instance)
 
     return standard_property_instances
@@ -148,7 +158,7 @@ class MetadataAbstractStandardPropertyForm(MetadataEditingForm):
         if customizers:
             proxy_pk = int(self.get_current_field_value("proxy"))
             customizer = find_in_sequence(lambda c: c.proxy.pk == proxy_pk, customizers)
-            assert(customizer.name == self.get_current_field_value("name"))   # this is new code; just make sure it works
+            assert(customizer.name == self.get_current_field_value("name"))  # this is new code; just make sure it works
         else:
             customizer = None
 
@@ -232,11 +242,15 @@ class MetadataAbstractStandardPropertyForm(MetadataEditingForm):
         if customizer.field_type == MetadataFieldTypes.ATOMIC:
             atomic_type = customizer.atomic_type
             if atomic_type:
+                atomic_field = self.fields["atomic_value"]
                 if atomic_type != MetadataAtomicFieldTypes.DEFAULT:
                     custom_widget_class = METADATA_ATOMICFIELD_MAP[atomic_type][0]
                     custom_widget_args = METADATA_ATOMICFIELD_MAP[atomic_type][1]
-                    self.fields["atomic_value"].widget = custom_widget_class(**custom_widget_args)
-                update_field_widget_attributes(self.fields["atomic_value"], {"class":atomic_type.lower()})
+                    atomic_field.widget = custom_widget_class(**custom_widget_args)
+                    if atomic_type == MetadataAtomicFieldTypes.TEXT:
+                        # force TextInput to be a pretty size, as per #82
+                        set_field_widget_attributes(atomic_field, {"cols": "40", "rows": "5", })
+                update_field_widget_attributes(atomic_field, {"class": atomic_type.lower()})
 
         elif customizer.field_type == MetadataFieldTypes.ENUMERATION:
             custom_widget_attributes = {"class": "multiselect"}

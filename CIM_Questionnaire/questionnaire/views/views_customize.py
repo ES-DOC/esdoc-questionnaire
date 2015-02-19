@@ -192,7 +192,7 @@ def questionnaire_customize_new(request, project_name="", model_name="", version
             return HttpResponseRedirect(customize_existing_url)
 
         else:
-            messages.add_message(request, messages.ERROR, "Failed to save customizer.")
+            messages.add_message(request, messages.ERROR, "Failed to save customization.")
 
     dict = {
         "site"                                    : get_current_site(request),
@@ -277,7 +277,7 @@ def questionnaire_customize_existing(request, project_name="", model_name="", ve
 
         else:
 
-            messages.add_message(request, messages.ERROR, "Failed to save customizer.")
+            messages.add_message(request, messages.ERROR, "Failed to save customization.")
 
     # gather all the extra information required by the template
     dict = {

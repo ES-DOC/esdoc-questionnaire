@@ -6,6 +6,7 @@
 #358C92 titles  (dk teal)
 */
 
+
 body {
     /* taken from CoG for now */
     margin: 0;
@@ -14,6 +15,10 @@ body {
     font-family: "Lucida Grande","DejaVu Sans","Bitstream Vera Sans",Verdana,Arial,sans-serif;
     color: #333;
     background: #FFFFFF;
+    /* forcing the default style to be "position: relative" ensures that dialog boxes */
+    /* don't randomly jump to the bottom of the page, as per ticket #239 */
+    /* TODO: in the long-term, I should upgrade JQuery and remove this */
+    position: relative;
 }
 
 * {
@@ -111,10 +116,10 @@ body {
 /* explicitly reset the background for open accordion headers */
 /* (by default, JQuery applies no style to them once opened) */
 #questionnaire .accordion .accordion_header.open_accordion { background: url(../img/default_ui_background.png) repeat-x 50% 50%; border: 1px solid #B9E0E3;}
-#questionnaire .accordion .accordion_header.open_accordion.ui-state-hover { background: url(../img/active_ui_background.png) repeat-x 50% 50%; border: 1px solid #B9E0E3;}
+#questionnaire .accordion .accordion_header.open_accordion.ui-state-hover { background: url(../img/default_ui_background.png) repeat-x 50% 50%; border: 1px solid #6DA6D1;}
 
 #questionnaire h3.accordion_header .open_accordion { padding: 100px;}
-#questionnaire .accordion_header .open_accordion.ui-state-hover { background: #358c92 url(../img/active_ui_background.png) repeat-x 50% 50%; border: 1px solid #666666;}
+#questionnaire .accordion_header .open_accordion.ui-state-hover { background: url(../img/default_ui_background.png) repeat-x 50% 50%; border: 1px solid #6DA6D1;}
 
 #questionnaire input.label { background: none; border: none; cursor: pointer; } /* width: 100%; } */ /* NOT SPECIFYING WIDTH HERE B/C SOME LABELS HAVE FIXED WIDTH (INSTEAD SPECIFYING WIDTHS IN FORM INIT FNS) */
 
@@ -184,7 +189,7 @@ input.default , input.character {
 
 #questionnaire .error_wrapper               { display: inline; background-color: #FF6666; padding: 2px; margin-left: 4px; }
 #questionnaire .error_wrapper .errorlist    { display: inline; list-style-type: none; text-align: center; padding: 0px; margin: 0px; }
-#questionnaire .error_wrapper .errorlist li { display: inline; background-color: #FF6666; }
+#questionnaire .error_wrapper .errorlist li { display: inline; background-color: #FF6666; padding-right: 1em; }
 #questionnaire fieldset.error { border-color: #FF6666; }
 #questionnaire fieldset.error > legend span.title { color: #FF6666; }
 #questionnaire fieldset.error > legend:hover span.title { color: #f7f7f7; }

@@ -121,7 +121,7 @@
 {% block site %}
     {% if site|site_type != "PROD" %}
         <div id="site" class="ui-state-error" style="width: 80%; margin: 2px auto 2px auto; text-align: center; padding: 4px;">
-            This is not a production site.&nbsp;&nbsp;Data will not be stored.
+            This is not a production site.&nbsp;&nbsp;Database may be periodically reset.
         </div>
     {% endif %} {# /site_type != "PROD" #}
 {% endblock %} {# /site #}
@@ -164,7 +164,7 @@
                                 {% endwith %} {# /user #}
                             {% else %}
                                 <a title="register" class="button" href="/register?next={{ next }}">register</a>
-                                <a title="login" class="button" href="/login?next={{ next }}">login</a>
+                                <a title="login" class="button" href="/login?next={{ request.path }}">login</a>
                             {% endif %}
                         </div>
                     {% endblock %} {# /#user #}

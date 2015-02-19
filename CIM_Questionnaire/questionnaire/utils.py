@@ -190,9 +190,14 @@ BAD_CHARS_LIST = ", ".join(BAD_CHARS.split(' '))
 
 
 def validate_no_bad_chars(value):
-
-    if re.search(BAD_CHARS_REGEX,value):
-        raise ValidationError(u"value may not contain any of the following characters: '%s'" % (BAD_CHARS))
+    """
+    validator function to use with CharFields;
+    ensures none of the above "BAD_CHARS" exist in the field
+    :param value:
+    :return:
+    """
+    if re.search(BAD_CHARS_REGEX, value):
+        raise ValidationError(u"Value may not contain any of the following characters: '%s'" % (BAD_CHARS))
 
 
 def validate_password(value):

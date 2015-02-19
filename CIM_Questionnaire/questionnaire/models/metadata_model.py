@@ -237,30 +237,29 @@ class MetadataModel(MPTTModel):
 
     def serialize(self, serialization_version=None, serialization_format=MetadataSerializationFormats.ESDOC_XML):
 
-        serialization_dict = {
-            "format" : MetadataSerializationFormats.ESDOC_XML,
-            "project" : self.project,
-            "version" : self.version,
-            "proxy" : self.proxy,
-            "model" : self,
-            "questionnaire_version" : get_version(),
+        if not serialization_version:
+            serialization_version = self.get_major_version()
 
+        (serialization, created_serialization) = MetadataModelSerialization.objects.get_or_create(
+            model=self,
+            name=self.guid,
+            format=serialization_format,
+            version=serialization_version
+        )
+
+        serialization_dict = {
+            "format": MetadataSerializationFormats.ESDOC_XML,
+            "project": self.project,
+            "version": self.version,
+            "proxy": self.proxy,
+            "model": self,
+            "serialization_version": serialization_version,
+            "questionnaire_version": get_version(),
         }
         serialization_template_path = "questionnaire/serialization/%s/%s.xml" % (serialization_format.getType(), self.proxy.name.lower())
-        serialized_model = render_to_string(serialization_template_path, serialization_dict )
-
-        new_serialization_kwargs = {
-            "model" : self,
-            "name" : self.guid,
-            "format" : serialization_format,
-        }
-        if serialization_version:
-            new_serialization_kwargs["version"] = serialization_version
-        else:
-            new_serialization_kwargs["version"] = self.get_major_version()
-        (serialization, created_serialization) = MetadataModelSerialization.objects.get_or_create(**new_serialization_kwargs)
-
+        serialized_model = render_to_string(serialization_template_path, serialization_dict)
         serialization.content = serialized_model
+
         if created_serialization:
             serialization.publication_date = timezone.now()
 
@@ -543,16 +542,31 @@ class MetadataStandardProperty(MetadataProperty):
         field_type = self.field_type
 
         if field_type == MetadataFieldTypes.ATOMIC:
+
             return self.atomic_value
 
         elif field_type == MetadataFieldTypes.ENUMERATION:
+
             enumerations = self.enumeration_value.split("|")
-            if OTHER_CHOICE[0] in enumerations:
+
+            if not any(enumerations):  # if enumerations == [u'']
+                return None
+
+            if NULL_CHOICE[0][0] in enumerations:
+                enumerations.remove(NULL_CHOICE[0][0])
+                enumerations.append(u"NONE")
+
+            if OTHER_CHOICE[0][0] in enumerations:
+                enumerations.remove(OTHER_CHOICE[0][0])
                 if self.enumeration_other_value:
-                    enumerations.append(u"OTHER: %s" % (self.enumeration_other_value))
+                    enumerations.append(u"OTHER: %s" % self.enumeration_other_value)
+                else:
+                    enumerations.append(u"OTHER")
+
             return enumerations
 
-        else: # MetadataFieldTypes.RELATIONSHIP
+        else:  # MetadataFieldTypes.RELATIONSHIP
+
             return self.relationship_value.all()
 
     def __unicode__(self):
@@ -608,7 +622,25 @@ class MetadataScientificProperty(MetadataProperty):
 
     def get_value(self):
         if not self.is_enumeration:
+
             return self.atomic_value
-        else: # is_enumeration
-            # TODO
-            pass
+
+        else:  # is_enumeration
+
+            enumerations = self.enumeration_value.split("|")
+
+            if not any(enumerations):  # if enumerations == [u'']
+                return None
+
+            if NULL_CHOICE[0][0] in enumerations:
+                enumerations.remove(NULL_CHOICE[0][0])
+                enumerations.append(u"NONE")
+
+            if OTHER_CHOICE[0][0] in enumerations:
+                enumerations.remove(OTHER_CHOICE[0][0])
+                if self.enumeration_other_value:
+                    enumerations.append(u"OTHER: %s" % self.enumeration_other_value)
+                else:
+                    enumerations.append(u"OTHER")
+
+            return enumerations

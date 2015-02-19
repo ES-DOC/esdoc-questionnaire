@@ -62,14 +62,18 @@ class MetadataModelSerialization(models.Model):
     def __unicode__(self):
         return u"%s_%s" % (self.name, self.version)
 
+    def get_file_path(self):
+        file_name = u"%s_%s.xml" % (self.name, self.version)
+        file_path = os.path.join(settings.MEDIA_ROOT, APP_LABEL, "serializations", file_name)
+        return file_path
+
     def save(self, *args, **kwargs):
         if not self.publication_date:
             self.publication_date = timezone.now()
         super(MetadataModelSerialization, self).save(*args, **kwargs)
 
     def write(self):
-        serialization_file_name = u"%s_%s.xml" % (self.name, self.version)
-        serialization_path = os.path.join(settings.MEDIA_ROOT, APP_LABEL, "serializations", serialization_file_name)
+        serialization_path = self.get_file_path()
         if not os.path.exists(os.path.dirname(serialization_path)):
             os.makedirs(os.path.dirname(serialization_path))
         with open(serialization_path, "w") as file:

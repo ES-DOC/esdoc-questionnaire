@@ -56,11 +56,24 @@ def create_scientific_property_form_data(model, scientific_property, scientific_
     return scientific_property_form_data
 
 
-def save_valid_scientific_properties_formset(scientific_properties_formsets):
+def save_valid_scientific_properties_formset(scientific_properties_formset):
 
-    scientific_property_instances = scientific_properties_formsets.save(commit=False)
-    for scientific_property_instance in scientific_property_instances:
+    scientific_property_instances = []
+    for scientific_property_instance, scientific_property_form in zip(scientific_properties_formset.save(commit=False), scientific_properties_formset.forms):
+        # want to have access to both the instance and the customizer
+        # in case I need to check customization details
+        assert(scientific_property_instance.name == scientific_property_form.get_current_field_value("name"))
+
+        # TODO: UNLOADED INLINE_FORMSETS ARE NOT SAVING THE FK FIELD APPROPRIATELY
+        # THIS MAKES NO SENSE, B/C THE INDIVIDUAL INSTANCES DO HAVE THE "model" FIELD SET
+        # BUT THAT CORRESPONDING MetadataModel HAS NO VALUES FOR "standard_properties"
+        # RE-SETTING IT AND RE-SAVING IT SEEMS TO DO THE TRICK
+        fk_field_name = scientific_properties_formset.fk.name
+        fk_model = getattr(scientific_property_instance, fk_field_name)
+        setattr(scientific_property_instance, fk_field_name, fk_model)
         scientific_property_instance.save()
+
+        scientific_property_instances.append(scientific_property_instance)
 
     return scientific_property_instances
 
@@ -95,6 +108,7 @@ class MetadataScientificPropertyForm(MetadataEditingForm):
         if customizers:
             proxy_pk = int(self.get_current_field_value("proxy"))
             customizer = find_in_sequence(lambda c: c.proxy.pk == proxy_pk, customizers)
+            assert(customizer.name == self.get_current_field_value("name"))  # this is new code; just make sure it works
         else:
             customizer = None
 
@@ -187,6 +201,14 @@ class MetadataScientificPropertyForm(MetadataEditingForm):
             return value_fields[0]
         except:
             return None
+
+    def has_changed(self):
+        # ScientificPropertyForms for now should always be saved, as w/ top-level StandardPropertyForms
+        # if I do not override has_changed, then the call to formset.save_existing_forms
+        # (which happens when saving an unloaded formset), will only return some of the forms
+        # and the loop in save_valid_scientific_properties_formset will be out-of-sync
+        # see ticket #246 for more info
+        return True
 
 
 class MetadataScientificPropertyInlineFormSet(MetadataEditingInlineFormSet):
