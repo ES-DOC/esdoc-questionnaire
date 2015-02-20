@@ -3,58 +3,62 @@ from south.utils import datetime_utils as datetime
 from south.db import db
 from south.v2 import SchemaMigration
 from django.db import models
-from django.db.utils import ProgrammingError
-from django.contrib.contenttypes.models import ContentType
-from django.db.transaction import rollback
+
+# NOTE THAT B/C OF A ROGUE GHOST MIGRATION, THE NAME OF THIS FILE DOESN'T CORRESPOND TO THE SCHEMA CHANGES IT IMPLEMENTS
 
 class Migration(SchemaMigration):
 
     def forwards(self, orm):
-        # Adding model 'MetadataProjectVocabulary'
-        db.create_table(u'questionnaire_metadataprojectvocabulary', (
-            (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('project', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['questionnaire.MetadataProject'])),
-            ('vocabulary', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['questionnaire.MetadataVocabulary'])),
-        ))
-        db.send_create_signal('questionnaire', ['MetadataProjectVocabulary'])
+        # Removing unique constraint on 'MetadataComponentProxy', fields ['vocabulary', 'name']
+        db.delete_unique(u'questionnaire_metadatacomponentproxy', ['vocabulary_id', 'name'])
 
         # MODIFIED BY AT
-        # if run in the Django Test Framework, then ContentType entries won't be created until after _all_ migrations have finished
-        # (see http://andrewingram.net/2012/dec/common-pitfalls-django-south/)
-        from django.contrib.contenttypes.management import update_contenttypes
-        from django.contrib.auth.management import create_permissions
-        from django.db.models import get_app, get_models
-        app = get_app("questionnaire")
-        update_contenttypes(app, get_models(), verbosity=0)
-        create_permissions(app, get_models(), 0)
+        # THIS IS A HOLDOVER FROM A GHOST MIGRATION
+        # (THIS CODE SHOULD BE DONE IN 0026)
+        # # Adding model 'MetadataProjectVocabulary'
+        # db.create_table(u'questionnaire_metadataprojectvocabulary', (
+        #     (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
+        #     ('project', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['questionnaire.MetadataProject'])),
+        #     ('vocabulary', self.gf('django.db.models.fields.related.ForeignKey')(related_name='', to=orm['questionnaire.MetadataVocabulary'])),
+        # ))
+        # db.send_create_signal('questionnaire', ['MetadataProjectVocabulary'])
+        #
+        # # Adding unique constraint on 'MetadataProjectVocabulary', fields ['project', 'vocabulary']
+        # db.create_unique(u'questionnaire_metadataprojectvocabulary', ['project_id', 'vocabulary_id'])
+        #
+        # # Removing M2M table for field vocabularies on 'MetadataProject'
+        # db.delete_table(db.shorten_name(u'questionnaire_metadataproject_vocabularies'))
         # END MODIFIED BY AT
 
-        # MODIFIED BY AT
-        # moving data from default relationship table to new 'through' relationship table
-        # (see http://stackoverflow.com/questions/7878605/how-to-migrate-with-south-when-using-through-for-a-manytomany-field)
-        MetadataProjectClass = ContentType.objects.get(app_label="questionnaire", model="metadataproject").model_class()
-        MetadataVocabularyClass = ContentType.objects.get(app_label="questionnaire", model="metadatavocabulary").model_class()
-        MetadataProjectVocabularyClass = ContentType.objects.get(app_label="questionnaire", model="metadataprojectvocabulary").model_class()
-        for metadata_project in MetadataProjectClass.objects.all():
-            for metadata_vocabulary in metadata_project.vocabularies.all():
-                MetadataProjectVocabularyClass.objects.create(project=metadata_project, vocabulary=metadata_vocabulary)
-        # END MODIFIED BY AT
+        # Adding unique constraint on 'MetadataComponentProxy', fields ['vocabulary', 'name', 'parent']
+        db.create_unique(u'questionnaire_metadatacomponentproxy', ['vocabulary_id', 'name', 'parent_id'])
+
 
     def backwards(self, orm):
+        # Removing unique constraint on 'MetadataComponentProxy', fields ['vocabulary', 'name', 'parent']
+        db.delete_unique(u'questionnaire_metadatacomponentproxy', ['vocabulary_id', 'name', 'parent_id'])
+
         # MODIFIED BY AT
-        # moving data from new 'through' relationship table to default relationship table
-        # (see http://stackoverflow.com/questions/7878605/how-to-migrate-with-south-when-using-through-for-a-manytomany-field)
-        MetadataProjectVocabularyClass = ContentType.objects.get(app_label="questionnaire", model="metadataprojectvocabulary").model_class()
-        for metadata_project_vocabulary in MetadataProjectVocabularyClass.objects.all():
-            metadata_project = metadata_project_vocabulary.project
-            metadata_vocabulary = metadata_project_vocabulary.vocabulary
-            metadata_project.vocabularies.add(metadata_vocabulary)
-            metadata_project.save()
-            metadata_vocabulary.save()
+        # THIS IS A HOLDOVER FROM A GHOST MIGRATION
+        # (THIS CODE SHOULD BE DONE IN 0026)
+        # # Removing unique constraint on 'MetadataProjectVocabulary', fields ['project', 'vocabulary']
+        # db.delete_unique(u'questionnaire_metadataprojectvocabulary', ['project_id', 'vocabulary_id'])
+        #
+        # # Deleting model 'MetadataProjectVocabulary'
+        # db.delete_table(u'questionnaire_metadataprojectvocabulary')
+        #
+        # # Adding M2M table for field vocabularies on 'MetadataProject'
+        # m2m_table_name = db.shorten_name(u'questionnaire_metadataproject_vocabularies')
+        # db.create_table(m2m_table_name, (
+        #     ('id', models.AutoField(verbose_name='ID', primary_key=True, auto_created=True)),
+        #     ('metadataproject', models.ForeignKey(orm['questionnaire.metadataproject'], null=False)),
+        #     ('metadatavocabulary', models.ForeignKey(orm['questionnaire.metadatavocabulary'], null=False))
+        # ))
+        # db.create_unique(m2m_table_name, ['metadataproject_id', 'metadatavocabulary_id'])
         # END MODIFIED BY AT
 
-        # Deleting model 'MetadataProjectVocabulary'
-        db.delete_table(u'questionnaire_metadataprojectvocabulary')
+        # Adding unique constraint on 'MetadataComponentProxy', fields ['vocabulary', 'name']
+        db.create_unique(u'questionnaire_metadatacomponentproxy', ['vocabulary_id', 'name'])
 
 
     models = {
@@ -102,7 +106,7 @@ class Migration(SchemaMigration):
             'registered': ('django.db.models.fields.BooleanField', [], {'default': 'False'})
         },
         'questionnaire.metadatacomponentproxy': {
-            'Meta': {'ordering': "['order']", 'unique_together': "(('vocabulary', 'name'),)", 'object_name': 'MetadataComponentProxy'},
+            'Meta': {'ordering': "['order']", 'unique_together': "(('vocabulary', 'name', 'parent'),)", 'object_name': 'MetadataComponentProxy'},
             'documentation': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
             'guid': ('django.db.models.fields.CharField', [], {'max_length': '128', 'unique': 'True', 'null': 'True', 'blank': 'True'}),
             u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
@@ -203,13 +207,13 @@ class Migration(SchemaMigration):
             'providers': ('django.db.models.fields.related.ManyToManyField', [], {'to': "orm['questionnaire.MetadataOpenIDProvider']", 'symmetrical': 'False', 'blank': 'True'}),
             'title': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
             'url': ('django.db.models.fields.URLField', [], {'max_length': '200', 'blank': 'True'}),
-            'vocabularies': ('django.db.models.fields.related.ManyToManyField', [], {'symmetrical': 'False', 'to': "orm['questionnaire.MetadataVocabulary']", 'null': 'True', 'blank': 'True'})
+            'vocabularies': ('django.db.models.fields.related.ManyToManyField', [], {'symmetrical': 'False', 'to': "orm['questionnaire.MetadataVocabulary']", 'null': 'True', 'through': "orm['questionnaire.MetadataProjectVocabulary']", 'blank': 'True'})
         },
         'questionnaire.metadataprojectvocabulary': {
-            'Meta': {'object_name': 'MetadataProjectVocabulary'},
+            'Meta': {'unique_together': "(('project', 'vocabulary'),)", 'object_name': 'MetadataProjectVocabulary'},
             u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'project': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['questionnaire.MetadataProject']"}),
-            'vocabulary': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['questionnaire.MetadataVocabulary']"})
+            'vocabulary': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "''", 'to': "orm['questionnaire.MetadataVocabulary']"})
         },
         'questionnaire.metadatascientificcategorycustomizer': {
             'Meta': {'ordering': "['order']", 'unique_together': "(('name', 'project', 'proxy', 'vocabulary_key', 'component_key', 'model_customizer'),)", 'object_name': 'MetadataScientificCategoryCustomizer'},
