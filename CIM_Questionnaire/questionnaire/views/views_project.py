@@ -18,9 +18,6 @@ Views for the Project Page
 """
 
 import json
-from django.forms import *
-from django.utils.safestring import SafeString
-from django.forms.models import ModelForm, BaseModelFormSet, modelformset_factory
 from django.core.urlresolvers import reverse
 from django.core.mail import send_mail
 from django.contrib.sites.models import get_current_site
@@ -30,6 +27,7 @@ from django.template import RequestContext
 from django.contrib import messages
 from django.conf import settings
 
+from CIM_Questionnaire.questionnaire.forms.forms_project import NewModelForm, ExistingModelFormSetFactory
 from CIM_Questionnaire.questionnaire.models.metadata_authentication import is_user_of, is_member_of, is_admin_of
 from CIM_Questionnaire.questionnaire.models.metadata_project import MetadataProject
 from CIM_Questionnaire.questionnaire.models.metadata_proxy import MetadataModelProxy
@@ -37,8 +35,7 @@ from CIM_Questionnaire.questionnaire.models.metadata_version import MetadataVers
 from CIM_Questionnaire.questionnaire.models.metadata_customizer import MetadataModelCustomizer
 from CIM_Questionnaire.questionnaire.models.metadata_model import MetadataModel
 from CIM_Questionnaire.questionnaire.views.views_error import questionnaire_error
-from CIM_Questionnaire.questionnaire.utils import SUPPORTED_DOCUMENTS
-from CIM_Questionnaire.questionnaire.utils import set_field_widget_attributes, update_field_widget_attributes, pretty_string
+from CIM_Questionnaire.questionnaire.utils import SUPPORTED_DOCUMENTS, pretty_string
 from CIM_Questionnaire.questionnaire import get_version
 
 
@@ -53,6 +50,14 @@ def questionnaire_project_index(request, project_name=""):
         msg = "Could not find an active project named '%s'." % project_name
         return questionnaire_error(request, msg)
 
+    # work out user roles...
+    current_user = request.user
+    can_customize = is_admin_of(current_user, project) or not project.authenticated
+    can_edit = is_user_of(current_user, project) or not project.authenticated
+    can_view = True
+    can_join = not is_member_of(current_user, project) and current_user.is_authenticated()
+
+    # get the querysets...
     all_ontologies = MetadataVersion.objects.filter(registered=True).order_by("key")
     all_proxies = MetadataModelProxy.objects.filter(
         stereotype__iexact="document",
@@ -69,142 +74,7 @@ def questionnaire_project_index(request, project_name=""):
         proxy__in=all_proxies
     ).order_by("name")
 
-    class _NewCustomizationForm(forms.Form):
-        # ontologies are all registered CIM versions
-        ontologies = ModelChoiceField(queryset=all_ontologies, label="Ontolgoy", required=True, empty_label=None)
-
-        # documents are all model proxies belonging to the above ontologies that have the 'document' stereotype
-        documents = ModelChoiceField(queryset=all_proxies, label="Document Type", required=True, empty_label=None)
-
-        def __init__(self, *args, **kwargs):
-            super(_NewCustomizationForm, self).__init__(*args, **kwargs)
-            function_name = "set_options(this,'%s-documents');" % self.prefix
-            update_field_widget_attributes(self.fields["ontologies"], {
-                "class": "changer",
-            })
-            set_field_widget_attributes(self.fields["ontologies"], {
-                "onchange": function_name,
-            })
-
-    class _NewDocumentForm(forms.Form):
-        # ontologies are all registered CIM versions that have a default customization for this project
-        ontologies = ModelChoiceField(queryset=all_ontologies, label="Ontolgoy", required=True, empty_label=None)
-
-        # documents are all model proxies belonging to the above ontologies that have the 'document' stereotype
-        documents = ModelChoiceField(queryset=all_proxies, label="Document Type", required=True, empty_label=None)
-
-        def __init__(self, *args, **kwargs):
-            super(_NewDocumentForm, self).__init__(*args, **kwargs)
-            function_name = "set_options(this,'%s-documents');" % self.prefix
-            update_field_widget_attributes(self.fields["ontologies"], {
-                "class": "changer",
-            })
-            set_field_widget_attributes(self.fields["ontologies"], {
-                "onchange": function_name,
-            })
-
-    class _ExistingFormset(BaseModelFormSet):
-
-        def find_selected_form(self):
-            assert self.is_bound
-            for form in self:
-                key = u"%s-selected" % form.prefix
-                if key in self.data:
-                    return form
-            return None
-
-    class _ExistingCustomizationForm(ModelForm):
-        class Meta:
-            model = MetadataModelCustomizer
-            fields = ["id", "selected", ]  # not sure why "id" is required, but it is
-
-        selected = BooleanField(initial=False, required=False)
-
-        def __init__(self, *args, **kwargs):
-            super(_ExistingCustomizationForm, self).__init__(*args, **kwargs)
-            update_field_widget_attributes(self.fields["selected"], {
-                "class": "hidden",
-            })
-
-        def get_label(self):
-            model = self.instance
-            assert(model is not None)
-
-            label_string = model.name
-            if model.default:
-                label_string += "&nbsp;*"
-            return SafeString(label_string)
-
-    class _ExistingDocumentForm(ModelForm):
-        class Meta:
-            model = MetadataModel
-            fields = ["id", "selected", ]  # not sure why "id" is required, but it is
-
-        selected = BooleanField(initial=False, required=False)
-
-        def __init__(self, *args, **kwargs):
-            super(_ExistingDocumentForm, self).__init__(*args, **kwargs)
-            update_field_widget_attributes(self.fields["selected"], {
-                "class": "hidden",
-            })
-
-        def get_label(self):
-            model = self.instance
-            assert(model is not None)
-
-            label_string = model.get_label()
-            if not label_string:
-                label_string = "<i>(no label provided)</i>"
-            label_string += "&nbsp;&nbsp;[%s]" % model.document_version
-            return SafeString(label_string)
-
-    def _ExistingDocumentFormsetFactory(*args, **kwargs):
-        _queryset = kwargs.pop("queryset", None)
-        _data = kwargs.pop("data", None)
-        _prefix = kwargs.pop("prefix")
-
-        _formset = modelformset_factory(
-            MetadataModel,
-            form=_ExistingDocumentForm,
-            formset=_ExistingFormset,
-            extra=0,
-            can_delete=False
-        )
-
-        if _data:
-            return _formset(_data, prefix=_prefix)
-        elif _queryset:
-            return _formset(queryset=_queryset, prefix=_prefix)
-
-    def _ExistingCustomizationFormsetFactory(*args, **kwargs):
-        _queryset = kwargs.pop("queryset", None)
-        _data = kwargs.pop("data", None)
-        _prefix = kwargs.pop("prefix")
-
-        _formset = modelformset_factory(
-            MetadataModelCustomizer,
-            form=_ExistingCustomizationForm,
-            formset=_ExistingFormset,
-            extra=0,
-            can_delete=False
-        )
-
-        if _data:
-            return _formset(_data, prefix=_prefix)
-        elif _queryset:
-            return _formset(queryset=_queryset, prefix=_prefix)
-
-    site = get_current_site(request)
-
-    # work out user roles...
-    current_user = request.user
-    can_customize = is_admin_of(current_user, project) or not project.authenticated
-    can_edit = is_user_of(current_user, project) or not project.authenticated
-    can_view = True
-    can_join = not is_member_of(current_user, project) and current_user.is_authenticated()
-
-    # dictionary mapping ontologies (versions) to documents (proxies);
-    # this allows for dynamic drop-down menus via JS
+    # dictionary mapping ontologies (versions) to documents (proxies); this allows for dynamic drop-down menus via JS
     # (bear in mind, b/c it is implicitly unsortable, there is some extra JS required to alphabetize the documents)
     ontology_document_dict = {
         ontology.pk:
@@ -214,20 +84,22 @@ def questionnaire_project_index(request, project_name=""):
         for ontology in all_ontologies
     }
 
+    site = get_current_site(request)
+
     if request.method == "GET":
 
-        new_customization_form = _NewCustomizationForm(prefix="new_customization")
-        existing_customization_formset = _ExistingCustomizationFormsetFactory(queryset=all_customizations, prefix="existing_customization")
-        new_document_form = _NewDocumentForm(prefix="new_document")
-        existing_document_formset = _ExistingDocumentFormsetFactory(queryset=all_models, prefix="existing_document")
+        new_customization_form = NewModelForm(ontologies=all_ontologies, documents=all_proxies, prefix="new_customization")
+        existing_customization_formset = ExistingModelFormSetFactory(model=MetadataModelCustomizer, queryset=all_customizations, prefix="existing_customization")
+        new_document_form = NewModelForm(ontologies=all_ontologies, documents=all_proxies, prefix="new_document")
+        existing_document_formset = ExistingModelFormSetFactory(model=MetadataModel, queryset=all_models, prefix="existing_document")
 
     else:  # request.method == "POST":
 
         data = request.POST
-        new_customization_form = _NewCustomizationForm(data, prefix="new_customization")
-        existing_customization_formset = _ExistingCustomizationFormsetFactory(data=data, prefix="existing_customization")
-        new_document_form = _NewDocumentForm(data, prefix="new_document")
-        existing_document_formset = _ExistingDocumentFormsetFactory(data=data, prefix="existing_document")
+        new_customization_form = NewModelForm(data, ontologies=all_ontologies, documents=all_proxies, prefix="new_customization")
+        existing_customization_formset = ExistingModelFormSetFactory(model=MetadataModelCustomizer, data=data, prefix="existing_customization")
+        new_document_form = NewModelForm(data, ontologies=all_ontologies, documents=all_proxies, prefix="new_document")
+        existing_document_formset = ExistingModelFormSetFactory(model=MetadataModel, data=data, prefix="existing_document")
 
         if u"%s-create" % new_customization_form.prefix in data:
             if new_customization_form.is_valid():
@@ -318,8 +190,8 @@ def questionnaire_project_index(request, project_name=""):
 
     # gather all the extra information required by the template
     _dict = {
-        "site": site,
         "questionnaire_version": get_version(),
+        "site": site,
         "project": project,
         "can_join": can_join,
         "can_view": can_view,
