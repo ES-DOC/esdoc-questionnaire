@@ -22,11 +22,13 @@ from django.forms import *
 from django.utils.safestring import SafeString
 from django.forms.models import ModelForm, BaseModelFormSet, modelformset_factory
 from django.core.urlresolvers import reverse
+from django.core.mail import send_mail
 from django.contrib.sites.models import get_current_site
 from django.shortcuts import render_to_response, redirect
 from django.http import HttpResponseRedirect
 from django.template import RequestContext
 from django.contrib import messages
+from django.conf import settings
 
 from CIM_Questionnaire.questionnaire.models.metadata_authentication import is_user_of, is_member_of, is_admin_of
 from CIM_Questionnaire.questionnaire.models.metadata_project import MetadataProject
@@ -192,6 +194,8 @@ def questionnaire_project_index(request, project_name=""):
         elif _queryset:
             return _formset(queryset=_queryset, prefix=_prefix)
 
+    site = get_current_site(request)
+
     # work out user roles...
     current_user = request.user
     can_customize = is_admin_of(current_user, project) or not project.authenticated
@@ -294,13 +298,27 @@ def questionnaire_project_index(request, project_name=""):
                     "customizer_name": customization.name,
                 })
                 return redirect(url)
+
+        elif "project_join" in data:
+            requested_permissions = ["default", "user", ]
+            mail_content = "User '%s' wants to join project '%s' with the following permissions: %s.\n(Request sent from site: %s.)" % \
+                (current_user.username, project.name, ", ".join([u"'%s'" % permission for permission in requested_permissions]), site.name)
+            mail_from = settings.EMAIL_HOST_USER
+            mail_to = [settings.EMAIL_HOST_USER, ]
+
+            try:
+                send_mail("ES-DOC Questionnaire project join request", mail_content, mail_from, mail_to, fail_silently=False)
+                messages.add_message(request, messages.SUCCESS, "Successfully sent request.")
+            except:
+                messages.add_message(request, messages.ERROR, "Unable to send request.")
+
         else:
             msg = "unknown action"
             messages.add_message(request, messages.ERROR, msg)
 
     # gather all the extra information required by the template
     _dict = {
-        "site": get_current_site(request),
+        "site": site,
         "questionnaire_version": get_version(),
         "project": project,
         "can_join": can_join,

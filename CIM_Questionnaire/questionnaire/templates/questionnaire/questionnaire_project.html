@@ -92,6 +92,9 @@
         <b>{{project.title}}</b> CIM Questionnaire
     </div> <!-- /.title -->
 
+    <form method="POST" action=".">
+        {% csrf_token %}
+
     <div class="documentation">
         <p>
             This is the Project Page for {% if project.url %}<a href="{{project.url}}" title="{{project.url}}">{% endif %}{{project.title|title}}{% if project.url %}</a>{% endif %}.
@@ -114,7 +117,11 @@
                 <tr>
                     <td colspan="2">
                         <!-- TODO -->
-                        <input class="button smaller" value="Join Project"/>
+                        <input class="button smaller"
+                               name="project_join"
+                               type="submit"
+                               value="Join {{ project.title }} Project"
+                               title="Your request will be sent to the project administrator for review."/>
                     </td>
                 </tr>
             {% endif %} {# /can_join #}
@@ -123,8 +130,6 @@
 
     <br/>
 
-    <form method="POST" action=".">
-        {% csrf_token %}
 
         <div class="tabs">
 
