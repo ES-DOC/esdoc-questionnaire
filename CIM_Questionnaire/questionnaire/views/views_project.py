@@ -39,6 +39,22 @@ from CIM_Questionnaire.questionnaire.utils import SUPPORTED_DOCUMENTS, pretty_st
 from CIM_Questionnaire.questionnaire import get_version
 
 
+def questionnaire_project_join_request(user, project, site):
+
+    requested_permissions = ["default", "user", ]
+
+    mail_content = "User '%s' wants to join project '%s' with the following permissions: %s.\n(Request sent from site: %s.)" % \
+        (user.username, project.name, ", ".join([u"'%s'" % permission for permission in requested_permissions]), site.name)
+    mail_from = settings.EMAIL_HOST_USER
+    mail_to = [settings.EMAIL_HOST_USER, ]
+
+    try:
+        send_mail("ES-DOC Questionnaire project join request", mail_content, mail_from, mail_to, fail_silently=False)
+        return True
+    except:
+        return False
+
+
 def questionnaire_project_index(request, project_name=""):
 
     if not project_name:
@@ -84,7 +100,7 @@ def questionnaire_project_index(request, project_name=""):
         for ontology in all_ontologies
     }
 
-    site = get_current_site(request)
+    current_site = get_current_site(request)
 
     if request.method == "GET":
 
@@ -172,16 +188,11 @@ def questionnaire_project_index(request, project_name=""):
                 return redirect(url)
 
         elif "project_join" in data:
-            requested_permissions = ["default", "user", ]
-            mail_content = "User '%s' wants to join project '%s' with the following permissions: %s.\n(Request sent from site: %s.)" % \
-                (current_user.username, project.name, ", ".join([u"'%s'" % permission for permission in requested_permissions]), site.name)
-            mail_from = settings.EMAIL_HOST_USER
-            mail_to = [settings.EMAIL_HOST_USER, ]
 
-            try:
-                send_mail("ES-DOC Questionnaire project join request", mail_content, mail_from, mail_to, fail_silently=False)
+            project_join_success = questionnaire_project_join_request(current_user, project, current_site)
+            if project_join_success:
                 messages.add_message(request, messages.SUCCESS, "Successfully sent request.")
-            except:
+            else:
                 messages.add_message(request, messages.ERROR, "Unable to send request.")
 
         else:
@@ -191,7 +202,7 @@ def questionnaire_project_index(request, project_name=""):
     # gather all the extra information required by the template
     _dict = {
         "questionnaire_version": get_version(),
-        "site": site,
+        "site": current_site,
         "project": project,
         "can_join": can_join,
         "can_view": can_view,
