@@ -1,23 +1,20 @@
-
 ####################
-#   CIM_Questionnaire
-#   Copyright (c) 2013 CoG. All rights reserved.
+#   ES-DOC CIM Questionnaire
+#   Copyright (c) 2014 ES-DOC. All rights reserved.
 #
-#   Developed by: Earth System CoG
 #   University of Colorado, Boulder
 #   http://cires.colorado.edu/
 #
 #   This project is distributed according to the terms of the MIT license [http://www.opensource.org/licenses/MIT].
 ####################
 
-__author__="allyn.treshansky"
-__date__ ="Sep 30, 2013 3:04:42 PM"
+__author__ = "allyn.treshansky"
+__date__ = "Dec 01, 2014 3:00:00 PM"
 
 """
-.. module:: views
+.. module:: views_project
 
-Summary of module goes here
-
+Views for the Project Page
 """
 
 import json
@@ -196,6 +193,8 @@ def questionnaire_project_index(request, project_name=""):
 
     # dictionary mapping ontologies (versions) to documents (proxies)
     # (allows for dynamic select binding via JavaScript)
+    # (bear in mind, though, that as a dictionary, it is implicitly unsortable)
+    # (so there there is a bit of extra JavaScript to get the documents into alphabetical order)
     ontology_document_dict = {
         ontology.pk:
             {document.pk: u"%s" % document

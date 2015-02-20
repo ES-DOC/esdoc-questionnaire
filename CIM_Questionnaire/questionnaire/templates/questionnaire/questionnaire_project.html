@@ -8,17 +8,30 @@
     var _options = {{ document_options|safe }};
 
     function set_options(source, target) {
-        var target_widget = $("select#id_" + target);
         var ontology_id = $(source).val();
-
-        $(target_widget).find("option").remove();
+        var target_widget = $("select#id_" + target);
 
         if (ontology_id) {
-            /* add new options */
+
+            $(target_widget).find("option").remove();
+
+            var option_elements = [];
             var document_options = _options[ontology_id];
-            $.each(document_options, function(key, value) {
-                $(target_widget).append($('<option>', { value : key }).text(value));
+
+            /* the above dictionary is not sorted */
+            $.each(document_options, function (key, value) {
+                option_elements.push($('<option>', {value: key}).text(value));
             });
+            /* so I have to explicitly sort it after storing it in an array */
+            option_elements.sort(function (a, b) {
+                var a_text = $(a).text().toLowerCase();
+                var b_text = $(b).text().toLowerCase();
+                return a_text > b_text ? 1 : a_text < b_text ? -1 : 0;
+            });
+            /* then I can add it to the target */
+            for (var i = 0; i < option_elements.length; i++) {
+                $(target_widget).append(option_elements[i]);
+            }
         }
     }
 
@@ -60,6 +73,8 @@
     <style type="text/css">
 
         .table_header * { font-weight: bold; text-decoration: underline; }
+        .documentation table tr { vertical-align: top; padding: 4px; }
+        .documentation table tr td:first-child { font-weight: bold; text-align: left; width: 12em; }
         .button.smaller { font-size: smaller !important; margin: 2px; }
 
     </style>
@@ -81,10 +96,26 @@
 
     <div class="documentation">
         <p>
-            Stick some stuff about the project here.
+            This is the Project Page for {% if project.url %}<a href="{{project.url}}" title="{{project.url}}">{% endif %}{{project.title|title}}{% if project.url %}</a>{% endif %}.
         </p>
 
+        <table border="0">
+            {% if project.description %}
+                <tr>
+                    <td>Project Description:</td>
+                    <td>{{ project.description }}</td>
+                </tr>
+            {% endif %} {# /project.description #}
+            {% if project.email %}
+                <tr>
+                    <td>Project Contact:</td>
+                    <td><a href="mailto:{{ project.email }}">{{ project.email }}</a></td>
+                </tr>
+            {% endif %} {# /project.email #}
+        </table>
     </div> <!-- /.documentation -->
+
+    <br/>
 
     <form method="POST" action=".">
         {% csrf_token %}
