@@ -30,7 +30,7 @@ from uuid import uuid4
 
 from CIM_Questionnaire.questionnaire.fields import MetadataFieldTypes, MetadataAtomicFieldTypes
 from CIM_Questionnaire.questionnaire.utils import QuestionnaireError
-from CIM_Questionnaire.questionnaire.utils import APP_LABEL, LIL_STRING, SMALL_STRING, BIG_STRING, HUGE_STRING, CIM_DOCUMENT_TYPES, CIM_MODEL_STEREOTYPES, CIM_PROPERTY_STEREOTYPES, CIM_NAMESPACES
+from CIM_Questionnaire.questionnaire.utils import APP_LABEL, LIL_STRING, SMALL_STRING, BIG_STRING, HUGE_STRING, CIM_DOCUMENT_TYPES, CIM_MODEL_STEREOTYPES, CIM_PROPERTY_STEREOTYPES, CIM_NAMESPACES, pretty_string
 
 STANDARD_PROPERTY_STEREOTYPES = ( ("attribute", "attribute"))
 
@@ -65,7 +65,8 @@ class MetadataModelProxy(models.Model):
         return is_document
     
     def __unicode__(self):
-        return u'%s'%(self.name)
+        return pretty_string(self.name)
+        #return u'%s'%(self.name)
         #return u'%s::%s' % (self.version,self.name)
 
     def get_standard_category_proxies(self):

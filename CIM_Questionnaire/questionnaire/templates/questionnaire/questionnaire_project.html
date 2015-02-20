@@ -1,0 +1,333 @@
+{% extends "questionnaire/questionnaire_base.html" %}
+
+{% load questionnaire_filters %}
+
+{% block scripts %}
+    <script language="javascript">
+
+    var _options = {{ document_options|safe }};
+
+    function set_options(source, target) {
+        var target_widget = $("select#id_" + target);
+        var ontology_id = $(source).val();
+
+        $(target_widget).find("option").remove();
+
+        if (ontology_id) {
+            /* add new options */
+            var document_options = _options[ontology_id];
+            $.each(document_options, function(key, value) {
+                $(target_widget).append($('<option>', { value : key }).text(value));
+            });
+        }
+    }
+
+    function set_checkbox_by_id(source) {
+        var source_id = $(source).attr("id")
+        var target_id = source_id.substring(0, source_id.lastIndexOf('-')) + "-selected"
+        var target_widget = $("input#" + target_id);
+        $(target_widget).prop("checked", true);
+        return true;
+    }
+
+    /* just setup a minimum of jquery-ui functionality */
+    $(document).ready(
+        function() {
+
+            var parent = document.body;
+
+            // do this first so that the dialogs appear near the top of the page
+            init_dialogs(parent);
+
+            // do this next, so it can happen while other widgets are loading
+            render_msg($("#msg"));
+
+            init_widgets(users,$(parent).find("#user"));
+            init_widgets(tabs,$(parent).find(".tabs"));
+            init_widgets(fieldsets,$(parent).find(".collapsible_fieldset"));
+            init_widgets(buttons,$(parent).find("input.button"));
+            init_widgets(changers,$(parent).find(".changer"));
+
+            // do this last b/c some of the xpath depends on changes made by the above fns...
+            init_errors(parent);
+        }
+    );
+
+    </script>
+{% endblock %} {# /scripts #}
+
+{% block style %}
+    <style type="text/css">
+
+        .table_header * { font-weight: bold; text-decoration: underline; }
+        .button.smaller { font-size: smaller !important; margin: 2px; }
+
+    </style>
+{% endblock %} {# / style #}
+
+{% block title %}
+
+    {{ project.title }} CIM Questionnaire
+
+{% endblock %} {# /title #}
+
+{% block content %}
+
+    {% with user_is_default=request.user|is_member_of:project user_is_user=request.user|is_user_of:project user_is_admin=request.user|is_admin_of:project %}
+
+    <div class="title">
+        <b>{{project.title}}</b> CIM Questionnaire
+    </div> <!-- /.title -->
+
+    <div class="documentation">
+        <p>
+            Stick some stuff about the project here.
+        </p>
+
+    </div> <!-- /.documentation -->
+
+    <form method="POST" action=".">
+        {% csrf_token %}
+
+        <div class="tabs">
+             <!-- the tab menu -->
+             <ul>
+                <li><a href="#tab_edit">Edit or create a CIM Document</a></li>
+                <li><a href="#tab_view">View an existing CIM Document</a></li>
+                <li><a href="#tab_customize">Customize the CIM Questionnaire</a></li>
+             </ul>
+            <!-- the tab content -->
+            <div id="tab_edit">
+                <div class="tab_content">
+
+                    <fieldset class="collapsible_fieldset">
+                        <legend title="click to toggle content">
+                            <span class="title">&nbsp;new documents&nbsp;</span>
+                        </legend>
+
+                        <div class="collapsible_fieldset_content">
+
+                            <div class="instructions">
+                                You can create a new CIM document by selecting a document type at a particular CIM version.
+                            </div>
+
+                            <table border="0" width="75%">
+                                <tr class="table_header">
+                                    <td width="15%">
+                                        {{ new_document_form.ontologies.label }}
+                                    </td>
+                                    <td width="25%">
+                                        {{ new_document_form.documents.label }}
+                                    </td>
+                                    <td colspan="2" width="60%"></td>
+                                </tr>
+                                <tr class="even">
+                                    <td>
+                                        {{ new_document_form.ontologies }}
+                                    </td>
+                                    <td>
+                                        {{ new_document_form.documents }}
+                                    </td>
+                                    <td>
+                                        <input class="button smaller" name="{{ new_document_form.prefix }}-create" type="submit" value="create"/>
+                                    </td>
+                                </tr>
+                            </table>
+                        </div> <!-- /.collapsible_fieldset_content -->
+
+                    </fieldset> <!-- /.collapsible_fieldset -->
+
+                    <fieldset class="collapsible_fieldset">
+                        <legend title="click to toggle content">
+                            <span class="title">&nbsp;existing documents&nbsp;</span>
+                        </legend>
+
+                        <div class="collapsible_fieldset_content">
+
+                            <div class="instructions">
+                                You can modify an existing CIM document.
+                            </div>
+
+                            {{ existing_document_formset.management_form }}
+
+                            <table border="0" width="75%">
+                                <tr class="table_header">
+                                    <td width="15%">Ontology</td>
+                                    <td width="25%">Document Type</td>
+                                    <td width="20%">Name &amp; Version</td>
+                                    <td width="40%"></td>
+                                </tr>
+                                {% for existing_document_form in existing_document_formset %}
+                                    <tr class="{% cycle 'even' 'odd' %}">
+                                        {% with model=existing_document_form.instance %}
+                                            <td>
+                                                {{ model.version }}
+                                            </td>
+                                            <td>
+                                                {{ model.proxy }}
+                                            </td>
+                                            <td>
+                                                {{ existing_document_form.get_label }}
+                                            </td>
+                                            <td>
+                                                {{ existing_document_form.id }}
+                                                {{ existing_document_form.selected }}
+                                                <input class="button smaller" id="id_{{ existing_document_form.prefix }}-edit" name="{{ existing_document_formset.prefix }}-edit" type="submit" value="edit" onclick="set_checkbox_by_id(this);"/>
+                                                <input class="button smaller" id="id_{{ existing_document_form.prefix }}-view" name="{{ existing_document_formset.prefix }}-view" type="submit" value="view" onclick="set_checkbox_by_id(this);"/>
+                                                <input class="button smaller" id="id_{{ existing_document_form.prefix }}-publish" name="{{ existing_document_formset.prefix }}-publish" type="submit" value="publish" onclick="set_checkbox_by_id(this);"/>
+                                            </td>
+                                        {% endwith %} {# /model #}
+                                    </tr>
+                                {% endfor %} {# /existing_document_form #}
+                            </table>
+                        </div> <!-- /.collapsible_fieldset_content -->
+
+                    </fieldset> <!-- /.collapsible_fieldset -->
+
+                </div> <!-- .tab_content -->
+            </div> <!-- /#tab_edit -->
+
+            <div id="tab_view">
+                <div class="tab_content">
+                    <fieldset class="collapsible_fieldset">
+                        <legend title="click to toggle content">
+                            <span class="title">&nbsp;existing documents&nbsp;</span>
+                        </legend>
+
+                        <div class="collapsible_fieldset_content">
+
+                            <div class="instructions">
+                                You can view an existing CIM document.
+                            </div>
+
+                            {{ existing_document_formset.management_form }}
+
+                            <table border="0" width="75%">
+                                <tr class="table_header">
+                                    <td width="15%">Ontology</td>
+                                    <td width="25%">Document Type</td>
+                                    <td width="20%">Name &amp; Version</td>
+                                    <td width="40%"></td>
+                                </tr>
+                                {% for existing_document_form in existing_document_formset %}
+                                    <tr class="{% cycle 'even' 'odd' %}">
+                                        {% with model=existing_document_form.instance %}
+                                            <td>
+                                                {{ model.version }}
+                                            </td>
+                                            <td>
+                                                {{ model.proxy }}
+                                            </td>
+                                            <td>
+                                                {{ existing_document_form.get_label }}
+                                            </td>
+                                            <td>
+                                                {{ existing_document_form.id }}
+                                                {{ existing_document_form.selected }}
+                                                <input class="button smaller" id="id_{{ existing_document_form.prefix }}-view" name="{{ existing_document_formset.prefix }}-view" type="submit" value="view" onclick="set_checkbox_by_id(this);"/>
+                                            </td>
+                                        {% endwith %} {# /model #}
+                                    </tr>
+                                {% endfor %} {# /existing_document_form #}
+                            </table>
+                        </div> <!-- /.collapsible_fieldset_content -->
+
+                    </fieldset> <!-- /.collapsible_fieldset -->
+
+                </div> <!-- .tab_content -->
+            </div> <!-- /#tab_view -->
+
+            <div id="tab_customize">
+                <div class="tab_content">
+                    <fieldset class="collapsible_fieldset">
+                        <legend title="click to toggle content">
+                            <span class="title">&nbsp;new customizations&nbsp;</span>
+                        </legend>
+
+                        <div class="collapsible_fieldset_content">
+
+                            <div class="instructions">
+                                You can create a new Questionnaire customization by selecting a document type at a particular CIM version.
+                            </div>
+
+                            <table border="0" width="75%">
+                                <tr class="table_header">
+                                    <td width="15%">
+                                        {{ new_customization_form.ontologies.label }}
+                                    </td>
+                                    <td width="25%">
+                                        {{ new_customization_form.documents.label }}
+                                    </td>
+                                    <td colspan="2" width="60%"></td>
+                                </tr>
+                                <tr class="even">
+                                    <td>
+                                        {{ new_customization_form.ontologies }}
+                                    </td>
+                                    <td>
+                                        {{ new_customization_form.documents }}
+                                    </td>
+                                    <td>
+                                        <input class="button smaller" name="{{ new_customization_form.prefix }}-create" type="submit" value="create"/>
+                                    </td>
+                                </tr>
+                            </table>
+                        </div> <!-- /.collapsible_fieldset_content -->
+
+                    </fieldset> <!-- /.collapsible_fieldset -->
+
+                    <fieldset class="collapsible_fieldset">
+                        <legend title="click to toggle content">
+                            <span class="title">&nbsp;existing customizations&nbsp;</span>
+                        </legend>
+
+                        <div class="collapsible_fieldset_content">
+
+                            <div class="instructions">
+                                You can edit existing customizations.  An asterix(*) next to the name indicates the <em>default</em> customization.
+                            </div>
+
+                            {{ existing_customization_formset.management_form }}
+
+                            <table border="0" width="75%">
+                                <tr class="table_header">
+                                    <td width="15%">Ontology</td>
+                                    <td width="25%">Document Type</td>
+                                    <td width="20%">Name</td>
+                                    <td width="40%"></td>
+                                </tr>
+                                {% for existing_customization_form in existing_customization_formset %}
+                                    <tr class="{% cycle 'even' 'odd' %}">
+                                        {% with model=existing_customization_form.instance %}
+                                            <td>
+                                                {{ model.version }}
+                                            </td>
+                                            <td>
+                                                {{ model.proxy }}
+                                            </td>
+                                            <td>
+                                                {{ existing_customization_form.get_label }}
+                                            </td>
+                                            <td>
+                                                {{ existing_customization_form.id }}
+                                                {{ existing_customization_form.selected }}
+                                                <input class="button smaller" id="id_{{ existing_customization_form.prefix }}-edit" name="{{ existing_customization_formset.prefix }}-edit" type="submit" value="edit" onclick="set_checkbox_by_id(this);"/>
+                                            </td>
+                                        {% endwith %} {# /model #}
+                                    </tr>
+                                {% endfor %} {# /existing_customization_form #}
+                            </table>
+                        </div> <!-- /.collapsible_fieldset_content -->
+
+                    </fieldset> <!-- /.collapsible_fieldset -->
+
+
+                </div> <!-- .tab_content -->
+            </div> <!-- /#tab_customize -->
+        </div> <!-- /.tabs -->
+
+    </form>
+
+    {% endwith %} {# / user_is_default, user_is_user, user_is_admin #}
+    
+{% endblock %} {# /content #}

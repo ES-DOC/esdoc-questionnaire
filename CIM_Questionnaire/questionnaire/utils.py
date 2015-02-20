@@ -476,6 +476,21 @@ def remove_null_data(data):
 def remove_spaces_and_linebreaks(str):
     return ' '.join(str.split())
 
+
+def pretty_string(string):
+    """
+    break camelCase string into words
+    :param string:
+    :return:
+    """
+
+    pretty_string_re_1 = re.compile('(.)([A-Z][a-z]+)')
+    pretty_string_re_2 = re.compile('([a-z0-9])([A-Z])')
+
+    s1 = pretty_string_re_1.sub(r'\1 \2', string)
+    s2 = pretty_string_re_2.sub(r'\1 \2', s1)
+    return s2.title()
+
 ####################
 # url manipulation #
 ####################

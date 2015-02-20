@@ -105,6 +105,12 @@ function readonlies(element) {
 }
 
 
+function changers(element) {
+    /* force the onchange event for this widget */
+    /* (required b/c most widgets have no onload event */
+    $(element).change();
+}
+
 function expanders(element) {
     /* make a TextInput widget expand (up to some maximum) to fit the value */
     $(element).autosizeInput({})

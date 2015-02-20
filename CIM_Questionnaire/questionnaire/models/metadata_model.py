@@ -93,7 +93,7 @@ class MetadataModel(MPTTModel):
     last_modified   = models.DateTimeField(blank=True,null=True,editable=False)
 
     guid = models.CharField(blank=True, null=True, max_length=LIL_STRING, unique=True, editable=False)
-    document_version = models.CharField(blank=False, max_length=LIL_STRING, editable=False, default="0.0")
+    document_version = models.CharField(blank=False, max_length=LIL_STRING, editable=True, default="0.0")
 
     proxy           = models.ForeignKey("MetadataModelProxy", blank=False, null=True, related_name="models")
     project         = models.ForeignKey("MetadataProject", blank=True, null=True, related_name="models")

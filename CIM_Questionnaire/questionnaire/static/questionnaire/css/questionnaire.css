@@ -122,6 +122,8 @@ body {
 #questionnaire .accordion_header .open_accordion.ui-state-hover { background: url(../img/default_ui_background.png) repeat-x 50% 50%; border: 1px solid #6DA6D1;}
 
 #questionnaire input.label { background: none; border: none; cursor: pointer; } /* width: 100%; } */ /* NOT SPECIFYING WIDTH HERE B/C SOME LABELS HAVE FIXED WIDTH (INSTEAD SPECIFYING WIDTHS IN FORM INIT FNS) */
+#questionnaire select.label { background: none; border: none; cursor: pointer; } /* width: 100%; } */ /* NOT SPECIFYING WIDTH HERE B/C SOME LABELS HAVE FIXED WIDTH (INSTEAD SPECIFYING WIDTHS IN FORM INIT FNS) */
+
 
 /* end accordions */
 
