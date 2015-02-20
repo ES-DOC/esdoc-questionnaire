@@ -28,6 +28,7 @@ from django.http import HttpResponseRedirect
 from django.template import RequestContext
 from django.contrib import messages
 
+from CIM_Questionnaire.questionnaire.models.metadata_authentication import is_user_of, is_member_of, is_admin_of
 from CIM_Questionnaire.questionnaire.models.metadata_project import MetadataProject
 from CIM_Questionnaire.questionnaire.models.metadata_proxy import MetadataModelProxy
 from CIM_Questionnaire.questionnaire.models.metadata_version import MetadataVersion
@@ -191,10 +192,16 @@ def questionnaire_project_index(request, project_name=""):
         elif _queryset:
             return _formset(queryset=_queryset, prefix=_prefix)
 
-    # dictionary mapping ontologies (versions) to documents (proxies)
-    # (allows for dynamic select binding via JavaScript)
-    # (bear in mind, though, that as a dictionary, it is implicitly unsortable)
-    # (so there there is a bit of extra JavaScript to get the documents into alphabetical order)
+    # work out user roles...
+    current_user = request.user
+    can_customize = is_admin_of(current_user, project) or not project.authenticated
+    can_edit = is_user_of(current_user, project) or not project.authenticated
+    can_view = True
+    can_join = not is_member_of(current_user, project) and current_user.is_authenticated()
+
+    # dictionary mapping ontologies (versions) to documents (proxies);
+    # this allows for dynamic drop-down menus via JS
+    # (bear in mind, b/c it is implicitly unsortable, there is some extra JS required to alphabetize the documents)
     ontology_document_dict = {
         ontology.pk:
             {document.pk: u"%s" % document
@@ -294,13 +301,17 @@ def questionnaire_project_index(request, project_name=""):
     # gather all the extra information required by the template
     _dict = {
         "site": get_current_site(request),
+        "questionnaire_version": get_version(),
         "project": project,
+        "can_join": can_join,
+        "can_view": can_view,
+        "can_edit": can_edit,
+        "can_customize": can_customize,
         "document_options": json.dumps(ontology_document_dict),
         "new_document_form": new_document_form,
         "existing_document_formset": existing_document_formset,
         "new_customization_form": new_customization_form,
         "existing_customization_formset": existing_customization_formset,
-        "questionnaire_version": get_version(),
     }
 
     return render_to_response('questionnaire/questionnaire_project.html', _dict, context_instance=RequestContext(request))
