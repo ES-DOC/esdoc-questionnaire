@@ -271,7 +271,7 @@ class MetadataComponentProxy(MPTTModel):
     class Meta:
         app_label = APP_LABEL
         abstract = False
-        unique_together = ("vocabulary", "name")
+        unique_together = ("vocabulary", "name", "parent", )
         ordering = ['order']
 
         # TODO: DELETE THESE NEXT TWO LINES
