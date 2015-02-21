@@ -11,10 +11,14 @@ function panes(element) {
 }
 
 function autocompletes(element) {
+    /* an autocomplete field stores the options as an attribute */
+    /* parse those options and pass them to JQuery */
     var suggestions = $(element).attr("suggestions").split("|");
     $(element).autocomplete({
         source : suggestions
     });
+    /* then add a visual indication that the field supports autocompletion */
+    /* I use a standard JQuery icon, but move it down and left so that it resides w/in the field */
     $(element).after(
         "<span class='ui-icon ui-icon-carat-1-s' style='display: inline-block; margin-left: -16px; margin-bottom: -8px;' title='this field supports autocompletion'></span>"
     );
