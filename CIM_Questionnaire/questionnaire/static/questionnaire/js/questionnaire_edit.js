@@ -15,6 +15,9 @@ function autocompletes(element) {
     $(element).autocomplete({
         source : suggestions
     });
+    $(element).after(
+        "<span class='ui-icon ui-icon-carat-1-s' style='display: inline-block; margin-left: -16px; margin-bottom: -8px;' title='this field supports autocompletion'></span>"
+    );
 }
 
 function dynamic_accordion_buttons(element) {
