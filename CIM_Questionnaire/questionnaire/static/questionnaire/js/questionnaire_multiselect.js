@@ -188,7 +188,7 @@ $.widget("questionnaire.multiselect", {
             var element_choice  = $(this);
             var value   = $(element_choice).attr("value");
             var text    = $(element_choice).text();
-            var id      = element_id + "-" + value;
+            var id      = element_id + "-" + "multiselect" + "-" + value;
 
             if (options.multiple) {
                 var type = "checkbox";
@@ -196,7 +196,7 @@ $.widget("questionnaire.multiselect", {
             else {
                 var type = "radio";
             }
-            var widget_choice   = $("<label previous_value='unchecked' style='display: block;' for='"+id+"'><input id='"+id+"' name='"+element_name+"-multiselect' type='"+type+"' value='"+value+"'>&nbsp;"+text+"</input></label>")
+            var widget_choice   = $("<label previous_value='unchecked' style='display: block;' for='"+id+"'/><input id='"+id+"' name='"+element_name+"-multiselect' type='"+type+"' value='"+value+"'>&nbsp;"+text+"</input>")
           
             $(widget_choice).click(function(event) {
                 // this bit of code prevents responding to click events if they were triggered during sorting
