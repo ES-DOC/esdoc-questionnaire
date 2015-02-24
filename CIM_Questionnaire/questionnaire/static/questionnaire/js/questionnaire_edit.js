@@ -167,9 +167,10 @@ function enumerations(element) {
     // 2) check if OTHER is selected
     // and if so, show the "other" widget
 
+
     $(element).change(function() {
-        other = $(this).siblings("input.other:first");
-        widget = $(this).siblings(".ui-multiselect:first").find(".multiselect_content");
+        var other = $(this).siblings("input.other:first");
+        var widget = $(this).siblings(".ui-multiselect:first").find(".multiselect_content");
 
         var values = $(this).find("option:selected").map(function() {
             return $(this).val();
@@ -188,12 +189,10 @@ function enumerations(element) {
         }
 
         else if (values.indexOf("_OTHER") != -1) {
-            console.log("selected  other");
             $(other).show();
         }
         else {
             console.log("didin't select other");
-            $(other).hide();
         }
 
     });
