@@ -31,3 +31,6 @@ admin.site.register(MetadataScientificCategoryCustomizer)
 admin.site.register(MetadataModel)
 admin.site.register(MetadataStandardProperty)
 admin.site.register(MetadataScientificProperty)
+
+from CIM_Questionnaire.questionnaire.models.metadata_test import TestModel
+admin.site.register(TestModel)

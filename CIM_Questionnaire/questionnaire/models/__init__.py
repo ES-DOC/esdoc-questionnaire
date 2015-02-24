@@ -16,3 +16,4 @@ from metadata_model          import MetadataModel, MetadataStandardProperty, Met
 from metadata_version        import MetadataVersion
 from metadata_categorization import MetadataCategorization
 from metadata_serialization  import MetadataModelSerialization
+from metadata_test import TestModel
