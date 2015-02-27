@@ -11,7 +11,7 @@
 __author__ = "allyn.treshansky"
 __date__ = "Dec 01, 2014 3:00:00 PM"
 
-from views_error import questionnaire_error as error
+from views_error import questionnaire_error as error, questionnaire_page_not_found as page_not_found
 from views_help import questionnaire_help as help
 from views_ajax import ajax_customize_category, ajax_customize_subform, ajax_select_realization
 from views_index import questionnaire_index as index

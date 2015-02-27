@@ -31,8 +31,15 @@ urlpatterns = patterns('',
     # dcf
     (r'^dcf/', include('dcf.urls')),
 
-    # index
-    url(r'^$', 'dcf.views.index'),
+    # # index
+    # url(r'^$', 'dcf.views.index'),
+
+    # add a custom 404 page
+    # (this is not the Django-approved way to do things)
+    # (it's a catch-all regex in-case none of the above patterns match)
+    # (doing it the right way in Django requires setting DEBUG to False in settings.py)
+    # (but that means that other, Python, errors would not be displayed)
+    url(r'^.*/$', 'questionnaire.views.page_not_found'),
     
 )
 
