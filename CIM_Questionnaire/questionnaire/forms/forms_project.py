@@ -32,7 +32,7 @@ from CIM_Questionnaire.questionnaire.utils import set_field_widget_attributes, u
 class NewModelForm(forms.Form):
 
     # ontologies are all registered CIM versions
-    ontologies = ModelChoiceField(queryset=MetadataVersion.objects.none(), label="Ontolgoy", required=True, empty_label=None)
+    ontologies = ModelChoiceField(queryset=MetadataVersion.objects.none(), label="Ontology", required=True, empty_label=None)
 
     # documents are all model proxies belonging to the above ontologies that have the 'document' stereotype
     documents = ModelChoiceField(queryset=MetadataModelProxy.objects.none(), label="Document Type", required=True, empty_label=None)

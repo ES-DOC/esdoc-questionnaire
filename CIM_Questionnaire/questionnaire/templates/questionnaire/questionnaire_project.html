@@ -76,6 +76,7 @@
         .documentation table tr { vertical-align: top; padding: 4px; }
         .documentation table tr td:first-child { font-weight: bold; text-align: left; width: 12em; }
         .button.smaller { font-size: smaller !important; margin: 2px; }
+        .button#join { margin-top: 8px; }
 
     </style>
 {% endblock %} {# / style #}
@@ -97,7 +98,7 @@
 
     <div class="documentation">
         <p>
-            This is the Project Page for {% if project.url %}<a href="{{project.url}}" title="{{project.url}}">{% endif %}{{project.title|title}}{% if project.url %}</a>{% endif %}.
+            This is the Project Page for the {% if project.url %}<a href="{{project.url}}" title="{{project.url}}">{% endif %}{{project.title|title}}{% if project.url %}</a>{% endif %} project.
         </p>
 
         <table border="0">
@@ -113,19 +114,24 @@
                     <td><a href="mailto:{{ project.email }}">{{ project.email }}</a></td>
                 </tr>
             {% endif %} {# /project.email #}
-            {% if can_join %}
+            {% if not project.authenticated %}
                 <tr>
                     <td colspan="2">
-                        <!-- TODO -->
-                        <input class="button smaller"
-                               name="project_join"
-                               type="submit"
-                               value="Join {{ project.title }} Project"
-                               title="Your request will be sent to the project administrator for review."/>
+                        Project Does <em>Not</em> Require Authentication
                     </td>
                 </tr>
-            {% endif %} {# /can_join #}
+            {% endif %} {# /project.authenticated #}
         </table>
+
+        {% if can_join %}
+            <input class="button"
+                   id="join"
+                   name="project_join"
+                   type="submit"
+                   value="Join {{ project.title }} Project"
+                   title="Your request will be sent to the project administrator for review."/>
+        {% endif %} {# /can_join #}
+
     </div> <!-- /.documentation -->
 
     <br/>
@@ -136,7 +142,7 @@
              <!-- the tab menu -->
              <ul>
                  {% if can_edit %}
-                    <li><a href="#tab_edit">Edit or create a CIM Document</a></li>
+                    <li><a href="#tab_edit">Edit or Create a CIM Document</a></li>
                  {% endif %} {# /can_edit #}
                  {% if can_view and not can_edit %}
                     <li><a href="#tab_view">View an existing CIM Document</a></li>
@@ -153,16 +159,16 @@
 
                         <fieldset class="collapsible_fieldset">
                             <legend title="click to toggle content">
-                                <span class="title">&nbsp;new documents&nbsp;</span>
+                                <span class="title">&nbsp;New Documents&nbsp;</span>
                             </legend>
 
                             <div class="collapsible_fieldset_content">
 
                                 <div class="instructions">
-                                    You can create a new CIM document by selecting a document type at a particular CIM version.
+                                    You can create a new CIM document by selecting a document type for a particular ontology (CIM version).
                                 </div>
 
-                                <table border="0" width="75%">
+                                <table border="0" width="100%">
                                     <tr class="table_header">
                                         <td width="15%">
                                             {{ new_document_form.ontologies.label }}
@@ -190,7 +196,7 @@
 
                         <fieldset class="collapsible_fieldset">
                             <legend title="click to toggle content">
-                                <span class="title">&nbsp;existing documents&nbsp;</span>
+                                <span class="title">&nbsp;Existing Documents&nbsp;</span>
                             </legend>
 
                             <div class="collapsible_fieldset_content">
@@ -201,7 +207,7 @@
 
                                 {{ existing_document_formset.management_form }}
 
-                                <table border="0" width="75%">
+                                <table border="0" width="100%">
                                     <tr class="table_header">
                                         <td width="15%">Ontology</td>
                                         <td width="25%">Document Type</td>
@@ -224,7 +230,7 @@
                                                     {{ existing_document_form.id }}
                                                     {{ existing_document_form.selected }}
                                                     <input class="button smaller" id="id_{{ existing_document_form.prefix }}-edit" name="{{ existing_document_formset.prefix }}-edit" type="submit" value="edit" onclick="set_checkbox_by_id(this);"/>
-                                                    <input class="button smaller" id="id_{{ existing_document_form.prefix }}-view" name="{{ existing_document_formset.prefix }}-view" type="submit" value="view" onclick="set_checkbox_by_id(this);"/>
+                                                    <input class="button smaller" id="id_{{ existing_document_form.prefix }}-view" name="{{ existing_document_formset.prefix }}-view" type="submit" value="view in Editor" onclick="set_checkbox_by_id(this);"/>
                                                     <input class="button smaller" id="id_{{ existing_document_form.prefix }}-publish" name="{{ existing_document_formset.prefix }}-publish" type="submit" value="publish" onclick="set_checkbox_by_id(this);"/>
                                                 </td>
                                             {% endwith %} {# /model #}
@@ -244,7 +250,7 @@
                     <div class="tab_content">
                         <fieldset class="collapsible_fieldset">
                             <legend title="click to toggle content">
-                                <span class="title">&nbsp;existing documents&nbsp;</span>
+                                <span class="title">&nbsp;Existing Documents&nbsp;</span>
                             </legend>
 
                             <div class="collapsible_fieldset_content">
@@ -255,7 +261,7 @@
 
                                 {{ existing_document_formset.management_form }}
 
-                                <table border="0" width="75%">
+                                <table border="0" width="100%">
                                     <tr class="table_header">
                                         <td width="15%">Ontology</td>
                                         <td width="25%">Document Type</td>
@@ -277,7 +283,7 @@
                                                 <td>
                                                     {{ existing_document_form.id }}
                                                     {{ existing_document_form.selected }}
-                                                    <input class="button smaller" id="id_{{ existing_document_form.prefix }}-view" name="{{ existing_document_formset.prefix }}-view" type="submit" value="view" onclick="set_checkbox_by_id(this);"/>
+                                                    <input class="button smaller" id="id_{{ existing_document_form.prefix }}-view" name="{{ existing_document_formset.prefix }}-view" type="submit" value="view in Editor" onclick="set_checkbox_by_id(this);"/>
                                                 </td>
                                             {% endwith %} {# /model #}
                                         </tr>
@@ -296,16 +302,16 @@
                     <div class="tab_content">
                         <fieldset class="collapsible_fieldset">
                             <legend title="click to toggle content">
-                                <span class="title">&nbsp;new customizations&nbsp;</span>
+                                <span class="title">&nbsp;New Customizations&nbsp;</span>
                             </legend>
 
                             <div class="collapsible_fieldset_content">
 
                                 <div class="instructions">
-                                    You can create a new Questionnaire customization by selecting a document type at a particular CIM version.
+                                    You can create a new Questionnaire customization by selecting a document type for a particular ontology (CIM version).
                                 </div>
 
-                                <table border="0" width="75%">
+                                <table border="0" width="100%">
                                     <tr class="table_header">
                                         <td width="15%">
                                             {{ new_customization_form.ontologies.label }}
@@ -333,18 +339,18 @@
 
                         <fieldset class="collapsible_fieldset">
                             <legend title="click to toggle content">
-                                <span class="title">&nbsp;existing customizations&nbsp;</span>
+                                <span class="title">&nbsp;Existing Customizations&nbsp;</span>
                             </legend>
 
                             <div class="collapsible_fieldset_content">
 
                                 <div class="instructions">
-                                    You can edit existing customizations.  An asterix(*) next to the name indicates the <em>default</em> customization.
+                                    You can edit existing Questionnaire customizations.  An asterix(*) next to the name indicates the <em>default</em> customization.
                                 </div>
 
                                 {{ existing_customization_formset.management_form }}
 
-                                <table border="0" width="75%">
+                                <table border="0" width="100%">
                                     <tr class="table_header">
                                         <td width="15%">Ontology</td>
                                         <td width="25%">Document Type</td>
@@ -366,7 +372,7 @@
                                                 <td>
                                                     {{ existing_customization_form.id }}
                                                     {{ existing_customization_form.selected }}
-                                                    <input class="button smaller" id="id_{{ existing_customization_form.prefix }}-edit" name="{{ existing_customization_formset.prefix }}-edit" type="submit" value="edit" onclick="set_checkbox_by_id(this);"/>
+                                                    <input class="button smaller" id="id_{{ existing_customization_form.prefix }}-edit" name="{{ existing_customization_formset.prefix }}-edit" type="submit" value="customize" onclick="set_checkbox_by_id(this);"/>
                                                 </td>
                                             {% endwith %} {# /model #}
                                         </tr>

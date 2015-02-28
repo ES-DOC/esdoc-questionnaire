@@ -166,7 +166,7 @@ class MetadataStandardPropertyProxy(MetadataPropertyProxy):
             self.relationship_target_model = target_proxy
 
     def enumerate_choices(self):
-        return [(choice,choice) for choice in self.enumeration_choices.split("|")]
+        return [(choice, choice) for choice in self.enumeration_choices.split("|")]
 
 SCIENTIFIC_PROPERTY_CHOICES = [
     ("XOR","XOR"),

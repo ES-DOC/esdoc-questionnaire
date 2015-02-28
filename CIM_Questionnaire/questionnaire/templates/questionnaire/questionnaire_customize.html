@@ -28,86 +28,85 @@
             init_widgets(fieldsets,$(parent).find(".collapsible_fieldset"));
             init_widgets_on_show(readonlies,$(parent).find(".readonly"));
 
-            init_widgets(enablers,$(parent).find(".enabler"));
-            init_widgets(accordions,$(parent).find(".accordion").not(".fake"));
-            init_widgets(sortable_accordions,$(parent).find(".accordion .accordion_header"));
-            init_widgets(accordion_buttons,$(parent).find(".subform_toolbar button"));
-            init_widgets(tags,$(parent).find(".tags"));
-            init_widgets(tabs,$(parent).find(".tabs"));
-            init_widgets(users,$(parent).find("#user"));
-            init_widgets(buttons,$(parent).find("input.button,a.button"))
-            init_widgets(selects,$(parent).find(".multiselect"));
+            init_widgets(enablers, $(parent).find(".enabler"));
+            init_widgets(accordions, $(parent).find(".accordion").not(".fake"));
+            init_widgets(sortable_accordions, $(parent).find(".accordion .accordion_header"));
+            init_widgets(accordion_buttons, $(parent).find(".subform_toolbar button"));
+            init_widgets(tags, $(parent).find(".tags"));
+            init_widgets(tabs, $(parent).find(".tabs"));
+            init_widgets(users, $(parent).find("#user"));
+            init_widgets(buttons, $(parent).find("input.button,a.button"))
+            init_widgets(multiselects, $(parent).find(".multiselect"));
             init_widgets(helps, $(parent).find(".help_button"));
 
-            // some one-offs for the customizer
+            /*  some one-offs for the customizer */
             $("button.customize_subform").button({
                   icons : {primary: "ui-icon-extlink"},
                   text : true
             });
 
-            // TODO: MOVE THIS TO A SEPARATE FN
+            /* TODO: MOVE THIS STUFF TO SEPARATE FNS */
 
-            var vocabularies_tabs = $("#vocabularies_tabs");
+            var model_customizer_vocabularies = $("div#vocabularies");
+            var vocabularies_tabs = $("div#vocabularies_tabs");
+            var vocabularies_tabs_headers = $(vocabularies_tabs).find("ul:first li");
 
             $(vocabularies_tabs).addClass("ui-tabs-vertical ui-helper-clearfix");
-            $("#vocabularies_tabs li").removeClass("ui-corner-top" ).addClass("ui-corner-left");
 
-            $("select[name='vocabularies']").change(function(){
-                var current_order = $(this).find("option").map(function() {
-                    return parseInt($(this).val());
-                }).get();
-                $("input[name='vocabulary_order']").val(current_order);
+            $(model_customizer_vocabularies).find("input.active").each(function() {
+
+                var model_customizer_vocabulary = $(this).closest("div.model_customizer_vocabulary");
+                var vocabulary_key = $(model_customizer_vocabulary).find("input.key").val();
+                var vocabulary_tab = $(vocabularies_tabs_headers).has("a[href^='#tab_scientific_properties_"+vocabulary_key+"']");
+                var vocabulary_index = $(vocabularies_tabs_headers).index(vocabulary_tab);
+                var vocabulary_tab_content = $(vocabularies_tabs).children("div.ui-tabs-panel").eq(vocabulary_index);
+
+                if ($(this).is(":checked")) {
+                    $(model_customizer_vocabulary).addClass("selected");
+                    $(vocabularies_tabs).tabs("enable", vocabulary_index);
+                    $(vocabulary_tab_content).removeClass("ui-state-disabled");
+                }
+                else {
+                    $(model_customizer_vocabulary).addClass("ui-state-disabled");
+                    $(vocabularies_tabs).tabs("disable", vocabulary_index);
+                    $(vocabulary_tab_content).addClass("ui-state-disabled");
+                }
+
+                $(this).change(function() {
+                    $(model_customizer_vocabulary).toggleClass("ui-state-disabled")
+                    $(model_customizer_vocabulary).toggleClass("selected");
+                    if ($(model_customizer_vocabulary).hasClass("selected")) {
+                        $(vocabularies_tabs).tabs("enable", vocabulary_index);
+                        $(vocabulary_tab_content).removeClass("ui-state-disabled");
+                    }
+                    else {
+                        $(vocabularies_tabs).tabs("disable", vocabulary_index);
+                        $(vocabulary_tab_content).addClass("ui-state-disabled");
+                    }
+                });
             });
 
-            $("select[name='vocabularies']").multiselect("option",{
-                sortable : true,
-                autoOpen : true,
-                emptyMultiText  : 'Select vocabularies',
-                onChange        : function(event,data) {
-                    $(event.target).find("option").each(function(index,element) {
-                        var vocabulary_tab_content = $(vocabularies_tabs).children("div.ui-tabs-panel").eq(index);
-                        if ($(this).is(":selected")) {
-                            $(vocabularies_tabs).tabs("enable",index);
-                            $(vocabulary_tab_content).removeClass("ui-state-disabled");
-                        }
-                        else {
-                            $(vocabularies_tabs).tabs("disable",index);
-                            $(vocabulary_tab_content).addClass("ui-state-disabled");
-                        }
+            $(model_customizer_vocabularies).sortable({
+                axis: "y",
+                placeholder: "sortable_item",
+                cancel : "input.active",
+                start : function(e, ui){
+                    ui.placeholder.height(ui.item.height());
+                    ui.placeholder.width("400");
+                },
+                stop : function(e,ui) {
+                    var sortable_item = ui["item"];
+                    $(sortable_item).closest("#vocabularies").find("div.model_customizer_vocabulary").each(function(index, element) {
+                        var vocabulary_order = $(this).find("input.order");
+                        $(vocabulary_order).val(index)
                     });
                 }
             });
 
-            $("select[name='vocabularies']").find("option").each(function(index,element) {
-                /* make sure that the appropriate vocabulary tabs are active or inactive according to the selected options */
-                /* (mirrors what the onChange event does above) */
-                var vocabulary_tab_content = $(vocabularies_tabs).children("div.ui-tabs-panel").eq(index);
-                if ($(this).is(":selected")) {
-                    $(vocabularies_tabs).tabs("enable",index);
-                    $(vocabulary_tab_content).removeClass("ui-state-disabled");
-                }
-                else {
-                    $(vocabularies_tabs).tabs("disable",index);
-                    $(vocabulary_tab_content).addClass("ui-state-disabled");
-                }
-            });
-
-            // make sure that the vocabulary selector is in the correct order
-            var current_order = $("input[name='vocabulary_order']").val().split(",");
-            var multiselect = $("select[name='vocabularies']").next(".ui-multiselect").find(".multiselect_content")
-            var multiselect_options = $(multiselect).children("label").get();
-            multiselect_options.sort(function(a,b) {
-               a_order = current_order.indexOf($(a).find("input").attr("value"));
-               b_order = current_order.indexOf($(b).find("input").attr("value"));
-               return a_order > b_order;
-            });
-            $(multiselect).append(multiselect_options);
-            
             // do this last b/c some of the xpath depends on changes made by the above fns...
             init_errors(parent);
 
         }
-
 
     );
 
@@ -123,7 +122,14 @@
     <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}questionnaire/css/questionnaire_customize.css" />
 
     <style type="text/css">
-        #questionniare .no_float    { float: none important!; }
+        #questionniare .no_float    { float: none !important; }
+
+        #questionnaire #vocabularies { width: 400px; }
+        #questionnaire #vocabularies div.model_customizer_vocabulary { cursor: pointer; padding: 2px; margin: 2px; }
+        #questionnaire #vocabularies input.active { }
+        #questionnaire #vocabularies input.vocabulary { }
+        #questionnaire #vocabularies input.order { text-align: right; }
+
     </style>
 
 {% endblock %} {# / style #}
@@ -138,7 +144,7 @@
 
     {% block content_title %}
         <div class="title">
-            Customize the CIM Questionnaire for <b>{{model_proxy.name|pretty_title}}</b> instances of the <a href="/{{ project.name|lower }}" title="ES-DOC Questionnaire Project Home"><b>{{project.title}}</b></a> Project
+            Customize the CIM Questionnaire for <b>{{model_proxy.name|pretty_string}}</b> instances of the <a href="/{{ project.name|lower }}" title="ES-DOC Questionnaire Project Home"><b>{{project.title}}</b></a> Project
         </div> <!-- /.title -->
     {% endblock %} {# /content_title #}
 
@@ -184,6 +190,28 @@
                                 {% include "questionnaire/_field.html" %}
                             </tr>
                         {% endfor %} {# / field in model_customizer_form.get_customizer_fields #}
+                        <tr class="odd field" name="sorted_vocabularies">
+                            <td>
+                                <span>{{ model_customizer_vocabularies_formset.label }}&nbsp;</span>
+                                <div class="documentation">
+                                    {{ model_customizer_vocabularies_formset.help_text|safe }}  {# the safe filter prevents inline HTML from being escaped  #}
+                                </div>
+                            </td>
+                            <td>
+                                {{ model_customizer_vocabularies_formset.management_form }}
+                                <div id="vocabularies" class="sortable ui-widget ui-widget-content ui-corner-all">
+                                    {% for model_customizer_vocabulary_form in model_customizer_vocabularies_formset %}
+                                        <div class="model_customizer_vocabulary ui-widget ui-widget-content ui-corner-all ui-state-default">
+                                            {{ model_customizer_vocabulary_form.id }} <!-- this is a hidden field; it still needs inclusion in order to validate -->
+                                            {{ model_customizer_vocabulary_form.vocabulary_key }} <!-- this is also hidden field; it's needed to match the vocabulary_tabs below -->
+                                            {{ model_customizer_vocabulary_form.active }}&nbsp;
+                                            {{ model_customizer_vocabulary_form.vocabulary }}&nbsp;
+                                            {{ model_customizer_vocabulary_form.order }}&nbsp;
+                                        </div>
+                                    {% endfor %} {# /model_customizer_vocabulary_form #}
+                                </div>
+                            </td>
+                        </tr>
                     </table>
 
                 </div> <!-- / .collapsible_fieldset_content -->
@@ -311,19 +339,19 @@
                                                             {% with type=form.type %}
                                                                 {% if type == "ATOMIC" %}
                                                                     {% for field in form.get_atomic_fields %}
-                                                                        <tr class="{% cycle 'odd' 'even' %} field" name="{{field.html_name}}">
+                                                                        <tr class="{% cycle 'odd' 'even' %} field" name="{{field.html_name}}" valign="top">
                                                                             {% include "questionnaire/_field.html" %}
                                                                         </tr>
                                                                     {% endfor %} {# / field in form.get_atomic_fields #}
                                                                 {% elif type == "ENUMERATION" %}
                                                                     {% for field in form.get_enumeration_fields %}
-                                                                        <tr class="{% cycle 'odd' 'even' %} field" name="{{field.html_name}}">
+                                                                        <tr class="{% cycle 'odd' 'even' %} field" name="{{field.html_name}}" valign="top">
                                                                             {% include "questionnaire/_field.html" %}
                                                                         </tr>
                                                                     {% endfor %} {# / field in form.get_enumeration_fields #}
                                                                 {% elif type == "RELATIONSHIP" %}
                                                                     {% for field in form.get_relationship_fields %}
-                                                                        <tr class="{% cycle 'odd' 'even' %} field" name="{{field.html_name}}">
+                                                                        <tr class="{% cycle 'odd' 'even' %} field" name="{{field.html_name}}" valign="top">
                                                                             {% if field.name|lower == "relationship_show_subform" %}
                                                                                 {# this is a copy of the "_field" template, but it adds a 'customize_subform' button to the field #}
                                                                                 {% with field_label=field.label field_id=field.html_name %}
@@ -481,7 +509,7 @@
 
                                                                                                 <table width="100%">
                                                                                                     {% for field in form.get_fields %}
-                                                                                                        <tr class="{% cycle 'odd' 'even' %} field" name="{{field.html_name}}">
+                                                                                                        <tr class="{% cycle 'odd' 'even' %} field" name="{{field.html_name}}" valign="top">
                                                                                                             {% include "questionnaire/_field.html" %}
                                                                                                         </tr>
                                                                                                     {% endfor %} {# / field in form.get_fields #}
@@ -502,7 +530,7 @@
                                                                                                                             <td width="25%">extra attribute</td>
                                                                                                                             <td style="width: 10% !important;" width="10%">display</td>
                                                                                                                             <td width="10%">allow editing</td>
-                                                                                                                            <td width="55%">defalt value</td>
+                                                                                                                            <td width="55%">default value</td>
                                                                                                                         </tr>
                                                                                                                         {% for label,fields in form.get_extra_fieldsets.items %}
                                                                                                                             <tr class="{% cycle 'even' 'odd' %} field">
@@ -558,7 +586,7 @@
                 {% if can_view %}
                     {% with project_name=project.name|lower version_key=version.get_key|lower model_name=model_proxy.name|lower %}
                         {% url 'questionnaire.views.edit_new' project_name version_key model_name  as url_edit_new %}
-                        <a class="button" target="_blank" href="{{ url_edit_new }}" title="view a blank {{ model_proxy.name }} document in the Editor using this customization">view</a>
+                        <a class="button" target="_blank" href="{{ url_edit_new }}" title="view a blank {{ model_proxy.name }} document in the Editor using this customization">view in Editor</a>
                     {% endwith %}
                 {% endif %} {# /can_view #}
             </div> <!-- /.submit -->
@@ -580,3 +608,4 @@
     {% endif %}
     <br/>For more information please contact: <a href="mailto:es-doc-support@list.woc.noaa.gov">es-doc-support@list.woc.noaa.gov</a>.<br/>
 {% endblock %} {# /footer #}
+

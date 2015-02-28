@@ -514,15 +514,14 @@ class MetadataStandardProperty(MetadataProperty):
             msg = "Trying to reset a standard property w/out a proxy having been specified."
             raise QuestionnaireError(msg)
 
-
-        self.name         = proxy.name
-        self.order        = proxy.order
-        self.is_label     = proxy.is_label
-        self.field_type   = proxy.field_type
+        self.name = proxy.name
+        self.order = proxy.order
+        self.is_label = proxy.is_label
+        self.field_type = proxy.field_type
         
-        self.atomic_value             = None
-        self.enumeration_value        = None
-        self.enumeration_other_value  = "Please enter a custom value"
+        self.atomic_value = None
+        self.enumeration_value = None
+        self.enumeration_other_value = "Please enter a custom value."
 
         if self.pk:
             self.relationship_value.clear()
@@ -557,6 +556,7 @@ class MetadataStandardProperty(MetadataProperty):
                 enumerations.append(u"NONE")
 
             if OTHER_CHOICE[0][0] in enumerations:
+                # TODO: MAY HAVE TO CHANGE THIS IN LIGHT OF TICKET #254
                 enumerations.remove(OTHER_CHOICE[0][0])
                 if self.enumeration_other_value:
                     enumerations.append(u"OTHER: %s" % self.enumeration_other_value)
@@ -608,17 +608,17 @@ class MetadataScientificProperty(MetadataProperty):
             msg = "Trying to reset a scientific property w/out a proxy having been specified."
             raise QuestionnaireError(msg)
 
-        self.name         = proxy.name
-        self.order        = proxy.order
-        self.is_label     = proxy.is_label
+        self.name = proxy.name
+        self.order = proxy.order
+        self.is_label = proxy.is_label
         self.category_key = proxy.category.key
 
-        self.atomic_value             = None
-        self.enumeration_value        = None
-        self.enumeration_other_value  = "Please enter a custom value"
+        self.atomic_value = None
+        self.enumeration_value = None
+        self.enumeration_other_value = "Please enter a custom value."
         
-        self.field_type     = MetadataFieldTypes.PROPERTY.getType()
-        self.is_enumeration = proxy.choice in ["OR","XOR"]
+        self.field_type = MetadataFieldTypes.PROPERTY.getType()
+        self.is_enumeration = proxy.choice in ["OR", "XOR", ]
 
     def get_value(self):
         if not self.is_enumeration:
@@ -637,6 +637,7 @@ class MetadataScientificProperty(MetadataProperty):
                 enumerations.append(u"NONE")
 
             if OTHER_CHOICE[0][0] in enumerations:
+                # TODO: MAY HAVE TO CHANGE THIS IN LIGHT OF TICKET #254
                 enumerations.remove(OTHER_CHOICE[0][0])
                 if self.enumeration_other_value:
                     enumerations.append(u"OTHER: %s" % self.enumeration_other_value)

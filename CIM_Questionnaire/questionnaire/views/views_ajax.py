@@ -1,39 +1,31 @@
-
 ####################
-#   CIM_Questionnaire
-#   Copyright (c) 2013 CoG. All rights reserved.
+#   ES-DOC CIM Questionnaire
+#   Copyright (c) 2014 ES-DOC. All rights reserved.
 #
-#   Developed by: Earth System CoG
 #   University of Colorado, Boulder
 #   http://cires.colorado.edu/
 #
 #   This project is distributed according to the terms of the MIT license [http://www.opensource.org/licenses/MIT].
 ####################
 
-__author__="allyn.treshansky"
-__date__ ="Jan 4, 2014 4:53:16 PM"
+__author__ = "allyn.treshansky"
+__date__ = "Dec 01, 2014 3:00:00 PM"
 
 """
-.. module:: views_ajax
+.. module:: views_edit
 
-Summary of module goes here
-
+views for AJAX
+eventually, these will be replaced w/ the views in "views_api.py"
 """
 
 
-import time
 import json
-
-from django.contrib import messages
+from django.conf import settings
 from django.contrib.sites.models import get_current_site
-
 from django.db.models import get_app, get_model
-
-from django.forms import  *  #TypedChoiceField, ModelChoiceField
-
+from django.forms import *  #TypedChoiceField, ModelChoiceField
 from django.template.loader import render_to_string
 from django.template.context import RequestContext
-
 from django.http import HttpResponse
 
 from CIM_Questionnaire.questionnaire.models.metadata_customizer import MetadataCustomizer, MetadataModelCustomizer, MetadataStandardCategoryCustomizer, MetadataStandardPropertyCustomizer, MetadataScientificCategoryCustomizer
@@ -45,42 +37,44 @@ from CIM_Questionnaire.questionnaire.forms.forms_edit import create_new_edit_sub
 from CIM_Questionnaire.questionnaire.utils import QuestionnaireError, update_field_widget_attributes, set_field_widget_attributes
 from CIM_Questionnaire.questionnaire import get_version
 
-def ajax_customize_subform(request,**kwargs):
+
+def ajax_customize_subform(request, **kwargs):
     subform_id = request.GET.get('i', None)
     if not subform_id:
         msg = "unable to customize subfrom (no id specified)"
         raise QuestionnaireError(msg)
 
     property_customizer = MetadataStandardPropertyCustomizer.objects.get(pk=subform_id)
-    property_parent     = property_customizer.model_customizer
-    property_proxy      = property_customizer.proxy
-    model_proxy         = property_proxy.relationship_target_model
+    property_parent = property_customizer.model_customizer
+    property_proxy = property_customizer.proxy
+    model_proxy = property_proxy.relationship_target_model
 
     # TODO: IN THE LONG-RUN, I WILL WANT TO ENSURE THAT THE CORRECT SCI PROPS ARE USED HERE
-    vocabularies   = property_parent.vocabularies.none() # using none() to avoid dealing w/ sci props
-    project        = property_parent.project
-    version        = property_parent.version
-    subform_prefix = u"customize_subform_%s-%s" % (property_proxy.name,subform_id)
+    # TODO: INTRODUCE property_parent.get_sorted_vocabularies()
+    vocabularies = property_parent.vocabularies.none()  # using none() to avoid dealing w/ sci props
+    project = property_parent.project
+    version = property_parent.version
+    subform_prefix = u"customize_subform_%s-%s" % (property_proxy.name, subform_id)
 
     customizer_filter_parameters = {
-        "project"   : project,
-        "version"   : version,
-        "proxy"     : model_proxy,
-        "name"      : property_parent.name
+        "project": project,
+        "version": version,
+        "proxy": model_proxy,
+        "name": property_parent.name
     }
 
     try:
 
         model_customizer = MetadataModelCustomizer.objects.get(**customizer_filter_parameters)
 
-        (model_customizer,standard_category_customizers,standard_property_customizers,scientific_category_customizers,scientific_property_customizers) = \
-            MetadataCustomizer.get_existing_customizer_set(model_customizer,vocabularies)
+        (model_customizer, standard_category_customizers, standard_property_customizers, scientific_category_customizers, scientific_property_customizers) = \
+            MetadataCustomizer.get_existing_customizer_set(model_customizer, vocabularies)
 
         new_customizer = False
 
     except MetadataModelCustomizer.DoesNotExist:
 
-        (model_customizer,standard_category_customizers,standard_property_customizers,scientific_category_customizers,scientific_property_customizers) = \
+        (model_customizer, standard_category_customizers, standard_property_customizers, scientific_category_customizers, scientific_property_customizers) = \
             MetadataCustomizer.get_new_customizer_set(project, version, model_proxy, vocabularies)
         model_customizer.name = property_parent.name
 
@@ -90,12 +84,28 @@ def ajax_customize_subform(request,**kwargs):
 
         if new_customizer:
 
-            (model_customizer_form,standard_property_customizer_formset,scientific_property_customizer_formsets) = \
-                create_new_customizer_forms_from_models(model_customizer,standard_category_customizers,standard_property_customizers,scientific_category_customizers,scientific_property_customizers,vocabularies_to_customize=vocabularies,is_subform=True)
+            (model_customizer_form, standard_property_customizer_formset, scientific_property_customizer_formsets, model_customizer_vocabularies_formset) = \
+                create_new_customizer_forms_from_models(
+                    model_customizer,
+                    standard_category_customizers,
+                    standard_property_customizers,
+                    scientific_category_customizers,
+                    scientific_property_customizers,
+                    vocabularies_to_customize=vocabularies,
+                    is_subform=True
+                )
 
         else:
-            (model_customizer_form,standard_property_customizer_formset,scientific_property_customizer_formsets) = \
-                create_existing_customizer_forms_from_models(model_customizer,standard_category_customizers,standard_property_customizers,scientific_category_customizers,scientific_property_customizers,vocabularies_to_customize=vocabularies,is_subform=True)
+            (model_customizer_form, standard_property_customizer_formset, scientific_property_customizer_formsets, model_customizer_vocabularies_formset) = \
+                create_existing_customizer_forms_from_models(
+                    model_customizer,
+                    standard_category_customizers,
+                    standard_property_customizers,
+                    scientific_category_customizers,
+                    scientific_property_customizers,
+                    vocabularies_to_customize=vocabularies,
+                    is_subform=True
+                )
 
         # give all this subform nonesense it's own unique prefix, so the fields aren't confused w/ the parent form fields
         # TODO: AS WITH EDITING SUBFORMS, SHOULD JUST PASS "subform_prefix" AND DO THIS AUTOMATICALLY
@@ -105,41 +115,49 @@ def ajax_customize_subform(request,**kwargs):
             for scientific_property_customizer_formset in scientific_property_customizer_formsets_dict.values():
                 scientific_property_customizer_formset.prefix = u"%s-%s" % (scientific_property_customizer_formset.prefix, subform_prefix)
 
-        status = 200 # return successful response for GET (don't actually process this in the AJAX JQuery call)
+        status = 200  # return successful response for GET (don't actually process this in the AJAX JQuery call)
         msg = None
 
-
-    else: # request.method == "POST":
+    else:  # request.method == "POST":
 
         data = request.POST
 
-        (validity, model_customizer_form, standard_property_customizer_formset, scientific_property_customizer_formsets) = \
-            create_customizer_forms_from_data(data,model_customizer,standard_category_customizers,standard_property_customizers,scientific_category_customizers,scientific_property_customizers,vocabularies_to_customize=vocabularies,is_subform=True,subform_prefix=subform_prefix)
+        (validity, model_customizer_form, standard_property_customizer_formset, scientific_property_customizer_formsets, model_customizer_vocabularies_formset) = \
+            create_customizer_forms_from_data(
+                data,
+                model_customizer,
+                standard_category_customizers,
+                standard_property_customizers,
+                scientific_category_customizers,
+                scientific_property_customizers,
+                vocabularies_to_customize=vocabularies,
+                is_subform=True,
+                subform_prefix=subform_prefix
+            )
 
         if all(validity):
 
-            model_customizer_instance = save_valid_forms(model_customizer_form,standard_property_customizer_formset,scientific_property_customizer_formsets)
-
+            model_customizer_instance = save_valid_forms(model_customizer_form, standard_property_customizer_formset, scientific_property_customizer_formsets, model_customizer_vocabularies_formset)
 
             data = {
-                "subform_customizer_id"   : model_customizer_instance.pk,
-                "subform_customizer_name" : u"%s" % (model_customizer_instance),
+                "subform_customizer_id": model_customizer_instance.pk,
+                "subform_customizer_name": u"%s" % model_customizer_instance,
             }
 
+            status = 200
             # not using Django's built-in messaging framework to pass status messages;
             # (don't want it to interfere w/ messages on main form)
             # instead, using header fields
-            msg =  "Successfully saved customizer '%s' for %s." % (model_customizer_instance.name,property_customizer.name)
-
-            status = 200
+            msg = "Successfully saved customizer '%s' for %s." % (model_customizer_instance.name, property_customizer.name)
 
             json_data = json.dumps(data)
-            response = HttpResponse(json_data,content_type="text/html",status=status)
+            response = HttpResponse(json_data, content_type="text/html", status=status)
             response["msg"] = msg
 
             return response
 
         else:
+
             # okay, I'm overloading things a bit here
             # the problem is that if I actually send a "400" code, then AJAX (correctly) interprets that as an error
             # and all sorts of problems ensue
@@ -156,26 +174,29 @@ def ajax_customize_subform(request,**kwargs):
         csrf_token_value = None
 
     # gather all the extra information required by the template
-    dict = {
-        "STATIC_URL"                              : "/static/",
-        "site"                                    : get_current_site(request),
-        "project"                                 : project,
-        "version"                                 : version,
-        "model_proxy"                             : model_proxy,
-        "parent_customizer"                       : property_parent,
-        "model_customizer_form"                   : model_customizer_form,
-        "standard_property_customizer_formset"    : standard_property_customizer_formset,
+    _dict = {
+        "STATIC_URL": settings.STATIC_URL,
+        "site": get_current_site(request),
+        "project": project,
+        "version": version,
+        "model_proxy": model_proxy,
+        "parent_customizer": property_parent,
+        "model_customizer_form": model_customizer_form,
+        # vocabularies are not needed for subforms...
+        # "model_customizer_vocabularies_formset": model_customizer_vocabularies_formset,
+        "standard_property_customizer_formset": standard_property_customizer_formset,
         # scientific properties are not needed for subforms...
-        #"scientific_property_customizer_formsets" : scientific_property_customizer_formsets,
-        "questionnaire_version"                   : get_version(),
-        "csrf_token_value"                        : csrf_token_value,
+        # "scientific_property_customizer_formsets" : scientific_property_customizer_formsets,
+        "questionnaire_version": get_version(),
+        "csrf_token_value": csrf_token_value,
     }
 
-    rendered_form = render_to_string("questionnaire/questionnaire_customize_subform.html", dictionary=dict, context_instance=RequestContext(request))
-    response = HttpResponse(rendered_form,content_type='text/html',status=status)
+    rendered_form = render_to_string("questionnaire/questionnaire_customize_subform.html", dictionary=_dict, context_instance=RequestContext(request))
+    response = HttpResponse(rendered_form, content_type='text/html', status=status)
     response["msg"] = msg
 
     return response
+
 
 def ajax_customize_category(request,category_id="",**kwargs):
 

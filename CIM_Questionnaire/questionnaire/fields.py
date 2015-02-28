@@ -17,21 +17,35 @@ __date__ = "Dec 01, 2014 3:00:00 PM"
 Special fields used for CIM Questionnaire
 """
 
+import os
+
 from django.conf import settings
 from django.db import models
 from django.db.models.fields import smart_text
-from django.forms import Select, SelectMultiple, ValidationError, ModelChoiceField
+from django.forms import ValidationError, Select, CheckboxSelectMultiple, RadioSelect
 from django.forms import CheckboxInput, DateInput, DateTimeInput, NumberInput, EmailInput, Textarea, TextInput, TimeInput, URLInput
 from django.forms.fields import CharField, MultipleChoiceField, MultiValueField
 from django.forms.widgets import MultiWidget
-from django.forms.models import ModelChoiceIterator
 from django.core.files.storage import FileSystemStorage
-
+from django.utils.html import format_html
+from django.utils.encoding import force_text
+from django.utils.safestring import mark_safe
 from south.modelsinspector import introspector
 
-import os
 
 from CIM_Questionnaire.questionnaire.utils import EnumeratedType, EnumeratedTypeList, BIG_STRING
+
+#############
+# constants #
+#############
+
+# THIS IS A RIDICULOUS HACK,
+# DJANGO ADDS SOME TEXT TO M2M FIELD'S HELP ("django.forms.models.ModelMultipleChoiceField#__init__")
+# I HAVE TO MANUALLY REMOVE IT IN VARIOUS FORMS
+# TODO: THIS SHOULD BE FIXED IN FUTURE VERSIONS OF DJANGO
+
+MULTIPLECHOICEFIELD_HELP_TEXT = 'Hold down "Control", or "Command" on a Mac, to select more than one.'
+
 
 ###########################
 # storage for file fields #
@@ -69,19 +83,135 @@ class OverwriteStorage(FileSystemStorage):
 # enumeration fields #
 ######################
 
-EMPTY_CHOICE = [("", "----------")]
+#: the bit to add onto a field's choices when an explicit empty choice is required
+EMPTY_CHOICE = [("", "---------")]
+#: the bit to add onto a field's choices when an explicit NONE choice is required
 NULL_CHOICE = [("_NONE", "---NONE---")]
+#: the bit to add onto a field's choices when an explicit OTHER choice is required
 OTHER_CHOICE = [("_OTHER", "---OTHER---")]
+
+# there is a distinction between "enumeration" fields and "multiselect" widgets
+# although the former must use the latter
+# any ModelField which uses a Select FormField can potentially use one the following 2 "multiselect" Widgets
+# this just provides hooks for JQuery code to make it look pretty
+# an "enumeration" field adds the ability to change the "choices" parameter at will
+# as well as handling "NONE" and "OTHER" choices (it is meant for enumeration properties)
+
+
+# TODO: COLLAPSE MultipleSelectWidget AND SingleSelectWidget INTO A SINGLE CLASS
+
+class MultipleSelectWidget(CheckboxSelectMultiple):
+    """
+    the widget to use for enumeration fields that have "multiple" set to True
+    """
+
+    def render(self, name, value, attrs=None, choices=()):
+        """
+        custom render fn that wraps the entire <ul> in a <div> w/ appropriate classes
+        that div can then be manipulated via JQuery in the template
+        :param name:
+        :param value:
+        :param attrs:
+        :param choices:
+        :return: HTML representation of the widget
+        """
+
+        # get rid of widget class attributes before rendering
+        # so that they are not added to every sub-widget,
+        # and I can just add them once to the top-level widget
+        if attrs and "class" in attrs:
+            classes_to_render = attrs.pop("class")
+            self.attrs.pop("class", None)
+        else:
+            classes_to_render = self.attrs.pop("class", [])
+        if classes_to_render:
+            classes_to_render = classes_to_render.split(' ')
+
+        renderer = self.get_renderer(name, value, attrs, choices)
+
+        # rendered_widget = renderer.render()
+        # return rendered_widget
+
+        id_ = renderer.attrs.get("id", None)
+        container = format_html("<div class='{0}'>", " ".join(classes_to_render))
+        header = format_html("<button class='multiselect_header' type='button'><span class='multiselect_header_title'>&nbsp;</span></button>")
+        content = format_html("<div class='multiselect_content ui-widget ui-widget-content ui-corner-all'>")
+        start_tag = format_html("<ul id='{0}'>", id_) if id_ else "<ul>"
+        output = [container, header, content, start_tag]
+        for widget in renderer:
+            output.append(format_html("<li>{0}</li>", force_text(widget)))
+        output.append("</ul></div></div>")  # end start_tag, content, container
+        rendered_widget = mark_safe('\n'.join(output))
+        return rendered_widget
+
+
+class SingleSelectWidget(RadioSelect):
+    """
+    the widget to use for enumeration fields that have "multiple" set to False
+    """
+
+    def render(self, name, value, attrs=None, choices=()):
+        """
+        custom render fn that wraps the entire <ul> in a <div> w/ appropriate classes
+        that div can then be manipulated via JQuery in the template
+        :param name:
+        :param value:
+        :param attrs:
+        :param choices:
+        :return: HTML representation of the widget
+        """
+
+        # get rid of widget class attributes before rendering
+        # so that they are not added to every sub-widget,
+        # and I can just add them once to the top-level widget
+        if attrs and "class" in attrs:
+            classes_to_render = attrs.pop("class")
+            self.attrs.pop("class", None)
+        else:
+            classes_to_render = self.attrs.pop("class", [])
+        if classes_to_render:
+            classes_to_render = classes_to_render.split(' ')
+
+        renderer = self.get_renderer(name, value, attrs, choices)
+
+        # rendered_widget = renderer.render()
+        # return rendered_widget
+
+        id_ = renderer.attrs.get("id", None)
+        container = format_html("<div class='{0}'>", " ".join(classes_to_render))
+        header = format_html("<button class='multiselect_header' type='button'><span class='multiselect_header_title'>&nbsp;</span></button>")
+        content = format_html("<div class='multiselect_content ui-widget ui-widget-content ui-corner-all'>")
+        start_tag = format_html("<ul id='{0}'>", id_) if id_ else "<ul>"
+        output = [container, header, content, start_tag]
+        for widget in renderer:
+            output.append(format_html("<li>{0}</li>", force_text(widget)))
+        output.append("</ul></div></div>")  # end start_tag, content, container
+        rendered_widget = mark_safe('\n'.join(output))
+        return rendered_widget
 
 
 class EnumerationFormField(MultipleChoiceField):
+    """
+    the form field to use for EnumeationFields
+    behaves like a MultipleChoiceField,
+    except that everything is stored as a string in the db
+    """
 
     def set_choices(self, choices, multi=True):
+        """
+        explicitly set the choices of this form field
+        since this is where I set the widget,
+        I also make sure to add "enumeration" to the rendered class
+        :param choices: the options to render
+        :param multi: boolean indicating whether to allow multiple selections or not
+        :return:
+        """
         self._choices = choices
+        class_attrs = {"class": "enumeration"}
         if multi:
-            self.widget = SelectMultiple(choices=choices)
+            self.widget = MultipleSelectWidget(choices=choices, attrs=class_attrs)
         else:
-            self.widget = Select(choices=choices)
+            self.widget = SingleSelectWidget(choices=choices, attrs=class_attrs)
 
     def clean(self, value):
 
@@ -102,7 +232,6 @@ class EnumerationFormField(MultipleChoiceField):
                     raise ValidationError(msg)
             self.run_validators(value)
         elif self.required:
-            # this block is here in-case there is any special processing I need to do b/c of customizers
             raise ValidationError(self.error_messages["required"])
         else:
             value = []
@@ -118,7 +247,7 @@ class EnumerationFormField(MultipleChoiceField):
         :param value:
         :return:
         """
-        if type(self.widget) == SelectMultiple:  # multi
+        if type(self.widget) == MultipleSelectWidget:  # multi
 
             # this code taken from MultipleChoiceField.to_python ("django/forms/fields.py")
             if not value:
@@ -136,23 +265,21 @@ class EnumerationFormField(MultipleChoiceField):
 
 
 class EnumerationField(models.TextField):
+    """
+    a custom model field to use for enumerations
+    allows choices to specified as-needed
+    allows widget to change based on whether it's multiple or not
+    has hooks for JQuery functionality to support logic of using OTHER  or NONE choices
+    """
 
     def formfield(self, **kwargs):
         new_kwargs = {
             "label": self.verbose_name.capitalize(),
             "required": not self.blank,
-            #"choices": self.get_enumeration(),
             "form_class": EnumerationFormField,
         }
         new_kwargs.update(kwargs)
-        return super(EnumerationField,self).formfield(**new_kwargs)
-
-
-#    def get_enumeration(self):
-#        return self.enumeration
-#
-#    def set_enumeration(self,choices):
-#        self.enumeration = [(slugify(choice),choice) for choice in choices]
+        return super(EnumerationField, self).formfield(**new_kwargs)
 
     def get_db_prep_value(self, value, connection, prepared=False):
         if isinstance(value, basestring):
@@ -173,178 +300,6 @@ class EnumerationField(models.TextField):
         field_class_path = self.__class__.__module__ + "." + self.__class__.__name__
         args, kwargs = introspector(self)
         return (field_class_path, args, kwargs)
-
-
-##############
-# BEGIN TEST #
-##############
-
-from django.db.models import TextField
-from django.forms import CheckboxSelectMultiple, RadioSelect
-from django.utils.html import format_html
-from django.utils.encoding import force_text
-from django.utils.safestring import mark_safe
-
-class TestFormFieldMultipleWidget(CheckboxSelectMultiple):
-
-    def render(self, name, value, attrs=None, choices=()):
-
-        # get rid of widget classes before rendering
-        # so that they are not added in every sub-widget
-        # and I can just add them once to the top-level widget
-
-        if attrs and "class" in attrs:
-            classes_to_render = attrs.pop("class", [])
-            self.attrs.pop("class", None)
-        else:
-            classes_to_render = self.attrs.pop("class", [])
-        if classes_to_render:
-            classes_to_render = classes_to_render.split(" ")
-
-        renderer = self.get_renderer(name, value, attrs, choices)
-
-        # rendered_widget = renderer.render()
-        # return rendered_widget
-
-        id_ = renderer.attrs.get("id", None)
-        container = format_html("<div class='{0}'>", " ".join(classes_to_render))
-        header = format_html("<button class='multiselect_header' type='button'><span class='multiselect_header_title'>&nbsp;</span></button>")
-        content = format_html("<div class='multiselect_content ui-widget ui-widget-content ui-corner-all'>")
-        start_tag = format_html("<ul id='{0}'>", id_) if id_ else "<ul>"
-        output = [container, header, content, start_tag]
-        for widget in renderer:
-            output.append(format_html("<li>{0}</li>", force_text(widget)))
-        output.append("</ul></div></div>")  # end start_tag, content, container
-        return mark_safe('\n'.join(output))
-
-
-class TestFormFieldSingleWidget(RadioSelect):
-
-    def render(self, name, value, attrs=None, choices=()):
-
-        # get rid of widget classes before rendering
-        # so that they are not added in every sub-widget
-        # and I can just add them once to the top-level widget
-
-        if attrs and "class" in attrs:
-            classes_to_render = attrs.pop("class", [])
-            self.attrs.pop("class", None)
-        else:
-            classes_to_render = self.attrs.pop("class", [])
-        if classes_to_render:
-            classes_to_render = classes_to_render.split(" ")
-
-        renderer = self.get_renderer(name, value, attrs, choices)
-
-        # rendered_widget = renderer.render()
-        # return rendered_widget
-
-        id_ = renderer.attrs.get("id", None)
-        container = format_html("<div class='{0}'>", " ".join(classes_to_render))
-        header = format_html("<button class='multiselect_header' type='button'><span class='multiselect_header_title'>&nbsp;</span></button>")
-        content = format_html("<div class='multiselect_content ui-widget ui-widget-content ui-corner-all'>")
-        start_tag = format_html("<ul id='{0}'>", id_) if id_ else "<ul>"
-        output = [container, header, content, start_tag]
-        for widget in renderer:
-            output.append(format_html("<li>{0}</li>", force_text(widget)))
-        output.append("</ul></div></div>")  # end start_tag, content, container
-        return mark_safe('\n'.join(output))
-
-
-class TestFormField(MultipleChoiceField):
-
-    def set_choices(self, choices, multi=True):
-        self._choices = choices
-        if multi:
-            self.widget = TestFormFieldMultipleWidget(choices=choices)
-        else:
-            self.widget = TestFormFieldSingleWidget(choices=choices)
-
-    def clean(self, value):
-
-        # if this is _not_ a multi enumeration,
-        # then the value will be a single string rather than a list;
-        # (this is why I am explicitly calling to_python - see note below)
-        value = self.to_python(value)
-
-        # an enumeration can be invalid in 2 ways:
-        # 1) specifying a value other than that provided by choices (choices is set during form initialization)
-        # 2) not specifying a value when field is required
-
-        if any(value):
-            # this block is mostly taken from the super validate() fn
-            for val in value:
-                if not self.valid_value(val):
-                    msg = "Select a valid choice, '%s' is not among the available choices" % val
-                    raise ValidationError(msg)
-            self.run_validators(value)
-        elif self.required:
-            raise ValidationError(self.error_messages["required"])
-        else:
-            value = []
-
-        return value
-
-    def to_python(self, value):
-        """
-        need to override this b/c this form field is based on a MultipleChoiceField
-        which uses the SelectMultiple widget by default (which provides lists on the clean callback)
-        but it uses the Select widget if the customizer/proxy specifies it should not be multiple
-        in this case it provides a string on the clean callback; I need to change that to a list
-        :param value:
-        :return:
-        """
-        if type(self.widget) == TestFormFieldMultipleWidget:  # multi
-
-            # this code taken from MultipleChoiceField.to_python ("django/forms/fields.py")
-            if not value:
-                return []
-            elif not isinstance(value, (list, tuple)):
-                raise ValidationError(self.error_messages['invalid_list'], code='invalid_list')
-            return [smart_text(val) for val in value]
-
-        else:  # not multi
-
-            # this code _not_ taken from ChoiceField.to_python (since I want it to return a list)
-            if value in self.empty_values:
-                return []
-            return [smart_text(value)]
-
-
-class TestField(TextField):
-
-    def formfield(self, **kwargs):
-        new_kwargs = {
-            "label": self.verbose_name.capitalize(),
-            "required": not self.blank,
-            "form_class": TestFormField,
-        }
-        new_kwargs.update(kwargs)
-        return super(TestField, self).formfield(**new_kwargs)
-
-    def get_db_prep_value(self, value, connection, prepared=False):
-        if isinstance(value, basestring):
-            return value
-        elif isinstance(value, list):
-            return "|".join(value)
-
-    def to_python(self, value):
-        if isinstance(value, list):
-            return value
-        else:
-            try:
-                return value.split("|")
-            except:
-                return []
-
-    def south_field_triple(self):
-        field_class_path = self.__class__.__module__ + "." + self.__class__.__name__
-        args, kwargs = introspector(self)
-        return (field_class_path, args, kwargs)
-
-############
-# END TEST #
-############
 
 ######################
 # cardinality fields #
@@ -426,8 +381,15 @@ class CardinalityField(models.CharField):
         args, kwargs = introspector(self)
         return (field_class_path, args, kwargs)
 
+#################
+# cached fields #
+#################
 
 # TODO: ARE THESE CACHED FIELD CLASSES BEING USED?
+
+from django.forms.models import ModelChoiceIterator
+from django.forms import ModelChoiceField
+
 class CachedModelChoiceIterator(ModelChoiceIterator):
 
     def __init__(self, field):

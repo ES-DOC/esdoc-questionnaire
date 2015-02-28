@@ -21,12 +21,10 @@
     $(document).ready(
         function() {
 
-
             var parent = document.body;
 
             // do this first so that the dialogs appear near the top of the page
             init_dialogs(parent);
-
 
             init_widgets(users,$(parent).find("#user"));
             init_widgets(helps,$(parent).find(".help_button"));

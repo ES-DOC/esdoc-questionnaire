@@ -151,54 +151,61 @@ function accordion_headers(element) {
     });
 }
 
-/*
-function nullables(element) {
-    // no longer need this fn;
-    // it's handled by multiselect plugin
-}
-*/
+var enumeration_null_value = "_NONE";
+var enumeration_other_value = "_OTHER";
 
 function enumerations(element) {
-    // this is a single fn for _both_ open & nullable enumerations
 
-    // whenever this widget changes,
-    // 1) check if NONE is selected
-    // and if so, de-select everything else (and hide the other widget)
-    // 2) check if OTHER is selected
-    // and if so, show the "other" widget
+    var header = $(element).find(".multiselect_header");
+    var content = $(element).find(".multiselect_content");
 
+    var other = $(element).siblings("input.other:first");
 
-    $(element).change(function() {
-        var other = $(this).siblings("input.other:first");
-        var widget = $(this).siblings(".ui-multiselect:first").find(".multiselect_content");
+    $(other).focus(function() {
+        /* make enumeration_other selectable by clicking */
+        /* _but_ break out of it if you do other things w/ the mouse */
+        $(this).one("mouseup", function() {
+            $(this).select();
+            return false;
+        }).select();
+    });
 
-        var values = $(this).find("option:selected").map(function() {
+    $(element).on("multiselect_change", function(e) {
+
+        /* whenever this element changes, */
+        /* check if NONE is selected and if so, de-select everything else (and hide the other widget) */
+        /* check if OTHER is selected and if so, show the "other" widget */
+
+        var selected_items = $(content).find("li input:checked");
+        var selected_items_values = $(selected_items).map(function () {
             return $(this).val();
         }).get();
 
-        if (values.indexOf("_NONE") != -1) {
-           $(widget).find("label").each(function(){
-              if ($(this).hasClass("selected")) {
-                  var value = $(this).find("input").val();
-                  if (value != "_NONE") {
-                      $(this).click()
-                  }
-                  $(other).hide()
-              }
-           });
+        if (selected_items_values.indexOf(enumeration_null_value) != -1) {
+
+            $(selected_items).each(function() {
+                if ($(this).val() != enumeration_null_value) {
+                    $(this).prop("checked", false);
+                    $(this).parents("li:first").removeClass("selected");
+                    /* I'll wind up w/ circular events if I simulate clicking */
+                    /* $(this).click(); */
+                }
+            });
+            $(other).hide();
+            multiselect_set_label(element, header, content);
         }
 
-        else if (values.indexOf("_OTHER") != -1) {
+        else if (selected_items_values.indexOf(enumeration_other_value) != -1) {
             $(other).show();
         }
         else {
-            console.log("didin't select other");
+            $(other).hide();
         }
 
     });
 
-    // and do these checks upon initialization too
-    $(element).trigger("change");
+    /* force enumeration code to run on initialization */
+    $(element).trigger("multiselect_change");
 }
 
 function treeviews(element) {
@@ -302,9 +309,9 @@ function show_pane(pane_key) {
                     init_widgets(dates, $(parent).find(".datetime, .date"));
                     init_widgets(expanders, $(parent).find(".default, .character"));
                     init_widgets(autocompletes, $(parent).find(".autocomplete"));
-                    init_widgets(selects, $(parent).find(".multiselect"));
+                    init_widgets(multiselects, $(parent).find(".multiselect"));
                     init_widgets(buttons, $(parent).find("input.button"))
-                    init_widgets(enumerations, $(parent).find(".multiselect.open,.multiselect.nullable"));
+                    init_widgets(enumerations, $(parent).find(".enumeration"));
                     init_widgets(accordions, $(parent).find(".accordion").not(".fake"));
                     init_widgets(dynamic_accordions, $(parent).find(".accordion .accordion_header"));
                     init_widgets(accordion_buttons, $(parent).find(".subform_toolbar button"));
@@ -479,7 +486,7 @@ function add_subform(row) {
                     init_widgets(buttons,$(parent).find("input.button"),true);
                     init_widgets(fieldsets,$(parent).find(".collapsible_fieldset"),true);
                     init_widgets(helps,$(parent).find(".help_button"),true);
-                    init_widgets(selects,$(parent).find(".multiselect"),true);
+                    init_widgets(multiselects,$(parent).find(".multiselect"),true);
                 },
 
                 buttons : [
@@ -527,8 +534,8 @@ function add_subform(row) {
                                                 init_widgets_on_show(dynamic_accordions, $(row).find(".accordion .accordion_header"));
                                                 init_widgets_on_show(accordion_buttons, $(row).find(".subform_toolbar button"));
                                                 init_widgets_on_show(dynamic_accordion_buttons, $(row).find("button.add,button.remove,button.replace"));
-                                                init_widgets_on_show(selects, $(row).find(".multiselect"));
-                                                init_widgets_on_show(enumerations, $(row).find(".multiselect.open,.multiselect.nullable"));
+                                                init_widgets_on_show(multiselects, $(row).find(".multiselect"));
+                                                init_widgets_on_show(enumerations, $(row).find(".enumeration"));
                                                 init_widgets_on_show(autocompletes, $(row).find(".autocomplete"));
                                                 init_widgets_on_show(enablers, $(row).find(".enabler"));
                                             }
@@ -542,8 +549,8 @@ function add_subform(row) {
                                                 init_widgets(dynamic_accordions, $(row).find(".accordion .accordion_header"));
                                                 init_widgets(accordion_buttons, $(row).find(".subform_toolbar button"));
                                                 init_widgets(dynamic_accordion_buttons, $(row).find("button.add,button.remove,button.replace"));
-                                                init_widgets(selects, $(row).find(".multiselect"));
-                                                init_widgets(enumerations, $(row).find(".multiselect.open,.multiselect.nullable"));
+                                                init_widgets(multiselects, $(row).find(".multiselect"));
+                                                init_widgets(enumerations, $(row).find(".enumeration"));
                                                 init_widgets(autocompletes, $(row).find(".autocomplete"));
                                                 init_widgets(enablers, $(row).find(".enabler"));
                                             }
@@ -594,7 +601,7 @@ function add_subform(row) {
                                         // TODO
                                         init_widget(buttons,parent,true);
                                         init_widget(fieldsets,parent,true);
-                                        init_widget(selects,parent,true);
+                                        init_widget(multiselects,parent,true);
                                         init_widget(helps,parent,true);
 
                                     }

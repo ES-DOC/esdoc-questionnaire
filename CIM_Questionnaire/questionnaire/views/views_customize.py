@@ -44,6 +44,7 @@ from CIM_Questionnaire.questionnaire.views.views_error import questionnaire_erro
 from CIM_Questionnaire.questionnaire.views.views_authenticate import questionnaire_join
 from CIM_Questionnaire.questionnaire import get_version
 
+
 def validate_view_arguments(project_name="", model_name="", version_key=""):
     """Ensures that the arguments passed to a customize view are valid (ie: resolve to active projects, models, versions)"""
 
@@ -166,19 +167,19 @@ def questionnaire_customize_new(request, project_name="", model_name="", version
 
     if request.method == "GET":
 
-        (model_customizer_form, standard_property_customizer_formset, scientific_property_customizer_formsets) = \
+        (model_customizer_form, standard_property_customizer_formset, scientific_property_customizer_formsets, model_customizer_vocabularies_formset) = \
             create_new_customizer_forms_from_models(model_customizer, standard_category_customizers, standard_property_customizers, scientific_category_customizers, scientific_property_customizers, vocabularies_to_customize=vocabularies)
 
-    else: # request.method == "POST"
+    else:  # request.method == "POST"
 
         data = request.POST
 
-        (validity, model_customizer_form, standard_property_customizer_formset, scientific_property_customizer_formsets) = \
+        (validity, model_customizer_form, standard_property_customizer_formset, scientific_property_customizer_formsets, model_customizer_vocabularies_formset) = \
             create_customizer_forms_from_data(data,model_customizer,standard_category_customizers,standard_property_customizers,scientific_category_customizers,scientific_property_customizers,vocabularies_to_customize=vocabularies)
 
         if all(validity):
 
-            model_customizer_instance = save_valid_forms(model_customizer_form,standard_property_customizer_formset,scientific_property_customizer_formsets)
+            model_customizer_instance = save_valid_forms(model_customizer_form,standard_property_customizer_formset,scientific_property_customizer_formsets, model_customizer_vocabularies_formset)
             request.session["model_id"] = model_customizer_instance.pk
 
             # using Django's built-in messaging framework to pass status messages (as per https://docs.djangoproject.com/en/dev/ref/contrib/messages/)
@@ -201,6 +202,7 @@ def questionnaire_customize_new(request, project_name="", model_name="", version
         "vocabularies"                            : vocabularies,
         "model_proxy"                             : model_proxy,
         "model_customizer_form"                   : model_customizer_form,
+        "model_customizer_vocabularies_formset": model_customizer_vocabularies_formset,
         "standard_property_customizer_formset"    : standard_property_customizer_formset,
         "scientific_property_customizer_formsets" : scientific_property_customizer_formsets,
         "questionnaire_version"                   : get_version(),
@@ -218,9 +220,6 @@ def questionnaire_customize_existing(request, project_name="", model_name="", ve
         return questionnaire_error(request,msg)
     request.session["checked_arguments"] = True
 
-    # get the relevant vocabularies...
-    vocabularies = project.vocabularies.filter(document_type__iexact=model_name)
-
     # check authentication...
     # (not using "@login_required" b/c some projects ignore authentication)
     if project.authenticated:
@@ -233,6 +232,8 @@ def questionnaire_customize_existing(request, project_name="", model_name="", ve
     # try to get the customizer set...
     try:
         model_customizer = MetadataModelCustomizer.objects.get(name__iexact=customizer_name,proxy=model_proxy,project=project,version=version)
+        vocabularies = model_customizer.get_sorted_vocabularies()
+
         (model_customizer,standard_category_customizers,standard_property_customizers,scientific_category_customizers,scientific_property_customizers) = \
             MetadataCustomizer.get_existing_customizer_set(model_customizer,vocabularies)
     except MetadataModelCustomizer.DoesNotExist:
@@ -243,22 +244,22 @@ def questionnaire_customize_existing(request, project_name="", model_name="", ve
 
     if request.method == "GET":
 
-        (model_customizer_form,standard_property_customizer_formset,scientific_property_customizer_formsets) = \
+        (model_customizer_form,standard_property_customizer_formset,scientific_property_customizer_formsets, model_customizer_vocabularies_formset) = \
             create_existing_customizer_forms_from_models(model_customizer,standard_category_customizers,standard_property_customizers,scientific_category_customizers,scientific_property_customizers,vocabularies_to_customize=vocabularies)
 
-    else: # request.method == "POST":
+    else:  # request.method == "POST":
 
         data = request.POST
 
-        (validity, model_customizer_form, standard_property_customizer_formset, scientific_property_customizer_formsets) = \
+        (validity, model_customizer_form, standard_property_customizer_formset, scientific_property_customizer_formsets, model_customizer_vocabularies_formset) = \
             create_customizer_forms_from_data(data,model_customizer,standard_category_customizers,standard_property_customizers,scientific_category_customizers,scientific_property_customizers,vocabularies_to_customize=vocabularies)
 
         if all(validity):
 
-            model_customizer_instance = save_valid_forms(model_customizer_form,standard_property_customizer_formset,scientific_property_customizer_formsets)
-            subsequent_model_customizer_name = model_customizer_instance.name
-            if initial_model_customizer_name != subsequent_model_customizer_name:
-                model_customizer_instance.rename(subsequent_model_customizer_name)
+            model_customizer_instance = save_valid_forms(model_customizer_form,standard_property_customizer_formset,scientific_property_customizer_formsets, model_customizer_vocabularies_formset)
+            current_model_customizer_name = model_customizer_instance.name
+            if initial_model_customizer_name != current_model_customizer_name:
+                model_customizer_instance.rename(current_model_customizer_name)
 
             # if there are existing instances which will use this customization, I need to check to see if they require new bits
             if model_customizer_instance.default:
@@ -280,20 +281,21 @@ def questionnaire_customize_existing(request, project_name="", model_name="", ve
             messages.add_message(request, messages.ERROR, "Failed to save customization.")
 
     # gather all the extra information required by the template
-    dict = {
-        "site"                                    : get_current_site(request),
-        "project"                                 : project,
-        "version"                                 : version,
-        "vocabularies"                            : project.vocabularies.filter(document_type__iexact=model_name),
-        "model_proxy"                             : model_proxy,
-        "model_customizer_form"                   : model_customizer_form,
-        "standard_property_customizer_formset"    : standard_property_customizer_formset,
-        "scientific_property_customizer_formsets" : scientific_property_customizer_formsets,
-        "questionnaire_version"                   : get_version(),
-        "can_view"                                : model_customizer.default,  # only customizers that have been saved and are default can be viewed
+    _dict = {
+        "site": get_current_site(request),
+        "project": project,
+        "version": version,
+        "vocabularies": vocabularies,
+        "model_proxy": model_proxy,
+        "model_customizer_form": model_customizer_form,
+        "model_customizer_vocabularies_formset": model_customizer_vocabularies_formset,
+        "standard_property_customizer_formset": standard_property_customizer_formset,
+        "scientific_property_customizer_formsets": scientific_property_customizer_formsets,
+        "questionnaire_version": get_version(),
+        "can_view": model_customizer.default,  # only customizers that have been saved and are default can be viewed
     }
 
-    return render_to_response('questionnaire/questionnaire_customize.html', dict, context_instance=RequestContext(request))
+    return render_to_response('questionnaire/questionnaire_customize.html', _dict, context_instance=RequestContext(request))
 
 
 def questionnaire_customize_help(request):

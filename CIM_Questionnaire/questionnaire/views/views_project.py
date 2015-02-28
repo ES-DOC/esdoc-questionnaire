@@ -67,9 +67,10 @@ def questionnaire_project_index(request, project_name=""):
         return questionnaire_error(request, msg)
 
     # work out user roles...
+    project_authenticated = project.authenticated
     current_user = request.user
-    can_customize = is_admin_of(current_user, project) or not project.authenticated
-    can_edit = is_user_of(current_user, project) or not project.authenticated
+    can_customize = is_admin_of(current_user, project) or not project_authenticated
+    can_edit = is_user_of(current_user, project) or not project_authenticated
     can_view = True
     can_join = not is_member_of(current_user, project) and current_user.is_authenticated()
 

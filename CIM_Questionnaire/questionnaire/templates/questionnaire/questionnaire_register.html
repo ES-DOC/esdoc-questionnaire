@@ -17,14 +17,10 @@
             // do this next, so it can happen while other widgets are loading
             render_msg($("#msg"));
 
-            init_widgets(fieldsets,$(parent).find(".collapsible_fieldset"))
+            init_widgets(fieldsets,$(parent).find(".collapsible_fieldset"));
             init_widgets(helps,$(parent).find(".help_button"));
-            init_widgets(readonlies,$(parent).find(".readonly"));
-            init_widgets(selects,$(parent).find(".multiselect"));
-            init_widgets(enablers,$(parent).find(".enabler"))
-
-            init_widgets(users,$(parent).find("#user"));
-            init_widgets(buttons,$(parent).find("input.button"))
+            init_widgets(enablers,$(parent).find(".enabler"));
+            init_widgets(buttons,$(parent).find("input.button"));
 
             // do this last b/c some of the xpath depends on changes made by the above fns...
             init_errors(parent);
@@ -37,14 +33,7 @@
 
 {% block style %}
     <style type="text/css">
-/*
-        #questionnaire tr.field td:first-child  { font-weight: bold; }
-        #questionnaire .form_container          { overflow: auto;  width: 1600px; }
-        #questionnaire fieldset                 { float: left; margin: 8px; }
-        #questionnaire table.project_details    { border: 0px #ffffff; padding: 2px; }
-        #questionnaire table.project_details tr { vertical-align: top; }
-        #questionnaire table.project_details tr td:first-child { font-weight: bold; width: 12em; }
-*/
+        /* no style here */
     </style>
 {% endblock %} {# / style #}
 

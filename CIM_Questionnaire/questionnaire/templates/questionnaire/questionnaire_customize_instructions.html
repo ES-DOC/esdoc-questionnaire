@@ -22,7 +22,7 @@
 
             init_widgets(users,$(parent).find("#user"));
             init_widgets(buttons,$(parent).find("input.button"))
-            init_widgets(selects,$(parent).find(".multiselect"));
+            init_widgets(multiselects,$(parent).find(".multiselect"));
 
             // do this last b/c some of the xpath depends on changes made by the above fns...
             init_errors(parent);

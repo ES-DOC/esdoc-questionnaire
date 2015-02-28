@@ -73,13 +73,15 @@ def questionnaire_edit_new(request, project_name="", model_name="", version_key=
         if not (request.user.is_superuser or request.user.metadata_user.is_user_of(project)):
             return questionnaire_join(request, project, ["default", "user", ])
 
-    # get the vocabularies...
-    # getting them in the right order is a 2-step process
-    # b/c vocabularies do not have an "order" attribute (since they can be used by multiple projects/customizations),
-    # but the model_customizer does record the desired order of active vocabularies (as a comma-separated list)
-    vocabularies = model_customizer.vocabularies.all().prefetch_related("component_proxies")
-    vocabulary_order = [int(order) for order in filter(None, model_customizer.vocabulary_order.split(','))]
-    vocabularies = sorted(vocabularies, key=lambda vocabulary: vocabulary_order.index(vocabulary.pk))
+    # # get the vocabularies...
+    # # getting them in the right order is a 2-step process
+    # # b/c vocabularies do not have an "order" attribute (since they can be used by multiple projects/customizations),
+    # # but the model_customizer does record the desired order of active vocabularies (as a comma-separated list)
+    # vocabularies = model_customizer.vocabularies.all().prefetch_related("component_proxies")
+    # vocabulary_order = [int(order) for order in filter(None, model_customizer.vocabulary_order.split(','))]
+    # vocabularies = sorted(vocabularies, key=lambda vocabulary: vocabulary_order.index(vocabulary.pk))
+
+    vocabularies = model_customizer.get_active_sorted_vocabularies()
 
     # get (or set) items from the cache...
     session_id = request.session.session_key
@@ -172,12 +174,13 @@ def questionnaire_edit_existing(request, project_name="", model_name="", version
         if not (request.user.is_superuser or request.user.metadata_user.is_user_of(project)):
             return questionnaire_join(request, project, ["default", "user", ])
 
-    # getting the vocabularies into the right order is a 2-step process
-    # b/c vocabularies do not have an "order" attribute (since they can be used by multiple projects/customizations),
-    # but the model_customizer does record the desired order of active vocabularies (as a comma-separated list)
-    vocabularies = model_customizer.vocabularies.all().prefetch_related("component_proxies")
-    vocabulary_order = [int(order) for order in filter(None, model_customizer.vocabulary_order.split(','))]
-    vocabularies = sorted(vocabularies, key=lambda vocabulary: vocabulary_order.index(vocabulary.pk))
+    # # getting the vocabularies into the right order is a 2-step process
+    # # b/c vocabularies do not have an "order" attribute (since they can be used by multiple projects/customizations),
+    # # but the model_customizer does record the desired order of active vocabularies (as a comma-separated list)
+    # vocabularies = model_customizer.vocabularies.all().prefetch_related("component_proxies")
+    # vocabulary_order = [int(order) for order in filter(None, model_customizer.vocabulary_order.split(','))]
+    # vocabularies = sorted(vocabularies, key=lambda vocabulary: vocabulary_order.index(vocabulary.pk))
+    vocabularies = model_customizer.get_active_sorted_vocabularies()
 
     # get (or set) items from the cache...
     session_id = request.session.session_key

@@ -64,7 +64,7 @@ class MetadataCustomizer(models.Model):
             version=version,
             proxy=model_proxy,
             # vocabularies=vocabularies,
-            vocabulary_order=",".join(map(str, [vocabulary.pk for vocabulary in vocabularies])),
+            # vocabulary_order=",".join(map(str, [vocabulary.pk for vocabulary in vocabularies])),
         )
         model_customizer.reset()
 
@@ -294,6 +294,19 @@ class MetadataModelCustomizer(MetadataCustomizer):
 
     project = models.ForeignKey("MetadataProject", blank=True, null=True, related_name="model_customizers")
     version = models.ForeignKey("MetadataVersion", blank=True, null=True, related_name="model_customizers")
+
+    # TODO: ONCE I HAVE THIS THROUGH MODEL WORKING, I CAN GET RID OF THE "vocabularies" & "vocabulary_order" FIELDS
+    sorted_vocabularies = models.ManyToManyField("MetadataVocabulary",
+                                                 blank=True,
+                                                 null=True,
+                                                 through="MetadataModelCustomizerVocabulary",
+                                                 related_name="model_customizer",
+                                                 verbose_name="Vocabularies to include",
+                                                 )
+    sorted_vocabularies.help_text = "These are the CVs (which contain scientific properties) that are associated with this project and document type.  " \
+                                    + "Please use the checkbox to enable or disable all of the related scientific properties.  " \
+                                    + "You can also drag-and-drop vocabularies to change the order in which they appear in the Editor."
+
     vocabularies = models.ManyToManyField("MetadataVocabulary", blank=True, null=True)  # cannot set 'limit_choices_to' - instead setting 'queryset' on form
     vocabularies.help_text = "Choose which Controlled Vocabularies (in which order) apply to this model."
     vocabulary_order = models.CommaSeparatedIntegerField(max_length=BIG_STRING, blank=True, null=True)
@@ -378,6 +391,14 @@ class MetadataModelCustomizer(MetadataCustomizer):
             subform_customizer = standard_property_customizer.subform_customizer
             if subform_customizer:
                 subform_customizer.rename(new_name)
+
+    def get_sorted_vocabularies(self):
+        # using related_name in the order_by fn as per http://stackoverflow.com/questions/3893955/django-manytomanyfield-ordering-using-through
+        # (this means follow the reverse relationship from vocabulary back to MetadataModelCustomizerVocabulary, and use that ordering)
+        return self.sorted_vocabularies.all().order_by("link_to_vocabulary")
+
+    def get_active_sorted_vocabularies(self):
+        return self.sorted_vocabularies.filter(link_to_vocabulary__active=True).order_by("link_to_vocabulary")
 
     def get_active_standard_categories(self):
         if self.model_show_all_categories:
@@ -672,7 +693,6 @@ class MetadataStandardPropertyCustomizer(MetadataPropertyCustomizer):
         
         # enumeration fields...
         if self.field_type == MetadataFieldTypes.ENUMERATION:
-            # this has been moved to the __init__ fn above
             #   enumeration_choices_field = self.get_field("enumeration_choices")
             #   enumeration_choices_field.set_choices(proxy.enumeration_choices.split("|"))
             self.enumeration_choices = proxy.enumeration_choices
@@ -688,7 +708,7 @@ class MetadataStandardPropertyCustomizer(MetadataPropertyCustomizer):
                 self.category.reset()
 
     def enumerate_choices(self):
-        return [(choice,choice) for choice in self.enumeration_choices.split("|")]
+        return [(choice, choice) for choice in self.enumeration_choices.split("|")]
 
     def render_as_formset(self):
         assert(self.field_type == MetadataFieldTypes.RELATIONSHIP)
@@ -818,3 +838,66 @@ class MetadataScientificPropertyCustomizer(MetadataPropertyCustomizer):
 
     def enumerate_choices(self):
         return [(choice, choice) for choice in self.enumeration_choices.split("|")]
+
+
+###############################################
+# Model used for "through" relationship above #
+###############################################
+
+class MetadataModelCustomizerVocabulary(models.Model):
+    class Meta:
+        app_label = APP_LABEL
+        abstract = False
+        unique_together = ("model_customizer", "vocabulary", )
+        ordering = ["order", ]
+
+        # TODO: DELETE THESE NEXT TWO LINES
+        verbose_name = 'Metadata Model Customizer Vocabulary (through model)'
+        verbose_name_plural = 'Metadata Model Customizer Vocabularies (through models)'
+
+    model_customizer = models.ForeignKey("MetadataModelCustomizer", related_name="link_to_model_customizer")
+    vocabulary = models.ForeignKey("MetadataVocabulary", related_name="link_to_vocabulary")
+
+    vocabulary_key = models.CharField(max_length=LIL_STRING, blank=False, null=True)
+
+    order = models.PositiveIntegerField(blank=False, default=0)
+    active = models.BooleanField(default=False)
+
+    def __unicode__(self):
+        return u"%s :: %s" % (self.model_customizer, self.vocabulary)
+
+    def update_order(self):
+        """
+        run when a MetadataModelCustomizerVocabulary is added/removed;
+        this can happen when a MetadataVocabulary is added/removed from a MetadataProject;
+        re-orders the model_customizer_vocabularies as needed
+        :return:
+        """
+        model_customizer = self.model_customizer
+        for i, vocabulary in enumerate(model_customizer.sorted_vocabularies.all()):
+            model_customizer_vocabulary = MetadataModelCustomizerVocabulary.objects.get(
+                model_customizer=model_customizer,
+                vocabulary=vocabulary,
+            )
+            if model_customizer_vocabulary.order != i:
+                model_customizer_vocabulary.order = i
+                model_customizer_vocabulary.save()
+
+
+from django.dispatch import receiver
+from django.db.models.signals import post_save, post_delete
+
+
+@receiver(post_save, sender=MetadataModelCustomizerVocabulary)
+def project_post_save(sender, **kwargs):
+    created = kwargs.pop("created", True)
+    model_customizer_vocabulary = kwargs.pop("instance", None)
+    if model_customizer_vocabulary and created:
+        model_customizer_vocabulary.update_order()
+
+
+@receiver(post_delete, sender=MetadataModelCustomizerVocabulary)
+def project_post_delete(sender, **kwargs):
+    model_customizer_vocabulary = kwargs.pop("instance", None)
+    if model_customizer_vocabulary:
+        model_customizer_vocabulary.update_order()

@@ -27,7 +27,7 @@ from django.contrib.auth.forms  import PasswordChangeForm, AdminPasswordChangeFo
 # from django.utils.html          import mark_safe
 
 from CIM_Questionnaire.questionnaire.models.metadata_authentication import MetadataUser, MetadataOpenIDProvider
-from CIM_Questionnaire.questionnaire.utils import update_field_widget_attributes, validate_password, validate_no_bad_chars
+from CIM_Questionnaire.questionnaire.utils import validate_password, validate_no_bad_chars
 
 class LocalAuthenticationForm(AuthenticationForm):
 
@@ -118,4 +118,3 @@ class MetadataRegistrationForm(UserCreationForm):
         super(MetadataRegistrationForm,self).__init__(*args,**kwargs)
         self.fields["password1"].validators = [validate_password,]
         self.fields["password1"].help_text = "Passwords must have a minimum length of 6 and a mixture of letters and non-letters."
-        
