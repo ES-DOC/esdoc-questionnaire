@@ -19,14 +19,13 @@ Summary of module goes here
 
 """
 
-import re
 from django import template
 
 from django.contrib.sites.models import Site
 from django.contrib.auth.models  import User
 
 from CIM_Questionnaire.questionnaire.models.metadata_site import get_metadata_site_type
-from CIM_Questionnaire.questionnaire.utils import DEFAULT_VOCABULARY_KEY, DEFAULT_COMPONENT_KEY
+from CIM_Questionnaire.questionnaire.utils import DEFAULT_VOCABULARY_KEY, DEFAULT_COMPONENT_KEY, pretty_string as pretty_string_fn
 
 register = template.Library()
 
@@ -52,18 +51,10 @@ def a_or_an(string):
         return "a"
 
 
-pretty_title_re_1 = re.compile('(.)([A-Z][a-z]+)')
-pretty_title_re_2 = re.compile('([a-z0-9])([A-Z])')
 @register.filter
-def pretty_title(string):
-    """
+def pretty_string(string):
+    return pretty_string_fn(string)
 
-    :param string:
-    :return:
-    """
-    s1 = pretty_title_re_1.sub(r'\1 \2', string)
-    s2 = pretty_title_re_2.sub(r'\1 \2', s1)
-    return s2.title()
 
 @register.filter
 def get_length_of_values(dict):
