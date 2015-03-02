@@ -73,6 +73,7 @@
     <style type="text/css">
 
         .table_header * { font-weight: bold; text-decoration: underline; }
+        .documentation table { width: 24em; }
         .documentation table tr { vertical-align: top; padding: 4px; }
         .documentation table tr td:first-child { font-weight: bold; text-align: left; width: 12em; }
         .button.smaller { font-size: smaller !important; margin: 2px; }
@@ -101,7 +102,7 @@
             This is the Project Page for the {% if project.url %}<a href="{{project.url}}" title="{{project.url}}">{% endif %}{{project.title|title}}{% if project.url %}</a>{% endif %} project.
         </p>
 
-        <table border="0">
+        <table>
             {% if project.description %}
                 <tr>
                     <td>Project Description:</td>
