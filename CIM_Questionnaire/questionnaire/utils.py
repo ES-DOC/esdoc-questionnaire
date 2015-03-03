@@ -476,6 +476,21 @@ def remove_null_data(data):
 def remove_spaces_and_linebreaks(str):
     return ' '.join(str.split())
 
+
+def pretty_string(string):
+    """
+    break camelCase string into words
+    :param string:
+    :return:
+    """
+
+    pretty_string_re_1 = re.compile('(.)([A-Z][a-z]+)')
+    pretty_string_re_2 = re.compile('([a-z0-9])([A-Z])')
+
+    s1 = pretty_string_re_1.sub(r'\1 \2', string)
+    s2 = pretty_string_re_2.sub(r'\1 \2', s1)
+    return s2.title()
+
 ####################
 # url manipulation #
 ####################
@@ -631,6 +646,21 @@ def find_in_sequence(fn, sequence):
         if fn(item) == True:
             return item
     return None
+
+
+def find_dict_in_sequence(dct, sequence):
+
+    # like above, but rather than passing a fn
+    # passes a dictionary of attribute values to test
+
+    def _is_dict_in_item(item):
+        for k, v in dct.iteritems():
+            if not hasattr(item, k) or getattr(item, k) != v:
+                return False
+        return True
+
+    return find_in_sequence(lambda item: _is_dict_in_item(item), sequence)
+
 
 
 ########################

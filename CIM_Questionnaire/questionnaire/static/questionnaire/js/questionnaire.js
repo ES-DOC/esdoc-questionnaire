@@ -93,6 +93,8 @@ function init_widgets(init_fn, elements, force_init) {
 
 }
 
+/* functions for specific widgets to customize */
+
 function users(element) {
     $(element).find("a.button").button({});
 }
@@ -104,6 +106,12 @@ function readonlies(element) {
    });
 }
 
+
+function changers(element) {
+    /* force the onchange event for this widget */
+    /* (required b/c most widgets have no onload event */
+    $(element).change();
+}
 
 function expanders(element) {
     /* make a TextInput widget expand (up to some maximum) to fit the value */
@@ -217,13 +225,8 @@ function tabs(element) {
 }
 
 
-function selects(element) {
-    $(element).multiselect({
-       autoOpen  : false,
-       multiple  : ($(element).is("[multiple]")) ? true : false,
-       sortable  : false,
-       numToShow : 1
-    });
+function multiselects(element) {
+    create_multiselect(element);  /* TODO: REWRITE FN TO TAKE ARGUMENTS? */
 }
 
 function accordions(element) {

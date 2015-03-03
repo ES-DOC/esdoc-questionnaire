@@ -38,7 +38,7 @@ class MetadataForm(ModelForm):
 
         super(MetadataForm, self).__init__(*args, **kwargs)
 
-        ## TODO: remove during form refactoring. this is a hack to avoid "None" strings of uncertain origin.
+        # TODO: remove during form refactoring. this is a hack to avoid "None" strings of uncertain origin.
         if self.data != {}:
             for k, v in self.data.iteritems():
                 for f in self._fields_none_string_overload:

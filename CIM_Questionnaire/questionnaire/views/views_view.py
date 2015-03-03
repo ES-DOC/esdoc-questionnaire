@@ -1,23 +1,20 @@
-
 ####################
-#   CIM_Questionnaire
-#   Copyright (c) 2013 CoG. All rights reserved.
+#   ES-DOC CIM Questionnaire
+#   Copyright (c) 2014 ES-DOC. All rights reserved.
 #
-#   Developed by: Earth System CoG
 #   University of Colorado, Boulder
 #   http://cires.colorado.edu/
 #
 #   This project is distributed according to the terms of the MIT license [http://www.opensource.org/licenses/MIT].
 ####################
 
-__author__="allyn.treshansky"
-__date__ ="Sep 30, 2013 3:04:42 PM"
+__author__ = "allyn.treshansky"
+__date__ = "Dec 01, 2014 3:00:00 PM"
 
 """
 .. module:: views_view
 
-Summary of module goes here
-
+views for viewing an existing CIM Document
 """
 
 from django.contrib.sites.models import get_current_site
@@ -76,9 +73,7 @@ def questionnaire_view_existing(request, project_name="", model_name="", version
         return questionnaire_error(request, msg)
     request.session["checked_arguments"] = True
 
-    # don't bother checking authentication; all users can view instances
-
-    # try to get the requested model...
+    # try to get the requested model(s)...
     try:
         model = MetadataModel.objects.get(pk=model_id, project=project, version=version, proxy=model_proxy)
     except MetadataModel.DoesNotExist:
@@ -88,13 +83,15 @@ def questionnaire_view_existing(request, project_name="", model_name="", version
         # TODO: DEAL W/ THIS USE-CASE
         msg = "Currently only root models can be viewed.  Please try again."
         return questionnaire_error(request, msg)
+    # don't bother checking authentication; all users can view instances
 
-    # getting the vocabularies into the right order is a 2-step process
-    # b/c vocabularies do not have an "order" attribute (since they can be used by multiple projects/customizations),
-    # but the model_customizer does record the desired order of active vocabularies (as a comma-separated list)
-    vocabularies = model_customizer.vocabularies.all()
-    vocabulary_order = [int(order) for order in filter(None,model_customizer.vocabulary_order.split(','))]
-    vocabularies = sorted(vocabularies, key=lambda vocabulary: vocabulary_order.index(vocabulary.pk))
+    # # getting the vocabularies into the right order is a 2-step process
+    # # b/c vocabularies do not have an "order" attribute (since they can be used by multiple projects/customizations),
+    # # but the model_customizer does record the desired order of active vocabularies (as a comma-separated list)
+    # vocabularies = model_customizer.vocabularies.all()
+    # vocabulary_order = [int(order) for order in filter(None,model_customizer.vocabulary_order.split(','))]
+    # vocabularies = sorted(vocabularies, key=lambda vocabulary: vocabulary_order.index(vocabulary.pk))
+    vocabularies = model_customizer.get_active_sorted_vocabularies()
 
     # get (or set) items from the cache...
     session_id = request.session.session_key

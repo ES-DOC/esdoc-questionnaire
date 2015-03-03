@@ -25,7 +25,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.contrib.auth.models import Group, Permission
 
 from CIM_Questionnaire.questionnaire import APP_LABEL
-from CIM_Questionnaire.questionnaire.models.metadata_customizer import MetadataCustomizer, MetadataModelCustomizer
+from CIM_Questionnaire.questionnaire.models.metadata_customizer import MetadataCustomizer, MetadataModelCustomizer, MetadataModelCustomizerVocabulary
 from CIM_Questionnaire.questionnaire.utils import validate_no_spaces, validate_no_reserved_words, QuestionnaireError
 
 # THIS IS THE SET OF GROUPS & CORRESPONDING PERMISSIONS THAT EVERY PROJECT HAS:
@@ -137,7 +137,7 @@ def project_post_delete(sender, **kwargs):
 
 
 # NOTE THAT SETTING UP THIS CLASS REQUIRED ME TO OVERWRITE SOME OF THE MIGRATION CODE
-# (see questionnaire/migrations/0028...)
+# (see questionnaire/migrations/0026...)
 class MetadataProjectVocabulary(models.Model):
     class Meta:
         app_label = APP_LABEL
@@ -145,7 +145,7 @@ class MetadataProjectVocabulary(models.Model):
         unique_together = ("project", "vocabulary")
 
     project = models.ForeignKey("MetadataProject")
-    vocabulary = models.ForeignKey("MetadataVocabulary", related_name="")  # TODO: DOUBLE-CHECK THIS
+    vocabulary = models.ForeignKey("MetadataVocabulary", related_name="")
 
     # TODO: IS THERE ANY WAY TO TRIGGER AN UPDATE OF CUSTOMIZERS & REALIZATIONS
     # TODO: ONLY WHEN _ALL_ MetadataProjectVocabularies HAVE BEEN SAVED/DELETED?
@@ -157,6 +157,17 @@ class MetadataProjectVocabulary(models.Model):
         for customizer_to_update in customizers_to_update:
             vocabularies = list(customizer_to_update.vocabularies.all())
             vocabularies.append(new_vocabulary)
+
+            # doing the same thing for "sorted_vocabularies"
+            # (which will eventually replace "vocabularies")
+            # rather than "add" to the m2m field, I have to create the "through" model
+            MetadataModelCustomizerVocabulary.objects.get_or_create(
+                model_customizer=customizer_to_update,
+                vocabulary=new_vocabulary,
+                vocabulary_key=new_vocabulary.get_key()
+            )
+            # handling the ordering of the new model_customizer_vocabulary is handled in MetadataModelCustomizerVocabulary.save()
+
             MetadataCustomizer.update_existing_customizer_set(customizer_to_update, vocabularies)
         # TODO: DO THE SAME THING FOR REALIZATIONS?
 
@@ -171,6 +182,20 @@ class MetadataProjectVocabulary(models.Model):
                 MetadataCustomizer.update_existing_customizer_set(customizer_to_update, vocabularies)
             except ValueError:
                 # old_vocabulary wasn't active in the customizer so no need to update it
+                pass
+
+            # doing the same thing for "sorted_vocabularies"
+            # (which will eventually replace "vocabularies")
+            # rather than "remove" from the m2m field, I have to delete the "through" model
+            try:
+                model_customizer_vocabulary = MetadataModelCustomizerVocabulary.objects.get(
+                    model_customizer=customizer_to_update,
+                    vocabulary=old_vocabulary,
+                    vocabulary_key=old_vocabulary.get_key(),
+                )
+                model_customizer_vocabulary.delete()
+                # updating the order of the remaining model_customizer_vocabularies is handled in  MetadataModelCustomizerVocabulary.delete()
+            except MetadataModelCustomizerVocabulary.DoesNotExist:
                 pass
 
         # TODO: DO THE SAME THING FOR REALIZATIONS?

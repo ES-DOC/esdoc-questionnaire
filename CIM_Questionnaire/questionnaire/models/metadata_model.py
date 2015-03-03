@@ -93,7 +93,7 @@ class MetadataModel(MPTTModel):
     last_modified   = models.DateTimeField(blank=True,null=True,editable=False)
 
     guid = models.CharField(blank=True, null=True, max_length=LIL_STRING, unique=True, editable=False)
-    document_version = models.CharField(blank=False, max_length=LIL_STRING, editable=False, default="0.0")
+    document_version = models.CharField(blank=False, max_length=LIL_STRING, editable=True, default="0.0")
 
     proxy           = models.ForeignKey("MetadataModelProxy", blank=False, null=True, related_name="models")
     project         = models.ForeignKey("MetadataProject", blank=True, null=True, related_name="models")
@@ -128,7 +128,7 @@ class MetadataModel(MPTTModel):
 
     def get_model_key(self):
         return u"%s_%s" % (self.vocabulary_key, self.component_key)
-    
+
     def reset(self):
         # this resets values according to the proxy
         # to reset values according to the customizer, you must go through the corresponding form
@@ -157,7 +157,9 @@ class MetadataModel(MPTTModel):
 
     def update(self, model_customization):
         """
-        looks through the customization and checks if any properties are set to display that do not already exist in this instance
+        looks through the customization and checks if any standard or scientific properties
+        which should be displayed are missing,
+        or which shouldn't be displayed are still there (?)
         :param model_customization:
         :return:
         """
@@ -165,28 +167,62 @@ class MetadataModel(MPTTModel):
         standard_property_customizations = model_customization.standard_property_customizers.all()
         for standard_property_customization in standard_property_customizations:
             standard_property_proxy = standard_property_customization.proxy
-            standard_property = find_in_sequence(lambda sp: sp.proxy == standard_property_proxy, standard_properties)
-            if standard_property:
+            standard_property = find_in_sequence(lambda sp: standard_property_proxy == sp.proxy, standard_properties)
+
+            if standard_property_customization.displayed:
+
+                # if there is no standard property, create it...
+                if not standard_property:
+                    new_standard_property = MetadataStandardProperty(
+                        proxy=standard_property_proxy,
+                        model=self,
+                    )
+                    new_standard_property.reset()
+                    new_standard_property.save()
+                    standard_property = new_standard_property
+
                 if standard_property.field_type == "RELATIONSHIP":
+                    # recurse through subforms...
                     for submodel in standard_property.relationship_value.all():
                         submodel_customizer = standard_property_customization.subform_customizer
                         if submodel_customizer:
                             submodel.update(submodel_customizer)
 
-            if standard_property_customization.displayed and not standard_property:
-                # if it should be displayed and is missing...
-                new_standard_property = MetadataStandardProperty(
-                    proxy=standard_property_proxy,
-                    model=self,
-                )
-                new_standard_property.reset()
-                new_standard_property.save()
+            else:  # not standard_property_customization.displayed
 
-            elif not standard_property_customization.displayed and standard_property:
-                # if it should not be displayed but exists...
-                standard_property.delete()
+                # if there is a standard property, delete it...
+                if standard_property:
+                    # TODO: RE-VISIT THIS LOGIC; EVENTUALLY, I DON'T WANT TO DELETE PROPERTIES
+                    standard_property.delete()
 
-        # TODO: DOES THIS WORK FOR ALL TYPES OF STANDARD_PROPERTIES?
+        # do the same basic thing, but w/ scientific properties
+        # TODO: THIS SEEMS LIKE PRETTY INEFFICIENT CODE, ANY WAY TO SPEED THIS UP
+        scientific_properties = self.scientific_properties.all()
+        scientific_property_customizations = model_customization.scientific_property_customizers.filter(
+            vocabulary_key=self.vocabulary_key,
+            component_key=self.component_key,
+        )
+        for scientific_property_customization in scientific_property_customizations:
+            scientific_property_proxy = scientific_property_customization.proxy
+            scientific_property = find_in_sequence(lambda sp: sp.proxy == scientific_property_proxy, scientific_properties)
+
+            if scientific_property_customization.displayed:
+
+                # if there is no scientific property, create it...
+                if not scientific_property:
+                    new_scientific_property = MetadataScientificProperty(
+                        proxy=scientific_property_proxy,
+                        model=self,
+                    )
+                    new_scientific_property.reset()
+                    new_scientific_property.save()
+
+            else:  # not scientific_property_customization.displayed
+
+                # if there is a scientific property, delete it...
+                if scientific_property:
+                    # TODO: RE-VISIT THIS LOGIC; EVENTUALLY, I DON'T WANT TO DELETE PROPERTIES
+                    scientific_property.delete()
 
     def get_id(self):
         return self.guid
@@ -505,6 +541,10 @@ class MetadataStandardProperty(MetadataProperty):
     relationship_value      = models.ManyToManyField("MetadataModel",blank=True,null=True)
     #relationship_value      = models.ForeignKey("MetadataModel",blank=True,null=True)
 
+
+    def __unicode__(self):
+        return u'%s' % (self.name)
+
     def reset(self):
         # this resets values according to the proxy
         # to reset values according to the customizer, you must go through the corresponding modelform
@@ -514,15 +554,14 @@ class MetadataStandardProperty(MetadataProperty):
             msg = "Trying to reset a standard property w/out a proxy having been specified."
             raise QuestionnaireError(msg)
 
-
-        self.name         = proxy.name
-        self.order        = proxy.order
-        self.is_label     = proxy.is_label
-        self.field_type   = proxy.field_type
+        self.name = proxy.name
+        self.order = proxy.order
+        self.is_label = proxy.is_label
+        self.field_type = proxy.field_type
         
-        self.atomic_value             = None
-        self.enumeration_value        = None
-        self.enumeration_other_value  = "Please enter a custom value"
+        self.atomic_value = None
+        self.enumeration_value = None
+        self.enumeration_other_value = "Please enter a custom value."
 
         if self.pk:
             self.relationship_value.clear()
@@ -533,6 +572,14 @@ class MetadataStandardProperty(MetadataProperty):
         if self.proxy:
             self.is_label = self.proxy.is_label
         super(MetadataStandardProperty,self).save(*args,**kwargs)
+
+    def delete(self, using=None):
+        # before deleting a standard_property,
+        # delete any related models & properties first
+        if self.field_type == "RELATIONSHIP":
+            for related_model in self.relationship_value.all():
+                related_model.delete(using)
+        super(MetadataStandardProperty, self).delete(using)
 
     def get_value(self):
         """
@@ -557,6 +604,7 @@ class MetadataStandardProperty(MetadataProperty):
                 enumerations.append(u"NONE")
 
             if OTHER_CHOICE[0][0] in enumerations:
+                # TODO: MAY HAVE TO CHANGE THIS IN LIGHT OF TICKET #254
                 enumerations.remove(OTHER_CHOICE[0][0])
                 if self.enumeration_other_value:
                     enumerations.append(u"OTHER: %s" % self.enumeration_other_value)
@@ -569,8 +617,6 @@ class MetadataStandardProperty(MetadataProperty):
 
             return self.relationship_value.all()
 
-    def __unicode__(self):
-        return u'%s' % (self.name)
 
 class MetadataScientificProperty(MetadataProperty):
 
@@ -608,17 +654,17 @@ class MetadataScientificProperty(MetadataProperty):
             msg = "Trying to reset a scientific property w/out a proxy having been specified."
             raise QuestionnaireError(msg)
 
-        self.name         = proxy.name
-        self.order        = proxy.order
-        self.is_label     = proxy.is_label
+        self.name = proxy.name
+        self.order = proxy.order
+        self.is_label = proxy.is_label
         self.category_key = proxy.category.key
 
-        self.atomic_value             = None
-        self.enumeration_value        = None
-        self.enumeration_other_value  = "Please enter a custom value"
+        self.atomic_value = None
+        self.enumeration_value = None
+        self.enumeration_other_value = "Please enter a custom value."
         
-        self.field_type     = MetadataFieldTypes.PROPERTY.getType()
-        self.is_enumeration = proxy.choice in ["OR","XOR"]
+        self.field_type = MetadataFieldTypes.PROPERTY.getType()
+        self.is_enumeration = proxy.choice in ["OR", "XOR", ]
 
     def get_value(self):
         if not self.is_enumeration:
@@ -637,6 +683,7 @@ class MetadataScientificProperty(MetadataProperty):
                 enumerations.append(u"NONE")
 
             if OTHER_CHOICE[0][0] in enumerations:
+                # TODO: MAY HAVE TO CHANGE THIS IN LIGHT OF TICKET #254
                 enumerations.remove(OTHER_CHOICE[0][0])
                 if self.enumeration_other_value:
                     enumerations.append(u"OTHER: %s" % self.enumeration_other_value)

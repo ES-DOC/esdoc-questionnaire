@@ -11,7 +11,7 @@ from metadata_authentication import MetadataUser, MetadataOpenIDProvider
 from metadata_project        import MetadataProject
 from metadata_proxy          import MetadataModelProxy, MetadataStandardPropertyProxy, MetadataScientificPropertyProxy, MetadataStandardCategoryProxy, MetadataScientificCategoryProxy, MetadataComponentProxy
 from metadata_vocabulary     import MetadataVocabulary
-from metadata_customizer     import MetadataCustomizer, MetadataModelCustomizer, MetadataStandardPropertyCustomizer, MetadataScientificPropertyCustomizer, MetadataStandardCategoryCustomizer, MetadataScientificCategoryCustomizer
+from metadata_customizer     import MetadataCustomizer, MetadataModelCustomizer, MetadataStandardPropertyCustomizer, MetadataScientificPropertyCustomizer, MetadataStandardCategoryCustomizer, MetadataScientificCategoryCustomizer, MetadataModelCustomizerVocabulary
 from metadata_model          import MetadataModel, MetadataStandardProperty, MetadataScientificProperty
 from metadata_version        import MetadataVersion
 from metadata_categorization import MetadataCategorization

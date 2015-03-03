@@ -13,7 +13,7 @@ from admin_vocabularies    import *
 from admin_serialization   import *
 
 from CIM_Questionnaire.questionnaire.models import MetadataModelProxy, MetadataComponentProxy, MetadataStandardPropertyProxy, MetadataScientificPropertyProxy, MetadataStandardCategoryProxy, MetadataScientificCategoryProxy
-from CIM_Questionnaire.questionnaire.models import MetadataModelCustomizer, MetadataStandardCategoryCustomizer, MetadataStandardPropertyCustomizer, MetadataScientificPropertyCustomizer, MetadataScientificCategoryCustomizer
+from CIM_Questionnaire.questionnaire.models import MetadataModelCustomizer, MetadataModelCustomizerVocabulary, MetadataStandardCategoryCustomizer, MetadataStandardPropertyCustomizer, MetadataScientificPropertyCustomizer, MetadataScientificCategoryCustomizer
 from CIM_Questionnaire.questionnaire.models import MetadataModel, MetadataStandardProperty, MetadataScientificProperty
 
 # TODO: DISABLE ADMIN ACCESS TO THESE CLASSES ONCE PROJECT IS OUT OF BETA
@@ -31,3 +31,4 @@ admin.site.register(MetadataScientificCategoryCustomizer)
 admin.site.register(MetadataModel)
 admin.site.register(MetadataStandardProperty)
 admin.site.register(MetadataScientificProperty)
+admin.site.register(MetadataModelCustomizerVocabulary)

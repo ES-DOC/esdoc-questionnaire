@@ -20,6 +20,7 @@ Note my use of mptt for efficient handling of component hiearchies.
 
 """
 
+import re
 from django.db import models
 
 from django.template.defaultfilters import slugify
@@ -75,11 +76,37 @@ class MetadataVocabulary(models.Model):
         return self.component_order
 
     def __unicode__(self):
-        return u"%s [%s]" % (self.name, self.version)
+        return self.get_label()
 
     def __init__(self,*args,**kwargs):
         super(MetadataVocabulary,self).__init__(*args,**kwargs)
         self.component_order = 0
+
+    def get_label(self):
+        return u"%s [%s]" % (self.name, self.version)
+
+    @classmethod
+    def get_vocabulary_by_label(cls, label):
+        match = re.match(r"(.*) \[(.*)\]", label)
+        vocabulary_name, vocabulary_version = match.groups()
+        try:
+            vocabulary = MetadataVocabulary.objects.get(
+                name=vocabulary_name,
+                version=vocabulary_version,
+            )
+            return vocabulary
+        except MetadataVocabulary.DoesNotExist:
+            return None
+
+    @classmethod
+    def get_vocabulary_by_key(cls, key):
+        try:
+            vocabulary = MetadataVocabulary.objects.get(
+                guid=key,
+            )
+            return vocabulary
+        except MetadataVocabulary.DoesNotExist:
+            return None
 
     def get_key(self):
         return self.guid

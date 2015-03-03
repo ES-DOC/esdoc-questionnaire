@@ -1,21 +1,8 @@
 {% extends "questionnaire/questionnaire_base.html" %}
 
-{% load questionnaire_filters %}
-
 {% block scripts %}
 
     <script language="javascript">
-
-    var ERROR_CODES = {
-        200 : "OK",
-        301 : "Moved Permanently",
-        302 : "Found",
-        400 : "Bad Request",
-        403 : "Forbidden",
-        404 : "Not Found",
-        408 : "Request Timeout",
-        500 : "Internal Server Error"
-    };
 
     /* just setup the minimum of jquery-ui functionality */
     $(document).ready(
@@ -44,7 +31,6 @@
 
         #questionnaire .icon    {}
         #questionnaire .msg     { font-weight: bold; }
-        #questionnaire .status  {}
 
     </style>
 
@@ -52,14 +38,14 @@
 
 {% block title %}
 
-    CIM Questionnaire Error
+    404 Error
 
 {% endblock %} {# /title #}
 
 {% block content %}
 
     <div class="title">
-        CIM Questionnaire Error!
+        Page Not Found
     </div> <!-- /.title -->
 
     <fieldset>
@@ -69,23 +55,15 @@
                     <img height='32px' src='{{STATIC_URL}}questionnaire/img/warning.png'/>
                 </td>
                 <td class="msg">
-                    {{error_msg|safe}} {# the 'safe' filter allows me to embed HTML #}
-                </td>
-                <td class="status">
-{#                    {% if status_code != 200 %}#}
-{#                        (#}
-{#                        {{status_code}}#}
-{#                        <script language="javascript">#}
-{#                            document.write(#}
-{#                                ": " + ERROR_CODES[{{status_code}}]#}
-{#                            );#}
-{#                        </script>#}
-{#                        )#}
-{#                    {% endif %} {# / status_code != 200 #}
+
+                    <p>Unable to find page: <em>"{{ request.path }}"</em>.</p>
+                    <p>Make sure you have specified a valid project name, vocabulary name, and document type.</p>
+                    <p>Also make sure you have specified whether you wish to "edit," "view," or "customize."</p>
+                    <p style="font-size: larger;">&nbsp;&nbsp;<a href="/">CIM Questionnaire Home Page</a></p>
+
                 </td>
             </tr>
         </table>
     </fieldset>
-
 
 {% endblock %} {# /content #}

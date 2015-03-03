@@ -29,7 +29,7 @@ from mptt.models import MPTTModel, TreeForeignKey
 from uuid import uuid4
 
 from CIM_Questionnaire.questionnaire.fields import MetadataFieldTypes, MetadataAtomicFieldTypes
-from CIM_Questionnaire.questionnaire.utils import QuestionnaireError
+from CIM_Questionnaire.questionnaire.utils import QuestionnaireError, pretty_string
 from CIM_Questionnaire.questionnaire.utils import APP_LABEL, LIL_STRING, SMALL_STRING, BIG_STRING, HUGE_STRING, CIM_DOCUMENT_TYPES, CIM_MODEL_STEREOTYPES, CIM_PROPERTY_STEREOTYPES, CIM_NAMESPACES
 
 STANDARD_PROPERTY_STEREOTYPES = ( ("attribute", "attribute"))
@@ -65,8 +65,7 @@ class MetadataModelProxy(models.Model):
         return is_document
     
     def __unicode__(self):
-        return u'%s'%(self.name)
-        #return u'%s::%s' % (self.version,self.name)
+        return pretty_string(self.name)
 
     def get_standard_category_proxies(self):
         if self.version.categorization:
@@ -167,7 +166,7 @@ class MetadataStandardPropertyProxy(MetadataPropertyProxy):
             self.relationship_target_model = target_proxy
 
     def enumerate_choices(self):
-        return [(choice,choice) for choice in self.enumeration_choices.split("|")]
+        return [(choice, choice) for choice in self.enumeration_choices.split("|")]
 
 SCIENTIFIC_PROPERTY_CHOICES = [
     ("XOR","XOR"),

@@ -2,6 +2,13 @@ CIM Questionnaire Change History
 
 For full release notes, please see https://earthsystemcog.org/projects/es-doc-models/releases_questionnaire
 
+v0.12.2.0
+
+* rewrote custom EnumerationField class; changed the way that drop-down menus function
+* redesigned Project Index Page
+* ensured changing a customization propagates to existing documents
+
+
 v0.12.1.0
 
 * fixed errors in serialization

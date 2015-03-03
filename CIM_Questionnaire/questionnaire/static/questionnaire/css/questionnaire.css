@@ -104,9 +104,6 @@ body {
 #questionnaire .subform_toolbar { padding: 4px; float: right;  }
 #questionnaire .sort_by { position: absolute; z-index: 9999; }
 
-
-
-
 /* end buttons */
 
 /* begin accordions */
@@ -122,6 +119,8 @@ body {
 #questionnaire .accordion_header .open_accordion.ui-state-hover { background: url(../img/default_ui_background.png) repeat-x 50% 50%; border: 1px solid #6DA6D1;}
 
 #questionnaire input.label { background: none; border: none; cursor: pointer; } /* width: 100%; } */ /* NOT SPECIFYING WIDTH HERE B/C SOME LABELS HAVE FIXED WIDTH (INSTEAD SPECIFYING WIDTHS IN FORM INIT FNS) */
+#questionnaire select.label { background: none; border: none; cursor: pointer; } /* width: 100%; } */ /* NOT SPECIFYING WIDTH HERE B/C SOME LABELS HAVE FIXED WIDTH (INSTEAD SPECIFYING WIDTHS IN FORM INIT FNS) */
+
 
 /* end accordions */
 
@@ -133,7 +132,7 @@ body {
 .hidden * { display: none; }
 
 /* some browsers (firefox) add spin buttons to integer fields */
-/* prevent this from happening in accordion_headers */
+/* prevent this from happening in accordion_headers & the customizer "vocabularies" section */
 /* b/c it makes the headers too big and clutters them up */
 
 .accordion_header input::-webkit-outer-spin-button, input::-webkit-inner-spin-button {
@@ -143,6 +142,17 @@ body {
 }
 
 .accordion_header input[type='number'] {
+    -moz-appearance:textfield;
+    margin: 0;
+}
+
+#vocabularies input::-webkit-outer-spin-button, input::-webkit-inner-spin-button {
+    /* display: none; <- Crashes Chrome on hover */
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+#vocabularies input[type='number'] {
     -moz-appearance:textfield;
     margin: 0;
 }

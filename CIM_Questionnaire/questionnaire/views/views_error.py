@@ -45,3 +45,18 @@ def questionnaire_error(request,error_msg="",status_code=400):
     response    = HttpResponse(template.render(context),status=status_code)
 
     return response
+
+
+def questionnaire_page_not_found(request):
+
+    # gather all the extra information required by the template
+    _dict = {
+        "site": get_current_site(request),
+        "questionnaire_version": get_version(),
+    }
+
+    template = loader.get_template('questionnaire/questionnaire_page_not_found.html')
+    context = RequestContext(request, _dict)
+    response = HttpResponse(template.render(context))
+
+    return response

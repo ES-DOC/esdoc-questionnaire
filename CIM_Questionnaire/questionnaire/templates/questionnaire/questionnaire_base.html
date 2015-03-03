@@ -16,12 +16,14 @@
         <script language="javascript" type="text/javascript" src="{{ STATIC_URL }}questionnaire/js/ext/jquery-ui.min.js"></script>
         <script language="javascript" type="text/javascript" src="{{ STATIC_URL }}questionnaire/js/ext/jquery.multiopenaccordion.min.js"></script>
         <script language="javascript" type="text/javascript" src="{{ STATIC_URL }}questionnaire/js/ext/jquery.autosize.min.js"></script>
+        <script language="javascript" type="text/javascript" src="{{ STATIC_URL }}questionnaire/js/ext/jquery.deselectableradio.min.js"></script>
         <script language="javascript" type="text/javascript" src="{{ STATIC_URL }}questionnaire/js/ext/toastr.min.js"></script>
 
         <!-- custom js -->
         <!-- TODO: MINIFY THESE FILES -->
-        <script language="javascript" type="text/javascript" src="{{ STATIC_URL }}questionnaire/js/questionnaire.js"></script>
         <script language="javascript" type="text/javascript" src="{{ STATIC_URL }}questionnaire/js/questionnaire_multiselect.js"></script>
+        <script language="javascript" type="text/javascript" src="{{ STATIC_URL }}questionnaire/js/questionnaire.js"></script>
+
         <script language="javascript" type="text/javascript">
             
             /* redefining javascript indexOf() fn,
@@ -80,15 +82,11 @@
         </script>
 
         <!-- page js -->
-        <!-- (moving this inside the block, so that I can add more includes as needed) -->
-        <!-- <script language="javascript"> -->
-            {% block scripts %}
-                <script language="javascript">
-                    // custom js goes here //
-                 </script>
-            {% endblock %} {# /scripts #}
-        <!-- (moved this inside the block, so that I can add more includes as needed) -->
-        <!-- </script> -->
+        {% block scripts %}
+            <script language="javascript">
+                /* custom js goes here */
+             </script>
+        {% endblock %} {# /scripts #}
 
         <!-- ext css -->
         <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}questionnaire/css/ext/jquery-ui.min.css"/>        

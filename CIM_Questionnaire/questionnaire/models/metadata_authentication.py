@@ -89,8 +89,36 @@ class MetadataUser(models.Model):
     def remove_group(self,group):
         group.user_set.remove(self.user)
 
+
 def get_metadata_user(user):
     return user.metadata_user
+
+
+def is_member_of(user, project):
+    if isinstance(user, User):
+        if user.is_superuser:
+            # admin is a member of _all_ projects
+            return True
+        return user.metadata_user.is_member_of(project)
+    return False
+
+
+def is_user_of(user, project):
+    if isinstance(user, User):
+        if user.is_superuser:
+            # admin has _all_ permisions
+            return True
+        return user.metadata_user.is_user_of(project)
+    return False
+
+
+def is_admin_of(user, project):
+    if isinstance(user, User):
+        if user.is_superuser:
+            # admin has _all_ permisions
+            return True
+        return user.metadata_user.is_admin_of(project)
+    return False
 
 from django.dispatch import receiver
 from django.db.models.signals import post_save, post_delete, m2m_changed

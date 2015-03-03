@@ -262,9 +262,11 @@ class MetadataAbstractStandardPropertyForm(MetadataEditingForm):
                 all_enumeration_choices += OTHER_CHOICE
                 custom_widget_attributes["class"] += " open"
             if customizer.enumeration_multi:
+                custom_widget_attributes["class"] += " multiple"
                 self.fields["enumeration_value"].set_choices(all_enumeration_choices, multi=True)
             else:
-                all_enumeration_choices = EMPTY_CHOICE + all_enumeration_choices
+                custom_widget_attributes["class"] += " single"
+                # all_enumeration_choices = EMPTY_CHOICE + all_enumeration_choices
                 self.fields["enumeration_value"].set_choices(all_enumeration_choices, multi=False)
             update_field_widget_attributes(self.fields["enumeration_value"], custom_widget_attributes)
 
