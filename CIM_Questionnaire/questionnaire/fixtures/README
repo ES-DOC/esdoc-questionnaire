@@ -6,3 +6,9 @@ When creating fixtures use the following command:
 The resultant file will contain models in a random order [see https://code.djangoproject.com/ticket/6726];
 You may have to re-order models for tests to work:
 versions, categorizations, vocabularies, projects, & projectvocabularies must come 1st;
+
+
+When updating fixtures you may need to:
+1) run `manage.py flush` then `manage.py syncdb`
+2) migrate to the last-used fixture version, then loaddata from the last-used fixture
+3) then migrate to the most-recent version, then (add/change/delete data and then) dumpdata as above

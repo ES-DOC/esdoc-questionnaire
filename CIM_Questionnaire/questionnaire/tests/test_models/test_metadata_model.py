@@ -17,21 +17,16 @@ __date__ = "Dec 01, 2014 3:00:00 PM"
 Tests the MetadataModel models
 """
 
-import os
-from django.conf import settings
 from lxml import etree as et
-from CIM_Questionnaire.questionnaire.tests.test_base import TestQuestionnaireBase
+from django.core.exceptions import ObjectDoesNotExist
+
 from CIM_Questionnaire.questionnaire.models.metadata_model import *
+from CIM_Questionnaire.questionnaire.tests.test_base import TestQuestionnaireBase
 from CIM_Questionnaire.questionnaire.models.metadata_proxy import MetadataModelProxy, MetadataComponentProxy
-from CIM_Questionnaire.questionnaire.models.metadata_version import MetadataVersion
-from CIM_Questionnaire.questionnaire.models.metadata_categorization import MetadataCategorization
-from CIM_Questionnaire.questionnaire.models.metadata_vocabulary import MetadataVocabulary
-from CIM_Questionnaire.questionnaire.models.metadata_project import MetadataProject
 from CIM_Questionnaire.questionnaire.models.metadata_serialization import MetadataModelSerialization, MetadataSerializationFormats
-from CIM_Questionnaire.questionnaire.models.metadata_vocabulary import UPLOAD_PATH as VOCABULARY_UPLOAD_PATH
-from CIM_Questionnaire.questionnaire.models.metadata_version import UPLOAD_PATH as VERSION_UPLOAD_PATH
-from CIM_Questionnaire.questionnaire.models.metadata_categorization import UPLOAD_PATH as CATEGORIZATION_UPLOAD_PATH
-from CIM_Questionnaire.questionnaire.utils import DEFAULT_VOCABULARY_KEY, DEFAULT_COMPONENT_KEY, get_tag_without_namespace, get_attribute_without_namespace
+from CIM_Questionnaire.questionnaire.utils import DEFAULT_VOCABULARY_KEY, DEFAULT_COMPONENT_KEY
+from CIM_Questionnaire.questionnaire.utils import find_in_sequence, find_dict_in_sequence
+from CIM_Questionnaire.questionnaire.utils import get_tag_without_namespace, get_attribute_without_namespace
 
 
 def get_vocabulary_key(model_key):
@@ -44,6 +39,17 @@ def get_component_key(model_key):
     split_key = model_key.split('_')
     n_splits = len(split_key)
     return "_".join(split_key[(n_splits/2):])
+
+
+def get_property_by_field_values(field_values_dict, properties):
+    # used in test_update below
+    def _does_property_have_field_values(p):
+        for k, v in field_values_dict.iteritems():
+            if not hasattr(p, k) or getattr(p, k) != v:
+                return False
+        return True
+
+    return find_in_sequence(lambda p: _does_property_have_field_values(p), properties)
 
 
 class TestMetadataModel(TestQuestionnaireBase):
@@ -221,104 +227,6 @@ class TestMetadataModel(TestQuestionnaireBase):
             for actual_scientific_property_data, test_scientific_property_data in zip(serialized_scientific_properties, test_scientific_properties_data[model_key]):
                 self.assertDictEqual(actual_scientific_property_data, test_scientific_property_data)
 
-
-
-
-
-
-    def test_get_new_realization_set2(self):
-
-        test_document_type = "modelcomponent"
-
-        test_proxy = MetadataModelProxy.objects.get(version=self.version, name__iexact=test_document_type)
-
-        test_vocabularies = self.project.vocabularies.filter(document_type__iexact=test_document_type)
-        self.assertEqual(len(test_vocabularies), 1)
-        test_vocabulary = test_vocabularies[0]
-
-        test_customizer = self.create_customizer_set_with_subforms(self.project, self.version, test_proxy, properties_with_subforms=["author"])
-
-        (model_proxy, standard_property_proxies, scientific_property_proxies) = MetadataModelProxy.get_proxy_set(test_proxy, vocabularies=test_vocabularies)
-
-        (models, standard_properties, scientific_properties) = \
-            MetadataModel.get_new_realization_set(self.project, self.version, model_proxy, standard_property_proxies, scientific_property_proxies, test_customizer, test_vocabularies)
-
-        root_model_key = u"%s_%s" % (DEFAULT_VOCABULARY_KEY, DEFAULT_COMPONENT_KEY)
-
-        n_components = 1
-        for vocabulary in test_vocabularies:
-            n_components += len(vocabulary.component_proxies.all())
-        self.assertEqual(len(models), n_components)
-        self.assertEqual(n_components, 6)
-
-        n_scientific_properties = sum([len(sp_list) for sp_list in scientific_properties.values()])
-        self.assertEqual(n_scientific_properties, 9)
-
-        excluded_fields = ["tree_id", "lft", "rght", "level", "parent",] # ignore mptt fields
-        serialized_models = [self.fully_serialize_model(model,exclude=excluded_fields) for model in models]
-        test_models_data = [
-            { "document_version" : u"0.0", "is_published": False, 'is_root': True,  'version': self.version, 'created': None, 'component_key': DEFAULT_COMPONENT_KEY,                                                                                           'description': u'A ModelCompnent is nice.', 'title': u'RootComponent',                       'order': 0, 'project': self.project, 'last_modified': None, 'proxy': test_proxy, 'vocabulary_key': DEFAULT_VOCABULARY_KEY,    'is_document': True, 'active': True, u'id': None, 'name': u'modelComponent'},
-            { "document_version" : u"0.0", "is_published": False, 'is_root': False, 'version': self.version, 'created': None, 'component_key': MetadataComponentProxy.objects.get(vocabulary=test_vocabulary, name__iexact='testmodel').get_key(),              'description': u'A ModelCompnent is nice.', 'title': u'vocabulary : TestModel',              'order': 0, 'project': self.project, 'last_modified': None, 'proxy': test_proxy, 'vocabulary_key': test_vocabulary.get_key(), 'is_document': True, 'active': True, u'id': None, 'name': u'modelComponent'},
-            { "document_version" : u"0.0", "is_published": False, 'is_root': False, 'version': self.version, 'created': None, 'component_key': MetadataComponentProxy.objects.get(vocabulary=test_vocabulary, name__iexact='testmodelkeyproperties').get_key(), 'description': u'A ModelCompnent is nice.', 'title': u'vocabulary : TestModelKeyProperties', 'order': 0, 'project': self.project, 'last_modified': None, 'proxy': test_proxy, 'vocabulary_key': test_vocabulary.get_key(), 'is_document': True, 'active': True, u'id': None, 'name': u'modelComponent'},
-            { "document_version" : u"0.0", "is_published": False, 'is_root': False, 'version': self.version, 'created': None, 'component_key': MetadataComponentProxy.objects.get(vocabulary=test_vocabulary, name__iexact='pretendsubmodel').get_key(),        'description': u'A ModelCompnent is nice.', 'title': u'vocabulary : PretendSubModel',        'order': 0, 'project': self.project, 'last_modified': None, 'proxy': test_proxy, 'vocabulary_key': test_vocabulary.get_key(), 'is_document': True, 'active': True, u'id': None, 'name': u'modelComponent'},
-            { "document_version" : u"0.0", "is_published": False, 'is_root': False, 'version': self.version, 'created': None, 'component_key': MetadataComponentProxy.objects.get(vocabulary=test_vocabulary, name__iexact='submodel').get_key(),               'description': u'A ModelCompnent is nice.', 'title': u'vocabulary : SubModel',               'order': 0, 'project': self.project, 'last_modified': None, 'proxy': test_proxy, 'vocabulary_key': test_vocabulary.get_key(), 'is_document': True, 'active': True, u'id': None, 'name': u'modelComponent'},
-            { "document_version" : u"0.0", "is_published": False, 'is_root': False, 'version': self.version, 'created': None, 'component_key': MetadataComponentProxy.objects.get(vocabulary=test_vocabulary, name__iexact='subsubmodel').get_key(),            'description': u'A ModelCompnent is nice.', 'title': u'vocabulary : SubSubModel',            'order': 0, 'project': self.project, 'last_modified': None, 'proxy': test_proxy, 'vocabulary_key': test_vocabulary.get_key(), 'is_document': True, 'active': True, u'id': None, 'name': u'modelComponent'},
-        ]
-
-        test_scientific_properties_data = {
-            u"%s_%s" % (DEFAULT_VOCABULARY_KEY, DEFAULT_COMPONENT_KEY) : [],
-            u"%s_%s" % (test_vocabulary.get_key(), MetadataComponentProxy.objects.get(vocabulary=test_vocabulary, name__iexact="testmodelkeyproperties").get_key()) : [
-                {'field_type': 'PROPERTY', 'enumeration_other_value': 'Please enter a custom value', 'extra_description': None, 'name': u'name',   'category_key': u'general-attributes',  'is_enumeration': False, 'extra_standard_name': None, u'id': None, 'enumeration_value': None, 'is_label': False, 'extra_units': None, 'order': 0, 'atomic_value': None},
-                {'field_type': 'PROPERTY', 'enumeration_other_value': 'Please enter a custom value', 'extra_description': None, 'name': u'number', 'category_key': u'general-attributes',  'is_enumeration': False, 'extra_standard_name': None, u'id': None, 'enumeration_value': None, 'is_label': False, 'extra_units': None, 'order': 1, 'atomic_value': None},
-                {'field_type': 'PROPERTY', 'enumeration_other_value': 'Please enter a custom value', 'extra_description': None, 'name': u'choice1', 'category_key': u'general-attributes', 'is_enumeration': True, 'extra_standard_name': None, u'id': None, 'enumeration_value': None, 'is_label': False, 'extra_units': None, 'order': 2, 'atomic_value': None},
-                {'field_type': 'PROPERTY', 'enumeration_other_value': 'Please enter a custom value', 'extra_description': None, 'name': u'choice2', 'category_key': u'general-attributes', 'is_enumeration': True, 'extra_standard_name': None, u'id': None, 'enumeration_value': None, 'is_label': False, 'extra_units': None, 'order': 3, 'atomic_value': None},
-                {'field_type': 'PROPERTY', 'enumeration_other_value': 'Please enter a custom value', 'extra_description': None, 'name': u'name',   'category_key': u'categoryone',         'is_enumeration': False, 'extra_standard_name': None, u'id': None, 'enumeration_value': None, 'is_label': False, 'extra_units': None, 'order': 0, 'atomic_value': None},
-                {'field_type': 'PROPERTY', 'enumeration_other_value': 'Please enter a custom value', 'extra_description': None, 'name': u'name',   'category_key': u'categorytwo',         'is_enumeration': False, 'extra_standard_name': None, u'id': None, 'enumeration_value': None, 'is_label': False, 'extra_units': None, 'order': 0, 'atomic_value': None},
-            ],
-            u"%s_%s" % (test_vocabulary.get_key(), MetadataComponentProxy.objects.get(vocabulary=test_vocabulary, name__iexact="pretendsubmodel").get_key()) : [
-                {'field_type': 'PROPERTY', 'enumeration_other_value': 'Please enter a custom value', 'extra_description': None, 'name': u'name', 'category_key': u'categoryone', 'is_enumeration': False, 'extra_standard_name': None, u'id': None, 'enumeration_value': None, 'is_label': False, 'extra_units': None, 'order': 0, 'atomic_value': None}
-            ],
-            u"%s_%s" % (test_vocabulary.get_key(), MetadataComponentProxy.objects.get(vocabulary=test_vocabulary, name__iexact="testmodel").get_key()) : [],
-            u"%s_%s" % (test_vocabulary.get_key(), MetadataComponentProxy.objects.get(vocabulary=test_vocabulary, name__iexact="submodel").get_key()) : [
-                {'field_type': 'PROPERTY', 'enumeration_other_value': 'Please enter a custom value', 'extra_description': None, 'name': u'name', 'category_key': u'categoryone', 'is_enumeration': False, 'extra_standard_name': None, u'id': None, 'enumeration_value': None, 'is_label': False, 'extra_units': None, 'order': 0, 'atomic_value': None}
-            ],
-            u"%s_%s" % (test_vocabulary.get_key(), MetadataComponentProxy.objects.get(vocabulary=test_vocabulary, name__iexact="subsubmodel").get_key()) : [
-                {'field_type': 'PROPERTY', 'enumeration_other_value': 'Please enter a custom value', 'extra_description': None, 'name': u'name', 'category_key': u'categoryone', 'is_enumeration': False, 'extra_standard_name': None, u'id': None, 'enumeration_value': None, 'is_label': False, 'extra_units': None, 'order': 0, 'atomic_value': None}
-            ],
-        }
-
-        for actual_model_data,test_model_data in zip(serialized_models,test_models_data):
-            self.assertDictEqual(actual_model_data, test_model_data, excluded_keys=["guid"])
-
-        test_scientific_property_data = {}
-        for model in models:
-            model_key = model.get_model_key()
-            for standard_property, standard_property_proxy in zip(standard_properties[model_key], standard_property_proxies):
-                self.assertEqual(standard_property.model, model)
-                self.assertEqual(standard_property.proxy, standard_property_proxy)
-                self.assertEqual(standard_property.name, standard_property_proxy.name)
-                self.assertEqual(standard_property.order, standard_property_proxy.order)
-                self.assertEqual(standard_property.is_label, standard_property_proxy.is_label)
-                self.assertEqual(standard_property.field_type, standard_property_proxy.field_type)
-                self.assertIsNone(standard_property.atomic_value)
-                self.assertIsNone(standard_property.enumeration_value)
-                self.assertEqual(standard_property.enumeration_other_value, "Please enter a custom value")
-                # no need to test relationship_value, since m2m fields cannot be set before save()
-
-            excluded_fields = ["model", "proxy"]
-            serialized_scientific_properties = [self.fully_serialize_model(sp, exclude=excluded_fields) for sp in scientific_properties[model_key]]
-            for actual_scientific_property_data, test_scientific_property_data in zip(serialized_scientific_properties, test_scientific_properties_data[model_key]):
-                self.assertDictEqual(actual_scientific_property_data, test_scientific_property_data)
-
-            try:
-                for scientific_property, scientific_property_proxy in zip(scientific_properties[model_key], scientific_property_proxies[model_key]):
-                    self.assertEqual(scientific_property.model, model)
-                    self.assertEqual(scientific_property.name, scientific_property_proxy.name)
-            except KeyError:
-                # the root model shouldn't have any scientific_properties
-                self.assertEqual(model_key,root_model_key)
-
-
     def test_get_existing_realization_set(self):
 
         test_document_type = "modelcomponent"
@@ -438,7 +346,6 @@ class TestMetadataModel(TestQuestionnaireBase):
 
         self.assertEqual(len(serializations_qs), 1)
 
-
     def test_serialize_realization(self):
 
         model = self.model_realization
@@ -455,5 +362,129 @@ class TestMetadataModel(TestQuestionnaireBase):
             # ESDOC doesn't use schemas; only check this if another format is used
             self.assertEqual(get_attribute_without_namespace(serialized_model, "schemaLocation"), model.version.url)
 
+    def test_update(self):
 
+        customizer_set = self.downscaling_model_component_customizer_set_with_subforms
+        model_customizer = customizer_set["model_customizer"]
+        self.downscaling_model_component_customizer_set["model_customizer"].default = False
+        self.downscaling_model_component_customizer_set["model_customizer"].save()
+        model_customizer.default = True
+        model_customizer.save()
+        standard_property_customizers = customizer_set["standard_property_customizers"]
 
+        atomic_standard_property_customizer = find_dict_in_sequence({
+            "field_type": "ATOMIC",
+            "displayed": True,
+        }, standard_property_customizers)
+        enumeration_standard_property_customizer = find_dict_in_sequence({
+            "field_type": "ENUMERATION",
+            "displayed": True,
+        }, standard_property_customizers)
+        relationship_standard_property_customizer = find_dict_in_sequence({
+            "field_type": "RELATIONSHIP",
+            "relationship_show_subform": True,
+            "displayed": True,
+        }, standard_property_customizers)
+        subform_model_customizer = relationship_standard_property_customizer.subform_customizer
+        subform_standard_property_customizers = subform_model_customizer.standard_property_customizers.all()
+        atomic_subform_standard_property_customizer = find_dict_in_sequence({
+            "field_type": "ATOMIC",
+            "displayed": True,
+        }, subform_standard_property_customizers)
+
+        realization_set = self.downscaling_model_component_realization_set
+        vocabulary_to_test = self.atmosphere_vocabulary
+        component_to_test = find_in_sequence(lambda c: c.name.lower() == "atmoskeyproperties", vocabulary_to_test.component_proxies.all())
+        # (the model I happen to be testing w/ has standard & scientific properties)
+        model = find_dict_in_sequence({
+            "vocabulary_key": vocabulary_to_test.get_key(),
+            "component_key": component_to_test.get_key(),
+        }, realization_set["models"])
+        standard_properties = model.standard_properties.all()
+
+        atomic_standard_property = find_in_sequence(lambda sp: sp.proxy == atomic_standard_property_customizer.proxy, standard_properties)
+        enumeration_standard_property = find_in_sequence(lambda sp: sp.proxy == enumeration_standard_property_customizer.proxy, standard_properties)
+        relationship_standard_property = find_in_sequence(lambda sp: sp.proxy == relationship_standard_property_customizer.proxy, standard_properties)
+        relationship_subform_models = relationship_standard_property.relationship_value.all()
+        relationship_subform_model = relationship_subform_models[0]
+        relationship_subform_model_standard_properties = relationship_subform_model.standard_properties.all()
+        atomic_subform_standard_property = find_in_sequence(lambda sp: sp.proxy == atomic_subform_standard_property_customizer.proxy , relationship_subform_model_standard_properties)
+
+        # make sure an atomic property dissappears if it's set to not display
+        self.assertIsNotNone(atomic_standard_property)
+        atomic_standard_property_customizer.displayed = False
+        atomic_standard_property_customizer.save()
+        model.update(model_customizer)
+        with self.assertRaises(ObjectDoesNotExist):
+            MetadataStandardProperty.objects.get(pk=atomic_standard_property.pk)
+
+        # make sure an enumeration property dissappears if it's set to not display
+        self.assertIsNotNone(enumeration_standard_property)
+        enumeration_standard_property_customizer.displayed = False
+        enumeration_standard_property_customizer.save()
+        model.update(model_customizer)
+        with self.assertRaises(ObjectDoesNotExist):
+            MetadataStandardProperty.objects.get(pk=enumeration_standard_property.pk)
+
+        # make sure a relationship property, and all related objects, dissappear if they're not set to display
+        self.assertIsNotNone(relationship_standard_property)
+        self.assertIsNotNone(atomic_subform_standard_property)
+        relationship_standard_property_customizer.displayed = False
+        relationship_standard_property_customizer.save()
+        model.update(model_customizer)
+        with self.assertRaises(ObjectDoesNotExist):
+            MetadataStandardProperty.objects.get(pk=relationship_standard_property.pk)
+        with self.assertRaises(ObjectDoesNotExist):
+            MetadataStandardProperty.objects.get(pk=atomic_subform_standard_property.pk)
+
+        # make sure an atomic property is created if it's re-set to display
+        atomic_standard_property_customizer.displayed = True
+        atomic_standard_property_customizer.save()
+        model.update(model_customizer)
+        new_atomic_standard_property = MetadataStandardProperty.objects.get(model=model, proxy=atomic_standard_property.proxy)
+        self.assertIsNotNone(new_atomic_standard_property)
+        self.assertNotEqual(new_atomic_standard_property.pk, atomic_standard_property.pk)
+
+        # make sure an enumeration property is created if it's re-set to display
+        enumeration_standard_property_customizer.displayed = True
+        enumeration_standard_property_customizer.save()
+        model.update(model_customizer)
+        new_enumeration_standard_property = MetadataStandardProperty.objects.get(model=model, proxy=atomic_standard_property.proxy)
+        self.assertIsNotNone(new_enumeration_standard_property)
+        self.assertNotEqual(new_enumeration_standard_property.pk, enumeration_standard_property.pk)
+
+        # make sure a relationship property, and all related objects, are created if it's re-set to display
+        relationship_standard_property_customizer.displayed = True
+        relationship_standard_property_customizer.save()
+        model.update(model_customizer)
+        new_relationship_standard_property = MetadataStandardProperty.objects.get(model=model, proxy=relationship_standard_property.proxy)
+        self.assertIsNotNone(new_relationship_standard_property)
+        self.assertNotEqual(new_relationship_standard_property.pk, relationship_standard_property.pk)
+        # TODO: IN THE LONG-TERM, I EXPECT THIS TO FAIL
+        # (THAT IS, I THINK I OUGHT TO CREATE THE FULL SUBFORM PROPERTY CHAIN)
+        # (BUT THAT CAN WAIT UNTIL #242 & #278)
+        new_atomic_subform_standard_property = MetadataStandardProperty.objects.filter(model=model, proxy=atomic_subform_standard_property.proxy)
+        self.assertEqual(len(new_atomic_subform_standard_property), 0)
+
+        # now do the same sorts of tests w/ scientific properties
+
+        scientific_property_customizers = customizer_set["scientific_property_customizers"][u"%s_%s" % (vocabulary_to_test.get_key(), component_to_test.get_key())]
+        scientific_properties = model.scientific_properties.all()
+        scientific_property_customizer = scientific_property_customizers[0]
+        scientific_property = find_in_sequence(lambda sp: sp.proxy == scientific_property_customizer.proxy, scientific_properties)
+
+        # make sure a scientific property dissappears if it's set to not display
+        self.assertIsNotNone(scientific_property)
+        scientific_property_customizer.displayed = False
+        scientific_property_customizer.save()
+        model.update(model_customizer)
+        with self.assertRaises(ObjectDoesNotExist):
+            MetadataScientificProperty.objects.get(pk=scientific_property.pk)
+
+        # make sure a scientific property is created if it's re-set to display
+        scientific_property_customizer.displayed = True
+        scientific_property_customizer.save()
+        model.update(model_customizer)
+        new_scientific_property = MetadataScientificProperty.objects.get(model=model, proxy=scientific_property.proxy)
+        self.assertIsNotNone(new_scientific_property)
+        self.assertNotEqual(new_scientific_property.pk, scientific_property.pk)

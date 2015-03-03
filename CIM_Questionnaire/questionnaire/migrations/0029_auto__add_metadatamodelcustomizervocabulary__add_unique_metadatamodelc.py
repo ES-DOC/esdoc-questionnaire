@@ -46,7 +46,7 @@ class Migration(SchemaMigration):
             for (i, metadata_vocabulary) in enumerate(metadata_model_customizer.vocabularies.all()):
                 metadata_model_customizer_vocabulary, created = MetadataModelCustomizerVocabularyClass.objects.get_or_create(
                     model_customizer=metadata_model_customizer,
-                    vocabulary=metadata_vocabulary
+                    vocabulary=metadata_vocabulary,
                 )
                 vocabulary_pk = u"%s" % metadata_vocabulary.pk
                 if vocabulary_pk in vocabulary_order:

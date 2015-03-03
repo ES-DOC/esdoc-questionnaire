@@ -128,7 +128,7 @@ class MetadataModel(MPTTModel):
 
     def get_model_key(self):
         return u"%s_%s" % (self.vocabulary_key, self.component_key)
-    
+
     def reset(self):
         # this resets values according to the proxy
         # to reset values according to the customizer, you must go through the corresponding form
@@ -195,8 +195,34 @@ class MetadataModel(MPTTModel):
                     # TODO: RE-VISIT THIS LOGIC; EVENTUALLY, I DON'T WANT TO DELETE PROPERTIES
                     standard_property.delete()
 
+        # do the same basic thing, but w/ scientific properties
+        # TODO: THIS SEEMS LIKE PRETTY INEFFICIENT CODE, ANY WAY TO SPEED THIS UP
+        scientific_properties = self.scientific_properties.all()
+        scientific_property_customizations = model_customization.scientific_property_customizers.filter(
+            vocabulary_key=self.vocabulary_key,
+            component_key=self.component_key,
+        )
+        for scientific_property_customization in scientific_property_customizations:
+            scientific_property_proxy = scientific_property_customization.proxy
+            scientific_property = find_in_sequence(lambda sp: sp.proxy == scientific_property_proxy, scientific_properties)
 
-        # TODO: DO THIS W/ SCIENTIFIC PROPERTIES TOO
+            if scientific_property_customization.displayed:
+
+                # if there is no scientific property, create it...
+                if not scientific_property:
+                    new_scientific_property = MetadataScientificProperty(
+                        proxy=scientific_property_proxy,
+                        model=self,
+                    )
+                    new_scientific_property.reset()
+                    new_scientific_property.save()
+
+            else:  # not scientific_property_customization.displayed
+
+                # if there is a scientific property, delete it...
+                if scientific_property:
+                    # TODO: RE-VISIT THIS LOGIC; EVENTUALLY, I DON'T WANT TO DELETE PROPERTIES
+                    scientific_property.delete()
 
     def get_id(self):
         return self.guid

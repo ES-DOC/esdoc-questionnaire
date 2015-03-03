@@ -648,6 +648,21 @@ def find_in_sequence(fn, sequence):
     return None
 
 
+def find_dict_in_sequence(dct, sequence):
+
+    # like above, but rather than passing a fn
+    # passes a dictionary of attribute values to test
+
+    def _is_dict_in_item(item):
+        for k, v in dct.iteritems():
+            if not hasattr(item, k) or getattr(item, k) != v:
+                return False
+        return True
+
+    return find_in_sequence(lambda item: _is_dict_in_item(item), sequence)
+
+
+
 ########################
 # flatten a dictionary #
 ########################
