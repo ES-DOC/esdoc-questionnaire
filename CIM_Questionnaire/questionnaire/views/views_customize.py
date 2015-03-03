@@ -58,7 +58,6 @@ def validate_view_arguments(project_name="", model_name="", version_key=""):
         validity = False
         return (validity,project,version,model_proxy,msg)
 
-
     if not project.active:
         msg = "Project '%s' is inactive." % (project_name)
         validity = False
@@ -261,7 +260,9 @@ def questionnaire_customize_existing(request, project_name="", model_name="", ve
             if initial_model_customizer_name != current_model_customizer_name:
                 model_customizer_instance.rename(current_model_customizer_name)
 
-            # if there are existing instances which will use this customization, I need to check to see if they require new bits
+            # if there are existing instances which will use this customization,
+            # I need to check to see if they require new bits
+            # (eventually, I plan on changing the way this works; see #210, #242, #278)
             if model_customizer_instance.default:
                 existing_realizations = MetadataModel.objects.filter(
                     project=model_customizer_instance.project,

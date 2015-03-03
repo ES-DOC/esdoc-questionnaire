@@ -157,7 +157,9 @@ class MetadataModel(MPTTModel):
 
     def update(self, model_customization):
         """
-        looks through the customization and checks if any properties are set to display that do not already exist in this instance
+        looks through the customization and checks if any standard or scientific properties
+        which should be displayed are missing,
+        or which shouldn't be displayed are still there (?)
         :param model_customization:
         :return:
         """
@@ -165,28 +167,36 @@ class MetadataModel(MPTTModel):
         standard_property_customizations = model_customization.standard_property_customizers.all()
         for standard_property_customization in standard_property_customizations:
             standard_property_proxy = standard_property_customization.proxy
-            standard_property = find_in_sequence(lambda sp: sp.proxy == standard_property_proxy, standard_properties)
-            if standard_property:
+            standard_property = find_in_sequence(lambda sp: standard_property_proxy == sp.proxy, standard_properties)
+
+            if standard_property_customization.displayed:
+
+                # if there is no standard property, create it...
+                if not standard_property:
+                    new_standard_property = MetadataStandardProperty(
+                        proxy=standard_property_proxy,
+                        model=self,
+                    )
+                    new_standard_property.reset()
+                    new_standard_property.save()
+                    standard_property = new_standard_property
+
                 if standard_property.field_type == "RELATIONSHIP":
+                    # recurse through subforms...
                     for submodel in standard_property.relationship_value.all():
                         submodel_customizer = standard_property_customization.subform_customizer
                         if submodel_customizer:
                             submodel.update(submodel_customizer)
 
-            if standard_property_customization.displayed and not standard_property:
-                # if it should be displayed and is missing...
-                new_standard_property = MetadataStandardProperty(
-                    proxy=standard_property_proxy,
-                    model=self,
-                )
-                new_standard_property.reset()
-                new_standard_property.save()
+            else:  # not standard_property_customization.displayed
 
-            elif not standard_property_customization.displayed and standard_property:
-                # if it should not be displayed but exists...
-                standard_property.delete()
+                # if there is a standard property, delete it...
+                if standard_property:
+                    # TODO: RE-VISIT THIS LOGIC; EVENTUALLY, I DON'T WANT TO DELETE PROPERTIES
+                    standard_property.delete()
 
-        # TODO: DOES THIS WORK FOR ALL TYPES OF STANDARD_PROPERTIES?
+
+        # TODO: DO THIS W/ SCIENTIFIC PROPERTIES TOO
 
     def get_id(self):
         return self.guid
@@ -505,6 +515,10 @@ class MetadataStandardProperty(MetadataProperty):
     relationship_value      = models.ManyToManyField("MetadataModel",blank=True,null=True)
     #relationship_value      = models.ForeignKey("MetadataModel",blank=True,null=True)
 
+
+    def __unicode__(self):
+        return u'%s' % (self.name)
+
     def reset(self):
         # this resets values according to the proxy
         # to reset values according to the customizer, you must go through the corresponding modelform
@@ -532,6 +546,14 @@ class MetadataStandardProperty(MetadataProperty):
         if self.proxy:
             self.is_label = self.proxy.is_label
         super(MetadataStandardProperty,self).save(*args,**kwargs)
+
+    def delete(self, using=None):
+        # before deleting a standard_property,
+        # delete any related models & properties first
+        if self.field_type == "RELATIONSHIP":
+            for related_model in self.relationship_value.all():
+                related_model.delete(using)
+        super(MetadataStandardProperty, self).delete(using)
 
     def get_value(self):
         """
@@ -569,8 +591,6 @@ class MetadataStandardProperty(MetadataProperty):
 
             return self.relationship_value.all()
 
-    def __unicode__(self):
-        return u'%s' % (self.name)
 
 class MetadataScientificProperty(MetadataProperty):
 
