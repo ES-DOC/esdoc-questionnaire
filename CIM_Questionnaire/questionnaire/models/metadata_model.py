@@ -147,13 +147,17 @@ class MetadataModel(MPTTModel):
 
         self.is_document = proxy.is_document()
 
-    def save(self,*args, **kwargs):
+    def save(self, *args, **kwargs):
         if not self.id:
             self.created = timezone.now()
         if not self.guid:
             self.guid = str(uuid4())
-        self.document_version = u"%s.%s" % (self.get_major_version(), int(self.get_minor_version())+1)
         self.last_modified = timezone.now()
+        increment_version = kwargs.pop("increment_version", True)
+        if increment_version:
+            self.document_version = u"%s.%s" % (self.get_major_version(), int(self.get_minor_version())+1)
+        else:
+            self.document_version = u"%s.%s" % (self.get_major_version(), int(self.get_minor_version()))
         super(MetadataModel, self).save(*args, **kwargs)
 
     def update(self, model_customization):
