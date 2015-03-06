@@ -39,7 +39,7 @@ from CIM_Questionnaire.questionnaire import get_version
 # mppt adds to components                   #
 #############################################
 
-def create_models_from_components(component_node,model_parameters,models=[]):
+def create_models_from_components(component_node, model_parameters, models=[], **kwargs):
     """
     recursively look through mppt components to recreate that hierarchy in models
     :param component_node:
@@ -50,6 +50,7 @@ def create_models_from_components(component_node,model_parameters,models=[]):
     title = model_parameters["title"]
     model_parameters["title"] = title[:title.index(" : ")] + " : " + component_node.name
     model_parameters["component_key"] = component_node.get_key()
+    model_parameters["is_root"] = kwargs.pop("is_root", False)
 
     model = MetadataModel(**model_parameters)
     models.append(model)
@@ -332,10 +333,8 @@ class MetadataModel(MPTTModel):
         for vocabulary in vocabularies:
             if model_customizer.model_show_hierarchy:
                 model_parameters["parent"] = model
-                model_parameters["is_root"] = False
             else:
-                model_parameters.pop("parent",None)
-                model_parameters["is_root"] = True
+                model_parameters.pop("parent", None)
             model_parameters["vocabulary_key"] = vocabulary.get_key()
             components = vocabulary.component_proxies.all()
             if components:
@@ -343,7 +342,14 @@ class MetadataModel(MPTTModel):
                 # adding corresponding models to the list
                 root_component = components[0].get_root()
                 model_parameters["title"] = u"%s : %s" % (vocabulary.name, root_component.name)
-                create_models_from_components(root_component, model_parameters, models)
+                create_models_from_components(
+                    root_component,
+                    model_parameters,
+                    models,
+                    # is_root will be False in all instances except the 1st time this is called
+                    # for a component w/ no hierarchy
+                    is_root=not model_customizer.model_show_hierarchy,
+                )
 
         standard_properties = {}
         scientific_properties = {}
