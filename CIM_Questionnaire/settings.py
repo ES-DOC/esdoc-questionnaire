@@ -24,7 +24,7 @@ import os
 rel = lambda *x: os.path.join(os.path.abspath(os.path.dirname(__file__)), *x)
 
 # Path to the configuration file containing secret values.
-# TODO: EITHER MOVE THE LOCATOIN OF THE CONF FILE OR MAKE ITS NAME UNIQUE (TO HANDLE CONCURRENT DEPLOYMENTS)
+# EITHER MOVE THE LOCATION OF THE CONF FILE OR MAKE ITS NAME UNIQUE (TO HANDLE CONCURRENT DEPLOYMENTS)
 CONF_PATH = os.path.join(os.path.expanduser('~'), '.config', 'esdoc-questionnaire.conf')
 
 parser = SafeConfigParser()
