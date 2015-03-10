@@ -17,6 +17,7 @@ __date__ = "Dec 01, 2014 3:00:00 PM"
 Functions common to all views.
 """
 
+from uuid import uuid4
 from django.core.cache import get_cache
 from CIM_Questionnaire.questionnaire.models import MetadataProject, MetadataVersion, MetadataCustomizer, MetadataModelCustomizer, MetadataModelProxy, MetadataModel
 from CIM_Questionnaire.questionnaire.utils import get_joined_keys_dict
@@ -204,3 +205,28 @@ def get_cached_existing_realization_set(session_id, realizations, customizer_set
         cache.set(cached_realization_set_key, realization_set)
 
     return realization_set
+
+
+def get_key_from_request(request):
+    """
+    generates a unique key to use throughout a GET/AJAX/PUT workflow instance
+    :param request:
+    :return:
+    """
+
+    if not request.is_ajax():
+        if request.method == "GET":
+            # a normal GET resets the key
+            key = str(uuid4())
+        else:
+            # a normal POST should have the key in the datadict
+            key = request.POST["instance_key"]
+    else:
+        if request.method == "GET":
+            # an AJAX GET should have passed the key as a parameter
+            key = request.GET["instance_key"]
+        else:
+            # an AJAX POST should have the key in the datadict
+            key = request.POST["instance_key"]
+
+    return key

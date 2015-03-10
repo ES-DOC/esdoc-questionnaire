@@ -28,7 +28,9 @@ from CIM_Questionnaire.questionnaire.models.metadata_project import MetadataProj
 from CIM_Questionnaire.questionnaire.models.metadata_proxy import MetadataModelProxy, MetadataComponentProxy, MetadataStandardCategoryProxy, MetadataScientificCategoryProxy, MetadataStandardPropertyProxy, MetadataScientificPropertyProxy
 from CIM_Questionnaire.questionnaire.models.metadata_version import MetadataVersion
 from CIM_Questionnaire.questionnaire.models.metadata_vocabulary import MetadataVocabulary
+from CIM_Questionnaire.questionnaire.views.views_base import get_key_from_request
 from CIM_Questionnaire.questionnaire.views.views_base import get_cached_existing_customization_set, get_cached_proxy_set, get_cached_new_realization_set, get_cached_existing_realization_set
+from CIM_Questionnaire.questionnaire.views.views_inheritance import get_cached_inheritance_data
 from CIM_Questionnaire.questionnaire.views.views_error import questionnaire_error
 from CIM_Questionnaire.questionnaire.utils import get_form_by_prefix
 from CIM_Questionnaire.questionnaire.utils import DEFAULT_VOCABULARY_KEY, DEFAULT_COMPONENT_KEY
@@ -246,18 +248,16 @@ def api_get_new_edit_form_section(request, project_name, section_key, **kwargs):
         return questionnaire_error(request, msg)
 
     # get (or set) models from the cache...
-    if request.method == "GET":
-        session_id = request.GET.get("session_id")
-    else:  # request.method == "POST"
-        # would this really every be a POST?
-        session_id = request.POST.get("session_id")
-    customizer_set = get_cached_existing_customization_set(session_id, model_customizer, vocabularies)
-    proxy_set = get_cached_proxy_set(session_id, customizer_set)
-    realization_set = get_cached_new_realization_set(session_id, customizer_set, proxy_set, vocabularies)
+    instance_key = get_key_from_request(request)
+    customizer_set = get_cached_existing_customization_set(instance_key, model_customizer, vocabularies)
+    proxy_set = get_cached_proxy_set(instance_key, customizer_set)
+    realization_set = get_cached_new_realization_set(instance_key, customizer_set, proxy_set, vocabularies)
+
+    inheritance_data = get_cached_inheritance_data(instance_key)
 
     # now create the formsets...
     (model_formset, standard_properties_formsets, scientific_properties_formsets) = \
-        create_new_edit_forms_from_models(realization_set["models"], customizer_set["model_customizer"], realization_set["standard_properties"], customizer_set["standard_property_customizers"], realization_set["scientific_properties"], customizer_set["scientific_property_customizers"])
+        create_new_edit_forms_from_models(realization_set["models"], customizer_set["model_customizer"], realization_set["standard_properties"], customizer_set["standard_property_customizers"], realization_set["scientific_properties"], customizer_set["scientific_property_customizers"], inheritance_data=inheritance_data)
 
     # now get some things that were previously computed in the master template
     # or in loops that I need to recreate for the individual sections
@@ -305,18 +305,16 @@ def api_get_existing_edit_form_section(request, project_name, section_key, model
         return questionnaire_error(request, msg)
 
     # get (or set) models from the cache...
-    if request.method == "GET":
-        session_id = request.GET.get("session_id")
-    else:  # request.method == "POST"
-        # would this really every be a POST?
-        session_id = request.POST.get("session_id")
-    customizer_set = get_cached_existing_customization_set(session_id, model_customizer, vocabularies)
-    proxy_set = get_cached_proxy_set(session_id, customizer_set)
-    realization_set = get_cached_existing_realization_set(session_id, root_model.get_descendants(include_self=True), customizer_set, proxy_set, vocabularies)
+    instance_key = get_key_from_request(request)
+    customizer_set = get_cached_existing_customization_set(instance_key, model_customizer, vocabularies)
+    proxy_set = get_cached_proxy_set(instance_key, customizer_set)
+    realization_set = get_cached_existing_realization_set(instance_key, root_model.get_descendants(include_self=True), customizer_set, proxy_set, vocabularies)
+
+    inheritance_data = get_cached_inheritance_data(instance_key)
 
     # now create the formsets...
     (model_formset, standard_properties_formsets, scientific_properties_formsets) = \
-        create_existing_edit_forms_from_models(realization_set["models"], customizer_set["model_customizer"], realization_set["standard_properties"], customizer_set["standard_property_customizers"], realization_set["scientific_properties"], customizer_set["scientific_property_customizers"])
+        create_existing_edit_forms_from_models(realization_set["models"], customizer_set["model_customizer"], realization_set["standard_properties"], customizer_set["standard_property_customizers"], realization_set["scientific_properties"], customizer_set["scientific_property_customizers"], inheritance_data=inheritance_data)
 
     # now get some things that were previously computed in the master template
     # or in loops that I need to recreate for the individual sections

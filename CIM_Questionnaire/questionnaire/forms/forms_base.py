@@ -75,7 +75,7 @@ class MetadataForm(ModelForm):
                     # this is the normal behavior (for loaded forms)...
                     value = field.widget.value_from_datadict(self.data, self.files, self.add_prefix(name))
                 else:
-                   # this is the special behavior (for non-loaded forms)...
+                    # this is the special behavior (for non-loaded forms)...
                     try:
                         value = self.initial[name]
                     except KeyError:
@@ -84,7 +84,9 @@ class MetadataForm(ModelForm):
                         # AND I RESET IT LATER ON IN THE SAVE PROCESS
                         if not isinstance(self.fields[name], InlineForeignKeyField):
                             # TODO: IS THIS REALLY THE CORRECT BEHAVIOR?
+                            # TODO: THIS IS HAPPENING FOR "DELETE" FIELD AS WELL
                             print "IF YOU ARE HERE THEN YOU SHOULD DOUBLE-CHECK WHAT'S GOING ON IN IN MetadataForm._clean_fields()"
+                            print "couldn't find %s in %s" % (name, type(self))
                         value = None
             try:
                 if isinstance(field, FileField):
@@ -174,6 +176,16 @@ class MetadataForm(ModelForm):
                     msg = 'The key "{0}" was not found in "data" or "initial" for form of type {1} with prefix "{2}".'.format(key, type(self), self.prefix)
                     raise KeyError(msg)
         return ret
+
+    def get_id_from_field_name(self, field_name):
+        """
+        returns the HTML id of the rendered field
+        this works w/ bound or unbound fields
+        (used by inheritance)
+        """
+
+        field_id = self.auto_id % self.add_prefix(field_name)
+        return field_id
 
 
 class MetadataFormSet(BaseModelFormSet):

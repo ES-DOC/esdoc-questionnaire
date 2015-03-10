@@ -31,7 +31,9 @@ from CIM_Questionnaire.questionnaire.forms.forms_edit import create_new_edit_for
 from CIM_Questionnaire.questionnaire.views.views_authenticate import questionnaire_join
 from CIM_Questionnaire.questionnaire.views.views_error import questionnaire_error
 from CIM_Questionnaire.questionnaire.views.views_base import validate_view_arguments
+from CIM_Questionnaire.questionnaire.views.views_base import get_key_from_request
 from CIM_Questionnaire.questionnaire.views.views_base import get_cached_existing_customization_set, get_cached_proxy_set, get_cached_new_realization_set, get_cached_existing_realization_set
+from CIM_Questionnaire.questionnaire.views.views_inheritance import get_cached_inheritance_data
 from CIM_Questionnaire.questionnaire import get_version
 
 
@@ -84,10 +86,10 @@ def questionnaire_edit_new(request, project_name="", model_name="", version_key=
     vocabularies = model_customizer.get_active_sorted_vocabularies()
 
     # get (or set) items from the cache...
-    session_id = request.session.session_key
-    customizer_set = get_cached_existing_customization_set(session_id, model_customizer, vocabularies)
-    proxy_set = get_cached_proxy_set(session_id, customizer_set)
-    realization_set = get_cached_new_realization_set(session_id, customizer_set, proxy_set, vocabularies)
+    instance_key = get_key_from_request(request)
+    customizer_set = get_cached_existing_customization_set(instance_key, model_customizer, vocabularies)
+    proxy_set = get_cached_proxy_set(instance_key, customizer_set)
+    realization_set = get_cached_new_realization_set(instance_key, customizer_set, proxy_set, vocabularies)
 
     # now build the forms...
     if request.method == "GET":
@@ -97,8 +99,19 @@ def questionnaire_edit_new(request, project_name="", model_name="", version_key=
 
     else:  # request.method == "POST":
 
+        data = request.POST
+        inheritance_data = get_cached_inheritance_data(instance_key)
         (validity, model_formset, standard_properties_formsets, scientific_properties_formsets) = \
-            create_edit_forms_from_data(request.POST, realization_set["models"], customizer_set["model_customizer"], realization_set["standard_properties"], customizer_set["standard_property_customizers"], realization_set["scientific_properties"], customizer_set["scientific_property_customizers"])
+            create_edit_forms_from_data(
+                data,
+                realization_set["models"],
+                customizer_set["model_customizer"],
+                realization_set["standard_properties"],
+                customizer_set["standard_property_customizers"],
+                realization_set["scientific_properties"],
+                customizer_set["scientific_property_customizers"],
+                inheritance_data=inheritance_data,
+            )
 
         if all(validity):
 
@@ -134,7 +147,7 @@ def questionnaire_edit_new(request, project_name="", model_name="", version_key=
         "standard_properties_formsets": standard_properties_formsets,
         "scientific_properties_formsets": scientific_properties_formsets,
         "questionnaire_version": get_version(),  # used in the footer
-        "session_id": session_id,
+        "instance_key": instance_key,
         "can_publish": False,  # only models that have already been saved can be published
     }
 
@@ -183,10 +196,10 @@ def questionnaire_edit_existing(request, project_name="", model_name="", version
     vocabularies = model_customizer.get_active_sorted_vocabularies()
 
     # get (or set) items from the cache...
-    session_id = request.session.session_key
-    customizer_set = get_cached_existing_customization_set(session_id, model_customizer, vocabularies)
-    proxy_set = get_cached_proxy_set(session_id, customizer_set)
-    realization_set = get_cached_existing_realization_set(session_id, model.get_descendants(include_self=True), customizer_set, proxy_set, vocabularies)
+    instance_key = get_key_from_request(request)
+    customizer_set = get_cached_existing_customization_set(instance_key, model_customizer, vocabularies)
+    proxy_set = get_cached_proxy_set(instance_key, customizer_set)
+    realization_set = get_cached_existing_realization_set(instance_key, model.get_descendants(include_self=True), customizer_set, proxy_set, vocabularies)
 
     # this is used for other fns that might need to know what the view returns
     # (such as those in the testing framework)
@@ -229,8 +242,18 @@ def questionnaire_edit_existing(request, project_name="", model_name="", version
     else:  # request.method == "POST":
 
         data = request.POST
+        inheritance_data = get_cached_inheritance_data(instance_key)
         (validity, model_formset, standard_properties_formsets, scientific_properties_formsets) = \
-            create_edit_forms_from_data(data, realization_set["models"], customizer_set["model_customizer"], realization_set["standard_properties"], customizer_set["standard_property_customizers"], realization_set["scientific_properties"], customizer_set["scientific_property_customizers"])
+            create_edit_forms_from_data(
+                data,
+                realization_set["models"],
+                customizer_set["model_customizer"],
+                realization_set["standard_properties"],
+                customizer_set["standard_property_customizers"],
+                realization_set["scientific_properties"],
+                customizer_set["scientific_property_customizers"],
+                inheritance_data=inheritance_data,
+            )
 
         if all(validity):
             model_parent_dictionary = get_model_parent_dictionary(realization_set["models"])
@@ -264,7 +287,7 @@ def questionnaire_edit_existing(request, project_name="", model_name="", version
         "standard_properties_formsets": standard_properties_formsets,
         "scientific_properties_formsets": scientific_properties_formsets,
         "questionnaire_version": get_version(),  # used in the footer
-        "session_id": session_id,
+        "instance_key": instance_key,
         "root_model_id": root_model_id,
         "can_publish": True,  # only models that have already been saved can be published
     }
