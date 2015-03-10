@@ -69,6 +69,22 @@
 
 {% endblock %} {# /scripts #}
 
+{% block style %}
+
+    <link rel='stylesheet' type="text/css" href="{{ STATIC_URL }}questionnaire/css/ext/jquery.dynatree.css"/>
+    <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}questionnaire/css/questionnaire_edit.css" />
+
+    <style type="text/css">
+        #questionniare .no_float { float: none !important; }
+        /* all the interactive features are hidden in the view template */
+        /* but not in this, the edit template */
+{#        #questionnaire button.add, button.remove, button.replace, button.reset { display: none !important; }#}
+{#        #questionnaire div.inheritance_options { display: none !important; background: none !important; }#}
+{#        #questionnaire div.inheritance_options * { display: none !important; background: none !important; }#}
+    </style>
+
+{% endblock %} {# / style #}
+
 {% block title %}
     CIM Questionnaire Editor
 {% endblock %} {# /title #}
