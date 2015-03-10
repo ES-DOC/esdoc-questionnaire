@@ -376,8 +376,8 @@ class MetadataAbstractStandardPropertyForm(MetadataEditingForm):
                 self.inherit(inheritance_data)
 
         if customizer.suggestions:
-            update_field_widget_attributes(value_field_name, {"class": "autocomplete"})
-            update_field_widget_attributes(value_field_name, {"suggestions": customizer.suggestions})
+            update_field_widget_attributes(value_field, {"class": "autocomplete"})
+            update_field_widget_attributes(value_field, {"suggestions": customizer.suggestions})
 
     def inherit(self, inheritance_data):
         """
