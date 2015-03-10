@@ -24,7 +24,7 @@ from django.template import RequestContext
 from CIM_Questionnaire.questionnaire.models.metadata_model import MetadataModel
 from CIM_Questionnaire.questionnaire.models.metadata_customizer import MetadataModelCustomizer, MetadataScientificPropertyCustomizer
 from CIM_Questionnaire.questionnaire.forms.forms_edit import create_existing_edit_forms_from_models
-from CIM_Questionnaire.questionnaire.views.views_base import validate_view_arguments
+from CIM_Questionnaire.questionnaire.views.views_base import validate_view_arguments, get_key_from_request
 from CIM_Questionnaire.questionnaire.views.views_base import get_cached_existing_customization_set, get_cached_proxy_set, get_cached_new_realization_set, get_cached_existing_realization_set
 from CIM_Questionnaire.questionnaire.views.views_error import questionnaire_error
 from CIM_Questionnaire.questionnaire import get_version
@@ -94,10 +94,10 @@ def questionnaire_view_existing(request, project_name="", model_name="", version
     vocabularies = model_customizer.get_active_sorted_vocabularies()
 
     # get (or set) items from the cache...
-    session_id = request.session.session_key
-    customizer_set = get_cached_existing_customization_set(session_id, model_customizer, vocabularies)
-    proxy_set = get_cached_proxy_set(session_id, customizer_set)
-    realization_set = get_cached_existing_realization_set(session_id, model.get_descendants(include_self=True), customizer_set, proxy_set, vocabularies)
+    instance_key = get_key_from_request(request)
+    customizer_set = get_cached_existing_customization_set(instance_key, model_customizer, vocabularies)
+    proxy_set = get_cached_proxy_set(instance_key, customizer_set)
+    realization_set = get_cached_existing_realization_set(instance_key, model.get_descendants(include_self=True), customizer_set, proxy_set, vocabularies)
 
     # this is used for other fns that might need to know what the view returns
     # (such as those in the testing framework)
@@ -148,9 +148,9 @@ def questionnaire_view_existing(request, project_name="", model_name="", version
         "standard_properties_formsets": standard_properties_formsets,
         "scientific_properties_formsets": scientific_properties_formsets,
         "questionnaire_version": get_version(),  # used in the footer
-        "session_id": session_id,
+        "instance_key": instance_key,
         "root_model_id": root_model_id,
-        "can_publish": True,  # only models that have already been saved can be published
+        "can_publish": False,  # cannot publish things in the "view" view
     }
 
     return render_to_response('questionnaire/questionnaire_view.html', _dict, context_instance=RequestContext(request))
