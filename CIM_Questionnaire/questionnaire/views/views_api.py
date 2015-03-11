@@ -206,7 +206,7 @@ def validate_edit_view_arguments(project_name, section_key):
         msg = "There is no default customization associated with this project/model/version."
         validity = False
         return (validity, version, model_proxy, vocabulary, component_proxy, property_type, category_proxy, property_proxy, model_customizer, vocabularies, msg)
-    vocabularies = model_customizer.vocabularies.all()
+    vocabularies = model_customizer.sorted_vocabularies.all()
 
     return (validity, version, model_proxy, vocabulary, component_proxy, property_type, category_proxy, property_proxy, model_customizer, vocabularies, msg)
 
