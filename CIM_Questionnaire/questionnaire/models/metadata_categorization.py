@@ -20,13 +20,14 @@ Summary of module goes here
 
 """
 
+import os
+import re
+
 from django.db import models
 from django.contrib import messages
 from django.conf import settings
 from lxml import etree as et
 
-import os
-import re
 
 from CIM_Questionnaire.questionnaire import APP_LABEL
 from CIM_Questionnaire.questionnaire.models.metadata_proxy import MetadataModelProxy, MetadataStandardPropertyProxy, MetadataStandardCategoryProxy
@@ -34,47 +35,62 @@ from CIM_Questionnaire.questionnaire.fields import OverwriteStorage
 from CIM_Questionnaire.questionnaire.utils import validate_file_extension, validate_file_schema, xpath_fix
 from CIM_Questionnaire.questionnaire.utils import LIL_STRING, SMALL_STRING, BIG_STRING, HUGE_STRING
 
-UPLOAD_DIR  = "categorizations"
-UPLOAD_PATH = os.path.join(APP_LABEL,UPLOAD_DIR)    # this is a relative path (will be concatenated w/ MEDIA_ROOT by FileFIeld)
+###################
+# local constants #
+###################
+
+UPLOAD_DIR = "categorizations"
+UPLOAD_PATH = os.path.join(APP_LABEL, UPLOAD_DIR)  # this is a relative path (will be concatenated w/ MEDIA_ROOT by FileField)
+
+
+####################
+# local validators #
+####################
+
 
 def validate_categorization_file_extension(value):
     valid_extensions = ["xml"]
-    return validate_file_extension(value,valid_extensions)
+    return validate_file_extension(value, valid_extensions)
+
 
 def validate_categorization_file_schema(value):
-    schema_path = os.path.join(settings.STATIC_ROOT,APP_LABEL,"xml/categorization.xsd")
-    return validate_file_schema(value,schema_path)
+    schema_path = os.path.join(settings.STATIC_ROOT, APP_LABEL, "xml/categorization.xsd")
+    return validate_file_schema(value, schema_path)
+
+
+############################
+# now for the actual model #
+############################
+
 
 class MetadataCategorization(models.Model):
     class Meta:
-        app_label   = APP_LABEL
-        abstract    = False
+        app_label = APP_LABEL
+        abstract = False
         # this is one of the few classes that I allow admin access to, so give it pretty names:
-        verbose_name        = 'Metadata Categorization'
+        verbose_name = 'Metadata Categorization'
         verbose_name_plural = 'Metadata Categorizations'
 
+    name = models.CharField(max_length=SMALL_STRING, blank=False, null=False, unique=True)
+    registered = models.BooleanField(default=False)
 
-    name            = models.CharField(max_length=SMALL_STRING,blank=False,null=False,unique=True)
-    registered      = models.BooleanField(default=False)
-
-    file            = models.FileField(upload_to=UPLOAD_PATH,validators=[validate_categorization_file_extension,validate_categorization_file_schema],storage=OverwriteStorage())
-    file.help_text  = "Note that files with the same names will be overwritten"
-
+    file = models.FileField(upload_to=UPLOAD_PATH, validators=[validate_categorization_file_extension, validate_categorization_file_schema], storage=OverwriteStorage(), max_length=SMALL_STRING)
+    file.help_text = "Note that files with the same names will be overwritten"
 
     def __unicode__(self):
 
         if self.name:
-            return u'%s' % (self.name)
+            return u'%s' % self.name
         else:
-            return u'%s' % (os.path.basename(self.file.name))
+            return u'%s' % os.path.basename(self.file.name)
 
     def clean(self):
         # force name to be lowercase
         # this avoids hacky methods of ensuring case-insensitive uniqueness
         self.name = self.name.lower()
 
-    def register(self,**kwargs):
-        request = kwargs.pop("request",None)
+    def register(self, **kwargs):
+        request = kwargs.pop("request", None)
 
         try:
             self.file.open()
@@ -86,17 +102,16 @@ class MetadataCategorization(models.Model):
                 messages.add_message(request, messages.ERROR, msg)
                 return
 
-
-        versions = self.versions.all()
-        if not versions:
-            msg = "MetadataCategorization '%s' has not been associated with any versions.  It's kind of silly to register it now." % (self)
+        ontologies = self.versions.all()
+        if not ontologies:
+            msg = "MetadataCategorization '%s' has not been associated with any ontologies.  It's kind of silly to register it now." % self
             if request:
                 messages.add_message(request, messages.WARNING, msg)
             else:
                 print msg
 
         new_category_proxy_kwargs = {
-            "categorization" : self,
+            "categorization": self,
         }
         for i, category in enumerate(xpath_fix(categorization_content,"//category")):
             category_name           = xpath_fix(category,"name/text()")
@@ -145,30 +160,40 @@ class MetadataCategorization(models.Model):
 
         self.registered = True
 
-    def unregister(self,**kwargs):
-        request = kwargs.pop("request",None)
+    def unregister(self, **kwargs):
+        request = kwargs.pop("request", None)
         for category in self.categories.all():
             category.delete()
         self.registered = False
 
+###########
+# signals #
+###########
+
 from django.dispatch import receiver
 from django.db.models.signals import post_save, post_delete
 
-@receiver(post_save, sender=MetadataCategorization)
-def project_post_save(sender, **kwargs):
-    created = kwargs.pop("created",True)
-    categorization = kwargs.pop("instance",None)
-    # TODO:
-    pass
+# @receiver(post_save, sender=MetadataCategorization)
+# def categorization_post_save(sender, **kwargs):
+#     created = kwargs.pop("created", True)
+#     categorization = kwargs.pop("instance", None)
+#     # TODO:
+#     pass
 
 @receiver(post_delete, sender=MetadataCategorization)
-def project_post_delete(sender, **kwargs):
-    categorization = kwargs.pop("instance",None)
+def categorization_post_delete(sender, **kwargs):
+    """
+    If you delete a categorization, make sure to delete the corresponding file
+    :param sender:
+    :param kwargs:
+    :return:
+    """
+    categorization = kwargs.pop("instance", None)
     if categorization:
         try:
-            categorization.file.delete(save=False)    # save=False prevents model from re-saving itself
+            categorization.file.delete(save=False)  # save=False prevents model from re-saving itself
             # TODO: CHECK THAT FILE.URL IS THE RIGHT WAY TO PRINT THIS
-            print "deleted %s" % (categorization.file.url)
+            print "deleted %s" % categorization.file.url
         except:
             pass
 

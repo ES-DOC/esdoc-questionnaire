@@ -63,7 +63,7 @@ class MetadataVocabulary(models.Model):
     version        = models.CharField(max_length=LIL_STRING, blank=False, null=False )
     url            = models.URLField(blank=True, null=True)
     registered     = models.BooleanField(default=False)
-    file           = models.FileField(upload_to=UPLOAD_PATH,validators=[validate_vocabulary_file_extension,],storage=OverwriteStorage())
+    file           = models.FileField(upload_to=UPLOAD_PATH,validators=[validate_vocabulary_file_extension,],storage=OverwriteStorage(), max_length=SMALL_STRING)
     file.help_text = "Note that files with the same names will be overwritten"
     document_type  = models.CharField(max_length=64,blank=False,choices=[(document_type,document_type) for document_type in CIM_DOCUMENT_TYPES])
 
