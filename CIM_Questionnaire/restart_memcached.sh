@@ -15,7 +15,8 @@ USAGE="Usage: `basename $0` [-h <host name>] [-p <port number>]"
 ####################
 
 HOST="127.0.0.1"  # default localhost
-PORT="11211" # default memcached port
+PORT="11211"  # default memcached port
+MEMORY="128"  # MB of memory to use (default is 64)
 
 ###############
 # get options #
