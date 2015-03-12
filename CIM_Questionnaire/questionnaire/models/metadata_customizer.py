@@ -324,10 +324,10 @@ class MetadataModelCustomizer(MetadataCustomizer):
     model_show_all_categories.help_text = "Include categories in the editing form for which there are no (visible) attributes associated with"
     model_show_all_properties = models.BooleanField(verbose_name="Display uncategorized fields?", default=True)
     model_show_all_properties.help_text = "Include attributes in the editing form that have no associated category.  These will show up below any category tabs."
-    model_show_hierarchy = models.BooleanField(verbose_name="Nest the full component hierarchy within a root component?", default=True)
+    model_show_hierarchy = models.BooleanField(verbose_name="Nest the full document hierarchy within a root document?", default=True)
     model_show_hierarchy.help_text = "A CIM Document that uses 1 or 0 CVs does not need a root component acting as a <i>parent</i> of all components."
-    model_hierarchy_name = models.CharField(max_length=LIL_STRING, verbose_name="Title of the component hierarchy tree", default="Component Hierarchy", blank=False)
-    model_hierarchy_name.help_text = "What should the title be for widget that navigates the component hierarchy?"
+    model_hierarchy_name = models.CharField(max_length=LIL_STRING, verbose_name="Title of the document hierarchy tree", default="Component Hierarchy", blank=False)
+    model_hierarchy_name.help_text = "What should the title be for the widget that navigates the document hierarchy?"
     model_root_component = models.CharField(max_length=LIL_STRING, verbose_name="Name of the root component", blank=True, validators=[validate_no_spaces], default="RootComponent")
 
     def __unicode__(self):
