@@ -260,6 +260,16 @@ if parser.has_option("cache", "port"):
 else:
     CACHE_PORT = DEFAULT_CACHE_PORT
 
+# make sure caching is running...
+from subprocess import check_call, CalledProcessError
+try:
+    cmd = rel("restart_memcached.sh")
+    args = "-h %s -p %s" % (CACHE_HOST, CACHE_PORT)
+    check_call([cmd, args])
+except CalledProcessError:
+    msg = "unable to (re)start memcached"
+    raise EnvironmentError(msg)
+
 CACHES = {
     'default': {
         'TIMEOUT': 60,
