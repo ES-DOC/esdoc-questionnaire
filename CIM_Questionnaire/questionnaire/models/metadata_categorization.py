@@ -113,48 +113,47 @@ class MetadataCategorization(models.Model):
         new_category_proxy_kwargs = {
             "categorization": self,
         }
-        for i, category in enumerate(xpath_fix(categorization_content,"//category")):
-            category_name           = xpath_fix(category,"name/text()")
-            category_key            = xpath_fix(category,"key/text()") or None
-            category_description    = xpath_fix(category,"description/text()") or None
-            category_order          = xpath_fix(category,'order/text()') or None
+        for i, category in enumerate(xpath_fix(categorization_content, "//category")):
+            category_name = xpath_fix(category, "name/text()")
+            category_key = xpath_fix(category, "key/text()") or None
+            category_description = xpath_fix(category, "description/text()") or None
+            category_order = xpath_fix(category, 'order/text()') or None
 
-            new_category_proxy_kwargs["name"]          = category_name[0]
-            new_category_proxy_kwargs["key"]           = category_key[0] if category_key else re.sub(r'\s','',category_name[0]).lower()
-            new_category_proxy_kwargs["description"]   = category_description[0] if category_description else ""
-            new_category_proxy_kwargs["order"]         = category_order[0] if category_order else i
+            new_category_proxy_kwargs["name"] = category_name[0]
+            new_category_proxy_kwargs["key"] = category_key[0] if category_key else re.sub(r'\s', '', category_name[0]).lower()
+            new_category_proxy_kwargs["description"] = category_description[0] if category_description else ""
+            new_category_proxy_kwargs["order"] = category_order[0] if category_order else i
 
-            (new_category_proxy,created_category) = MetadataStandardCategoryProxy.objects.get_or_create(**new_category_proxy_kwargs)
+            (new_category_proxy, created_category) = MetadataStandardCategoryProxy.objects.get_or_create(**new_category_proxy_kwargs)
 
             if not created_category:
                 # remove any existing relationships (going to replace them during this registration)...
                 new_category_proxy.properties.clear()
 
-            for i, field in enumerate(categorization_content.xpath("//field[category_key='%s']" % (new_category_proxy.key))):
+            for j, field in enumerate(categorization_content.xpath("//field[category_key='%s']" % new_category_proxy.key)):
 
                 model_name = field.xpath("./ancestor::model/name/text()")[0]
                 field_name = field.xpath("name/text()")[0]
 
-                for version in versions:
+                for ontology in ontologies:
                     try:
-                        model_proxy    = version.model_proxies.get(name__iexact=model_name)
+                        model_proxy = ontology.model_proxies.get(name__iexact=model_name)
                         property_proxy = model_proxy.standard_properties.get(name__iexact=field_name)
 
                         new_category_proxy.properties.add(property_proxy)
 
                     except MetadataModelProxy.DoesNotExist:
-                        msg = "Unable to find MetadataModel '%s' specified in MetadataCategorization '%s'" % (model_name,self)
+                        msg = "Unable to find MetadataModel '%s' specified in MetadataCategorization '%s'" % (model_name, self)
                         if request:
                             messages.add_message(request, messages.WARNING, msg)
                         else:
-                            pass#print msg
+                            pass  # print msg
                     except MetadataStandardPropertyProxy.DoesNotExist:
                         msg = "Unable to find MetadataProperty '%s' specified in MetadataCategorization '%s'" % (field_name,self)
                         if request:
                             messages.add_message(request, messages.WARNING, msg)
                         else:
-                            pass#print msg
-                        
+                            pass  # print msg
 
             new_category_proxy.save()
 
