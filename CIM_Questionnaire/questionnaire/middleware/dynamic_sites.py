@@ -21,7 +21,6 @@ This is needed b/c the site information is used for various messages that get em
 
 from django.conf import settings
 from django.contrib.sites.models import Site
-#from CIM_Questionnaire.questionnaire.utils import QuestionnaireError
 
 
 class DynamicSitesMiddleware(object):

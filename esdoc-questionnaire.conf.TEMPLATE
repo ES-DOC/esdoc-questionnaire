@@ -12,7 +12,7 @@ port=11211
 
 [email]
 host=smtp.gmail.com
-port=
+port=587
 username=
 password=
 

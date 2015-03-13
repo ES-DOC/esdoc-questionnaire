@@ -256,7 +256,6 @@ class MetadataScientificCategoryProxy(MetadataCategoryProxy):
     def is_default_category(self):
         return self.key == DEFAULT_SCIENTIFIC_CATEGORY_KEY
 
-#@hierarchical
 class MetadataComponentProxy(MPTTModel):
     name          = models.CharField(max_length=SMALL_STRING, blank=False, null=False)
     documentation = models.TextField(blank=True, null=True)

@@ -75,6 +75,8 @@ urlpatterns = patterns('',
     url(r'^api/(?P<project_name>[^/]+)/get_new_edit_form_section/(?P<section_key>[^/]+)/$', 'questionnaire.views.views_api.api_get_new_edit_form_section', name="api_get_new_edit_form_section"),
     url(r'^api/(?P<project_name>[^/]+)/get_existing_edit_form_section/(?P<model_id>[^/]+)/(?P<section_key>[^/]+)/$', 'questionnaire.views.views_api.api_get_existing_edit_form_section', name="api_get_existing_edit_form_section"),
 
+    url(r'^api/add_inheritance_data/$', 'questionnaire.views.views_inheritance.api_add_inheritance_data', name="add_inheritance_data"),
+
     # atom feeds...
     url(r'^feed/$', MetadataFeed(), name="feed"),
     url(r'^feed/(?P<project_name>[^/]+)/$', MetadataFeed(), name="feed_project"),

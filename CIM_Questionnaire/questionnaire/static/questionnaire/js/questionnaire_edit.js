@@ -4,11 +4,13 @@ var PREVIOUSLY_SELECTED_TAB = 0;
 
 $.ui.dynatree.nodedatadefaults["icon"] = false; // Turn off icons by default
 
+
 function panes(element) {
     // hide panes by default
     // only show them as the corresponding tree node is selected
     $(element).hide();
 }
+
 
 function autocompletes(element) {
     /* an autocomplete field stores the options as an attribute */
@@ -23,6 +25,7 @@ function autocompletes(element) {
         "<span class='ui-icon ui-icon-carat-1-s' style='display: inline-block; margin-left: -16px; margin-bottom: -8px;' title='this field supports autocompletion'></span>"
     );
 }
+
 
 function dynamic_accordion_buttons(element) {
 
@@ -106,7 +109,8 @@ function dynamic_accordion_buttons(element) {
         });
 
     }
-};
+}
+
 
 function dynamic_accordions(element) {
     /* element = $(parent).find(".accordion .accordion_header") */
@@ -132,17 +136,18 @@ function dynamic_accordions(element) {
 
 }
 
+
 function accordion_headers(element) {
 
-    /* updates the accordion headers based on the current value of a scientific property
-     */
+    /* updates the accordion headers based on the current value of a scientific property */
+
     $(element).find(".atomic_value").each(function () {
         $(this).trigger("change");
     });
     $(element).find(".ui-multiselect").each(function () {
         console.log("found it");
         var source_name = $(this).prev(".multiselect").attr("name");
-        var target_name = source_name.replace("-enumeration_value", "-scientific_property_value")
+        var target_name = source_name.replace("-enumeration_value", "-scientific_property_value");
         $(this).find(".multiselect_header").change(function (event) {
             var source_value = $(this).button("option", "label");
             var target = $("*[name='" + target_name + "']");
@@ -150,6 +155,7 @@ function accordion_headers(element) {
         })
     });
 }
+
 
 var enumeration_null_value = "_NONE";
 var enumeration_other_value = "_OTHER";
@@ -208,6 +214,7 @@ function enumerations(element) {
     $(element).trigger("multiselect_change");
 }
 
+
 function treeviews(element) {
 
     $(element).dynatree({
@@ -220,8 +227,8 @@ function treeviews(element) {
             show_pane(node.data.key);
         },
         onDeactivate    : function(node) {
-            inactive_pane_id = node.data.key + "_pane";
-            inactive_pane = $("#"+inactive_pane_id);
+            var inactive_pane_id = node.data.key + "_pane";
+            var inactive_pane = $("#"+inactive_pane_id);
             $(inactive_pane).hide();
             PREVIOUSLY_SELECTED_TAB = $(inactive_pane).find(".tabs:first").tabs("option","active");
         }
@@ -234,8 +241,8 @@ function treeviews(element) {
             })
 
             node.tree.visit(function (node) {
-                pane_id = node.data.key + "_pane";
-                pane = $("#" + pane_id);
+                var pane_id = node.data.key + "_pane";
+                var pane = $("#" + pane_id);
                 if ($.inArray(node, selected_nodes) > -1) {
                     $(pane).removeClass("ui-state-disabled");
                     $(pane).find("input[name$='-active']").prop("checked", true)
@@ -247,13 +254,14 @@ function treeviews(element) {
             });
         }
     });
-    root = $(element).dynatree("getRoot");
+
+    var root = $(element).dynatree("getRoot");
 
     root.visit(function(node) {
-        pane_id = node.data.key + "_pane";
-        pane = $("#"+pane_id);
+        var pane_id = node.data.key + "_pane";
+        var pane = $("#"+pane_id);
 
-        active_checkbox = $(pane).find("input[name$='-active']")
+        var active_checkbox = $(pane).find("input[name$='-active']");
 
 //        if ($(active_checkbox).is(":checked")) {
 //            console.log(pane_id + " is selected");
@@ -267,7 +275,7 @@ function treeviews(element) {
 //        }
 //        alert(pane_id + ": " + $(active_checkbox).is(":checked"));
 //        node.select($(active_checkbox).is(":checked"));
-        node.select(true)
+        node.select(true);
 //        node.select(false)
 //        node.activate($(active_checkbox).is(":checked"))
         node.expand(true);
@@ -276,24 +284,24 @@ function treeviews(element) {
     // hence this fn call
     var first_child = root.getChildren()[0];
     first_child.activate(true);
-
 }
+
 
 function show_pane(pane_key) {
     var pane = $("#" + pane_key + "_pane");
 
     if (!$(pane).hasClass("loaded")) {
 
-        toastr.info("loading...")
+        toastr.info("loading...");
 
-        var project_name = $("#_project_name").val()
-        var session_id = $("#_session_id").val()
+        var project_name = $("#_project_name").val();
+        var instance_key = $("#_instance_key").val();
         var section_key = $(pane).attr("data-section-key");
 
         /* get_form_section_view is the name of the AJAX view to return the particular type of form (new vs existing, edit vs customize) */
         /* for this template; it is set in the template header */
         var url = window.document.location.protocol + "//" + window.document.location.host + "/api/" + project_name + "/" + get_form_section_view+ "/" + section_key;
-        url += "?session_id=" + session_id;
+        url += "?instance_key=" + instance_key;
 
         $.ajax({
             url: url,
@@ -310,27 +318,14 @@ function show_pane(pane_key) {
                     init_widgets(expanders, $(parent).find(".default, .character"));
                     init_widgets(autocompletes, $(parent).find(".autocomplete"));
                     init_widgets(multiselects, $(parent).find(".multiselect"));
-                    init_widgets(buttons, $(parent).find("input.button"))
+                    init_widgets(buttons, $(parent).find("input.button"));
                     init_widgets(enumerations, $(parent).find(".enumeration"));
                     init_widgets(accordions, $(parent).find(".accordion").not(".fake"));
                     init_widgets(dynamic_accordions, $(parent).find(".accordion .accordion_header"));
                     init_widgets(accordion_buttons, $(parent).find(".subform_toolbar button"));
                     init_widgets(dynamic_accordion_buttons, $(parent).find("button.add, button.remove, button.replace"));
-                    init_widgets(fieldsets, $(parent).find(".collapsible_fieldset"))
-
-//            init_widgets_on_show(accordions,$(parent).find(".accordion").not(".fake"));
-//            init_widgets_on_show(dynamic_accordions,$(parent).find(".accordion .accordion_header"));
-//            init_widgets_on_show(accordion_buttons,$(parent).find(".subform_toolbar button"));
-//            init_widgets_on_show(dynamic_accordion_buttons,$(parent).find("button.add,button.remove,button.replace"));
-//            /* TODO: accordion_headers
-//            init_widgets_on_show(accordion_headers,$(parent).find(".scientific_property"));
-//            */
-//
-//            init_widgets_on_show(autocompletes,$(parent).find(".autocomplete"));
-//            init_widgets_on_show(enablers,$(parent).find(".enabler"))
-//
-//            init_widgets(enumerations,$(parent).find(".multiselect.open,.multiselect.nullable"));
-//            init_widgets(readonlies,$(parent).find(".readonly"));
+                    init_widgets(fieldsets, $(parent).find(".collapsible_fieldset"));
+                    init_widgets(inherits, $(parent).find(".inherited"));
 
                     // identify the section as loaded for js...
                     $(pane).addClass("loaded");
@@ -351,82 +346,206 @@ function show_pane(pane_key) {
     $(pane).find(".tabs:first").tabs({ "active" : PREVIOUSLY_SELECTED_TAB });
 }
 
-function inherit(item) {
 
-    var inheritance_options = $(item).closest(".field").find(".inheritance_options:first");
-    if ($(inheritance_options).find(".enable_inheritance").is(":checked")) {
+function inherits(element) {
+    var tree_widget = $("#component_tree").find(".treeview");
+    if (!tree_widget.length) {
+        /* there is no point of inheriting anything in the absence of a component tree */
+        return true
+    }
+    var tree = $(tree_widget).dynatree("getTree");
+    var inheritance_options = $(element).closest(".field").find("div.inheritance_options:first");
 
-        var tree_widget = $("#component_tree").find(".treeview");
-        if (!($(tree_widget).hasClass("initialized_treeviews"))) {
-            /* only carry on if the treeview has already been setup */
-            return false;
-        }
-        var tree = $(tree_widget).dynatree("getTree");
+    var current_pane = $(element).closest(".pane");
+    var current_component_key = $(current_pane).attr("id").replace(/_pane$/, "")
+    var current_component_node = tree.getNodeByKey(current_component_key);
+    var child_component_keys = [];
+    current_component_node.visit(function (node) {
+        child_component_keys.push(node.data.key)
+    });
 
-        var current_pane = $(item).closest(".pane");
-        var current_component_key = $(current_pane).attr("id").replace(/_pane$/,"")
-        var current_component_node = tree.getNodeByKey(current_component_key);
+    if ($(element).hasClass("multiselect")) {
+        $(element).on("multiselect_change", function() {
+            if ($(inheritance_options).find(".enable_inheritance").is(":checked")) {
 
-        var child_pane_keys  = [];
-        current_component_node.visit(function(node) {
-            child_pane_keys.push(node.data.key+"_pane")
-        });
+                var source_element_id = $(element).find("div.multiselect_content ul:first").attr("id");
+                var target_element_ids_to_inherit_later = new Array();
 
-        var item_name = $(item).closest("tr.field").attr("name");
-
-        if ($(item).attr("type") == "checkbox") {
-            // checkbox
-            var item_value = $(item).is(":checked");
-            $(child_pane_keys).each(function() {
-                var child_pane = $(".pane[id='"+this+"']");
-                var child_field = $(child_pane).find("tr.field[name='"+item_name+"']");
-                var child_inheritance_options = $(child_field).find("td:nth-child(1) .inheritance_options")
-                var child_item = $(child_field).find("td:nth-child(2) input:first")
-                if ($(child_inheritance_options).find(".enable_inheritance").is(":checked")) {
-                    $(child_item).prop("checked",item_value);
-                }
-            });
-        }
-        else if ($(item).prop("tagName").toLowerCase()=="select") {
-            // TODO
-            if ($(item).attr("multiple")) {
-                console.log("inherit multiple select");
-            }
-            else {
-                console.log("inherit single select");
-                var item_value = $(item).val();
-                $(child_pane_keys).each(function() {
-                    var child_pane = $(".pane[id='"+this+"']");
-                    var child_field = $(child_pane).find("tr.field[name='"+item_name+"']");
-                    var child_inheritance_options = $(child_field).find("td:nth-child(1) .inheritance_options")
-                    var child_item = $(child_field).find("td:nth-child(2) .multiselect_content:first")
-                    console.log("found child item (multiselect) w/ class = " + $(child_item).attr("class"));
-                    if ($(child_inheritance_options).find(".enable_inheritance").is(":checked")) {
-                        console.log("going to set child item: " + $(child_item).find("input[value='"+item_value+"']").attr("type"));
-                        $(child_item).find("input[value='" + item_value + "']").prop("checked", true);
+                $(child_component_keys).each(function () {
+                    var child_pane = $(".pane[id='" + this + "_pane']");
+                    var target_element_id = source_element_id.replace(current_component_key, this);
+                    if ($(child_pane).hasClass("loaded")) {
+                        var target_element = $(child_pane).find("#"+target_element_id).closest("div.multiselect");
+                        inherit_now(element, target_element);
+                    }
+                    else {
+                        /* the pane has not yet been loaded, so inherit it later */
+                        target_element_ids_to_inherit_later.push(target_element_id);
                     }
                 });
+
+                if (target_element_ids_to_inherit_later.length) {
+                    inherit_later(element, target_element_ids_to_inherit_later);
+                }
+            }
+        });
+
+    }
+    else {
+        $(element).change(function () {
+
+            if ($(inheritance_options).find(".enable_inheritance").is(":checked")) {
+
+                var source_element_id = $(element).attr("id");
+                var target_element_ids_to_inherit_later = new Array();
+
+                $(child_component_keys).each(function () {
+                    var child_pane = $(".pane[id='" + this + "_pane']");
+                    var target_element_id = source_element_id.replace(current_component_key, this);
+                    if ($(child_pane).hasClass("loaded")) {
+                        /* the inherited field will exist in the pane, so inherit it now */
+                        var target_element = $(child_pane).find("#"+target_element_id);
+                        inherit_now(element, target_element);
+                    }
+                    else {
+                        /* the pane has not yet been loaded, so inherit it later */
+                        target_element_ids_to_inherit_later.push(target_element_id);
+                    }
+                });
+
+                if (target_element_ids_to_inherit_later.length) {
+                    inherit_later(element, target_element_ids_to_inherit_later)
+                }
+            }
+        });
+    }
+}
+
+
+function inherit_now(source_element, target_element) {
+    var target_inheritance_options = $(target_element).closest(".field").find("div.inheritance_options:first");
+    if ($(target_inheritance_options).find(".enable_inheritance").is(":checked")) {
+
+        /* element_type can be a...
+         checkbox input,
+         a normal input (including ".other"),
+         a select,
+         a textarea,
+         a single multiselect,
+         or a multiple multiselect,
+        */
+
+        var element_type = $(source_element).prop("tagName").toLowerCase();
+
+        if (element_type == "input") {
+            if ($(source_element).attr("type") == "checkbox") {
+                $(target_element).prop("checked", $(source_element).is(":checked"));
+            }
+            else {
+                $(target_element).val($(source_element).val());
+                if ($(source_element).hasClass("other")) {
+                    $(target_element).show();
+                }
             }
         }
+
+        else if (element_type == "select") {
+            $(target_element).val($(source_element).val());
+        }
+
+        else if (element_type == "textarea") {
+            $(target_element).val($(source_element).val())
+        }
+
+        else if ($(source_element).hasClass("multiselect")) {
+            /* TODO: THIS WILL NOT WORK W/ SORTABLE MULTISELECTS */
+            /* TODO: BUT I DON'T THINK THAT FEATURE IS EVER USED */
+            /* TODO: SO JUST GET RID OF THAT FEATURE */
+            var source_inputs = $(source_element).find("div.multiselect_content li input");
+            var target_inputs = $(target_element).find("div.multiselect_content li input");
+            $(source_inputs).each(function(input_index, source_input) {
+                var target_input = $(target_inputs).eq(input_index);
+                $(target_input).prop("checked", $(source_input).prop("checked"))
+                $(target_input).trigger("change")
+            });
+            /* .other is handled above by <input>*/
+            /* var other_source_input = $(source_element).siblings("input.other:first") */
+            /* var other_target_input = $(target_element).siblings("input.other:first") */
+            /* $(other_target_input).val($(other_source_input).val()); */
+        }
+
         else {
-            // text input or textarea
-            var item_value = $(item).val();
-            $(child_pane_keys).each(function() {
-                var child_pane = $(".pane[id='"+this+"']");
-                var child_field = $(child_pane).find("tr.field[name='"+item_name+"']");
-                var child_inheritance_options = $(child_field).find("td:nth-child(1) .inheritance_options")
-                var child_item = $(child_field).find("td:nth-child(2) input:first, textarea:first")
-                if ($(child_inheritance_options).find(".enable_inheritance").is(":checked")) {
-                    $(child_item).val(item_value);
-                    if ($(child_item).hasClass("enumeration_other")) {
-                        $(child_item).show();
-                    }
-                }
+            console.log("ERROR: unhandled element type (" + element_type + ") for inheritance.");
+        }
+    }
+}
+
+
+function inherit_later(source_element, target_element_ids) {
+    /* note that target_element_ids is an array; */
+    /* I am doing this all-at-once, instead of one-at-a-time */
+    /* (as w/ inherit_now), to avoid multiple AJAX calls */
+
+    var inheritance_data = {
+        "instance_key": $("input#_instance_key").val()
+    };
+
+    var element_type = $(source_element).prop("tagName").toLowerCase();
+
+    if (element_type == "input") {
+        if ($(source_element).attr("type") == "checkbox") {
+            $(target_element_ids).each(function() {
+                inheritance_data[this] = $(source_element).is(":checked");
+            });
+        }
+        else {
+            $(target_element_ids).each(function() {
+                inheritance_data[this] = $(source_element).val();
             });
         }
     }
 
-};
+    else if (element_type == "select") {
+        $(target_element_ids).each(function() {
+            inheritance_data[this] = $(source_element).val();
+        });
+    }
+
+    else if (element_type == "textarea") {
+        $(target_element_ids).each(function() {
+            inheritance_data[this] = $(source_element).val();
+        });
+    }
+
+    else if ($(source_element).hasClass("multiselect")) {
+        var source_component_key = $(source_element).closest("div.pane").attr("id").replace(/_pane$/, "");
+        var component_key_regex = /^id_(.*?)_standard_properties/;
+        
+
+        var source_content = $(source_element).find("div.multiselect_content");
+        $(source_content).find("li input").each(function() {
+            var source_input = this;
+            $(target_element_ids).each(function() {
+                var target_component_key = component_key_regex.exec(this)[1];
+                var target_key = $(source_input).attr("id").replace(source_component_key, target_component_key)
+                inheritance_data[target_key] = $(source_input).is(":checked");
+            });
+        });
+    }
+
+    var url = window.document.location.protocol + "//" + window.document.location.host + "/api/add_inheritance_data/";
+
+    $.ajax({
+        url: url,
+        type: "POST",
+        data: inheritance_data,
+        cache: false,
+        error: function(xhr, status, error) {
+            console.log(xhr.responseText + status + error)
+        }
+    });
+}
+
 
 function add_subform(row) {
 
@@ -439,22 +558,22 @@ function add_subform(row) {
     var pane                    = $(row).closest(".pane");
     var accordion_units         = $(accordion).children(".accordion_unit");
     var customizer_id           = $(field).find("input[name='customizer_id']").val();
-    var property_id             = $(field).find("input[name='property_id']").val()
-    var prefix                  = $(field).find("input[name='prefix']").val()
-    var parent_vocabulary_key   = $(pane).find("input[name$='-vocabulary_key']:first").val()
-    var parent_component_key    = $(pane).find("input[name$='-component_key']:first").val()
-    var n_forms                 = parseInt(accordion_units.length)
+    var property_id             = $(field).find("input[name='property_id']").val();
+    var prefix                  = $(field).find("input[name='prefix']").val();
+    var parent_vocabulary_key   = $(pane).find("input[name$='-vocabulary_key']:first").val();
+    var parent_component_key    = $(pane).find("input[name$='-component_key']:first").val();
+    var n_forms                 = parseInt(accordion_units.length);
     var existing_subforms       = $(accordion_units).find("input[name$='-id']:first").map(function() {
-        var removed = $(this).closest(".accordion_content").find(".remove:first input[name$='-DELETE']").val()
+        var removed = $(this).closest(".accordion_content").find(".remove:first input[name$='-DELETE']").val();
         if (!removed) {
             var subform_id = $(this).val();
             if (subform_id != "") {
                 return parseInt(subform_id)
             }
         }
-    }).get()
+    }).get();
 
-    url = window.document.location.protocol + "//" + window.document.location.host + "/ajax/select_realization/";
+    var url = window.document.location.protocol + "//" + window.document.location.host + "/ajax/select_realization/";
     url += "?c=" + customizer_id + "&p=" + prefix + "&n=" + n_forms + "&e=" + existing_subforms + "&p_v_k=" + parent_vocabulary_key + "&p_c_k=" + parent_component_key;
     if (property_id != "") {
         url += "&s=" + property_id;
@@ -463,7 +582,7 @@ function add_subform(row) {
     var old_prefix = $(accordion).attr("name");
     /* TODO: DOUBLE-CHECK THAT THIS IS ALWAYS CREATING A NEWFORM W/ ID=0 */
     /*old_prefix += "-" + (n_forms - 2);*/
-    old_prefix += "-" + "0"
+    old_prefix += "-" + "0";
 
     var add_subform_dialog = $("#add_dialog");
 
@@ -483,10 +602,10 @@ function add_subform(row) {
                     var parent = $(add_subform_dialog);
                     // the addition of the 'true' attribute forces initialization,
                     // even if this dialog is opened multiple times
-                    init_widgets(buttons,$(parent).find("input.button"),true);
-                    init_widgets(fieldsets,$(parent).find(".collapsible_fieldset"),true);
-                    init_widgets(helps,$(parent).find(".help_button"),true);
-                    init_widgets(multiselects,$(parent).find(".multiselect"),true);
+                    init_widgets(buttons, $(parent).find("input.button"), true);
+                    init_widgets(fieldsets, $(parent).find(".collapsible_fieldset"), true);
+                    init_widgets(helps, $(parent).find(".help_button"), true);
+                    init_widgets(multiselects, $(parent).find(".multiselect"), true);
                 },
 
                 buttons : [
@@ -598,12 +717,10 @@ function add_subform(row) {
                                         var parent = $(add_subform_dialog);
                                         // the addition of the 'true' attribute forces initialization,
                                         // even if this dialog is opened multiple times
-                                        // TODO
-                                        init_widget(buttons,parent,true);
-                                        init_widget(fieldsets,parent,true);
-                                        init_widget(multiselects,parent,true);
-                                        init_widget(helps,parent,true);
-
+                                        init_widgets(buttons, $(parent).find("input.button"), true);
+                                        init_widgets(fieldsets, $(parent).find(".collapsible_fieldset"), true);
+                                        init_widgets(multiselects, $(parent).find(".multiselect"), true);
+                                        init_widgets(helps, $(parent).find(".help_button"), true);
                                     }
                                 }
                             })
@@ -626,7 +743,7 @@ function add_subform(row) {
             }).dialog("open");
         }
     });
-};
+}
 
 
 function remove_subform(remove_button) {
@@ -680,6 +797,7 @@ function remove_subform(remove_button) {
 function added_subformset_form(row) {
     add_subform(row);
 }
+
 
 function removed_subformset_form(row) {
     // don't have to do anything else

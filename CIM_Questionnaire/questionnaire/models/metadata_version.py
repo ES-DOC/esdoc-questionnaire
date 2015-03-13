@@ -59,7 +59,7 @@ class MetadataVersion(models.Model):
 
     url = models.URLField(blank=False)
     url.help_text = "This URL is used as the namespace of serialized documents"
-    file = models.FileField(upload_to=UPLOAD_PATH, validators=[validate_version_file_extension,validate_version_file_schema], storage=OverwriteStorage())
+    file = models.FileField(upload_to=UPLOAD_PATH, validators=[validate_version_file_extension,validate_version_file_schema], storage=OverwriteStorage(), max_length=SMALL_STRING)
     file.help_text = "Note that files with the same names will be overwritten"
     categorization  = models.ForeignKey("MetadataCategorization", blank=True, null=True, related_name="versions", on_delete=models.SET_NULL)
     categorization.help_text = "A version can only have a single categorization."

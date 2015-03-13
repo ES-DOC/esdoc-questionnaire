@@ -24,7 +24,7 @@ import os
 rel = lambda *x: os.path.join(os.path.abspath(os.path.dirname(__file__)), *x)
 
 # Path to the configuration file containing secret values.
-# TODO: EITHER MOVE THE LOCATOIN OF THE CONF FILE OR MAKE ITS NAME UNIQUE (TO HANDLE CONCURRENT DEPLOYMENTS)
+# EITHER MOVE THE LOCATION OF THE CONF FILE OR MAKE ITS NAME UNIQUE (TO HANDLE CONCURRENT DEPLOYMENTS)
 CONF_PATH = os.path.join(os.path.expanduser('~'), '.config', 'esdoc-questionnaire.conf')
 
 parser = SafeConfigParser()
@@ -189,7 +189,7 @@ WSGI_APPLICATION = 'wsgi.application'
 INSTALLED_APPS = (
     'django.contrib.auth',
     'django.contrib.contenttypes',
-    'django.contrib.sessions',
+    'django.contrib.sessions',  # (required for db caching)
     'django.contrib.sites',
     'django.contrib.messages',
     'django.contrib.staticfiles',
@@ -207,7 +207,7 @@ INSTALLED_APPS = (
     # viewing remote mindmaps...
     'mindmaps',
     # old apps from DCMIP-2012...
-    'django_cim_forms', 'django_cim_forms.cim_1_5', 'dycore',
+    #'django_cim_forms', 'django_cim_forms.cim_1_5', 'dycore',
     # old apps from QED...
     #'dcf', 'dcf.cim_1_8_1',
 )
@@ -243,11 +243,11 @@ for optional_app in OPTIONAL_INSTALLED_APPS:
 SESSION_SERIALIZER = 'django.contrib.sessions.serializers.JSONSerializer'
 SESSION_SAVE_EVERY_REQUEST = True  # forces session to have key even if it has been unchanged (session keys are used to prefix cache instances)
 
-# TODO: THIS IS STORING SESSION VARIABLES VIA COOKIES
-# OTHER OPTIONS ARE FILE, DB (DEFAULT), OR CACHE
-# EVENTUALLY, I SHOULD MOVE TO CACHE: https://docs.djangoproject.com/en/dev/topics/cache/
-SESSION_ENGINE = 'django.contrib.sessions.backends.signed_cookies'
-SESSION_COOKIE_HTTPONLY = True
+# TODO: DECIDE ONCE AND FOR ALL WHETHER TO STORE SESSION VARIABLES VIA COOKIES, CACHE, DB, OR FILE
+# SESSION_ENGINE = 'django.contrib.sessions.backends.signed_cookies'
+# SESSION_COOKIE_HTTPONLY = True
+SESSION_ENGINE = 'django.contrib.sessions.backends.cached_db'
+
 
 DEFAULT_CACHE_PORT = "11211"  # (standard memcached port)
 
@@ -260,13 +260,33 @@ if parser.has_option("cache", "port"):
 else:
     CACHE_PORT = DEFAULT_CACHE_PORT
 
+# make sure caching is running...
+from subprocess import check_call, CalledProcessError
+try:
+    cmd = rel("restart_memcached.sh")
+    args = "-h %s -p %s" % (CACHE_HOST, CACHE_PORT)
+    check_call([cmd, args])
+except CalledProcessError:
+    msg = "unable to (re)start memcached"
+    raise EnvironmentError(msg)
+
 CACHES = {
-    'default' : {
+    'default': {
         'TIMEOUT': 60,
         'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
         'LOCATION': CACHE_HOST + ":" + CACHE_PORT,
     }
 }
+
+# make sure caching works...
+from django.core.cache import get_cache
+from uuid import uuid4
+test_cache = get_cache("default")
+test_cache_key = str(uuid4())
+test_cache.set(test_cache_key, True)
+if not test_cache.get(test_cache_key):
+    msg = "Unable to cache using: '%s'" % CACHES["default"]["BACKEND"]
+    raise EnvironmentError(msg)
 
 ################################################
 # fixing known django / south / postgres issue #

@@ -52,7 +52,7 @@ class MetadataEditingForm(MetadataForm):
 
 class MetadataEditingFormSet(MetadataFormSet):
 
-    number_of_properties = 0       # lets me keep track of the number of forms w/out having to actually render them
+    number_of_models = 0       # lets me keep track of the number of forms w/out having to actually render them
 
     def _construct_form(self, i, **kwargs):
 
@@ -137,6 +137,8 @@ class MetadataEditingFormSet(MetadataFormSet):
 
         if self.is_bound:
             # passing initial along w/ data just in case formset was not loaded
+            # additionally, note that in create_edit_forms_from_data,
+            # I manually update the data dictionary to include appropriate values for the management form
             form = ManagementForm(self.data, auto_id=self.auto_id, prefix=self.prefix, initial=initial)
             if not form.is_valid():
                 raise ValidationError(
@@ -150,7 +152,9 @@ class MetadataEditingFormSet(MetadataFormSet):
 
     # if these formsets are not loaded,
     # then accessing total_form_count or initial_form_count via the management_form will fail
-    # so I override them below...
+    # so I override those fns below...
+    # (note my use of get_number_of_forms in total_form_count,
+    # which varies according to whether this is a model formset or a property formset)
 
     def total_form_count(self):
         """Returns the total number of forms in this FormSet."""
@@ -161,7 +165,7 @@ class MetadataEditingFormSet(MetadataFormSet):
                 # HERE IS THE NEW CODE
                 # (KEPT THE ABOVE TRY CLAUSE IN-CASE A FORM WAS ADDED BY JS)
                 # (IN WHICH CASE IT MUST HAVE BEEN LOADED AND THE TRY WILL NOT FAIL)
-                return min(self.number_of_properties, self.absolute_max)
+                return min(self.get_number_of_forms(), self.absolute_max)
         else:
             initial_forms = self.initial_form_count()
             total_forms = initial_forms + self.extra
@@ -299,6 +303,8 @@ class MetadataEditingInlineFormSet(MetadataInlineFormSet):
 
         if self.is_bound:
             # passing initial along w/ data just in case formset was not loaded
+            # additionally, note that in create_edit_forms_from_data,
+            # I manually update the data dictionary to include appropriate values for the management form
             form = ManagementForm(self.data, auto_id=self.auto_id, prefix=self.prefix, initial=initial)
             if not form.is_valid():
                 raise ValidationError(
@@ -312,6 +318,8 @@ class MetadataEditingInlineFormSet(MetadataInlineFormSet):
     # if these formsets are not loaded,
     # then accessing total_form_count or initial_form_count via the management_form will fail
     # so I override them below...
+    # (note my use of get_number_of_forms in total_form_count,
+    # which varies according to whether this is a model formset or a property formset)
 
     def total_form_count(self):
         """Returns the total number of forms in this FormSet."""
@@ -322,7 +330,7 @@ class MetadataEditingInlineFormSet(MetadataInlineFormSet):
                 # HERE IS THE NEW CODE
                 # (KEPT THE ABOVE TRY CLAUSE IN-CASE A FORM WAS ADDED BY JS)
                 # (IN WHICH CASE IT MUST HAVE BEEN LOADED AND THE TRY WILL NOT FAIL)
-                return min(self.number_of_properties, self.absolute_max)
+                return min(self.get_number_of_forms(), self.absolute_max)
         else:
             initial_forms = self.initial_form_count()
             total_forms = initial_forms + self.extra
@@ -353,7 +361,7 @@ class MetadataEditingInlineFormSet(MetadataInlineFormSet):
             return 0
 
 
-def create_new_edit_forms_from_models(models, model_customizer, standard_properties, standard_property_customizers, scientific_properties,scientific_property_customizers):
+def create_new_edit_forms_from_models(models, model_customizer, standard_properties, standard_property_customizers, scientific_properties,scientific_property_customizers, inheritance_data=None):
 
     from .forms_edit_model import create_model_form_data, MetadataModelFormSetFactory
     from .forms_edit_standard_properties import create_standard_property_form_data, MetadataStandardPropertyInlineFormSetFactory
@@ -386,6 +394,7 @@ def create_new_edit_forms_from_models(models, model_customizer, standard_propert
             initial=standard_properties_data,
             extra=len(standard_properties_data),
             customizers=standard_property_customizers,
+            inheritance_data=inheritance_data,
         )
 
         # TODO: JUST A LIL HACK UNTIL I CAN FIGURE OUT WHERE TO SETUP THIS LOGIC
@@ -409,7 +418,7 @@ def create_new_edit_forms_from_models(models, model_customizer, standard_propert
     return (model_formset, standard_properties_formsets, scientific_properties_formsets)
 
 
-def create_existing_edit_forms_from_models(models, model_customizer, standard_properties, standard_property_customizers, scientific_properties, scientific_property_customizers):
+def create_existing_edit_forms_from_models(models, model_customizer, standard_properties, standard_property_customizers, scientific_properties, scientific_property_customizers, inheritance_data=None):
 
     from .forms_edit_model import MetadataModelFormSetFactory
     from .forms_edit_standard_properties import MetadataStandardPropertyInlineFormSetFactory
@@ -432,6 +441,7 @@ def create_existing_edit_forms_from_models(models, model_customizer, standard_pr
             queryset=standard_properties[model_key],
             customizers=standard_property_customizers,
             prefix=model_key,
+            inheritance_data=inheritance_data,
         )
 
         # TODO: JUST A LIL HACK UNTIL I CAN FIGURE OUT WHERE TO SETUP THIS LOGIC
@@ -448,7 +458,7 @@ def create_existing_edit_forms_from_models(models, model_customizer, standard_pr
     return (model_formset, standard_properties_formsets, scientific_properties_formsets)
 
 
-def create_new_edit_subforms_from_models(models, model_customizer, standard_properties, standard_property_customizers, scientific_properties, scientific_property_customizers, subform_prefix="", subform_min=0, subform_max=1,  increment_prefix=0):
+def create_new_edit_subforms_from_models(models, model_customizer, standard_properties, standard_property_customizers, scientific_properties, scientific_property_customizers, subform_prefix="", subform_min=0, subform_max=1,  increment_prefix=0, inheritance_data=None):
 
     from .forms_edit_model import create_model_form_data, MetadataModelSubFormSetFactory
     from .forms_edit_standard_properties import create_standard_property_form_data, MetadataStandardPropertyInlineFormSetFactory
@@ -485,6 +495,7 @@ def create_new_edit_subforms_from_models(models, model_customizer, standard_prop
             extra=len(standard_properties_data),
             customizers=standard_property_customizers,
             prefix=model_prefix,
+            inheritance_data=inheritance_data,
         )
 
         # TODO: JUST A LIL HACK UNTIL I CAN FIGURE OUT WHERE TO SETUP THIS LOGIC
@@ -508,7 +519,7 @@ def create_new_edit_subforms_from_models(models, model_customizer, standard_prop
     return (model_formset, standard_properties_formsets, scientific_properties_formsets)
 
 
-def create_existing_edit_subforms_from_models(models, model_customizer, standard_properties, standard_property_customizers, scientific_properties, scientific_property_customizers, subform_prefix="", subform_min=0, subform_max=1, increment_prefix=0):
+def create_existing_edit_subforms_from_models(models, model_customizer, standard_properties, standard_property_customizers, scientific_properties, scientific_property_customizers, subform_prefix="", subform_min=0, subform_max=1, increment_prefix=0, inheritance_data=None):
 
     from .forms_edit_model import MetadataModelSubFormSetFactory
     from .forms_edit_standard_properties import MetadataStandardPropertyInlineSubFormSetFactory
@@ -537,6 +548,7 @@ def create_existing_edit_subforms_from_models(models, model_customizer, standard
             prefix=model_prefix,
             queryset=standard_properties[submodel_key],
             customizers=standard_property_customizers,
+            inheritance_data=inheritance_data,
         )
 
         # TODO: JUST A LIL HACK UNTIL I CAN FIGURE OUT WHERE TO SETUP THIS LOGIC
@@ -553,7 +565,7 @@ def create_existing_edit_subforms_from_models(models, model_customizer, standard
     return (model_formset, standard_properties_formsets, scientific_properties_formsets)
 
 
-def create_edit_forms_from_data(data, models, model_customizer, standard_properties, standard_property_customizers, scientific_properties, scientific_property_customizers):
+def create_edit_forms_from_data(data, models, model_customizer, standard_properties, standard_property_customizers, scientific_properties, scientific_property_customizers, inheritance_data=None):
     """
     This creates and validates forms based on POST data
     However, not all of the forms may have been loaded
@@ -612,13 +624,19 @@ def create_edit_forms_from_data(data, models, model_customizer, standard_propert
             data=standard_properties_post_data,
             initial=standard_properties_initial_data,  # passing initial AND data (provides values for unloaded forms)
             customizers=standard_property_customizers,
+            inheritance_data=inheritance_data,
         )
 
         if not loaded:
             # manually add default values for management_form (prior to calling is_valid)...
-            standard_properties_post_data[standard_properties_formset.add_prefix(TOTAL_FORM_COUNT)] = standard_properties_formset.total_form_count()
-            standard_properties_post_data[standard_properties_formset.add_prefix(INITIAL_FORM_COUNT)] = standard_properties_formset.initial_form_count()
-            standard_properties_post_data[standard_properties_formset.add_prefix(MAX_NUM_FORM_COUNT)] = standard_properties_formset.absolute_max
+            standard_properties_formset.data[standard_properties_formset.add_prefix(TOTAL_FORM_COUNT)] = standard_properties_formset.total_form_count()
+            standard_properties_formset.data[standard_properties_formset.add_prefix(INITIAL_FORM_COUNT)] = standard_properties_formset.initial_form_count()
+            standard_properties_formset.data[standard_properties_formset.add_prefix(MAX_NUM_FORM_COUNT)] = standard_properties_formset.absolute_max
+
+        if loaded:
+            # also manually load forms as needed...
+            for standard_property_form in standard_properties_formset:
+                standard_property_form.load()
 
         validity += [standard_properties_formset.is_valid(loaded_prefixes=[form.prefix for form in standard_properties_formset.forms if loaded])]
 
@@ -655,9 +673,14 @@ def create_edit_forms_from_data(data, models, model_customizer, standard_propert
 
         if not loaded:
             # manually add default values for management_form (prior to calling is_valid)...
-            scientific_properties_post_data[scientific_properties_formset.add_prefix(TOTAL_FORM_COUNT)] = scientific_properties_formset.total_form_count()
-            scientific_properties_post_data[scientific_properties_formset.add_prefix(INITIAL_FORM_COUNT)] = scientific_properties_formset.initial_form_count()
-            scientific_properties_post_data[scientific_properties_formset.add_prefix(MAX_NUM_FORM_COUNT)] = scientific_properties_formset.absolute_max
+            scientific_properties_formset.data[scientific_properties_formset.add_prefix(TOTAL_FORM_COUNT)] = scientific_properties_formset.total_form_count()
+            scientific_properties_formset.data[scientific_properties_formset.add_prefix(INITIAL_FORM_COUNT)] = scientific_properties_formset.initial_form_count()
+            scientific_properties_formset.data[scientific_properties_formset.add_prefix(MAX_NUM_FORM_COUNT)] = scientific_properties_formset.absolute_max
+
+        if loaded:
+            # also manually load forms as needed...
+            for scientific_property_forms in scientific_properties_formset:
+                scientific_property_forms.load()
 
         validity += [scientific_properties_formset.is_valid(loaded_prefixes=[form.prefix for form in scientific_properties_formset.forms if loaded])]
 
@@ -666,7 +689,7 @@ def create_edit_forms_from_data(data, models, model_customizer, standard_propert
     return (validity, model_formset, standard_properties_formsets, scientific_properties_formsets)
 
 
-def create_edit_subforms_from_data(data, models, model_customizer, standard_properties, standard_property_customizers, scientific_properties, scientific_property_customizers, subform_prefix="", subform_min=0, subform_max=1):
+def create_edit_subforms_from_data(data, models, model_customizer, standard_properties, standard_property_customizers, scientific_properties, scientific_property_customizers, subform_prefix="", subform_min=0, subform_max=1, inheritance_data=None):
     """This creates and validates forms based on POST data"""
 
     from .forms_edit_model import create_model_form_data, MetadataModelSubFormSetFactory
@@ -721,6 +744,8 @@ def create_edit_subforms_from_data(data, models, model_customizer, standard_prop
 
         loaded = subform_prefix in loaded_model_prefixes
 
+        standard_properties_post_data = data.copy()
+
         # BEGIN v0.12.0.0 CHANGES
         # THIS CODE NEEDS TO BE SLIGHTLY DIFFERENT THAN create_edit_forms_from_data
         # B/C THE STANDARD_PROPERTIES MAY HAVE BEEN ADDED/CHANGED VIA AJAX
@@ -754,16 +779,31 @@ def create_edit_subforms_from_data(data, models, model_customizer, standard_prop
 
         # END v0.12.0.0 CHANGES
 
-        standard_properties_formsets[subform_prefix] = MetadataStandardPropertyInlineSubFormSetFactory(
+        standard_properties_formset = MetadataStandardPropertyInlineSubFormSetFactory(
             instance=model_instances[i] if model_formset_validity and not ignore_model else model_form.instance,
             prefix=subform_prefix,
-            data=data,
+            data=standard_properties_post_data,
             initial=standard_properties_data,  # passing initial AND data (provides values for unloaded forms)
             customizers=standard_property_customizers,
+            inheritance_data=inheritance_data,
         )
 
-        loaded_standard_property_prefixes = [form.prefix for form in standard_properties_formsets[subform_prefix].forms if loaded]
-        validity += [standard_properties_formsets[subform_prefix].is_valid(loaded_prefixes=loaded_standard_property_prefixes)]
+        if not loaded:
+            # manually add default values for management_form (prior to calling is_valid)...
+            standard_properties_formset.data[standard_properties_formset.add_prefix(TOTAL_FORM_COUNT)] = standard_properties_formset.total_form_count()
+            standard_properties_formset.data[standard_properties_formset.add_prefix(INITIAL_FORM_COUNT)] = standard_properties_formset.initial_form_count()
+            standard_properties_formset.data[standard_properties_formset.add_prefix(MAX_NUM_FORM_COUNT)] = standard_properties_formset.absolute_max
+
+        if loaded:
+            # also manually load forms as needed...
+            for standard_properties_form in standard_properties_formset:
+                standard_properties_form.load()
+
+        validity += [standard_properties_formset.is_valid(loaded_prefixes=[form.prefix for form in standard_properties_formset.forms if loaded])]
+
+        standard_properties_formsets[subform_prefix] = standard_properties_formset
+
+        scientific_properties_post_data = data.copy()
 
         # TODO: JUST A LIL HACK UNTIL I CAN FIGURE OUT WHERE TO SETUP THIS LOGIC
         if subform_prefix not in scientific_property_customizers:
@@ -784,16 +824,28 @@ def create_edit_subforms_from_data(data, models, model_customizer, standard_prop
             scientific_properties_data = [{}, ]
         # END CHANGES FOR v0.12.0.0
 
-        scientific_properties_formsets[subform_prefix] = MetadataScientificPropertyInlineFormSetFactory(
+        scientific_properties_formset = MetadataScientificPropertyInlineFormSetFactory(
             instance=model_instances[i] if model_formset_validity and not ignore_model else model_form.instance,
             prefix=subform_prefix,
-            data=data,
+            data=scientific_properties_post_data,
             initial=scientific_properties_data,  # passing initial AND data (provides values for unloaded forms)
             customizers=scientific_property_customizers[subform_prefix],
         )
 
-        loaded_scientific_property_prefixes = [form.prefix for form in scientific_properties_formsets[subform_prefix].forms if loaded]
-        validity += [scientific_properties_formsets[subform_prefix].is_valid(loaded_prefixes=loaded_scientific_property_prefixes)]
+        if not loaded:
+            # manually add default values for management_form (prior to calling is_valid)...
+            scientific_properties_formset.data[scientific_properties_formset.add_prefix(TOTAL_FORM_COUNT)] = scientific_properties_formset.total_form_count()
+            scientific_properties_formset.data[scientific_properties_formset.add_prefix(INITIAL_FORM_COUNT)] = scientific_properties_formset.initial_form_count()
+            scientific_properties_formset.data[scientific_properties_formset.add_prefix(MAX_NUM_FORM_COUNT)] = scientific_properties_formset.absolute_max
+
+        if loaded:
+            # also manually load forms as needed...
+            for scientific_property_form in scientific_properties_formset:
+                scientific_property_form.load()
+
+        validity += [scientific_properties_formset.is_valid(loaded_prefixes=[form.prefix for form in scientific_properties_formset.forms if loaded])]
+
+        scientific_properties_formsets[subform_prefix] = scientific_properties_formset
 
     return (validity, model_formset, standard_properties_formsets, scientific_properties_formsets)
 
@@ -907,8 +959,6 @@ def save_valid_subforms(model_subform, standard_properties_subformset, scientifi
     # I have to save via the inlineformset (so that the inline fk gets saved appropriately)
     # but I also need access to the underlying form so I can check certain customization details
     # NOTE THAT force_clean() MUST HAVE BEEN CALLED AFTER VALIDATION BUT PRIOR TO SAVING FOR THIS TO WORK
- #   for standard_property_instance, standard_property_form in zip(standard_properties_subformset.save(commit=True),standard_properties_subformset.forms):
-
 
     standard_property_instances = [sp.save(commit=False) for sp in standard_properties_subformset.forms]
     for standard_property_instance, standard_property_form in zip(standard_property_instances, standard_properties_subformset.forms):

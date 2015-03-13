@@ -63,7 +63,7 @@ def save_valid_model_formset(model_formset, model_parent_dictionary={}):
             model_instance.parent = find_in_sequence(lambda m: m.get_model_key() == model_parent_key, model_instances)
         except KeyError:
             pass  # maybe this model didn't have a parent (or the dict was never passed to this fn)
-        model_instance.save()
+        model_instance.save(increment_version=False)
 
     return model_instances
 
@@ -152,11 +152,17 @@ class MetadataModelFormSet(MetadataEditingFormSet):
     def add_prefix(self, index):
         return "%s" % self.prefixes_list[index]
 
+    def get_number_of_forms(self):
+        return self.number_of_models
+
     # note that there is no _construct_form() fn
     # instead, I have overloaded the parent class
 
 
 class MetadataModelSubFormSet(MetadataEditingFormSet):
+
+    def get_number_of_forms(self):
+        return self.number_of_models
 
     def _construct_form(self, i, **kwargs):
 

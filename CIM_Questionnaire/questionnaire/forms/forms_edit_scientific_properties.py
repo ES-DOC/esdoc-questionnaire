@@ -215,7 +215,8 @@ class MetadataScientificPropertyForm(MetadataEditingForm):
 
 class MetadataScientificPropertyInlineFormSet(MetadataEditingInlineFormSet):
 
-    pass
+    def get_number_of_forms(self):
+        return self.number_of_properties
 
     # def _construct_form(self, i, **kwargs):
     #

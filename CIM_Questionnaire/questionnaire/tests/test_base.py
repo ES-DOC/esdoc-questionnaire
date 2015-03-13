@@ -9,7 +9,8 @@ from unittest.util import safe_repr
 from difflib import ndiff
 
 from django.core.cache import get_cache
-from django.db import connection, connections, DEFAULT_DB_ALIAS
+from django.core.management.color import no_style
+from django.db import models, connection, connections, DEFAULT_DB_ALIAS
 from django.db.models.query import QuerySet
 
 from django.core.urlresolvers import reverse
@@ -36,9 +37,62 @@ from CIM_Questionnaire.questionnaire.forms.forms_customize import get_data_from_
 
 from CIM_Questionnaire.questionnaire.fields import MetadataFieldTypes, EnumerationFormField, CardinalityFormField
 
-from CIM_Questionnaire.questionnaire.utils import add_parameters_to_url, get_form_by_field, get_joined_keys_dict, get_forms_by_field, get_data_from_form, get_data_from_formset
+from CIM_Questionnaire.questionnaire.utils import add_parameters_to_url, get_form_by_field, get_joined_keys_dict, model_to_data, get_forms_by_field, get_data_from_form, get_data_from_formset
 from CIM_Questionnaire.questionnaire.utils import CIM_DOCUMENT_TYPES
+from CIM_Questionnaire.questionnaire.utils import APP_LABEL
 
+
+class TestModel(models.Model):
+    """
+    The base class for test-specific models below;
+    These classes are just used for testing, therefore they shouldn't be in the regular db
+    hence I define them here rather than the "models" directory and they are unlisted in INSTALLED_APPLICATIONS
+    in order to ensure that they get added and removed from the test db (which is loaded initially via fixtures),
+    the create_table and delete_table methods are used in setUp and tearDown below
+    (got the idea from http://datahackermd.com/2013/testing-django-fields/)
+    """
+
+    class Meta:
+        app_label = APP_LABEL
+        abstract = True
+
+    create_fn_name = "create_table"
+    delete_fn_name = "delete_table"
+
+    @classmethod
+    def create_table(cls):
+        table_name = cls._meta.db_table
+        raw_sql, refs = connection.creation.sql_create_model(cls, no_style(), [])
+        sql = u'\n'.join(raw_sql).encode('utf-8')
+        cls.delete_table()
+        cursor = connection.cursor()
+        try:
+            cursor.execute(sql)
+        finally:
+            cursor.close()
+
+    @classmethod
+    def delete_table(cls):
+        table_name = cls._meta.db_table
+        cursor = connection.cursor()
+        try:
+            cursor.execute('DROP TABLE IF EXISTS %s' % table_name)
+        except:
+            # Catch anything backend-specific here.
+            # (E.g., MySQLdb raises a warning if the table didn't exist.)
+            pass
+        finally:
+            cursor.close()
+
+    def get_form_data(self):
+        form_data = model_to_data(
+            self,
+            exclude=[],
+            include={
+                "loaded": True,  # here is not the place to test loaded/unloaded forms
+            }
+        )
+        return form_data
 
 class QueryCounter(CaptureQueriesContext):
     """ provides a context manager for me to keep track of the number of queries

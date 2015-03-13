@@ -17,77 +17,23 @@ __date__ = "Dec 01, 2014 3:00:00 PM"
 Tests the custom fields specific to the CIM customizer
 """
 
-from django.db import connection, models
-from django.core.management.color import no_style
-from django.forms.models import ModelForm
-
-from CIM_Questionnaire.questionnaire.tests.test_base import TestQuestionnaireBase
+from CIM_Questionnaire.questionnaire.tests.test_base import TestQuestionnaireBase, TestModel
 from CIM_Questionnaire.questionnaire.forms.forms_base import MetadataForm
-from CIM_Questionnaire.questionnaire.utils import APP_LABEL, BIG_STRING, HUGE_STRING, model_to_data, get_data_from_form
+from CIM_Questionnaire.questionnaire.utils import HUGE_STRING, model_to_data, get_data_from_form
 from CIM_Questionnaire.questionnaire.fields import *
-
-
-class FieldModel(models.Model):
-    """
-    The base class for field-specific models below;
-    These classes are just used for testing fields, therefore they shouldn't be in the regular db
-    hence I define them here rather than the "models" directory and they are unlisted in INSTALLED_APPLICATIONS
-    in order to ensure that they get added and removed from the test db (which is loaded initially via fixtures),
-    the create_table and delete_table methods are used in setUp and tearDown below
-    (got the idea from http://datahackermd.com/2013/testing-django-fields/)
-    """
-
-    class Meta:
-        app_label = APP_LABEL
-        abstract = True
-
-    @classmethod
-    def create_table(cls):
-        table_name = cls._meta.db_table
-        raw_sql, refs = connection.creation.sql_create_model(cls, no_style(), [])
-        sql = u'\n'.join(raw_sql).encode('utf-8')
-        cls.delete_table()
-        cursor = connection.cursor()
-        try:
-            cursor.execute(sql)
-        finally:
-            cursor.close()
-
-    @classmethod
-    def delete_table(cls):
-        table_name = cls._meta.db_table
-        cursor = connection.cursor()
-        try:
-            cursor.execute('DROP TABLE IF EXISTS %s' % table_name)
-        except:
-            # Catch anything backend-specific here.
-            # (E.g., MySQLdb raises a warning if the table didn't exist.)
-            pass
-        finally:
-            cursor.close()
-
-    def get_form_data(self):
-        form_data = model_to_data(
-            self,
-            exclude=[],
-            include={
-                "loaded": True,  # here is not the place to test loaded/unloaded forms
-            }
-        )
-        return form_data
 
 
 ######################################################################################
 # these next few models & forms are used for testing custom field types              #
-# I am testing them in isolation here, away from the complexity of the questionnaire #
-# (hence the use of the create/delete fns above and setup/teardown fns below)        #
+# I am testing them in isolation here, away from the complexity of the Questionnaire #
+# (hence the use of TestModel and the extra code in setUp/tearDown below             #
 ######################################################################################
 
 ENUMERATION_CHOICES = "one|two|three|four"
 ENUMERATION_FIELD_CHOICES = [(choice, choice) for choice in ENUMERATION_CHOICES.split("|")]
 
 
-class EnumerationFieldModel(FieldModel):
+class EnumerationFieldModel(TestModel):
 
     name = models.CharField(blank=True, null=True, max_length=BIG_STRING, unique=True)
 
@@ -119,18 +65,19 @@ class EnumerationFieldForm(MetadataForm):
         _multi = self.get_current_field_value("multi")
         _nullable = self.get_current_field_value("nullable")
 
+        enumeration_value_field = self.fields["enumeration_value"]
+
         if _nullable:
             all_enumeration_choices += NULL_CHOICE
         if _open:
             all_enumeration_choices += OTHER_CHOICE
         if _multi:
-            self.fields["enumeration_value"].set_choices(all_enumeration_choices, multi=True)
+            enumeration_value_field.set_choices(all_enumeration_choices, multi=True)
         else:
-            all_enumeration_choices = EMPTY_CHOICE + all_enumeration_choices
-            self.fields["enumeration_value"].set_choices(all_enumeration_choices, multi=False)
+            enumeration_value_field.set_choices(all_enumeration_choices, multi=False)
 
 
-class CardinalityFieldModel(FieldModel):
+class CardinalityFieldModel(TestModel):
 
     name = models.CharField(blank=True, null=True, max_length=BIG_STRING, unique=True)
 
@@ -148,20 +95,21 @@ class CardinalityFieldForm(MetadataForm):
     pass
 
 
+TEST_FIELD_MODELS = {
+    "enumeration_field_model": EnumerationFieldModel,
+    "cardinality_field_model": CardinalityFieldModel,
+}
+
+
 #################################
 # now for the actual test class #
 #################################
 
 class Test(TestQuestionnaireBase):
 
-    field_models = {
-        "enumeration_field_model": EnumerationFieldModel,
-        "cardinality_field_model": CardinalityFieldModel,
-    }
-
     def setUp(self):
-        create_fn_name = "create_table"
-        for model_name, model_class in self.field_models.iteritems():
+        for model_name, model_class in TEST_FIELD_MODELS.iteritems():
+            create_fn_name = model_class.create_fn_name
             try:
                 model_create_fn = getattr(model_class, create_fn_name)
                 model_create_fn()
@@ -171,15 +119,14 @@ class Test(TestQuestionnaireBase):
         super(Test, self).setUp()
 
     def tearDown(self):
-        delete_fn_name = "create_table"
-        for model_name, model_class in self.field_models.iteritems():
+        for model_name, model_class in TEST_FIELD_MODELS.iteritems():
+            delete_fn_name = model_class.delete_fn_name
             try:
                 model_delete_fn = getattr(model_class, delete_fn_name)
                 model_delete_fn()
             except AttributeError:
                 msg = "%s has no %s method" % (model_name, delete_fn_name)
                 raise TypeError(msg)
-
         super(Test, self).tearDown()
 
     ######################################
@@ -188,32 +135,97 @@ class Test(TestQuestionnaireBase):
 
     def test_enumeration_field(self):
 
-        enumeration_name = "enumeration_test"
+        enumeration_model_single = EnumerationFieldModel(name="one", multi=False)
+        enumeration_model_multi = EnumerationFieldModel(name="two", multi=True)
 
-        enumeration_field_model = EnumerationFieldModel(name=enumeration_name)
-        enumeration_form_data = enumeration_field_model.get_form_data()
-        enumeration_form = EnumerationFieldForm(initial=enumeration_form_data, prefix=enumeration_name)
-        post_data = get_data_from_form(enumeration_form)
+        enumeration_form_data_single = model_to_data(enumeration_model_single, include={"loaded": True, })
+        enumeration_form_data_multi = model_to_data(enumeration_model_multi, include={"loaded": True, })
 
-        enumeration_form = EnumerationFieldForm(data=post_data, initial=enumeration_form_data, prefix=enumeration_name)
+        enumeration_form_single = EnumerationFieldForm(initial=enumeration_form_data_single)
+        enumeration_form_multi = EnumerationFieldForm(initial=enumeration_form_data_multi)
+
+        post_data_single = get_data_from_form(enumeration_form_single)
+        post_data_multi = get_data_from_form(enumeration_form_multi)
+
+        new_data = post_data_single.copy()
+        new_data.update({
+            "name": "one",
+            "enumeration_value": None,
+        })
+        enumeration_form = EnumerationFieldForm(data=new_data)
         validity = enumeration_form.is_valid(loaded=enumeration_form.get_current_field_value("loaded"))
         self.assertTrue(validity)
         enumeration_field_model = enumeration_form.save()
         self.assertEqual(enumeration_field_model.enumeration_value, [])
 
-        new_data = post_data.copy()
-        new_data[u"%s-%s" % (enumeration_name, "name")] = "one"
-        new_data[u"%s-%s" % (enumeration_name, "enumeration_value")] = "one"
-        enumeration_form = EnumerationFieldForm(data=new_data, initial=enumeration_form_data, prefix=enumeration_name)
+        new_data = post_data_single.copy()
+        new_data.update({
+            "name": "two",
+            "enumeration_value": "one",
+        })
+        enumeration_form = EnumerationFieldForm(data=new_data)
         validity = enumeration_form.is_valid(loaded=enumeration_form.get_current_field_value("loaded"))
         self.assertTrue(validity)
-        enumeration_field_model = enumeration_form.save()
-        self.assertEqual(enumeration_field_model.enumeration_value, [u"one"])
+        enumeration_model = enumeration_form.save()
+        self.assertEqual(enumeration_model.enumeration_value, [u"one"])
 
-        new_data = post_data.copy()
-        new_data[u"%s-%s" % (enumeration_name, "name")] = "two"
-        new_data[u"%s-%s" % (enumeration_name, "enumeration_value")] = "invalid"
-        enumeration_form = EnumerationFieldForm(data=new_data, initial=enumeration_form_data, prefix=enumeration_name)
+        new_data = post_data_single.copy()
+        new_data.update({
+            "name": "three",
+            "enumeration_value": "invalid",
+        })
+        enumeration_form = EnumerationFieldForm(data=new_data)
+        validity = enumeration_form.is_valid(loaded=enumeration_form.get_current_field_value("loaded"))
+        self.assertFalse(validity)
+
+        new_data = post_data_single.copy()
+        new_data.update({
+            "name": "four",
+            "enumeration_value": ["one", "two"]
+        })
+        enumeration_form = EnumerationFieldForm(data=new_data)
+        validity = enumeration_form.is_valid(loaded=enumeration_form.get_current_field_value("loaded"))
+        self.assertFalse(validity)
+
+        new_data = post_data_multi.copy()
+        new_data.update({
+            "name": "five",
+            "enumeration_value": None,
+        })
+        enumeration_form = EnumerationFieldForm(data=new_data)
+        validity = enumeration_form.is_valid(loaded=enumeration_form.get_current_field_value("loaded"))
+        self.assertTrue(validity)
+        enumeration_model = enumeration_form.save()
+        self.assertEqual(enumeration_model.enumeration_value, [])
+
+        new_data = post_data_multi.copy()
+        new_data.update({
+            "name": "six",
+            "enumeration_value": ["one"],
+        })
+        enumeration_form = EnumerationFieldForm(data=new_data)
+        validity = enumeration_form.is_valid(loaded=enumeration_form.get_current_field_value("loaded"))
+        self.assertTrue(validity)
+        enumeration_model = enumeration_form.save()
+        self.assertEqual(enumeration_model.enumeration_value, [u"one"])
+
+        new_data = post_data_multi.copy()
+        new_data.update({
+            "name": "seven",
+            "enumeration_value": ["one", "two"],
+        })
+        enumeration_form = EnumerationFieldForm(data=new_data)
+        validity = enumeration_form.is_valid(loaded=enumeration_form.get_current_field_value("loaded"))
+        self.assertTrue(validity)
+        enumeration_model = enumeration_form.save()
+        self.assertEqual(enumeration_model.enumeration_value, [u"one", u"two"])
+
+        new_data = post_data_multi.copy()
+        new_data.update({
+            "name": "eight",
+            "enumeration_value": ["one", "invalid"],
+        })
+        enumeration_form = EnumerationFieldForm(data=new_data)
         validity = enumeration_form.is_valid(loaded=enumeration_form.get_current_field_value("loaded"))
         self.assertFalse(validity)
 

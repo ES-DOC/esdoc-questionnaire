@@ -267,7 +267,7 @@ def validate_file_schema(value,schema_path):
 ###########################
 
 
-def get_form_by_field(formset,field_name,field_value):
+def get_form_by_field(formset, field_name, field_value):
     """
     returns the 1st form in a formset whose specified field has the specified value
     :param formset: formset to check
@@ -315,8 +315,8 @@ def remove_form_errors(form):
         form.errors[field] = form.error_class()
 
 
-def set_field_widget_attributes(field,widget_attributes):
-    for (key,value) in widget_attributes.iteritems():
+def set_field_widget_attributes(field, widget_attributes):
+    for (key, value) in widget_attributes.iteritems():
         field.widget.attrs[key] = value
 
 
@@ -354,21 +354,6 @@ def model_to_data(model, exclude=[], include={}):
     for key, value in model_data_copy.iteritems():
         if key in exclude:
             model_data.pop(key)
-    return model_data
-
-
-def model_to_data_old(model, exclude=[], include={}):
-    """
-    serializes model to dictionary (like get_initial_data) but follows fk & m2m fields
-    """
-    model_data = {}
-    for field in model._meta.fields:
-        field_name = field.name
-        if field_name not in exclude:
-            if field_name in include:
-                model_data[field_name] = include[field_name]
-            else:
-                model_data[field_name] = getattr(model,field_name)
     return model_data
 
 
@@ -602,25 +587,26 @@ class FuzzyInt(int):
 # deal w/ hierarchies of components #
 #####################################
 
-from mptt.fields import TreeForeignKey
+# this decorator is no longer used,
+# instead, I simply have some classes which inherit from MPTT model
+# and which have an explicit "TreeForeignKey" field
 
-
-# TODO: I DON'T THINK THIS DECORATOR IS BEING USED ANYMORE
-def hierarchical(cls):
-    TreeForeignKey(cls, null=True, blank=True, related_name='bens_children').contribute_to_class(cls,'parent')
-    #ForeignKey(cls, null=True, blank=True,related_name="children").contribute_to_class(cls,'parent')
-    return cls
+# from mptt.fields import TreeForeignKey
+#
+# def hierarchical(cls):
+#     TreeForeignKey(cls, null=True, blank=True, related_name='children').contribute_to_class(cls,'parent')
+#     return cls
 
 ######################################
 # removes duplicates from a sequence #
 # but preserves order                #
 ######################################
 
+# this is no longer used either
 
-def ordered_set(sequence):
-    seen_items = set()
-    #seen_add = seen.add
-    return [item for item in sequence if item not in seen_items and not seen_items.add(item)]
+# def ordered_set(sequence):
+#     seen_items = set()
+#     return [item for item in sequence if item not in seen_items and not seen_items.add(item)]
 
 ####################################################
 # gets index from list only if exists              #
@@ -628,9 +614,9 @@ def ordered_set(sequence):
 ####################################################
 
 
-def get_index(list, i):
+def get_index(lst, i):
     try:
-        return list[i]
+        return lst[i]
     except IndexError:
         return None
 
@@ -660,7 +646,6 @@ def find_dict_in_sequence(dct, sequence):
         return True
 
     return find_in_sequence(lambda item: _is_dict_in_item(item), sequence)
-
 
 
 ########################

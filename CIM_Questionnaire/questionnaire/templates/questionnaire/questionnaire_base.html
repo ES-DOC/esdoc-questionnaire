@@ -76,8 +76,8 @@
                 "timeOut": "60000",
                 "showMethod": "fadeIn",
                 "hideMethod": "fadeOut"
-            }
-            toasts = []
+            };
+            toasts = [];
 
         </script>
 
@@ -128,12 +128,12 @@
 
     <div id="questionnaire">
 
-        <!-- some useful stuff for AJAX calls -->
-        <input class="hidden" type="text" id="_version_key" name="version_key" value="{{ version.key }}"/>
-        <input class="hidden" type="text" id="_project_name" name="project_name" value="{{ project.name|lower }}"/>
-        <input class="hidden" type="text" id="_document_type" name="project_name" value="{{ model_proxy.name|lower }}"/>
-        <input class="hidden" type="text" id="_session_id" name="session_id" value="{{ session_id }}"/>
-
+{#  moved to the <form> element so that it is available as POST data #}
+{#        <!-- some useful stuff for AJAX calls -->#}
+{#        <input class="hidden" type="text" id="_version_key" name="version_key" value="{{ version.key }}"/>#}
+{#        <input class="hidden" type="text" id="_project_name" name="project_name" value="{{ project.name|lower }}"/>#}
+{#        <input class="hidden" type="text" id="_document_type" name="project_name" value="{{ model_proxy.name|lower }}"/>#}
+{#        <input class="hidden" type="text" id="_session_id" name="session_id" value="{{ session_id }}"/>#}
 
             <!-- some pre-ready divs to use for popups -->
             <!-- (more efficient than creating them from scratch) -->
@@ -145,8 +145,6 @@
             <div class="hidden_dialog" id="remove_dialog"   title="remove">&nbsp;</div>
             <div class="hidden_dialog" id="edit_dialog"     title="edit">&nbsp;</div>
 
-            
-            
             {% block header %}
                 <!-- default header -->
                 <div class="header">
@@ -168,7 +166,6 @@
                     {% endblock %} {# /#user #}
                 </div> <!-- /.header -->
             {% endblock %} {# /header #}
-
 
             {% block messages %}
                 {% if messages %}
@@ -201,6 +198,7 @@
         </div>  <!-- /#questionnaire -->
 
 {% endblock %} {# / main #}
+
 </body>
 
 </html>
