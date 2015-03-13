@@ -366,7 +366,7 @@ class MetadataAbstractStandardPropertyForm(MetadataEditingForm):
             update_field_widget_attributes(value_field, {"class": "optional"})
 
         if not customizer.editable:
-            update_field_widget_attributes(value_field_name, {"class": "readonly", "readonly": "readonly"})
+            update_field_widget_attributes(value_field, {"class": "readonly", "readonly": "readonly"})
 
         if customizer.inherited:
             update_field_widget_attributes(value_field, {"class": "inherited"})
