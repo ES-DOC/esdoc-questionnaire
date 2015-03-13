@@ -9,7 +9,7 @@
     {% if property_customizer.required %}
         <span class="required">{{property_customizer.verbose_name}}:&nbsp;</span>
     {% else %}
-        <span class="optional">{{property_customizer.verbose_name}}&nbsp;</span>
+        <span class="optional">{{property_customizer.verbose_name}}:&nbsp;</span>
     {% endif %} {# / required #}
 
     {% if property_customizer.documentation and property_customizer.inline_help %}
