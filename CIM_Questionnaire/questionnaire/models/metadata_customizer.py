@@ -602,13 +602,22 @@ class MetadataPropertyCustomizer(MetadataCustomizer):
     editable = models.BooleanField(default=True, blank=True, verbose_name="Can the value of this property be edited?")
     unique = models.BooleanField(default=False, blank=True, verbose_name="Must the value of this property be unique?")
     verbose_name = models.CharField(max_length=LIL_STRING, blank=False, verbose_name="How should this property be labeled (overrides default name)?")
-    default_value = models.CharField(max_length=BIG_STRING, blank=True, null=True, verbose_name="What is the default value of this property?")
+    default_value = models.CharField(
+        max_length=BIG_STRING,
+        blank=True,
+        null=True,
+        verbose_name=_(
+            "What is the default value of this property?"
+            "<div class='documentation'>Note that this only applies to new and not existing documents</div>"
+        )
+    )
     inline_help = models.BooleanField(default=False, blank=True, verbose_name="Should the help text be displayed inline?")
     documentation = models.TextField(
         blank=True,
-        verbose_name=_("What is the help text to associate with this property?"
-                       "<div class='documentation'>Any initial help text comes from the CIM Schema or a CIM Controlled Vocabulary.</div>"
-                       "<div class='documentation'>Note that basic HTML tags are supported.</div>"
+        verbose_name=_(
+            "What is the help text to associate with this property?"
+            "<div class='documentation'>Any initial help text comes from the CIM Schema or a CIM Controlled Vocabulary.</div>"
+            "<div class='documentation'>Note that basic HTML tags are supported.</div>"
         )
     )
 
@@ -752,7 +761,18 @@ class MetadataScientificPropertyCustomizer(MetadataPropertyCustomizer):
                                    choices=[(ft.getType(), ft.getName()) for ft in MetadataAtomicFieldTypes],
                                    default=MetadataAtomicFieldTypes.DEFAULT.getType(),
                                    )
-    atomic_default = models.CharField(max_length=BIG_STRING, blank=True, null=True, verbose_name="What is the default value of this property?")
+    atomic_default = models.CharField(
+        max_length=BIG_STRING,
+        blank=True,
+        null=True,
+        verbose_name=_(
+            "What is the default value of this property?"
+            "<div class='documentation'>Note that this only applies to new and not existing documents</div>"
+        )
+    )
+
+
+
 
     enumeration_choices = EnumerationField(blank=True, null=True, verbose_name="Choose the property values that should be presented to users.")
     enumeration_default = EnumerationField(blank=True, null=True, verbose_name="Choose the default value(s), if any, for this property.")

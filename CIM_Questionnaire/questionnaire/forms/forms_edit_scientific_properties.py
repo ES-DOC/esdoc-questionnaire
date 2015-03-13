@@ -44,14 +44,26 @@ def create_scientific_property_form_data(model, scientific_property, scientific_
 
         if scientific_property_customizer.is_enumeration:
             # enumeration fields...
-            current_enumeration_value = scientific_property_form_data["enumeration_value"]
+            value_field_name = "enumeration_value"
+            is_multi = scientific_property_customizer.enumeration_multi
+            current_enumeration_value = scientific_property_form_data[value_field_name]
+            default_enumeration_value = scientific_property_customizer.enumeration_default
             if current_enumeration_value:
-                if scientific_property_customizer.enumeration_multi:
-                    scientific_property_form_data["enumeration_value"] = current_enumeration_value.split("|")
+                if is_multi:
+                    scientific_property_form_data[value_field_name] = current_enumeration_value.split("|")
+                else:
+                    scientific_property_form_data[value_field_name] = current_enumeration_value
+            elif default_enumeration_value:
+                if is_multi:
+                    scientific_property_form_data[value_field_name] = default_enumeration_value.split("|")
+                else:
+                    scientific_property_form_data[value_field_name] = default_enumeration_value
 
         else:
             # atomic fields...
-            pass
+            value_field_name = "atomic_value"
+            if scientific_property_customizer.atomic_default:
+                scientific_property_form_data[value_field_name] = scientific_property_customizer.atomic_default
 
     return scientific_property_form_data
 

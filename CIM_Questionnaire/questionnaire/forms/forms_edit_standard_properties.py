@@ -57,10 +57,19 @@ def create_standard_property_form_data(model, standard_property, standard_proper
 
         elif field_type == MetadataFieldTypes.ENUMERATION:
             value_field_name = "enumeration_value"
+            is_multi = standard_property_customizer.enumeration_multi
             current_enumeration_value = standard_property_form_data[value_field_name]
+            default_enumeration_value = standard_property_customizer.enumeration_default
             if current_enumeration_value:
-                if standard_property_customizer.enumeration_multi:
+                if is_multi:
                     standard_property_form_data[value_field_name] = current_enumeration_value.split("|")
+                else:
+                    standard_property_form_data[value_field_name] = current_enumeration_value
+            elif default_enumeration_value:
+                if is_multi:
+                    standard_property_form_data[value_field_name] = default_enumeration_value.split("|")
+                else:
+                    standard_property_form_data[value_field_name] = default_enumeration_value
 
         elif field_type == MetadataFieldTypes.RELATIONSHIP:
             value_field_name = "relationship_value"

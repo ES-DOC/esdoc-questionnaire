@@ -468,9 +468,9 @@ class MetadataStandardPropertyCustomizerForm(MetadataCustomizerForm):
             # header fields...
             "name", "category_name", "order", "field_type",
             # common fields...
-            "displayed", "required", "editable", "unique", "verbose_name", "default_value", "documentation","inline_help","inherited",
+            "displayed", "required", "editable", "unique", "verbose_name", "documentation", "inline_help", "inherited",
             # atomic fields...
-            "atomic_type", "suggestions",
+            "atomic_type",  "default_value", "suggestions",
             # enumeration fields...
             "enumeration_choices", "enumeration_default", "enumeration_open", "enumeration_multi", "enumeration_nullable",
             # relationship fields...
@@ -482,8 +482,8 @@ class MetadataStandardPropertyCustomizerForm(MetadataCustomizerForm):
 
     _hidden_fields = ("proxy", "category", "subform_customizer", )
     _header_fields = ("name", "category_name", "field_type", "order", )
-    _common_fields = ("displayed", "required", "editable", "unique", "verbose_name", "documentation", "inline_help", "default_value", "inherited", )
-    _atomic_fields = ("atomic_type", "suggestions",)
+    _common_fields = ("displayed", "required", "editable", "unique", "verbose_name", "documentation", "inline_help", "inherited", )
+    _atomic_fields = ("atomic_type", "default_value", "suggestions", )
     _enumeration_fields = ("enumeration_choices", "enumeration_default", "enumeration_open", "enumeration_multi", "enumeration_nullable", )
     _relationship_fields = ("relationship_cardinality", "relationship_show_subform", )
 
@@ -612,13 +612,21 @@ class MetadataStandardPropertyCustomizerForm(MetadataCustomizerForm):
         except KeyError:
             pass
 
+        # make sure that if a user chose to render a property as a subform, that the subform customizer exists
         if cleaned_data["field_type"] == MetadataFieldTypes.RELATIONSHIP and cleaned_data["relationship_show_subform"]:
-            # make sure that if a user chose to render a property as a subform that the subform customizer exists
             if not cleaned_data["subform_customizer"]:
                 msg = u"Failed to associate a subform customizer with this property."
                 self._errors["relationship_show_subform"] = self.error_class([msg])
                 del cleaned_data["relationship_show_subform"]
                 del cleaned_data["subform_customizer"]
+
+        # make sure that if a user specified multiple default values for an enumeration, that it supports multiple values
+        if cleaned_data["field_type"] == MetadataFieldTypes.ENUMERATION:
+            n_default_values = len(cleaned_data["enumeration_default"])
+            if n_default_values > 1 and not cleaned_data["enumeration_multi"]:
+                msg = u"You have specified multiple default values without specifying that this property can have multiple values."
+                self._errors["enumeration_default"] = self.error_class([msg])
+                del cleaned_data["enumeration_default"]
 
         return cleaned_data
 
@@ -850,6 +858,14 @@ class MetadataScientificPropertyCustomizerForm(MetadataCustomizerForm):
         except KeyError:
             pass
 
+        # make sure that if a user specified multiple default values for an enumeration, that it supports multiple values
+        if cleaned_data["is_enumeration"] == True:
+            n_default_values = len(cleaned_data["enumeration_default"])
+            if n_default_values > 1 and not cleaned_data["enumeration_multi"]:
+                msg = u"You have specified multiple default values without specifying that this property can have multiple values."
+                self._errors["enumeration_default"] = self.error_class([msg])
+                del cleaned_data["enumeration_default"]
+
         return cleaned_data
 
 def MetadataScientificPropertyCustomizerInlineFormSetFactory(*args,**kwargs):
@@ -983,7 +999,6 @@ def create_customizer_forms_from_data(data,model_customizer,standard_category_cu
     if model_customizer_form_validity:
         model_customizer_instance = model_customizer_form.save(commit=False)
 
-
     # now do some post-processing validation
     # (b/c I have to compare the content of model_customizer_vocabularies_formset & model_customizer_form)
 
@@ -1000,7 +1015,7 @@ def create_customizer_forms_from_data(data,model_customizer,standard_category_cu
         validity += [model_customizer_vocabularies_formset.is_valid()]
         active_vocabulary_forms = model_customizer_vocabularies_formset.get_active_forms()
         active_vocabulary_keys = \
-            [active_vocabulary_form.cleaned_data["vocabulary"]
+            [active_vocabulary_form.cleaned_data["vocabulary"].get_key()
              for active_vocabulary_form in active_vocabulary_forms
             ]
     if is_subform and subform_prefix:
@@ -1009,7 +1024,7 @@ def create_customizer_forms_from_data(data,model_customizer,standard_category_cu
             data=data,
             categories=standard_category_customizers,
             # TODO: WORKING OUT THE APPROPRIATE PREFIX SHOULD BE AUTOMATIC!
-            prefix=u"standard_property-%s" % (subform_prefix)
+            prefix=u"standard_property-%s" % subform_prefix
         )
     else:
         standard_property_customizer_formset = MetadataStandardPropertyCustomizerInlineFormSetFactory(
