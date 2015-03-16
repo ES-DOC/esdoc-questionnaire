@@ -5,15 +5,12 @@
 {% block head %}
     <!-- this page is displayed in a JQuery dialog box -->
     <!-- hence, there is no need for the <head> section -->
-    <!-- (note - any JQuery widgets to be initialized are handled in the dialog open event) -->
 {% endblock %} {# /head #}
-
 
 {% block header %}
     <!-- this page is displayed in a JQuery dialog box -->
     <!-- hence, there is no need for the header -->
 {% endblock %} {# /header #}
-
 
 {% block footer %}
     <!-- this page is displayed in a JQuery dialog box -->
@@ -45,7 +42,9 @@
                         </tr>
                     {% endfor %} {# / field in model_customizer_form.get_document_fields #}
                 </table>
+
             </fieldset>
+
         </div> <!-- /.form -->
 
     </form>
