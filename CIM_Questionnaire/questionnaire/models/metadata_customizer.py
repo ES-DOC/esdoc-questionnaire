@@ -40,7 +40,11 @@ class MetadataCustomizer(models.Model):
     last_modified = models.DateTimeField(blank=True, null=True, editable=False)
 
     def refresh(self):
-        """re-gets the model from the db"""
+        """
+        re-gets the model from the db
+        (NOTE THAT THERE WILL BE A BUILT-IN DJANGO METHOD FOR THIS IN 1.8)
+        https://docs.djangoproject.com/en/dev/ref/models/instances/#refreshing-objects-from-database
+        """
         if not self.pk:
             return self
         return self.__class__.objects.get(pk=self.pk)

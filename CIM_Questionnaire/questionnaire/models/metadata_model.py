@@ -113,6 +113,16 @@ class MetadataModel(MPTTModel):
     description     = models.CharField(max_length=HUGE_STRING, blank=True, null=True)
     order           = models.PositiveIntegerField(blank=True, null=True)
 
+    def refresh(self):
+        """
+        re-gets the model from the db
+        (NOTE THAT THERE WILL BE A BUILT-IN DJANGO METHOD FOR THIS IN 1.8)
+        https://docs.djangoproject.com/en/dev/ref/models/instances/#refreshing-objects-from-database
+        """
+        if not self.pk:
+            return self
+        return self.__class__.objects.get(pk=self.pk)
+
     def __unicode__(self):
         label = self.get_label()
         if label:
