@@ -34,7 +34,8 @@ from CIM_Questionnaire.questionnaire.models.metadata_model import MetadataModel,
 from CIM_Questionnaire.questionnaire.forms.forms_customize import create_new_customizer_forms_from_models, create_existing_customizer_forms_from_models, create_customizer_forms_from_data, save_valid_forms
 from CIM_Questionnaire.questionnaire.forms.forms_categorize import MetadataScientificCategoryCustomizerForm, MetadataStandardCategoryCustomizerForm
 from CIM_Questionnaire.questionnaire.forms.forms_edit import create_new_edit_subforms_from_models, create_existing_edit_subforms_from_models, get_data_from_existing_edit_forms
-from CIM_Questionnaire.questionnaire.utils import QuestionnaireError, update_field_widget_attributes, set_field_widget_attributes
+from CIM_Questionnaire.questionnaire.utils import QuestionnaireError, update_field_widget_attributes, set_field_widget_attributes, pretty_string
+from CIM_Questionnaire.questionnaire.fields import SingleSelectWidget, MultipleSelectWidget
 from CIM_Questionnaire.questionnaire import get_version
 
 
@@ -279,12 +280,19 @@ def ajax_select_realization(request, **kwargs):
     empty_choice = [(empty_pk, "create a new instance")]
 
     class _RealizationSelectForm(forms.Form):
-        realizations = ChoiceField(choices=empty_choice+realization_choices, required=True, label=realization_customizer.model_title)
+
+        realizations = ChoiceField(
+            choices=empty_choice + realization_choices,
+            required=True,
+            label=pretty_string(realization_customizer.model_title),
+        )
 
         def __init__(self, *args, **kwargs):
             super(_RealizationSelectForm, self).__init__(*args, **kwargs)
-            update_field_widget_attributes(self.fields["realizations"], {"class": "multiselect"})
-            update_field_widget_attributes(self.fields["realizations"], {"class": "required"})
+            realizations_field = self.fields["realizations"]
+            realizations_field.initial = empty_pk
+            realizations_field.widget = SingleSelectWidget(choices=realizations_field.choices)
+            update_field_widget_attributes(self.fields["realizations"], {"class": "required multiselect single selection_required"})
 
     if request.method == "GET":
 
