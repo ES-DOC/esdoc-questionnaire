@@ -27,6 +27,7 @@ from CIM_Questionnaire.questionnaire.forms.forms_edit import create_existing_edi
 from CIM_Questionnaire.questionnaire.views.views_base import validate_view_arguments, get_key_from_request
 from CIM_Questionnaire.questionnaire.views.views_base import get_cached_existing_customization_set, get_cached_proxy_set, get_cached_new_realization_set, get_cached_existing_realization_set
 from CIM_Questionnaire.questionnaire.views.views_error import questionnaire_error
+from CIM_Questionnaire.questionnaire.utils import get_joined_keys_dict
 from CIM_Questionnaire.questionnaire import get_version
 
 
@@ -98,6 +99,9 @@ def questionnaire_view_existing(request, project_name="", model_name="", version
     customizer_set = get_cached_existing_customization_set(instance_key, model_customizer, vocabularies)
     proxy_set = get_cached_proxy_set(instance_key, customizer_set)
     realization_set = get_cached_existing_realization_set(instance_key, model.get_descendants(include_self=True), customizer_set, proxy_set, vocabularies)
+    # flatten the scientific properties...
+    customizer_set["scientific_category_customizers"] = get_joined_keys_dict(customizer_set["scientific_category_customizers"])
+    customizer_set["scientific_property_customizers"] = get_joined_keys_dict(customizer_set["scientific_property_customizers"])
 
     # this is used for other fns that might need to know what the view returns
     # (such as those in the testing framework)

@@ -164,6 +164,13 @@
 
         {% csrf_token %}
 
+        <!-- some useful stuff for AJAX calls -->
+        <input class="hidden" type="text" id="_version_key" name="version_key" value="{{ version.key }}"/>
+        <input class="hidden" type="text" id="_project_name" name="project_name" value="{{ project.name|lower }}"/>
+        <input class="hidden" type="text" id="_document_type" name="document_type" value="{{ model_proxy.name|lower }}"/>
+{#        <input class="hidden" type="text" id="_session_id" name="session_id" value="{{ session_id }}"/>#}
+        <input class="hidden" type="text" id="_instance_key" name="instance_key" value="{{ instance_key }}"/>
+
         <div class="form"> {# wrap everything in div.form, so I can group related fields together #}
 
             <div class="hidden">
