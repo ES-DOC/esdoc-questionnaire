@@ -22,7 +22,6 @@ from django.contrib import admin
 
 from CIM_Questionnaire.questionnaire.views.views_feed import MetadataFeed
 
-
 admin.autodiscover()
 
 urlpatterns = patterns('',
@@ -30,11 +29,11 @@ urlpatterns = patterns('',
    # testing (of course)...
    url(r'^test/$', 'questionnaire.views.test', name="questionnaire_test"),
 
-#    # project error...
-#    url(r'^error/$',   'questionnaire.views.error',    name='questionnaire_error'),
+    # project error...
+    # url(r'^error/$', 'questionnaire.views.error', name='questionnaire_error'),
 
     # project help...
-    url(r'^help/$',    'questionnaire.views.help',     name='questionnaire_help'),
+    url(r'^help/$', 'questionnaire.views.help', name='questionnaire_help'),
 
     # authentication...
     url(r'^login/$', 'questionnaire.views.login', name='login'),
@@ -43,11 +42,9 @@ urlpatterns = patterns('',
     url(r'^user/$', 'questionnaire.views.user', name='user'),
     url(r'^user/(?P<user_name>[^/]+)/$', 'questionnaire.views.user', name='user'),
 
-    # profiling...
-    #url(r^profiles', ')
     # openid authentication...
-    #url(r'^openid/$', 'questionnaire.views.oid_login'),
-    #url(r'^openid/process/(?P<token>.*)/$', 'questionnaire.views.oid_process'),
+    # url(r'^openid/$', 'questionnaire.views.oid_login'),
+    # url(r'^openid/process/(?P<token>.*)/$', 'questionnaire.views.oid_process'),
 
     # customizing...
     url(r'^customize/help$', 'questionnaire.views.customize_help', name="customize_help"),
@@ -74,6 +71,7 @@ urlpatterns = patterns('',
     url(r'^api/(?P<project_name>[^/]+)/get_new_edit_form_section/(?P<section_key>[^/]+)/$', 'questionnaire.views.views_api.api_get_new_edit_form_section', name="api_get_new_edit_form_section"),
     url(r'^api/(?P<project_name>[^/]+)/get_existing_edit_form_section/(?P<model_id>[^/]+)/(?P<section_key>[^/]+)/$', 'questionnaire.views.views_api.api_get_existing_edit_form_section', name="api_get_existing_edit_form_section"),
     url(r'^api/(?P<project_name>[^/]+)/get_new_customize_form_section/(?P<section_key>[^/]+)/$', 'questionnaire.views.views_api.api_get_new_customize_form_section', name="api_get_new_customize_form_section"),
+    url(r'^api/(?P<project_name>[^/]+)/get_existing_customize_form_section/(?P<customization_name>[^/]+)/(?P<section_key>[^/]+)/$', 'questionnaire.views.views_api.api_get_existing_customize_form_section', name="api_get_existing_customize_form_section"),
 
     url(r'^api/add_inheritance_data/$', 'questionnaire.views.views_inheritance.api_add_inheritance_data', name="add_inheritance_data"),
 
@@ -86,7 +84,7 @@ urlpatterns = patterns('',
     url(r'^feed/(?P<project_name>[^/]+)/(?P<version_key>[^/]+)/(?P<model_name>[^/]+)/(?P<model_guid>[^/]+)/(?P<model_version>[^/]+)/$', 'questionnaire.views.serialize', name="serialize_specific_version"),
 
     # indices
-    url(r'^$',                                'questionnaire.views.index', name="index"),
-    url(r'^(?P<project_name>[^/]+)/$',        'questionnaire.views.project_index', name="project_index"),
+    url(r'^$', 'questionnaire.views.index', name="index"),
+    url(r'^(?P<project_name>[^/]+)/$', 'questionnaire.views.project_index', name="project_index"),
 
 )

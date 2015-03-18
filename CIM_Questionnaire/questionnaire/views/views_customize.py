@@ -201,7 +201,7 @@ def questionnaire_customize_existing(request, project_name="", model_name="", ve
         if not (request.user.is_superuser or request.user.metadata_user.is_admin_of(project)):
             return questionnaire_join(request, project, ["default", "user", "admin"])
 
-    # try to get the customizer set...
+    # try to get the specified customization...
     try:
         model_customizer = MetadataModelCustomizer.objects.get(name__iexact=customizer_name, proxy=model_proxy, project=project, version=version)
         initial_model_customizer_name = model_customizer.name
@@ -217,7 +217,7 @@ def questionnaire_customize_existing(request, project_name="", model_name="", ve
     # now build the forms...
     if request.method == "GET":
 
-        (model_customizer_form,standard_property_customizer_formset,scientific_property_customizer_formsets, model_customizer_vocabularies_formset) = \
+        (model_customizer_form, standard_property_customizer_formset, scientific_property_customizer_formsets, model_customizer_vocabularies_formset) = \
             create_existing_customizer_forms_from_models(customizer_set["model_customizer"], customizer_set["standard_category_customizers"], customizer_set["standard_property_customizers"], customizer_set["scientific_category_customizers"], customizer_set["scientific_property_customizers"], vocabularies_to_customize=vocabularies)
 
     else:  # request.method == "POST":
@@ -277,7 +277,7 @@ def questionnaire_customize_existing(request, project_name="", model_name="", ve
         "scientific_property_customizer_formsets": scientific_property_customizer_formsets,
         "questionnaire_version": get_version(),
         "instance_key": instance_key,
-        "get_section_view_name": u"get_existing_customize_form_section/%s" % model_customizer.pk,
+        "get_section_view_name": u"get_existing_customize_form_section/%s" % model_customizer.name,
         "can_view": model_customizer.default,  # only customizers that have been saved and are default can be viewed
     }
 
