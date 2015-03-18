@@ -21,8 +21,6 @@ views for editing a new or existing CIM Customization
 
 """
 
-# from CIM_Questionnaire.questionnaire.models.metadata_model import MetadataModel
-
 import re
 from django.http import HttpResponseRedirect
 from django.shortcuts import render_to_response, redirect
@@ -34,6 +32,7 @@ from django.contrib.sites.models import get_current_site
 from django.contrib import messages
 
 from CIM_Questionnaire.questionnaire.models.metadata_customizer import MetadataCustomizer, MetadataModelCustomizer
+from CIM_Questionnaire.questionnaire.models.metadata_model import MetadataModel
 from CIM_Questionnaire.questionnaire.forms.forms_customize import create_new_customizer_forms_from_models, create_existing_customizer_forms_from_models, create_customizer_forms_from_data
 from CIM_Questionnaire.questionnaire.forms.forms_customize import save_valid_forms
 from CIM_Questionnaire.questionnaire.views.views_base import get_key_from_request
@@ -178,6 +177,7 @@ def questionnaire_customize_new(request, project_name="", model_name="", version
         "scientific_property_customizer_formsets": scientific_property_customizer_formsets,
         "questionnaire_version": get_version(),
         "instance_key": instance_key,
+        "get_section_view_name": u"get_new_customize_form_section",
         "can_view": False,  # only customizers that have been saved and are default can be viewed
     }
 
@@ -277,6 +277,7 @@ def questionnaire_customize_existing(request, project_name="", model_name="", ve
         "scientific_property_customizer_formsets": scientific_property_customizer_formsets,
         "questionnaire_version": get_version(),
         "instance_key": instance_key,
+        "get_section_view_name": u"get_existing_customize_form_section/%s" % model_customizer.pk,
         "can_view": model_customizer.default,  # only customizers that have been saved and are default can be viewed
     }
 

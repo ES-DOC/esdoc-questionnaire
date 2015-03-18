@@ -277,8 +277,7 @@ class MetadataComponentProxy(MPTTModel):
         verbose_name_plural = '(DISABLE ADMIN ACCESS SOON) Metadata Component Proxies'
 
     def __unicode__(self):
-        return u'%s' % (self.name)
-        #return u'%s::%s' % (self.vocabulary,self.name)
+        return pretty_string(self.name)
 
     def get_key(self):
         return self.guid

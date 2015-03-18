@@ -21,6 +21,7 @@ These are accessed from AJAX
 
 from django.shortcuts import render_to_response
 from django.template.context import RequestContext
+from CIM_Questionnaire.questionnaire.forms.forms_customize import create_new_customizer_forms_from_models, create_existing_customizer_forms_from_models
 from CIM_Questionnaire.questionnaire.forms.forms_edit import create_new_edit_forms_from_models, create_existing_edit_forms_from_models
 from CIM_Questionnaire.questionnaire.models.metadata_customizer import MetadataModelCustomizer, MetadataStandardPropertyCustomizer, MetadataScientificPropertyCustomizer
 from CIM_Questionnaire.questionnaire.models.metadata_model import MetadataModel
@@ -29,18 +30,20 @@ from CIM_Questionnaire.questionnaire.models.metadata_proxy import MetadataModelP
 from CIM_Questionnaire.questionnaire.models.metadata_version import MetadataVersion
 from CIM_Questionnaire.questionnaire.models.metadata_vocabulary import MetadataVocabulary
 from CIM_Questionnaire.questionnaire.views.views_base import get_key_from_request
-from CIM_Questionnaire.questionnaire.views.views_base import get_cached_existing_customization_set, get_cached_proxy_set, get_cached_new_realization_set, get_cached_existing_realization_set
+from CIM_Questionnaire.questionnaire.views.views_base import get_cached_new_customization_set, get_cached_existing_customization_set, get_cached_proxy_set, get_cached_new_realization_set, get_cached_existing_realization_set
 from CIM_Questionnaire.questionnaire.views.views_inheritance import get_cached_inheritance_data
 from CIM_Questionnaire.questionnaire.views.views_error import questionnaire_error
-from CIM_Questionnaire.questionnaire.utils import get_form_by_prefix
+from CIM_Questionnaire.questionnaire.utils import get_form_by_prefix, get_joined_keys_dict
 from CIM_Questionnaire.questionnaire.utils import DEFAULT_VOCABULARY_KEY, DEFAULT_COMPONENT_KEY
 
 STANDARD_PROPERTY_TYPE = "standard_properties"
 SCIENTIFIC_PROPERTY_TYPE = "scientific_properties"
 VALID_PROPERTY_TYPES = [STANDARD_PROPERTY_TYPE, SCIENTIFIC_PROPERTY_TYPE, ]
 
+# TODO: GET ALL THESE FNS TO WORK W/ CACHED INSTANCE OF FORMS RATHER THAN RE-CREATING THEM EACH TIME
 
-def validate_section_key(section_key):
+
+def validate_edit_section_key(section_key):
 
     # section_key format is:
     # [ <version_key> |
@@ -171,7 +174,74 @@ def validate_section_key(section_key):
     return (validity, version, model_proxy, vocabulary, component_proxy, property_type, category_proxy, property_proxy, msg)
 
 
-# TODO: GET THESE FNS TO WORK W/ CACHED INSTANCE OF FORMS RATHER THAN RE-CREATING THEM EACH TIME
+def validate_customize_section_key(section_key):
+
+    # section_key format is:
+    # [ <version_key> |
+    #   <model_key> |
+    #   <vocabulary_key> |
+    #   <component_key> |
+    # ]
+
+    (validity, version, model_proxy, vocabulary, component_proxy, msg) = \
+        (True, None, None, None, None, "")
+
+    section_keys = section_key.split('|')
+
+    # try to get the version...
+    try:
+        version_key = section_keys[0]
+        version = MetadataVersion.objects.get(key=version_key, registered=True)
+    except IndexError:
+        msg = "Invalid section key; did not specify version"
+        validity = False
+        return (validity, version, model_proxy, vocabulary, component_proxy, msg)
+    except MetadataVersion.DoesNotExist:
+        msg = "Invalid section key; unable to find a registered version w/ key=%s" % version_key
+        validity = False
+        return (validity, version, model_proxy, vocabulary, component_proxy, msg)
+
+    # try to get the model proxy...
+    try:
+        model_proxy_key = section_keys[1]
+        model_proxy = MetadataModelProxy.objects.get(version=version, name__iexact=model_proxy_key)
+    except IndexError:
+        msg = "Invalid section key; did not specify model"
+        validity = False
+        return (validity, version, model_proxy, vocabulary, component_proxy, msg)
+    except MetadataModelProxy.DoesNotExist:
+        msg = "Invalid section key; unable to find a model w/ name=%s" % model_proxy_key
+        validity = False
+        return (validity, version, model_proxy, vocabulary, component_proxy, msg)
+
+    # try to get the vocabulary...
+    try:
+        vocabulary_key = section_keys[2]
+        vocabulary = MetadataVocabulary.objects.get(guid=vocabulary_key)
+    except IndexError:
+        msg = "Invalid section key; did not specify vocabulary"
+        validity = False
+        return (validity, version, model_proxy, vocabulary, component_proxy, msg)
+    except MetadataVocabulary.DoesNotExist:
+        msg = "Invalid section key; unable to find a vocabulary w/ guid=%s" % vocabulary_key
+        validity = False
+        return (validity, version, model_proxy, vocabulary, component_proxy, msg)
+
+    # from this point on the keys don't need to be present
+    # (so I can just return on IndexError)
+
+    # try to get the component_proxy...
+    try:
+        component_proxy_key = section_keys[3]
+        component_proxy = MetadataComponentProxy.objects.get(guid=component_proxy_key, vocabulary=vocabulary)
+    except IndexError:
+        return (validity, version, model_proxy, vocabulary, component_proxy, msg)
+    except MetadataComponentProxy.DoesNotExist:
+        msg = "Invalid section key; unable to find a component w/ key=%s" % component_proxy_key
+        validity = False
+        return (validity, version, model_proxy, vocabulary, component_proxy, msg)
+
+    return (validity, version, model_proxy, vocabulary, component_proxy, msg)
 
 
 def validate_edit_view_arguments(project_name, section_key):
@@ -193,7 +263,7 @@ def validate_edit_view_arguments(project_name, section_key):
 
     # get all the other necessary elements by parsing the section_key
     (validity, version, model_proxy, vocabulary, component_proxy, property_type, category_proxy, property_proxy, msg) = \
-        validate_section_key(section_key)
+        validate_edit_section_key(section_key)
     if not validity:
         return (validity, version, model_proxy, vocabulary, component_proxy, property_type, category_proxy, property_proxy, model_customizer, vocabularies, msg)
 
@@ -211,7 +281,33 @@ def validate_edit_view_arguments(project_name, section_key):
     return (validity, version, model_proxy, vocabulary, component_proxy, property_type, category_proxy, property_proxy, model_customizer, vocabularies, msg)
 
 
-def get_section_template_path(property_proxy, property_type, category_proxy):
+def validate_customize_view_arguments(project_name, section_key):
+
+    (validity, project, version, model_proxy, vocabulary, component_proxy, msg) = \
+        (True, None, None, None, None, None, "")
+
+    # try to get the project...
+    try:
+        project = MetadataProject.objects.get(name=project_name.lower())
+    except MetadataProject.DoesNotExist:
+        msg = "Cannot find the <u>project</u> '%s'.  Has it been registered?" % project_name
+        validity = False
+        return (validity, project, version, model_proxy, vocabulary, component_proxy, msg)
+    if not project.active:
+        msg = "Project '%s' is inactive." % project_name
+        validity = False
+        return (validity, project, version, model_proxy, vocabulary, component_proxy, msg)
+
+    # get all the other necessary elements by parsing the section_key
+    (validity, version, model_proxy, vocabulary, component_proxy, msg) = \
+        validate_customize_section_key(section_key)
+    if not validity:
+        return (validity, project, version, model_proxy, vocabulary, component_proxy, msg)
+
+    return (validity, project, version, model_proxy, vocabulary, component_proxy, msg)
+
+
+def get_edit_section_template_path(property_proxy, property_type, category_proxy):
 
     section_template_path = "questionnaire/api/"
 
@@ -238,6 +334,18 @@ def get_section_template_path(property_proxy, property_type, category_proxy):
     return section_template_path + section_template
 
 
+def get_customize_section_template_path(vocabulary, component):
+
+    section_template_path = "questionnaire/api/"
+
+    if vocabulary:
+        section_template = "_section_customize_vocabulary.html"
+    if component:
+        section_template = "_section_customize_vocabulary_component.html"
+
+    return section_template_path + section_template
+
+
 def api_get_new_edit_form_section(request, project_name, section_key, **kwargs):
 
     # check the arguments to the view,
@@ -250,6 +358,9 @@ def api_get_new_edit_form_section(request, project_name, section_key, **kwargs):
     # get (or set) models from the cache...
     instance_key = get_key_from_request(request)
     customizer_set = get_cached_existing_customization_set(instance_key, model_customizer, vocabularies)
+    # flatten the scientific properties...
+    customizer_set["scientific_category_customizers"] = get_joined_keys_dict(customizer_set["scientific_category_customizers"])
+    customizer_set["scientific_property_customizers"] = get_joined_keys_dict(customizer_set["scientific_property_customizers"])
     proxy_set = get_cached_proxy_set(instance_key, customizer_set)
     realization_set = get_cached_new_realization_set(instance_key, customizer_set, proxy_set, vocabularies)
 
@@ -278,7 +389,7 @@ def api_get_new_edit_form_section(request, project_name, section_key, **kwargs):
         },
     }
 
-    template = get_section_template_path(property_proxy, property_type, category_proxy)
+    template = get_edit_section_template_path(property_proxy, property_type, category_proxy)
     return render_to_response(template, _dict, context_instance=RequestContext(request))
 
 
@@ -307,6 +418,9 @@ def api_get_existing_edit_form_section(request, project_name, section_key, model
     # get (or set) models from the cache...
     instance_key = get_key_from_request(request)
     customizer_set = get_cached_existing_customization_set(instance_key, model_customizer, vocabularies)
+    # flatten the scientific properties...
+    customizer_set["scientific_category_customizers"] = get_joined_keys_dict(customizer_set["scientific_category_customizers"])
+    customizer_set["scientific_property_customizers"] = get_joined_keys_dict(customizer_set["scientific_property_customizers"])
     proxy_set = get_cached_proxy_set(instance_key, customizer_set)
     realization_set = get_cached_existing_realization_set(instance_key, root_model.get_descendants(include_self=True), customizer_set, proxy_set, vocabularies)
 
@@ -335,5 +449,50 @@ def api_get_existing_edit_form_section(request, project_name, section_key, model
         },
     }
 
-    template = get_section_template_path(property_proxy, property_type, category_proxy)
+    template = get_edit_section_template_path(property_proxy, property_type, category_proxy)
+    return render_to_response(template, _dict, context_instance=RequestContext(request))
+
+
+def api_get_new_customize_form_section(request, project_name, section_key, **kwargs):
+
+    # check the arguments to the view,
+    # and parse the section key
+    (validity, project, version, model_proxy, vocabulary, component_proxy, msg) = \
+        validate_customize_view_arguments(project_name, section_key)
+    if not validity:
+        return questionnaire_error(request, msg)
+
+    # get the relevant vocabularies...
+    vocabularies = project.vocabularies.filter(document_type__iexact=model_proxy.name)
+
+    # get (or set) models from the cache...
+    instance_key = get_key_from_request(request)
+    customizer_set = get_cached_new_customization_set(instance_key, project, version, model_proxy, vocabularies)
+
+    (model_customizer_form, standard_property_customizer_formset, scientific_property_customizer_formsets, model_customizer_vocabularies_formset) = \
+        create_new_customizer_forms_from_models(customizer_set["model_customizer"], customizer_set["standard_category_customizers"], customizer_set["standard_property_customizers"], customizer_set["scientific_category_customizers"], customizer_set["scientific_property_customizers"], vocabularies_to_customize=vocabularies)
+
+    # now get some things that were previously computed in the master template
+    # or in loops that I need to recreate for the individual sections
+    if component_proxy:
+        formsets = scientific_property_customizer_formsets[vocabulary.get_key()]
+        formset = formsets[component_proxy.get_key()]
+    else:
+        # the actual property formset is not needed for the top-level vocabulary section
+        formset = None
+    _dict = {
+        # "vocabularies": vocabularies,
+        "model_customizer_form": model_customizer_form,
+        # "standard_property_customizer_formset": standard_property_customizer_formset,
+        # "scientific_property_customizer_formsets": scientific_property_customizer_formsets,
+        "section_parameters": {
+            "version": version,
+            "model_proxy": model_proxy,
+            "vocabulary": vocabulary,
+            "component": component_proxy,
+            "formset": formset,
+        },
+    }
+
+    template = get_customize_section_template_path(vocabulary, component_proxy)
     return render_to_response(template, _dict, context_instance=RequestContext(request))

@@ -89,11 +89,11 @@ def questionnaire_edit_new(request, project_name="", model_name="", version_key=
     # get (or set) items from the cache...
     instance_key = get_key_from_request(request)
     customizer_set = get_cached_existing_customization_set(instance_key, model_customizer, vocabularies)
-    proxy_set = get_cached_proxy_set(instance_key, customizer_set)
-    realization_set = get_cached_new_realization_set(instance_key, customizer_set, proxy_set, vocabularies)
     # flatten the scientific properties...
     customizer_set["scientific_category_customizers"] = get_joined_keys_dict(customizer_set["scientific_category_customizers"])
     customizer_set["scientific_property_customizers"] = get_joined_keys_dict(customizer_set["scientific_property_customizers"])
+    proxy_set = get_cached_proxy_set(instance_key, customizer_set)
+    realization_set = get_cached_new_realization_set(instance_key, customizer_set, proxy_set, vocabularies)
 
     # now build the forms...
     if request.method == "GET":
@@ -202,11 +202,11 @@ def questionnaire_edit_existing(request, project_name="", model_name="", version
     # get (or set) items from the cache...
     instance_key = get_key_from_request(request)
     customizer_set = get_cached_existing_customization_set(instance_key, model_customizer, vocabularies)
-    proxy_set = get_cached_proxy_set(instance_key, customizer_set)
-    realization_set = get_cached_existing_realization_set(instance_key, model.get_descendants(include_self=True), customizer_set, proxy_set, vocabularies)
     # flatten the scientific properties...
     customizer_set["scientific_category_customizers"] = get_joined_keys_dict(customizer_set["scientific_category_customizers"])
     customizer_set["scientific_property_customizers"] = get_joined_keys_dict(customizer_set["scientific_property_customizers"])
+    proxy_set = get_cached_proxy_set(instance_key, customizer_set)
+    realization_set = get_cached_existing_realization_set(instance_key, model.get_descendants(include_self=True), customizer_set, proxy_set, vocabularies)
 
     # this is used for other fns that might need to know what the view returns
     # (such as those in the testing framework)

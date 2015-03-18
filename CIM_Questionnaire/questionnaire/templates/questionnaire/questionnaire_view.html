@@ -195,7 +195,7 @@
                     {% for model_form in model_formset %}
 
                         <div class="pane" id="{{ model_form.prefix }}_pane" data-section-key="{{ version.key }}|{{ model_proxy.name|lower }}|{{ model_form.get_vocabulary_key }}|{{ model_form.get_component_key }}">
-                            <div style="width: 50%; margin-left: auto; margin-right: auto; margin-top: 10px; text-align: center; font-style: italic; color: #B9E0E3">This pane has not yet been loaded.</div>
+                            <div class="documentation unloaded">This pane has not yet been loaded.</div>
                         </div> <!-- /.pane -->
 
                     {%  endfor %}

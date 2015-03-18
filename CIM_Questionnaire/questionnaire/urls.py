@@ -71,9 +71,9 @@ urlpatterns = patterns('',
     url(r'^ajax/select_realization/$', 'questionnaire.views.ajax_select_realization', name="select_realization"),
 
     # new ajax / restful api...
-    #url(r'^api/(?P<project_name>[^/]+)/get_form_section/(?P<section_key>[^/]+)/$', 'questionnaire.views.views_api.api_get_form_section', name="api_get_form_section"),
     url(r'^api/(?P<project_name>[^/]+)/get_new_edit_form_section/(?P<section_key>[^/]+)/$', 'questionnaire.views.views_api.api_get_new_edit_form_section', name="api_get_new_edit_form_section"),
     url(r'^api/(?P<project_name>[^/]+)/get_existing_edit_form_section/(?P<model_id>[^/]+)/(?P<section_key>[^/]+)/$', 'questionnaire.views.views_api.api_get_existing_edit_form_section', name="api_get_existing_edit_form_section"),
+    url(r'^api/(?P<project_name>[^/]+)/get_new_customize_form_section/(?P<section_key>[^/]+)/$', 'questionnaire.views.views_api.api_get_new_customize_form_section', name="api_get_new_customize_form_section"),
 
     url(r'^api/add_inheritance_data/$', 'questionnaire.views.views_inheritance.api_add_inheritance_data', name="add_inheritance_data"),
 

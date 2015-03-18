@@ -81,7 +81,7 @@ body {
 #questionnaire table tr.odd { background-color: #fff; }
 #questionnaire table tr.even { background-color: #eee; }
 #questionnaire table tr.field td:first-child { width: 30%; }
-#questionnaire table tr.field td:first-child+td { width: 70%; }   /* slightly hacky way of doing things b/c nth-child pseudo-selector is not supprted by all browsers */
+/*#questionnaire table tr.field td:first-child+td { width: 70%; }    *//* slightly hacky way of doing things b/c nth-child pseudo-selector is not supprted by all browsers */
 
 
 #questionnaire fieldset { border: 2px solid #B9E0E3; padding: 0.5em; margin-right: 1.0em; margin-top: 1.0em; margin-bottom: 1.0em; margin-left: 0px; }
@@ -220,3 +220,9 @@ input.default , input.character {
 }
 
 /* end toast notifications */
+
+/* load-on-demand stuff */
+
+.unloaded { width: 50%; margin-left: auto; margin-right: auto; margin-top: 10px; text-align: center; color: #B9E0E3; }
+
+/* end load-on-demand stuff */
