@@ -32,7 +32,7 @@ from django.contrib.auth.models import User
 from django.contrib.sites.models import get_current_site
 from django.conf import settings
 
-from CIM_Questionnaire.questionnaire.forms.forms_authentication import MetadataUserForm, MetadataRegistrationForm, MetadataPasswordForm, LocalAuthenticationForm #, RemoteAuthenticationForm
+from CIM_Questionnaire.questionnaire.forms.forms_authentication import MetadataUserForm, MetadataRegistrationForm, MetadataPasswordForm, LocalAuthenticationForm  #, RemoteAuthenticationForm
 from CIM_Questionnaire.questionnaire.views.views_error import questionnaire_error
 from CIM_Questionnaire.questionnaire.utils import remove_form_errors
 from CIM_Questionnaire.questionnaire import get_version
