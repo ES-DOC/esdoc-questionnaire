@@ -27,15 +27,20 @@ from CIM_Questionnaire.questionnaire.models.metadata_customizer import MetadataM
 from CIM_Questionnaire.questionnaire.models.metadata_proxy import MetadataStandardPropertyProxy
 from CIM_Questionnaire.questionnaire.fields import MetadataFieldTypes, MultipleSelectWidget, SingleSelectWidget, EMPTY_CHOICE
 from CIM_Questionnaire.questionnaire.forms.forms_customize import MetadataCustomizerForm, MetadataCustomizerInlineFormSet
-from CIM_Questionnaire.questionnaire.utils import find_in_sequence, get_initial_data, QuestionnaireError
+from CIM_Questionnaire.questionnaire.utils import find_in_sequence, model_to_data, QuestionnaireError
 from CIM_Questionnaire.questionnaire.utils import set_field_widget_attributes, update_field_widget_attributes, model_to_data, get_data_from_form, get_data_from_formset
 
 
 def create_standard_property_customizer_form_data(model_customizer, standard_property_customizer):
 
-    standard_property_customizer_form_data = get_initial_data(standard_property_customizer,{
-        "last_modified": time.strftime("%c"),
-    })
+    standard_property_customizer_form_data = model_to_data(
+        standard_property_customizer,
+        exclude=["model", ],  # no need to pass model, since this is handled by virtue of being an "inline" formset
+        include={
+            "last_modified": time.strftime("%c"),
+            "loaded": True,  # standard_property_customizer forms are always loaded (only scientific_property forms aren't)
+        }
+    )
 
     field_type = standard_property_customizer_form_data["field_type"]
 
@@ -243,7 +248,9 @@ class MetadataStandardPropertyCustomizerForm(MetadataCustomizerForm):
 
 
 class MetadataStandardPropertyCustomizerInlineFormSet(MetadataCustomizerInlineFormSet):
-    pass
+
+    def get_number_of_forms(self):
+        return self.number_of_properties
 
 
 def MetadataStandardPropertyCustomizerInlineFormSetFactory(*args,**kwargs):

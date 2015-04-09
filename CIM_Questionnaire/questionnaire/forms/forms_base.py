@@ -336,4 +336,3 @@ class MetadataInlineFormSet(BaseInlineFormSet):
                 forms_valid &= form.is_valid(loaded=False)
 
         return forms_valid and not bool(self.non_form_errors())
-

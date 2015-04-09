@@ -173,6 +173,15 @@ class QuestionnaireError(Exception):
 ##############
 
 
+def validate_not_blank(value):
+    """
+    validator function to use with charFields;
+    ensures there is more than just whitespace in the field
+    """
+    if not value.strip():
+        raise ValidationError(u"Value must have content.")
+
+
 def validate_no_spaces(value):
     """
     validator function to use with charFields;
@@ -730,4 +739,3 @@ def itr_product_keywords(keywords, as_namedtuple=False):
 #                   else:
 #                       raise
 #             import ipdb; ipdb.set_trace()
-

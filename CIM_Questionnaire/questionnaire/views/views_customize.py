@@ -126,14 +126,15 @@ def questionnaire_customize_new(request, project_name="", model_name="", version
     # now build the forms...
     if request.method == "GET":
 
-        (model_customizer_form, standard_property_customizer_formset, scientific_property_customizer_formsets, model_customizer_vocabularies_formset) = \
+        (model_customizer_form, standard_category_customizer_formset, standard_property_customizer_formset, scientific_category_customizer_formsets, scientific_property_customizer_formsets, model_customizer_vocabularies_formset) = \
             create_new_customizer_forms_from_models(customizer_set["model_customizer"], customizer_set["standard_category_customizers"], customizer_set["standard_property_customizers"], customizer_set["scientific_category_customizers"], customizer_set["scientific_property_customizers"], vocabularies_to_customize=vocabularies)
 
     else:  # request.method == "POST"
 
-        data = request.POST
+        data = request.POST.copy()  # sometimes I need to alter the data for unloaded forms;
+                                    # this cannot be done on the original (immutable) QueryDict
 
-        (validity, model_customizer_form, standard_property_customizer_formset, scientific_property_customizer_formsets, model_customizer_vocabularies_formset) = \
+        (validity, standard_category_customizer_formset, model_customizer_form, standard_property_customizer_formset, scientific_property_customizer_formsets, model_customizer_vocabularies_formset) = \
             create_customizer_forms_from_data(
                 data,
                 customizer_set["model_customizer"],
@@ -145,7 +146,7 @@ def questionnaire_customize_new(request, project_name="", model_name="", version
             )
 
         if all(validity):
-
+            import ipdb; ipdb.set_trace()
             model_customizer_instance = save_valid_forms(model_customizer_form, standard_property_customizer_formset, scientific_property_customizer_formsets, model_customizer_vocabularies_formset)
 
             # this is used for other fns that might need to know what the view returns
@@ -173,7 +174,9 @@ def questionnaire_customize_new(request, project_name="", model_name="", version
         "model_proxy": model_proxy,
         "model_customizer_form": model_customizer_form,
         "model_customizer_vocabularies_formset": model_customizer_vocabularies_formset,
+        "standard_category_customizer_formset": standard_category_customizer_formset,
         "standard_property_customizer_formset": standard_property_customizer_formset,
+        "scientific_category_customizer_formsets": scientific_category_customizer_formsets,
         "scientific_property_customizer_formsets": scientific_property_customizer_formsets,
         "questionnaire_version": get_version(),
         "instance_key": instance_key,
@@ -293,4 +296,3 @@ def questionnaire_customize_help(request):
     }
 
     return render_to_response('questionnaire/questionnaire_customize_instructions.html', _dict, context_instance=RequestContext(request))
-

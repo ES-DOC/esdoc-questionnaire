@@ -31,6 +31,147 @@ function vocabularies(parent) {
 
 function tags(element) {
 
+    var tag_widget = element;
+    /* note that the value of the comparison string has to match the values in "forms/forms_customize_categories.py#TagTypes" */
+    var tag_type = $(tag_widget).attr("name") == "standard_categories" ? STANDARD_TAG_TYPE : SCIENTIFIC_TAG_TYPE;
+    var category_form_container = $(tag_widget).nextAll("div.categories_forms");
+    var category_forms = $(category_form_container).find("div.category_form");
+
+    $(tag_widget).tagit({
+        allowSpaces : true,
+        singleField : true,
+        singleFieldDelimiter : "|",
+        containment: "parent",  /* prevent overflows; used in conjuction w/ the "containment" option of ".sortable()" below */
+        caseSensitive: true,
+        allowDuplicates: true,
+        afterTagAdded : function(event, ui) {
+            var tag = ui.tag;
+            var tag_label = $(tag).find("span.tagit-label");
+            var tag_name = $(tag_label).text();
+
+            $(tag_label).attr("title", "click to toggle properties belonging to this category");
+            /* hide the delete button for standard categories */
+            if (tag_type == STANDARD_TAG_TYPE) {
+                $(tag).find(".tagit-close").hide();
+            }
+            /* add an edit button for all categories */
+            $(tag_label).before(
+                "<a class='tagit-edit' title='edit this category' onclick='edit_tag(this);'>" +
+                "<span class='ui-icon ui-icon-pencil'></span>" +
+                "</a>"
+            );
+            $(tag).click(function(event) {
+                /* if you really clicked the tag, and not an icon/button on the tag... */
+                if ($(event.target).attr("class").indexOf("ui-icon") == -1) {
+                    /* toggle its state... */
+                    $(this).toggleClass("ui-state-disabled");
+                    /* and that of all corresponding properties... */
+                    $(this).closest("div.tab_content").find(".accordion_header input.label[name$='category_name']").each(function() {
+
+                        if ($(this).val() == tag_name) {
+                            var section = $(this).closest("div.accordion_unit");
+                            $(section).toggle();
+                        }
+                    });
+                }
+            });
+
+            //var tag_just_added = $(tag).hasClass("added");
+            //if (tag_just_added) {
+            //    $(tag).removeClass("added");
+            //}
+
+        }
+    });
+
+    // now that the tagit widget has been created we can further customize it...
+    var tagit_widget = $(tag_widget).next("ul.tagit:first");
+
+    if (tag_type == SCIENTIFIC_TAG_TYPE) {
+        $(tagit_widget).attr("style", "width: 94%;");  /* shorted the widget a bit, to allow room for the "add_tag" button */
+    }
+
+    $(tagit_widget).sortable({
+        axis: "x",
+        items: "li:not(.tagit-new)",
+        placeholder: "sortable_item",
+        containment: "parent",
+        start: function (e, ui) {
+            ui.placeholder.height(ui.item.height());
+            ui.placeholder.width(ui.item.width());
+        },
+        stop: function(e, ui) {
+            var new_tag_order = $(this).find("li.tagit-choice").map(function() {
+                return $(this).find("span.tagit-label").text();
+            }).get();
+            for (var order=0; order < new_tag_order.length; order++) {
+                var tag_name = new_tag_order[order];
+                $.each(category_forms, function(i, category_form) {
+                   var category_name = $(category_form).find("input[name$='-name']").val();
+                   if (category_name == tag_name) {
+                       var category_order = $(category_form).find("input[name$='-order']");
+                       $(category_order).val(order + 1); /* JS is 0-based, Django is 1-based */
+                       return false; /* break out of the inner loop */
+                   }
+                });
+            }
+        }
+
+    });
+
+    // setup how adding new tags is done...
+    // disable the default way of adding tags
+    $(tagit_widget).find(".tagit-new").hide();
+    // and replace it with this dummy button
+    var add_tag_button = $(tagit_widget).prevAll("button.add_tag:first");
+    if (tag_type == STANDARD_TAG_TYPE) {
+        // but not for standard categories
+        $(add_tag_button).hide();
+    }
+    else {
+        // only for scientific categories
+        $(add_tag_button).button({
+            icons: { primary: "ui-icon-circle-plus"},
+            text: false
+        }).click(function() {
+            $(category_form_container).find("a.add-row").trigger("click");
+            var new_category_forms = $(category_form_container).find("div.category_form");
+            var new_category_form = $(new_category_forms).last();
+            var new_category_name = "new category";
+            var new_category_order = new_category_forms.length;
+
+            $(tag_widget).tagit("createTag", new_category_name, "added");
+            var new_tag = $(tagit_widget).find(".tagit-choice:last")
+
+            var field_name = $(new_category_form).find("input:first").attr("name");
+            var n = field_name.lastIndexOf('-');
+            var old_prefix = field_name.substring(0, n);
+            var new_prefix = field_name.substring(0, n-1) + new_category_order - 1;
+            update_field_names(new_category_form, old_prefix, new_prefix);
+
+            $(new_category_form).find("input[name$='-name']").val(new_category_name);
+            $(new_category_form).find("input[name$='-order']").val(new_category_order);
+
+            edit_tag($(new_tag).find("a.tagit-edit"));
+
+            return false;  /* don't perform the default button action (which would be submitting the form) */
+        });
+
+        $(category_forms).formset({
+            //added: function(row) {
+            //    alert("added");
+            //},
+            //removed: function(row) {
+            //    alert('removed');
+            //}
+        });
+
+    }
+
+}
+
+function tags2(element) {
+
         var tag_widget  = $(element);
         var tag_type    = $(tag_widget).attr("name").endsWith("standard_categories_tags") ? STANDARD_TAG_TYPE : SCIENTIFIC_TAG_TYPE;
 
@@ -245,7 +386,151 @@ function view_all_categories(view_all_button) {
     });
 }
 
+
+function update_property_categories(property_forms, category_key, category_name) {
+    /* called in response to editing or adding a category tag */
+    /* if the category already exists, changes the name in all relevant widgets */
+    /* if the category is new, adds the name to all relative widgets */
+    /* then triggers the change event, which updates the label text */
+    $(property_forms).find("select[name$='-category']").each(function() {
+        var option = $(this).find("option[value='" + category_key + "']");
+        if (option) {
+            option.text(category_name);
+        }
+        else {
+            $(this).append("<option value='" + category_key + "'>" + category_name + "</option>");
+        }
+        $(this).trigger("change");
+    });
+}
+
+
 function edit_tag(edit_tag_icon) {
+
+    var tag_widget = $(edit_tag_icon).closest(".tagit");
+    var tag_label = $(edit_tag_icon).next(".tagit-label");
+    var tag_name = $(tag_label).text();
+    /* note that the value of the comparison string has to match the values in "forms/forms_customize_categories.py#TagTypes" */
+    var tag_type = $(tag_widget).prev("input.tags").attr("name") == "standard_categories" ? STANDARD_TAG_TYPE : SCIENTIFIC_TAG_TYPE;
+
+    var category_forms = $(tag_widget).nextAll("div.categories_forms").find("div.category_form");
+    $.each(category_forms, function(i, category_form) {
+        var form = $(category_form).find("div.category_form_content");
+        var form_fields = $(form).find("input,select,textarea,button");
+        var category_name = $(form).find("input[name$='-name']").val();
+
+        if (category_name == tag_name) {
+
+            var url = window.document.location.protocol + "//" + window.document.location.host + "/api/customize_category/";
+            url += $(tag_widget).prev("input.tags").attr("name"); /* this gives the type: standard or scientific */
+            url += "/";  /* trailing slash is required to prevent RuntimeError; alternatively, could set APPEND_SLASH to False in Django settings */
+
+            var edit_dialog = $("#edit_dialog");
+
+            $.ajax({
+                url: url,
+                type: "GET",
+                cache: false,
+                data: $(form_fields).serializeArray(),
+                success: function(data) {
+                    $(edit_dialog).html(data);
+                    $(edit_dialog).dialog("option", {
+                        autoOpen: false,
+                        height: 400,
+                        width: 600,
+                        dialogClass: "no_close",
+                        title: "Edit Category",
+                        open: function() {
+                            var parent = $(edit_dialog);
+                            init_widgets(readonlies, $(parent).find(".readonly"), true);
+                            init_widgets(helps, $(parent).find(".help_button"), true);
+                            init_widgets(buttons, $(parent).find("input.button"), true);
+                        },
+                        buttons: {
+                            ok: function() {
+                                $.ajax({
+                                    url: url,
+                                    type: "POST", /* (POST mimics submit) */
+                                    data: $(edit_dialog).find("input,select,textarea").serializeArray(),
+                                    cache: false,
+                                    success: function (data, status, xhr) {
+                                        var msg = xhr.getResponseHeader("msg");
+                                        var msg_dialog = $(document.createElement("div"));
+                                        msg_dialog.html(msg);
+                                        msg_dialog.dialog({
+                                            modal: true,
+                                            hide: "explode",
+                                            height: 200,
+                                            width: 400,
+                                            dialogClass: "no_close",
+                                            buttons: {
+                                                OK: function () {
+                                                    $(this).dialog("close");
+                                                }
+                                            }
+                                        });
+
+                                        var status_code = xhr.status;
+
+                                        if (status_code == 200) {
+                                            var parsed_data = $.parseJSON(data);
+                                            $.each(parsed_data, function (key, value) {
+                                                /* TODO: WHY CAN'T I RE-USE $(form_fields) HERE? */
+                                                /*var field = $(form_fields).("[name$='-" + key + "']")*/
+                                                var field = $(form).find("input[name$='-" + key + "'],select[name$='-" + key + "'],textarea[name$='-" + key + "']");
+                                                if ($(field).is(":checkbox")) {
+                                                    $(field).prop("checked", value);
+                                                }
+                                                else {
+                                                    $(field).val(value);
+                                                }
+                                                if (key == "name") {
+                                                    $(tag_label).text(value);
+                                                }
+
+                                            });
+
+                                            if (tag_type = SCIENTIFIC_TAG_TYPE) {
+                                                var property_forms = $(tag_widget).closest("div.categories").nextAll("div.accordion:first").find("div.form");
+                                                update_property_categories(property_forms, parsed_data.key, parsed_data.name);
+                                            }
+
+                                            $(edit_dialog).dialog("close");
+                                        }
+                                        else {
+                                            $(edit_dialog).html(data);
+                                            //var parent = $(edit_dialog);
+                                            //init_widgets(readonlies, $(parent).find(".readonly"), true);
+                                            //init_widgets(helps, $(parent).find(".help_button"), true);
+                                            //init_widgets(buttons, $(parent).find("input.button"), true);
+                                        }
+                                    },
+                                    error: function (xhr, status, error) {
+                                        console.log(xhr.responseText + status + error)
+                                    }
+                                });
+                            }
+                            // don't allow canceling the dialog
+                            // this requires users to change the name of new categories (since the ok button forces validation)
+                            //},
+                            //cancel: function() {
+                            //    $(edit_dialog).dialog("close");
+                            //}
+                        }
+                    }).dialog("open");
+                },
+                error: function(xhr, status, error) {
+                    console.log(xhr.responseText + status + error)
+                }
+            });
+
+            return false; /* break out of the loop */
+        }
+    });
+}
+
+
+function edit_tag2(edit_tag_icon) {
     var tag_name        = $(edit_tag_icon).next(".tagit-label").text();
     var tag_key         = slugify(tag_name);
     var tag_widget      = $(edit_tag_icon).closest(".tagit").prev(".tags");

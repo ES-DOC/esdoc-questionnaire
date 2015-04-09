@@ -28,27 +28,25 @@ from CIM_Questionnaire.questionnaire.forms.forms_customize import MetadataCustom
 from CIM_Questionnaire.questionnaire.models.metadata_customizer import MetadataModelCustomizer
 from CIM_Questionnaire.questionnaire.models.metadata_vocabulary import MetadataVocabulary
 from CIM_Questionnaire.questionnaire.utils import JSON_SERIALIZER
-from CIM_Questionnaire.questionnaire.utils import get_initial_data
+from CIM_Questionnaire.questionnaire.utils import model_to_data
 from CIM_Questionnaire.questionnaire.utils import set_field_widget_attributes, update_field_widget_attributes
 
 
 def create_model_customizer_form_data(model_customizer, standard_category_customizers, scientific_category_customizers, vocabularies=[]):
 
-    model_customizer_form_data = get_initial_data(model_customizer,{
-        "last_modified": time.strftime("%c"),
-        "standard_categories_content": JSON_SERIALIZER.serialize(standard_category_customizers),
-        "standard_categories_tags": "|".join([standard_category.name for standard_category in standard_category_customizers]),
-    })
+    model_customizer_form_data = model_to_data(
+        model_customizer,
+        exclude=[],
+        include={
+            "last_modified": time.strftime("%c"),
+            "loaded": True,  # model_customizer forms are always loaded (only scientific_property forms aren't)
+            "standard_categories_content": JSON_SERIALIZER.serialize(standard_category_customizers),
+            "standard_categories_tags": "|".join([standard_category.name for standard_category in standard_category_customizers]),
+        }
+    )
 
-    # if not model_customizer.pk:
-    #     vocabulary_pks = [vocabulary.pk for vocabulary in vocabularies]
-    #     # if this is a new customizer, by default all of the vocabularies should be active
-    #     model_customizer_form_data["vocabularies"]  = vocabulary_pks
-    #     # if this is not a new customizer, then the vocabulary order will have been set previously
-    #     model_customizer_form_data["vocabulary_order"]  = ",".join(map(str,vocabulary_pks))
-
-    for vocabulary_key,scientific_category_customizer_dict in scientific_category_customizers.iteritems():
-        for component_key,scientific_category_customizer_list in scientific_category_customizer_dict.iteritems():
+    for vocabulary_key, scientific_category_customizer_dict in scientific_category_customizers.iteritems():
+        for component_key, scientific_category_customizer_list in scientific_category_customizer_dict.iteritems():
             scientific_categories_content_field_name = u"%s_%s_scientific_categories_content" % (vocabulary_key, component_key)
             scientific_categories_tags_field_name = u"%s_%s_scientific_categories_tags" % (vocabulary_key, component_key)
             model_customizer_form_data[scientific_categories_content_field_name] = JSON_SERIALIZER.serialize(scientific_category_customizer_list)
@@ -57,7 +55,7 @@ def create_model_customizer_form_data(model_customizer, standard_category_custom
     return model_customizer_form_data
 
 
-class MetadataModelCustomizerAbstractForm(MetadataCustomizerForm):
+class MetadataAbstractModelCustomizerForm(MetadataCustomizerForm):
 
     class Meta:
         abstract = True
@@ -86,7 +84,7 @@ class MetadataModelCustomizerAbstractForm(MetadataCustomizerForm):
                         self.errors[unique_together_field] = msg
 
 
-class MetadataModelCustomizerForm(MetadataModelCustomizerAbstractForm):
+class MetadataModelCustomizerForm(MetadataAbstractModelCustomizerForm):
 
     class Meta:
         model = MetadataModelCustomizer
@@ -98,50 +96,25 @@ class MetadataModelCustomizerForm(MetadataModelCustomizerAbstractForm):
             "name", "description", "default",
             # document fields...
             "model_title", "model_description", "model_show_all_categories", "model_show_all_properties", "model_show_hierarchy", "model_hierarchy_name", "model_root_component",
-            # other fields...
-            "standard_categories_content", "standard_categories_tags",
         ]
 
     _hidden_fields = ("proxy", "project", "version", )
     _customizer_fields = ("name", "description", "default", )
     _document_fields = ("model_title", "model_description", "model_show_all_categories", "model_show_all_properties", "model_show_hierarchy", "model_hierarchy_name", "model_root_component",)
-    
-    standard_categories_content = CharField(required=False, widget=Textarea)  # the categories themselves
-    standard_categories_tags = CharField(label="Available Categories", required=False)  # the field used by the tagging widget
-    standard_categories_tags.help_text = "This widget contains the standard set of categories associated with the CIM version.  If this set is unsuitable, or empty, then the categorization should be updated. Please contact your administrator."
-    # scientific categories are done on a per-cv / per-component basis in __init__ below
-
-    standard_categories_to_process = []
-    scientific_categories_to_process = {}
 
     def __init__(self, *args, **kwargs):
-        all_vocabularies = kwargs.pop("all_vocabularies",[])
+        all_vocabularies = kwargs.pop("all_vocabularies", [])
 
         super(MetadataModelCustomizerForm, self).__init__(*args, **kwargs)
 
         update_field_widget_attributes(self.fields["model_show_hierarchy"], {"class": "enabler", })
         set_field_widget_attributes(self.fields["model_show_hierarchy"], {"onchange": "enable(this,'true',['model_root_component']);", })
-
         set_field_widget_attributes(self.fields["description"], {"cols": "60", "rows": "4", })
-
         set_field_widget_attributes(self.fields["model_description"], {"cols": "60", "rows": "4", })
-
-        update_field_widget_attributes(self.fields["standard_categories_tags"], {"class": "tags", })
-
-        for vocabulary in all_vocabularies:
-            vocabulary_key = vocabulary.get_key()
-            for component_proxy in vocabulary.component_proxies.all():
-                component_key = component_proxy.get_key()
-                scientific_categories_content_field_name = vocabulary_key+"_"+component_key + "_scientific_categories_content"
-                scientific_categories_tags_field_name = vocabulary_key+"_"+component_key + "_scientific_categories_tags"
-                self.fields[scientific_categories_content_field_name] = CharField(required=False, widget=Textarea)                  # the categories themselves
-                self.fields[scientific_categories_tags_field_name] = CharField(label="Available Categories", required=False)        # the field used by the tagging widget
-                self.fields[scientific_categories_tags_field_name].help_text = "This widget contains the set of categories associated with this component of this CV.  Users can add to this set via this customization."
-                update_field_widget_attributes(self.fields[scientific_categories_tags_field_name], {"class":"tags"})
 
     def clean_default(self):
         cleaned_data = self.cleaned_data
-        default = cleaned_data.get("default")  # using the get fn instead of directly accessing the dictionary in-case the field is missing, as w/ subform customizers
+        default = cleaned_data.get("default")
         if default:
             other_customizer_filter_kwargs = {
                 "default": True,
@@ -203,33 +176,10 @@ class MetadataModelCustomizerForm(MetadataModelCustomizerAbstractForm):
             self._errors["model_show_hierarchy"] = ErrorList()
             self._errors["model_show_hierarchy"].append("There must be a root component when using multiple CVs")
 
-        # categories have to be saved separately
-        # since they are manipulated via a JQuery tagging widget, and therefore aren't part of the form
-        # (the variables set below are used in "save_valid_forms")
-
-        # NOTE: MAKE SURE NOT TO ACCESS THE CATEGORY_CONTENT FIELDS BEFORE DESERIALIZING THEM, AS THIS CAUSES ERRORS LATER ON
-        self.standard_categories_to_process[:] = []  # fancy way of clearing the list, making sure any references are also updated
-        for deserialized_standard_category_customizer in serializers.deserialize("json", cleaned_data["standard_categories_content"], ignorenonexistent=True):
-            self.standard_categories_to_process.append(deserialized_standard_category_customizer)
-        try:
-            # TODO: SHOULD I JUST BE LOOPING THROUGH active_vocabularies?
-            for vocabulary in vocabularies:
-                vocabulary_key = vocabulary.get_key()
-                self.scientific_categories_to_process[vocabulary_key] = {}
-                for component_proxy in vocabulary.component_proxies.all():
-                    component_key = component_proxy.get_key()
-                    scientific_categories_content_field_name = vocabulary_key+"_"+component_key+"_scientific_categories_content"
-                    self.scientific_categories_to_process[vocabulary_key][component_key] = []
-                    for deserialized_scientific_category_customizer in serializers.deserialize("json", self.data[scientific_categories_content_field_name], ignorenonexistent=True):
-                        self.scientific_categories_to_process[vocabulary_key][component_key].append(deserialized_scientific_category_customizer)
-        except KeyError:
-            # this takes care of the case when this being called on a subform
-            pass
-
         return cleaned_data
 
 
-class MetadataModelCustomizerSubForm(MetadataModelCustomizerAbstractForm):
+class MetadataModelCustomizerSubForm(MetadataAbstractModelCustomizerForm):
 
     class Meta:
         model = MetadataModelCustomizer
@@ -240,22 +190,11 @@ class MetadataModelCustomizerSubForm(MetadataModelCustomizerAbstractForm):
             # customizer fields...
             # document fields...
             "model_title", "model_description", "model_show_all_categories", "model_show_all_properties",
-            # other fields...
-            "standard_categories_content", "standard_categories_tags",
         ]
 
     _hidden_fields = ("proxy", "project", "version", "name", )
     _customizer_fields = ()
     _document_fields = ("model_title", "model_description", "model_show_all_categories", "model_show_all_properties", )
-
-    standard_categories_content = CharField(required=False, widget=Textarea)  # the categories themselves
-    standard_categories_tags = CharField(label="Available Categories", required=False)  # the field used by the tagging widget
-    standard_categories_tags.help_text = "This widget contains the standard set of categories associated with the CIM version. If this set is unsuitable, or empty, then the categorization should be updated. Please contact your administrator."
-
-    # scientific categories are done on a per-cv / per-component basis in __init__ below
-
-    standard_categories_to_process = []
-    scientific_categories_to_process = {}
 
     def __init__(self, *args, **kwargs):
         all_vocabularies = kwargs.pop("all_vocabularies", [])
@@ -263,17 +202,4 @@ class MetadataModelCustomizerSubForm(MetadataModelCustomizerAbstractForm):
         super(MetadataModelCustomizerSubForm, self).__init__(*args, **kwargs)
 
         set_field_widget_attributes(self.fields["model_description"], {"cols": "60", "rows": "4", })
-
         update_field_widget_attributes(self.fields["standard_categories_tags"], {"class": "tags", })
-
-        for vocabulary in all_vocabularies:
-            vocabulary_key = vocabulary.get_key()
-            for component_proxy in vocabulary.component_proxies.all():
-                component_key = component_proxy.get_key()
-                scientific_categories_content_field_name = vocabulary_key+"_"+component_key + "_scientific_categories_content"
-                scientific_categories_tags_field_name  = vocabulary_key+"_"+component_key + "_scientific_categories_tags"
-                self.fields[scientific_categories_content_field_name] = CharField(required=False, widget=Textarea)  # the categories themselves
-                self.fields[scientific_categories_tags_field_name] = CharField(label="Available Categories", required=False)  # the field used by the tagging widget
-                self.fields[scientific_categories_tags_field_name].help_text = "This widget contains the set of categories associated with this component of this CV.  Users can add to this set via this customization."
-                update_field_widget_attributes(self.fields[scientific_categories_tags_field_name], {"class": "tags",})
-

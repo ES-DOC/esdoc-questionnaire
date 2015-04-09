@@ -77,6 +77,15 @@ class MetadataVersion(models.Model):
         super(MetadataVersion, self).save(*args, **kwargs)
         self._original_key = self.key
 
+    # def save(self, *args, **kwargs):
+    #     if self.pk:
+    #         existing_version = MetadataVersion.objects.get(pk=self.pk)
+    #         if existing_version.name != self.name or existing_version.version != self.version
+    #             self.key = u"%s_%s" % (self.name, self.version)
+    #     else:
+    #         self.key = u"%s_%s" % (self.name, self.version)
+    #     super(MetadataVersion, self).save(*args, **kwargs)
+
     def __unicode__(self):
 
         if self.name:
@@ -95,6 +104,7 @@ class MetadataVersion(models.Model):
 
     def get_key(self):
         return u"%s_%s" % (self.name, self.version)
+
 
     def register(self, **kwargs):
 

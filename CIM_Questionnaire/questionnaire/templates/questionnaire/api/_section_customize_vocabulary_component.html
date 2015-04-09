@@ -9,6 +9,7 @@
     {% with section_parameters.vocabulary as vocabulary %}
     {% with section_parameters.component as component %}
     {% with section_parameters.formset as formset %}
+    {% with section_parameters.categories_formset as categories_formset %}
 
         {% with vocabulary_key=vocabulary.get_key %}
             {% with component_key=component.get_key %}
@@ -16,11 +17,9 @@
                 <div id="tab_scientific_properties_{{ vocabulary_key }}_{{ component_key }}" data-section-key="{{ version.key }}|{{ model_proxy.name.lower }}|{{ vocabulary_key }}|{{ component_key }}">
                     <div class="tab_content"> <!-- inner tab content -->
 
-                        {% with tag_field_name=vocabulary_key|add:'_'|add:component_key|add:'_scientific_categories_tags' content_field_name=vocabulary_key|add:'_'|add:component_key|add:'_scientific_categories_content' %}
-                            {% with tags=model_customizer_form|get_field_by_name:tag_field_name content=model_customizer_form|get_field_by_name:content_field_name %}
-                                {% include "questionnaire/_categories.html" %}
-                            {% endwith %} {# / tags, content #}
-                        {% endwith %} {# / tag_field_name, content_field_name #}
+                        {% with formset=categories_formset %}
+                            {% include "questionnaire/_categories.html" %}
+                        {% endwith %}
 
                         {{ formset.management_form }}
                         {# formset.non_form_errors #}
@@ -68,6 +67,9 @@
                                             {% for hidden_field in form.hidden_fields %}
                                                 {{ hidden_field }}
                                             {% endfor %} {# /hidden_field #}
+                                            {# and a special form-only (ie: not part of the underlying model) field #}
+                                            {# which helps w/ the load-on-demand paradigm #}
+                                            {{ form.loaded }}
                                         </div>
 
                                         <table width="100%">
@@ -130,6 +132,7 @@
             {% endwith %} {# /component_key #}
         {% endwith %} {# /vocabulary_key #}
 
+    {% endwith %} {# /catgories_formset #}
     {% endwith %} {# /formset #}
     {% endwith %} {# /component #}
     {% endwith %} {# /vocabulary #}

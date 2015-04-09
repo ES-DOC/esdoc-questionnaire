@@ -81,7 +81,7 @@ body {
 #questionnaire table tr.odd { background-color: #fff; }
 #questionnaire table tr.even { background-color: #eee; }
 #questionnaire table tr.field td:first-child { width: 30%; }
-/*#questionnaire table tr.field td:first-child+td { width: 70%; }    *//* slightly hacky way of doing things b/c nth-child pseudo-selector is not supprted by all browsers */
+#questionnaire table tr.field td:first-child+td { width: 70%; }   /* slightly hacky way of doing things b/c nth-child pseudo-selector is not supprted by all browsers */
 
 
 #questionnaire fieldset { border: 2px solid #B9E0E3; padding: 0.5em; margin-right: 1.0em; margin-top: 1.0em; margin-bottom: 1.0em; margin-left: 0px; }
@@ -165,12 +165,6 @@ button.ui-multiselect           { margin-top:  4px !important; }
 .ui-menu li a { color: inherit;} /* no idea why this is not the default color?!? */
 
 .ui-accordion-header .ui-icon { float: left; margin-top: 4px; margin-right: 4px; }  /* fixes icon forcing content onto newline */
-
-.tagit { border: 2px solid #358C92; background: #ffffff; min-height: 2em; padding: 6px !important;}
-.tagit .tagit-choice .tagit-edit { cursor: pointer; float: left; margin-right: 4px; margin-left: -4px; }
-.tagit .tagit-choice .tagit-close { cursor: pointer; }
-.tagit-label { cursor: default; }
-.add_tag input { border: 2px solid #358C92; }
 
 .sortable_item { border: 1px dashed #cccccc; }
 

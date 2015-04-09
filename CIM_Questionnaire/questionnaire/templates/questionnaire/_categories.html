@@ -1,31 +1,74 @@
-{# this displays any errors for a metadata field #}
-
 <div class="categories">
+
     <fieldset>
 
-        <span>{{ tags.label }}:&nbsp;</span>
+        {% with tags=formset.tags %}
 
-        {{ tags }}
+            <div>{{ tags.label }}:</div>
 
-        <div class="hidden">
-            {{content}}
-        </div>
+            <button class="add_tag" title="add a new category">add category</button> <!-- note, this is hidden via JS for standard categories -->
 
-        <input type="button" class="button view_all" value="View All Properties" title="View All Properties" onclick="view_all_categories(this);"/>
+            {{ tags.render }}
 
-        <div class="documentation">
-            <p style="text-align: justify; margin-right: 2px;">
-                These categories will appear as tabs within the Editor.
-                The tab order can be changed by dragging and dropping the above widgets.
-                Additionally, each category can be customized by clicking the "pencil/edit" icon.
-                Clicking elsewhere on a category widget will toggle the visibility of all properties belonging to that category.
-                Use the "View All" button above to display properties from all categories.
-            </p>
-        </div>
+            <input type="button" class="button view_all" style="clear: both;" value="View All Properties" title="View All Properties" onclick="view_all_categories(this);"/>
 
-        <div class="add_tag">
-            add a new category:&nbsp;<input type="text" class="add_tag" title="enter a new category name here"/>
-        </div>
+            <div class="documentation">
+                <p style="text-align: justify; margin-right: 2px;">
+                    These categories will appear as tabs within the Editor.
+                    The tab order can be changed by dragging and dropping the above widgets.
+                    Additionally, each category can be customized by clicking the "pencil/edit" icon.
+                    Clicking elsewhere on a category widget will toggle the visibility of all properties belonging to that category.
+                    Use the "View All" button above to display properties from all categories.
+                </p>
+            </div>
+
+
+
+{#            <div class="add_tag">  #}
+{#                add a new category:&nbsp;<input type="text" class="add_tag" title="enter a new category name here"/>#}
+{#            </div>#}
+
+        {% endwith %} {# /tags #}
+
+        <div class="categories_forms">
+            {{ formset.management_form }}
+            {% for form in formset %}
+                <div class="category_form">
+                    <div class="category_form_content">
+
+{#                        {{ form }}#}
+
+                        <div class="hidden">
+                            {# the fields I explicitly set to hidden #}
+                            {% for field in form.get_hidden_fields %}
+                                {{ field }}
+                            {% endfor %} {# /field #}
+                            {#  and the fields that are hidden by default #}
+                            {% for hidden_field in form.hidden_fields %}
+                                {{ hidden_field }}
+                            {% endfor %} {# /hidden_field #}
+                            {% if formset.can_delete %}
+                                {{ form.DELETE }}
+                            {% endif %}
+                            {# and a special form-only (ie: not part of the underlying model) field #}
+                            {# which helps w/ the load-on-demand paradigm #}
+                            {{ form.loaded }}
+                        </div>
+
+
+                        <table width="100%">
+                            {% for field in form.get_customizer_fields %}
+                                <tr class="{% cycle 'odd' 'even' %} field" name="{{field.html_name}}">
+                                    {% include "questionnaire/_field.html" %}
+                                </tr>
+                            {% endfor %} {# / field in form #}
+                        </table>
+
+                    </div> <!-- /.category_form_content -->
+                </div> <!-- /.category_form -->
+            {% endfor %} {# /form #}
+        </div> <!-- /.categories_forms -->
 
     </fieldset>
+
 </div> <!-- /.categories -->

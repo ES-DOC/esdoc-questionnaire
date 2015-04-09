@@ -469,28 +469,34 @@ def api_get_new_customize_form_section(request, project_name, section_key, **kwa
     instance_key = get_key_from_request(request)
     customizer_set = get_cached_new_customization_set(instance_key, project, version, model_proxy, vocabularies)
 
-    (model_customizer_form, standard_property_customizer_formset, scientific_property_customizer_formsets, model_customizer_vocabularies_formset) = \
+    (model_customizer_form, standard_category_customizer_formset, standard_property_customizer_formset, scientific_category_customizer_formsets, scientific_property_customizer_formsets, model_customizer_vocabularies_formset) = \
         create_new_customizer_forms_from_models(customizer_set["model_customizer"], customizer_set["standard_category_customizers"], customizer_set["standard_property_customizers"], customizer_set["scientific_category_customizers"], customizer_set["scientific_property_customizers"], vocabularies_to_customize=vocabularies)
 
     # now get some things that were previously computed in the master template
     # or in loops that I need to recreate for the individual sections
     if component_proxy:
-        formsets = scientific_property_customizer_formsets[vocabulary.get_key()]
-        formset = formsets[component_proxy.get_key()]
+        property_formsets = scientific_property_customizer_formsets[vocabulary.get_key()]
+        property_formset = property_formsets[component_proxy.get_key()]
+        category_formsets = scientific_category_customizer_formsets[vocabulary.get_key()]
+        category_formset = category_formsets[component_proxy.get_key()]
     else:
         # the actual property formset is not needed for the top-level vocabulary section
-        formset = None
+        property_formset = None
+        category_formset = None
     _dict = {
         # "vocabularies": vocabularies,
         "model_customizer_form": model_customizer_form,
+        # "standard_category_customizer_formset": standard_category_customizer_formset,
         # "standard_property_customizer_formset": standard_property_customizer_formset,
+        # "scientific_category_customizer_formsets": scientific_category_customizer_formsests,
         # "scientific_property_customizer_formsets": scientific_property_customizer_formsets,
         "section_parameters": {
             "version": version,
             "model_proxy": model_proxy,
             "vocabulary": vocabulary,
             "component": component_proxy,
-            "formset": formset,
+            "formset": property_formset,
+            "categories_formset": category_formset,
         },
     }
 

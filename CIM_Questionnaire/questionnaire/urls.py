@@ -63,8 +63,6 @@ urlpatterns = patterns('',
 
     # old ajax...
     url(r'^ajax/customize_subform/$', 'questionnaire.views.ajax_customize_subform', name="customize_subform"),
-    url(r'^ajax/customize_category/$', 'questionnaire.views.ajax_customize_category'),
-    url(r'^ajax/customize_category/(?P<category_id>[^/]+)/$', 'questionnaire.views.ajax_customize_category'),
     url(r'^ajax/select_realization/$', 'questionnaire.views.ajax_select_realization', name="select_realization"),
 
     # new ajax / restful api...
@@ -74,6 +72,7 @@ urlpatterns = patterns('',
     url(r'^api/(?P<project_name>[^/]+)/get_existing_customize_form_section/(?P<customization_name>[^/]+)/(?P<section_key>[^/]+)/$', 'questionnaire.views.views_api.api_get_existing_customize_form_section', name="api_get_existing_customize_form_section"),
 
     url(r'^api/add_inheritance_data/$', 'questionnaire.views.views_inheritance.api_add_inheritance_data', name="add_inheritance_data"),
+    url(r'api/customize_category/(?P<category_type>[^/]+)/$', 'questionnaire.views.views_categories.api_customize_category', name="customize_category"),
 
     # atom feeds...
     url(r'^feed/$', MetadataFeed(), name="feed"),

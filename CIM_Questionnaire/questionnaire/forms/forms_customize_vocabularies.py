@@ -28,6 +28,9 @@ from CIM_Questionnaire.questionnaire.models.metadata_customizer import MetadataM
 from CIM_Questionnaire.questionnaire.fields import MULTIPLECHOICEFIELD_HELP_TEXT
 from CIM_Questionnaire.questionnaire.utils import update_field_widget_attributes, model_to_data
 
+# notice that MetadataModelCustomizerVocabulary doesn't inherit from MetadataForm
+# and does not concern itself w/ any of the confusing-isms of the load-on-demand paradigm
+
 
 def create_model_customizer_vocabulary_form_data(model_customizer, vocabulary, order):
 

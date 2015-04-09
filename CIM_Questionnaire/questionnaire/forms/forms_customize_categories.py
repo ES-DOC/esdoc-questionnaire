@@ -1,0 +1,238 @@
+####################
+#   ES-DOC CIM Questionnaire
+#   Copyright (c) 2014 ES-DOC. All rights reserved.
+#
+#   University of Colorado, Boulder
+#   http://cires.colorado.edu/
+#
+#   This project is distributed according to the terms of the MIT license [http://www.opensource.org/licenses/MIT].
+####################
+
+__author__ = "allyn.treshansky"
+__date__ = "Dec 01, 2014 3:00:00 PM"
+
+"""
+.. module:: forms_customize_standard_categories
+
+forms for customizing standard_categories
+
+"""
+
+import time
+from django.forms import CharField
+from django.forms.models import modelformset_factory
+from django.forms.util import ErrorList
+from django.template.defaultfilters import slugify
+from django.utils.translation import ugettext_lazy as _
+
+from CIM_Questionnaire.questionnaire.forms.forms_customize import MetadataCustomizerForm, MetadataCustomizerFormSet
+from CIM_Questionnaire.questionnaire.models.metadata_customizer import MetadataStandardCategoryCustomizer, MetadataScientificCategoryCustomizer
+from CIM_Questionnaire.questionnaire.utils import model_to_data, update_field_widget_attributes, set_field_widget_attributes, EnumeratedType, EnumeratedTypeList
+
+
+###########################
+# code to help w/ tagging #
+###########################
+
+class TagType(EnumeratedType):
+    pass
+
+TagTypes = EnumeratedTypeList([
+    TagType("STANDARD", "standard_categories"),
+    TagType("SCIENTIFIC", "scientific_categories"),
+])
+
+
+class TagField(CharField):
+
+    def __init__(self, *args, **kwargs):
+        type = kwargs.pop("type")
+        kwargs.update({
+            "label": "Available Categories",
+            "required": False,
+        })
+        super(TagField, self).__init__(*args, **kwargs)
+        self.type = type
+
+    def render(self):
+        """
+        allows me to render the underlying widget
+        (since it's not done automatically b/c this field exists outside of any form)
+        :return: HTML representation of tag
+        """
+        return self.widget.render(self.type.getName(), self.initial)
+
+
+############################
+# now for the actual forms #
+############################
+
+NEW_CATEGORY_NAME = "new category"
+
+
+def create_standard_category_customizer_form_data(standard_category_customizer):
+
+    standard_category_customizer_form_data = model_to_data(
+        standard_category_customizer,
+        exclude=[],
+        include={
+            "last_modified": time.strftime("%c"),
+        }
+    )
+
+    return standard_category_customizer_form_data
+
+
+def create_scientific_category_customizer_form_data(scientific_category_customizer):
+
+    scientific_category_customizer_form_data = model_to_data(
+        scientific_category_customizer,
+        exclude=[],
+        include={
+            "last_modified": time.strftime("%c"),
+        }
+    )
+
+    return scientific_category_customizer_form_data
+
+
+class MetadataCategoryCustomizerForm(MetadataCustomizerForm):
+
+    class Meta:
+        abstract = True
+
+    def get_hidden_fields(self):
+        return self.get_fields_from_list(self._hidden_fields)
+
+    def get_customizer_fields(self):
+        return self.get_fields_from_list(self._customizer_fields)
+
+    def clean(self):
+        """
+        ensure that the key is based on the name
+        and ensure that the name of a new category has been changed
+        :return:
+        """
+        super(MetadataCategoryCustomizerForm, self).clean()
+        cleaned_data = self.cleaned_data
+
+        cleaned_data["key"] = slugify(cleaned_data["name"])
+        # ideally I would also change "self.data" w/ the updated key
+        # however, "self.data" is immutable
+        # since I need the updated key value to pass back to the template via AJAX
+        # I use the "existing_data" argument to the "get_data_from_form" fn in the AJAX view
+
+        if cleaned_data["name"] == NEW_CATEGORY_NAME:
+            self._errors["name"] = ErrorList()
+            self._errors["name"].append("Please change the name.")
+
+        return cleaned_data
+
+
+class MetadataCategoryCustomizerFormSet(MetadataCustomizerFormSet):
+
+    def __init__(self, *args, **kwargs):
+        _type = kwargs.pop("type")
+        super(MetadataCategoryCustomizerFormSet, self).__init__(*args, **kwargs)
+
+        category_names = [
+            category_form.get_current_field_value("name")
+            for category_form in self.forms
+        ]
+
+        tags = TagField(
+            type=_type,
+            initial="|".join(category_names),
+            help_text=_(
+                "This widget contains the standard set of categories associated with this CIM ontology."
+                "If this set is unsuitable, or empty, then the categorization should be updated."
+                "Please contact your project administrator."
+            ),
+        )
+        update_field_widget_attributes(tags, {"class": "tags", })
+
+        self.tags = tags
+
+
+class MetadataStandardCategoryCustomizerForm(MetadataCategoryCustomizerForm):
+
+    class Meta:
+        model = MetadataStandardCategoryCustomizer
+        fields = [
+            # hidden fields...
+            "key", "proxy", "project", "version", "order",
+            # customizer fields...
+            "name", "description",
+        ]
+
+    _hidden_fields = ("key", "proxy", "project", "version", "order", )
+    _customizer_fields = ("name", "description", )
+
+    def __init__(self, *args, **kwargs):
+        super(MetadataStandardCategoryCustomizerForm, self).__init__(*args, **kwargs)
+        set_field_widget_attributes(self.fields["description"], {"cols": "40", "rows": "4", })
+        # update_field_widget_attributes(self.fields["name"], {"readonly": "readonly", "class": "readonly", })
+
+
+def MetadataStandardCategoryCustomizerFormSetFactory(*args,**kwargs):
+    _prefix = kwargs.pop("prefix", "standard_categories")
+    _data = kwargs.pop("data", None)
+    _initial = kwargs.pop("initial", [])
+    _queryset = kwargs.pop("queryset", MetadataStandardCategoryCustomizer.objects.none())
+    new_kwargs = {
+        "can_delete": False,
+        "extra": kwargs.pop("extra", 0),
+        "formset": MetadataCategoryCustomizerFormSet,
+        "form": MetadataStandardCategoryCustomizerForm,
+    }
+    new_kwargs.update(kwargs)
+
+    _formset = modelformset_factory(MetadataStandardCategoryCustomizer, *args, **new_kwargs)
+    _type = TagTypes.STANDARD
+
+    if _data:
+        return _formset(_data, initial=_initial, prefix=_prefix, type=_type)
+
+    return _formset(queryset=_queryset, initial=_initial, prefix=_prefix, type=_type)
+
+
+class MetadataScientificCategoryCustomizerForm(MetadataCategoryCustomizerForm):
+
+    class Meta:
+        model = MetadataScientificCategoryCustomizer
+        fields = [
+            # hidden fields...
+            "key", "proxy", "project", "vocabulary_key", "component_key", "order",
+            # customizer fields...
+            "name", "description", "order",
+        ]
+
+    _hidden_fields = ("key", "proxy", "project", "vocabulary_key", "component_key", "order", )
+    _customizer_fields = ("name", "description", )
+
+    def __init__(self, *args, **kwargs):
+        super(MetadataScientificCategoryCustomizerForm, self).__init__(*args, **kwargs)
+        set_field_widget_attributes(self.fields["description"], {"cols": "40", "rows": "4", })
+        # update_field_widget_attributes(self.fields["name"], {"readonly": "readonly", "class": "readonly", })
+
+
+def MetadataScientificCategoryCustomizerFormSetFactory(*args, **kwargs):
+    _prefix = kwargs.pop("prefix", "scientific_categories")
+    _data = kwargs.pop("data", None)
+    _initial = kwargs.pop("initial", [])
+    _queryset = kwargs.pop("queryset", MetadataScientificCategoryCustomizer.objects.none())
+    new_kwargs = {
+        "can_delete": True,
+        "extra": kwargs.pop("extra", 0),
+        "formset": MetadataCategoryCustomizerFormSet,
+        "form": MetadataScientificCategoryCustomizerForm,
+    }
+    new_kwargs.update(kwargs)
+
+    _formset = modelformset_factory(MetadataScientificCategoryCustomizer, *args, **new_kwargs)
+    _type = TagTypes.SCIENTIFIC
+
+    if _data:
+        return _formset(_data, initial=_initial, prefix=_prefix, type=_type)
+
+    return _formset(queryset=_queryset, initial=_initial, prefix=_prefix, type=_type)

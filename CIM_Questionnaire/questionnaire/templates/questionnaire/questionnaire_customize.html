@@ -7,6 +7,7 @@
 
     <!-- ext js -->
     <script language="javascript" type="text/javascript" src="{{ STATIC_URL }}questionnaire/js/ext/jquery.tagit.min.js"></script>
+    <script language="javascript" type="text/javascript" src="{{ STATIC_URL }}questionnaire/js/ext/jquery.formset.js"></script>
 
     <!--custom js -->
     <script language="javascript" type="text/javascript" src="{{ STATIC_URL }}questionnaire/js/questionnaire_customize.js"></script>
@@ -33,7 +34,6 @@
             /* for this template; it is set in the template header */
             var url = window.document.location.protocol + "//" + window.document.location.host + "/api/" + project_name + "/" + get_section_view_name + "/" + section_key;
             url += "?instance_key=" + instance_key;
-
             $.ajax({
                 url: url,
                 type: "GET",
@@ -356,7 +356,7 @@
                                         </p>
                                     </div> <!-- /.documentation -->
 
-                                    {% with tags=model_customizer_form.standard_categories_tags content=model_customizer_form.standard_categories_content %}
+                                    {% with formset=standard_category_customizer_formset %}
                                         {% include "questionnaire/_categories.html" %}
                                     {% endwith %}
 
@@ -507,7 +507,7 @@
 
                                             <div id="tab_scientific_properties_{{ vocabulary_key }}" data-section-key="{{ version.key }}|{{ model_proxy.name.lower }}|{{ vocabulary_key }}">
                                                 <div class="tab_content">
-                                                    <div style="width: 50%; margin-left: auto; margin-right: auto; margin-top: 10px; text-align: center; font-style: italic; color: #B9E0E3">
+                                                    <div class="unloaded">
                                                         This section has not yet been loaded.
                                                     </div>
                                                 </div>

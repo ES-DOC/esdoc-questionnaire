@@ -32,7 +32,6 @@ from CIM_Questionnaire.questionnaire.models.metadata_customizer import MetadataC
 from CIM_Questionnaire.questionnaire.models.metadata_vocabulary import MetadataVocabulary
 from CIM_Questionnaire.questionnaire.models.metadata_model import MetadataModel, MetadataStandardProperty
 from CIM_Questionnaire.questionnaire.forms.forms_customize import create_new_customizer_forms_from_models, create_existing_customizer_forms_from_models, create_customizer_forms_from_data, save_valid_forms
-from CIM_Questionnaire.questionnaire.forms.forms_categorize import MetadataScientificCategoryCustomizerForm, MetadataStandardCategoryCustomizerForm
 from CIM_Questionnaire.questionnaire.forms.forms_edit import create_new_edit_subforms_from_models, create_existing_edit_subforms_from_models, get_data_from_existing_edit_forms
 from CIM_Questionnaire.questionnaire.utils import QuestionnaireError, update_field_widget_attributes, set_field_widget_attributes, pretty_string
 from CIM_Questionnaire.questionnaire.fields import SingleSelectWidget, MultipleSelectWidget
@@ -197,52 +196,6 @@ def ajax_customize_subform(request, **kwargs):
     response["msg"] = msg
 
     return response
-
-
-def ajax_customize_category(request,category_id="",**kwargs):
-
-    category_name           = request.GET.get('n',None)
-    category_key            = request.GET.get('k',None)
-    category_description    = request.GET.get('d',None)
-    category_order          = request.GET.get('o',None)
-    category_class          = request.GET.get('m',None)
-
-    if not category_class:
-        msg = "unable to determine type of category (no class specified)"
-        raise QuestionnaireError(msg)
-
-    (category_app_name,category_model_name) = category_class.split(".")
-    
-    category_model = get_model(category_app_name,category_model_name)
-
-    if not category_model:
-        msg = "Unable to determine type of category (invalid class specified)"
-        raise QuestionnaireError(msg)
-
-    if category_model == MetadataStandardCategoryCustomizer:
-        category_form_class = MetadataStandardCategoryCustomizerForm
-    elif category_model == MetadataScientificCategoryCustomizer:
-        category_form_class = MetadataScientificCategoryCustomizerForm
-    else:
-        msg = "Invalid type of category specified."
-        raise QuestionnaireError(msg)
-    
-    temp_category = category_model(
-        name            = category_name,
-        key             = category_key,
-        description     = category_description,
-        order           = category_order,
-    )
-
-    category_form = category_form_class(instance=temp_category)
-
-    dict = {
-        "form"          : category_form,
-        "questionnaire_version" : get_version(),
-    }
-    
-    rendered_form = render_to_string("questionnaire/questionnaire_category.html", dictionary=dict, context_instance=RequestContext(request))
-    return HttpResponse(rendered_form,content_type='text/html')
 
 
 def ajax_select_realization(request, **kwargs):

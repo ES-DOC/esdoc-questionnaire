@@ -47,3 +47,9 @@
     position: relative;
     left: -1px;
 }
+
+.tagit { border: 2px solid #358C92; background: #ffffff; min-height: 2em; padding: 6px !important;}
+.tagit .tagit-choice .tagit-edit { cursor: pointer; float: left; margin-right: 4px; margin-left: -4px; }
+.tagit .tagit-choice .tagit-close { cursor: pointer; }
+.tagit-label { cursor: default; }
+.add_tag { float: right; margin-top: 1.5em; }/*18px; }*/
