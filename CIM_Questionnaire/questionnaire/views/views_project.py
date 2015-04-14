@@ -209,6 +209,7 @@ def questionnaire_project_index(request, project_name=""):
         "can_view": can_view,
         "can_edit": can_edit,
         "can_customize": can_customize,
+        "has_published": all_models.filter(is_published=True).count() > 0,
         "document_options": json.dumps(ontology_document_dict),
         "new_document_form": new_document_form,
         "existing_document_formset": existing_document_formset,
