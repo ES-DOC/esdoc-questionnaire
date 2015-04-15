@@ -65,7 +65,7 @@
                         /* identify the section as loaded for js... */
                         $(vocabulary_section).addClass("loaded");
                         /* and for the django view... */
-                        /* TODO $(pane).find("input#id_"+pane_key+"-loaded").prop('checked', true);*/
+                        $(vocabulary_section).find("input[name$='-loaded']").prop('checked', true);
 
                     });
 
@@ -412,6 +412,9 @@
                                                             {% for hidden_field in form.hidden_fields %}
                                                                 {{ hidden_field }}
                                                             {% endfor %} {# /hidden_field #}
+                                                            {# and a special form-only (ie: not part of the underlying model) field #}
+                                                            {# which helps w/ the load-on-demand paradigm #}
+                                                            {{ form.loaded }}
                                                         </div>
 
                                                         <table width="100%">

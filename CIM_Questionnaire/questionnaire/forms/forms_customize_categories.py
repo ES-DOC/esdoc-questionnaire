@@ -22,6 +22,7 @@ import time
 from django.forms import CharField
 from django.forms.models import modelformset_factory
 from django.forms.util import ErrorList
+from django.forms.formsets import DELETION_FIELD_NAME
 from django.template.defaultfilters import slugify
 from django.utils.translation import ugettext_lazy as _
 
@@ -77,6 +78,7 @@ def create_standard_category_customizer_form_data(standard_category_customizer):
         exclude=[],
         include={
             "last_modified": time.strftime("%c"),
+            "loaded": True,  # standard_category_forms are always loaded
         }
     )
 
@@ -89,7 +91,9 @@ def create_scientific_category_customizer_form_data(scientific_category_customiz
         scientific_category_customizer,
         exclude=[],
         include={
+            DELETION_FIELD_NAME: False,
             "last_modified": time.strftime("%c"),
+            "loaded": False,  # in addition to being unloaded until get_form_section renders the form, a category_form remains unloaded until it is edited via AJAX
         }
     )
 
@@ -153,6 +157,13 @@ class MetadataCategoryCustomizerFormSet(MetadataCustomizerFormSet):
 
         self.tags = tags
 
+    def get_number_of_forms(self):
+        # you might think this number will be off in case extra categories were added or deleted
+        # but this only gets called when re-creating the management form in-case it is unloaded
+        # (in which case nothing could have been added or deleted; hence the term "_initial_" in the variable below)
+        # if it is loaded, then the management form will already exist w/ correct values in self.data
+        return self.number_of_initial_forms
+
 
 class MetadataStandardCategoryCustomizerForm(MetadataCategoryCustomizerForm):
 
@@ -190,6 +201,15 @@ def MetadataStandardCategoryCustomizerFormSetFactory(*args,**kwargs):
     _formset = modelformset_factory(MetadataStandardCategoryCustomizer, *args, **new_kwargs)
     _type = TagTypes.STANDARD
 
+    if _initial:
+        _formset.number_of_initial_forms = len(_initial)
+    elif _queryset:
+        _formset.number_of_initial_forms = len(_queryset)
+    elif _data:
+        _formset.number_of_initial_forms = int(_data[u"%s-TOTAL_FORMS" % _prefix])
+    else:
+        _formset.number_of_initial_forms = 0
+
     if _data:
         return _formset(_data, initial=_initial, prefix=_prefix, type=_type)
 
@@ -204,10 +224,10 @@ class MetadataScientificCategoryCustomizerForm(MetadataCategoryCustomizerForm):
             # hidden fields...
             "key", "proxy", "project", "vocabulary_key", "component_key", "order",
             # customizer fields...
-            "name", "description", "order",
+            "name", "description",
         ]
 
-    _hidden_fields = ("key", "proxy", "project", "vocabulary_key", "component_key", "order", )
+    _hidden_fields = ("key", "proxy", "project", "vocabulary_key", "component_key", "order",)
     _customizer_fields = ("name", "description", )
 
     def __init__(self, *args, **kwargs):
@@ -219,7 +239,7 @@ class MetadataScientificCategoryCustomizerForm(MetadataCategoryCustomizerForm):
 def MetadataScientificCategoryCustomizerFormSetFactory(*args, **kwargs):
     _prefix = kwargs.pop("prefix", "scientific_categories")
     _data = kwargs.pop("data", None)
-    _initial = kwargs.pop("initial", [])
+    _initial = kwargs.pop("initial", None)
     _queryset = kwargs.pop("queryset", MetadataScientificCategoryCustomizer.objects.none())
     new_kwargs = {
         "can_delete": True,
@@ -231,6 +251,15 @@ def MetadataScientificCategoryCustomizerFormSetFactory(*args, **kwargs):
 
     _formset = modelformset_factory(MetadataScientificCategoryCustomizer, *args, **new_kwargs)
     _type = TagTypes.SCIENTIFIC
+
+    if _initial is not None:
+        _formset.number_of_initial_forms = len(_initial)
+    elif _queryset:
+        _formset.number_of_initial_forms = len(_queryset)
+    elif _data:
+        _formset.number_of_initial_forms = int(_data[u"%s-TOTAL_FORMS" % _prefix])
+    else:
+        _formset.number_of_initial_forms = 0
 
     if _data:
         return _formset(_data, initial=_initial, prefix=_prefix, type=_type)

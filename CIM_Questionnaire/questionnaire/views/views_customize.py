@@ -134,7 +134,7 @@ def questionnaire_customize_new(request, project_name="", model_name="", version
         data = request.POST.copy()  # sometimes I need to alter the data for unloaded forms;
                                     # this cannot be done on the original (immutable) QueryDict
 
-        (validity, standard_category_customizer_formset, model_customizer_form, standard_property_customizer_formset, scientific_property_customizer_formsets, model_customizer_vocabularies_formset) = \
+        (validity, model_customizer_form, standard_category_customizer_formset, standard_property_customizer_formset, scientific_category_customizer_formsets, scientific_property_customizer_formsets, model_customizer_vocabularies_formset) = \
             create_customizer_forms_from_data(
                 data,
                 customizer_set["model_customizer"],
@@ -145,8 +145,8 @@ def questionnaire_customize_new(request, project_name="", model_name="", version
                 vocabularies_to_customize=vocabularies
             )
 
+        import ipdb; ipdb.set_trace()
         if all(validity):
-            import ipdb; ipdb.set_trace()
             model_customizer_instance = save_valid_forms(model_customizer_form, standard_property_customizer_formset, scientific_property_customizer_formsets, model_customizer_vocabularies_formset)
 
             # this is used for other fns that might need to know what the view returns

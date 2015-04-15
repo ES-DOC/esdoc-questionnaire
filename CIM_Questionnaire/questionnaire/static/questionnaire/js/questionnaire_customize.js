@@ -37,6 +37,8 @@ function tags(element) {
     var category_form_container = $(tag_widget).nextAll("div.categories_forms");
     var category_forms = $(category_form_container).find("div.category_form");
 
+    var property_forms = $(tag_widget).closest("div.categories").nextAll("div.accordion:first").find("div.form");
+
     $(tag_widget).tagit({
         allowSpaces : true,
         singleField : true,
@@ -76,11 +78,46 @@ function tags(element) {
                 }
             });
 
-            //var tag_just_added = $(tag).hasClass("added");
-            //if (tag_just_added) {
-            //    $(tag).removeClass("added");
-            //}
+        },
+        beforeTagRemoved: function(event, ui) {
 
+            if (tag_type == STANDARD_TAG_TYPE) {
+
+                alert("You shouldn't be deleting standard categories!  You're a very naughty boy!");
+
+            }
+
+            else {
+
+                var tag = ui.tag;
+                var tag_label = $(tag).find("span.tagit-label");
+                var tag_name = $(tag_label).text();
+                var tag_key = slugify(tag_name);
+
+                /* I am _not_ using a dialog box to popup this msg */
+                /* b/c JQuery .dialog() is asynchronous and the tag will be removed while waiting for a user response */
+                /* instead I am using the JS .confirm() fn which is synchronous */
+                var should_delete_tag = confirm("You cannot undo this operation.  Any properties belonging to this category will become uncategorized.  Do you wish to continue?");
+                if (should_delete_tag == true) {
+                    $.each(category_forms, function(i, category_form) {
+                        var form = $(category_form).find("div.category_form_content");
+                        var category_name = $(form).find("input[name$='-name']").val();
+                        if (category_name == tag_name) {
+                            /* 1st make the category form for deletion */
+                            var delete_button = $(form).nextAll("a.delete-row:first");
+                            $(delete_button).trigger("click");
+
+                            /* then remove the category from property pull downs */
+                            update_property_categories(property_forms, tag_key, tag_name, false)
+
+                            return false;  /* break out of the loop */
+                        }
+                    });
+                }
+                else {
+                    return false;
+                }
+            }
         }
     });
 
@@ -119,17 +156,17 @@ function tags(element) {
 
     });
 
-    // setup how adding new tags is done...
-    // disable the default way of adding tags
+    /* setup how adding new tags is done... */
+    /* disable the default way of adding tags */
     $(tagit_widget).find(".tagit-new").hide();
-    // and replace it with this dummy button
+    /* and replace it with this button */
     var add_tag_button = $(tagit_widget).prevAll("button.add_tag:first");
     if (tag_type == STANDARD_TAG_TYPE) {
-        // but not for standard categories
+        /* but not for standard categories, */
         $(add_tag_button).hide();
     }
     else {
-        // only for scientific categories
+        /* only for scientific categories */
         $(add_tag_button).button({
             icons: { primary: "ui-icon-circle-plus"},
             text: false
@@ -152,19 +189,12 @@ function tags(element) {
             $(new_category_form).find("input[name$='-name']").val(new_category_name);
             $(new_category_form).find("input[name$='-order']").val(new_category_order);
 
-            edit_tag($(new_tag).find("a.tagit-edit"));
+            edit_tag($(new_tag).find("a.tagit-edit"));  /* simulate clicking the edit button (forces users to change the default name) */
 
             return false;  /* don't perform the default button action (which would be submitting the form) */
         });
 
-        $(category_forms).formset({
-            //added: function(row) {
-            //    alert("added");
-            //},
-            //removed: function(row) {
-            //    alert('removed');
-            //}
-        });
+        $(category_forms).formset();
 
     }
 
@@ -387,18 +417,28 @@ function view_all_categories(view_all_button) {
 }
 
 
-function update_property_categories(property_forms, category_key, category_name) {
-    /* called in response to editing or adding a category tag */
-    /* if the category already exists, changes the name in all relevant widgets */
-    /* if the category is new, adds the name to all relative widgets */
+function update_property_categories(property_forms, category_key, category_name, add) {
+    /* called in response to editing or adding or deleting a category tag */
+    /* if add=true and the category already exists, changes the name in all relevant widgets */
+    /* if add=true and the category is new, adds the name to all relevant widgets */
+    /* if add=false and the category already exists, removes the name from all relevant widgets */
     /* then triggers the change event, which updates the label text */
+    if (typeof(add) === 'undefined') add = true;
+
     $(property_forms).find("select[name$='-category']").each(function() {
         var option = $(this).find("option[value='" + category_key + "']");
         if (option) {
-            option.text(category_name);
+            if (add == true) {
+                option.text(category_name);
+            }
+            else {
+                $(option).remove();
+            }
         }
         else {
-            $(this).append("<option value='" + category_key + "'>" + category_name + "</option>");
+            if (add == true) {
+                $(this).append("<option value='" + category_key + "'>" + category_name + "</option>");
+            }
         }
         $(this).trigger("change");
     });

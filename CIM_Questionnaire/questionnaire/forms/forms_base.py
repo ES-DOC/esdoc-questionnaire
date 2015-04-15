@@ -209,7 +209,6 @@ class MetadataFormSet(BaseModelFormSet):
         if not self.is_bound:  # Stop further processing.
             return
         for i in range(0, self.total_form_count()):
-
             form = self.forms[i]
             prefix = form.prefix
 
@@ -268,6 +267,14 @@ class MetadataFormSet(BaseModelFormSet):
 
 
 class MetadataInlineFormSet(BaseInlineFormSet):
+
+    def get_loaded_forms(self):
+        loaded_forms = []
+        for i in range(0, self.total_form_count()):
+            form = self.forms[i]
+            if form.is_loaded():
+                loaded_forms.append(form)
+        return loaded_forms
 
     def full_clean(self, loaded_prefixes=[]):
         """

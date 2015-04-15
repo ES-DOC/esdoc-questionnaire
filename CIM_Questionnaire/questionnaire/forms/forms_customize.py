@@ -32,18 +32,222 @@ class MetadataCustomizerForm(MetadataForm):
 
     pass
 
-    # def __init__(self, *args, **kwargs):
-    #
-    #     initial = kwargs.pop("initial", None) or {}
-    #
-    #     initial["loaded"] = True
-    #     kwargs["initial"] = initial
-    #
-    #     super(MetadataCustomizerForm, self).__init__(*args, **kwargs)
-
 
 class MetadataCustomizerFormSet(MetadataFormSet):
-    pass
+
+    def _construct_form(self, i, **kwargs):
+
+        if self.is_bound and i < self.initial_form_count():
+            # Import goes here instead of module-level because importing
+            # django.db has side effects.
+            from django.db import connections
+            pk_field = self.model._meta.pk
+            pk_name = "%s" % pk_field.name
+            pk_key = "%s-%s" % (self.add_prefix(i), pk_name)
+            # HERE IS THE DIFFERENT BIT
+            # (OH, AND THE ABOVE 3 VARIABLES HAVE BEEN MOVED AROUND AND SIMPLIFIED A BIT JUST TO MAKE THE CODE NICER)
+            try:
+                pk = self.data[pk_key]
+                # here is a difference between customizers & editors formsets (note this difference doesn't exist w/ inlineformsets)
+                # in the editing form set (ie: model_components), a form is either completely loaded or unloaded
+                # but in the customizer form set (ie: category_customizers), a form can have been rendered but still unloaded b/c it is not loaded until edited via AJAX
+                # so pk might be found in data but still be empty in which case I have to explicitly set it to "None"
+                if not pk:
+                    # TODO: IS THIS REALLY GOING ON?  WHY DOESN'T THIS ISSUE CROP UP IN THE EDITOR?
+                    pk = None
+            except KeyError:
+                # if I am here then the pk_key was not found in data
+                # given that this is a bound form,
+                # this is probably b/c the form is unloaded
+                # double-check this...
+                initial = self.initial_extra[i]
+                if initial["loaded"] == False:
+                    # ...and get the pk another way
+                    pk = initial[pk_name]
+                    kwargs["initial"] = initial
+                else:
+                    # ...if it failed for some other reason, though, raise an error
+                    msg = "Unable to determine pk from form w/ prefix %s" % self.add_prefix(i)
+                    raise QuestionnaireError(msg)
+            # HERE ENDS THE DIFFERENT BIT
+            try:
+                pk = pk_field.get_db_prep_lookup('exact', pk,
+                    connection=connections[self.get_queryset().db])
+            except:
+                import ipdb; ipdb.set_trace()
+            if isinstance(pk, list):
+                pk = pk[0]
+            kwargs['instance'] = self._existing_object(pk)
+        if i < self.initial_form_count() and "instance" not in kwargs:
+            try:
+                kwargs['instance'] = self.get_queryset()[i]
+            except IndexError:
+                # if this formset has changed based on add/delete via AJAX
+                # then the underlying queryset may not have updated
+                # if so - since I've already worked out the pk above - just get the model directly
+                # (note that in the case of new models, pk will be None and this will return an empty model)
+                # (which is the desired behavior anyway - see this same bit of code for MetadataEditingFormSet)
+                model_class = self.model
+                kwargs['instance'] = model_class.objects.get(pk=pk)
+        if i >= self.initial_form_count() and self.initial_extra:
+            # Set initial values for extra forms
+            try:
+                kwargs['initial'] = self.initial_extra[i-self.initial_form_count()]
+            except IndexError:
+                pass
+        # rather than call _construct_form() from super() here (which winds up calling BaseModelFormset),
+        # I explicitly call it from BaseFormSet;
+        # the former repeates the above "get instance" code w/out handling loaded & unloaded forms
+        # since I've already done that, I just want to call the code that builds the actual form
+        form = BaseFormSet._construct_form(self, i, **kwargs)
+
+        return form
+
+
+    # def _construct_form(self, i, **kwargs):
+    #
+    #     if self.is_bound and i < self.initial_form_count():
+    #         # Import goes here instead of module-level because importing
+    #         # django.db has side effects.
+    #         from django.db import connections
+    #         pk_field = self.model._meta.pk
+    #         pk_name = "%s" % pk_field.name
+    #         pk_key = "%s-%s" % (self.add_prefix(i), pk_name)
+    #         # HERE IS THE DIFFERENT BIT
+    #         # (OH, AND THE ABOVE 3 VARIABLES HAVE BEEN MOVED AROUND AND SIMPLIFIED A BIT JUST TO MAKE THE CODE NICER)
+    #         try:
+    #             pk = self.data[pk_key]
+    #         except KeyError:  # MultiValueDictKeyError:
+    #             # if I am here then the pk_key was not found in data
+    #             # given that this is a bound form,
+    #             # this is probably b/c the form is unloaded
+    #             # double-check this...
+    #             initial = self.initial_extra[i]
+    #             if initial["loaded"] == False:
+    #                 # ...and get the pk another way
+    #                 pk = initial[pk_name]
+    #                 kwargs["initial"] = initial
+    #             else:
+    #                 # ...if it failed for some other reason, though, raise an error
+    #                 msg = "Unable to determine pk from form w/ prefix %s" % self.add_prefix(i)
+    #                 raise QuestionnaireError(msg)
+    #         if not pk:
+    #             # since I am including the "id" field (for other reasons)
+    #             # if this is a _new_ rather than _existing_ model
+    #             # then that field will be blank and will be cleaned as u''
+    #             # convert that to None, so that get_db_prep_lookup below returns None
+    #             pk = None
+    #         # HERE ENDS THE DIFFERENT BIT
+    #         pk = pk_field.get_db_prep_lookup('exact', pk,
+    #             connection=connections[self.get_queryset().db])
+    #         if isinstance(pk, list):
+    #             pk = pk[0]
+    #         kwargs['instance'] = self._existing_object(pk)
+    #     # if i < self.initial_form_count() and not kwargs.get('instance'):
+    #     if i < self.initial_form_count() and "instance" not in kwargs:
+    #         try:
+    #             kwargs['instance'] = self.get_queryset()[i]
+    #         except IndexError:
+    #             # if this formset has changed based on add/delete via AJAX
+    #             # then the underlying queryset may not have updated
+    #             # if so - since I've already worked out the pk above - just get the model directly
+    #             # (note that in the case of new models, pk will be None and this will return an empty model)
+    #             # (which is the desired behavior anyway - see this same bit of code for MetadataEditingFormSet)
+    #             model_class = self.model
+    #             kwargs['instance'] = model_class.objects.get(pk=pk)
+    #
+    #     if i >= self.initial_form_count() and self.initial_extra:
+    #         # Set initial values for extra forms
+    #         try:
+    #             kwargs['initial'] = self.initial_extra[i-self.initial_form_count()]
+    #         except IndexError:
+    #             pass
+    #
+    #     # rather than call _construct_form() from super() here (which winds up calling BaseModelFormset),
+    #     # I explicitly call it from BaseFormSet;
+    #     # the former repeates the above "get instance" code w/out handling loaded & unloaded forms
+    #     # since I've already done that, I just want to call the code that builds the actual form
+    #     form = BaseFormSet._construct_form(self, i, **kwargs)
+    #
+    #     return form
+
+    @property
+    def management_form(self):
+        """Returns the ManagementForm instance for this FormSet."""
+
+        initial_forms = self.initial_form_count()
+        total_forms = initial_forms + self.extra
+        # Allow all existing related objects/inlines to be displayed,
+        # but don't allow extra beyond max_num.
+        if initial_forms > self.max_num >= 0:
+            total_forms = initial_forms
+        elif total_forms > self.max_num >= 0:
+            total_forms = self.max_num
+
+        initial = {
+            TOTAL_FORM_COUNT: total_forms,
+            INITIAL_FORM_COUNT: initial_forms,
+            MAX_NUM_FORM_COUNT: self.absolute_max,
+        }
+
+        if self.is_bound:
+            # passing initial along w/ data just in case formset was not loaded
+            # additionally, note that in create_customizer_forms_from_data,
+            # I manually update the data dictionary to include appropriate values for the management form
+            form = ManagementForm(self.data, auto_id=self.auto_id, prefix=self.prefix, initial=initial)
+            if not form.is_valid():
+                raise ValidationError(
+                    ugettext('ManagementForm data is missing or has been tampered with'),
+                    code='missing_management_form',
+                )
+        else:
+            form = ManagementForm(auto_id=self.auto_id, prefix=self.prefix, initial=initial)
+        return form
+
+    # if these formsets are not loaded,
+    # then accessing total_form_count or initial_form_count via the management_form will fail
+    # so I override them below...
+    # (note my use of get_number_of_forms in total_form_count,
+    # which varies according to whether this is a model formset or a property formset)
+
+    def total_form_count(self):
+        """Returns the total number of forms in this FormSet."""
+        if self.is_bound:
+            try:
+                return min(self.management_form.cleaned_data[TOTAL_FORM_COUNT], self.absolute_max)
+            except ValidationError:
+                # HERE IS THE NEW CODE
+                # (KEPT THE ABOVE TRY CLAUSE IN-CASE A FORM WAS ADDED BY JS)
+                # (IN WHICH CASE IT MUST HAVE BEEN LOADED AND THE TRY WILL NOT FAIL)
+                return min(self.get_number_of_forms(), self.absolute_max)
+        else:
+            initial_forms = self.initial_form_count()
+            total_forms = initial_forms + self.extra
+            # Allow all existing related objects/inlines to be displayed,
+            # but don't allow extra beyond max_num.
+            if initial_forms > self.max_num >= 0:
+                total_forms = initial_forms
+            elif total_forms > self.max_num >= 0:
+                total_forms = self.max_num
+        return total_forms
+
+    def initial_form_count(self):
+        # a MetadataInlineFormset can be created in 3 ways:
+        # 1) via new models, in which case "initial" will have been passed
+        # 2) via an existing queryset, in which case "queryset" will have been passed
+        # 3) via data, in which case "data" will have been passed
+        # _however_ data may be missing depending on whether or not the form(s) were loaded
+        # b/c of that an extra "initial" argument is passed to the factory fns to handle unloaded forms
+        # FOR BOUND FORMS, THAT ARGUMENT IS STORED IN self.initial_extra (THIS TOOK A WHILE TO FIGURE OUT!)
+
+        if self.queryset:
+            return len(self.queryset)
+        elif self.initial:
+            return len(self.initial)
+        elif self.is_bound and self.initial_extra:
+            return len(self.initial_extra)
+        else:
+            return 0
 
 
 class MetadataCustomizerInlineFormSet(MetadataInlineFormSet):
@@ -356,6 +560,7 @@ def create_customizer_forms_from_data(data, model_customizer, standard_category_
 
     from .forms_customize_model import create_model_customizer_form_data, MetadataModelCustomizerForm, MetadataModelCustomizerSubForm
     from .forms_customize_categories import create_standard_category_customizer_form_data, MetadataStandardCategoryCustomizerFormSetFactory
+    from .forms_customize_categories import create_scientific_category_customizer_form_data, MetadataScientificCategoryCustomizerFormSetFactory
     from .forms_customize_standard_properties import create_standard_property_customizer_form_data, MetadataStandardPropertyCustomizerInlineFormSetFactory
     from .forms_customize_scientific_properties import create_scientific_property_customizer_form_data, MetadataScientificPropertyCustomizerInlineFormSetFactory
     from .forms_customize_vocabularies import create_model_customizer_vocabulary_form_data, MetadataModelCustomizerVocabularyFormSetFactory
@@ -405,7 +610,6 @@ def create_customizer_forms_from_data(data, model_customizer, standard_category_
         )
 
     else:
-
         standard_category_customizers_data = [
             create_standard_category_customizer_form_data(standard_category_customizer)
             for standard_category_customizer in standard_category_customizers
@@ -423,8 +627,6 @@ def create_customizer_forms_from_data(data, model_customizer, standard_category_
             categories=standard_category_customizers,
         )
 
-
-    import ipdb; ipdb.set_trace()
     # standard_category_customizer_forms are loaded only when they are edited
     loaded_standard_category_forms = standard_category_customizer_formset.get_loaded_forms()
     loaded_prefixes = [form.prefix for form in loaded_standard_category_forms]
@@ -434,6 +636,30 @@ def create_customizer_forms_from_data(data, model_customizer, standard_category_
     loaded_standard_property_forms = standard_property_customizer_formset.get_loaded_forms()
     loaded_prefixes = [form.prefix for form in loaded_standard_property_forms]
     validity += [standard_property_customizer_formset.is_valid(loaded_prefixes=loaded_prefixes)]
+
+    scientific_category_customizer_formsets = {}
+    for vocabulary_key, scientific_category_customizer_dict in scientific_category_customizers.iteritems():
+        scientific_category_customizer_formsets[vocabulary_key] = {}
+        for component_key, scientific_category_customizer_list in scientific_category_customizer_dict.iteritems():
+            scientific_category_customizers_data = [
+                create_scientific_category_customizer_form_data(scientific_category_customizer)
+                for scientific_category_customizer in scientific_category_customizer_list
+            ]
+            scientific_category_customizer_formset = MetadataScientificCategoryCustomizerFormSetFactory(
+                initial=scientific_category_customizers_data,
+                data=data,
+                prefix=u"%s_%s_scientific_categories" % (vocabulary_key, component_key)
+            )
+
+            # as above scientific_category_customizer_forms are loaded only when they are edited
+            # (and they are edited when they are added too)
+            loaded_scientific_category_property_forms = scientific_category_customizer_formset.get_loaded_forms()
+            loaded_prefixes = [form.prefix for form in loaded_scientific_category_property_forms]
+
+            if vocabulary_key in active_vocabulary_keys:
+                validity += [scientific_category_customizer_formset.is_valid(loaded_prefixes=loaded_prefixes)]
+
+            scientific_category_customizer_formsets[vocabulary_key][component_key] = scientific_category_customizer_formset
 
     scientific_property_customizer_formsets = {}
     for vocabulary_key, scientific_property_customizer_dict in scientific_property_customizers.iteritems():
@@ -484,7 +710,7 @@ def create_customizer_forms_from_data(data, model_customizer, standard_category_
 
             scientific_property_customizer_formsets[vocabulary_key][component_key] = scientific_property_customizer_formset
 
-    return (validity, model_customizer_form, standard_property_customizer_formset, scientific_property_customizer_formsets, model_customizer_vocabularies_formset)
+    return (validity, model_customizer_form, standard_category_customizer_formset, standard_property_customizer_formset, scientific_category_customizer_formsets, scientific_property_customizer_formsets, model_customizer_vocabularies_formset)
 
 
 def get_data_from_customizer_forms(model_customizer_form, standard_property_customizer_formset, scientific_property_customizer_formsets):

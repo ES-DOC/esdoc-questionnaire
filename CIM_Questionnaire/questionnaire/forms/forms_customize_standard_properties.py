@@ -38,7 +38,7 @@ def create_standard_property_customizer_form_data(model_customizer, standard_pro
         exclude=["model", ],  # no need to pass model, since this is handled by virtue of being an "inline" formset
         include={
             "last_modified": time.strftime("%c"),
-            "loaded": True,  # standard_property_customizer forms are always loaded (only scientific_property forms aren't)
+            "loaded": True,  # standard_property_customizer forms are always loaded
         }
     )
 
@@ -249,14 +249,14 @@ class MetadataStandardPropertyCustomizerForm(MetadataCustomizerForm):
 
 class MetadataStandardPropertyCustomizerInlineFormSet(MetadataCustomizerInlineFormSet):
 
-    def get_number_of_forms(self):
+    def number_of_forms(self):
         return self.number_of_properties
 
 
 def MetadataStandardPropertyCustomizerInlineFormSetFactory(*args,**kwargs):
     _prefix = kwargs.pop("prefix", "standard_property")
     _data = kwargs.pop("data", None)
-    _initial = kwargs.pop("initial", [])
+    _initial = kwargs.pop("initial", None)
     _instance = kwargs.pop("instance")
     _categories = kwargs.pop("categories", [])
     _queryset = kwargs.pop("queryset", MetadataStandardPropertyCustomizer.objects.none())
@@ -273,7 +273,7 @@ def MetadataStandardPropertyCustomizerInlineFormSetFactory(*args,**kwargs):
     # in this case, the set of choices for scientific categories
     _formset = inlineformset_factory(MetadataModelCustomizer, MetadataStandardPropertyCustomizer, *args, **new_kwargs)
     _formset.form = staticmethod(curry(MetadataStandardPropertyCustomizerForm, category_choices=_categories))
-    if _initial:
+    if _initial is not None:
         _formset.number_of_properties = len(_initial)
     elif _queryset:
         _formset.number_of_properties = len(_queryset)

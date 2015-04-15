@@ -244,7 +244,7 @@ class MetadataScientificPropertyCustomizerInlineFormSet(MetadataCustomizerInline
 def MetadataScientificPropertyCustomizerInlineFormSetFactory(*args, **kwargs):
     _prefix = kwargs.pop("prefix", "scientific_property")
     _data = kwargs.pop("data", None)
-    _initial = kwargs.pop("initial", [])
+    _initial = kwargs.pop("initial", None)
     _instance = kwargs.pop("instance")
     _categories = kwargs.pop("categories", [])
     _queryset = kwargs.pop("queryset", MetadataScientificPropertyCustomizer.objects.none())
@@ -261,7 +261,7 @@ def MetadataScientificPropertyCustomizerInlineFormSetFactory(*args, **kwargs):
     _formset = inlineformset_factory(MetadataModelCustomizer, MetadataScientificPropertyCustomizer, *args, **new_kwargs)
     _formset.form = staticmethod(curry(MetadataScientificPropertyCustomizerForm, category_choices=_categories))
 
-    if _initial:
+    if _initial is not None:
         _formset.number_of_properties = len(_initial)
     elif _queryset:
         _formset.number_of_properties = len(_queryset)
