@@ -632,8 +632,8 @@ class MetadataStandardPropertyCustomizer(MetadataPropertyCustomizer):
                                    default=MetadataAtomicFieldTypes.DEFAULT.getType(),
                                    )
     atomic_type.help_text = "By default, all fields are rendered as strings.  However, a field can be customized to accept longer snippets of text, dates, email addresses, etc."
-    suggestions = models.TextField(blank=True, verbose_name="Are there any suggestions you would like to offer to users?")
-    suggestions.help_text = "Please enter a \"|\" separated list.  These suggestions will only take effect for text fields, in the case of Standard Properties, or for text fields or when \"OTHER\" is selected, in the case of Scientific Properties.  They appear as an auto-complete widget and not as a formal enumeration."
+    suggestions = models.TextField(blank=True, verbose_name="Are there any suggestions you would like to offer as auto-completion options?")
+    suggestions.help_text = "Please enter a \"|\" separated list of words or phrases.  These suggestions will only take effect for text fields in the case of atomic properties, or when \"OTHER\" is selected in the case of enumerations."
 
     # ways to customize an enumeration field
     enumeration_choices = EnumerationField(blank=True, null=True, verbose_name="Choose the property values that should be presented to users.")
