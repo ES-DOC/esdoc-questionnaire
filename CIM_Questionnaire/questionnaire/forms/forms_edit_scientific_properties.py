@@ -137,6 +137,8 @@ class MetadataScientificPropertyForm(MetadataEditingForm):
             update_field_widget_attributes(self.fields["atomic_value"], {"onchange": "copy_value(this,'%s-scientific_property_value');" % self.prefix})
             update_field_widget_attributes(self.fields["atomic_value"], {"class": "atomic_value"})
         else:
+            # this is handled via the "multiselect" widget in JS rather than here (b/c the widget is created dynamically via JS and has no _standard_ onchange event)
+            # update_field_widget_attributes(self.fields["enumeration_value"], {"onchange": "copy_value(this,'%s-scientific_property_value');" % self.prefix})
             update_field_widget_attributes(self.fields["enumeration_value"], {"class": "multiselect"})
 
         if customizer:
@@ -163,10 +165,15 @@ class MetadataScientificPropertyForm(MetadataEditingForm):
                     custom_widget_class = METADATA_ATOMICFIELD_MAP[atomic_type][0]
                     custom_widget_args = METADATA_ATOMICFIELD_MAP[atomic_type][1]
                     self.fields["atomic_value"].widget = custom_widget_class(**custom_widget_args)
+                    # if I changed the widget, then I have to re-add the attributes that were updated in __init__ above
+                    # b/c they will have been lost (I only have to do this for atomic fields b/c the widget for enumerations cannot change)
+                    update_field_widget_attributes(self.fields["atomic_value"], {"onchange": "copy_value(this,'%s-scientific_property_value');" % self.prefix})
+                    update_field_widget_attributes(self.fields["atomic_value"], {"class": "atomic_value"})
+
                 update_field_widget_attributes(self.fields["atomic_value"], {"class": atomic_type.lower()})
 
         else:
-            widget_attributes = {"class": "multiselect"}
+            widget_attributes = {"class": "multiselect", }
             all_enumeration_choices = customizer.enumerate_choices()
             if customizer.enumeration_nullable:
                 all_enumeration_choices += NULL_CHOICE

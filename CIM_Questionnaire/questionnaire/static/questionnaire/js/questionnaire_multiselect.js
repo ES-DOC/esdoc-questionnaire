@@ -24,6 +24,21 @@ function multiselect_set_label(element, header, content) {
     }
 
     $(header).button("option", "label", new_label);
+
+    /* update accordion headers for scientific_properties... */
+    var is_scientific_property = $(element).closest("div.scientific_property").length;
+    if (is_scientific_property) {
+        var value_label = $(element).closest("div.accordion_content").prev(".accordion_header").find("input[name$='-scientific_property_value']");  /* might be more intuitive to use ".closest('div.accordion_unit')", but that may not exist depending on when the accordions are initialized via JQuery */
+
+        if (new_label == multiselect_empty_single_text || new_label == multiselect_empty_multiple_text) {
+            /* if no selection has been made, remove the label */
+            $(value_label).val("");
+        }
+        else {
+            /* if a selection has been made, update the labebl */
+            $(value_label).val(new_label);
+        }
+    }
 }
 
 
