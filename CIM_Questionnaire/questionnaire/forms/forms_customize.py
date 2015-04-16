@@ -737,7 +737,7 @@ def get_data_from_customizer_forms(model_customizer_form, standard_property_cust
     return data_copy
 
 
-def save_valid_forms(model_customizer_form, standard_property_customizer_formset, scientific_property_customizer_formsets, model_customizer_vocabularies_formset):
+def save_valid_forms(model_customizer_form, standard_category_customizer_formset, standard_property_customizer_formset, scientific_category_customizer_formsets, scientific_property_customizer_formsets, model_customizer_vocabularies_formset):
 
     model_customizer_instance = model_customizer_form.save()
 
@@ -751,58 +751,37 @@ def save_valid_forms(model_customizer_form, standard_property_customizer_formset
     else:
         active_vocabularies = []
 
-    standard_categories_to_process = model_customizer_form.standard_categories_to_process
-    scientific_categories_to_process = model_customizer_form.scientific_categories_to_process
-
-    # save (or delete) the standard category customizers...
-    active_standard_categories = []
-    for standard_category_to_process in standard_categories_to_process:
-        standard_category_customizer = standard_category_to_process.object
-        if standard_category_customizer.pending_deletion:
-            standard_category_to_process.delete()
-        else:
-            standard_category_customizer.model_customizer = model_customizer_instance
-            standard_category_to_process.save()
-            active_standard_categories.append(standard_category_customizer)
-
-    # save (or delete) the scientific category customizers...
-    # TODO: DO I REALLY NEED TO DEAL W/ ALL scientific_category_customizers OR JUST THE ONES IN active_vocabularies?
-    active_scientific_categories = {}
-    for vocabulary_key, scientific_categories_to_process_dict in scientific_categories_to_process.iteritems():
-        active_scientific_categories[vocabulary_key] = {}
-        for component_key, scientific_categories_to_process_list in scientific_categories_to_process_dict.iteritems():
-            active_scientific_categories[vocabulary_key][component_key] = []
-            for scientific_category_to_process in scientific_categories_to_process_list:
-                scientific_category_customizer = scientific_category_to_process.object
-                if scientific_category_customizer.pending_deletion:
-                    scientific_category_customizer.delete()
-                else:
-                    scientific_category_customizer.model_customizer = model_customizer_instance
-                    scientific_category_customizer.vocabulary_key = vocabulary_key
-                    scientific_category_customizer.component_key = component_key
-                    scientific_category_customizer.model_key = u"%s_%s" % (vocabulary_key, component_key)
-                    scientific_category_customizer.save()
-                    active_scientific_categories[vocabulary_key][component_key].append(scientific_category_customizer)
+    # save the standard category customizers...
+    standard_category_customizer_instances = standard_category_customizer_formset.save(commit=False)
+    for standard_category_customizer_instance in standard_category_customizer_instances:
+        standard_category_customizer_instance.model_customizer = model_customizer_instance
+        standard_category_customizer_instance.save()
 
     # save the standard property customizers...
     standard_property_customizer_instances = standard_property_customizer_formset.save(commit=False)
     for standard_property_customizer_instance in standard_property_customizer_instances:
         category_key = slugify(standard_property_customizer_instance.category_name)
-        category = find_in_sequence(lambda category: category.key==category_key,active_standard_categories)
+        category = find_in_sequence(lambda c: c.key == category_key, standard_category_customizer_instances)
         standard_property_customizer_instance.category = category
         standard_property_customizer_instance.save()
 
-    # save the scientific property customizers...
-    for (vocabulary_key, formset_dictionary) in scientific_property_customizer_formsets.iteritems():
-        if find_in_sequence(lambda vocabulary: vocabulary.get_key()==vocabulary_key, active_vocabularies):
-            for (component_key,scientific_property_customizer_formset) in formset_dictionary.iteritems():
-                scientific_property_customizer_instances = scientific_property_customizer_formset.save(commit=False)
-                for scientific_property_customizer_instance in scientific_property_customizer_instances:
-                    # TODO: DOES THIS WORK FOR CATEGORY_KEY SINCE CHANGING TO USING GUIDS
-                    # TODO: CHANGE CODE TO USE GUIDS FOR CATEGORIES AS WELL AS COMPONENTS/VOCABULARIES
-                    category_key = slugify(scientific_property_customizer_instance.category_name)
-                    category = find_in_sequence(lambda category: category.key == category_key, active_scientific_categories[vocabulary_key][component_key])
-                    scientific_property_customizer_instance.category = category
-                    scientific_property_customizer_instance.save()
+    # save the scientific category & scientific property customizers...
+    for vocabulary in active_vocabularies:
+        vocabulary_key = vocabulary.get_key()
+        for component in vocabulary.component_proxies.all():
+            component_key = component.get_key()
+
+            # TODO: CHECK THAT THIS WORKS FOR ADDED/DELETED CATEGORIES
+            scientific_category_customizer_instances = scientific_category_customizer_formsets[vocabulary_key][component_key].save(commit=False)
+            for scientific_category_customizer_instance in scientific_category_customizer_instances:
+                scientific_category_customizer_instance.model_customizer = model_customizer_instance
+                scientific_category_customizer_instance.save()
+
+            scientific_property_customizer_instances = scientific_property_customizer_formsets[vocabulary_key][component_key].save(commit=False)
+            for scientific_property_customizer_instance in scientific_property_customizer_instances:
+                category_key = slugify(scientific_property_customizer_instance.category_name)
+                category = find_in_sequence(lambda c: c.key == category_key, scientific_category_customizer_instances)
+                scientific_property_customizer_instance.category = category
+                scientific_property_customizer_instance.save()
 
     return model_customizer_instance
