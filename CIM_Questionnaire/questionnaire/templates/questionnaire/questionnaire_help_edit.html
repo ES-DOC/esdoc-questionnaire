@@ -1,101 +1,20 @@
-{% extends "questionnaire/questionnaire_base.html" %}
-
-{% load questionnaire_filters %}
-
-{% block scripts %}
-    <script language="javascript">
-
-    /* just setup the minimum of jquery-ui functionality */
-    $(document).ready(
-        function() {
-            var parent = document.body;
-
-            init_dialogs(parent);
-
-            // do this first so that the dialogs appear near the top of the page
-            init_dialogs(parent);
-
-            // do this next, so it can happen while other widgets are loading
-            render_msg($("#msg"));
-
-            init_widgets(users,$(parent).find("#user"));
-            init_widgets(fieldsets,$(parent).find(".collapsible_fieldset"));
-            init_widgets(tabs, $(parent).find(".tabs"));
-            init_widgets(helps,$(parent).find(".help_button"));
-
-            // do this last b/c some of the xpath depends on changes made by the above fns...
-            init_errors(parent);
-        }
-    );
-
-    </script>
-
-{% endblock %} {# /scripts #}
-
-{% block style %}
-
-    <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}questionnaire/css/questionnaire_instructions.css" />
-
-{% endblock %} {# / style #}
-
-{% block title %}
-
-    CIM Questionnaire Help
-
-{% endblock %} {# /title #}
-
-{% block content %}
-
-    <div class="title">
-        CIM Questionnaire Help
-    </div> <!-- /.title -->
-    <br/>
-
-    <div class="tabs">
-        <ul> <!-- the tab menu -->
-            <li>
-                <a href="#tab_general_help">
-                    What is the CIM Questionnaire
-                </a>
-            </li>
-            {% if can_edit %}
-                <li>
-                    <a href="#tab_edit_help">
-                        How To Edit a CIM Document
-                    </a>
-                </li>
-            {% endif %} {# /can_edit #}
-            {% if can_customize %}
-                <li>
-                    <a href="#tab_customize_help">
-                        How to Customize the Questionnaire Editing Forms
-                    </a>
-                </li>
-            {% endif %} {# /can_customize #}
-        </ul>
-
-        <div id="tab_general_help">
-            <div class="tab_content">
-                {% include "questionnaire/questionnaire_help_general.html" %}
-            </div>
-        </div>
-
-        {% if can_edit %}
-            <div id="tab_edit_help">
-                <div class="tab_content">
-                    {% include "questionnaire/questionnaire_help_edit.html" %}
-                </div>
-            </div>
-        {% endif %} {# /can_edit #}
-
-        {% if can_customize %}
-            <div id="tab_customize_help">
-                <div class="tab_content">
-                    {% include "questionnaire/questionnaire_help_customize.html" %}
-                </div>
-            </div>
-        {% endif %} {# /can_customize #}
-
+<div id="help_general">
+    <strong>What is the CIM?</strong>
+    <p>
+        The Common Information Model (CIM) is a formal metadata standard used to describe processes and artifacts relevant to the Earth System modeling community.
+        This includes model components, experiments, geographic grids, data files, experimental requirements, and so on.
+    </p>
+    <strong>What is the CIM Questionnaire?</strong>
+    <p>
+        The CIM Questionnaire is part of a suite of tools built around the CIM provided by the ES-DOC project.
+        It allows users to create complex CIM Documents.  Those documents can then be viewed and manipulated in other tools.
+    </p>
+    <p>
+        An interested project can register themselves with the CIM Questionnaire.
+        Project administrators are able to define a subset of the CIM metadata structure which they are interested in capturing in CIM Documents.
+        Project members can than use the CIM Questionnaire Editing Forms to create those documents.
+    </p>
+</div> <!-- /#help_general -->
 
 {#   <div id="instructions">#}
 {##}
@@ -151,11 +70,3 @@
 {##}
 {#       </ul>#}
 
-   </div>
-
-{% endblock %} {# /content #}
-
-{% block footer %}
-    <br/>
-    {{ block.super }}
-{% endblock %} {# /footer #}
