@@ -182,7 +182,7 @@ class MetadataStandardCategoryCustomizerForm(MetadataCategoryCustomizerForm):
     def __init__(self, *args, **kwargs):
         super(MetadataStandardCategoryCustomizerForm, self).__init__(*args, **kwargs)
         set_field_widget_attributes(self.fields["description"], {"cols": "40", "rows": "4", })
-        # update_field_widget_attributes(self.fields["name"], {"readonly": "readonly", "class": "readonly", })
+        self.load()  # just always load a standard category customizer
 
 
 def MetadataStandardCategoryCustomizerFormSetFactory(*args,**kwargs):

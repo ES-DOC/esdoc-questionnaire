@@ -214,6 +214,8 @@ class MetadataStandardPropertyCustomizerForm(MetadataCustomizerForm):
         set_field_widget_attributes(self.fields["field_type"], {"size": "12", })
         set_field_widget_attributes(self.fields["order"], {"size": "4", })
 
+        self.load()  # just always load a standard property customizer
+
     def clean(self):
         cleaned_data = self.cleaned_data
 

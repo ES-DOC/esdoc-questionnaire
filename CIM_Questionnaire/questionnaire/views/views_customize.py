@@ -226,14 +226,17 @@ def questionnaire_customize_existing(request, project_name="", model_name="", ve
     # now build the forms...
     if request.method == "GET":
 
-        (model_customizer_form, standard_property_customizer_formset, scientific_property_customizer_formsets, model_customizer_vocabularies_formset) = \
+        (model_customizer_form, standard_category_customizer_formset, standard_property_customizer_formset, scientific_category_cusstomizer_formsets, scientific_property_customizer_formsets, model_customizer_vocabularies_formset) = \
             create_existing_customizer_forms_from_models(customizer_set["model_customizer"], customizer_set["standard_category_customizers"], customizer_set["standard_property_customizers"], customizer_set["scientific_category_customizers"], customizer_set["scientific_property_customizers"], vocabularies_to_customize=vocabularies)
 
     else:  # request.method == "POST":
 
-        data = request.POST
+        data = request.POST.copy()  # sometimes I need to alter the data for unloaded forms;
+                                    # this cannot be done on the original (immutable) QueryDict
 
-        (validity, model_customizer_form, standard_property_customizer_formset, scientific_property_customizer_formsets, model_customizer_vocabularies_formset) = \
+        import ipdb; ipdb.set_trace()
+
+        (validity, model_customizer_form, standard_category_customizer_formset, standard_property_customizer_formset, scientific_category_cusstomizer_formsets, scientific_property_customizer_formsets, model_customizer_vocabularies_formset) = \
             create_customizer_forms_from_data(
                 data,
                 customizer_set["model_customizer"],
@@ -246,7 +249,14 @@ def questionnaire_customize_existing(request, project_name="", model_name="", ve
 
         if all(validity):
 
-            model_customizer_instance = save_valid_forms(model_customizer_form,standard_property_customizer_formset,scientific_property_customizer_formsets, model_customizer_vocabularies_formset)
+            model_customizer_instance = save_valid_forms(
+                model_customizer_form,
+                standard_category_customizer_formset,
+                standard_property_customizer_formset,
+                scientific_category_cusstomizer_formsets,
+                scientific_property_customizer_formsets,
+                model_customizer_vocabularies_formset
+            )
             current_model_customizer_name = model_customizer_instance.name
             if initial_model_customizer_name != current_model_customizer_name:
                 model_customizer_instance.rename(current_model_customizer_name)
@@ -282,7 +292,9 @@ def questionnaire_customize_existing(request, project_name="", model_name="", ve
         "model_proxy": model_proxy,
         "model_customizer_form": model_customizer_form,
         "model_customizer_vocabularies_formset": model_customizer_vocabularies_formset,
+        "standard_category_customizer_formset": standard_category_customizer_formset,
         "standard_property_customizer_formset": standard_property_customizer_formset,
+        "scientific_category_customizer_formsets": scientific_category_cusstomizer_formsets,
         "scientific_property_customizer_formsets": scientific_property_customizer_formsets,
         "questionnaire_version": get_version(),
         "instance_key": instance_key,
