@@ -48,20 +48,20 @@
     <div id="help">
 
         <div class="title">
-            CIM Questionnaire Editor Help
+            CIM Questionnaire Customizer Help
         </div> <!-- /.title -->
         <br/>
 
         <fieldset>
 
-{#            {% if not can_edit %}#}
+{#            {% if not can_customize %}#}
 {#                <div class="instructions">#}
-{#                    You must be logged in and a member of a project to edit or create a CIM Document belonging to that project.#}
+{#                    You must be logged in and an adminstrator of a project to customize the CIM Questionnaire Editor.#}
 {#                </div>#}
 {#                <br/>#}
-{#            {% endif %} {# /can_edit #}
+{#            {% endif %} {# /can_customize #}
 
-            {% include "questionnaire/_help_edit.html" %}
+            {% include "questionnaire/_help_customize.html" %}
 
         </fieldset>
 

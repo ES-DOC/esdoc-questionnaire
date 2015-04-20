@@ -23,6 +23,8 @@ from django.template import RequestContext
 
 from CIM_Questionnaire.questionnaire.models.metadata_model import MetadataModel
 from CIM_Questionnaire.questionnaire.models.metadata_customizer import MetadataModelCustomizer, MetadataScientificPropertyCustomizer
+from CIM_Questionnaire.questionnaire.models.metadata_project import MetadataProject
+from CIM_Questionnaire.questionnaire.models.metadata_authentication import is_user_of, is_admin_of
 from CIM_Questionnaire.questionnaire.forms.forms_edit import create_existing_edit_forms_from_models
 from CIM_Questionnaire.questionnaire.views.views_base import validate_view_arguments, get_key_from_request
 from CIM_Questionnaire.questionnaire.views.views_base import get_cached_existing_customization_set, get_cached_proxy_set, get_cached_new_realization_set, get_cached_existing_realization_set
@@ -162,11 +164,18 @@ def questionnaire_view_existing(request, project_name="", model_name="", version
 
 def questionnaire_view_help(request):
 
+    active_projects = MetadataProject.objects.filter(active=True)
+    current_user = request.user
+    can_edit = any([is_user_of(current_user, project) for project in active_projects])
+    can_customize = any([is_admin_of(current_user, project) for project in active_projects])
+
     # gather all the extra information required by the template
     _dict = {
         "site": get_current_site(request),
+        "can_edit": can_edit,
+        "can_customize": can_customize,
         "questionnaire_version": get_version(),
     }
 
-    return render_to_response('questionnaire/questionnaire_edit_instructions.html', _dict, context_instance=RequestContext(request))
+    return render_to_response('questionnaire/questionnaire_help_edit.html', _dict, context_instance=RequestContext(request))
 

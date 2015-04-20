@@ -33,6 +33,8 @@ from django.contrib import messages
 
 from CIM_Questionnaire.questionnaire.models.metadata_customizer import MetadataCustomizer, MetadataModelCustomizer
 from CIM_Questionnaire.questionnaire.models.metadata_model import MetadataModel
+from CIM_Questionnaire.questionnaire.models.metadata_project import MetadataProject
+from CIM_Questionnaire.questionnaire.models.metadata_authentication import is_user_of, is_admin_of
 from CIM_Questionnaire.questionnaire.forms.forms_customize import create_new_customizer_forms_from_models, create_existing_customizer_forms_from_models, create_customizer_forms_from_data
 from CIM_Questionnaire.questionnaire.forms.forms_customize import save_valid_forms
 from CIM_Questionnaire.questionnaire.views.views_base import get_key_from_request
@@ -307,10 +309,17 @@ def questionnaire_customize_existing(request, project_name="", model_name="", ve
 
 def questionnaire_customize_help(request):
 
+    active_projects = MetadataProject.objects.filter(active=True)
+    current_user = request.user
+    can_edit = any([is_user_of(current_user, project) for project in active_projects])
+    can_customize = any([is_admin_of(current_user, project) for project in active_projects])
+
     # gather all the extra information required by the template
     _dict = {
         "site": get_current_site(request),
+        "can_edit": can_edit,
+        "can_customize": can_customize,
         "questionnaire_version": get_version(),
     }
 
-    return render_to_response('questionnaire/questionnaire_customize_instructions.html', _dict, context_instance=RequestContext(request))
+    return render_to_response('questionnaire/questionnaire_help_customize.html', _dict, context_instance=RequestContext(request))

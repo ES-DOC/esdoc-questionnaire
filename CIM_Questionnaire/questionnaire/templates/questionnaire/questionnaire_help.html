@@ -34,7 +34,7 @@
 
 {% block style %}
 
-    <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}questionnaire/css/questionnaire_instructions.css" />
+    <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}questionnaire/css/questionnaire_help.css" />
 
 {% endblock %} {# / style #}
 
@@ -46,112 +46,61 @@
 
 {% block content %}
 
-    <div class="title">
-        CIM Questionnaire Help
-    </div> <!-- /.title -->
-    <br/>
+    <div id="help">
 
-    <div class="tabs">
-        <ul> <!-- the tab menu -->
-            <li>
-                <a href="#tab_general_help">
-                    What is the CIM Questionnaire
-                </a>
-            </li>
+        <div class="title">
+            CIM Questionnaire Help
+        </div> <!-- /.title -->
+        <br/>
+
+        <div class="tabs">
+            <ul> <!-- the tab menu -->
+                <li>
+                    <a href="#tab_general_help">
+                        What is the CIM Questionnaire
+                    </a>
+                </li>
+                {% if can_edit %}
+                    <li>
+                        <a href="#tab_edit_help">
+                            How To Edit a CIM Document
+                        </a>
+                    </li>
+                {% endif %} {# /can_edit #}
+                {% if can_customize %}
+                    <li>
+                        <a href="#tab_customize_help">
+                            How to Customize the Questionnaire Editing Forms
+                        </a>
+                    </li>
+                {% endif %} {# /can_customize #}
+            </ul>
+
+            <div id="tab_general_help">
+                <div class="tab_content">
+                    {% include "questionnaire/_help_general.html" %}
+                </div>
+            </div>
+
             {% if can_edit %}
-                <li>
-                    <a href="#tab_edit_help">
-                        How To Edit a CIM Document
-                    </a>
-                </li>
+                <div id="tab_edit_help">
+                    <div class="tab_content">
+                        {% include "questionnaire/_help_edit.html" %}
+                    </div>
+                </div>
             {% endif %} {# /can_edit #}
+
             {% if can_customize %}
-                <li>
-                    <a href="#tab_customize_help">
-                        How to Customize the Questionnaire Editing Forms
-                    </a>
-                </li>
+                <div id="tab_customize_help">
+                    <div class="tab_content">
+                        {% include "questionnaire/_help_customize.html" %}
+                    </div>
+                </div>
             {% endif %} {# /can_customize #}
-        </ul>
 
-        <div id="tab_general_help">
-            <div class="tab_content">
-                {% include "questionnaire/questionnaire_help_general.html" %}
-            </div>
-        </div>
+        </div> <!-- /.tabs -->
 
-        {% if can_edit %}
-            <div id="tab_edit_help">
-                <div class="tab_content">
-                    {% include "questionnaire/questionnaire_help_edit.html" %}
-                </div>
-            </div>
-        {% endif %} {# /can_edit #}
-
-        {% if can_customize %}
-            <div id="tab_customize_help">
-                <div class="tab_content">
-                    {% include "questionnaire/questionnaire_help_customize.html" %}
-                </div>
-            </div>
-        {% endif %} {# /can_customize #}
-
-
-{#   <div id="instructions">#}
-{##}
-{#       <ul>#}
-{##}
-{#            <li><span class="title">What is the CIM?</span>#}
-{#                <p>#}
-{#                    The Common Information Model (CIM) is a formal metadata language used to describe processes and artifacts relevant to the climate modeling community.#}
-{#                    This includes model components, experiments, geographic grids, data files, experimental requirements, and so on.#}
-{#                </p>#}
-{#                <p>#}
-{#                    The CIM is defined as a large UML Model (the conceptual "ConCIM") which gets translated into a set of XML Schemas (the application-specific "AppCIM").#}
-{#                    These schemas define the structure of a CIM Instance.#}
-{#                    Each CIM Instance can also be associated with a number of additional CIM Controlled Vocabularies (CVs).#}
-{#                    These define the full content of a CIM Instance.#}
-{#                </p>#}
-{#                <p>#}
-{#                    For example, the CIM Schema dictates that a component model can have a set of scientific properties; The CIM CV for CMIP5 atmospheric models dictates that the <i>atmospheric dynamical core</i> component can have a scientific property listing <i>prognostic variables</i> which can contain terms such as <i>surface pressure</i>, <i>wind components</i>, and so on.#}
-{#                </p>#}
-{#                <p>#}
-{#                    <a href="https://earthsystemcog.org/projects/es-doc-models/cim"><b>More information about the CIM</b></a> is available.#}
-{#                </p>#}
-{#            </li>#}
-{##}
-{#            <li><span class="title">The customization form</span>#}
-{#                <p>#}
-{#                    The customization form allows administrators to customize the way that the viewing/editing form appears to their users.#}
-{#                    This includes specifying the subset of the CIM Schema and Controlled Vocabularies to display and, for each property, how to render that property.#}
-{#                    Properties can be rendered as required or optional, with a specific ordering, with predetermined default content or suggestions, within different categories, and so on.#}
-{#                    This customization step is cruicial; It hides the full complexity of the CIM and makes the act of creating CIM Instances much more manageable.#}
-{#                </p>#}
-{#                <p>#}
-{#                    <a href="/customize/help"><b>More detailed instructions</b></a> are available.#}
-{#                </p>#}
-{#            </li>#}
-{##}
-{#            <li><span class="title">The viewing/editing form</span>#}
-{#                <p>#}
-{#                    Once an appropriate customization exists, the viewing and editing forms allow users to create and view CIM Instances.#}
-{#                </p>#}
-{#                <p>#}
-{#                    <a href="/edit/help"><b>More detailed instructions</b></a> are available.#}
-{#                </p>#}
-{#            </li>#}
-{##}
-{##}
-{#            <li><span class="title">Why do these questionnaires exist?</span>#}
-{#                <p>#}
-{#                    Using the CIM Questionnaire ultimately allows users to publish their CIM Instances to the ES-DOC archive which makes them accessible to the full suite of ES-DOC tools.#}
-{#                    This includes tools for searching, viewing, and comparing.#}
-{#                </p>#}
-{#            </li>#}
-{##}
-{#       </ul>#}
-
-   </div>
+    </div> <!-- /#help -->
 
 {% endblock %} {# /content #}
 
