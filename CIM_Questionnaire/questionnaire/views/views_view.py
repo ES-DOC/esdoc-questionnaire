@@ -63,7 +63,7 @@ def questionnaire_view_new(request, project_name="", model_name="", version_key=
         return questionnaire_error(request, msg)
 
     # and then let the user know that you can't view a new document
-    msg = "The Questionnaire only supports viewing of <i>existing</i> instances."
+    msg = "The Questionnaire only supports viewing of <em>existing</em> instances."
     return questionnaire_error(request, msg)
 
 
