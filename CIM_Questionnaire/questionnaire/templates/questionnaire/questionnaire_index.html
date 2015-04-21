@@ -14,10 +14,9 @@
             init_dialogs(parent);
             render_msg($("#msg"));
 
-            init_widgets(users,$(parent).find("#user"));
-            init_widgets(buttons,$(parent).find("input.button"))
-
-            init_widgets_on_show(helps,$(parent).find(".help_button"));
+            init_widgets(users, $(parent).find("#user"));
+            init_widgets(buttons, $(parent).find("input.button"));
+            init_widgets(multiselects, $(parent).find(".multiselect"));
 
             init_errors(parent);
 
@@ -30,9 +29,7 @@
 {% block style %}
 
     <style type="text/css">
-
         #questionnaire tr.field td:first-child  { font-weight: bold; }
-        
     </style>
 
 {% endblock %} {# / style #}
@@ -51,11 +48,20 @@
 
     <div class="documentation">
         <p>
-            If you are seeing this page, then you have not selected a project.  Please select from the available projects below.  Authentication may be required.  Alternatively, click on the following links for more information:
+            The CIM Questionnaire provides an Editor for creating complex CIM Documents for particular Earth Science projects.
+            Once published, those documents can be viewed and manipluated by other ES-DOC tools.
+        </p>
+        <p>
+            If you are seeing this page, then you have not selected a project.
+            Please select from the available projects below.
+            Depending on the project, you may have to login to proceed.
+        </p>
+        <p>
+            Alternatively, click on the following links for more information:
             <ul>
-                <li><a href="/admin/questionnaire"><b>Django Admin Interface</b></a> (for registering projects/ontologies/vocabularies/etc.)&nbsp;&nbsp;</li>
+                <!--<li><a href="/admin/questionnaire"><b>Django Admin Interface</b></a> (for registering projects/ontologies/vocabularies/etc.)&nbsp;&nbsp;</li>-->
                 <li><a href="/help"><b>CIM Questionnaire help</b></a>&nbsp;&nbsp;</li>
-                <li><a href="/feed"><b>CIM Questionnaire Document Feed</b></a>&nbsp;&nbsp;</li>
+                <li><a href="/feed"><b>CIM Questionnaire Published Document Feed</b></a>&nbsp;&nbsp;</li>
             </ul>
         </p>
 
@@ -70,6 +76,7 @@
             <div class='instructions'>
                 This menu lists projects that have registered with the CIM Questionnaire.
             </div>
+            <br/>
 
             <table width="100%">
                 {% for field in form %}
@@ -80,12 +87,7 @@
             </table>
 
             <div class="submit">
-                <input class="button"  type="submit"   value="submit"/>
-                <!--
-                <input class="button"  name="customize"  type="submit"   value="customize"   onclick="set_action('customize');"/>
-                <input class="button"  name="edit"       type="submit"   value="edit"        onclick="set_action('edit');"/>
-                <input class="button"  name="view"       type="submit"   value="view"        onclick="set_action('view');"/>
-                -->
+                <input class="button" type="submit" value="submit"/>
             </div> <!-- /.submit -->
             <div style="clear: both;">&nbsp;</div>
 
@@ -95,3 +97,8 @@
 
 {% endblock %} {# /content #}
 
+{% block footer %}
+    {{ block.super }}
+    <br/>
+    <a href="/admin/questionnaire">Django Admin Interface</a>
+{% endblock %} {# /footer #}
