@@ -434,8 +434,8 @@ class MetadataCustomizerInlineFormSet(MetadataInlineFormSet):
 def create_new_customizer_forms_from_models(model_customizer, standard_category_customizers, standard_property_customizers, scientific_category_customizers, scientific_property_customizers, vocabularies_to_customize=MetadataVocabulary.objects.none(), is_subform=False):
 
     from .forms_customize_model import create_model_customizer_form_data, MetadataModelCustomizerForm, MetadataModelCustomizerSubForm
-    from .forms_customize_categories import create_standard_category_customizer_form_data, MetadataStandardCategoryCustomizerFormSetFactory
-    from .forms_customize_categories import create_scientific_category_customizer_form_data, MetadataScientificCategoryCustomizerFormSetFactory
+    from .forms_customize_categories import create_standard_category_customizer_form_data, MetadataStandardCategoryCustomizerInlineFormSetFactory
+    from .forms_customize_categories import create_scientific_category_customizer_form_data, MetadataScientificCategoryCustomizerInlineFormSetFactory
     from .forms_customize_standard_properties import create_standard_property_customizer_form_data, MetadataStandardPropertyCustomizerInlineFormSetFactory
     from .forms_customize_scientific_properties import create_scientific_property_customizer_form_data, MetadataScientificPropertyCustomizerInlineFormSetFactory
     from .forms_customize_vocabularies import create_model_customizer_vocabulary_form_data, MetadataModelCustomizerVocabularyFormSetFactory
@@ -456,11 +456,12 @@ def create_new_customizer_forms_from_models(model_customizer, standard_category_
         )
 
     standard_category_customizers_data = [
-        create_standard_category_customizer_form_data(standard_category_customizer)
+        create_standard_category_customizer_form_data(model_customizer, standard_category_customizer)
         for standard_category_customizer in standard_category_customizers
     ]
 
-    standard_category_customizer_formset = MetadataStandardCategoryCustomizerFormSetFactory(
+    standard_category_customizer_formset = MetadataStandardCategoryCustomizerInlineFormSetFactory(
+        instance=model_customizer,
         initial=standard_category_customizers_data,
         extra=len(standard_category_customizers_data),
         prefix=u"standard_categories"
@@ -479,10 +480,11 @@ def create_new_customizer_forms_from_models(model_customizer, standard_category_
         scientific_category_customizer_formsets[vocabulary_key] = {}
         for component_key, scientific_category_customizer_list in scientific_category_customizer_dict.iteritems():
             scientific_category_customizers_data = [
-                create_scientific_category_customizer_form_data(scientific_category_customizer)
+                create_scientific_category_customizer_form_data(model_customizer, scientific_category_customizer)
                 for scientific_category_customizer in scientific_category_customizer_list
             ]
-            scientific_category_customizer_formset = MetadataScientificCategoryCustomizerFormSetFactory(
+            scientific_category_customizer_formset = MetadataScientificCategoryCustomizerInlineFormSetFactory(
+                instance=model_customizer,
                 initial=scientific_category_customizers_data,
                 extra=len(scientific_category_customizers_data),
                 prefix=u"%s_%s_scientific_categories" % (vocabulary_key, component_key)
@@ -514,8 +516,8 @@ def create_existing_customizer_forms_from_models(model_customizer, standard_cate
 
     # TODO: CAN I GET RID OF THE NEED FOR "create_model_customizer_form_data"?
     from .forms_customize_model import create_model_customizer_form_data, MetadataModelCustomizerForm, MetadataModelCustomizerSubForm
-    from .forms_customize_categories import MetadataStandardCategoryCustomizerFormSetFactory
-    from .forms_customize_categories import MetadataScientificCategoryCustomizerFormSetFactory
+    from .forms_customize_categories import MetadataStandardCategoryCustomizerInlineFormSetFactory
+    from .forms_customize_categories import MetadataScientificCategoryCustomizerInlineFormSetFactory
     from .forms_customize_standard_properties import MetadataStandardPropertyCustomizerInlineFormSetFactory
     from .forms_customize_scientific_properties import MetadataScientificPropertyCustomizerInlineFormSetFactory
     from .forms_customize_vocabularies import MetadataModelCustomizerVocabularyFormSetFactory
@@ -530,7 +532,8 @@ def create_existing_customizer_forms_from_models(model_customizer, standard_cate
             instance=model_customizer,
         )
 
-    standard_category_customizer_formset = MetadataStandardCategoryCustomizerFormSetFactory(
+    standard_category_customizer_formset = MetadataStandardCategoryCustomizerInlineFormSetFactory(
+        instance=model_customizer,
         queryset=standard_category_customizers,
         prefix=u"standard_categories",
     )
@@ -547,7 +550,8 @@ def create_existing_customizer_forms_from_models(model_customizer, standard_cate
     for vocabulary_key, scientific_category_customizer_dict in scientific_category_customizers.iteritems():
         scientific_category_customizer_formsets[vocabulary_key] = {}
         for component_key, scientific_category_customizer_list in scientific_category_customizer_dict.iteritems():
-            scientific_category_customizer_formset = MetadataScientificCategoryCustomizerFormSetFactory(
+            scientific_category_customizer_formset = MetadataScientificCategoryCustomizerInlineFormSetFactory(
+                instance=model_customizer,
                 queryset=scientific_category_customizer_list,
                 prefix=u"%s_%s_scientific_categories" % (vocabulary_key, component_key),
             )
@@ -560,8 +564,6 @@ def create_existing_customizer_forms_from_models(model_customizer, standard_cate
             scientific_property_customizer_formset = MetadataScientificPropertyCustomizerInlineFormSetFactory(
                 instance=model_customizer,
                 queryset=scientific_property_customizer_list,
-                # don't pass extra; w/ existing (queryset) models, extra ought to be 0
-                # extra=len(scientific_property_customizer_list),
                 prefix=u"%s_%s" % (vocabulary_key, component_key),
                 categories=scientific_category_customizers[vocabulary_key][component_key],
             )
@@ -574,11 +576,11 @@ def create_customizer_forms_from_data(data, model_customizer, standard_category_
     """This creates and validates forms based on POST data"""
 
     from .forms_customize_model import create_model_customizer_form_data, MetadataModelCustomizerForm, MetadataModelCustomizerSubForm
-    from .forms_customize_categories import create_standard_category_customizer_form_data, MetadataStandardCategoryCustomizerFormSetFactory
-    from .forms_customize_categories import create_scientific_category_customizer_form_data, MetadataScientificCategoryCustomizerFormSetFactory
-    from .forms_customize_standard_properties import create_standard_property_customizer_form_data, MetadataStandardPropertyCustomizerInlineFormSetFactory
-    from .forms_customize_scientific_properties import create_scientific_property_customizer_form_data, MetadataScientificPropertyCustomizerInlineFormSetFactory
     from .forms_customize_vocabularies import create_model_customizer_vocabulary_form_data, MetadataModelCustomizerVocabularyFormSetFactory
+    from .forms_customize_categories import create_standard_category_customizer_form_data, MetadataStandardCategoryCustomizerInlineFormSetFactory
+    from .forms_customize_standard_properties import create_standard_property_customizer_form_data, MetadataStandardPropertyCustomizerInlineFormSetFactory
+    from .forms_customize_categories import create_scientific_category_customizer_form_data, MetadataScientificCategoryCustomizerInlineFormSetFactory
+    from .forms_customize_scientific_properties import create_scientific_property_customizer_form_data, MetadataScientificPropertyCustomizerInlineFormSetFactory
 
     if is_subform:
         if subform_prefix:
@@ -626,7 +628,8 @@ def create_customizer_forms_from_data(data, model_customizer, standard_category_
 
     else:
 
-        standard_category_customizer_formset = MetadataStandardCategoryCustomizerFormSetFactory(
+        standard_category_customizer_formset = MetadataStandardCategoryCustomizerInlineFormSetFactory(
+            instance=model_customizer_instance if model_customizer_form_validity else model_customizer,
             data=data,
             prefix="standard_categories",
         )
@@ -656,10 +659,11 @@ def create_customizer_forms_from_data(data, model_customizer, standard_category_
             # and _then_ work out whether or not it's loaded
 
             scientific_category_customizers_data = [
-                create_scientific_category_customizer_form_data(scientific_category_customizer)
+                create_scientific_category_customizer_form_data(model_customizer, scientific_category_customizer)
                 for scientific_category_customizer in scientific_category_customizer_list
             ]
-            scientific_category_customizer_formset = MetadataScientificCategoryCustomizerFormSetFactory(
+            scientific_category_customizer_formset = MetadataScientificCategoryCustomizerInlineFormSetFactory(
+                instance=model_customizer_instance if model_customizer_form_validity else model_customizer,
                 initial=scientific_category_customizers_data,
                 data=data,
                 prefix=u"%s_%s_scientific_categories" % (vocabulary_key, component_key)
@@ -760,6 +764,7 @@ def get_data_from_customizer_forms(model_customizer_form, standard_property_cust
 
 
 def save_valid_forms(model_customizer_form, standard_category_customizer_formset, standard_property_customizer_formset, scientific_category_customizer_formsets, scientific_property_customizer_formsets, model_customizer_vocabularies_formset):
+    from .forms_customize_categories import save_valid_categories_formset
 
     model_customizer_instance = model_customizer_form.save(commit=True)
 
@@ -774,12 +779,12 @@ def save_valid_forms(model_customizer_form, standard_category_customizer_formset
         active_vocabularies = []
 
     # save the standard category customizers...
-    standard_category_customizer_instances = standard_category_customizer_formset.save(commit=False)
-    for standard_category_customizer_instance in standard_category_customizer_instances:
-        standard_category_customizer_instance.model_customizer = model_customizer_instance
-        standard_category_customizer_instance.save()
+    standard_category_customizer_instances = save_valid_categories_formset(standard_category_customizer_formset)
+    # standard_category_customizer_formset.save(commit=True)
+    # standard_category_customizer_instances = model_customizer_instance.standard_property_category_customizers.all()
 
     # save the standard property customizers...
+    # (this is pretty straightforward, since standard categories & properties are always loaded)
     standard_property_customizer_instances = standard_property_customizer_formset.save(commit=False)
     for standard_property_customizer_instance in standard_property_customizer_instances:
         category_key = slugify(standard_property_customizer_instance.category_name)
@@ -795,10 +800,7 @@ def save_valid_forms(model_customizer_form, standard_category_customizer_formset
             component_key = component.get_key()
 
             # TODO: CHECK THAT THIS WORKS FOR ADDED/DELETED CATEGORIES
-            scientific_category_customizer_instances = scientific_category_customizer_formsets[vocabulary_key][component_key].save(commit=False)
-            for scientific_category_customizer_instance in scientific_category_customizer_instances:
-                scientific_category_customizer_instance.model_customizer = model_customizer_instance
-                scientific_category_customizer_instance.save()
+            scientific_category_customizer_instances = save_valid_categories_formset(scientific_category_customizer_formsets[vocabulary_key][component_key])
 
             scientific_property_customizer_instances = scientific_property_customizer_formsets[vocabulary_key][component_key].save(commit=False)
             for scientific_property_customizer_instance in scientific_property_customizer_instances:

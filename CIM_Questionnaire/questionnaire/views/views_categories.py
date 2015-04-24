@@ -59,7 +59,7 @@ def api_customize_category(request, category_type, **kwargs):
         msg = None
 
     else:  # request.method == "POST"
-        data = request.POST
+        data = request.POST.copy()
         form = form_class(data)
         if form.is_valid():
 

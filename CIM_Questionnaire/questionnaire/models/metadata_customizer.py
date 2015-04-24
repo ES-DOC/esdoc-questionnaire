@@ -471,7 +471,7 @@ class MetadataStandardCategoryCustomizer(MetadataCategoryCustomizer):
         verbose_name_plural = '(DISABLE ADMIN ACCESS SOON) Metadata Standard Category Customizers'
 
         ordering = ['order']
-        unique_together = ("name","project","proxy","model_customizer")
+        unique_together = ("key", "project", "proxy", "model_customizer")
 
     model_customizer = models.ForeignKey("MetadataModelCustomizer", blank=True, null=True, related_name="standard_property_category_customizers")
 

@@ -20,14 +20,14 @@ forms for customizing standard_categories
 
 import time
 from django.forms import CharField
-from django.forms.models import modelformset_factory
+from django.forms.models import modelformset_factory, inlineformset_factory
 from django.forms.util import ErrorList
 from django.forms.formsets import DELETION_FIELD_NAME
 from django.template.defaultfilters import slugify
 from django.utils.translation import ugettext_lazy as _
 
-from CIM_Questionnaire.questionnaire.forms.forms_customize import MetadataCustomizerForm, MetadataCustomizerFormSet
-from CIM_Questionnaire.questionnaire.models.metadata_customizer import MetadataStandardCategoryCustomizer, MetadataScientificCategoryCustomizer
+from CIM_Questionnaire.questionnaire.forms.forms_customize import MetadataCustomizerForm, MetadataCustomizerFormSet, MetadataCustomizerInlineFormSet
+from CIM_Questionnaire.questionnaire.models.metadata_customizer import MetadataModelCustomizer, MetadataStandardCategoryCustomizer, MetadataScientificCategoryCustomizer
 from CIM_Questionnaire.questionnaire.utils import model_to_data, update_field_widget_attributes, set_field_widget_attributes, EnumeratedType, EnumeratedTypeList
 
 
@@ -47,13 +47,13 @@ TagTypes = EnumeratedTypeList([
 class TagField(CharField):
 
     def __init__(self, *args, **kwargs):
-        type = kwargs.pop("type")
+        _type = kwargs.pop("type")
         kwargs.update({
             "label": "Available Categories",
             "required": False,
         })
         super(TagField, self).__init__(*args, **kwargs)
-        self.type = type
+        self.type = _type
 
     def render(self):
         """
@@ -71,7 +71,7 @@ class TagField(CharField):
 NEW_CATEGORY_NAME = "new category"
 
 
-def create_standard_category_customizer_form_data(standard_category_customizer):
+def create_standard_category_customizer_form_data(model_customizer, standard_category_customizer):
 
     standard_category_customizer_form_data = model_to_data(
         standard_category_customizer,
@@ -85,7 +85,7 @@ def create_standard_category_customizer_form_data(standard_category_customizer):
     return standard_category_customizer_form_data
 
 
-def create_scientific_category_customizer_form_data(scientific_category_customizer):
+def create_scientific_category_customizer_form_data(model_customizer, scientific_category_customizer):
 
     scientific_category_customizer_form_data = model_to_data(
         scientific_category_customizer,
@@ -99,6 +99,23 @@ def create_scientific_category_customizer_form_data(scientific_category_customiz
 
     return scientific_category_customizer_form_data
 
+
+def save_valid_categories_formset(categories_formset):
+
+    category_instances = []
+    for category_instance in categories_formset.save(commit=False):
+        # TODO: UNLOADED INLINE_FORMSETS ARE NOT SAVING THE FK FIELD APPROPRIATELY
+        # THIS MAKES NO SENSE, B/C THE INDIVIDUAL INSTANCES DO HAVE THE "model" FIELD SET
+        # BUT THAT CORRESPONDING MetadataModel HAS NO VALUES FOR "standard_properties"
+        # RE-SETTING IT AND RE-SAVING IT SEEMS TO DO THE TRICK
+        fk_field_name = categories_formset.fk.name
+        fk_model = getattr(category_instance, fk_field_name)
+        setattr(category_instance, fk_field_name, fk_model)
+        category_instance.save()
+
+        category_instances.append(category_instance)
+
+    return category_instances
 
 class MetadataCategoryCustomizerForm(MetadataCustomizerForm):
 
@@ -165,6 +182,38 @@ class MetadataCategoryCustomizerFormSet(MetadataCustomizerFormSet):
         return self.number_of_initial_forms
 
 
+class MetadataCategoryCustomizerInlineFormSet(MetadataCustomizerInlineFormSet):
+
+    def __init__(self, *args, **kwargs):
+        _type = kwargs.pop("type")
+        super(MetadataCategoryCustomizerInlineFormSet, self).__init__(*args, **kwargs)
+
+        category_names = [
+            category_form.get_current_field_value("name")
+            for category_form in self.forms
+        ]
+
+        tags = TagField(
+            type=_type,
+            initial="|".join(category_names),
+            help_text=_(
+                "This widget contains the standard set of categories associated with this CIM ontology."
+                "If this set is unsuitable, or empty, then the categorization should be updated."
+                "Please contact your project administrator."
+            ),
+        )
+        update_field_widget_attributes(tags, {"class": "tags", })
+
+        self.tags = tags
+
+    def get_number_of_forms(self):
+        # you might think this number will be off in case extra categories were added or deleted
+        # but this only gets called when re-creating the management form in-case it is unloaded
+        # (in which case nothing could have been added or deleted; hence the term "_initial_" in the variable below)
+        # if it is loaded, then the management form will already exist w/ correct values in self.data
+        return self.number_of_initial_forms
+
+
 class MetadataStandardCategoryCustomizerForm(MetadataCategoryCustomizerForm):
 
     class Meta:
@@ -181,6 +230,7 @@ class MetadataStandardCategoryCustomizerForm(MetadataCategoryCustomizerForm):
 
     def __init__(self, *args, **kwargs):
         super(MetadataStandardCategoryCustomizerForm, self).__init__(*args, **kwargs)
+        set_field_widget_attributes(self.fields["name"], {"readonly": "readonly", "class": "readonly", })  # don't allow users to change the name of standard categories
         set_field_widget_attributes(self.fields["description"], {"cols": "40", "rows": "4", })
         self.load()  # just always load a standard category customizer
 
@@ -214,6 +264,40 @@ def MetadataStandardCategoryCustomizerFormSetFactory(*args,**kwargs):
         return _formset(_data, initial=_initial, prefix=_prefix, type=_type)
 
     return _formset(queryset=_queryset, initial=_initial, prefix=_prefix, type=_type)
+
+
+def MetadataStandardCategoryCustomizerInlineFormSetFactory(*args, **kwargs):
+
+    _prefix = kwargs.pop("prefix", "standard_categories")
+    _data = kwargs.pop("data", None)
+    _initial = kwargs.pop("initial", None)
+    _instance = kwargs.pop("instance")
+    _queryset = kwargs.pop("queryset", MetadataStandardCategoryCustomizer.objects.none())
+    new_kwargs = {
+        "can_delete": False,
+        "extra": kwargs.pop("extra", 0),
+        "formset": MetadataCategoryCustomizerInlineFormSet,
+        "form": MetadataStandardCategoryCustomizerForm,
+        "fk_name": "model_customizer"  # required in-case there are more than 1 fk's to "metadatamodelcustomizer"; this is the one that is relevant for this inline form
+    }
+    new_kwargs.update(kwargs)
+
+    _formset = inlineformset_factory(MetadataModelCustomizer, MetadataStandardCategoryCustomizer, *args, **new_kwargs)
+    _type = TagTypes.STANDARD
+
+    if _initial is not None:
+        _formset.number_of_initial_forms = len(_initial)
+    elif _queryset:
+        _formset.number_of_initial_forms = len(_queryset)
+    elif _data:
+        _formset.number_of_initial_forms = int(_data[u"%s-TOTAL_FORMS" % _prefix])
+    else:
+        _formset.number_of_initial_forms = 0
+
+    if _data:
+        return _formset(_data, instance=_instance, initial=_initial, prefix=_prefix, type=_type)
+
+    return _formset(queryset=_queryset, instance=_instance, initial=_initial, prefix=_prefix, type=_type)
 
 
 class MetadataScientificCategoryCustomizerForm(MetadataCategoryCustomizerForm):
@@ -265,3 +349,37 @@ def MetadataScientificCategoryCustomizerFormSetFactory(*args, **kwargs):
         return _formset(_data, initial=_initial, prefix=_prefix, type=_type)
 
     return _formset(queryset=_queryset, initial=_initial, prefix=_prefix, type=_type)
+
+
+def MetadataScientificCategoryCustomizerInlineFormSetFactory(*args, **kwargs):
+
+    _prefix = kwargs.pop("prefix", "scientific_categories")
+    _data = kwargs.pop("data", None)
+    _initial = kwargs.pop("initial", None)
+    _instance = kwargs.pop("instance")
+    _queryset = kwargs.pop("queryset", MetadataStandardCategoryCustomizer.objects.none())
+    new_kwargs = {
+        "can_delete": True,
+        "extra": kwargs.pop("extra", 0),
+        "formset": MetadataCategoryCustomizerInlineFormSet,
+        "form": MetadataScientificCategoryCustomizerForm,
+        "fk_name": "model_customizer"  # required in-case there are more than 1 fk's to "metadatamodelcustomizer"; this is the one that is relevant for this inline form
+    }
+    new_kwargs.update(kwargs)
+
+    _formset = inlineformset_factory(MetadataModelCustomizer, MetadataScientificCategoryCustomizer, *args, **new_kwargs)
+    _type = TagTypes.SCIENTIFIC
+
+    if _initial is not None:
+        _formset.number_of_initial_forms = len(_initial)
+    elif _queryset:
+        _formset.number_of_initial_forms = len(_queryset)
+    elif _data:
+        _formset.number_of_initial_forms = int(_data[u"%s-TOTAL_FORMS" % _prefix])
+    else:
+        _formset.number_of_initial_forms = 0
+
+    if _data:
+        return _formset(_data, instance=_instance, initial=_initial, prefix=_prefix, type=_type)
+
+    return _formset(queryset=_queryset, instance=_instance, initial=_initial, prefix=_prefix, type=_type)

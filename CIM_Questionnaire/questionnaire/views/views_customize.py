@@ -236,8 +236,6 @@ def questionnaire_customize_existing(request, project_name="", model_name="", ve
         data = request.POST.copy()  # sometimes I need to alter the data for unloaded forms;
                                     # this cannot be done on the original (immutable) QueryDict
 
-        import ipdb; ipdb.set_trace()
-
         (validity, model_customizer_form, standard_category_customizer_formset, standard_property_customizer_formset, scientific_category_cusstomizer_formsets, scientific_property_customizer_formsets, model_customizer_vocabularies_formset) = \
             create_customizer_forms_from_data(
                 data,

@@ -426,8 +426,11 @@ function update_property_categories(property_forms, category_key, category_name,
     if (typeof(add) === 'undefined') add = true;
 
     $(property_forms).find("select[name$='-category']").each(function() {
+        console.log("category select = " + this);
+        console.log("add = " + add);
         var option = $(this).find("option[value='" + category_key + "']");
         if (option) {
+            console.log("option existed");
             if (add == true) {
                 option.text(category_name);
             }
@@ -436,6 +439,7 @@ function update_property_categories(property_forms, category_key, category_name,
             }
         }
         else {
+            console.log("option didn't exist");
             if (add == true) {
                 $(this).append("<option value='" + category_key + "'>" + category_name + "</option>");
             }
@@ -569,80 +573,6 @@ function edit_tag(edit_tag_icon) {
     });
 }
 
-
-function edit_tag2(edit_tag_icon) {
-    var tag_name        = $(edit_tag_icon).next(".tagit-label").text();
-    var tag_key         = slugify(tag_name);
-    var tag_widget      = $(edit_tag_icon).closest(".tagit").prev(".tags");
-    var tag_id          = $(tag_widget).attr("id")
-    var tag_content_widget      = $("textarea[id='"+tag_id.replace(/_tags$/,"_content")+"']");
-    var tag_content             = $.parseJSON($(tag_content_widget).val());
-
-    var category_to_edit = "";
-    $.each(tag_content,function(i,category) {
-       var category_fields = category.fields
-
-       if ((category_fields.key == tag_key)) {
-           category_to_edit = category;
-           return false;    // break the each loop
-       }
-    });
-
-    
-    
-    url = window.document.location.protocol + "//" + window.document.location.host + "/ajax/customize_category/";
-    url += "?n=" + category_to_edit.fields.name +
-           "&k=" + category_to_edit.fields.key +
-           "&d=" + category_to_edit.fields.description +
-           "&o=" + category_to_edit.fields.order +
-           "&m=" + category_to_edit.model
-
-    var edit_dialog = $("#edit_dialog");
-    $.ajax({
-        url     : url,
-        type    : "GET",
-        cache   : false,
-        success : function(data) {
-            $(edit_dialog).html(data);
-            $(edit_dialog).dialog("option",{
-                height      : 400,
-                width       : 800,
-                dialogClass : "no_close",
-                title       : "Edit Category",                
-                open : function() {
-                    // apply all of the JQuery code to _this_ dialog
-                    var parent = $(edit_dialog);
-                    // the addition of the 'true' attribute forces initialization,
-                    // even if this dialog is opened multiple times
-                    init_widgets(readonlies, $(parent).find(".readonly"), true);
-                    init_widgets(buttons, $(parent).find("input.button"), true);
-                    init_widgets(helps, $(parent).find(".help_button"), true);
-                },                
-                buttons     : {
-                    ok : function() {
-                        form_data = $(this).find("form#category").serializeArray();
-                        for (var i=0; i<form_data.length; i++) {
-                            field_data = form_data[i];
-                            category_to_edit.fields[field_data.name] = field_data.value;
-                        }
-                        $(tag_content_widget).val(JSON.stringify(tag_content));
-                        $(edit_dialog).dialog("close");
-                    },
-                    cancel : function() {
-                        $(edit_dialog).dialog("close");
-                    }
-                }
-                /*
-                 * (not needed since we're using an existing div)
-                close : function() {
-                    $(this).dialog("destroy");
-                }
-                */
-            }).dialog("open");
-            
-        }
-    });
-}
 
 /* based on the enable() fn, which enables seaprate fields,
  *  this is a special case just for enabling the customize subform button */
