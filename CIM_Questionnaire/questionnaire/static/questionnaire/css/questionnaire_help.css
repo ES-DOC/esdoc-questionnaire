@@ -11,7 +11,7 @@
 /*#instructions .title      { font-weight: bold; font-size: 100%; color: #000000; }*/
 /*#instructions .url        { font-style: italic; text-decoration: underline; }*/
 
-#help a { font-weight: bold; text-decoration: underline; }
+#help p a { font-weight: bold; text-decoration: underline; color: #0000FF; }
 #help .screenshot { display: block; margin-left: auto; margin-right: auto; margin-top: 8px; margin-bottom: 8px; padding: 2px; border: 1px solid #358C92; }
 #help .screenshot.left { margin-left: 0px !important; }
 #help .screenshot.right { margin-right: 0px !important; }
