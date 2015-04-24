@@ -102,7 +102,10 @@ function users(element) {
 function readonlies(element) {
    $(element).closest("tr.field").find("input,textarea,select,button,span").each(function() {
        $(this).addClass("ui-state-disabled");
-       $(this).prop("disabled",true);
+       //$(this).prop("disabled",true);
+       $(this).focus(function() {
+           this.blur();
+       })
    });
 }
 
