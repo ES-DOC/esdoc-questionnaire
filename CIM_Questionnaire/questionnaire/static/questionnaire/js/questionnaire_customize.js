@@ -103,12 +103,12 @@ function tags(element) {
                         var form = $(category_form).find("div.category_form_content");
                         var category_name = $(form).find("input[name$='-name']").val();
                         if (category_name == tag_name) {
-                            /* 1st make the category form for deletion */
+                            /* 1st marke the category form for deletion */
                             var delete_button = $(form).nextAll("a.delete-row:first");
                             $(delete_button).trigger("click");
 
                             /* then remove the category from property pull downs */
-                            update_property_categories(property_forms, tag_key, tag_name, false)
+                            remove_property_categories(property_forms, tag_key, tag_name);
 
                             return false;  /* break out of the loop */
                         }
@@ -417,32 +417,27 @@ function view_all_categories(view_all_button) {
 }
 
 
-function update_property_categories(property_forms, category_key, category_name, add) {
-    /* called in response to editing or adding or deleting a category tag */
-    /* if add=true and the category already exists, changes the name in all relevant widgets */
-    /* if add=true and the category is new, adds the name to all relevant widgets */
-    /* if add=false and the category already exists, removes the name from all relevant widgets */
-    /* then triggers the change event, which updates the label text */
-    if (typeof(add) === 'undefined') add = true;
-
+function remove_property_categories(property_forms, category_key, category_name) {
     $(property_forms).find("select[name$='-category']").each(function() {
-        console.log("category select = " + this);
-        console.log("add = " + add);
         var option = $(this).find("option[value='" + category_key + "']");
         if (option) {
-            console.log("option existed");
-            if (add == true) {
-                option.text(category_name);
-            }
-            else {
-                $(option).remove();
-            }
+            $(option).remove();
+        }
+        $(this).trigger("change");
+    });
+}
+
+
+function update_property_categories(property_forms, old_category_key, new_category_key, new_category_name) {
+
+    $(property_forms).find("select[name$='-category']").each(function() {
+        var option = $(this).find("option[value='" + old_category_key + "']");
+        if (option) {
+            option.attr("value", new_category_key);
+            option.text(new_category_name);
         }
         else {
-            console.log("option didn't exist");
-            if (add == true) {
-                $(this).append("<option value='" + category_key + "'>" + category_name + "</option>");
-            }
+            $(this).append("<option value='" + new_category_key + "'>" + new_category_name + "</option>");
         }
         $(this).trigger("change");
     });
@@ -454,6 +449,7 @@ function edit_tag(edit_tag_icon) {
     var tag_widget = $(edit_tag_icon).closest(".tagit");
     var tag_label = $(edit_tag_icon).next(".tagit-label");
     var tag_name = $(tag_label).text();
+    var tag_key = slugify(tag_name);
     /* note that the value of the comparison string has to match the values in "forms/forms_customize_categories.py#TagTypes" */
     var tag_type = $(tag_widget).prev("input.tags").attr("name") == "standard_categories" ? STANDARD_TAG_TYPE : SCIENTIFIC_TAG_TYPE;
 
@@ -536,7 +532,7 @@ function edit_tag(edit_tag_icon) {
 
                                             if (tag_type = SCIENTIFIC_TAG_TYPE) {
                                                 var property_forms = $(tag_widget).closest("div.categories").nextAll("div.accordion:first").find("div.form");
-                                                update_property_categories(property_forms, parsed_data.key, parsed_data.name);
+                                                update_property_categories(property_forms, tag_key, parsed_data.key, parsed_data.name);
                                             }
 
                                             $(edit_dialog).dialog("close");

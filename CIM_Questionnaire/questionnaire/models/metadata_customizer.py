@@ -20,9 +20,9 @@ classes for model, category, and property customizers
 from django.db import models
 from django.db.models.fields import FieldDoesNotExist
 from django.template.defaultfilters import slugify
-
-from collections import OrderedDict
 from django.utils import timezone
+from collections import OrderedDict
+from uuid import uuid4
 
 from CIM_Questionnaire.questionnaire.models.metadata_vocabulary import MetadataVocabulary
 from CIM_Questionnaire.questionnaire.fields import MetadataFieldTypes, MetadataAtomicFieldTypes, EnumerationField, CardinalityField, MetadataUnitTypes
@@ -541,7 +541,6 @@ class MetadataScientificCategoryCustomizer(MetadataCategoryCustomizer):
     order.help_text = "Drag and drop the corresponding category widget to modify its order."
 
     def __unicode__(self):
-        # return u'%s::%s' % (self.project,self.proxy)
         return u'%s' % self.name
 
     def __init__(self, *args, **kwargs):

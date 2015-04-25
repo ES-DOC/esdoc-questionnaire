@@ -25,6 +25,7 @@ from django.forms.util import ErrorList
 from django.forms.formsets import DELETION_FIELD_NAME
 from django.template.defaultfilters import slugify
 from django.utils.translation import ugettext_lazy as _
+from uuid import uuid4
 
 from CIM_Questionnaire.questionnaire.forms.forms_customize import MetadataCustomizerForm, MetadataCustomizerFormSet, MetadataCustomizerInlineFormSet
 from CIM_Questionnaire.questionnaire.models.metadata_customizer import MetadataModelCustomizer, MetadataStandardCategoryCustomizer, MetadataScientificCategoryCustomizer
@@ -116,6 +117,7 @@ def save_valid_categories_formset(categories_formset):
         category_instances.append(category_instance)
 
     return category_instances
+
 
 class MetadataCategoryCustomizerForm(MetadataCustomizerForm):
 
@@ -311,7 +313,7 @@ class MetadataScientificCategoryCustomizerForm(MetadataCategoryCustomizerForm):
             "name", "description",
         ]
 
-    _hidden_fields = ("key", "proxy", "project", "vocabulary_key", "component_key", "order",)
+    _hidden_fields = ("key", "proxy", "project", "vocabulary_key", "component_key", "order", )
     _customizer_fields = ("name", "description", )
 
     def __init__(self, *args, **kwargs):
