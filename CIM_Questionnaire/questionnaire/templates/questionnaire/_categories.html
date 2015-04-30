@@ -36,33 +36,33 @@
                 <div class="category_form">
                     <div class="category_form_content">
 
-{#                        {{ form }}#}
+                        {{ form }}
 
-                        <div class="hidden">
+{#                        <div class="hidden">#}
                             {# the fields I explicitly set to hidden #}
-                            {% for field in form.get_hidden_fields %}
-                                {{ field }}
-                            {% endfor %} {# /field #}
+{#                            {% for field in form.get_hidden_fields %}#}
+{#                                {{ field }}#}
+{#                            {% endfor %} {# /field #}
                             {#  and the fields that are hidden by default #}
-                            {% for hidden_field in form.hidden_fields %}
-                                {{ hidden_field }}
-                            {% endfor %} {# /hidden_field #}
-                            {% if formset.can_delete %}
-                                {{ form.DELETE }}
-                            {% endif %}
+{#                            {% for hidden_field in form.hidden_fields %}#}
+{#                                {{ hidden_field }}#}
+{#                            {% endfor %} {# /hidden_field #}
+{#                            {% if formset.can_delete %}#}
+{#                                {{ form.DELETE }}#}
+{#                            {% endif %}#}
                             {# and a special form-only (ie: not part of the underlying model) field #}
                             {# which helps w/ the load-on-demand paradigm #}
-                            {{ form.loaded }}
-                        </div>
-
-
-                        <table width="100%">
-                            {% for field in form.get_customizer_fields %}
-                                <tr class="{% cycle 'odd' 'even' %} field" name="{{field.html_name}}">
-                                    {% include "questionnaire/_field.html" %}
-                                </tr>
-                            {% endfor %} {# / field in form #}
-                        </table>
+{#                            {{ form.loaded }}#}
+{#                        </div>#}
+{##}
+{##}
+{#                        <table width="100%">#}
+{#                            {% for field in form.get_customizer_fields %}#}
+{#                                <tr class="{% cycle 'odd' 'even' %} field" name="{{field.html_name}}">#}
+{#                                    {% include "questionnaire/_field.html" %}#}
+{#                                </tr>#}
+{#                            {% endfor %} {# / field in form #}
+{#                        </table>#}
 
                     </div> <!-- /.category_form_content -->
                 </div> <!-- /.category_form -->

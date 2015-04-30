@@ -24,6 +24,7 @@ from django.template.context import RequestContext
 from django.contrib.sites.models import get_current_site
 
 from CIM_Questionnaire.questionnaire.forms.forms_customize_categories import TagTypes, MetadataStandardCategoryCustomizerForm, MetadataScientificCategoryCustomizerForm
+from CIM_Questionnaire.questionnaire.models.metadata_proxy import MetadataStandardCategoryProxy, MetadataScientificCategoryProxy
 from CIM_Questionnaire.questionnaire.utils import get_data_from_form, QuestionnaireError
 
 
@@ -52,13 +53,24 @@ def api_customize_category(request, category_type, **kwargs):
         raise QuestionnaireError(msg)
 
     if request.method == "GET":
-        initial_data = remove_prefixes(request.GET.dict())
-        form = form_class(initial=initial_data)
 
+        initial_data = remove_prefixes(request.GET.dict())
+        # either have to add component/vocabulary key via JS and passing it as request.GET.dict()
+        # or do the following extra work
+        # (if I choose to do the following, be sure not to un-set the proxy field in JS)
+        # proxy_pk = initial_data["proxy"]
+        # if proxy_pk:
+        #     proxy = MetadataScientificCategoryProxy.objects.get(pk=proxy_pk)
+        #     component = proxy.component
+        #     vocabulary = component.vocabulary
+        #     initial_data["component_key"] = component.get_key()
+        #     initial_data["vocabulary_key"] = vocabulary.get_key()
+        form = form_class(initial=initial_data)
         status = 200
         msg = None
 
     else:  # request.method == "POST"
+
         data = request.POST.copy()
         form = form_class(data)
         if form.is_valid():

@@ -25,7 +25,6 @@ from django.forms.util import ErrorList
 from django.forms.formsets import DELETION_FIELD_NAME
 from django.template.defaultfilters import slugify
 from django.utils.translation import ugettext_lazy as _
-from uuid import uuid4
 
 from CIM_Questionnaire.questionnaire.forms.forms_customize import MetadataCustomizerForm, MetadataCustomizerFormSet, MetadataCustomizerInlineFormSet
 from CIM_Questionnaire.questionnaire.models.metadata_customizer import MetadataModelCustomizer, MetadataStandardCategoryCustomizer, MetadataScientificCategoryCustomizer

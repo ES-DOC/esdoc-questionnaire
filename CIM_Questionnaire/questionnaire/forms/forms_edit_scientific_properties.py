@@ -158,6 +158,11 @@ class MetadataScientificPropertyForm(MetadataEditingForm):
 
         self.fields[value_field_name].help_text = customizer.documentation
 
+        # you can customize the category of scientific properties,
+        # so set it here...
+        category_customizer = customizer.category
+        self.initial["category_key"] = category_customizer.key
+
         if not customizer.is_enumeration:
             atomic_type = customizer.atomic_type
             if atomic_type:

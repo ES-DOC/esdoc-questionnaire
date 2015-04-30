@@ -86,7 +86,7 @@ class MetadataScientificPropertyCustomizerForm(MetadataCustomizerForm):
             ]
 
     category_name = CharField(label="Category", required=False)
-    category = ChoiceField(required=False)  # changing from the default fk field (ModelChoiceField)
+    category = ChoiceField(required=True)   # changing from the default fk field (ModelChoiceField)
                                             # since I'm potentially dealing w/ _unsaved_ category_customizers
 
     _hidden_fields = ("field_type", "proxy", "is_enumeration", "vocabulary_key", "component_key", "model_key", )

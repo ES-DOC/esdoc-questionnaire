@@ -166,7 +166,11 @@ function tags(element) {
         $(add_tag_button).hide();
     }
     else {
-        /* only for scientific categories */
+
+
+        var widget_id = $(element).closest("div.tab_content").closest("div[id^='tab_scientific_properties_']").attr("id");
+        var model_key = widget_id.match("tab_scientific_properties_(.*)")[1].split('_');
+
         $(add_tag_button).button({
             icons: { primary: "ui-icon-circle-plus"},
             text: false
@@ -178,23 +182,30 @@ function tags(element) {
             var new_category_order = new_category_forms.length;
 
             $(tag_widget).tagit("createTag", new_category_name, "added");
-            var new_tag = $(tagit_widget).find(".tagit-choice:last")
+            var new_tag = $(tagit_widget).find(".tagit-choice:last");
 
-            var field_name = $(new_category_form).find("input:first").attr("name");
-            var n = field_name.lastIndexOf('-');
-            var old_prefix = field_name.substring(0, n);
-            var new_prefix = field_name.substring(0, n-1) + new_category_order - 1;
-            update_field_names(new_category_form, old_prefix, new_prefix);
+            /* WHEN DEALING w/ EDITING FORMS I NEED TO CHANGE THE PREFIXES */
+            /* BUT HERE IN THE CUSTOMIZER, I DON'T */
+            /* I DO, HOWEVER, HAVE TO UPDATE THE VALUES */
+
+            $(new_category_form).find("input[name$='-vocabulary_key']").val(model_key[0]);
+            $(new_category_form).find("input[name$='-component_key']").val(model_key[1]);
+            $(new_category_form).find("select[name$='-proxy'] option:selected").removeAttr("selected");
 
             $(new_category_form).find("input[name$='-name']").val(new_category_name);
             $(new_category_form).find("input[name$='-order']").val(new_category_order);
+
+            $(new_category_form).find("input[name$='-loaded']").prop("checked", true);
 
             edit_tag($(new_tag).find("a.tagit-edit"));  /* simulate clicking the edit button (forces users to change the default name) */
 
             return false;  /* don't perform the default button action (which would be submitting the form) */
         });
 
-        $(category_forms).formset();
+        var prefix = model_key[0] + "_" + model_key[1] + "_" + $(element).attr("name");
+        $(category_forms).formset({
+            prefix : prefix
+        });
 
     }
 
@@ -254,7 +265,7 @@ function update_property_categories(property_forms, old_category_key, new_catego
 
     $(property_forms).find("select[name$='-category']").each(function() {
         var option = $(this).find("option[value='" + old_category_key + "']");
-        if (option) {
+        if (option.length) {
             option.attr("value", new_category_key);
             option.text(new_category_name);
         }
