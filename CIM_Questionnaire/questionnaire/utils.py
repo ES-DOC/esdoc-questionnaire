@@ -230,7 +230,7 @@ def validate_no_reserved_words(value):
         # cannot have projects w/ these names, else the URLs won't make sense...
         "admin", "static", "site_media",
         "index", "login", "logout", "register", "user",
-        "questionnaire", "mindmaps",
+        "questionnaire", "mindmaps", "metadata",
         "customize", "edit", "view", "help",
         "ajax", "api",
         "test",
