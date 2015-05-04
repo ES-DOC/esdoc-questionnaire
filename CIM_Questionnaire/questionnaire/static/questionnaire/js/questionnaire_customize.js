@@ -3,21 +3,6 @@
 var STANDARD_TAG_TYPE   = 0;
 var SCIENTIFIC_TAG_TYPE = 1;
 
-var SAMPLE_CATEGORY = {
-    "pk"        : "null",
-    "model"     : "questionnaire.metadatascientificcategorycustomizer", // only scientific categories can be added to
-    "fields"    : {
-        "name"          : "sample", // to be overwritten
-        "key"           : "sample", // to be overwritten
-        "description"   : null,     // to be overwritten
-        "vocabulary"    : null,     // to be set in the view
-        "last_modified" : null,     // to be set in the view
-        "proxy"         : null,     // an added category will have no proxy
-        "order"         : 0,        // to be overwritten
-        "pending_deletion"  : false
-    }
-};
-
 function vocabularies(parent) {
     $(parent).find("select[name='vocabularies'].multiselect").multiselect({
         autoOpen    : true,
@@ -97,7 +82,7 @@ function tags(element) {
                 /* I am _not_ using a dialog box to popup this msg */
                 /* b/c JQuery .dialog() is asynchronous and the tag will be removed while waiting for a user response */
                 /* instead I am using the JS .confirm() fn which is synchronous */
-                var should_delete_tag = confirm("You cannot undo this operation.  Any properties belonging to this category will become uncategorized.  Do you wish to continue?");
+                var should_delete_tag = confirm("Any properties belonging to this category will become uncategorized.  You cannot undo this operation.  Do you wish to continue?");
                 if (should_delete_tag == true) {
                     $.each(category_forms, function(i, category_form) {
                         var form = $(category_form).find("div.category_form_content");

@@ -56,11 +56,18 @@
                         init_widgets(helps, $(parent).find(".help_button"));
 
                         /* initialize the load-on-demand stuff */
+                        /* (JQuery has some clever events bound to the tab widget, */
+                        /* but they only apply in the case of content loaded by AJAX, */
+                        /* so I initialize this stuff on the "show" event of the tab_content) */
                         var vocabulary_tabs = $(parent).find("div.vocabulary_tabs");
-                        $(vocabulary_tabs).find("ul.ui-tabs-nav li").click(function() {
-                            var tab_id = $(this).find("a").attr("href").replace("#", "");
+                        var vocabulary_tabs_content = $(vocabulary_tabs).find("div.tab_content");
+                        $(vocabulary_tabs_content).on("show", function() {
+                            var tab_id = $(this).parent("div.ui-tabs-panel").attr("id");
                             show_vocabulary_content(tab_id);
                         });
+                        /* be sure to load the 1st one by default */
+                        /* (a quirk of JQuery means the show event does not fire for content that "starts" already shown) */
+                        $(vocabulary_tabs_content).first().trigger("show");
 
                         /* identify the section as loaded for js... */
                         $(vocabulary_section).addClass("loaded");
@@ -115,8 +122,6 @@
             var vocabularies_tabs = $("div#vocabularies_tabs");
             var vocabularies_tabs_headers = $(vocabularies_tabs).find("ul:first li");
 
-{#            $(vocabularies_tabs).addClass("ui-tabs-vertical ui-helper-clearfix");#}
-
             $(model_customizer_vocabularies).find("input.active").each(function() {
 
                 var model_customizer_vocabulary = $(this).closest("div.model_customizer_vocabulary");
@@ -168,8 +173,11 @@
             });
 
             /* initialize the load-on-demand stuff */
-            $(vocabularies_tabs).find("ul.ui-tabs-nav li").click(function() {
-                var tab_id = $(this).find("a").attr("href").replace("#", "");
+            /* (JQuery has some clever events bound to the tab widget, */
+            /* but they only apply in the case of content loaded by AJAX, */
+            /* so I initialize this stuff on the "show" event of the tab_content) */
+            $(vocabularies_tabs).find("div.tab_content").on("show", function() {
+                var tab_id = $(this).parent("div.ui-tabs-panel").attr("id");
                 show_vocabulary_content(tab_id);
             });
 
