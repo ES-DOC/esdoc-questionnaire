@@ -18,11 +18,12 @@ classes for model, category, and property customizers
 """
 
 from django.db import models
+from django.db.models import CASCADE, PROTECT, SET_NULL, SET_DEFAULT, DO_NOTHING
 from django.db.models.fields import FieldDoesNotExist
 from django.template.defaultfilters import slugify
 from django.utils import timezone
 from collections import OrderedDict
-from uuid import uuid4
+
 
 from CIM_Questionnaire.questionnaire.models.metadata_vocabulary import MetadataVocabulary
 from CIM_Questionnaire.questionnaire.fields import MetadataFieldTypes, MetadataAtomicFieldTypes, EnumerationField, CardinalityField, MetadataUnitTypes
@@ -619,8 +620,27 @@ class MetadataStandardPropertyCustomizer(MetadataPropertyCustomizer):
     proxy = models.ForeignKey("MetadataStandardPropertyProxy", blank=True, null=True)
     model_customizer = models.ForeignKey("MetadataModelCustomizer", blank=False, null=True, related_name="standard_property_customizers")
 
-    category = models.ForeignKey("MetadataStandardCategoryCustomizer", blank=True, null=True, related_name="standard_property_customizers")
-    category_name = models.CharField(blank=True, null=True, max_length=BIG_STRING)
+    # category customizations are weird b/c they can be added and removed via JS
+    # this could have allowed the possibility of...
+    # 1) trying to set a category FK that does not yet exist, or
+    # 2) having a deleted category FK force deletion of this property customization
+    # to get around this, I...
+    # 1) use the "category_name" field to record the name of the category customization to use as the FK
+    # and then do the actual linking in a separate fn
+    # 2) ensure that on_delete is set to either "SET_NULL" or "DO_NOTHING" to prevent cascading deletes
+    # (I chose the former b/c DO_NOTHING may have cause db integrity errors)
+    category = models.ForeignKey(
+        "MetadataStandardCategoryCustomizer",
+        blank=True,
+        null=True,
+        on_delete=SET_NULL,
+        related_name="standard_property_customizers"
+    )
+    category_name = models.CharField(
+        blank=True,
+        null=True,
+        max_length=BIG_STRING
+    )
 
     inherited = models.BooleanField(default=False, blank=True, verbose_name="Can this property be inherited by children?")
     inherited.help_text = "Enabling inheritance will allow the correponding properties of child components to 'inherit' the value of this property.  The editing form will allow users the ability to 'opt-out' of this inheritance."
@@ -737,9 +757,28 @@ class MetadataScientificPropertyCustomizer(MetadataPropertyCustomizer):
     model_key = models.CharField(blank=True, null=True, max_length=BIG_STRING)
 
     is_enumeration = models.BooleanField(blank=False, default=False)
-    
-    category = models.ForeignKey("MetadataScientificCategoryCustomizer", blank=True, null=True, related_name="scientific_property_customizers")
-    category_name = models.CharField(blank=True, null=True, max_length=BIG_STRING)
+
+    # category customizations are weird b/c they can be added and removed via JS
+    # this could have allowed the possibility of...
+    # 1) trying to set a category FK that does not yet exist, or
+    # 2) having a deleted category FK force deletion of this property customization
+    # to get around this, I...
+    # 1) use the "category_name" field to record the name of the category customization to use as the FK
+    # and then do the actual linking in a separate fn
+    # 2) ensure that on_delete is set to either "SET_NULL" or "DO_NOTHING" to prevent cascading deletes
+    # (I chose the former b/c DO_NOTHING may have cause db integrity errors)
+    category = models.ForeignKey(
+        "MetadataScientificCategoryCustomizer",
+        blank=True,
+        null=True,
+        on_delete=SET_NULL,
+        related_name="scientific_property_customizers"
+    )
+    category_name = models.CharField(
+        blank=True,
+        null=True,
+        max_length=BIG_STRING
+    )
 
     atomic_type = models.CharField(max_length=BIG_STRING, blank=True, verbose_name="How should this field be rendered?",
                                    choices=[(ft.getType(), ft.getName()) for ft in MetadataAtomicFieldTypes],
