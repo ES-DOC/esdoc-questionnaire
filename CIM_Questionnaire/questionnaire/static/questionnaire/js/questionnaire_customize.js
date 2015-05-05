@@ -528,7 +528,7 @@ function customize_property_subform(subform_id,subform_customizer_field_name) {
                         }
                     },
                     {
-                        text: "Cancel",
+                        text: "cancel",
                         click: function () {
                             $(customize_subform_dialog).dialog("close");
                         }

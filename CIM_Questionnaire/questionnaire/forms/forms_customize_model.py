@@ -202,4 +202,3 @@ class MetadataModelCustomizerSubForm(MetadataAbstractModelCustomizerForm):
         super(MetadataModelCustomizerSubForm, self).__init__(*args, **kwargs)
 
         set_field_widget_attributes(self.fields["model_description"], {"cols": "60", "rows": "4", })
-        update_field_widget_attributes(self.fields["standard_categories_tags"], {"class": "tags", })

@@ -54,6 +54,7 @@ def ajax_customize_subform(request, **kwargs):
     vocabularies = property_parent.vocabularies.none()  # using none() to avoid dealing w/ sci props
     project = property_parent.project
     version = property_parent.version
+    # give all this subform nonesense it's own unique prefix, so the fields aren't confused w/ the parent form fields
     subform_prefix = u"customize_subform_%s-%s" % (property_proxy.name, subform_id)
 
     customizer_filter_parameters = {
@@ -84,7 +85,7 @@ def ajax_customize_subform(request, **kwargs):
 
         if new_customizer:
 
-            (model_customizer_form, standard_property_customizer_formset, scientific_property_customizer_formsets, model_customizer_vocabularies_formset) = \
+            (model_customizer_form, standard_category_customizer_formset, standard_property_customizer_formset, scientific_category_customizer_formsets, scientific_property_customizer_formsets, model_customizer_vocabularies_formset) = \
                 create_new_customizer_forms_from_models(
                     model_customizer,
                     standard_category_customizers,
@@ -92,11 +93,12 @@ def ajax_customize_subform(request, **kwargs):
                     scientific_category_customizers,
                     scientific_property_customizers,
                     vocabularies_to_customize=vocabularies,
-                    is_subform=True
+                    is_subform=True,
+                    subform_prefix=subform_prefix,
                 )
 
         else:
-            (model_customizer_form, standard_property_customizer_formset, scientific_property_customizer_formsets, model_customizer_vocabularies_formset) = \
+            (model_customizer_form, standard_category_customizer_formset, standard_property_customizer_formset, scientific_category_customizer_formsets, scientific_property_customizer_formsets, model_customizer_vocabularies_formset) = \
                 create_existing_customizer_forms_from_models(
                     model_customizer,
                     standard_category_customizers,
@@ -104,25 +106,18 @@ def ajax_customize_subform(request, **kwargs):
                     scientific_category_customizers,
                     scientific_property_customizers,
                     vocabularies_to_customize=vocabularies,
-                    is_subform=True
+                    is_subform=True,
+                    subform_prefix=subform_prefix,
                 )
-
-        # give all this subform nonesense it's own unique prefix, so the fields aren't confused w/ the parent form fields
-        # TODO: AS WITH EDITING SUBFORMS, SHOULD JUST PASS "subform_prefix" AND DO THIS AUTOMATICALLY
-        model_customizer_form.prefix = subform_prefix
-        standard_property_customizer_formset.prefix = u"%s-%s" % (standard_property_customizer_formset.prefix, subform_prefix)
-        for scientific_property_customizer_formsets_dict in scientific_property_customizer_formsets.values():
-            for scientific_property_customizer_formset in scientific_property_customizer_formsets_dict.values():
-                scientific_property_customizer_formset.prefix = u"%s-%s" % (scientific_property_customizer_formset.prefix, subform_prefix)
 
         status = 200  # return successful response for GET (don't actually process this in the AJAX JQuery call)
         msg = None
 
     else:  # request.method == "POST":
 
-        data = request.POST
+        data = request.POST.copy()
 
-        (validity, model_customizer_form, standard_property_customizer_formset, scientific_property_customizer_formsets, model_customizer_vocabularies_formset) = \
+        (validity, model_customizer_form, standard_category_customizer_formset, standard_property_customizer_formset, scientific_category_customizer_formsets, scientific_property_customizer_formsets, model_customizer_vocabularies_formset) = \
             create_customizer_forms_from_data(
                 data,
                 model_customizer,
@@ -132,13 +127,12 @@ def ajax_customize_subform(request, **kwargs):
                 scientific_property_customizers,
                 vocabularies_to_customize=vocabularies,
                 is_subform=True,
-                subform_prefix=subform_prefix
+                subform_prefix=subform_prefix,
             )
 
         if all(validity):
 
-            model_customizer_instance = save_valid_forms(model_customizer_form, standard_property_customizer_formset, scientific_property_customizer_formsets, model_customizer_vocabularies_formset)
-
+            model_customizer_instance = save_valid_forms(model_customizer_form, standard_category_customizer_formset, standard_property_customizer_formset, scientific_category_customizer_formsets, scientific_property_customizer_formsets, model_customizer_vocabularies_formset)
             data = {
                 "subform_customizer_id": model_customizer_instance.pk,
                 "subform_customizer_name": u"%s" % model_customizer_instance,
@@ -179,13 +173,16 @@ def ajax_customize_subform(request, **kwargs):
         "site": get_current_site(request),
         "project": project,
         "version": version,
+        "vocabularies": vocabularies,
         "model_proxy": model_proxy,
         "parent_customizer": property_parent,
         "model_customizer_form": model_customizer_form,
         # vocabularies are not needed for subforms...
         # "model_customizer_vocabularies_formset": model_customizer_vocabularies_formset,
+        "standard_category_customizer_formset": standard_category_customizer_formset,
         "standard_property_customizer_formset": standard_property_customizer_formset,
         # scientific properties are not needed for subforms...
+        # "scientific_category_customizer_formsets": scientific_category_customizer_formsets,
         # "scientific_property_customizer_formsets" : scientific_property_customizer_formsets,
         "questionnaire_version": get_version(),
         "csrf_token_value": csrf_token_value,
