@@ -21,9 +21,9 @@ from django.db import models
 from django.db.models import CASCADE, PROTECT, SET_NULL, SET_DEFAULT, DO_NOTHING
 from django.db.models.fields import FieldDoesNotExist
 from django.template.defaultfilters import slugify
-from django.utils import timezone
+from django.utils.translation import ugettext_lazy as _
 from collections import OrderedDict
-
+from django.utils import timezone
 
 from CIM_Questionnaire.questionnaire.models.metadata_vocabulary import MetadataVocabulary
 from CIM_Questionnaire.questionnaire.fields import MetadataFieldTypes, MetadataAtomicFieldTypes, EnumerationField, CardinalityField, MetadataUnitTypes
@@ -41,7 +41,11 @@ class MetadataCustomizer(models.Model):
     last_modified = models.DateTimeField(blank=True, null=True, editable=False)
 
     def refresh(self):
-        """re-gets the model from the db"""
+        """re-gets the model from the db
+        re-gets the model from the db
+        (NOTE THAT THERE WILL BE A BUILT-IN DJANGO METHOD FOR THIS IN 1.8)
+        https://docs.djangoproject.com/en/dev/ref/models/instances/#refreshing-objects-from-database
+        """
         if not self.pk:
             return self
         return self.__class__.objects.get(pk=self.pk)
@@ -602,8 +606,23 @@ class MetadataPropertyCustomizer(MetadataCustomizer):
     editable = models.BooleanField(default=True, blank=True, verbose_name="Can the value of this property be edited?")
     unique = models.BooleanField(default=False, blank=True, verbose_name="Must the value of this property be unique?")
     verbose_name = models.CharField(max_length=LIL_STRING, blank=False, verbose_name="How should this property be labeled (overrides default name)?")
-    default_value = models.CharField(max_length=BIG_STRING, blank=True, null=True, verbose_name="What is the default value of this property?")
-    documentation = models.TextField(blank=True, verbose_name="What is the help text to associate with this property?<div class='documentation'>Any initial help text comes from the CIM Schema or a CIM Controlled Vocabulary.</div>")
+    default_value = models.CharField(
+        max_length=BIG_STRING,
+        blank=True,
+        null=True,
+        verbose_name=_(
+            "What is the default value of this property?"
+            "<div class='documentation'>Note that this only applies to new and not existing documents</div>"
+        )
+    )
+    documentation = models.TextField(
+        blank=True,
+        verbose_name=_(
+            "What is the help text to associate with this property?"
+            "<div class='documentation'>Any initial help text comes from the CIM Schema or a CIM Controlled Vocabulary.</div>"
+            "<div class='documentation'>Note that basic HTML tags are supported.</div>"
+        )
+    )
     inline_help = models.BooleanField(default=False, blank=True, verbose_name="Should the help text be displayed inline?")
     
     
@@ -780,11 +799,22 @@ class MetadataScientificPropertyCustomizer(MetadataPropertyCustomizer):
         max_length=BIG_STRING
     )
 
-    atomic_type = models.CharField(max_length=BIG_STRING, blank=True, verbose_name="How should this field be rendered?",
-                                   choices=[(ft.getType(), ft.getName()) for ft in MetadataAtomicFieldTypes],
-                                   default=MetadataAtomicFieldTypes.DEFAULT.getType(),
-                                   )
-    atomic_default = models.CharField(max_length=BIG_STRING, blank=True, null=True, verbose_name="What is the default value of this property?")
+    atomic_type = models.CharField(
+        max_length=BIG_STRING,
+        blank=True,
+        verbose_name="How should this field be rendered?",
+        choices=[(ft.getType(), ft.getName()) for ft in MetadataAtomicFieldTypes],
+        default=MetadataAtomicFieldTypes.DEFAULT.getType(),
+    )
+    atomic_default = models.CharField(
+        max_length=BIG_STRING,
+        blank=True,
+        null=True,
+        verbose_name=_(
+            "What is the default value of this property?"
+            "<div class='documentation'>Note that this only applies to new and not existing documents</div>"
+        )
+    )
 
     enumeration_choices = EnumerationField(blank=True, null=True, verbose_name="Choose the property values that should be presented to users.")
     enumeration_default = EnumerationField(blank=True, null=True, verbose_name="Choose the default value(s), if any, for this property.")
