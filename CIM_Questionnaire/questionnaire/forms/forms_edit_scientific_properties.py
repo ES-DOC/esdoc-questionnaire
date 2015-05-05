@@ -135,7 +135,7 @@ class MetadataScientificPropertyForm(MetadataEditingForm):
 
         if not is_enumeration:
             update_field_widget_attributes(self.fields["atomic_value"], {"onchange": "copy_value(this,'%s-scientific_property_value');" % self.prefix})
-            update_field_widget_attributes(self.fields["atomic_value"], {"class": "atomic_value"})
+            update_field_widget_attributes(self.fields["atomic_value"], {"class": "atomic_value changer"})
         else:
             # this is handled via the "multiselect" widget in JS rather than here (b/c the widget is created dynamically via JS and has no _standard_ onchange event)
             # update_field_widget_attributes(self.fields["enumeration_value"], {"onchange": "copy_value(this,'%s-scientific_property_value');" % self.prefix})
@@ -173,7 +173,7 @@ class MetadataScientificPropertyForm(MetadataEditingForm):
                     # if I changed the widget, then I have to re-add the attributes that were updated in __init__ above
                     # b/c they will have been lost (I only have to do this for atomic fields b/c the widget for enumerations cannot change)
                     update_field_widget_attributes(self.fields["atomic_value"], {"onchange": "copy_value(this,'%s-scientific_property_value');" % self.prefix})
-                    update_field_widget_attributes(self.fields["atomic_value"], {"class": "atomic_value"})
+                    update_field_widget_attributes(self.fields["atomic_value"], {"class": "atomic_value changer"})
 
                 update_field_widget_attributes(self.fields["atomic_value"], {"class": atomic_type.lower()})
 
