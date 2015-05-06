@@ -125,7 +125,7 @@ function dynamic_accordions(element) {
 
     $(accordion_unit).formset({
        prefix : prefix,
-       formCssClass : "dynamic_accordion_" + prefix,
+       formCssClass : "dynamic_accordion_" + prefix,  /* note that formCssClass is _required_ in this situation */
        added : function(row) {
            added_subformset_form(row);
        },

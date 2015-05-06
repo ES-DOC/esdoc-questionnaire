@@ -152,7 +152,6 @@ function tags(element) {
     }
     else {
 
-
         var widget_id = $(element).closest("div.tab_content").closest("div[id^='tab_scientific_properties_']").attr("id");
         var model_key = widget_id.match("tab_scientific_properties_(.*)")[1].split('_');
 
@@ -166,21 +165,26 @@ function tags(element) {
             var new_category_name = "new category";
             var new_category_order = new_category_forms.length;
 
-            $(tag_widget).tagit("createTag", new_category_name, "added");
-            var new_tag = $(tagit_widget).find(".tagit-choice:last");
+            /* update new field names */
+            /* I DO NOT HAVE TO UPDATE PREFIXES; .formset({}) DOES IT FOR ME */
+            //var sample_field_name = $(new_category_form).find("input:first").attr("name");
+            //var i = sample_field_name.lastIndexOf('-');
+            //var n_form = new_category_order - 1;
+            //var old_prefix = sample_field_name.substring(0, i);
+            //var new_prefix = sample_field_name.substring(0, i-1) + n_form;
+            //update_field_names(new_category_form, old_prefix, new_prefix);
 
-            /* WHEN DEALING w/ EDITING FORMS I NEED TO CHANGE THE PREFIXES */
-            /* BUT HERE IN THE CUSTOMIZER, I DON'T */
-            /* I DO, HOWEVER, HAVE TO UPDATE THE VALUES */
-
+            /* update new field values */
             $(new_category_form).find("input[name$='-vocabulary_key']").val(model_key[0]);
             $(new_category_form).find("input[name$='-component_key']").val(model_key[1]);
             $(new_category_form).find("select[name$='-proxy'] option:selected").removeAttr("selected");
-
             $(new_category_form).find("input[name$='-name']").val(new_category_name);
             $(new_category_form).find("input[name$='-order']").val(new_category_order);
-
             $(new_category_form).find("input[name$='-loaded']").prop("checked", true);
+
+            /* add new tag */
+            $(tag_widget).tagit("createTag", new_category_name, "added");
+            var new_tag = $(tagit_widget).find(".tagit-choice:last");
 
             edit_tag($(new_tag).find("a.tagit-edit"));  /* simulate clicking the edit button (forces users to change the default name) */
 
@@ -189,7 +193,8 @@ function tags(element) {
 
         var prefix = model_key[0] + "_" + model_key[1] + "_" + $(element).attr("name");
         $(category_forms).formset({
-            prefix : prefix
+            prefix: prefix,
+            formCssClass: "dynamic_category_form_" + prefix  /* note that formCssClass is _required_ in this situation */
         });
 
     }

@@ -22,12 +22,6 @@
                 </p>
             </div>
 
-
-
-{#            <div class="add_tag">  #}
-{#                add a new category:&nbsp;<input type="text" class="add_tag" title="enter a new category name here"/>#}
-{#            </div>#}
-
         {% endwith %} {# /tags #}
 
         <div class="categories_forms">
@@ -37,7 +31,9 @@
                     <div class="category_form_content">
                         <div class="hidden">
 
-                            {{ form }}
+                            {% for field in form %}
+                                {{ field }}
+                            {% endfor %} {# /field #}
 
                         </div>
                     </div> <!-- /.category_form_content -->
