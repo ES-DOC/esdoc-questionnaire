@@ -840,9 +840,8 @@ def save_valid_forms(model_customizer_form, standard_category_customizer_formset
         active_vocabularies = []
 
     # save the standard category customizers...
-    standard_category_customizer_instances = save_valid_categories_formset(standard_category_customizer_formset)
-    # standard_category_customizer_formset.save(commit=True)
-    # standard_category_customizer_instances = model_customizer_instance.standard_property_category_customizers.all()
+    save_valid_categories_formset(standard_category_customizer_formset)
+    standard_category_customizer_instances = model_customizer_instance.standard_property_category_customizers.all()
 
     # save the standard property customizers...
     # (this is pretty straightforward, since standard categories & properties are always loaded)
