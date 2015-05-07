@@ -5,15 +5,12 @@
 {% block head %}
     <!-- this page is displayed in a JQuery dialog box -->
     <!-- hence, there is no need for the <head> section -->
-    <!-- (note - any JQuery widgets to be initialized are handled in the dialog open event) -->
 {% endblock %} {# /head #}
-
 
 {% block header %}
     <!-- this page is displayed in a JQuery dialog box -->
     <!-- hence, there is no need for the header -->
 {% endblock %} {# /header #}
-
 
 {% block footer %}
     <!-- this page is displayed in a JQuery dialog box -->
@@ -25,7 +22,7 @@
     {% block content_documentation %}
         <div class="documentation">
             <p>
-                <div class="instructions">Select an existing instance.  Be sure not to choose the same instance more than once.</div>
+                <div class="instructions">Please select an existing instance or choose "create a new instance."</div>
             </p>
         </div> <!-- /.documentation -->
     {% endblock %} {# /content_documentation #}
@@ -40,12 +37,14 @@
 
                  <table width="100%">
                     {% for field in form %}
-                        <tr class="{% cycle 'even' 'odd' %} field" name="{{field.html_name}}"> {# cycling in reverse oder just b/c this form only has one field and "even" rows look nicer #}
+                        <tr valign="top" class="{% cycle 'even' 'odd' %} field" name="{{field.html_name}}"> {# cycling in reverse oder just b/c this form only has one field and "even" rows look nicer #}
                             {% include "questionnaire/_field.html" %}
                         </tr>
                     {% endfor %} {# / field in model_customizer_form.get_document_fields #}
                 </table>
+
             </fieldset>
+
         </div> <!-- /.form -->
 
     </form>

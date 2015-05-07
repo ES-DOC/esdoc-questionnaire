@@ -102,7 +102,10 @@ function users(element) {
 function readonlies(element) {
    $(element).closest("tr.field").find("input,textarea,select,button,span").each(function() {
        $(this).addClass("ui-state-disabled");
-       $(this).prop("disabled",true);
+       //$(this).prop("disabled",true);
+       $(this).focus(function() {
+           this.blur();
+       })
    });
 }
 
@@ -325,7 +328,7 @@ function init_errors(parent) {
 function render_error(error) {
     // render fields...
     $(error).parents(".field:first").find("input,textarea,select").addClass("ui-state-error");
-    
+
     // render fieldsets...
     $(error).parents(".collapsible_fieldset").each(function() {
         $(this).addClass("error")
@@ -335,7 +338,7 @@ function render_error(error) {
     $(error).parents(".accordion_content").each(function() {
         $(this).prev(".accordion_header").addClass("ui-state-error");
     });
-    
+
     // render tabs...
     $(error).parents(".tab_content").each(function() {
         var tab_id = $(this).parent(".ui-tabs-panel").attr("id");
@@ -345,7 +348,7 @@ function render_error(error) {
     // render treeview nodes...
     // TODO
 }
-    
+
 function render_msg(msg) {
     $(msg).find("div.msg").each(function() {
         $(this).dialog({
@@ -386,7 +389,7 @@ function enable(source,enabling_value,targets) {
     for (var i = 0; i < targets.length; i++) {
         var selector = ".field[name$='" + targets[i] + "']";
         var target_container = $(source).closest(".form").find(selector);
-               
+
         if (source_value_matches) {
             $(target_container).find("input,textarea,select,button,span").each(function() {
                 $(this).removeClass("ui-state-disabled");
@@ -430,7 +433,7 @@ function restrict_options_bak(source,target_names) {
         $(target).find("option").each(function() {
             options.push($(this).val());
         });
-        
+
         // (this is horrible syntax; "grep" doesn't mean the same thing in JQuery)
         var in_options_but_not_restrictions = $.grep(options,function(el){
            return $.inArray(el,restrictions) == -1;

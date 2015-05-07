@@ -125,7 +125,7 @@ function dynamic_accordions(element) {
 
     $(accordion_unit).formset({
        prefix : prefix,
-       formCssClass : "dynamic_accordion_" + prefix,
+       formCssClass : "dynamic_accordion_" + prefix,  /* note that formCssClass is _required_ in this situation */
        added : function(row) {
            added_subformset_form(row);
        },
@@ -326,6 +326,7 @@ function show_pane(pane_key) {
                     init_widgets(dynamic_accordion_buttons, $(parent).find("button.add, button.remove, button.replace"));
                     init_widgets(fieldsets, $(parent).find(".collapsible_fieldset"));
                     init_widgets(inherits, $(parent).find(".inherited"));
+                    init_widgets(changers, $(parent).find(".changer"));  /* force the change event on scientific properties, which copies the property value to the accordion header */
 
                     // identify the section as loaded for js...
                     $(pane).addClass("loaded");

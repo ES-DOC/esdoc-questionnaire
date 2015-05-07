@@ -166,12 +166,6 @@ button.ui-multiselect           { margin-top:  4px !important; }
 
 .ui-accordion-header .ui-icon { float: left; margin-top: 4px; margin-right: 4px; }  /* fixes icon forcing content onto newline */
 
-.tagit { border: 2px solid #358C92; background: #ffffff; min-height: 2em; padding: 6px !important;}
-.tagit .tagit-choice .tagit-edit { cursor: pointer; float: left; margin-right: 4px; margin-left: -4px; }
-.tagit .tagit-choice .tagit-close { cursor: pointer; }
-.tagit-label { cursor: default; }
-.add_tag input { border: 2px solid #358C92; }
-
 .sortable_item { border: 1px dashed #cccccc; }
 
 input.default , input.character {
@@ -220,3 +214,9 @@ input.default , input.character {
 }
 
 /* end toast notifications */
+
+/* load-on-demand stuff */
+
+.unloaded { width: 50%; margin-left: auto; margin-right: auto; margin-top: 10px; text-align: center; color: #B9E0E3; }
+
+/* end load-on-demand stuff */

@@ -21,8 +21,8 @@ deals w/ version info.
 APP_LABEL = "questionnaire"
 
 __version_info__ = {
-    'major': 0.12,
-    'minor': 2,
+    'major': 0.13,
+    'minor': 0,
     'patch': 0,
 }
 

@@ -77,8 +77,6 @@ class MetadataVersion(models.Model):
         super(MetadataVersion, self).save(*args, **kwargs)
         self._original_key = self.key
 
-
-
     # def save(self, *args, **kwargs):
     #     if self.pk:
     #         existing_version = MetadataVersion.objects.get(pk=self.pk)

@@ -122,7 +122,7 @@
         <!-- some useful stuff for AJAX calls -->
         <input class="hidden" type="text" id="_version_key" name="version_key" value="{{ version.key }}"/>
         <input class="hidden" type="text" id="_project_name" name="project_name" value="{{ project.name|lower }}"/>
-        <input class="hidden" type="text" id="_document_type" name="project_name" value="{{ model_proxy.name|lower }}"/>
+        <input class="hidden" type="text" id="_document_type" name="document_type" value="{{ model_proxy.name|lower }}"/>
 {#        <input class="hidden" type="text" id="_session_id" name="session_id" value="{{ session_id }}"/>#}
         <input class="hidden" type="text" id="_instance_key" name="instance_key" value="{{ instance_key }}"/>
 
@@ -195,7 +195,7 @@
                     {% for model_form in model_formset %}
 
                         <div class="pane" id="{{ model_form.prefix }}_pane" data-section-key="{{ version.key }}|{{ model_proxy.name|lower }}|{{ model_form.get_vocabulary_key }}|{{ model_form.get_component_key }}">
-                            <div style="width: 50%; margin-left: auto; margin-right: auto; margin-top: 10px; text-align: center; font-style: italic; color: #B9E0E3">This pane has not yet been loaded.</div>
+                            <div class="documentation unloaded">This pane has not yet been loaded.</div>
                         </div> <!-- /.pane -->
 
                     {%  endfor %}

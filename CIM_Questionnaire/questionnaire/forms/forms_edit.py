@@ -858,6 +858,7 @@ def get_data_from_edit_forms(model_formset, standard_properties_formsets, scient
     data.update(model_formset_data)
 
     for i, standard_property_formset in enumerate(standard_properties_formsets.values()):
+
         standard_property_formset_data = get_data_from_formset(standard_property_formset, existing_data=existing_data)
         data.update(standard_property_formset_data)
 
@@ -900,6 +901,7 @@ def get_data_from_existing_edit_forms(model_formset, standard_properties_formset
     data.update(model_formset_data)
 
     for standard_property_formset in standard_properties_formsets.values():
+
         standard_property_formset_data = get_data_from_formset(standard_property_formset)
         data.update(standard_property_formset_data)
 

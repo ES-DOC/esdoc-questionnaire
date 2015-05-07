@@ -35,7 +35,7 @@ from CIM_Questionnaire.questionnaire.models.metadata_proxy import MetadataCompon
 from CIM_Questionnaire.questionnaire.fields import OverwriteStorage
 from CIM_Questionnaire.questionnaire.utils import validate_file_extension, validate_file_schema, validate_no_spaces, xpath_fix
 from CIM_Questionnaire.questionnaire.utils import HUGE_STRING, BIG_STRING, SMALL_STRING, LIL_STRING, CIM_DOCUMENT_TYPES
-from CIM_Questionnaire.questionnaire.utils import QuestionnaireError
+from CIM_Questionnaire.questionnaire.utils import QuestionnaireError, get_index, remove_spaces_and_linebreaks
 from CIM_Questionnaire.questionnaire import APP_LABEL
 
 UPLOAD_DIR  = "vocabularies"
@@ -177,11 +177,11 @@ class MetadataVocabulary(models.Model):
         component_proxy_vocabulary = self
         component_proxy_name = xpath_fix(component_proxy_node,"@name")[0]
         component_proxy_order = self.next_component_order()
-        component_proxy_documentation_node = xpath_fix(component_proxy_node,"definition/text()") or None
-        if component_proxy_documentation_node:
-            component_proxy_documentation = component_proxy_documentation_node[0]
+        component_proxy_documentation = get_index(xpath_fix(component_proxy_node, "definition/text()"), 0)
+        if component_proxy_documentation:
+            component_proxy_documentation = remove_spaces_and_linebreaks(component_proxy_documentation)
         else:
-            component_proxy_documentation = u''#None
+            component_proxy_documentation = u""
 
         (new_component_proxy, created_component_proxy) = MetadataComponentProxy.objects.get_or_create(
             vocabulary = component_proxy_vocabulary,
@@ -199,12 +199,12 @@ class MetadataVocabulary(models.Model):
 
             category_proxy_name = xpath_fix(category_proxy_node,"@name")[0]
             category_proxy_key = slugify(category_proxy_name)
-            category_proxy_documentation_node = xpath_fix(category_proxy_node,"definition/text()") or None
             category_proxy_order = i
-            if category_proxy_documentation_node:
-                category_proxy_documentation = category_proxy_documentation_node[0]
+            category_proxy_documentation = get_index(xpath_fix(category_proxy_node, "definition/text()"), 0)
+            if category_proxy_documentation:
+                category_proxy_documentation = remove_spaces_and_linebreaks(category_proxy_documentation)
             else:
-                category_proxy_documentation = u''#None
+                category_proxy_documentation = u""
 
             (new_category_proxy, created_category_proxy) = MetadataScientificCategoryProxy.objects.get_or_create(
                 component = category_proxy_component,
@@ -224,12 +224,14 @@ class MetadataVocabulary(models.Model):
 
                 property_proxy_name = xpath_fix(property_proxy_node, "@name")[0]
                 property_proxy_choice = xpath_fix(property_proxy_node,"@choice")[0]
-                property_proxy_documentation_node = xpath_fix(property_proxy_node,"definition/text()") or None
                 property_proxy_order = j
-                if property_proxy_documentation_node:
-                    property_proxy_documentation = property_proxy_documentation_node[0]
+
+                property_proxy_documentation = get_index(xpath_fix(property_proxy_node, "definition/text()"), 0)
+                if property_proxy_documentation:
+                    property_proxy_documentation = remove_spaces_and_linebreaks(property_proxy_documentation)
                 else:
-                    property_proxy_documentation = u''#None
+                    property_proxy_documentation = u""
+
                 property_proxy_values = []
                 for property_proxy_value in xpath_fix(property_proxy_node,"value"):
                     property_proxy_value_name = xpath_fix(property_proxy_value, "@name")
@@ -245,7 +247,7 @@ class MetadataVocabulary(models.Model):
                 )
 
                 new_property_proxy.documentation = property_proxy_documentation
-                new_property_proxy.order = j
+                new_property_proxy.order = property_proxy_order
                 # TODO: SHOULD I CREATE A NEW PROXY IF THE VALUES ARE CHANGED?
                 # TODO: OR JUST ADD NEW VALUES HERE?
                 # TODO: DOUBLE-CHECK THAT VALUES ARE ADDED CORRECTLY

@@ -75,7 +75,7 @@
         .table_header * { font-weight: bold; text-decoration: underline; }
         .documentation table { width: 100%; }
         .documentation table tr { vertical-align: top; padding: 4px; }
-        .documentation table tr td:first-child { font-weight: bold; text-align: left; width: 12em; }
+        .documentation table tr td:first-child { font-weight: bold; text-align: left; width: 14em; }
         .button.smaller { font-size: smaller !important; margin: 2px; }
         .button#join { margin-top: 8px; }
 
@@ -100,6 +100,7 @@
     <div class="documentation">
         <p>
             This is the Project Page for the {% if project.url %}<a href="{{project.url}}" title="{{project.url}}">{% endif %}{{project.title|title}}{% if project.url %}</a>{% endif %} project.
+            <a href="/help">ES-DOC Questionnaire help</a> is available.
         </p>
 
         <table>
@@ -109,6 +110,12 @@
                     <td>{{ project.description }}</td>
                 </tr>
             {% endif %} {# /project.description #}
+            {% if has_published %}
+                <tr>
+                    <td>Document Feed:</td>
+                    <td><a href="/feed/{{ project.name }}">{{ request.get_host }}/feed/{{ project.name }}</a></td>
+                </tr>
+            {% endif %} {# /has_published #}
             {% if project.email %}
                 <tr>
                     <td>Project Contact:</td>

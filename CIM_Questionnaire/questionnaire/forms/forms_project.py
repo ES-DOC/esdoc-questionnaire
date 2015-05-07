@@ -136,5 +136,5 @@ def ExistingModelFormSetFactory(*args, **kwargs):
 
     if _data:
         return _formset(_data, prefix=_prefix)
-    elif _queryset:
+    else:  # elif _queryset:
         return _formset(queryset=_queryset, prefix=_prefix)

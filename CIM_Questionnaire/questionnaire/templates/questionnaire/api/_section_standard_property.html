@@ -1,6 +1,7 @@
 {% load questionnaire_filters %}
 
-<tr class="field" valign="top" name="{{property_customizer.name}}">
+{# this containing <tr> is actually set in "_section_standard_category_content" so that I can cycle odd/even #}
+{#<tr class="field" valign="top" name="{{property_customizer.name}}">#}
 
     {% if property_customizer.relationship_show_subform %}
 
@@ -34,4 +35,6 @@
     {% endif %} {# /relationship_show_subform #}
 
 
-</tr> <!-- /.field -->
+
+{# this containing <tr> is actually set in "_section_standard_category_content" so that I can cycle odd/even #}
+{#</tr> <!-- /.field -->#}

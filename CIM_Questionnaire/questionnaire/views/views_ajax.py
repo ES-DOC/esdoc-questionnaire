@@ -32,9 +32,9 @@ from CIM_Questionnaire.questionnaire.models.metadata_customizer import MetadataC
 from CIM_Questionnaire.questionnaire.models.metadata_vocabulary import MetadataVocabulary
 from CIM_Questionnaire.questionnaire.models.metadata_model import MetadataModel, MetadataStandardProperty
 from CIM_Questionnaire.questionnaire.forms.forms_customize import create_new_customizer_forms_from_models, create_existing_customizer_forms_from_models, create_customizer_forms_from_data, save_valid_forms
-from CIM_Questionnaire.questionnaire.forms.forms_categorize import MetadataScientificCategoryCustomizerForm, MetadataStandardCategoryCustomizerForm
 from CIM_Questionnaire.questionnaire.forms.forms_edit import create_new_edit_subforms_from_models, create_existing_edit_subforms_from_models, get_data_from_existing_edit_forms
-from CIM_Questionnaire.questionnaire.utils import QuestionnaireError, update_field_widget_attributes, set_field_widget_attributes
+from CIM_Questionnaire.questionnaire.utils import QuestionnaireError, update_field_widget_attributes, set_field_widget_attributes, pretty_string
+from CIM_Questionnaire.questionnaire.fields import SingleSelectWidget, MultipleSelectWidget
 from CIM_Questionnaire.questionnaire import get_version
 
 
@@ -54,6 +54,7 @@ def ajax_customize_subform(request, **kwargs):
     vocabularies = property_parent.vocabularies.none()  # using none() to avoid dealing w/ sci props
     project = property_parent.project
     version = property_parent.version
+    # give all this subform nonesense it's own unique prefix, so the fields aren't confused w/ the parent form fields
     subform_prefix = u"customize_subform_%s-%s" % (property_proxy.name, subform_id)
 
     customizer_filter_parameters = {
@@ -84,7 +85,7 @@ def ajax_customize_subform(request, **kwargs):
 
         if new_customizer:
 
-            (model_customizer_form, standard_property_customizer_formset, scientific_property_customizer_formsets, model_customizer_vocabularies_formset) = \
+            (model_customizer_form, standard_category_customizer_formset, standard_property_customizer_formset, scientific_category_customizer_formsets, scientific_property_customizer_formsets, model_customizer_vocabularies_formset) = \
                 create_new_customizer_forms_from_models(
                     model_customizer,
                     standard_category_customizers,
@@ -92,11 +93,12 @@ def ajax_customize_subform(request, **kwargs):
                     scientific_category_customizers,
                     scientific_property_customizers,
                     vocabularies_to_customize=vocabularies,
-                    is_subform=True
+                    is_subform=True,
+                    subform_prefix=subform_prefix,
                 )
 
         else:
-            (model_customizer_form, standard_property_customizer_formset, scientific_property_customizer_formsets, model_customizer_vocabularies_formset) = \
+            (model_customizer_form, standard_category_customizer_formset, standard_property_customizer_formset, scientific_category_customizer_formsets, scientific_property_customizer_formsets, model_customizer_vocabularies_formset) = \
                 create_existing_customizer_forms_from_models(
                     model_customizer,
                     standard_category_customizers,
@@ -104,25 +106,18 @@ def ajax_customize_subform(request, **kwargs):
                     scientific_category_customizers,
                     scientific_property_customizers,
                     vocabularies_to_customize=vocabularies,
-                    is_subform=True
+                    is_subform=True,
+                    subform_prefix=subform_prefix,
                 )
-
-        # give all this subform nonesense it's own unique prefix, so the fields aren't confused w/ the parent form fields
-        # TODO: AS WITH EDITING SUBFORMS, SHOULD JUST PASS "subform_prefix" AND DO THIS AUTOMATICALLY
-        model_customizer_form.prefix = subform_prefix
-        standard_property_customizer_formset.prefix = u"%s-%s" % (standard_property_customizer_formset.prefix, subform_prefix)
-        for scientific_property_customizer_formsets_dict in scientific_property_customizer_formsets.values():
-            for scientific_property_customizer_formset in scientific_property_customizer_formsets_dict.values():
-                scientific_property_customizer_formset.prefix = u"%s-%s" % (scientific_property_customizer_formset.prefix, subform_prefix)
 
         status = 200  # return successful response for GET (don't actually process this in the AJAX JQuery call)
         msg = None
 
     else:  # request.method == "POST":
 
-        data = request.POST
+        data = request.POST.copy()
 
-        (validity, model_customizer_form, standard_property_customizer_formset, scientific_property_customizer_formsets, model_customizer_vocabularies_formset) = \
+        (validity, model_customizer_form, standard_category_customizer_formset, standard_property_customizer_formset, scientific_category_customizer_formsets, scientific_property_customizer_formsets, model_customizer_vocabularies_formset) = \
             create_customizer_forms_from_data(
                 data,
                 model_customizer,
@@ -132,13 +127,12 @@ def ajax_customize_subform(request, **kwargs):
                 scientific_property_customizers,
                 vocabularies_to_customize=vocabularies,
                 is_subform=True,
-                subform_prefix=subform_prefix
+                subform_prefix=subform_prefix,
             )
 
         if all(validity):
 
-            model_customizer_instance = save_valid_forms(model_customizer_form, standard_property_customizer_formset, scientific_property_customizer_formsets, model_customizer_vocabularies_formset)
-
+            model_customizer_instance = save_valid_forms(model_customizer_form, standard_category_customizer_formset, standard_property_customizer_formset, scientific_category_customizer_formsets, scientific_property_customizer_formsets, model_customizer_vocabularies_formset)
             data = {
                 "subform_customizer_id": model_customizer_instance.pk,
                 "subform_customizer_name": u"%s" % model_customizer_instance,
@@ -179,13 +173,16 @@ def ajax_customize_subform(request, **kwargs):
         "site": get_current_site(request),
         "project": project,
         "version": version,
+        "vocabularies": vocabularies,
         "model_proxy": model_proxy,
         "parent_customizer": property_parent,
         "model_customizer_form": model_customizer_form,
         # vocabularies are not needed for subforms...
         # "model_customizer_vocabularies_formset": model_customizer_vocabularies_formset,
+        "standard_category_customizer_formset": standard_category_customizer_formset,
         "standard_property_customizer_formset": standard_property_customizer_formset,
         # scientific properties are not needed for subforms...
+        # "scientific_category_customizer_formsets": scientific_category_customizer_formsets,
         # "scientific_property_customizer_formsets" : scientific_property_customizer_formsets,
         "questionnaire_version": get_version(),
         "csrf_token_value": csrf_token_value,
@@ -196,52 +193,6 @@ def ajax_customize_subform(request, **kwargs):
     response["msg"] = msg
 
     return response
-
-
-def ajax_customize_category(request,category_id="",**kwargs):
-
-    category_name           = request.GET.get('n',None)
-    category_key            = request.GET.get('k',None)
-    category_description    = request.GET.get('d',None)
-    category_order          = request.GET.get('o',None)
-    category_class          = request.GET.get('m',None)
-
-    if not category_class:
-        msg = "unable to determine type of category (no class specified)"
-        raise QuestionnaireError(msg)
-
-    (category_app_name,category_model_name) = category_class.split(".")
-    
-    category_model = get_model(category_app_name,category_model_name)
-
-    if not category_model:
-        msg = "Unable to determine type of category (invalid class specified)"
-        raise QuestionnaireError(msg)
-
-    if category_model == MetadataStandardCategoryCustomizer:
-        category_form_class = MetadataStandardCategoryCustomizerForm
-    elif category_model == MetadataScientificCategoryCustomizer:
-        category_form_class = MetadataScientificCategoryCustomizerForm
-    else:
-        msg = "Invalid type of category specified."
-        raise QuestionnaireError(msg)
-    
-    temp_category = category_model(
-        name            = category_name,
-        key             = category_key,
-        description     = category_description,
-        order           = category_order,
-    )
-
-    category_form = category_form_class(instance=temp_category)
-
-    dict = {
-        "form"          : category_form,
-        "questionnaire_version" : get_version(),
-    }
-    
-    rendered_form = render_to_string("questionnaire/questionnaire_category.html", dictionary=dict, context_instance=RequestContext(request))
-    return HttpResponse(rendered_form,content_type='text/html')
 
 
 def ajax_select_realization(request, **kwargs):
@@ -279,12 +230,19 @@ def ajax_select_realization(request, **kwargs):
     empty_choice = [(empty_pk, "create a new instance")]
 
     class _RealizationSelectForm(forms.Form):
-        realizations = ChoiceField(choices=empty_choice+realization_choices, required=True, label=realization_customizer.model_title)
+
+        realizations = ChoiceField(
+            choices=empty_choice + realization_choices,
+            required=True,
+            label=pretty_string(realization_customizer.model_title),
+        )
 
         def __init__(self, *args, **kwargs):
             super(_RealizationSelectForm, self).__init__(*args, **kwargs)
-            update_field_widget_attributes(self.fields["realizations"], {"class": "multiselect"})
-            update_field_widget_attributes(self.fields["realizations"], {"class": "required"})
+            realizations_field = self.fields["realizations"]
+            realizations_field.initial = empty_pk
+            realizations_field.widget = SingleSelectWidget(choices=realizations_field.choices)
+            update_field_widget_attributes(self.fields["realizations"], {"class": "required multiselect single selection_required"})
 
     if request.method == "GET":
 

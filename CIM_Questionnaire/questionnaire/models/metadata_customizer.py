@@ -18,9 +18,10 @@ classes for model, category, and property customizers
 """
 
 from django.db import models
+from django.db.models import CASCADE, PROTECT, SET_NULL, SET_DEFAULT, DO_NOTHING
 from django.db.models.fields import FieldDoesNotExist
 from django.template.defaultfilters import slugify
-
+from django.utils.translation import ugettext_lazy as _
 from collections import OrderedDict
 from django.utils import timezone
 
@@ -40,7 +41,11 @@ class MetadataCustomizer(models.Model):
     last_modified = models.DateTimeField(blank=True, null=True, editable=False)
 
     def refresh(self):
-        """re-gets the model from the db"""
+        """re-gets the model from the db
+        re-gets the model from the db
+        (NOTE THAT THERE WILL BE A BUILT-IN DJANGO METHOD FOR THIS IN 1.8)
+        https://docs.djangoproject.com/en/dev/ref/models/instances/#refreshing-objects-from-database
+        """
         if not self.pk:
             return self
         return self.__class__.objects.get(pk=self.pk)
@@ -471,7 +476,7 @@ class MetadataStandardCategoryCustomizer(MetadataCategoryCustomizer):
         verbose_name_plural = '(DISABLE ADMIN ACCESS SOON) Metadata Standard Category Customizers'
 
         ordering = ['order']
-        unique_together = ("name","project","proxy","model_customizer")
+        unique_together = ("key", "project", "proxy", "model_customizer")
 
     model_customizer = models.ForeignKey("MetadataModelCustomizer", blank=True, null=True, related_name="standard_property_category_customizers")
 
@@ -541,7 +546,6 @@ class MetadataScientificCategoryCustomizer(MetadataCategoryCustomizer):
     order.help_text = "Drag and drop the corresponding category widget to modify its order."
 
     def __unicode__(self):
-        # return u'%s::%s' % (self.project,self.proxy)
         return u'%s' % self.name
 
     def __init__(self, *args, **kwargs):
@@ -602,8 +606,23 @@ class MetadataPropertyCustomizer(MetadataCustomizer):
     editable = models.BooleanField(default=True, blank=True, verbose_name="Can the value of this property be edited?")
     unique = models.BooleanField(default=False, blank=True, verbose_name="Must the value of this property be unique?")
     verbose_name = models.CharField(max_length=LIL_STRING, blank=False, verbose_name="How should this property be labeled (overrides default name)?")
-    default_value = models.CharField(max_length=BIG_STRING, blank=True, null=True, verbose_name="What is the default value of this property?")
-    documentation = models.TextField(blank=True, verbose_name="What is the help text to associate with this property?<div class='documentation'>Any initial help text comes from the CIM Schema or a CIM Controlled Vocabulary.</div>")
+    default_value = models.CharField(
+        max_length=BIG_STRING,
+        blank=True,
+        null=True,
+        verbose_name=_(
+            "What is the default value of this property?"
+            "<div class='documentation'>Note that this only applies to new and not existing documents</div>"
+        )
+    )
+    documentation = models.TextField(
+        blank=True,
+        verbose_name=_(
+            "What is the help text to associate with this property?"
+            "<div class='documentation'>Any initial help text comes from the CIM Schema or a CIM Controlled Vocabulary.</div>"
+            "<div class='documentation'>Note that basic HTML tags are supported.</div>"
+        )
+    )
     inline_help = models.BooleanField(default=False, blank=True, verbose_name="Should the help text be displayed inline?")
     
     
@@ -620,8 +639,27 @@ class MetadataStandardPropertyCustomizer(MetadataPropertyCustomizer):
     proxy = models.ForeignKey("MetadataStandardPropertyProxy", blank=True, null=True)
     model_customizer = models.ForeignKey("MetadataModelCustomizer", blank=False, null=True, related_name="standard_property_customizers")
 
-    category = models.ForeignKey("MetadataStandardCategoryCustomizer", blank=True, null=True, related_name="standard_property_customizers")
-    category_name = models.CharField(blank=True, null=True, max_length=BIG_STRING)
+    # category customizations are weird b/c they can be added and removed via JS
+    # this could have allowed the possibility of...
+    # 1) trying to set a category FK that does not yet exist, or
+    # 2) having a deleted category FK force deletion of this property customization
+    # to get around this, I...
+    # 1) use the "category_name" field to record the name of the category customization to use as the FK
+    # and then do the actual linking in a separate fn
+    # 2) ensure that on_delete is set to either "SET_NULL" or "DO_NOTHING" to prevent cascading deletes
+    # (I chose the former b/c DO_NOTHING may have cause db integrity errors)
+    category = models.ForeignKey(
+        "MetadataStandardCategoryCustomizer",
+        blank=True,
+        null=True,
+        on_delete=SET_NULL,
+        related_name="standard_property_customizers"
+    )
+    category_name = models.CharField(
+        blank=True,
+        null=True,
+        max_length=BIG_STRING
+    )
 
     inherited = models.BooleanField(default=False, blank=True, verbose_name="Can this property be inherited by children?")
     inherited.help_text = "Enabling inheritance will allow the correponding properties of child components to 'inherit' the value of this property.  The editing form will allow users the ability to 'opt-out' of this inheritance."
@@ -632,8 +670,8 @@ class MetadataStandardPropertyCustomizer(MetadataPropertyCustomizer):
                                    default=MetadataAtomicFieldTypes.DEFAULT.getType(),
                                    )
     atomic_type.help_text = "By default, all fields are rendered as strings.  However, a field can be customized to accept longer snippets of text, dates, email addresses, etc."
-    suggestions = models.TextField(blank=True, verbose_name="Are there any suggestions you would like to offer to users?")
-    suggestions.help_text = "Please enter a \"|\" separated list.  These suggestions will only take effect for text fields, in the case of Standard Properties, or for text fields or when \"OTHER\" is selected, in the case of Scientific Properties.  They appear as an auto-complete widget and not as a formal enumeration."
+    suggestions = models.TextField(blank=True, verbose_name="Are there any suggestions you would like to offer as auto-completion options?")
+    suggestions.help_text = "Please enter a \"|\" separated list of words or phrases.  These suggestions will only take effect for text fields in the case of atomic properties, or when \"OTHER\" is selected in the case of enumerations."
 
     # ways to customize an enumeration field
     enumeration_choices = EnumerationField(blank=True, null=True, verbose_name="Choose the property values that should be presented to users.")
@@ -738,15 +776,45 @@ class MetadataScientificPropertyCustomizer(MetadataPropertyCustomizer):
     model_key = models.CharField(blank=True, null=True, max_length=BIG_STRING)
 
     is_enumeration = models.BooleanField(blank=False, default=False)
-    
-    category = models.ForeignKey("MetadataScientificCategoryCustomizer", blank=True, null=True, related_name="scientific_property_customizers")
-    category_name = models.CharField(blank=True, null=True, max_length=BIG_STRING)
 
-    atomic_type = models.CharField(max_length=BIG_STRING, blank=True, verbose_name="How should this field be rendered?",
-                                   choices=[(ft.getType(), ft.getName()) for ft in MetadataAtomicFieldTypes],
-                                   default=MetadataAtomicFieldTypes.DEFAULT.getType(),
-                                   )
-    atomic_default = models.CharField(max_length=BIG_STRING, blank=True, null=True, verbose_name="What is the default value of this property?")
+    # category customizations are weird b/c they can be added and removed via JS
+    # this could have allowed the possibility of...
+    # 1) trying to set a category FK that does not yet exist, or
+    # 2) having a deleted category FK force deletion of this property customization
+    # to get around this, I...
+    # 1) use the "category_name" field to record the name of the category customization to use as the FK
+    # and then do the actual linking in a separate fn
+    # 2) ensure that on_delete is set to either "SET_NULL" or "DO_NOTHING" to prevent cascading deletes
+    # (I chose the former b/c DO_NOTHING may have cause db integrity errors)
+    category = models.ForeignKey(
+        "MetadataScientificCategoryCustomizer",
+        blank=True,
+        null=True,
+        on_delete=SET_NULL,
+        related_name="scientific_property_customizers"
+    )
+    category_name = models.CharField(
+        blank=True,
+        null=True,
+        max_length=BIG_STRING
+    )
+
+    atomic_type = models.CharField(
+        max_length=BIG_STRING,
+        blank=True,
+        verbose_name="How should this field be rendered?",
+        choices=[(ft.getType(), ft.getName()) for ft in MetadataAtomicFieldTypes],
+        default=MetadataAtomicFieldTypes.DEFAULT.getType(),
+    )
+    atomic_default = models.CharField(
+        max_length=BIG_STRING,
+        blank=True,
+        null=True,
+        verbose_name=_(
+            "What is the default value of this property?"
+            "<div class='documentation'>Note that this only applies to new and not existing documents</div>"
+        )
+    )
 
     enumeration_choices = EnumerationField(blank=True, null=True, verbose_name="Choose the property values that should be presented to users.")
     enumeration_default = EnumerationField(blank=True, null=True, verbose_name="Choose the default value(s), if any, for this property.")

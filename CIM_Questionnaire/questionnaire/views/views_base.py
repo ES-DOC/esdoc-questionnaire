@@ -20,7 +20,6 @@ Functions common to all views.
 from uuid import uuid4
 from django.core.cache import get_cache
 from CIM_Questionnaire.questionnaire.models import MetadataProject, MetadataVersion, MetadataCustomizer, MetadataModelCustomizer, MetadataModelProxy, MetadataModel
-from CIM_Questionnaire.questionnaire.utils import get_joined_keys_dict
 
 
 def validate_view_arguments(project_name="", model_name="", version_key=""):
@@ -56,6 +55,10 @@ def validate_view_arguments(project_name="", model_name="", version_key=""):
         msg = "Cannot find the <u>version</u> '%s'.  Has it been registered?" % version_key
         validity = False
         return (validity, project, version, model_proxy, msg)
+    if version.categorization is None:
+        msg = "The <u>version</u> '%s' has no categorization associated with it." % (version)
+        validity = False
+        return (validity, project, version, model_proxy, msg)
 
     # try to get the model (proxy)...
     try:
@@ -73,7 +76,33 @@ def validate_view_arguments(project_name="", model_name="", version_key=""):
 
 
 def validate_view_authentication(project, user):
+    # TODO!!
     pass
+
+
+def get_cached_new_customization_set(instance_key, project, ontolgoy, proxy, vocabularies):
+
+    cache = get_cache("default")
+    cached_customizer_set_key = u"%s_customizer_set" % instance_key
+
+    customizer_set = cache.get(cached_customizer_set_key)
+
+    if not customizer_set:
+
+        (model_customizer, standard_category_customizers, standard_property_customizers, scientific_category_customizers, scientific_property_customizers) = \
+            MetadataCustomizer.get_new_customizer_set(project, ontolgoy, proxy, vocabularies)
+
+        customizer_set = {
+            "model_customizer": model_customizer,
+            "standard_category_customizers": standard_category_customizers,
+            "standard_property_customizers": standard_property_customizers,
+            "scientific_category_customizers": scientific_category_customizers,
+            "scientific_property_customizers": scientific_property_customizers,
+        }
+
+        cache.set(cached_customizer_set_key, customizer_set)
+
+    return customizer_set
 
 
 def get_cached_existing_customization_set(session_id, model_customizer, vocabularies):
@@ -99,8 +128,11 @@ def get_cached_existing_customization_set(session_id, model_customizer, vocabula
             "model_customizer": model_customizer,
             "standard_category_customizers": standard_category_customizers,
             "standard_property_customizers": standard_property_customizers,
-            "scientific_category_customizers": get_joined_keys_dict(nested_scientific_category_customizers),
-            "scientific_property_customizers": get_joined_keys_dict(nested_scientific_property_customizers),
+            # this has been moved into the edit & view since this fn is used by the customizer views as well
+            # "scientific_category_customizers": get_joined_keys_dict(nested_scientific_category_customizers),
+            # "scientific_property_customizers": get_joined_keys_dict(nested_scientific_property_customizers),
+            "scientific_category_customizers": nested_scientific_category_customizers,
+            "scientific_property_customizers": nested_scientific_property_customizers,
         }
 
         cache.set(cached_customizer_set_key, customizer_set)

@@ -12,7 +12,8 @@ from django.core.cache import get_cache
 from django.core.management.color import no_style
 from django.db import models, connection, connections, DEFAULT_DB_ALIAS
 from django.db.models.query import QuerySet
-
+from django.forms.fields import MultiValueField
+from django.forms.models import BaseInlineFormSet
 from django.core.urlresolvers import reverse
 from django.contrib import messages
 
@@ -41,6 +42,86 @@ from CIM_Questionnaire.questionnaire.utils import add_parameters_to_url, get_for
 from CIM_Questionnaire.questionnaire.utils import CIM_DOCUMENT_TYPES
 from CIM_Questionnaire.questionnaire.utils import APP_LABEL
 
+
+###########################################
+# some utility fns to get data from forms #
+# (even if they aren't MetadataForms)     #
+
+###########################################
+
+def get_data_from_form(form, existing_data={}):
+
+    data = {}
+
+    form_prefix = form.prefix
+    for field_name, field in form.fields.iteritems():
+
+        if form_prefix:
+            field_key = u"%s-%s" % (form_prefix, field_name)
+        else:
+            field_key = field_name
+
+        if field_name in existing_data:
+            field_value = existing_data[field_name]
+
+        else:
+            try:
+                field_value = form.data[field_key]
+            except KeyError:
+                field_value = field.initial
+                # try:
+                #     field_value = form.initial[field_name]
+                # except KeyError:
+                #     msg = "unable to find %s in %s" % (field_key, form)
+                #     raise KeyError(msg)
+
+        if isinstance(field, MultiValueField) and isinstance(field_value, list):
+            for i, v in enumerate(field_value):
+                data[u"%s_%s" % (field_key, i)] = v
+        else:
+            data[field_key] = field_value
+
+    return data
+
+
+def get_data_from_formset(formset, existing_data={}):
+
+    data = {}
+    current_data = {}
+
+    for form in formset:
+        current_data.clear()
+        current_data.update(existing_data)
+
+        # (the hidden pk & fk fields do not get passed in via the queryset for existing model formsets)
+        pk_field_name = formset.model._meta.pk.name
+        current_data[pk_field_name] = form.fields[pk_field_name].initial
+        if isinstance(formset, BaseInlineFormSet):
+            fk_field_name = formset.fk.name
+            current_data[fk_field_name] = form.fields[fk_field_name].initial
+
+        if formset.can_delete:
+            current_data["DELETE"] = False
+
+        form_data = get_data_from_form(form, current_data)
+        data.update(form_data)
+
+    formset_prefix = formset.prefix
+    if formset_prefix:
+        total_forms_key = u"%s-TOTAL_FORMS" % formset_prefix
+        initial_forms_key = u"%s-INITIAL_FORMS" % formset_prefix
+    else:
+        total_forms_key = u"TOTAL_FORMS"
+        initial_forms_key = u"INITIAL_FORMS"
+    data[total_forms_key] = formset.total_form_count()
+    data[initial_forms_key] = formset.initial_form_count()
+
+    return data
+
+
+###############################################
+# models used for test-specific functionality #
+###############################################
 
 class TestModel(models.Model):
     """
@@ -94,6 +175,12 @@ class TestModel(models.Model):
         )
         return form_data
 
+
+##########################################
+# a way of testing the number of queries #
+# performed during an operation          #
+##########################################
+
 class QueryCounter(CaptureQueriesContext):
     """ provides a context manager for me to keep track of the number of queries
         (not to be confused w/ assertNumQueries)
@@ -120,6 +207,10 @@ class QueryCounter(CaptureQueriesContext):
         except AttributeError:
             return 0
 
+
+##############################
+# the actual base test class #
+##############################
 
 class TestQuestionnaireBase(TestCase):
 
