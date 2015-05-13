@@ -111,6 +111,15 @@ def save_valid_categories_formset(categories_formset):
         fk_field_name = categories_formset.fk.name
         fk_model = getattr(category_instance, fk_field_name)
         setattr(category_instance, fk_field_name, fk_model)
+
+        # TODO: THIS CAN BE REMOVED ONCE ISSUE #318 IS FIXED
+        msg = _("The project this category is bound to does not match the project of the parent customization."
+                "  (See issue #318.)"
+                )
+        parent_project = category_instance.model_customizer.project
+        category_project = category_instance.project
+        assert category_project == parent_project, msg
+
         category_instance.save()
 
         category_instances.append(category_instance)
@@ -147,6 +156,17 @@ class MetadataCategoryCustomizerForm(MetadataCustomizerForm):
         if cleaned_data["name"] == NEW_CATEGORY_NAME:
             self._errors["name"] = ErrorList()
             self._errors["name"].append("Please change the name.")
+
+        # TODO: THIS CAN BE REMOVED ONCE ISSUE #318 IS FIXED
+        try:
+            msg = _("The project this category is bound to does not match the project of the parent customization."
+                    "  (See issue #318.)"
+                    )
+            parent_project = cleaned_data["model_customizer"].project
+            category_project = cleaned_data["project"]
+            assert category_project == parent_project, msg
+        except KeyError:
+            pass
 
         return cleaned_data
 
