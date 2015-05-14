@@ -252,11 +252,12 @@ class TestQuestionnaireBase(TestCase):
         self.atmosphere_vocabulary = MetadataVocabulary.objects.get(name__iexact="atmosphere")
         self.landsurface_vocabulary = MetadataVocabulary.objects.get(name__iexact="landsurface")
         self.statisticaldownscaling_vocabulary = MetadataVocabulary.objects.get(name__iexact="statisticaldownscaling")
+        self.couplingtechnology_vocabulary = MetadataVocabulary.objects.get(name__iexact="couplingtechnology")
 
         self.downscaling_project = MetadataProject.objects.get(name="downscaling")
         downscaling_model_component_customizer = MetadataModelCustomizer.objects.get(project=self.downscaling_project, proxy=self.model_component_proxy, name="default")
         downscaling_model_component_customizer_with_subforms = MetadataModelCustomizer.objects.get(project=self.downscaling_project, proxy=self.model_component_proxy, name="subforms")
-        self.downscaling_model_component_vocabularies = downscaling_model_component_customizer.vocabularies.all()
+        self.downscaling_model_component_vocabularies = downscaling_model_component_customizer.get_sorted_vocabularies()
 
         (model_customizer, standard_category_customizers, standard_property_customizers, nested_scientific_category_customizers, nested_scientific_property_customizers) = \
             MetadataCustomizer.get_existing_customizer_set(downscaling_model_component_customizer, self.downscaling_model_component_vocabularies)
@@ -291,6 +292,37 @@ class TestQuestionnaireBase(TestCase):
             MetadataModel.get_existing_realization_set(downscaling_model_component_realizations, self.downscaling_model_component_customizer_set["model_customizer"], vocabularies=self.downscaling_model_component_vocabularies)
 
         self.downscaling_model_component_realization_set = {
+            "models": models,
+            "standard_properties": standard_properties,
+            "scientific_properties": scientific_properties,
+        }
+
+        self.esfdl_project = MetadataProject.objects.get(name="es-fdl")
+        esfdl_model_component_customizer = MetadataModelCustomizer.objects.get(project=self.esfdl_project, proxy=self.model_component_proxy, name="test")
+        self.esfdl_model_component_vocabularies = esfdl_model_component_customizer.get_sorted_vocabularies()
+
+        (model_customizer, standard_category_customizers, standard_property_customizers, nested_scientific_category_customizers, nested_scientific_property_customizers) = \
+            MetadataCustomizer.get_existing_customizer_set(esfdl_model_component_customizer, self.esfdl_model_component_vocabularies)
+
+        self.esfdl_model_component_customizer_set = {
+            "model_customizer": model_customizer,
+            "standard_category_customizers": standard_category_customizers,
+            "standard_property_customizers": standard_property_customizers,
+            "scientific_category_customizers": get_joined_keys_dict(nested_scientific_category_customizers),
+            "scientific_property_customizers": get_joined_keys_dict(nested_scientific_property_customizers),
+        }
+
+        self.esfdl_model_component_proxy_set = {
+            "model_proxy": self.model_component_proxy,
+            "standard_property_proxies": [standard_property_customizer.proxy for standard_property_customizer in self.esfdl_model_component_customizer_set["standard_property_customizers"]],
+            "scientific_property_proxies": {key: [spc.proxy for spc in value] for key, value in self.esfdl_model_component_customizer_set["scientific_property_customizers"].items()},
+        }
+
+        esfdl_model_component_realizations = MetadataModel.objects.filter(project=self.esfdl_project)
+        (models, standard_properties, scientific_properties) = \
+            MetadataModel.get_existing_realization_set(esfdl_model_component_realizations, self.esfdl_model_component_customizer_set["model_customizer"], vocabularies=self.esfdl_model_component_vocabularies)
+
+        self.esfdl_model_component_realization_set = {
             "models": models,
             "standard_properties": standard_properties,
             "scientific_properties": scientific_properties,
