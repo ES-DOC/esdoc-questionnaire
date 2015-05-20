@@ -381,6 +381,11 @@
                                                     {{ existing_customization_form.id }}
                                                     {{ existing_customization_form.selected }}
                                                     <input class="button smaller" id="id_{{ existing_customization_form.prefix }}-edit" name="{{ existing_customization_formset.prefix }}-edit" type="submit" value="customize" onclick="set_checkbox_by_id(this);"/>
+                                                    {% if can_delete %}
+                                                        {% if not existing_customization_form.is_default %}
+                                                            <input class="button smaller" id="id_{{ existing_customization_form.prefix }}-delete" name="{{ existing_customization_formset.prefix }}-delete" type="submit" value="delete" onclick="set_checkbox_by_id(this);"/>
+                                                        {% endif %}
+                                                    {% endif %} {# can_delete #}
                                                 </td>
                                             {% endwith %} {# /model #}
                                         </tr>

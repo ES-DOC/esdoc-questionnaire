@@ -257,6 +257,20 @@ class MetadataCustomizer(models.Model):
                     scientific_property_customizer.model_customizer = model_customizer
                     scientific_property_customizer.save()
 
+    @classmethod
+    def remove_customizer_set(cls, model_customizer):
+
+        # you should not be removing the default customization
+        assert not model_customizer.default
+
+        project = model_customizer.project
+        customizer_name = model_customizer.name
+
+        model_customizers_to_delete = MetadataModelCustomizer.objects.filter(project=project, name=customizer_name)
+        for model_customizer_to_delete in model_customizers_to_delete:
+            # the "on_delete" argument ensures that all related standard/scientific categories/properties will be deleted as well
+            model_customizer_to_delete.delete()
+
     def get_unique_together(self):
         # This fn is required because 'unique_together' validation is only enforced at the modelform
         # if all unique_together fields appear in the modelform; If not, I have to manually validate

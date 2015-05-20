@@ -17,12 +17,47 @@ __date__ = "Dec 01, 2014 3:00:00 PM"
 Tests the MetadataCustomizer models
 """
 
+from django.core.exceptions import ObjectDoesNotExist
+
 from CIM_Questionnaire.questionnaire.tests.test_base import TestQuestionnaireBase
 from CIM_Questionnaire.questionnaire.models.metadata_customizer import *
 from CIM_Questionnaire.questionnaire.models.metadata_proxy import MetadataModelProxy
 
 
 class TestMetadataCustomizer(TestQuestionnaireBase):
+
+    def test_remove_customizer_set(self):
+
+        test_customizer = self.downscaling_model_component_customizer_set_with_subforms["model_customizer"]
+
+        model_customizer_pk_list = []
+        standard_category_customizer_pk_list = []
+        standard_property_customizer_pk_list = []
+        scientific_category_customizer_pk_list = []
+        scientific_property_customizer_pk_list = []
+
+        project = test_customizer.project
+        customizer_name = test_customizer.name
+        model_customizers_to_delete = MetadataModelCustomizer.objects.filter(project=project, name=customizer_name)
+        for model_customizer_to_delete in model_customizers_to_delete:
+            model_customizer_pk_list.append(model_customizer_to_delete.pk)
+            standard_category_customizer_pk_list += [standard_category_customizer.pk for standard_category_customizer in model_customizer_to_delete.standard_property_category_customizers.all()]
+            standard_property_customizer_pk_list += [standard_property_customizer.pk for standard_property_customizer in model_customizer_to_delete.standard_property_customizers.all()]
+            scientific_category_customizer_pk_list += [scientific_category_customizer.pk for scientific_category_customizer in model_customizer_to_delete.scientific_property_category_customizers.all()]
+            scientific_property_customizer_pk_list += [scientific_property_customizer.pk for scientific_property_customizer in model_customizer_to_delete.scientific_property_customizers.all()]
+
+        MetadataCustomizer.remove_customizer_set(test_customizer)
+
+        for model_customizer_pk in model_customizer_pk_list:
+            self.assertRaises(ObjectDoesNotExist, MetadataModelCustomizer.objects.get, pk=model_customizer_pk)
+        for standard_category_customizer_pk in standard_category_customizer_pk_list:
+            self.assertRaises(ObjectDoesNotExist, MetadataStandardCategoryCustomizer.objects.get, pk=standard_category_customizer_pk)
+        for standard_property_customizer_pk in standard_property_customizer_pk_list:
+            self.assertRaises(ObjectDoesNotExist, MetadataStandardPropertyCustomizer.objects.get, pk=standard_property_customizer_pk)
+        for scientific_category_customizer_pk in scientific_category_customizer_pk_list:
+            self.assertRaises(ObjectDoesNotExist, MetadataScientificCategoryCustomizer.objects.get, pk=scientific_category_customizer_pk)
+        for scientific_property_customizer_pk in scientific_property_customizer_pk_list:
+            self.assertRaises(ObjectDoesNotExist, MetadataScientificPropertyCustomizer.objects.get, pk=scientific_property_customizer_pk)
 
     def test_get_multiple_existing_customizer_sets(self):
 

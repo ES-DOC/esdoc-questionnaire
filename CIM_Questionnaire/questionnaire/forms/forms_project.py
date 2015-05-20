@@ -88,13 +88,20 @@ class ExistingCustomizationForm(ExistingModelForm):
         model = MetadataModelCustomizer
         fields = ["id", "selected", ]  # not sure why "id" is required, but it is
 
+    def is_default(self):
+
+        model = self.instance
+        assert model is not None
+
+        return model.default
+
     def get_label(self):
 
         model = self.instance
         assert model is not None
 
         label_string = model.name
-        if model.default:
+        if self.is_default():
             label_string += "&nbsp;*"
 
         return SafeString(label_string)

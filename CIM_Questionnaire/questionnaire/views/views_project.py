@@ -32,7 +32,7 @@ from CIM_Questionnaire.questionnaire.models.metadata_authentication import is_us
 from CIM_Questionnaire.questionnaire.models.metadata_project import MetadataProject
 from CIM_Questionnaire.questionnaire.models.metadata_proxy import MetadataModelProxy
 from CIM_Questionnaire.questionnaire.models.metadata_version import MetadataVersion
-from CIM_Questionnaire.questionnaire.models.metadata_customizer import MetadataModelCustomizer
+from CIM_Questionnaire.questionnaire.models.metadata_customizer import MetadataCustomizer, MetadataModelCustomizer
 from CIM_Questionnaire.questionnaire.models.metadata_model import MetadataModel
 from CIM_Questionnaire.questionnaire.views.views_error import questionnaire_error
 from CIM_Questionnaire.questionnaire.utils import SUPPORTED_DOCUMENTS, pretty_string
@@ -73,6 +73,7 @@ def questionnaire_project_index(request, project_name=""):
     can_edit = is_user_of(current_user, project) or not project_authenticated
     can_view = True
     can_join = not is_member_of(current_user, project) and current_user.is_authenticated()
+    can_delete =  current_user.is_superuser
 
     # get the querysets...
     all_ontologies = MetadataVersion.objects.filter(registered=True).order_by("key")
@@ -188,6 +189,23 @@ def questionnaire_project_index(request, project_name=""):
                 })
                 return redirect(url)
 
+        elif u"%s-delete" % existing_customization_formset.prefix in data:
+            if existing_customization_formset.is_valid():
+                selected_form = existing_customization_formset.find_selected_form()
+                customization = selected_form.instance
+                customization_name = customization.name
+
+                MetadataCustomizer.remove_customizer_set(customization)
+
+                msg = u"Successfully deleted customization \"%s.\"" % customization_name
+                messages.add_message(request, messages.SUCCESS, msg)
+
+                # reload this page w/ the new db state...
+                url = reverse("project_index", kwargs={
+                    "project_name": project.name,
+                })
+                return redirect(url)
+
         elif "project_join" in data:
 
             project_join_success = questionnaire_project_join_request(current_user, project, current_site)
@@ -209,6 +227,7 @@ def questionnaire_project_index(request, project_name=""):
         "can_view": can_view,
         "can_edit": can_edit,
         "can_customize": can_customize,
+        "can_delete": can_delete,
         "has_published": all_models.filter(is_published=True).count() > 0,
         "document_options": json.dumps(ontology_document_dict),
         "new_document_form": new_document_form,
