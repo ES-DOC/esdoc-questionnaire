@@ -4,7 +4,6 @@ __author__ = "allyn.treshansky"
 __date__ = "$Jan 15, 2014 15:28:06 PM$"
 
 import os
-import cProfile
 
 
 def update_db(sender, **kwargs):
@@ -62,7 +61,7 @@ if __name__ == "__main__":
     profiling_test_runner = ProfilingTestRunner()
     profiling_test_runner.setup_databases()
 
-    from CIM_Questionnaire.questionnaire.tests.test_views.test_views_customize import Test as CustomizeTest
+    from CIM_Questionnaire.questionnaire.tests.tests_unit.test_views.test_views_customize import Test as CustomizeTest
     customize_tests = [ "test_validate_view_arguments" ]
 
     test_suite = profiling_test_runner.TestSuite()

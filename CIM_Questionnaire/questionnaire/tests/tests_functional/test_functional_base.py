@@ -37,14 +37,14 @@ class TestFunctionalBase(LiveServerTestCase):
 
     @classmethod
     def setUpClass(cls):
-        super(TestFunctionalBase, cls).setUpClass()
         cls.selenium = WebDriver()
         cls.selenium.implicitly_wait(TEST_TIMEOUT)
+        super(TestFunctionalBase, cls).setUpClass()
 
     @classmethod
     def tearDownClass(cls):
-        super(TestFunctionalBase, cls).tearDownClass()
         cls.selenium.quit()
+        super(TestFunctionalBase, cls).tearDownClass()
 
     # I SUPSECT THAT THINGS MIGHT GO A BIT WONKY
     # B/C OF THE AMOUNT OF JQUERY LOADING & AJAX STUFF THAT THE APP DOES;
@@ -76,21 +76,34 @@ class TestFunctionalBase(LiveServerTestCase):
     # https://code.google.com/p/selenium/wiki/FrequentlyAskedQuestions#Q:_WebDriver_fails_to_find_elements_/_Does_not_block_on_page_loa
     # http://selenide.org/
 
-    ############################################################
-    # fns to hide whatever test domain LiveServerTestCase uses #
-    ############################################################
+    #######################################################################
+    # fns to hide details of whatever test domain LiveServerTestCase uses #
+    #######################################################################
 
-    def get_url(self, path):
+    def get_url(self, path=""):
+        """
+        returns a URL to use w/ tests
+        :param path: path to append after the protocol+domain+port
+        :return:
+        """
         url = u"%s/%s" % (self.live_server_url, path.lstrip("/"))
         return url
 
     def set_url(self, path):
+        """
+        :param path: path to goto
+        :return: None
+        """
         if "//" in path:
             self.selenium.get(path)
         else:
             self.selenium.get(self.get_url(path))
 
     def assertURL(self, path):
+        """
+        :param path: asserts path matches the current url
+        :return:
+        """
         msg = "URLs do not match"
 
         current_url = self.selenium.current_url.rstrip("/")
@@ -102,12 +115,13 @@ class TestFunctionalBase(LiveServerTestCase):
 
         self.assertEqual(test_url, current_url, msg=msg)
 
-    ##################################
-    # checking generic custom widget #
-    ##################################
+    ###################################
+    # checking generic custom widgets #
+    ###################################
 
     def is_initialized(self, webelement):
         """
+        checks if widget has been initialized via JS
         :param webelement: selenium webelement representing widget
         :return: boolean
         """
@@ -129,7 +143,7 @@ class TestFunctionalBase(LiveServerTestCase):
         multiselect_classes = webelement.get_attribute("class").split(" ")
         return "single" in multiselect_classes
 
-    def is_multiselect_single(self, webelement):
+    def is_multiselect_multiple(self, webelement):
         """
         :param webelement: selenium webelement representing multiselect widget
         :return: boolean
@@ -220,5 +234,3 @@ class TestFunctionalBase(LiveServerTestCase):
         help_dialog_close_button = help_dialog.find_element_by_xpath("../div/button")
         help_dialog_close_button.click()
         self.assertFalse(help_dialog.is_displayed(), msg=msg)
-
-
