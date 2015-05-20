@@ -274,19 +274,135 @@
         </model>
         <model>
             <name>platform</name>
-            <fields/>
+            <fields>
+                <field>
+                    <name>shortName</name>
+                    <category_key>basic-properties</category_key>
+                </field>
+                <field>
+                    <name>longName</name>
+                    <category_key>basic-properties</category_key>
+                </field>
+                <field>
+                    <name>description</name>
+                    <category_key>basic-properties</category_key>
+                </field>
+                <field>
+                    <name>contact</name>
+                    <category_key>basic-properties</category_key>
+                </field>
+                <field>
+                    <name>unit</name>
+                    <category_key>component-description</category_key>
+                </field>
+                <field>
+                    <name>documentStatus</name>
+                    <category_key>document-properties</category_key>
+                </field>
+                <field>
+                    <name>documentAuthor</name>
+                    <category_key>document-properties</category_key>
+                </field>
+                <field>
+                    <name>documentCreationDate</name>
+                    <category_key>document-properties</category_key>
+                </field>
+            </fields>
         </model>
         <model>
             <name>machineCompilerUnit</name>
-            <fields/>
+            <fields>
+                <field>
+                    <name>machine</name>
+                    <category_key>component-description</category_key>
+                </field>
+                <field>
+                    <name>compiler</name>
+                    <category_key>component-description</category_key>
+                </field>
+            </fields>
         </model>
         <model>
             <name>machine</name>
-            <fields/>
+            <fields>
+                <field>
+                    <name>machineType</name>                 
+                    <category_key>component-description</category_key>
+                </field>
+                <field>
+                    <name>machineName</name>
+                    <category_key>basic-properties</category_key>
+                </field>
+                <field>
+                    <name>machineSystem</name>
+                    <category_key>component-description</category_key>
+                </field>
+                <field>
+                    <name>machineLibrary</name>
+                    <category_key>component-description</category_key>
+                </field>
+                <field>
+                    <name>machineDescription</name>
+                    <category_key>basic-properties</category_key>
+                </field>
+                <field>
+                    <name>machineLocation</name>
+                    <category_key>component-description</category_key>
+                </field>
+                <field>
+                    <name>machineOperatingSystem</name>
+                    <category_key>component-description</category_key>
+                </field>
+                <field>
+                    <name>machineVendor</name>
+                    <category_key>component-description</category_key>
+                </field>
+                <field>
+                    <name>machineInterconnect</name>
+                    <category_key>component-description</category_key>
+                </field>
+                <field>
+                    <name>machineMaximumProcessors</name>
+                    <category_key>component-description</category_key>
+                </field>
+                <field>
+                    <name>machineCoresPerProcessor</name>
+                    <category_key>component-description</category_key>
+                </field>
+                <field>
+                    <name>machineProcessorType</name>
+                    <category_key>component-description</category_key>
+                </field>                
+            </fields>
         </model>
         <model>
             <name>compiler</name>
-            <fields/>
+            <fields>
+                <field>
+                    <name>name</name>
+                    <category_key>basic-properties</category_key>                    
+                </field>
+                <field>
+                    <name>version</name>
+                    <category_key>basic-properties</category_key>
+                </field>
+                <field>
+                    <name>language</name>
+                    <category_key>component-description</category_key>                    
+                </field>
+                <field>
+                    <name>compilerType</name>
+                    <category_key>component-description</category_key>                    
+                </field>
+                <field>
+                    <name>compilerOptions</name>
+                    <category_key>component-description</category_key>                    
+                </field>
+                <field>
+                    <name>compilerEnvironmentVariables</name>
+                    <category_key>component-description</category_key>                    
+                </field>
+            </fields>
         </model>
         <model>
             <name>simulationRun</name>

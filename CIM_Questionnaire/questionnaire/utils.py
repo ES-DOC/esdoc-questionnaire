@@ -115,12 +115,14 @@ CIM_DOCUMENT_TYPES = [
     "modelcomponent",
     "statisticalmodelcomponent",
     "experiment",
+    "platform",
 ]
 
 #: the set of document types that can be fully processed (ie: end-to-end) by the questionnaire
 SUPPORTED_DOCUMENTS = [
     "modelcomponent",
     "statisticalmodelcomponent",
+    "platform",
 ]
 
 #: keys to use for cases where a model has no vocabulary, or where it is the root component of several vocabularies
