@@ -20,6 +20,7 @@ Django settings for CIM_Questionnaire project.
 from ConfigParser import SafeConfigParser
 from django.conf.global_settings import TEMPLATE_CONTEXT_PROCESSORS
 import os
+import sys
 
 rel = lambda *x: os.path.join(os.path.abspath(os.path.dirname(__file__)), *x)
 
@@ -47,16 +48,37 @@ EMAIL_HOST_PASSWORD = parser.get('email', 'password')
 EMAIL_USE_TLS = True
 
 # DB SETTINGS
-DATABASES = {
-    'default': {
-        'ENGINE': parser.get('database', 'engine'),
-        'NAME': parser.get('database', 'name'),
-        'USER': parser.get('database', 'user'),
-        'PASSWORD': parser.get('database', 'password', raw=True),
-        'HOST': parser.get('database', 'host'),
-        'PORT': parser.get('database', 'port'),
+
+if 'test' not in sys.argv:
+
+    DATABASES = {
+        'default': {
+            'ENGINE': parser.get('database', 'engine'),
+            'NAME': parser.get('database', 'name'),
+            'USER': parser.get('database', 'user'),
+            'PASSWORD': parser.get('database', 'password', raw=True),
+            'HOST': parser.get('database', 'host'),
+            'PORT': parser.get('database', 'port'),
+        }
     }
-}
+
+
+else:
+
+    # actually testing postgres is  r e a l l y  s l o w
+    # so, for most testing, just use sqlite3
+
+    DATABASES = {
+        'default':  {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': rel("questionnaire/tests/db/questionnaire_testdata.db")
+        }
+    }
+
+    # also, don't automatically update migrations during testing; this allows me to load fixtures easily
+    # however, it also means I have to recreate those fixtures as migrations change or are added
+    # (see http://south.readthedocs.org/en/latest/settings.html#south-tests-migrate for more info)
+    SOUTH_TESTS_MIGRATE = False
 
 # Hosts/domain names that are valid for this site; required if DEBUG is False
 # See https://docs.djangoproject.com/en/1.5/ref/settings/#allowed-hosts
@@ -207,7 +229,7 @@ INSTALLED_APPS = (
     # viewing remote mindmaps...
     'mindmaps',
     # old apps from DCMIP-2012...
-    #'django_cim_forms', 'django_cim_forms.cim_1_5', 'dycore',
+    'django_cim_forms', 'django_cim_forms.cim_1_5', 'dycore',
     # old apps from QED...
     #'dcf', 'dcf.cim_1_8_1',
 )
@@ -223,7 +245,7 @@ OPTIONAL_INSTALLED_APPS = [
 ]
 
 for optional_app in OPTIONAL_INSTALLED_APPS:
-    if optional_app.get("condition",False):
+    if optional_app.get("condition", False):
     #     try:
     #         __import__(optional_app["import"])
     #     except ImportError:
@@ -233,7 +255,7 @@ for optional_app in OPTIONAL_INSTALLED_APPS:
         # django is pretty ridiculous
         # the order of entries in middleware is very important
         # so rather than append this middleware, insert it as the next-to-last one
-        #MIDDLEWARE_CLASSES += optional_app.get("middleware", ())
+        # MIDDLEWARE_CLASSES += optional_app.get("middleware", ())
         MIDDLEWARE_CLASSES = MIDDLEWARE_CLASSES[0:-1] + optional_app.get("middleware", ()) + (MIDDLEWARE_CLASSES[-1],)
 
 #################
@@ -241,16 +263,14 @@ for optional_app in OPTIONAL_INSTALLED_APPS:
 #################
 
 SESSION_SERIALIZER = 'django.contrib.sessions.serializers.JSONSerializer'
-SESSION_SAVE_EVERY_REQUEST = True  # forces session to have key even if it has been unchanged (session keys are used to prefix cache instances)
+SESSION_SAVE_EVERY_REQUEST = True   # forces session to have key even if it has been unchanged (session keys are used to prefix cache instances)
 
 # TODO: DECIDE ONCE AND FOR ALL WHETHER TO STORE SESSION VARIABLES VIA COOKIES, CACHE, DB, OR FILE
 # SESSION_ENGINE = 'django.contrib.sessions.backends.signed_cookies'
 # SESSION_COOKIE_HTTPONLY = True
 SESSION_ENGINE = 'django.contrib.sessions.backends.cached_db'
 
-
 DEFAULT_CACHE_PORT = "11211"  # (standard memcached port)
-
 if parser.has_option("cache", "host"):
     CACHE_HOST = parser.get('cache', 'host')
 else:
@@ -292,36 +312,38 @@ if not test_cache.get(test_cache_key):
 # fixing known django / south / postgres issue #
 ################################################
 
-# before proceeding after the syncdb call
-# increase the size of the "name" field in auth_permission if needed
+if "psycopg2" in DATABASES["default"]["ENGINE"]:
 
-try:
+    # before proceeding after the syncdb call
+    # increase the size of the "name" field in auth_permission if needed
 
-    from django.db.models.signals import post_syncdb
-    from django.db import connection
+    try:
 
-    from django.contrib.auth.models import Permission
+        from django.db.models.signals import post_syncdb
+        from django.db import connection
 
-    def update_db(sender, **kwargs):
+        from django.contrib.auth.models import Permission
 
-        # when the 1st APP tries to sync,
-        # check if auth_permission_name is too small;
-        # if so, increase the column size
-        if kwargs['app'].__name__ == INSTALLED_APPS[0] + ".models":
-            auth_permission_name = Permission._meta.get_field_by_name("name")[0]
-            if auth_permission_name.max_length < 100:
+        def update_db(sender, **kwargs):
 
-                cursor = connection.cursor()
+            # when the 1st APP tries to sync,
+            # check if auth_permission_name is too small;
+            # if so, increase the column size
+            if kwargs['app'].__name__ == INSTALLED_APPS[0] + ".models":
+                auth_permission_name = Permission._meta.get_field_by_name("name")[0]
+                if auth_permission_name.max_length < 100:
 
-                cursor.execute("ALTER TABLE auth_permission DROP COLUMN name;")
-                cursor.execute("ALTER TABLE auth_permission ADD COLUMN name character varying(100);")
+                    cursor = connection.cursor()
 
-    post_syncdb.connect(update_db)
+                    cursor.execute("ALTER TABLE auth_permission DROP COLUMN name;")
+                    cursor.execute("ALTER TABLE auth_permission ADD COLUMN name character varying(100);")
 
-except ImportError:
-    # sometimes this module gets loaded outside of the full django framework
-    # (as w/ the db scripts)
-    pass
+        post_syncdb.connect(update_db)
+
+    except ImportError:
+        # sometimes this module gets loaded outside of the full django framework
+        # (as w/ the db scripts)
+        pass
 
 
 # A sample logging configuration. The only tangible logging
@@ -352,16 +374,6 @@ LOGGING = {
         },
     }
 }
-
-###########
-# testing #
-###########
-
-# don't automatically update migrations during testing
-# this allows me to load fixtures easily
-# however, it also means I have to recreate those fixtures as migrations change or are added
-# (see http://south.readthedocs.org/en/latest/settings.html#south-tests-migrate for more info)
-#SOUTH_TESTS_MIGRATE = False
 
 #########################
 # debugging & profiling #
