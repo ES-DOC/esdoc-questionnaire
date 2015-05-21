@@ -19,7 +19,25 @@ base class for functional tests; provides LiveServerTestCase
 """
 
 from django.test import LiveServerTestCase
-from selenium.webdriver.firefox.webdriver import WebDriver
+from django.core.exceptions import ImproperlyConfigured
+import os
+
+# test browser can be specified in environment variables
+try:
+    TEST_BROWSER = os.environ["TEST_BROWSER"].lower()
+except KeyError:
+    TEST_BROWSER = "firefox"
+if TEST_BROWSER == "firefox":
+    from selenium.webdriver.firefox.webdriver import WebDriver
+elif TEST_BROWSER == "chrome" or TEST_BROWSER == "chromium":
+    from selenium.webdriver.chrome.webdriver import WebDriver
+elif TEST_BROWSER == "safari":
+    from selenium.webdriver.safari.webdriver import WebDriver
+elif TEST_BROWSER == "opera":
+    from selenium.webdriver.opera.webdriver import WebDriver
+else:
+    msg = u"unknown test browser: '%s'" % TEST_BROWSER
+    raise ImproperlyConfigured(msg)
 
 
 TEST_TIMEOUT = 10  # seconds
@@ -37,13 +55,13 @@ class TestFunctionalBase(LiveServerTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.selenium = WebDriver()
-        cls.selenium.implicitly_wait(TEST_TIMEOUT)
+        cls.webdriver = WebDriver()
+        cls.webdriver.implicitly_wait(TEST_TIMEOUT)
         super(TestFunctionalBase, cls).setUpClass()
 
     @classmethod
     def tearDownClass(cls):
-        cls.selenium.quit()
+        cls.webdriver.quit()
         super(TestFunctionalBase, cls).tearDownClass()
 
     # I SUPSECT THAT THINGS MIGHT GO A BIT WONKY
@@ -95,9 +113,9 @@ class TestFunctionalBase(LiveServerTestCase):
         :return: None
         """
         if "//" in path:
-            self.selenium.get(path)
+            self.webdriver.get(path)
         else:
-            self.selenium.get(self.get_url(path))
+            self.webdriver.get(self.get_url(path))
 
     def assertURL(self, path):
         """
@@ -106,7 +124,7 @@ class TestFunctionalBase(LiveServerTestCase):
         """
         msg = "URLs do not match"
 
-        current_url = self.selenium.current_url.rstrip("/")
+        current_url = self.webdriver.current_url.rstrip("/")
 
         if "//" in path:
             test_url = path.rstrip("/")
@@ -224,7 +242,7 @@ class TestFunctionalBase(LiveServerTestCase):
 
         msg = "help_button does not function"
 
-        help_dialog = self.selenium.find_element_by_id("help_dialog")
+        help_dialog = self.webdriver.find_element_by_id("help_dialog")
         help_button = webelement.find_element_by_css_selector("div.help_button")
 
         self.assertFalse(help_dialog.is_displayed(), msg=msg)

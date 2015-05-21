@@ -35,12 +35,12 @@ class Test(TestFunctionalBase):
         self.set_url(index_url)
 
         # test it has the right title...
-        title = self.selenium.title
+        title = self.webdriver.title
         test_title = "CIM Questionnaire"
         self.assertEqual(title, test_title)
 
         # test it has the right version (in the footer)...
-        footer = self.selenium.find_element_by_css_selector("div.footer")
+        footer = self.webdriver.find_element_by_css_selector("div.footer")
         version = get_version()
         self.assertIn(version, footer.text)
 
@@ -49,11 +49,11 @@ class Test(TestFunctionalBase):
         self.assertIn(link_text, footer.text)
 
         # test it has the right site notice...
-        site_section = self.selenium.find_element_by_id("site")
+        site_section = self.webdriver.find_element_by_id("site")
         self.assertIsNotNone(site_section)
 
         # test the user block exists (and a user is not logged in)...
-        user_section = self.selenium.find_element_by_id("user")
+        user_section = self.webdriver.find_element_by_id("user")
         user_buttons = user_section.find_elements_by_css_selector("a.button")
         self.assertEqual(len(user_buttons), 2)
         self.assertEqual(user_buttons[0].text, "register")
@@ -63,7 +63,7 @@ class Test(TestFunctionalBase):
         # test the projects field #
         ###########################
 
-        projects_section = self.selenium.find_element_by_css_selector("tr.field[name='projects']")
+        projects_section = self.webdriver.find_element_by_css_selector("tr.field[name='projects']")
         projects_widget = projects_section.find_element_by_css_selector("div.multiselect")
 
         # test it is initialized...
@@ -86,11 +86,11 @@ class Test(TestFunctionalBase):
         index_url = reverse("index", kwargs={})
         self.set_url(index_url)
 
-        submit_button = self.selenium.find_element_by_css_selector("div.submit input.button")
+        submit_button = self.webdriver.find_element_by_css_selector("div.submit input.button")
 
         # test it takes user to project page...
         project_to_test = MetadataProject.objects.get(name__iexact="downscaling")
-        projects_section = self.selenium.find_element_by_css_selector("tr.field[name='projects']")
+        projects_section = self.webdriver.find_element_by_css_selector("tr.field[name='projects']")
         projects_widget = projects_section.find_element_by_css_selector("div.multiselect")
         self.set_multiselect_values(projects_widget, [project_to_test.title])
 
@@ -102,16 +102,15 @@ class Test(TestFunctionalBase):
         index_url = reverse("index", kwargs={})
         self.set_url(index_url)
 
-        submit_button = self.selenium.find_element_by_css_selector("div.submit input.button")
+        submit_button = self.webdriver.find_element_by_css_selector("div.submit input.button")
 
-        old_url = self.selenium.current_url
+        old_url = self.webdriver.current_url
         submit_button.click()
 
         # test it's re-loaded the same page...
         self.assertURL(old_url)
 
         # test it returns w/ error...
-        projects_section = self.selenium.find_element_by_css_selector("tr.field[name='projects']")
+        projects_section = self.webdriver.find_element_by_css_selector("tr.field[name='projects']")
         projects_error = projects_section.find_element_by_css_selector("div.error_wrapper")
         self.assertIsNotNone(projects_error)
-
