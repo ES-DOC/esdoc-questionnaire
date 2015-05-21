@@ -95,12 +95,15 @@ class MetadataModelCustomizerForm(MetadataAbstractModelCustomizerForm):
             # customizer fields...
             "name", "description", "default",
             # document fields...
-            "model_title", "model_description", "model_show_all_categories", "model_show_all_properties", "model_show_hierarchy", "model_hierarchy_name", "model_root_component",
+            # "model_title", "model_description", "model_show_all_categories", "model_show_all_properties", "model_show_hierarchy", "model_hierarchy_name", "model_root_component",
+            "model_title", "model_description", "model_show_all_categories", "model_show_hierarchy", "model_hierarchy_name", "model_root_component",
         ]
 
     _hidden_fields = ("proxy", "project", "version", )
     _customizer_fields = ("name", "description", "default", )
-    _document_fields = ("model_title", "model_description", "model_show_all_categories", "model_show_all_properties", "model_show_hierarchy", "model_hierarchy_name", "model_root_component",)
+    # _document_fields = ("model_title", "model_description", "model_show_all_categories", "model_show_all_properties", "model_show_hierarchy", "model_hierarchy_name", "model_root_component",)
+    _document_fields = ("model_title", "model_description", "model_show_all_categories", "model_show_hierarchy", "model_hierarchy_name", "model_root_component",)
+
 
     def __init__(self, *args, **kwargs):
         all_vocabularies = kwargs.pop("all_vocabularies", [])
@@ -189,12 +192,14 @@ class MetadataModelCustomizerSubForm(MetadataAbstractModelCustomizerForm):
             "proxy", "project", "version", "name",
             # customizer fields...
             # document fields...
-            "model_title", "model_description", "model_show_all_categories", "model_show_all_properties",
+            # "model_title", "model_description", "model_show_all_categories", "model_show_all_properties",
+            "model_title", "model_description", "model_show_all_categories",
         ]
 
     _hidden_fields = ("proxy", "project", "version", "name", )
     _customizer_fields = ()
-    _document_fields = ("model_title", "model_description", "model_show_all_categories", "model_show_all_properties", )
+    # _document_fields = ("model_title", "model_description", "model_show_all_categories", "model_show_all_properties", )
+    _document_fields = ("model_title", "model_description", "model_show_all_categories", )
 
     def __init__(self, *args, **kwargs):
         all_vocabularies = kwargs.pop("all_vocabularies", [])
