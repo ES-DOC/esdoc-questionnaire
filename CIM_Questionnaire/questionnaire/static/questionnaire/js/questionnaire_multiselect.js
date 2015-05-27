@@ -4,6 +4,15 @@ var multiselect_empty_multiple_text = "Select options";
 var multiselect_empty_single_text = "Select option";
 var multiselect_num_to_show = 2; /* number of selected entries to show in the header */
 
+function get_multiselect_value(element) {
+    var content = $(element).find(".multiselect_content");
+    var selected_items = $(content).find("li").has("input:checked").map(function() {
+        return '"' + $(this).text().trim() + '"';
+    }).get();
+    return selected_items;
+}
+
+
 function multiselect_set_label(element, header, content) {
 
     var is_multiple = $(element).hasClass("multiple");

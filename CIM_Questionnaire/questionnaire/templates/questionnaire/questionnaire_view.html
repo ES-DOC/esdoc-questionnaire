@@ -104,13 +104,15 @@
 
     {% block content_documentation %}
         <div class="documentation">
+
             <p>
-                Use this form to view a {{ model_customizer.model_title|title }} instance in the CIM Questionnaire.
+                Use this form to view a {{ model_customizer.model_title|title }} document in the CIM Questionnaire.
             </p>
+
             {%  if model_customizer.model_description %}
-                <div style="border: 1px solid #B9E0E3; padding: 8px;">
+                <p style="border: 1px solid #B9E0E3; padding: 8px;">
                     {{model_customizer.model_description|safe}}
-                </div>
+                </p>
             {% endif %}
         </div> <!-- /.documentation -->
     {% endblock %} {# /content_documentation #}
@@ -129,6 +131,22 @@
         <div class="form"> {# wrap everything in div.form, so I can group related fields together #}
 
             <fieldset>
+
+                <!-- section for toggling incompletion icons -->
+                <div id="completion">
+                    <div class="help_button" title="click for more info" id="completion_toggle">
+                        <span class="default-help-icon ui-icon-info" style="display: inline-block;">&nbsp;</span>
+                        <div class="help_description" title="view completion status">
+                            Use this checkbox to toggle the indication of incomplete sections.
+                            When selected, any section with required properties that have <em>not</em> been filled in will be indicated by this icon:
+                            <!-- inline styling here b/c this will show up outside the containing #questionnaire <div> -->
+                            <span class="ui-state-error-text""><span class="ui-icon ui-icon-pin-w" style="display: inline-block; vertical-align: middle;">&nbsp;</span></span>
+                            Only documents with no incomplete properties can be published.
+                        </div> <!-- /.help_description -->
+                    </div> <!-- /.help_button -->
+                    <label for="completion_toggle">view completion status:</label>
+                    <input type="checkbox" id="completion_toggle" onclick="toggle_completion_icons(this.checked);"/>
+                </div> <!-- /#incompletion -->
 
                 {% get_default_vocabulary_key as root_vocabulary_key %}
                 {% get_default_component_key as root_component_key %}
@@ -162,8 +180,8 @@
                                                             {# this is all that's needed to re-create the component hierarchy! #}
                                                             {# wow!! #}
                                                             {% recursetree nodes %}
-                                                                <li data="key:'{{vocabulary_key}}_{{node.get_key}}'">   {# node is a component; it has a key #}
-                                                                    {{ node.name }}
+                                                                <li data="key:'{{vocabulary_key}}_{{node.get_key}}'">  {# node is a component; it has a key #}
+                                                                    <span> {{ node.name }}  {# {% include "questionnaire/_completion.html" %} #}  </span>
                                                                     {% if not node.is_leaf_node %}
                                                                         <ul>
                                                                             {{ children }}

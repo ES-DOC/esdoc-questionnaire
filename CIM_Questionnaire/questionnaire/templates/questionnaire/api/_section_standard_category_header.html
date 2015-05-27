@@ -2,6 +2,7 @@
 
  <li>
     <a href="#tab_{{model_form.prefix}}_{{category_customizer.key}}">
+        {% include "questionnaire/_completion.html" %}
         {{category_customizer.name}}
         <span style="font-size: small;">
             ({{ property_customizers|length }})

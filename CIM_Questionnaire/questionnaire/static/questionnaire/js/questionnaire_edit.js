@@ -326,11 +326,15 @@ function show_pane(pane_key) {
                     init_widgets(dynamic_accordion_buttons, $(parent).find("button.add, button.remove, button.replace"));
                     init_widgets(fieldsets, $(parent).find(".collapsible_fieldset"));
                     init_widgets(inherits, $(parent).find(".inherited"));
+                    init_widgets(completion_icons, $(parent).find("input.required, textarea.required, select.required, div.required"));
                     init_widgets(changers, $(parent).find(".changer"));  /* force the change event on scientific properties, which copies the property value to the accordion header */
 
-                    // identify the section as loaded for js...
+                    /* hide or show the completion icons */
+                    toggle_completion_icons($("#completion_toggle").checked);
+
+                    /* identify the section as loaded for js... */
                     $(pane).addClass("loaded");
-                    // and for the django view...
+                    /* ...and for the django view */
                     $(pane).find("input#id_"+pane_key+"-loaded").prop('checked', true);
                     /* TODO: SINCE I'M LOADING AN ENTIRE PANE, JUST SET ALL LOADED FLAGS TO TRUE */
                     /* TODO: IN THE LONGTERM, THOUGH, I OUGHT TO BE MORE PRECISE HERE */
@@ -801,5 +805,160 @@ function added_subformset_form(row) {
 
 
 function removed_subformset_form(row) {
-    // don't have to do anything else
+    /* don't have to do anything else */
+    /* hooray */
+}
+
+
+function is_complete(element) {
+    if ($(element).hasClass("multiselect")) {
+        /* treat enumerations slightly differently */
+        /* (b/c they use a custom JQuery widget) */
+        var selected_items = get_multiselect_value(element);
+        var num_selected_items = selected_items.length;
+        return (num_selected_items > 0);
+    }
+    else {
+        var value = $(element).val();
+        var type = $(element).prop("tagName");
+        if (type == "SELECT") {
+            if (value) {
+                return Boolean(value);
+            }
+            else {
+                return false;
+            }
+        }
+        else {
+            if (value) {
+                return Boolean(value.trim());
+            }
+            else {
+                return false;
+            }
+        }
+    }
+}
+
+
+function completion_icons(element) {
+
+    var is_multiselect = $(element).hasClass("multiselect");
+    var type = $(element).prop("tagName");
+
+    var completion_icons = $(element).parents("div.section").find(".completion_icon");
+    $(completion_icons).each(function() {
+
+        var completion_icon = this;
+
+        var n_total_input = $(completion_icon).find("input[name='n_total']");
+        $(n_total_input).val(function(i, old_val) {
+            return ++old_val;
+        });
+        var n_total = $(n_total_input).val()
+
+        var n_complete_input = $(this).find("input[name='n_complete']");
+        if (is_complete(element)) {
+            $(n_complete_input).val(function(i, old_val) {
+                return ++old_val;
+            });
+        }
+        var n_complete = $(n_complete_input).val();
+
+        if (n_total == n_complete) {
+            /* during initialization, since this is iterative */
+            /* I can check if the n_total _ever_ equals n_complete */
+            /* during the change event (below), I can modify things dynamically */
+            $(completion_icon).attr("complete", true);
+        }
+    });
+
+    if (is_multiselect) {
+        $(element).find("button:first").on("focus", function() {
+            var selected_items = get_multiselect_value(element);
+            element.old_value = selected_items.join(", ");
+        });
+    }
+    else {
+        if (type=="SELECT") {
+            var selected_options = $(element).find(":selected").map(function() {
+               return $(this).attr("value");
+            }).get();
+            element.old_value = selected_options.join(", ")
+        }
+        else {
+            $(element).on("focus", function() {
+                element.old_value = $(element).val();
+            });
+        }
+    }
+
+
+    $(element).on("change", function() {
+        var old_value = element.old_value;
+        if (is_multiselect) {
+            /* treat enumerations slightly differently */
+            /* (b/c they use a custom JQuery widget) */
+            var selected_items = get_multiselect_value(element);
+            var new_value = selected_items.join(", ");
+        }
+        else {
+            if (type == "SELECT") {
+                var selected_options = $(element).find(":selected").map(function() {
+                    return $(this).attr("value");
+                }).get();
+                var new_value = selected_options.join(", ");
+            }
+            else {
+                var new_value = $(element).val();
+            }
+        }
+        /* if there was an old_value and there is now no new_value */
+        /* or if there was no old_value and there is now a new_value */
+        /* then adjust the number of completed fields accordingly */
+        if ((old_value || new_value) && !(old_value && new_value)) {
+            var complete = is_complete(element);
+            $(completion_icons).each(function() {
+                var completion_icon = this;
+                var n_total_input = $(completion_icon).find("input[name='n_total']");
+                var n_complete_input = $(completion_icon).find("input[name='n_complete']");
+                $(n_complete_input).val(function (i, old_val) {
+                    if (complete) {
+                        return ++old_val;
+                    }
+                    else {
+                        return --old_val;
+                    }
+                });
+                var n_total = $(n_total_input).val();
+                var n_complete = $(n_complete_input).val();
+                if (n_total == n_complete) {
+                    $(completion_icon).attr("complete", true);
+                }
+                else {
+                    $(completion_icon).attr("complete", false);
+                }
+            });
+        }
+        element.old_value = new_value;
+    });
+}
+
+function toggle_completion_icons(checked) {
+
+    $(".completion_icon").each(function() {
+        var completion_icon = this;
+        if (checked) {
+            var n_total_input = $(completion_icon).find("input[name='n_total']");
+            var n_complete_input = $(completion_icon).find("input[name='n_complete']");
+            var n_total = $(n_total_input).val();
+            var n_complete = $(n_complete_input).val();
+            if (n_total != n_complete) {
+                $(completion_icon).show();
+            }
+        }
+        else {
+            $(completion_icon).hide();
+        }
+    });
 }

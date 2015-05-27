@@ -25,6 +25,11 @@
 #questionnaire .pane fieldset legend span.title * { border: 0px; padding-left: 0.5em; background: #358c92 url(../img/default_ui_background.png) repeat-x 50% 50%; font-size: 110%; }
 #questionnaire .pane fieldset legend:hover span.title * { border: 0px; background: #358c92 url(../img/default_ui_background.png) repeat-x 50% 50%; color: #358C92; }
 
+/* incompletion indicators */
+
+#questionnaire #completion { float: right; color: #358C92; font-size: small; }
+#questionnaire #completion #completion_toggle { vertical-align: middle; }
+#questionnaire .completion_icon { display: inline-block; }
 
 /* ways to customize fields */
 

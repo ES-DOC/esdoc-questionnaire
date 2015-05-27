@@ -8,15 +8,21 @@
 {% block content %}
 
     {% with section_parameters.model_form as model_form %}
+    {% with standard_property_formset=section_parameters.standard_property_formset %}
+    {% with scientific_property_formset=section_parameters.scientific_property_formset %}
 
 {# placeholder element already has 'pane' class; no need to repeat it here #}
 {#        <div class="pane" id="{{ model_form.prefix }}_pane">#}
             <fieldset>
                 <legend>
+
+                    {% include "questionnaire/_completion.html" %}
+
                     <span class="title">
                         {% for field in model_form.get_header_fields %}
                             {{ field }}
                         {% endfor %} {# /field #}
+
                     </span>
                 </legend>
 
@@ -45,24 +51,19 @@
                             {% include "questionnaire/api/_section_scientific_category_top_level_header.html" %}
                         </ul>
 
-                        {% with standard_property_formset=section_parameters.standard_property_formset %}
 
-                            {{ standard_property_formset.management_form }}
-                            {{ standard_property_formset.non_form_errors }}
+                        {{ standard_property_formset.management_form }}
+                        {{ standard_property_formset.non_form_errors }}
 
-                            {% for category_customizer,property_customizers in active_standard_categories_and_properties.items %}
-                                {% include "questionnaire/api/_section_standard_category_content.html" %}
-                            {% endfor %}
+                        {% for category_customizer,property_customizers in active_standard_categories_and_properties.items %}
+                            {% include "questionnaire/api/_section_standard_category_content.html" %}
+                        {% endfor %}
 
-                        {% endwith %} {# /standard_property_formset #}
-
-                        {% with  scientific_property_formset=section_parameters.scientific_property_formset %}
-                            {# standard_property deals w/ 1 form at a time #}
-                            {# hence, inserting the management_form and non_form_errors at this top-level #}
-                            {# but I deal w/ scientific properties as a whole formset #}
-                            {# so those things go in the template(s) below #}
-                            {% include "questionnaire/api/_section_scientific_category_top_level_content.html" %}
-                        {% endwith %}
+                        {# standard_property deals w/ 1 form at a time #}
+                        {# hence, inserting the management_form and non_form_errors at this top-level #}
+                        {# but I deal w/ scientific properties as a whole formset #}
+                        {# so those things go in the template(s) below #}
+                        {% include "questionnaire/api/_section_scientific_category_top_level_content.html" %}
 
                     </div>
 
@@ -75,7 +76,9 @@
 {# see comment above; no need to repeat 'pane' class #}
 {#        </div> <!-- /.pane --> #}
 
-    {% endwith %}
+    {% endwith %} {# /scientific_property_formset #}
+    {% endwith %} {# /standard_property_formset #}
+    {% endwith %} {# /model_form #}
 
 {% endblock %} {# /content #}
 
