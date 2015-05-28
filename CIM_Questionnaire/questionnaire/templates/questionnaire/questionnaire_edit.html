@@ -121,9 +121,9 @@
     {% block content_submit %}
 
         <div class="submit">
-            <input class="button"  name="_save"  type="submit"   value="save"/>
+            <input class="button" name="_save" type="submit" value="save" title="save the current state of this document"/>
             {% if can_publish %}
-                <input class="button"  name="_publish"  type="submit"   value="publish"/>
+                <input class="button"  name="_publish" value="publish" title="publish the last-saved state of this document" onclick="publish();"/>
             {% endif %} {# /can_publish #}
         </div> <!-- /.submit -->
         <div style="clear: both;">&nbsp;</div>

@@ -856,6 +856,7 @@ function completion_icons(element) {
     /* and get the completion icon for this particualr pane / component */
     var pane_completion_icon = $(element).parents("div.section").find(".completion_icon:first");
 
+    /* and put them together */
     var completion_icons = $(pane_completion_icon).add(tab_completion_icon);
 
     $(completion_icons).each(function() {
@@ -888,6 +889,8 @@ function completion_icons(element) {
     });
 
     if (is_multiselect) {
+        /* treat enumerations slightly differently */
+        /* (b/c they use a custom JQuery widget) */
         $(element).find("button:first").on("focus", function() {
             var selected_items = get_multiselect_value(element);
             element.old_value = selected_items.join(", ");
@@ -906,7 +909,6 @@ function completion_icons(element) {
             });
         }
     }
-
 
     $(element).on("change", function() {
         var old_value = element.old_value;
@@ -973,6 +975,48 @@ function toggle_completion_icons(checked) {
         }
         else {
             $(this).hide();
+        }
+    });
+}
+
+/* publishing */
+
+function publish() {
+    var instance_key = $("#_instance_key").val();
+    var url = window.document.location.protocol + "//" + window.document.location.host + "/api/publish/";
+    $.ajax({
+        url: url,
+        type: "POST",
+        cache: false,
+        data: { "instance_key": instance_key},
+        success: function (data, status, xhr) {
+            var msg = xhr.getResponseHeader("msg");
+            var msg_dialog = $(document.createElement("div"));
+            msg_dialog.html(msg);
+            msg_dialog.dialog({
+                modal: true,
+                hide: "explode",
+                height: 200,
+                width: 400,
+                dialogClass: "no_close",
+                buttons: {
+                    OK: function () {
+                        $(this).dialog("close");
+                    }
+                }
+            });
+
+            var status_code = xhr.status;
+
+            if (status_code != 200) {
+                completion_toggle = $("input#completion_toggle");
+                if (! $(completion_toggle).prop("checked")) {
+                    $(completion_toggle).click();
+                }
+
+
+            }
+
         }
     });
 }

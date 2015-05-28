@@ -73,6 +73,7 @@ urlpatterns = patterns('',
 
     url(r'^api/add_inheritance_data/$', 'questionnaire.views.views_inheritance.api_add_inheritance_data', name="add_inheritance_data"),
     url(r'api/customize_category/(?P<category_type>[^/]+)/$', 'questionnaire.views.views_categories.api_customize_category', name="customize_category"),
+    url(r'^api/publish/$', 'questionnaire.views.views_publish.api_publish', name="api_publish"),
 
     # atom feeds...
     url(r'^feed/$', MetadataFeed(), name="feed"),

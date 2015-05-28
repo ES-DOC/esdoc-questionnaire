@@ -250,6 +250,9 @@ class MetadataModel(MPTTModel):
         major, minor = self.document_version.split(".")
         return minor
 
+    def is_complete(self):
+        return True
+
     def publish(self, force_save=True):
 
         if not self.id:
