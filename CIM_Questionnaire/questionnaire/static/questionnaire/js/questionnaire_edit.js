@@ -847,7 +847,17 @@ function completion_icons(element) {
     var is_multiselect = $(element).hasClass("multiselect");
     var type = $(element).prop("tagName");
 
-    var completion_icons = $(element).parents("div.section").find(".completion_icon");
+
+    /* get the completion icon for this particular tab / category */
+    var tab_id = $(element).closest("div.tab_content").parent("div").attr("id");
+    var tab_header = $(element).closest("div.tabs").find("a[href='#" + tab_id + "']");
+    var tab_completion_icon =$(tab_header).find(".completion_icon:first")
+
+    /* and get the completion icon for this particualr pane / component */
+    var pane_completion_icon = $(element).parents("div.section").find(".completion_icon:first");
+
+    var completion_icons = $(pane_completion_icon).add(tab_completion_icon);
+
     $(completion_icons).each(function() {
 
         var completion_icon = this;
