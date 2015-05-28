@@ -30,7 +30,8 @@
 #questionnaire #completion { float: right; color: #358C92; font-size: small; }
 #questionnaire #completion #completion_toggle { vertical-align: middle; }
 #questionnaire .completion_icon { display: inline-block; }
-
+#questionnaire .completion_icon span.ui-icon.complete { display: none !important; }
+#questionnaire .completion_icon span.ui-icon.incomplete { display: inherit !important; }
 /* ways to customize fields */
 
 #questionnaire .extra { margin-top: 8px; margin-bottom: 8px; }

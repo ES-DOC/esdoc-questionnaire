@@ -809,6 +809,7 @@ function removed_subformset_form(row) {
     /* hooray */
 }
 
+/* a bunch of code for dealing w/ completion */
 
 function is_complete(element) {
     if ($(element).hasClass("multiselect")) {
@@ -850,12 +851,13 @@ function completion_icons(element) {
     $(completion_icons).each(function() {
 
         var completion_icon = this;
+        var icon = $(completion_icon).find("span.ui-icon");
 
         var n_total_input = $(completion_icon).find("input[name='n_total']");
         $(n_total_input).val(function(i, old_val) {
             return ++old_val;
         });
-        var n_total = $(n_total_input).val()
+        var n_total = $(n_total_input).val();
 
         var n_complete_input = $(this).find("input[name='n_complete']");
         if (is_complete(element)) {
@@ -866,10 +868,12 @@ function completion_icons(element) {
         var n_complete = $(n_complete_input).val();
 
         if (n_total == n_complete) {
-            /* during initialization, since this is iterative */
-            /* I can check if the n_total _ever_ equals n_complete */
-            /* during the change event (below), I can modify things dynamically */
-            $(completion_icon).attr("complete", true);
+            $(icon).addClass("complete");
+            $(icon).removeClass("incomplete");
+        }
+        else {
+            $(icon).removeClass("complete");
+            $(icon).addClass("incomplete");
         }
     });
 
@@ -920,6 +924,7 @@ function completion_icons(element) {
             var complete = is_complete(element);
             $(completion_icons).each(function() {
                 var completion_icon = this;
+                var icon = $(completion_icon).find("span.ui-icon");
                 var n_total_input = $(completion_icon).find("input[name='n_total']");
                 var n_complete_input = $(completion_icon).find("input[name='n_complete']");
                 $(n_complete_input).val(function (i, old_val) {
@@ -933,10 +938,12 @@ function completion_icons(element) {
                 var n_total = $(n_total_input).val();
                 var n_complete = $(n_complete_input).val();
                 if (n_total == n_complete) {
-                    $(completion_icon).attr("complete", true);
+                    $(icon).addClass("complete");
+                    $(icon).removeClass("incomplete");
                 }
                 else {
-                    $(completion_icon).attr("complete", false);
+                    $(icon).removeClass("complete");
+                    $(icon).addClass("incomplete");
                 }
             });
         }
@@ -944,21 +951,18 @@ function completion_icons(element) {
     });
 }
 
+
 function toggle_completion_icons(checked) {
 
     $(".completion_icon").each(function() {
-        var completion_icon = this;
+        /* show or hide the "complete completion_icon" section */
+        /* the icon itself is displayed conditionally via CSS */
+        /* based on the "complete" or "incomplete" class set above */
         if (checked) {
-            var n_total_input = $(completion_icon).find("input[name='n_total']");
-            var n_complete_input = $(completion_icon).find("input[name='n_complete']");
-            var n_total = $(n_total_input).val();
-            var n_complete = $(n_complete_input).val();
-            if (n_total != n_complete) {
-                $(completion_icon).show();
-            }
+            $(this).show();
         }
         else {
-            $(completion_icon).hide();
+            $(this).hide();
         }
     });
 }
