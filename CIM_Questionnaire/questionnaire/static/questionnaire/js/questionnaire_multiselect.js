@@ -76,6 +76,11 @@ function create_multiselect(element) {
         text: true
     }).click(function(event) {
 
+        if ($(element).hasClass("ui-state-disabled")) {
+            /* don't allow changing values for readonly properties */
+            return;
+        }
+
         var icon = $(this).find(".ui-icon:first");
 
         $(icon).toggleClass("ui-icon-triangle-1-s ui-icon-triangle-1-e");

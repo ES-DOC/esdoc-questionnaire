@@ -286,8 +286,8 @@ function treeviews(element) {
     first_child.activate(true);
 }
 
-
-function show_pane(pane_key) {
+show_pane = function(pane_key) {
+    /* this uses functional closure so that I can re-define it in the "view" template */
     var pane = $("#" + pane_key + "_pane");
 
     if (!$(pane).hasClass("loaded")) {

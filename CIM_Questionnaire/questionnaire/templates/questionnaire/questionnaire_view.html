@@ -1,7 +1,9 @@
 {% extends "questionnaire/questionnaire_base.html" %}
 
+
 {% load questionnaire_filters %}
 {% load mptt_tags %}
+
 
 {% block scripts %}
 
@@ -21,11 +23,53 @@
 
             var parent = document.body;
 
-            // do this first so that the dialogs appear near the top of the page
+            /* do this first so that the dialogs appear near the top of the page */
             init_dialogs(parent);
 
-            // do this next, so it can happen while other widgets are loading
+            /* do this next, so it can happen while other widgets are loading */
             render_msg($("#msg"));
+
+            /* disable all editing in the "view" form */
+
+            /* I do this by "overloading" the show_pane fn; */
+            /* after a pane is loaded, I then make all properties read-only */
+            /* (got the syntax from: http://stackoverflow.com/a/9134757) */
+
+            /* (do this before any init_widget fns have the chance to call the old show_pane) */
+
+            /* ...hiding the add/remove/replace/etc buttons is done via CSS below */
+
+            show_pane = (function() {
+                var cached_show_pane = show_pane;
+                return function(pane_key) {
+                    var pane = $("#" + pane_key + "_pane");
+                    cached_show_pane.apply(this, arguments);
+                    setTimeout(function(){
+                        var standard_properties = $(pane).find("tr.field");
+                        var standard_properties_atomic = $(standard_properties).find("input, textarea, select");
+                        var standard_properties_enumeration = $(standard_properties).find("div.multiselect");
+                        var scientific_properties = $(pane).find("div.scientific_property");
+                        var scientific_properties_atomic = $(scientific_properties).find("input, textarea");
+                        var scientific_properties_enumeration = $(scientific_properties).find("div.multiselect");
+                        var all_properties =
+                                $(standard_properties_atomic)
+                                .add(standard_properties_enumeration)
+                                .add(scientific_properties_atomic)
+                                .add(scientific_properties_enumeration);
+
+                        $(all_properties).each(function() {
+                            $(this).addClass("ui-state-disabled");  /* addClass("readonly") */
+                            $(this).focus(function() {
+                                this.blur();
+                            })
+                        });
+
+                    }, 2000);
+                    /* I am not happy w/ this "setTimeout" hack */
+                    /* but I don't know a better way to deal w/ the fact that */
+                    /* the original "show_pane" uses asynchronous AJAX */
+                }
+            }());
 
             init_widgets(users,$(parent).find("#user"));
             init_widgets(helps,$(parent).find(".help_button"));
@@ -39,32 +83,7 @@
                 show_pane("{{ root_vocabulary_key }}_{{ root_component_key }}");
             {% endif %}
 
-            /* disable all add/remove buttons in view */
-            $("button.add").hide();
-            $("button.remove").hide();
-            $("button.replace").hide();
-            $("button.reset").hide();
-
-            /*
-            THIS CODE IS REPLACED BY THE accordion_headers FN ABOVE
-            $(parent).find(".scientific_property .atomic_value").each(function() {
-                $(this).trigger("change");
-            });
-            $(parent).find(".scientific_property .ui-multiselect").each(function() {
-                var source_name = $(this).prev(".multiselect").attr("name");
-                var target_name = source_name.replace("-enumeration_value", "-scientific_property_value")
-                $(this).find(".multiselect_header").change(function (event) {
-                    var source_value = $(this).button("option", "label");
-                    var target = $("*[name='" + target_name + "']");
-                    $(target).val(source_value);
-                })
-            });
-            */
-
-            // do this last b/c some of the xpath depends on changes made by the above fns...
-            init_errors(parent);
-
-             // do this last b/c some of the xpath depends on changes made by the above fns...
+            /* do this last b/c some of the xpath depends on changes made by the above fns... */
             init_errors(parent);
 
         }
@@ -74,6 +93,7 @@
 
 {% endblock %} {# /scripts #}
 
+
 {% block style %}
 
     <link rel='stylesheet' type="text/css" href="{{ STATIC_URL }}questionnaire/css/ext/jquery.dynatree.css"/>
@@ -82,16 +102,18 @@
     <style type="text/css">
         #questionniare .no_float { float: none !important; }
         /* hide all the interactive features in the view */
-        #questionnaire button.add, button.remove, button.replace, button.reset { display: none !important; }
+        #questionnaire button.add, button.remove, button.replace, button.reset, button.ui-datepicker-trigger { display: none !important; }
         #questionnaire div.inheritance_options { display: none !important; background: none !important; }
         #questionnaire div.inheritance_options * { display: none !important; background: none !important; }
     </style>
 
 {% endblock %} {# / style #}
 
+
 {% block title %}
     CIM Questionnaire Viewer
 {% endblock %} {# /title #}
+
 
 {% block content %}
 
@@ -107,12 +129,12 @@
 
             <p>
                 Use this form to view a {{ model_customizer.model_title|title }} document in the CIM Questionnaire.
-                This is a <em>read-only</em> form used only for viewing a document.
-                If you wish to create or edit a document, you must use the editor form;
+                This is a <em>read-only</em> form used only for <em>viewing</em> a document.
+                If you wish to create or edit a document, you must use the editor form.
                 This may require registering for a CIM Questionnaire account as well as joining the {{project.title|title}} Project.
             </p>
             <p>
-                <a href="/edit/help" target="blank"><b>More detailed instructions</b></a> are available.
+                <a href="/edit/help" target="blank"><strong>More detailed instructions</strong></a> are available.
             </p>
 
             {%  if model_customizer.model_description %}
@@ -122,6 +144,7 @@
             {% endif %}
         </div> <!-- /.documentation -->
     {% endblock %} {# /content_documentation #}
+
 
     <form method="POST" action="">
 
@@ -145,13 +168,13 @@
                             Use this checkbox to toggle the indication of incomplete sections.
                             When selected, any section with required properties that have <em>not</em> been filled in will be indicated by this icon:
                             <!-- inline styling here b/c this will show up outside the containing #questionnaire <div> -->
-                            <span class="ui-state-error-text""><span class="ui-icon ui-icon-pin-w" style="display: inline-block; vertical-align: middle;">&nbsp;</span></span>
+                            <span class="ui-state-error-text"><span class="ui-icon ui-icon-pin-w" style="display: inline-block; vertical-align: middle;">&nbsp;</span></span>
                             Only documents with no incomplete properties can be published.
                         </div> <!-- /.help_description -->
                     </div> <!-- /.help_button -->
                     <label for="completion_toggle">view completion status:</label>
                     <input type="checkbox" id="completion_toggle" onclick="toggle_completion_icons(this.checked);"/>
-                </div> <!-- /#incompletion -->
+                </div> <!-- /#completion -->
 
                 {% get_default_vocabulary_key as root_vocabulary_key %}
                 {% get_default_component_key as root_component_key %}
@@ -233,11 +256,11 @@
 
             </fieldset>
 
-        {% block content_submit %}
 
-            <!-- there is no ability to submit from a view -->
+            {% block content_submit %}
+                <!-- there is no ability to submit from the "view" template -->
+            {% endblock %} {# /content_submit #}
 
-        {% endblock %} {# /content_submit #}
 
         </div> <!-- /.form -->
     </form>
