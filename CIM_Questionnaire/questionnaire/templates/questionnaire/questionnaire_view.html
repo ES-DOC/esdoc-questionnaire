@@ -128,7 +128,7 @@
         <div class="documentation">
 
             <p>
-                Use this form to view a {{ model_customizer.model_title|title }} document in the CIM Questionnaire.
+                Use this form to view a <u>read-only</u> {{ model_customizer.model_title|title }} document in the CIM Questionnaire.
                 This is a <em>read-only</em> form used only for <em>viewing</em> a document.
                 If you wish to create or edit a document, you must use the editor form.
                 This may require registering for a CIM Questionnaire account as well as joining the {{project.title|title}} Project.
@@ -160,7 +160,7 @@
 
             <fieldset>
 
-                <!-- section for toggling incompletion icons -->
+                <!-- section for toggling completion icons -->
                 <div id="completion">
                     <div class="help_button" title="click for more info" id="completion_toggle">
                         <span class="default-help-icon ui-icon-info" style="display: inline-block;">&nbsp;</span>
@@ -244,7 +244,7 @@
                             <div class="documentation unloaded">This pane has not yet been loaded.</div>
                         </div> <!-- /.pane -->
 
-                    {%  endfor %}
+                    {%  endfor %} {# model_form #}
 
                 {% endwith %} {# active_standard_categories_and_properties #}
 
