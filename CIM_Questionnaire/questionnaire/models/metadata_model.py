@@ -269,7 +269,7 @@ class MetadataModel(MPTTModel):
                 for related_model in related_models:
                     if not related_model.is_complete():
                         return False
-        return False
+        return True
 
     def publish(self, force_save=True):
 
