@@ -123,13 +123,15 @@ def questionnaire_edit_new(request, project_name="", model_name="", version_key=
 
             model_parent_dictionary = get_model_parent_dictionary(realization_set["models"])
             model_instances = save_valid_forms(model_formset, standard_properties_formsets, scientific_properties_formsets, model_parent_dictionary=model_parent_dictionary)
-            root_model_id = model_instances[0].get_root().pk
+            root_model = model_instances[0].get_root()
+            root_model_id = root_model.pk
 
             # this is used for other fns that might need to know what the view returns
             # (such as those in the testing framework)
             request.session["root_model_id"] = root_model_id
 
-            messages.add_message(request, messages.SUCCESS, "Successfully saved model instance(s)")
+            msg = "Successfully saved document (v%s)" % root_model.document_version
+            messages.add_message(request, messages.SUCCESS, msg)
             edit_existing_url = reverse("edit_existing", kwargs={
                 "project_name": project_name,
                 "model_name": model_name,
@@ -140,7 +142,7 @@ def questionnaire_edit_new(request, project_name="", model_name="", version_key=
 
         else:
 
-            messages.add_message(request, messages.ERROR, "Error saving model instance(s)")
+            messages.add_message(request, messages.ERROR, "Error saving document")
 
     _dict = {
         "site": get_current_site(request),  # provide a special message if this is not the production site
@@ -154,6 +156,7 @@ def questionnaire_edit_new(request, project_name="", model_name="", version_key=
         "scientific_properties_formsets": scientific_properties_formsets,
         "questionnaire_version": get_version(),  # used in the footer
         "instance_key": instance_key,
+        "display_completion_status": False,
         "can_publish": False,  # only models that have already been saved can be published
     }
 
@@ -248,6 +251,13 @@ def questionnaire_edit_existing(request, project_name="", model_name="", version
         (model_formset, standard_properties_formsets, scientific_properties_formsets) = \
             create_existing_edit_forms_from_models(realization_set["models"], customizer_set["model_customizer"], realization_set["standard_properties"], customizer_set["standard_property_customizers"], realization_set["scientific_properties"], customizer_set["scientific_property_customizers"])
 
+        # completion_status = {
+        #     realization.get_model_key(): realization.is_complete()
+        #     for realization in realization_set["models"]
+        # }
+
+        display_completion_status = False
+
     else:  # request.method == "POST":
 
         data = request.POST
@@ -264,6 +274,9 @@ def questionnaire_edit_existing(request, project_name="", model_name="", version
                 inheritance_data=inheritance_data,
             )
 
+        try_to_publish = "_publish" in data
+        display_completion_status = False
+
         if all(validity):
             model_parent_dictionary = get_model_parent_dictionary(realization_set["models"])
             model_instances = save_valid_forms(model_formset, standard_properties_formsets, scientific_properties_formsets, model_parent_dictionary=model_parent_dictionary)
@@ -273,16 +286,30 @@ def questionnaire_edit_existing(request, project_name="", model_name="", version
             # (such as those in the testing framework)
             request.session["root_model_id"] = root_model.pk
 
-            if "_publish" in data:
-                root_model.publish(force_save=True)
-                messages.add_message(request, messages.SUCCESS, "Successfully saved and published instance(s).")
+            if try_to_publish:
+                # the .is_complete() fn works on a single instance
+                # this checks _all_ instances
+                completion = [model_instance.is_complete() for model_instance in model_instances]
+                if all(completion):
+                    root_model.publish(force_save=True)
 
+                    msg = "Successfully saved and published document (v%s)" % root_model.document_version
+                    messages.add_message(request, messages.SUCCESS, msg)
+                else:
+                    msg = "Saved document (v%s), but unable to publish it because it is incomplete." % root_model.document_version
+                    messages.add_message(request, messages.WARNING, msg)
+                    display_completion_status = True
             else:
-                messages.add_message(request, messages.SUCCESS, "Successfully saved instance(s).")
+                msg = "Successfully saved document (v%s)" % root_model.document_version
+                messages.add_message(request, messages.SUCCESS, msg)
 
         else:
 
-            messages.add_message(request, messages.ERROR, "Error saving model instance(s)")
+            if try_to_publish:
+                msg = "Eror saving document; did not attempt to publish it."
+            else:
+                msg = "Eror saving document."
+            messages.add_message(request, messages.ERROR, msg)
 
     # gather all the extra information required by the template
     _dict = {
@@ -291,6 +318,7 @@ def questionnaire_edit_existing(request, project_name="", model_name="", version
         "version": version,  # used for generating URLs in the footer
         "model_proxy": model_proxy,  # used for generating URLs in the footer
         "vocabularies": vocabularies,
+        # "completion_status": completion_status,
         "model_customizer": customizer_set["model_customizer"],
         "model_formset": model_formset,
         "standard_properties_formsets": standard_properties_formsets,
@@ -298,6 +326,7 @@ def questionnaire_edit_existing(request, project_name="", model_name="", version
         "questionnaire_version": get_version(),  # used in the footer
         "instance_key": instance_key,
         "root_model_id": root_model_id,
+        "display_completion_status": display_completion_status,
         "can_publish": True,  # only models that have already been saved can be published
     }
 
