@@ -100,6 +100,7 @@ class MetadataPropertyProxy(models.Model):
 
     is_label            = models.BooleanField(blank=False,default=False)
 
+
 class MetadataStandardPropertyProxy(MetadataPropertyProxy):
     class Meta:
         app_label   = APP_LABEL
@@ -114,6 +115,7 @@ class MetadataStandardPropertyProxy(MetadataPropertyProxy):
     model_proxy = models.ForeignKey("MetadataModelProxy", blank=True, null=True, related_name="standard_properties")
     stereotype = models.CharField(max_length=BIG_STRING, blank=True, null=True, choices=[(slugify(stereotype),stereotype) for stereotype in CIM_PROPERTY_STEREOTYPES])
     namespace = models.CharField(max_length=BIG_STRING, blank=True, null=True, choices=[(slugify(namespace),namespace) for namespace in CIM_NAMESPACES])
+    required = models.BooleanField(blank=False, default=False)
 
     # attributes for ATOMIC fields
     atomic_default  = models.CharField(max_length=BIG_STRING,blank=True)

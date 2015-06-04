@@ -251,7 +251,25 @@ class MetadataModel(MPTTModel):
         return minor
 
     def is_complete(self):
-        return True
+        """
+        checks if a single model is complete
+        :return: boolean
+        """
+        # this works on a single instance
+        # when calling it it ought to be in a loop
+        # (either using built-in MPTT fns, or as in "metadata_edit_view")
+
+        for standard_property in self.standard_properties.all():
+            proxy = standard_property.proxy
+            if proxy.required:
+                if not standard_property.is_complete():
+                    return False
+            if standard_property.field_type == MetadataFieldTypes.RELATIONSHIP:
+                related_models = standard_property.relationship_value.all()
+                for related_model in related_models:
+                    if not related_model.is_complete():
+                        return False
+        return False
 
     def publish(self, force_save=True):
 
@@ -640,6 +658,13 @@ class MetadataStandardProperty(MetadataProperty):
 
             return self.relationship_value.all()
 
+    def is_complete(self):
+        """
+        checks if a single standard_propety is complete
+        :return: boolean
+        """
+        value = self.get_value()
+        return bool(value)
 
 class MetadataScientificProperty(MetadataProperty):
 

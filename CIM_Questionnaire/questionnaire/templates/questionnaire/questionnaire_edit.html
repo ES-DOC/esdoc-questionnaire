@@ -14,10 +14,14 @@
     <script language="javascript">
 
     {% if can_publish %}
-    var get_form_section_view = "get_existing_edit_form_section/{{ root_model_id }}";
+        var get_form_section_view = "get_existing_edit_form_section/{{ root_model_id }}";
     {% else %}
-    var get_form_section_view = "get_new_edit_form_section";
-    {% endif %}
+        var get_form_section_view = "get_new_edit_form_section";
+    {% endif %} {# /can_publish #}
+
+    {% if display_completion_status %}
+        start_with_completion_status_displayed = true;
+    {% endif %} {# /display_completion_status #}
 
     /* just setup a minimum of jquery-ui functionality */
     $(document).ready(
@@ -41,24 +45,12 @@
                 {% get_default_vocabulary_key as root_vocabulary_key %}
                 {% get_default_component_key as root_component_key %}
                 show_pane("{{ root_vocabulary_key }}_{{ root_component_key }}");
-            {% endif %}
+            {% endif %} {# / not vocabularies #}
 
-            /*
-            THIS CODE IS REPLACED BY THE accordion_headers FN ABOVE
-            $(parent).find(".scientific_property .atomic_value").each(function() {
-                $(this).trigger("change");
-            });
-            $(parent).find(".scientific_property .ui-multiselect").each(function() {
-                var source_name = $(this).prev(".multiselect").attr("name");
-                var target_name = source_name.replace("-enumeration_value", "-scientific_property_value")
-                $(this).find(".multiselect_header").change(function (event) {
-                    var source_value = $(this).button("option", "label");
-                    var target = $("*[name='" + target_name + "']");
-                    $(target).val(source_value);
-                })
-            });
-            */
-
+{#        var completion_toggle = $("input#completion_toggle");#}
+{#        if (! $(completion_toggle).prop("checked")) {#}
+{#            $(completion_toggle).click();#}
+{#        }#}
             // do this last b/c some of the xpath depends on changes made by the above fns...
             init_errors(parent);
 
@@ -78,7 +70,7 @@
         #questionniare .no_float { float: none !important; }
         /* all the interactive features are hidden in the view template */
         /* but not in this, the edit template */
-{#        #questionnaire button.add, button.remove, button.replace, button.reset { display: none !important; }#}
+{#        #questionnaire button.add, button.remove, button.replace, button.reset, button.ui-datepicker-trigger { display: none !important; }#}
 {#        #questionnaire div.inheritance_options { display: none !important; background: none !important; }#}
 {#        #questionnaire div.inheritance_options * { display: none !important; background: none !important; }#}
     </style>
@@ -125,7 +117,7 @@
         <div class="submit">
             <input class="button" name="_save" type="submit" value="save" title="save the current state of this document"/>
             {% if can_publish %}
-                <input class="button"  name="_publish" value="publish" title="publish the last-saved state of this document" onclick="publish();"/>
+                <input class="button"  name="_publish" type="submit" value="save & publish" title="save then current state of this document"/>
             {% endif %} {# /can_publish #}
         </div> <!-- /.submit -->
         <div style="clear: both;">&nbsp;</div>

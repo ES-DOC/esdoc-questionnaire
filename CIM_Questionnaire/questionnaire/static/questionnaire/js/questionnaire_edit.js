@@ -329,8 +329,18 @@ show_pane = function(pane_key) {
                     init_widgets(completion_icons, $(parent).find("input.required, textarea.required, select.required, div.required"));
                     init_widgets(changers, $(parent).find(".changer"));  /* force the change event on scientific properties, which copies the property value to the accordion header */
 
+                    if (start_with_completion_status_displayed) {
+                        /* if this is supposed to display the completion icons, */
+                        /* then force the toggle to be checked */
+                        /* the first time this fn is run */
+                        $("input#completion_toggle").prop("checked", true);
+                        start_with_completion_status_displayed = false;
+                    }
+
                     /* hide or show the completion icons */
-                    toggle_completion_icons($("#completion_toggle").checked);
+                    /* TODO: CONVENTIONAL WISDOM SAYS I SHOULD USE .checked INSTEAD OF .is(":checked") */
+                    /* TODO: BUT THAT DIDN'T WORK */
+                    toggle_completion_icons($("input#completion_toggle").is(":checked"));
 
                     /* identify the section as loaded for js... */
                     $(pane).addClass("loaded");
@@ -811,6 +821,8 @@ function removed_subformset_form(row) {
 
 /* a bunch of code for dealing w/ completion */
 
+var start_with_completion_status_displayed = false;
+
 function is_complete(element) {
     if ($(element).hasClass("multiselect")) {
         /* treat enumerations slightly differently */
@@ -1009,12 +1021,10 @@ function publish() {
             var status_code = xhr.status;
 
             if (status_code != 200) {
-                completion_toggle = $("input#completion_toggle");
+                var completion_toggle = $("input#completion_toggle");
                 if (! $(completion_toggle).prop("checked")) {
                     $(completion_toggle).click();
                 }
-
-
             }
 
         }
