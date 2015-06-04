@@ -239,7 +239,9 @@
                                                     {{ existing_document_form.selected }}
                                                     <input class="button smaller" id="id_{{ existing_document_form.prefix }}-edit" name="{{ existing_document_formset.prefix }}-edit" type="submit" value="edit" onclick="set_checkbox_by_id(this);"/>
                                                     <input class="button smaller" id="id_{{ existing_document_form.prefix }}-view" name="{{ existing_document_formset.prefix }}-view" type="submit" value="view in Editor" onclick="set_checkbox_by_id(this);"/>
-                                                    <input class="button smaller" id="id_{{ existing_document_form.prefix }}-publish" name="{{ existing_document_formset.prefix }}-publish" type="submit" value="publish" onclick="set_checkbox_by_id(this);"/>
+                                                    {% if existing_document_form.is_complete %}
+                                                        <input class="button smaller" id="id_{{ existing_document_form.prefix }}-publish" name="{{ existing_document_formset.prefix }}-publish" type="submit" value="publish" onclick="set_checkbox_by_id(this);"/>
+                                                    {% endif %}
                                                 </td>
                                             {% endwith %} {# /model #}
                                         </tr>

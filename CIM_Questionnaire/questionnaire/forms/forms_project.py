@@ -81,6 +81,14 @@ class ExistingDocumentForm(ExistingModelForm):
 
         return SafeString(label_string)
 
+    def is_complete(self):
+        document = self.instance
+        assert document is not None
+
+        all_documents = document.get_descendants(include_self=True)
+        completion = [document.is_complete() for documentd in all_documents]
+        return all(completion)
+
 
 class ExistingCustomizationForm(ExistingModelForm):
 
