@@ -40,18 +40,9 @@ def create_model_customizer_form_data(model_customizer, standard_category_custom
         include={
             "last_modified": time.strftime("%c"),
             "loaded": True,  # model_customizer forms are always loaded (only scientific_property forms aren't)
-            "standard_categories_content": JSON_SERIALIZER.serialize(standard_category_customizers),
-            "standard_categories_tags": "|".join([standard_category.name for standard_category in standard_category_customizers]),
         }
     )
-
-    for vocabulary_key, scientific_category_customizer_dict in scientific_category_customizers.iteritems():
-        for component_key, scientific_category_customizer_list in scientific_category_customizer_dict.iteritems():
-            scientific_categories_content_field_name = u"%s_%s_scientific_categories_content" % (vocabulary_key, component_key)
-            scientific_categories_tags_field_name = u"%s_%s_scientific_categories_tags" % (vocabulary_key, component_key)
-            model_customizer_form_data[scientific_categories_content_field_name] = JSON_SERIALIZER.serialize(scientific_category_customizer_list)
-            model_customizer_form_data[scientific_categories_tags_field_name] = "|".join([scientific_category.name for scientific_category in scientific_category_customizer_list])
-
+    
     return model_customizer_form_data
 
 
@@ -101,7 +92,6 @@ class MetadataModelCustomizerForm(MetadataAbstractModelCustomizerForm):
     _hidden_fields = ("proxy", "project", "version", )
     _customizer_fields = ("name", "description", "default", )
     _document_fields = ("model_title", "model_description", "model_show_all_categories", "model_show_hierarchy", "model_hierarchy_name", "model_root_component",)
-
 
     def __init__(self, *args, **kwargs):
         all_vocabularies = kwargs.pop("all_vocabularies", [])
