@@ -148,8 +148,8 @@ class MetadataStandardPropertyCustomizerForm(MetadataCustomizerForm):
 
         super(MetadataStandardPropertyCustomizerForm, self).__init__(*args, **kwargs)
 
+        property_proxy = MetadataStandardPropertyProxy.objects.get(pk=self.get_current_field_value("proxy"))
         property_customizer = self.instance
-        # this attribute is needed b/c I access it in the customize_template to decide which other templates to include
         self.type = self.get_current_field_value("field_type")
 
         if property_customizer.pk:
@@ -178,8 +178,7 @@ class MetadataStandardPropertyCustomizerForm(MetadataCustomizerForm):
             update_field_widget_attributes(atomic_type_field, {"class": "multiselect single selection_required", })
 
         elif self.type == MetadataFieldTypes.ENUMERATION:
-            proxy = MetadataStandardPropertyProxy.objects.get(pk=self.get_current_field_value("proxy"))
-            all_enumeration_choices = proxy.enumerate_choices()
+            all_enumeration_choices = property_proxy.enumerate_choices()
             self.fields["enumeration_choices"].set_choices(all_enumeration_choices, multi=True)
             self.fields["enumeration_default"].set_choices(all_enumeration_choices, multi=True)
             # TODO: I CANNOT GET THE MULTISELECT PLUGIN TO WORK W/ THE RESTRICT_OPTIONS FN
@@ -187,7 +186,7 @@ class MetadataStandardPropertyCustomizerForm(MetadataCustomizerForm):
             # update_field_widget_attributes(self.fields["enumeration_choices"],{"class":"multiselect","onchange":"restrict_options(this,['%s-enumeration_default']);"%(self.prefix)})
             update_field_widget_attributes(self.fields["enumeration_choices"], {"class": "multiselect multiple", })  # NOTE THAT I AM NOT ADDING "enumeration" AS A CLASS
             update_field_widget_attributes(self.fields["enumeration_default"], {"class": "multiselect multiple", })  # THAT'S B/C "enumeration" IS FOR DEALING W/ "NONE" & "OTHER"
-                                                                                                                   # THAT HAPPENS IN THE EDITOR, NOT THE CUSTOMIZER
+                                                                                                                     # THAT HAPPENS IN THE EDITOR, NOT THE CUSTOMIZER
 
         elif self.type == MetadataFieldTypes.RELATIONSHIP:
             update_field_widget_attributes(self.fields["relationship_show_subform"], {"class": "enabler", "onchange": "enable_customize_subform_button(this);", })
@@ -206,6 +205,12 @@ class MetadataStandardPropertyCustomizerForm(MetadataCustomizerForm):
 
         set_field_widget_attributes(self.fields["documentation"], {"cols": "60", "rows": "4", })
         set_field_widget_attributes(self.fields["suggestions"], {"cols": "60", "rows": "4", })
+
+        if property_proxy.required:
+            # if a property is required by the CIM,
+            # (then property.reset() will have set the customizer.required field to True)
+            # then don't allow users to change this
+            update_field_widget_attributes(self.fields["required"], {"readonly": "readonly", })
 
         # specify the widths of header fields...
         # (some should use most of the available space, others should just use a fixed size)

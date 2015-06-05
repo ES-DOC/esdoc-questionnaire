@@ -608,6 +608,10 @@ class MetadataPropertyCustomizer(MetadataCustomizer):
     # ways to customize _any_ field...
     displayed = models.BooleanField(default=True, blank=True, verbose_name="Should this property be displayed?")
     required = models.BooleanField(default=True, blank=True, verbose_name="Is this property required?")
+    required.help_text = _(
+        "All required properties must be completed prior to publication.  "
+        "A property that is defined as required <em>in the CIM or a CV</em> cannot be made optional."
+    )
     editable = models.BooleanField(default=True, blank=True, verbose_name="Can the value of this property be edited?")
     unique = models.BooleanField(default=False, blank=True, verbose_name="Must the value of this property be unique?")
     verbose_name = models.CharField(max_length=LIL_STRING, blank=False, verbose_name="How should this property be labeled (overrides default name)?")
@@ -729,6 +733,7 @@ class MetadataStandardPropertyCustomizer(MetadataPropertyCustomizer):
         self.verbose_name = proxy.name
         self.documentation = proxy.documentation
         self.inline_help = False
+        self.required = proxy.required
 
         # atomic fields...
         if self.field_type == MetadataFieldTypes.ATOMIC:
@@ -874,6 +879,7 @@ class MetadataScientificPropertyCustomizer(MetadataPropertyCustomizer):
         self.documentation = proxy.documentation
         self.inline_help = False
         self.field_type = MetadataFieldTypes.PROPERTY.getType()
+        self.required = proxy.required
 
         self.display_extra_standard_name = False
         self.display_extra_description = False
