@@ -468,8 +468,6 @@ class MetadataCategoryCustomizer(MetadataCustomizer):
         app_label = APP_LABEL
         abstract = True
 
-    pending_deletion = models.BooleanField(blank=False, default=False)
-
 
 class MetadataStandardCategoryCustomizer(MetadataCategoryCustomizer):
     class Meta:
@@ -520,7 +518,6 @@ class MetadataStandardCategoryCustomizer(MetadataCategoryCustomizer):
         self.key = proxy.key
         self.description = proxy.description
         self.order = proxy.order
-        self.pending_deletion = False
 
 
 class MetadataScientificCategoryCustomizer(MetadataCategoryCustomizer):
@@ -590,8 +587,6 @@ class MetadataScientificCategoryCustomizer(MetadataCategoryCustomizer):
                 self.vocabulary_key = vocabulary_key
                 self.component_key = component_key
                 self.model_key = "%s_%s" % (vocabulary_key, component_key)
-
-        self.pending_deletion = False
 
 
 class MetadataPropertyCustomizer(MetadataCustomizer):
