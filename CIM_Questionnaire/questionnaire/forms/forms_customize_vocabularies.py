@@ -90,7 +90,7 @@ class MetadataModelCustomizerVocabularyForm(ModelForm):
 
         update_field_widget_attributes(active_field, {"class": "active"})
         update_field_widget_attributes(vocabulary_field, {"class": "vocabulary label", "readonly": "readonly"})
-        update_field_widget_attributes(order_field, {"class": "order label", "readonly": "readonly"})
+        update_field_widget_attributes(order_field, {"class": "order label", "readonly": "readonly", })
         update_field_widget_attributes(key_field, {"class": "key hidden"})
 
     def clean(self):
