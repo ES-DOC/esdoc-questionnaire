@@ -232,7 +232,7 @@
             <description>A ModelCompnent is a scientific model; it represents code which models some
                 physical phenomena for a particular length of time.</description>
             <attributes>
-                <attribute>
+                <attribute required="true">
                     <name>purpose</name>
                     <description/>
                     <type>ATOMIC</type>
