@@ -88,17 +88,19 @@ class MetadataModelProxy(models.Model):
 
         return (model_proxy, standard_property_proxies, scientific_property_proxies)
 
+
 class MetadataPropertyProxy(models.Model):
     class Meta:
-        app_label   = APP_LABEL
-        abstract    = True
+        app_label = APP_LABEL
+        abstract = True
 
-    name                = models.CharField(max_length=HUGE_STRING,blank=False,null=False)
-    documentation       = models.TextField(blank=True,null=True)
-    field_type          = models.CharField(max_length=SMALL_STRING,blank=False,null=True,choices=[(ft.getType(),ft.getName()) for ft in MetadataFieldTypes])
-    order               = models.PositiveIntegerField(blank=True,null=True)
+    name = models.CharField(max_length=HUGE_STRING, blank=False, null=False)
+    documentation = models.TextField(blank=True, null=True)
+    field_type = models.CharField(max_length=SMALL_STRING, blank=False, null=True, choices=[(ft.getType(), ft.getName()) for ft in MetadataFieldTypes])
+    order = models.PositiveIntegerField(blank=True, null=True)
 
-    is_label            = models.BooleanField(blank=False,default=False)
+    is_label = models.BooleanField(blank=False, default=False)
+    required = models.BooleanField(blank=False, default=False)
 
 
 class MetadataStandardPropertyProxy(MetadataPropertyProxy):
@@ -115,7 +117,6 @@ class MetadataStandardPropertyProxy(MetadataPropertyProxy):
     model_proxy = models.ForeignKey("MetadataModelProxy", blank=True, null=True, related_name="standard_properties")
     stereotype = models.CharField(max_length=BIG_STRING, blank=True, null=True, choices=[(slugify(stereotype),stereotype) for stereotype in CIM_PROPERTY_STEREOTYPES])
     namespace = models.CharField(max_length=BIG_STRING, blank=True, null=True, choices=[(slugify(namespace),namespace) for namespace in CIM_NAMESPACES])
-    required = models.BooleanField(blank=False, default=False)
 
     # attributes for ATOMIC fields
     atomic_default  = models.CharField(max_length=BIG_STRING,blank=True)

@@ -8,6 +8,11 @@ from django.db import models
 class Migration(SchemaMigration):
 
     def forwards(self, orm):
+        # Adding field 'MetadataScientificPropertyProxy.required'
+        db.add_column(u'questionnaire_metadatascientificpropertyproxy', 'required',
+                      self.gf('django.db.models.fields.BooleanField')(default=False),
+                      keep_default=False)
+
         # Adding field 'MetadataStandardPropertyProxy.required'
         db.add_column(u'questionnaire_metadatastandardpropertyproxy', 'required',
                       self.gf('django.db.models.fields.BooleanField')(default=False),
@@ -15,6 +20,9 @@ class Migration(SchemaMigration):
 
 
     def backwards(self, orm):
+        # Deleting field 'MetadataScientificPropertyProxy.required'
+        db.delete_column(u'questionnaire_metadatascientificpropertyproxy', 'required')
+
         # Deleting field 'MetadataStandardPropertyProxy.required'
         db.delete_column(u'questionnaire_metadatastandardpropertyproxy', 'required')
 
@@ -278,6 +286,7 @@ class Migration(SchemaMigration):
             'is_label': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
             'name': ('django.db.models.fields.CharField', [], {'max_length': '1024'}),
             'order': ('django.db.models.fields.PositiveIntegerField', [], {'null': 'True', 'blank': 'True'}),
+            'required': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
             'values': ('django.db.models.fields.TextField', [], {'blank': 'True'})
         },
         'questionnaire.metadatasite': {
