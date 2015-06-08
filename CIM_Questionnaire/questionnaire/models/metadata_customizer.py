@@ -137,11 +137,24 @@ class MetadataCustomizer(models.Model):
         return (model_customizer,standard_category_customizers,standard_property_customizers, scientific_category_customizers,scientific_property_customizers)
 
     @classmethod
-    def update_existing_customizer_set(cls, model_customizer, vocabularies):
-        # TODO: RIGHT NOW THIS WORKS BY UPDATING SCIENTIFIC CATEGORIES/PROPERTIES (IF VOCABULARY IS RE-REGISTERED)
-        # TODO: IT SHOULD ALSO WORK W/ STANDARD CATEGORIES/PROPERTIES (IF VERSION IS RE-REGISTERED)
+    def update_existing_customizer_set(cls, model_customizer, vocabularies=[]):
 
-        # setup the scientific category & property customizers
+        # update standard categories/properties (in all cases)
+        # TODO: RIGHT NOW THIS ONLY DEALS W/ A CHANGE IN THE "required" ATTRIBUTE
+        # IT REALLY NEEDS TO ADD/DELETE THINGS AS W/ SCIENTIFIC THINGS
+
+        standard_property_customizers = list(model_customizer.standard_property_customizers.all())
+        for standard_property_customizer in standard_property_customizers:
+            if standard_property_customizer.field_type == MetadataFieldTypes.RELATIONSHIP:
+                submodel_customizer = standard_property_customizer.subform_customizer
+                if submodel_customizer:
+                    cls.update_existing_customizer_set(submodel_customizer, vocabularies)
+            standard_property_proxy = standard_property_customizer.proxy
+            if standard_property_proxy.required and not standard_property_customizer.required:
+                standard_property_customizer.required = True
+                standard_property_customizer.save()
+
+        # update scientific categories/properties (if vocabularies was provided)
         for vocabulary in vocabularies:
             vocabulary_key = vocabulary.get_key()
             component_proxies = vocabulary.component_proxies.prefetch_related("categories", "scientific_properties").all()

@@ -219,7 +219,6 @@ class MetadataVersion(models.Model):
             if old_model_proxy not in new_model_proxies:
                 old_model_proxy.delete()
 
-
         # reset whatever's left
         for model_proxy in MetadataModelProxy.objects.filter(version=self):
             for property_proxy in model_proxy.standard_properties.all():
@@ -232,7 +231,16 @@ class MetadataVersion(models.Model):
                 messages.add_message(request, messages.WARNING, msg)
 
         self.registered = True
-            
+
+        # if I re-registered a version and there were existing customizations associated w/ it
+        # then I better update those customizations so that it has the right content
+        from CIM_Questionnaire.questionnaire.models.metadata_customizer import MetadataCustomizer, MetadataModelCustomizer
+        # TODO: RATHER THAN USE A LIST COMPREHENSION HERE, I OUGHT TO USE A CUSTOM MANAGER
+        # (THAT'S A BIG CHANGE, THOUGH, SO I'M DEFERRING IT TILL LATER)
+        customizers_to_update = [customizer for customizer in MetadataModelCustomizer.objects.filter(version=self) if customizer.proxy.is_document()]
+        for customizer in customizers_to_update:
+            MetadataCustomizer.update_existing_customizer_set(customizer)
+
     def unregister(self,**kwargs):
         request = kwargs.pop("request",None)
 
