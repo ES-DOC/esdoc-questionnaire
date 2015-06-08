@@ -157,11 +157,11 @@
 
             $(model_customizer_vocabularies).sortable({
                 axis: "y",
+                items: "div.model_customizer_vocabulary",
                 placeholder: "sortable_item",
                 cancel : "input.active",
                 start : function(e, ui){
                     ui.placeholder.height(ui.item.height());
-                    ui.placeholder.width("400");
                 },
                 stop : function(e,ui) {
                     var sortable_item = ui["item"];
@@ -203,10 +203,10 @@
         #questionniare .no_float    { float: none !important; }
 
         #questionnaire #vocabularies { display: inline-block; }
-        #questionnaire #vocabularies div.model_customizer_vocabulary { cursor: pointer; padding: 2px; margin: 2px; }
-        #questionnaire #vocabularies input.active {  }
-        #questionnaire #vocabularies input.vocabulary {  }
-        #questionnaire #vocabularies input.order { text-align: right; }
+        #questionnaire #vocabularies div.model_customizer_vocabulary { cursor: pointer; padding: 2px; margin: 0px; }
+        #questionnaire #vocabularies .vocabulary { }
+        #questionnaire #vocabularies .active { width: 50px; }
+        #questionnaire #vocabularies .order { width: 100px; text-align: right; }
 
         #questionnaire table.extra_attributes th { text-decoration: underline; text-align: left; }
 
@@ -287,6 +287,11 @@
                             <td>
                                 {{ model_customizer_vocabularies_formset.management_form }}
                                 <div id="vocabularies" class="sortable ui-widget ui-widget-content ui-corner-all">
+                                    <div class="ui-widget ui-content ui-corner-all ui-state-default" style="text-align: center;">
+                                        <span class="active" style="float: left;">&nbsp;active&nbsp;</span>
+                                        name
+                                        <span class="order" style="float: right;">&nbsp;order&nbsp;</span>
+                                    </div>
                                     {% for model_customizer_vocabulary_form in model_customizer_vocabularies_formset %}
                                         <div class="model_customizer_vocabulary ui-widget ui-widget-content ui-corner-all ui-state-default">
                                             {{ model_customizer_vocabulary_form.id }} <!-- this is a hidden field; it still needs inclusion in order to validate -->

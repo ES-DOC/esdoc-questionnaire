@@ -335,9 +335,11 @@ class MetadataModelCustomizer(MetadataCustomizer):
                                                  related_name="model_customizer",
                                                  verbose_name="Vocabularies to include",
                                                  )
-    sorted_vocabularies.help_text = "These are the CVs (which contain scientific properties) that are associated with this project and document type.  " \
-                                    + "Please use the checkbox to enable or disable all of the related scientific properties.  " \
-                                    + "You can also drag-and-drop vocabularies to change the order in which they appear in the Editor."
+    sorted_vocabularies.help_text = _(
+        "These are the CVs that are associated with this document type and project.  "
+        "Please use the checkbox to enable or diable all of the properties contained within a particular CV.  "
+        "You can also drag-and-drop CVs to change the order in which they appear in the Editor."
+    )
 
     vocabularies = models.ManyToManyField("MetadataVocabulary", blank=True, null=True)  # cannot set 'limit_choices_to' - instead setting 'queryset' on form
     vocabularies.help_text = "Choose which Controlled Vocabularies (in which order) apply to this model."
