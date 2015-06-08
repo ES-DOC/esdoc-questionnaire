@@ -949,7 +949,7 @@ class MetadataModelCustomizerVocabulary(models.Model):
 
     vocabulary_key = models.CharField(max_length=LIL_STRING, blank=False, null=True)
 
-    order = models.PositiveIntegerField(blank=False, default=0)
+    order = models.PositiveIntegerField(blank=False, default=1)
     active = models.BooleanField(default=False)
 
     def __unicode__(self):
@@ -968,8 +968,8 @@ class MetadataModelCustomizerVocabulary(models.Model):
                 model_customizer=model_customizer,
                 vocabulary=vocabulary,
             )
-            if model_customizer_vocabulary.order != i:
-                model_customizer_vocabulary.order = i
+            if model_customizer_vocabulary.order != i+1:
+                model_customizer_vocabulary.order = i+1
                 model_customizer_vocabulary.save()
 
 

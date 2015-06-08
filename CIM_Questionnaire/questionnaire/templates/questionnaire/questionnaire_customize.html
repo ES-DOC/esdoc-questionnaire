@@ -167,7 +167,7 @@
                     var sortable_item = ui["item"];
                     $(sortable_item).closest("#vocabularies").find("div.model_customizer_vocabulary").each(function(index, element) {
                         var vocabulary_order = $(this).find("input.order");
-                        $(vocabulary_order).val(index)
+                        $(vocabulary_order).val(index+1)
                     });
                 }
             });
