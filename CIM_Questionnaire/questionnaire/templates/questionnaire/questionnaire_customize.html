@@ -287,20 +287,24 @@
                             <td>
                                 {{ model_customizer_vocabularies_formset.management_form }}
                                 <div id="vocabularies" class="sortable ui-widget ui-widget-content ui-corner-all">
-                                    <div class="ui-widget ui-content ui-corner-all ui-state-default" style="text-align: center;">
-                                        <span class="active" style="float: left;">&nbsp;active&nbsp;</span>
-                                        name
-                                        <span class="order" style="float: right;">&nbsp;order&nbsp;</span>
-                                    </div>
-                                    {% for model_customizer_vocabulary_form in model_customizer_vocabularies_formset %}
-                                        <div class="model_customizer_vocabulary ui-widget ui-widget-content ui-corner-all ui-state-default">
-                                            {{ model_customizer_vocabulary_form.id }} <!-- this is a hidden field; it still needs inclusion in order to validate -->
-                                            {{ model_customizer_vocabulary_form.vocabulary_key }} <!-- this is also hidden field; it's needed to match the vocabulary_tabs below -->
-                                            {{ model_customizer_vocabulary_form.active }}&nbsp;
-                                            {{ model_customizer_vocabulary_form.vocabulary }}&nbsp;
-                                            {{ model_customizer_vocabulary_form.order }}&nbsp;
+                                    {% if vocabularies.count %}
+                                        <div class="ui-widget ui-content ui-corner-all ui-state-default" style="text-align: center;">
+                                            <span class="active" style="float: left;">&nbsp;active&nbsp;</span>
+                                            name
+                                            <span class="order" style="float: right;">&nbsp;order&nbsp;</span>
                                         </div>
-                                    {% endfor %} {# /model_customizer_vocabulary_form #}
+                                        {% for model_customizer_vocabulary_form in model_customizer_vocabularies_formset %}
+                                            <div class="model_customizer_vocabulary ui-widget ui-widget-content ui-corner-all ui-state-default">
+                                                {{ model_customizer_vocabulary_form.id }} <!-- this is a hidden field; it still needs inclusion in order to validate -->
+                                                {{ model_customizer_vocabulary_form.vocabulary_key }} <!-- this is also hidden field; it's needed to match the vocabulary_tabs below -->
+                                                {{ model_customizer_vocabulary_form.active }}&nbsp;
+                                                {{ model_customizer_vocabulary_form.vocabulary }}&nbsp;
+                                                {{ model_customizer_vocabulary_form.order }}&nbsp;
+                                            </div>
+                                        {% endfor %} {# /model_customizer_vocabulary_form #}
+                                    {% else %}
+                                        <span class="documentation">There are no CVs associated with this document type &amp; project.</span>
+                                    {% endif %} {# vocabularies.count #}
                                 </div>
                             </td>
                         </tr>
