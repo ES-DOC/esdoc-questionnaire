@@ -199,7 +199,7 @@
 					    {% if model_customizer.model_show_hierarchy %}
                                             <ul><!-- style="display: none;">-->
                                                 <li data="key:'{{root_vocabulary_key}}_{{root_component_key}}'">
-                                                    {{model_customizer.model_root_component}}
+                                                    <span> {{model_customizer.model_root_component}} {% include "questionnaire/_completion.html" %} </span>
 					    {% endif %} {# /model_customizer.model_show_hierarchy #}
                                                     <ul>
                                                     {% for vocabulary in vocabularies %}
@@ -209,7 +209,7 @@
                                                             {# wow!! #}
                                                             {% recursetree nodes %}
                                                                 <li data="key:'{{vocabulary_key}}_{{node.get_key}}'">  {# node is a component; it has a key #}
-                                                                    <span> {{ node.name }}  {# {% include "questionnaire/_completion.html" %} #}  </span>
+                                                                    <span> {{ node.name }}  {% include "questionnaire/_completion.html" %} </span>
                                                                     {% if not node.is_leaf_node %}
                                                                         <ul>
                                                                             {{ children }}

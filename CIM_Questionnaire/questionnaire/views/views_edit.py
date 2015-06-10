@@ -17,6 +17,7 @@ __date__ = "Dec 01, 2014 3:00:00 PM"
 views for editing a new or existing CIM Document
 """
 
+import json
 from django.contrib import messages
 from django.contrib.sites.models import get_current_site
 from django.core.urlresolvers import reverse
@@ -103,6 +104,11 @@ def questionnaire_edit_new(request, project_name="", model_name="", version_key=
         (model_formset, standard_properties_formsets, scientific_properties_formsets) = \
             create_new_edit_forms_from_models(realization_set["models"], customizer_set["model_customizer"], realization_set["standard_properties"], customizer_set["standard_property_customizers"], realization_set["scientific_properties"], customizer_set["scientific_property_customizers"])
 
+        initial_completion_status = {
+            realization.get_model_key(): False
+            for realization in realization_set["models"]
+        }
+
     else:  # request.method == "POST":
 
         data = request.POST
@@ -150,6 +156,7 @@ def questionnaire_edit_new(request, project_name="", model_name="", version_key=
         "version": version,  # used for generating URLs in the footer
         "model_proxy": model_proxy,  # used for generating URLs in the footer
         "vocabularies": vocabularies,
+        "initial_completion_status": json.dumps(initial_completion_status),
         "model_customizer": customizer_set["model_customizer"],
         "model_formset": model_formset,
         "standard_properties_formsets": standard_properties_formsets,
@@ -251,10 +258,10 @@ def questionnaire_edit_existing(request, project_name="", model_name="", version
         (model_formset, standard_properties_formsets, scientific_properties_formsets) = \
             create_existing_edit_forms_from_models(realization_set["models"], customizer_set["model_customizer"], realization_set["standard_properties"], customizer_set["standard_property_customizers"], realization_set["scientific_properties"], customizer_set["scientific_property_customizers"])
 
-        # completion_status = {
-        #     realization.get_model_key(): realization.is_complete()
-        #     for realization in realization_set["models"]
-        # }
+        initial_completion_status = {
+            realization.get_model_key(): realization.is_complete()
+            for realization in realization_set["models"]
+        }
 
         display_completion_status = False
 
@@ -318,7 +325,7 @@ def questionnaire_edit_existing(request, project_name="", model_name="", version
         "version": version,  # used for generating URLs in the footer
         "model_proxy": model_proxy,  # used for generating URLs in the footer
         "vocabularies": vocabularies,
-        # "completion_status": completion_status,
+        "initial_completion_status": json.dumps(initial_completion_status),
         "model_customizer": customizer_set["model_customizer"],
         "model_formset": model_formset,
         "standard_properties_formsets": standard_properties_formsets,

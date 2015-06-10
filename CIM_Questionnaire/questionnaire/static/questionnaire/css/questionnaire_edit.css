@@ -9,6 +9,7 @@
 #questionnaire #component_tree { }
 #questionnaire #component_tree #component_tree_header  { padding: 2px; background: #B9E0E3; border: 1px solid #358C92; font-weight: bold; text-align: center; }
 #questionnaire #component_tree #component_tree_content { border: 1px dotted #358C92; margin-top: 2px; }
+#questionnaire #component_tree #component_tree_content span.ui-icon { height: 14px; } /* make completion icons slightly smaller in the component_tree, so the spacing isn't affected */
 
 /* change the default colors for the treeview nodes */
 #questionnaire .dynatree-selected .dynatree-title { color: #359C92 !important; font-weight: normal !important; }

@@ -238,7 +238,7 @@ function treeviews(element) {
             $(element).find(".dynatree-partsel:not(.dynatree-selected)").each(function () {
                 var node = $.ui.dynatree.getNode(this);
                 selected_nodes.push(node);
-            })
+            });
 
             node.tree.visit(function (node) {
                 var pane_id = node.data.key + "_pane";
@@ -280,6 +280,7 @@ function treeviews(element) {
 //        node.activate($(active_checkbox).is(":checked"))
         node.expand(true);
     });
+
     // root is actually a built-in parent of the tree, and not the first item in my list
     // hence this fn call
     var first_child = root.getChildren()[0];
@@ -288,6 +289,7 @@ function treeviews(element) {
 
 show_pane = function(pane_key) {
     /* this uses functional closure so that I can re-define it in the "view" template */
+    /* to make properties read-only */
     var pane = $("#" + pane_key + "_pane");
 
     if (!$(pane).hasClass("loaded")) {
@@ -823,6 +825,28 @@ function removed_subformset_form(row) {
 
 var start_with_completion_status_displayed = false;
 
+
+function set_initial_treeview_completion(treeview, initial_completion_status) {
+
+    var tree = $(treeview).dynatree("getTree");
+    $.each(initial_completion_status, function(key, status) {
+        var node = tree.getNodeByKey(key);
+        var completion_icon = $(node.li).find("span.completion_icon:first span.ui-icon");
+        /* don't worry about tracking n_complete & n_total as below */
+        /* this fn just sets the initial state based on models */
+        /* the current state based on forms gets set upon loading */
+        if (status) {
+            $(completion_icon).addClass("complete");
+            $(completion_icon).removeClass("incomplete");
+        }
+        else {
+            $(completion_icon).removeClass("complete");
+            $(completion_icon).addClass("incomplete");
+        }
+    });
+}
+
+
 function is_complete(element) {
     if ($(element).hasClass("multiselect")) {
         /* treat enumerations slightly differently */
@@ -859,17 +883,26 @@ function completion_icons(element) {
     var is_multiselect = $(element).hasClass("multiselect");
     var type = $(element).prop("tagName");
 
-
     /* get the completion icon for this particular tab / category */
     var tab_id = $(element).closest("div.tab_content").parent("div").attr("id");
     var tab_header = $(element).closest("div.tabs").find("a[href='#" + tab_id + "']");
     var tab_completion_icon =$(tab_header).find(".completion_icon:first")
 
     /* and get the completion icon for this particualr pane / component */
-    var pane_completion_icon = $(element).parents("div.section").find(".completion_icon:first");
+    var pane = $(element).parents("div.pane");
+    var pane_completion_icon = $(pane).find(".completion_icon:first");
+
+    /* and get the completion icon for the corresopnding node in the treeview */
+    var pane_key = $(pane).attr("id");
+    var component_key = pane_key.substr(0, pane_key.length - 5);  /* (5 is the length of the string "_pane") */
+    var treeview = $("div#component_tree div.treeview");
+    var tree = $(treeview).dynatree("getTree");
+    console.log(component_key);
+    var node = tree.getNodeByKey(component_key);
+    var treeview_completion_icon = $(node.li).find("span.completion_icon:first");
 
     /* and put them together */
-    var completion_icons = $(pane_completion_icon).add(tab_completion_icon);
+    var completion_icons = $(pane_completion_icon).add(tab_completion_icon).add(treeview_completion_icon);
 
     $(completion_icons).each(function() {
 
