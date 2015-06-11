@@ -289,6 +289,11 @@ def questionnaire_edit_existing(request, project_name="", model_name="", version
             model_instances = save_valid_forms(model_formset, standard_properties_formsets, scientific_properties_formsets, model_parent_dictionary=model_parent_dictionary)
             root_model = model_instances[0].get_root()
 
+            initial_completion_status = {
+                realization.get_model_key(): realization.is_complete()
+                for realization in model_instances
+            }
+
             # this is used for other fns that might need to know what the view returns
             # (such as those in the testing framework)
             request.session["root_model_id"] = root_model.pk
@@ -317,6 +322,11 @@ def questionnaire_edit_existing(request, project_name="", model_name="", version
             else:
                 msg = "Eror saving document."
             messages.add_message(request, messages.ERROR, msg)
+
+            initial_completion_status = {
+                realization.get_model_key(): realization.is_complete()
+                for realization in realization_set["models"]
+            }
 
     # gather all the extra information required by the template
     _dict = {
