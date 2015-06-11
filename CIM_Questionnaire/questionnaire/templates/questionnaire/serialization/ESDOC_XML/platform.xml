@@ -1,0 +1,9 @@
+{% extends "questionnaire/serialization/ESDOC_XML/base.xml" %}
+
+{% block content %}
+    {% spaceless %}
+        {% with "questionnaire/serialization/ESDOC_XML/_model.xml" as template %}
+            {% include template %}
+        {% endwith %}
+    {% endspaceless %}
+{% endblock %} {# /content #}
