@@ -213,16 +213,23 @@ class MetadataScientificPropertyCustomizerForm(MetadataCustomizerForm):
     def clean(self):
         cleaned_data = self.cleaned_data
 
-        # the "category" field is a special case
-        # it was working off of _unsaved_ models
-        # so there is no pk associated w/ it
-        # the form will, however, have stored the name in the "category_name" field
+        # the "category" field is a special case:
+        # it can potentially be associated w/ _unsaved_ models,
+        # which means there would be no pk associated w/ it;
+        # the form will, however, have stored it's name in the "category_name" field;
         # I will use that to find the appropriate category to map to in the view
-        try:
-            self.cleaned_data["category"] = None
-            del self.errors["category"]
-        except KeyError:
-            pass
+
+        # I also need to make sure that a category was actually specified...
+
+        if not cleaned_data["category_name"] in EMPTY_CHOICE[0]:
+            # as long as "category_name" has been set,
+            # ignore the content of "category"
+            # (since it might be set to a yet-to-be-saved category)
+            try:
+                cleaned_data["category"] = None
+                del self.errors["category"]
+            except KeyError:
+                pass
 
         # make sure that if a user specified multiple default values for an enumeration, that it supports multiple values
         if cleaned_data["is_enumeration"] == True:
