@@ -71,17 +71,23 @@
                 }
             }());
 
-            init_widgets(users,$(parent).find("#user"));
-            init_widgets(helps,$(parent).find(".help_button"));
-            init_widgets(buttons,$(parent).find("input.button"))
-            init_widgets(panes,$(parent).find(".pane"));
-            init_widgets(treeviews,$(parent).find(".treeview"));
+            init_widgets(users, $(parent).find("#user"));
+            init_widgets(helps, $(parent).find(".help_button"));
+            init_widgets(buttons, $(parent).find("input.button"));
+            init_widgets(panes, $(parent).find(".pane"));
+            init_widgets(treeviews, $(parent).find(".treeview"));
 
             {% if not vocabularies %}
                 {% get_default_vocabulary_key as root_vocabulary_key %}
                 {% get_default_component_key as root_component_key %}
                 show_pane("{{ root_vocabulary_key }}_{{ root_component_key }}");
-            {% endif %}
+            {% else %}
+                {# okay, this is weird... #}
+                {# I understand what the |safe filter is doing here #}
+                {# but why have I not needed it when passing other JSON instances around?!? #}
+                var initial_completion_status = {{ initial_completion_status|safe }};
+                set_initial_treeview_completion($(parent).find("div#component_tree div.treeview"), initial_completion_status);
+            {% endif %} {# / not vocabularies #}
 
             /* do this last b/c some of the xpath depends on changes made by the above fns... */
             init_errors(parent);
