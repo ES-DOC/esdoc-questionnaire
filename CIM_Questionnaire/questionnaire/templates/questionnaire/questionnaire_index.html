@@ -100,6 +100,7 @@
 
 {% block footer %}
     {{ block.super }}
-    <br/>
-    <a href="/admin/questionnaire">Django Admin Interface</a>
+{#    {% if request.user.is_superuser %}#}
+        <br/><a href="/admin/questionnaire">Django Admin Interface</a>
+{#    {% endif %}#}
 {% endblock %} {# /footer #}

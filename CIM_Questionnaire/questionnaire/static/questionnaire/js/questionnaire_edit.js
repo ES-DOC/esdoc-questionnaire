@@ -331,7 +331,7 @@ show_pane = function(pane_key) {
                     init_widgets(changers, $(parent).find(".changer"));  /* forces the change event; for scientific properties, this copies the value to the corresponding header */
 
                     /* deal w/ completion icons */
-                    
+
                     init_widgets(completion_icons, $(parent).find("input.required, textarea.required, select.required, div.required"));
 
                     if (start_with_completion_status_displayed) {

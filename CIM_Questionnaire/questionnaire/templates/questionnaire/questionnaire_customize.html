@@ -203,6 +203,7 @@
         #questionniare .no_float    { float: none !important; }
 
         #questionnaire #vocabularies { display: inline-block; }
+        #questionnaire #vocabularies .documentation { padding: 2px; margin: 0px; }
         #questionnaire #vocabularies div.model_customizer_vocabulary { cursor: pointer; padding: 2px; margin: 0px; }
         #questionnaire #vocabularies .vocabulary { }
         #questionnaire #vocabularies .active { width: 50px; }
@@ -303,7 +304,7 @@
                                             </div>
                                         {% endfor %} {# /model_customizer_vocabulary_form #}
                                     {% else %}
-                                        <span class="documentation">There are no CVs associated with this document type &amp; project.</span>
+                                        <span class="documentation">There are no CVs associated with this particular document type &amp; project.</span>
                                     {% endif %} {# vocabularies.count #}
                                 </div>
                             </td>

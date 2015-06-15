@@ -1023,7 +1023,7 @@
                 component/simulation. A platform pairs a machine with a (set of) compilers. There is
                 also a point of contact for the platform. </description>
             <attributes>
-                <attribute is_label="true">
+                <attribute is_label="true" required="true">
                     <name>shortName</name>
                     <description/>
                     <type>ATOMIC</type>

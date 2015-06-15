@@ -258,7 +258,40 @@
         </model>
         <model>
             <name>platform</name>
-            <fields/>
+            <fields>
+                <field>
+                    <name>shortName</name>
+                    <category_key>basic-properties</category_key>
+                </field>
+                <field>
+                    <name>longName</name>
+                    <category_key>basic-properties</category_key>
+                </field>
+                <field>
+                    <name>description</name>
+                    <category_key>basic-properties</category_key>
+                </field>
+                <field>
+                    <name>contact</name>
+                    <category_key>basic-properties</category_key>
+                </field>
+                <field>
+                    <name>unit</name>
+                    <category_key>component-description</category_key>
+                </field>
+                <field>
+                    <name>documentStatus</name>
+                    <category_key>document-properties</category_key>
+                </field>
+                <field>
+                    <name>documentAuthor</name>
+                    <category_key>document-properties</category_key>
+                </field>
+                <field>
+                    <name>documentCreationDate</name>
+                    <category_key>document-properties</category_key>
+                </field>
+            </fields>
         </model>
         <model>
             <name>machineCompilerUnit</name>

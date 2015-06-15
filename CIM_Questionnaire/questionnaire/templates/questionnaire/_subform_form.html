@@ -55,8 +55,6 @@
                         {# with standard_properties_subformset=property_form|get_standard_properties_subformset_for_model:model_subform #}
                         {% with standard_properties_subformset=property_form.get_standard_properties_subformsets|get_value_from_key:model_subform.prefix %}
 
-
-
                             {{ standard_properties_subformset.management_form }}
                             {{ standard_properties_subformset.non_form_errors }}
 

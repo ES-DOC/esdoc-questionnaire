@@ -42,7 +42,7 @@ def create_model_customizer_form_data(model_customizer, standard_category_custom
             "loaded": True,  # model_customizer forms are always loaded (only scientific_property forms aren't)
         }
     )
-    
+
     return model_customizer_form_data
 
 

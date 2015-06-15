@@ -26,7 +26,7 @@ import os
 try:
     TEST_BROWSER = os.environ["TEST_BROWSER"].lower()
 except KeyError:
-    TEST_BROWSER = "firefox"
+    TEST_BROWSER = "firefox"  # use firefox by default
 if TEST_BROWSER == "firefox":
     from selenium.webdriver.firefox.webdriver import WebDriver
 elif TEST_BROWSER == "chrome" or TEST_BROWSER == "chromium":

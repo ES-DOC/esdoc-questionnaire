@@ -73,7 +73,7 @@ def questionnaire_project_index(request, project_name=""):
     can_edit = is_user_of(current_user, project) or not project_authenticated
     can_view = True
     can_join = not is_member_of(current_user, project) and current_user.is_authenticated()
-    can_delete =  current_user.is_superuser
+    can_delete = current_user.is_superuser
 
     # get the querysets...
     all_ontologies = MetadataVersion.objects.filter(registered=True).order_by("key")
