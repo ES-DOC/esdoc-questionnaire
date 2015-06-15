@@ -328,38 +328,11 @@ show_pane = function(pane_key) {
                     init_widgets(dynamic_accordion_buttons, $(parent).find("button.add, button.remove, button.replace"));
                     init_widgets(fieldsets, $(parent).find(".collapsible_fieldset"));
                     init_widgets(inherits, $(parent).find(".inherited"));
-                    init_widgets(changers, $(parent).find(".changer"));  /* force the change event on scientific properties, which copies the property value to the accordion header */
+                    init_widgets(changers, $(parent).find(".changer"));  /* forces the change event; for scientific properties, this copies the value to the corresponding header */
 
-                    /* dealing w/ completion widgets is a special case */
-                    /* b/c even if there are no "required" properties (unlikely, but possible) */
-                    /* I still need to set the icons */
-                    var required_properties = $(parent).find("input.required, textarea.required, select.required, div.required");
-                    if (required_properties.length) {
-                        init_widgets(completion_icons, required_properties);
-                    }
-                    else {
-                        $(parent).find(".completion_icon").each(function() {
-
-                            var completion_icon = this;
-                            var icon = $(completion_icon).find("span.ui-icon");
-
-                            var n_total_input = $(completion_icon).find("input[name='n_total']");
-                            var n_total = $(n_total_input).val();
-
-                            var n_complete_input = $(this).find("input[name='n_complete']");
-                            var n_complete = $(n_complete_input).val();
-
-                            if (n_total == n_complete) {
-                                $(icon).addClass("complete");
-                                $(icon).removeClass("incomplete");
-                            }
-                            else {
-                                $(icon).removeClass("complete");
-                                $(icon).addClass("incomplete");
-                            }
-
-                        });
-                    }
+                    /* deal w/ completion icons */
+                    
+                    init_widgets(completion_icons, $(parent).find("input.required, textarea.required, select.required, div.required"));
 
                     if (start_with_completion_status_displayed) {
                         /* if this is supposed to display the completion icons, */
@@ -856,7 +829,7 @@ function removed_subformset_form(row) {
 var start_with_completion_status_displayed = false;
 
 
-function set_initial_treeview_completion(treeview, initial_completion_status) {
+function set_initial_treeview_completion_icons(treeview, initial_completion_status) {
 
     var tree = $(treeview).dynatree("getTree");
     $.each(initial_completion_status, function(key, status) {
