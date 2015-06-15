@@ -895,16 +895,22 @@ function completion_icons(element) {
     var pane = $(element).parents("div.pane");
     var pane_completion_icon = $(pane).find(".completion_icon:first");
 
-    /* and get the completion icon for the corresopnding node in the treeview */
-    var pane_key = $(pane).attr("id");
-    var component_key = pane_key.substr(0, pane_key.length - 5);  /* (5 is the length of the string "_pane") */
-    var treeview = $("div#component_tree div.treeview");
-    var tree = $(treeview).dynatree("getTree");
-    var node = tree.getNodeByKey(component_key);
-    var treeview_completion_icon = $(node.li).find("span.completion_icon:first");
-
     /* and put them together */
     var completion_icons = $(pane_completion_icon).add(tab_completion_icon).add(treeview_completion_icon);
+
+    /* oh, and get the completion icon for the corresopnding node in the treeview */
+    /* (iff it exists) */
+    var treeview = $("div#component_tree div.treeview");
+    if (treeview.length) {
+        var pane_key = $(pane).attr("id");
+        var component_key = pane_key.substr(0, pane_key.length - 5);
+        /* (5 is the length of the string "_pane") */
+        var tree = $(treeview).dynatree("getTree");
+        var node = tree.getNodeByKey(component_key);
+        var treeview_completion_icon = $(node.li).find("span.completion_icon:first");
+
+        completion_icons = $(completion_icons).add(treeview_completion_icon);
+    }
 
     $(completion_icons).each(function() {
 
