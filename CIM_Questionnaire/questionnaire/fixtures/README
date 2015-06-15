@@ -4,9 +4,8 @@ When creating fixtures use the following command:
 `manage.py dumpdata --indent 4 questionnaire > <fixture file>.json`
 
 The resultant file will contain models in a random order [see https://code.djangoproject.com/ticket/6726];
-You may have to re-order models for tests to work:
-site, versions, categorizations, vocabularies, projects, & projectvocabularies must come 1st;
-
+You may have to re-order models for tests to work;
+This can be done using the "sort_fixtures.py" script
 
 When updating fixtures you may need to:
 1) run `manage.py flush` then `manage.py syncdb`
