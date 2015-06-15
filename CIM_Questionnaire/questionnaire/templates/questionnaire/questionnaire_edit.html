@@ -50,7 +50,7 @@
                 {# I understand what the |safe filter is doing here #}
                 {# but why have I not needed it when passing other JSON instances around?!? #}
                 var initial_completion_status = {{ initial_completion_status|safe }};
-                set_initial_treeview_completion($(parent).find("div#component_tree div.treeview"), initial_completion_status);
+                set_initial_treeview_completion_icons($(parent).find("div#component_tree div.treeview"), initial_completion_status);
             {% endif %} {# / not vocabularies #}
 
             // do this last b/c some of the xpath depends on changes made by the above fns...
