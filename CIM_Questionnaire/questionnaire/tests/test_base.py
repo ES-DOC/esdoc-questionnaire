@@ -247,12 +247,15 @@ class TestQuestionnaireBase(TestCase):
 
         self.cim_1_8_1_version = MetadataVersion.objects.get(name="cim", version="1.8.1")
         self.cim_1_8_1_categorization = self.cim_1_8_1_version.categorization
-        self.model_component_proxy = MetadataModelProxy.objects.get(version=self.cim_1_8_1_version, name__iexact="modelcomponent")
+        self.cim_1_10_version = MetadataVersion.objects.get(name="cim", version="1.10")
+        self.cim_1_10_categorization = self.cim_1_10_version.categorization
+
+        self.model_component_proxy = MetadataModelProxy.objects.get(version=self.cim_1_10_version, name__iexact="modelcomponent")
 
         self.atmosphere_vocabulary = MetadataVocabulary.objects.get(name__iexact="atmosphere")
         self.landsurface_vocabulary = MetadataVocabulary.objects.get(name__iexact="landsurface")
         self.statisticaldownscaling_vocabulary = MetadataVocabulary.objects.get(name__iexact="statisticaldownscaling")
-        self.couplingtechnology_vocabulary = MetadataVocabulary.objects.get(name__iexact="couplingtechnology")
+        self.modelinfrastructure_vocabulary = MetadataVocabulary.objects.get(name__iexact="modelinfrastructure")
 
         self.downscaling_project = MetadataProject.objects.get(name="downscaling")
         downscaling_model_component_customizer = MetadataModelCustomizer.objects.get(project=self.downscaling_project, proxy=self.model_component_proxy, name="default")
@@ -298,7 +301,7 @@ class TestQuestionnaireBase(TestCase):
         }
 
         self.esfdl_project = MetadataProject.objects.get(name="es-fdl")
-        esfdl_model_component_customizer = MetadataModelCustomizer.objects.get(project=self.esfdl_project, proxy=self.model_component_proxy, name="test")
+        esfdl_model_component_customizer = MetadataModelCustomizer.objects.get(project=self.esfdl_project, proxy=self.model_component_proxy, name="default")
         self.esfdl_model_component_vocabularies = esfdl_model_component_customizer.get_sorted_vocabularies()
 
         (model_customizer, standard_category_customizers, standard_property_customizers, nested_scientific_category_customizers, nested_scientific_property_customizers) = \

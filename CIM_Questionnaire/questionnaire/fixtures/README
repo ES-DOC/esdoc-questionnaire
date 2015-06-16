@@ -13,3 +13,22 @@ When updating fixtures you may need to:
    (this may require minor code changes to reset the models as they were at that last-used fixture)
 3) then migrate to the most-recent version, then (add/change/delete data and then) dumpdata as above
 4) double-check that no print outs are in the fixture and then reorder as described above
+
+Note that the test framework relies of the following serialized models in the fixture file:
+* cim_1_8_1
+* cim_1_8_1_categorization
+* cim_1_10
+* cim_1_10_categorization
+* downscaling project
+* es-fdl project
+* esps project
+* atmosphere cv
+* landsurface cv
+* statisticaldownscaling cv
+* modelinfrastructure cv
+* downscaling/model_component customizer ("default")
+* downscaling/model_component customizer ("subforms")
+* downscaling/model_component document ("one")
+* downscaling/platform customizer ("default")
+* downscaling/platform document ("one"); complete
+* es-fdl/model_component customizer ("default")

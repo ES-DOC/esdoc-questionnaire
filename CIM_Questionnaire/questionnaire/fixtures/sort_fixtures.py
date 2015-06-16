@@ -16,7 +16,7 @@ __date__ ="Jan 23, 2014 10:19:02 AM"
 .. module:: sort_fixtures
 
 stand-alone script to sort fixtures, so that models are listed in the correct order
-
+this is required b/c of a known bug in Django [see https://code.djangoproject.com/ticket/6726]
 """
 
 import os
