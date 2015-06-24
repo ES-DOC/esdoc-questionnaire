@@ -186,6 +186,8 @@ class MetadataModel(MPTTModel):
 
             if standard_property_customization.displayed:
 
+                field_type = standard_property_customization.field_type
+
                 # if there is no standard property, create it...
                 if not standard_property:
                     new_standard_property = MetadataStandardProperty(
@@ -193,10 +195,15 @@ class MetadataModel(MPTTModel):
                         model=self,
                     )
                     new_standard_property.reset()
+                    # and if there is a default value, then set it...
+                    if field_type == MetadataFieldTypes.ATOMIC and standard_property_customization.default_value:
+                        new_standard_property.atomic_value = standard_property_customization.default_value
+                    elif field_type == MetadataFieldTypes.ENUMERATION and standard_property_customization.enumeration_default:
+                        new_standard_property.enumeration_value = standard_property_customization.enumeration_default
                     new_standard_property.save()
                     standard_property = new_standard_property
 
-                if standard_property.field_type == "RELATIONSHIP":
+                if field_type == "RELATIONSHIP":
                     # recurse through subforms...
                     for submodel in standard_property.relationship_value.all():
                         submodel_customizer = standard_property_customization.subform_customizer
@@ -336,6 +343,14 @@ class MetadataModel(MPTTModel):
             serialization.publication_date = timezone.now()
 
         serialization.save()
+
+    @classmethod
+    def get_models_with_label(cls, label, models):
+        models_with_label = [
+            model for model in models
+            if model.get_label() == label
+        ]
+        return models_with_label
 
     @classmethod
     def get_new_realization_set(cls, project, version, model_proxy, standard_property_proxies, scientific_property_proxies, model_customizer, vocabularies):
@@ -601,8 +616,8 @@ class MetadataStandardProperty(MetadataProperty):
         self.field_type = proxy.field_type
         
         self.atomic_value = None
-        self.enumeration_value = None
-        self.enumeration_other_value = "Please enter a custom value."
+        self.enumeration_value = u""
+        self.enumeration_other_value = u"Please enter a custom value."
 
         if self.pk:
             self.relationship_value.clear()
