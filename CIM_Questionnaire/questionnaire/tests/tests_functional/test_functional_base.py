@@ -39,8 +39,11 @@ else:
     msg = u"unknown test browser: '%s'" % TEST_BROWSER
     raise ImproperlyConfigured(msg)
 
-
 TEST_TIMEOUT = 10  # seconds
+
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions
 
 
 class TestFunctionalBase(LiveServerTestCase):
@@ -56,7 +59,7 @@ class TestFunctionalBase(LiveServerTestCase):
     @classmethod
     def setUpClass(cls):
         cls.webdriver = WebDriver()
-        cls.webdriver.implicitly_wait(TEST_TIMEOUT)
+        cls.webdriver.implicitly_wait(TEST_TIMEOUT)  # default wait (can explicitly wait using fns below)
         super(TestFunctionalBase, cls).setUpClass()
 
     @classmethod
@@ -64,35 +67,27 @@ class TestFunctionalBase(LiveServerTestCase):
         cls.webdriver.quit()
         super(TestFunctionalBase, cls).tearDownClass()
 
-    # I SUPSECT THAT THINGS MIGHT GO A BIT WONKY
-    # B/C OF THE AMOUNT OF JQUERY LOADING & AJAX STUFF THAT THE APP DOES;
-    # IN THAT CASE, I HAVE A HOOK HERE FOR A TIMEOUT FN
-    # - OTHER THAN THE IMPLICIT TIMEOUT ABOVE -
-    # BUT I'M NOT SURE HOW TO COMPLETE IT
-    # (THE LINKS GIVE MORE INFO)
-    # def wait_for_js_to_load(self):
-    #     from selenium.webdriver.support.wait import WebDriverWait
-    #     from selenium.webdriver.support import expected_conditions as ec
-    #     from selenium.webdriver.common.by import By
-    #
-    #     something like this...
-    #
-    #     WebDriverWait(self.selenium, TEST_TIMEOUT).until(
-    #         lambda driver: driver.find_element_by_tag_name('my_dynamic_element'), timeout=TEST_TIMEOUT)
-    #
-    #     or else something like this...
-    #
-    #     try:
-    #         element = WebDriverWait(self.selenium, TEST_TIMEOUT).until(
-    #             ec.presence_of_element_located((By.ID, "my_dynamic_element"))
-    #         )
-    #     finally:
-    #         self.selenium.quit()
-    #
-    # http://selenium-python.readthedocs.org/en/latest/waits.html
-    # http://sqa.stackexchange.com/questions/7420/the-code-of-wait-method-for-ajax-call-to-complete
-    # https://code.google.com/p/selenium/wiki/FrequentlyAskedQuestions#Q:_WebDriver_fails_to_find_elements_/_Does_not_block_on_page_loa
-    # http://selenide.org/
+    ##############################
+    # some additional assertions #
+    ##############################
+
+    def assertIn(self, member, container, msg=None):
+        """
+        performs a case-insensitive assertion
+        (a lot of template code uses tags or filters that I want to be able to ignore)
+        :param member:
+        :param container:
+        :param msg:
+        :return:
+        """
+
+        member_lower = member.lower()
+        container_lower = container.lower()
+
+        if msg:
+            return super(TestFunctionalBase, self).assertIn(member_lower, container_lower, msg=msg)
+        else:
+            return super(TestFunctionalBase, self).assertIn(member_lower, container_lower)
 
     #######################################################################
     # fns to hide details of whatever test domain LiveServerTestCase uses #
@@ -252,3 +247,37 @@ class TestFunctionalBase(LiveServerTestCase):
         help_dialog_close_button = help_dialog.find_element_by_xpath("../div/button")
         help_dialog_close_button.click()
         self.assertFalse(help_dialog.is_displayed(), msg=msg)
+
+    ###############################################
+    # some stuff for dealing w/ JS loading delays #
+    ###############################################
+
+    # in general, these work by knowing that the JS code adds a class or element or whatever to the HTML
+    # the selector argument targets the element _with_ that additional bit
+    # it only returns once the element can be found
+
+    def wait_by_css(self, selector):
+        """
+        pauses execution until an element w/ the specified css can be found
+        :param selector:
+        :return:
+        """
+        waiter = WebDriverWait(self.webdriver, TEST_TIMEOUT)
+        locator = (By.CSS_SELECTOR, selector)
+        element = waiter.until(expected_conditions.presence_of_element_located(locator))
+
+        _msg = "Waited for %s seconds, but an element could not be found w/ the following css: '%s'" % (TEST_TIMEOUT, selector)
+        self.assertIsNotNone(element, msg=_msg)
+
+    def wait_by_xpath(self, selector):
+        """
+        pauses execution until an element w/ the specified xpath can be found
+        :param selector:
+        :return:
+        """
+        waiter = WebDriverWait(self.webdriver, TEST_TIMEOUT)
+        locator = (By.XPATH, selector)
+        element = waiter.until(expected_conditions.presence_of_element_located(locator))
+
+        _msg = "Waited for %s seconds, but an element could not be found w/ the following xpath: '%s'" % (TEST_TIMEOUT, selector)
+        self.assertIsNotNone(element, msg=_msg)

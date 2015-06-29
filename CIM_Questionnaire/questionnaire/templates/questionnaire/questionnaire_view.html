@@ -44,24 +44,33 @@
                 return function(pane_key) {
                     var pane = $("#" + pane_key + "_pane");
                     cached_show_pane.apply(this, arguments);
-                    setTimeout(function(){
-                        var standard_properties = $(pane).find("tr.field");
-                        var standard_properties_atomic = $(standard_properties).find("input, textarea, select");
-                        var standard_properties_enumeration = $(standard_properties).find("div.multiselect");
+                    setTimeout(function() {
+{#                        var standard_properties = $(pane).find("tr.field");#}
+{#                        var standard_properties_atomic = $(standard_properties).find("input, textarea, select");#}
+{#                        var standard_properties_enumeration = $(standard_properties).find("div.multiselect");#}
+                        var standard_properties = $(pane).find(".standard_property");
                         var scientific_properties = $(pane).find("div.scientific_property");
                         var scientific_properties_atomic = $(scientific_properties).find("input, textarea");
                         var scientific_properties_enumeration = $(scientific_properties).find("div.multiselect");
                         var all_properties =
-                                $(standard_properties_atomic)
-                                .add(standard_properties_enumeration)
+                                $(standard_properties)
+{#                                $(standard_properties_atomic)#}
+{#                                .add(standard_properties_enumeration)#}
                                 .add(scientific_properties_atomic)
                                 .add(scientific_properties_enumeration);
 
                         $(all_properties).each(function() {
                             $(this).addClass("ui-state-disabled");  /* addClass("readonly") */
-                            $(this).focus(function() {
+                            /* I am trying 2 ways to prevent selection:*/
+                            /* 1st by blurring focus... */
+                            $(this).focus(function(e) {
                                 this.blur();
-                            })
+                            });
+                            /* ...2nd by explicitly preventing events propagating */
+                            $(this).click(function(e) {
+                                e.preventDefault();
+                                e.stopPropagation();
+                            });
                         });
 
                     }, 2000);
@@ -123,9 +132,10 @@
 
 {% block content %}
 
+
     {% block content_title %}
         <div class="title">
-            Viewing {{ model_customizer.model_title|a_or_an }} <b>{{model_customizer.model_title|title}}</b> instance for the <a href="/{{ project.name|lower }}" title="ES-DOC Questionnaire Project Home"><b>{{project.title|title}}</b></a> Project
+            Viewing {{ model_customizer.model_title|a_or_an }} <u>read-only</u> <b>{{model_customizer.model_title|title}}</b> instance for the <a href="/{{ project.name|lower }}" title="ES-DOC Questionnaire Project Home"><b>{{project.title|title}}</b></a> Project
         </div> <!-- /.title -->
     {% endblock %} {# /content_title #}
 
@@ -174,7 +184,7 @@
                             Use this checkbox to toggle the indication of incomplete sections.
                             When selected, any section with required properties that have <em>not</em> been filled in will be indicated by this icon:
                             <!-- inline styling here b/c this will show up outside the containing #questionnaire <div> -->
-                            <span class="ui-state-error-text"><span class="ui-icon ui-icon-pin-w" style="display: inline-block; vertical-align: middle;">&nbsp;</span></span>
+                            <span class="ui-state-error-text"><span class="ui-icon ui-icon-pin-s" style="display: inline-block; vertical-align: middle;">&nbsp;</span></span>
                             Only documents with no incomplete properties can be published.
                         </div> <!-- /.help_description -->
                     </div> <!-- /.help_button -->

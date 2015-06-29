@@ -41,7 +41,7 @@
                         <choice>NUOPC</choice>
                     </enumeration>
                 </attribute>
-                <attribute is_label="true">
+                <attribute is_label="true" required="true">
                     <name>shortName</name>
                     <description>The name of the model (that is used internally).</description>
                     <type>ATOMIC</type>
@@ -179,7 +179,7 @@
                         <target>deployment</target>
                     </relationship>
                 </attribute>
-                <attribute>
+                <attribute required="true">
                     <name>type</name>
                     <description>Describes the type of component. There can be multiple
                         types.</description>
@@ -247,7 +247,7 @@
             <description>A ModelComponent is a scientific model; it represents code which models some
                 physical phenomena for a particular length of time.</description>
             <attributes>
-                <attribute required="true">
+                <attribute>
                     <name>purpose</name>
                     <description/>
                     <type>ATOMIC</type>
@@ -280,7 +280,7 @@
                         <choice>NUOPC</choice>
                     </enumeration>
                 </attribute>
-                <attribute is_label="true">
+                <attribute is_label="true" required="true">
                     <name>shortName</name>
                     <description>The name of the model (that is used internally).</description>
                     <type>ATOMIC</type>
@@ -418,7 +418,7 @@
                         <target>deployment</target>
                     </relationship>
                 </attribute>
-                <attribute>
+                <attribute required="true">
                     <name>type</name>
                     <description>Describes the type of component. There can be multiple
                         types.</description>
@@ -644,7 +644,7 @@
                         <target>contactType</target>
                     </relationship>
                 </attribute>
-                <attribute namespace="gmd">
+                <attribute namespace="gmd" required="true">
                     <name>role</name>
                     <description/>
                     <type>ENUMERATION</type>
@@ -668,7 +668,7 @@
             <name>citation</name>
             <description>Standardized resource reference</description>
             <attributes>
-                <attribute is_label="true">
+                <attribute is_label="true" required="true">
                     <name>title</name>
                     <description/>
                     <type>ATOMIC</type>
@@ -684,7 +684,7 @@
                         <atomic_type>STRING</atomic_type>
                     </atomic>
                 </attribute>
-                <attribute>
+                <attribute required="true">
                     <name>date</name>
                     <description/>
                     <type>ATOMIC</type>
@@ -765,7 +765,7 @@
             <description>Information about online sources from which the dataset, specification, or
                 community profile name and extended metadata elements can be obtained.</description>
             <attributes>
-                <attribute is_label="true">
+                <attribute is_label="true" required="true">
                     <name>linkage</name>
                     <description/>
                     <type>ATOMIC</type>
@@ -821,7 +821,7 @@
             <description>Details of the programming language a component is written in. There is an
                 assumption that all EntryPoints use the same ComponentLanguage.</description>
             <attributes>
-                <attribute is_label="true">
+                <attribute is_label="true" required="true">
                     <name>name</name>
                     <description>The name of the language</description>
                     <type>ATOMIC</type>
@@ -838,7 +838,7 @@
                 times that the component was run for or the units of time that a component is able
                 to model (in a single timestep).</description>
             <attributes>
-                <attribute>
+                <attribute required="true">
                     <name>units</name>
                     <description/>
                     <type>ENUMERATION</type>
@@ -996,7 +996,7 @@
             <description>Describes how a deployment has been parallelised across a computing
                 platform.</description>
             <attributes>
-                <attribute>
+                <attribute required="true">
                     <name>process</name>
                     <type>ATOMIC</type>
                     <atomic>
@@ -1086,7 +1086,7 @@
                         <target>responsibleParty</target>
                     </relationship>
                 </attribute>
-                <attribute>
+                <attribute required="true">
                     <name>unit</name>
                     <description/>
                     <type>RELATIONSHIP</type>
@@ -1132,7 +1132,7 @@
             <description>Associates a machine with a [set of] compilers. This is a separate class in
                 case a platform needs to specify more than one machine/compiler pair.</description>
             <attributes>
-                <attribute>
+                <attribute required="true">
                     <name>machine</name>
                     <description/>
                     <type>RELATIONSHIP</type>
@@ -1164,7 +1164,7 @@
                         <atomic_type>STRING</atomic_type>
                     </atomic>
                 </attribute>
-                <attribute is_label="true">
+                <attribute is_label="true" required="true">
                     <name>machineName</name>
                     <description/>
                     <type>ATOMIC</type>
@@ -1306,7 +1306,7 @@
             <name>compiler</name>
             <description>A description of a compiler used on a particular platform.</description>
             <attributes>
-                <attribute is_label="true">
+                <attribute is_label="true" required="true">
                     <name>name</name>
                     <description/>
                     <type>ATOMIC</type>
@@ -1314,7 +1314,7 @@
                         <atomic_type>STRING</atomic_type>
                     </atomic>
                 </attribute>
-                <attribute>
+                <attribute required="true">
                     <name>version</name>
                     <description/>
                     <type>ATOMIC</type>
@@ -1436,7 +1436,7 @@
                 case the isLeaf property should be set to true, indicating that the mosaic is a leaf
                 mosaic.</description>
             <attributes>
-                <attribute>
+                <attribute required="true">
                     <name>id</name>
                     <description>Specifies a globally unique identifier for a grid mosaic instance.
                         By globally we mean across all GridSpec instances/records within a given
@@ -1446,7 +1446,7 @@
                         <atomic_type>STRING</atomic_type>
                     </atomic>
                 </attribute>
-                <attribute>
+                <attribute required="true">
                     <name>gridType</name>
                     <description>Specifies the type of all the grid tiles contained in a grid
                         mosaic. It is assumed that all of the tiles comprising a given grid mosaic
@@ -1645,7 +1645,7 @@
             <name>gridTile</name>
             <description/>
             <attributes>
-                <attribute>
+                <attribute required="true">
                     <name>descretizationType</name>
                     <description>Indicates the type of discretization applied to the grid tile, e.g.
                         "logically_rectangular".</description>
@@ -2178,7 +2178,7 @@
             <description>Simple data type for encapsulating an array of grid cell
                 definitions.</description>
             <attributes>
-                <attribute>
+                <attribute required="true">
                     <name>gridCell</name>
                     <description/>
                     <type>RELATIONSHIP</type>
@@ -2249,7 +2249,7 @@
             <description>Simple data type for encapsulating an array of grid cell reference
                 definitions.</description>
             <attributes>
-                    <attribute>
+                    <attribute required="true">
                         <name>gridCellRef</name>
                         <description/>
                         <type>RELATIONSHIP</type>
@@ -2358,7 +2358,7 @@
                 child components. That is, a composition must belong to an ancestor component of the
                 components whose fields are being connected.</description>
             <attributes>
-                <attribute>
+                <attribute required="true">
                     <name>coupling</name>
                     <description/>
                     <type>RELATIONSHIP</type>
@@ -2367,7 +2367,7 @@
                         <target>coupling</target>
                     </relationship>
                 </attribute>
-                <attribute>
+                <attribute required="true">
                     <name>description</name>
                     <description/>
                     <type>ATOMIC</type>
@@ -2410,7 +2410,6 @@
                         <atomic_type>TEXT</atomic_type>
                     </atomic>
                 </attribute>
-
                 <attribute>
                     <name>type</name>
                     <description>Describes the method of coupling.</description>
@@ -2446,7 +2445,6 @@
                         <target>timeLag</target>
                     </relationship>
                 </attribute>
-
                 <attribute>
                     <name>spatialRegridding</name>
                     <description>Characteristics of the scheme used to interpolate a field from one
@@ -2457,7 +2455,6 @@
                         <target>spatialRegridding</target>
                     </relationship>
                 </attribute>
-
                 <attribute>
                     <name>timeTransformation</name>
                     <description>Temporal transformation performed on the coupling field before or
@@ -2468,8 +2465,7 @@
                         <target>timeTransformation</target>
                     </relationship>
                 </attribute>
-
-                <attribute>
+                <attribute required="true">
                     <name>couplingSource</name>
                     <description>The source component of the coupling. (note that there can be
                         multiple sources)</description>
@@ -2479,7 +2475,7 @@
                         <target>couplingEndPoint</target>
                     </relationship>
                 </attribute>
-                <attribute>
+                <attribute required="true">
                     <name>couplingTarget</name>
                     <description>The target component of the coupling</description>
                     <type>RELATIONSHIP</type>
@@ -2488,7 +2484,6 @@
                         <target>couplingEndPoint</target>
                     </relationship>
                 </attribute>
-
                 <attribute>
                     <name>transformer</name>
                     <description>An "in-line" transformer. This references a fully-described
@@ -2763,7 +2758,7 @@
             <description>Allows users to bypass the SpatialRegriddingStandardMethod and instead
                 provide a set of weights and addresses for regridding via a file.</description>
             <attributes>
-                <attribute>
+                <attribute required="true">
                     <name>name</name>
                     <description/>
                     <type>ATOMIC</type>
@@ -2788,7 +2783,7 @@
             <description>Characteristics of the scheme used to interpolate a field from one grid
                 (source grid) to another (target grid) </description>
             <attributes>
-                <attribute is_label="true">
+                <attribute is_label="true" required="true">
                     <name>mappingType</name>
                     <type>ENUMERATION</type>
                     <enumeration multi="false" nullable="false" open="true">
@@ -2818,7 +2813,7 @@
                 in case the same DataSource is used more than once in a coupled model (this may be
                 required for BFG).</description>
             <attributes>
-                <attribute>
+                <attribute required="true">
                     <!-- TODO REVIEW THIS ATTRIBUTE -->
                     <name>dataSource</name>
                     <description/>
@@ -2850,7 +2845,7 @@
                 required for BFG). Realistically, tihe instanceID is unlikely to be used for a
                 connection, only for a coupling. It is provided here for consistency.</description>
             <attributes>
-                <attribute>
+                <attribute required="true">
                     <!-- TODO REVIEW THIS ATTRIBUTE -->
                     <name>dataSource</name>
                     <description/>

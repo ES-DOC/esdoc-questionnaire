@@ -308,6 +308,7 @@ show_pane = function(pane_key) {
         $.ajax({
             url: url,
             type: "GET",
+            //async: false,
             success: function (data) {
 
                 $(pane).html(data);

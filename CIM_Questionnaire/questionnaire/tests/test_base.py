@@ -46,7 +46,6 @@ from CIM_Questionnaire.questionnaire.utils import APP_LABEL
 ###########################################
 # some utility fns to get data from forms #
 # (even if they aren't MetadataForms)     #
-
 ###########################################
 
 def get_data_from_form(form, existing_data={}):
