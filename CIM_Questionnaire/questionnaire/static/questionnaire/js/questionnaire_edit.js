@@ -287,9 +287,14 @@ function treeviews(element) {
     first_child.activate(true);
 }
 
-show_pane = function(pane_key) {
-    /* this uses functional closure so that I can re-define it in the "view" template */
-    /* to make properties read-only */
+/* this uses functional closure so that I can re-define it in the "view" template */
+/* to ensure is_view is true, which makes properties read-only */
+
+show_pane = function(pane_key, is_view) {
+
+    /* if you don't provide an argument for is_view, set it to false */
+    is_view = typeof is_view !== 'undefined' ? is_view : false;
+    
     var pane = $("#" + pane_key + "_pane");
 
     if (!$(pane).hasClass("loaded")) {
@@ -330,6 +335,30 @@ show_pane = function(pane_key) {
                     init_widgets(fieldsets, $(parent).find(".collapsible_fieldset"));
                     init_widgets(inherits, $(parent).find(".inherited"));
                     init_widgets(changers, $(parent).find(".changer"));  /* forces the change event; for scientific properties, this copies the value to the corresponding header */
+
+                    if (is_view) {
+                        /* make things read-only */
+                        var standard_properties = $(pane).find(".standard_property");
+                        var scientific_properties = $(pane).find("div.scientific_property");
+                        var scientific_properties_atomic = $(scientific_properties).find("input, textarea");
+                        var scientific_properties_enumeration = $(scientific_properties).find("div.multiselect");
+                        var all_properties = standard_properties
+                            .add(scientific_properties_atomic)
+                            .add(scientific_properties_enumeration);
+                        $(all_properties).each(function() {
+                            $(this).addClass("ui-state-disabled");  /* .addClass("readonly") */
+                            /* there are 2 ways to prevent selection: */
+                            /* 1st by blurring focus... */
+                            $(this).focus(function() {
+                                $(this).blur();
+                            });
+                            /* ...2nd by explicitly preventing click propagation */
+                            $(this).click(function(e) {
+                                e.preventDefault();
+                                e.stopPropagation();
+                            });
+                        });
+                    }
 
                     /* deal w/ completion icons */
 

@@ -42,41 +42,23 @@
             show_pane = (function() {
                 var cached_show_pane = show_pane;
                 return function(pane_key) {
-                    var pane = $("#" + pane_key + "_pane");
-                    cached_show_pane.apply(this, arguments);
-                    setTimeout(function() {
-{#                        var standard_properties = $(pane).find("tr.field");#}
-{#                        var standard_properties_atomic = $(standard_properties).find("input, textarea, select");#}
-{#                        var standard_properties_enumeration = $(standard_properties).find("div.multiselect");#}
-                        var standard_properties = $(pane).find(".standard_property");
-                        var scientific_properties = $(pane).find("div.scientific_property");
-                        var scientific_properties_atomic = $(scientific_properties).find("input, textarea");
-                        var scientific_properties_enumeration = $(scientific_properties).find("div.multiselect");
-                        var all_properties =
-                                $(standard_properties)
-{#                                $(standard_properties_atomic)#}
-{#                                .add(standard_properties_enumeration)#}
-                                .add(scientific_properties_atomic)
-                                .add(scientific_properties_enumeration);
+                    /* an explicit "true" argument is added to the standard arguments for show_pane */
+                    /* this corresponds to the "is_view" argument of show_pane */
+                    /* which will cause all properties to become read-only */
+                    var view_arguments = [];
+                    $.each(arguments, function(key,value) {
+                        view_arguments.push(value);
+                    });
+                    view_arguments.push(true);
+                    cached_show_pane.apply(this, view_arguments);
 
-                        $(all_properties).each(function() {
-                            $(this).addClass("ui-state-disabled");  /* addClass("readonly") */
-                            /* I am trying 2 ways to prevent selection:*/
-                            /* 1st by blurring focus... */
-                            $(this).focus(function(e) {
-                                this.blur();
-                            });
-                            /* ...2nd by explicitly preventing events propagating */
-                            $(this).click(function(e) {
-                                e.preventDefault();
-                                e.stopPropagation();
-                            });
-                        });
-
-                    }, 2000);
-                    /* I am not happy w/ this "setTimeout" hack */
-                    /* but I don't know a better way to deal w/ the fact that */
-                    /* the original "show_pane" uses asynchronous AJAX */
+                    /* originally this worked by using setTimeout, */
+                    /* but that created a race condition b/c cached_show_pane used asynchronous AJAX */
+                    /* which meant that I couldn't guarantee that properties would be available by the time of the timeout */
+                    /* see issue #375 */
+{#                    setTimeout(function() {#}
+{#                        ...#}
+{#                    }, 2000);#}
                 }
             }());
 
