@@ -294,7 +294,7 @@ show_pane = function(pane_key, is_view) {
 
     /* if you don't provide an argument for is_view, set it to false */
     is_view = typeof is_view !== 'undefined' ? is_view : false;
-    
+
     var pane = $("#" + pane_key + "_pane");
 
     if (!$(pane).hasClass("loaded")) {
