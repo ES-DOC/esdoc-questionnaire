@@ -259,15 +259,15 @@ class MetadataAbstractStandardPropertyForm(MetadataEditingForm):
         if customizer.field_type == MetadataFieldTypes.ATOMIC:
             atomic_type = customizer.atomic_type
             if atomic_type:
-                atomic_field = self.fields["atomic_value"]
+                # atomic_field = self.fields["atomic_value"]
                 if atomic_type != MetadataAtomicFieldTypes.DEFAULT:
                     custom_widget_class = METADATA_ATOMICFIELD_MAP[atomic_type][0]
                     custom_widget_args = METADATA_ATOMICFIELD_MAP[atomic_type][1]
-                    atomic_field.widget = custom_widget_class(**custom_widget_args)
+                    value_field.widget = custom_widget_class(**custom_widget_args)
                     if atomic_type == MetadataAtomicFieldTypes.TEXT:
                         # force TextInput to be a pretty size, as per #82
-                        set_field_widget_attributes(atomic_field, {"cols": "40", "rows": "5", })
-                update_field_widget_attributes(atomic_field, {"class": atomic_type.lower()})
+                        set_field_widget_attributes(value_field, {"cols": "40", "rows": "5", })
+                update_field_widget_attributes(value_field, {"class": atomic_type.lower()})
 
         elif customizer.field_type == MetadataFieldTypes.ENUMERATION:
             custom_widget_attributes = {"class": "multiselect"}
@@ -302,7 +302,6 @@ class MetadataAbstractStandardPropertyForm(MetadataEditingForm):
                 #         model_key = u"%s_%s" % (vocabulary_key, component_key)
                 #         scientific_property_customizers[model_key] = scientific_property_customizer_list
                 #         scientific_property_proxies[model_key] = [scientific_property_customizer.proxy for scientific_property_customizer in scientific_property_customizer_list]
-
 
                 # determine if the subforms ought to be a 1-to-1 (ie: a subformset w/ 1 item) or a m-to-m (ie: a subformset w/ multiple items)
                 # even though the underlying model uses a m-to-m field, this restricts how many items users can add
@@ -388,6 +387,8 @@ class MetadataAbstractStandardPropertyForm(MetadataEditingForm):
             update_field_widget_attributes(value_field, {"class": "autocomplete"})
             update_field_widget_attributes(value_field, {"suggestions": customizer.suggestions})
 
+        update_field_widget_attributes(value_field, {"class": "standard_property"})
+
     def inherit(self, inheritance_data):
         """
         updates fields w/ inheritance_data, removing data as it goes
@@ -464,6 +465,30 @@ class MetadataAbstractStandardPropertyForm(MetadataEditingForm):
                 validity = validity and self.subform_validity
 
         return validity
+
+    # def is_required(self):
+    #     return self.customizer.required
+    #
+    # def is_complete(self):
+    #     value_field_name = self.get_value_field_name()
+    #     value = self.get_current_field_value(value_field_name)
+    #
+    #     field_type = self.get_current_field_value("field_type")
+    #     if field_type == MetadataFieldTypes.ATOMIC:
+    #         return bool(value)
+    #     elif field_type == MetadataFieldTypes.ENUMERATION:
+    #         return bool(value)
+    #     else:  # MetadataFieldTypes.RELATIONSHIP
+    #         if not self.customizer.relationship_show_subform:
+    #             return bool(value)
+    #         else:
+    #             # THIS IS TURNING OUT PRETTY COMPLICATED; I SHOULD JUST DO IT IN JAVASCRIPT
+    #             # SO, CHANGE THE NAME OF THE ICONS TO "COMPLETION"
+    #             # THEN IN CUSTOMIZE GIVE EVERY REQUIRED FIELD A COMPLETION FIELD
+    #             # THEN WHEN THOSE FIELDS CHANGE UPDATE COMPLETION
+    #             # WHICH MEANS CHANGE THE VALUE OF THAT FIELD
+    #             # BUT ALSO PROPAGATE THE CHANGE UP TO THE ICONS
+    #             return False
 
     def get_subform_tuple(self):
         field_type = self.get_current_field_value("field_type")
@@ -644,6 +669,10 @@ class MetadataStandardPropertyInlineFormSet(MetadataEditingInlineFormSet):
         for form in self.forms:
             form.force_clean()
 
+    # def is_complete(self):
+    #
+    #     completion = [form.is_complete for form in self.forms if form.is_required()]
+    #     return all(completion)
 
 def MetadataStandardPropertyInlineFormSetFactory(*args, **kwargs):
     _DEFAULT_PREFIX = "_standard_properties"
