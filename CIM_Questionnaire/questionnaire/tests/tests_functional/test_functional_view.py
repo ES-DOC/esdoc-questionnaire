@@ -112,9 +112,10 @@ class Test(TestFunctionalBase):
         self.assertIn("read-only", content_documentation.text)
 
         # test that editing buttons are not displayed...
+        accordion_buttons = self.webdriver.find_elements_by_css_selector("button.replace, button.add, button.remove")
+        self.assertEqual(len(accordion_buttons), 0)
         with self.assertRaises(NoSuchElementException):
-            self.webdriver.find_elements_by_css_selector("button.replace, button.add, button.remove")
-            self.webdriver.find_elements_by_css_selector("div.submit")
+            self.webdriver.find_element_by_css_selector("div.submit")
 
     def test_view_existing_is_read_only(self):
         """
