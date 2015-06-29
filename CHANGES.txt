@@ -2,6 +2,13 @@ CIM Questionnaire Change History
 
 For full release notes, please see https://earthsystemcog.org/projects/es-doc-models/releases_questionnaire
 
+v0.13.1.1
+* ensured the viewer form is read-only
+
+v0.13.1.0
+* prevented incomplete documents from being published
+* added ability to view "completion status" of document
+
 v0.13.0.0
 * optimized customizer form by only loading content on-demand
 * refactored category customization code in light of the above change
