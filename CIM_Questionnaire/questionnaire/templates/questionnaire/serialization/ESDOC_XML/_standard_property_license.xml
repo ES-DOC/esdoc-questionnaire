@@ -17,7 +17,7 @@
         <description>{{ license_description.get_value }}</description>
     {% endif %} {# /license_description #}
     {% if license_unrestricted %}
-        <is_unrestricted>{{ license_unrestricted.get_value }}</is_unrestricted>
+        <isUnrestricted>{{ license_unrestricted.get_value }}</isUnrestricted>
     {% endif %} {# /license_unrestricted #}
 </license>
 
