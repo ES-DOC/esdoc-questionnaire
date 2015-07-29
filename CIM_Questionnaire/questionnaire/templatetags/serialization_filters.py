@@ -22,10 +22,24 @@ Summary of module goes here
 import os
 from django import template
 
+from CIM_Questionnaire.questionnaire.models.metadata_model import MetadataStandardProperty, MetadataScientificProperty
 from CIM_Questionnaire.questionnaire.models.metadata_proxy import MetadataModelProxy, MetadataScientificCategoryProxy, MetadataScientificPropertyProxy, MetadataStandardCategoryProxy, MetadataStandardPropertyProxy
-#from CIM_Questionnaire.questionnaire.models.metadata_model import MetadataModel, MetadataStandardProperty, MetadataScientificProperty
 
 register = template.Library()
+
+@register.filter
+def index(sequence, i):
+    """
+    returns the ith element in the sequence, otherwise returns an empty string
+    :param sequence:
+    :param index:
+    :return:
+    """
+    try:
+        return sequence[i]
+    except IndexError:
+        return u""
+
 
 @register.filter
 def get_institute_code(model):
@@ -58,22 +72,35 @@ def get_institute_code(model):
 
 @register.filter
 def get_standard_property_by_name(model, property_name):
-    property_name_lower = property_name.lower()
-    standard_properties = model.standard_properties.all()
-    for standard_property in standard_properties:
-        if standard_property.name.lower() == property_name_lower:
-            return standard_property
-    return None
+    """
+    returns the standard_property w/ a matching property_name,
+    if no matches are found, returns None
+    :param model: model to check
+    :param property_name: name to check (case-insensitive)
+    :return:
+    """
+    try:
+        standard_property = model.standard_properties.get(name__iexact=property_name)
+        return standard_property
+    except MetadataStandardProperty.DoesNotExist:
+        return None
 
 
 @register.filter
 def get_scientific_property_by_name(model, property_name):
-    property_name_lower = property_name.lower()
-    scientific_properties = model.scientific_properties.all()
-    for scientific_property in scientific_properties:
-        if scientific_property.name.lower() == property_name_lower:
-            return scientific_property
-    return None
+    """
+    returns the scientific_property w/ a matching property_name,
+    if no matches are found, returns None
+    :param model: model to check
+    :param property_name: name to check (case-insensitive)
+    :return:
+    """
+    try:
+        scientific_property = model.scientific_properties.get(name__iexact=property_name)
+        return scientific_property
+    except MetadataScientificProperty.DoesNotExist:
+        return None
+
 
 @register.filter
 def get_scientific_categories_and_properties_dictionary(scientific_properties):

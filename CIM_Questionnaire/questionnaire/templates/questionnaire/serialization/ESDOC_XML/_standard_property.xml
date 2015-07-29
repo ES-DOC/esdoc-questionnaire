@@ -4,38 +4,50 @@
 {#{% with tagname=property|get_fully_qualified_tagname %}#}
 {% with tagname=property.name %}
 
-    {% with property_type=property.field_type %}
+    {# there are some special-cases for serializing ESDOC_XML standard properties #}
+    {# b/c the ESDOC_XML format does not map to the CIM XML format _exactly_ #}
+    {% if tagname|lower == "license" %}
+        {% with license=property.get_value|index:0 %}
+            {% with "questionnaire/serialization/ESDOC_XML/_standard_property_license.xml" as template %}
+                {% include template %}
+            {% endwith %}
+        {% endwith %} {# /license #}
+    {% else %}
 
-        {% if property_type == "ATOMIC" %}
+        {% with property_type=property.field_type %}
 
-            <{{ tagname }}>{{ property.get_value }}</{{ tagname }}>
+            {% if property_type == "ATOMIC" %}
 
-        {% elif property_type == "ENUMERATION" %}
-            <{{ tagname }}>{# separating values by "|" rather than in explicit tags #}{% for value in property.get_value %}{{ value }}{% if not forloop.last %} | {% endif %}{% endfor %}</{{ tagname }}>
+                <{{ tagname }}>{{ property.get_value }}</{{ tagname }}>
 
-        {% elif property_type == "RELATIONSHIP" %}
+            {% elif property_type == "ENUMERATION" %}
+                <{{ tagname }}>{# separating values by "|" rather than in explicit tags #}{% for value in property.get_value %}{{ value }}{% if not forloop.last %} | {% endif %}{% endfor %}</{{ tagname }}>
+
+            {% elif property_type == "RELATIONSHIP" %}
 
 
-            {% if property.proxy.is_multiple %}
-                <{{ tagname|get_plural }}>
-            {% endif %} {# /is_multiple #}
+                {% if property.proxy.is_multiple %}
+                    <{{ tagname|get_plural }}>
+                {% endif %} {# /is_multiple #}
 
-            {% for value in property.get_value %}
-                {# TODO: IF IS_REFERENCE... #}
-                <{{ tagname }}>
-                    {% with model=value model_type=value.name.lower %}
-                        {% with "questionnaire/serialization/ESDOC_XML/_model.xml" as template %}
-                            {% include template %}
-                        {% endwith %}
-                    {% endwith %} {# /model #}
-                </{{ tagname }}>
-            {% endfor %} {# /value #}
+                {% for value in property.get_value %}
+                    {# TODO: IF IS_REFERENCE... #}
+                    <{{ tagname }}>
+                        {% with model=value model_type=value.name.lower %}
+                            {% with "questionnaire/serialization/ESDOC_XML/_model.xml" as template %}
+                                {% include template %}
+                            {% endwith %}
+                        {% endwith %} {# /model #}
+                    </{{ tagname }}>
+                {% endfor %} {# /value #}
 
-            {% if property.proxy.is_multiple %}
-                </{{ tagname|get_plural }}>
-            {% endif %} {# /is_multiple #}
-            
-        {% endif %} {# /property_type #}
-    {% endwith %} {# /property_type #}
+                {% if property.proxy.is_multiple %}
+                    </{{ tagname|get_plural }}>
+                {% endif %} {# /is_multiple #}
+
+            {% endif %} {# /property_type #}
+        {% endwith %} {# /property_type #}
+
+    {% endif %}
 
 {% endwith %} {# /tagname #}
