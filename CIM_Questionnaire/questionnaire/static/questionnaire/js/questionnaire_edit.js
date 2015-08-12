@@ -334,6 +334,7 @@ show_pane = function(pane_key, is_view) {
                     init_widgets(dynamic_accordion_buttons, $(parent).find("button.add, button.remove, button.replace"));
                     init_widgets(fieldsets, $(parent).find(".collapsible_fieldset"));
                     init_widgets(inherits, $(parent).find(".inherited"));
+                    init_widgets(readonlies, $(parent).find(".readonly"));
                     init_widgets(changers, $(parent).find(".changer"));  /* forces the change event; for scientific properties, this copies the value to the corresponding header */
 
                     if (is_view) {

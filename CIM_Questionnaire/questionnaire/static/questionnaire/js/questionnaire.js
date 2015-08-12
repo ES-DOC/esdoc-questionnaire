@@ -107,6 +107,27 @@ function readonlies(element) {
            this.blur();
        })
    });
+    if ($(element).hasClass("multiselect")) {
+        var header = $(element).find(".multiselect_header");
+        var content = $(element).find(".multiselect_content");
+        $(header).focus(function() {
+            $(this).blur();
+        });
+        $(header).click(function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        });
+        $(content).find("input").each(function() {
+           $(this).focus(function() {
+               $(this).blur();
+           });
+            $(this).click(function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            })
+        });
+
+    }
 }
 
 
