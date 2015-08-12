@@ -211,6 +211,7 @@ class MetadataStandardPropertyCustomizerForm(MetadataCustomizerForm):
             # (then property.reset() will have set the customizer.required field to True)
             # then don't allow users to change this
             update_field_widget_attributes(self.fields["required"], {"readonly": "readonly", })
+            update_field_widget_attributes(self.fields["displayed"], {"readonly": "readonly", })
 
         # specify the widths of header fields...
         # (some should use most of the available space, others should just use a fixed size)
