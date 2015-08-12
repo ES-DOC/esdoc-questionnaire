@@ -348,16 +348,37 @@ show_pane = function(pane_key, is_view) {
                             .add(scientific_properties_enumeration);
                         $(all_properties).each(function() {
                             $(this).addClass("ui-state-disabled");  /* .addClass("readonly") */
-                            /* there are 2 ways to prevent selection: */
-                            /* 1st by blurring focus... */
-                            $(this).focus(function() {
-                                $(this).blur();
-                            });
-                            /* ...2nd by explicitly preventing click propagation */
-                            $(this).click(function(e) {
-                                e.preventDefault();
-                                e.stopPropagation();
-                            });
+                            if ($(this).hasClass("multiselect")) {
+                                /* TREAT MULTISELECTS DIFFERENTLY... */
+                                var header = $(this).find(".multiselect_header");
+                                var content = $(this).find(".multiselect_content");
+                                $(content).find("li, label, input").each(function() {
+                                    /* there are 2 ways to prevent selection: */
+                                    /* 1st by blurring focus... */
+                                   $(this).focus(function() {
+                                       $(this).blur()
+                                   });
+                                    /* ...2nd by explicitly preventing click propagation */
+                                    $(this).click(function (e) {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                    });
+                                });
+                            }
+
+                            else {
+                                /* ...THAN ALL OTHER WIDGETS */
+                                /* there are 2 ways to prevent selection: */
+                                /* 1st by blurring focus... */
+                                $(this).focus(function () {
+                                    $(this).blur();
+                                });
+                                /* ...2nd by explicitly preventing click propagation */
+                                $(this).click(function (e) {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                });
+                            }
                         });
                     }
 

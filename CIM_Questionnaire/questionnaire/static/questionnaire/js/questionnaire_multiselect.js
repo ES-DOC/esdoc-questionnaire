@@ -76,10 +76,12 @@ function create_multiselect(element) {
         text: true
     }).click(function(event) {
 
-        if ($(element).hasClass("ui-state-disabled")) {
-            /* don't allow changing values for readonly properties */
-            return;
-        }
+        // as per #376, do allow the content to display
+        // (other code prevents readonly content from being selected)
+        //if ($(element).hasClass("ui-state-disabled")) {
+        //    /* don't allow changing values for readonly properties */
+        //    return;
+        //}
 
         var icon = $(this).find(".ui-icon:first");
 

@@ -117,7 +117,7 @@ function readonlies(element) {
             e.preventDefault();
             e.stopPropagation();
         });
-        $(content).find("input").each(function() {
+        $(content).find("li, label, input").each(function() {
            $(this).focus(function() {
                $(this).blur();
            });
