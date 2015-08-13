@@ -197,11 +197,10 @@ def ajax_customize_subform(request, **kwargs):
 # NEW CODE!
 # DOESN'T LET USERS SELECT EXISTING REALIZATIONS
 # JUST RETURNS FORM DATA FOR A NEW REALIZATION
+# DONE FOR v0.14.0.0
+# WILL BE RENDERED OBSOLETE ONCE ANGULAR & REST ARE IN-PLACE
 def ajax_select_realization(request, **kwargs):
 
-    import ipdb; ipdb.set_trace()
-    I AM HERE
-    REWROTE THIS VIEW AND THE ADD_SUBFORM FN IN JS
     # I can get all of the info I need (version/proxy/project) from the customizer
     # (I still need to check for existing properties (using property_id) to exclude items from the queryset below)
     customizer_id = request.GET.get('c', None)
