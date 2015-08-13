@@ -618,11 +618,153 @@ function inherit_later(source_element, target_element_ids) {
     });
 }
 
-
 function add_subform(row) {
 
     /* this takes place AFTER the form is added */
 
+    var field                   = $(row).closest(".field");
+    var accordion               = $(row).closest(".accordion");
+    var is_one_to_one           = $(accordion).hasClass("fake");
+    var is_one_to_many          = !(is_one_to_one);
+    var pane                    = $(row).closest(".pane");
+    var accordion_units         = $(accordion).children(".accordion_unit");
+    var customizer_id           = $(field).find("input[name='customizer_id']").val();
+    var property_id             = $(field).find("input[name='property_id']").val();
+    var prefix                  = $(field).find("input[name='prefix']").val();
+    var parent_vocabulary_key   = $(pane).find("input[name$='-vocabulary_key']:first").val();
+    var parent_component_key    = $(pane).find("input[name$='-component_key']:first").val();
+    var n_forms                 = parseInt(accordion_units.length);
+    var existing_subforms       = $(accordion_units).find("input[name$='-id']:first").map(function() {
+        var removed = $(this).closest(".accordion_content").find(".remove:first input[name$='-DELETE']").val();
+        if (!removed) {
+            var subform_id = $(this).val();
+            if (subform_id != "") {
+                return parseInt(subform_id)
+            }
+        }
+    }).get();
+
+    var url = window.document.location.protocol + "//" + window.document.location.host + "/ajax/select_realization/";
+    url += "?c=" + customizer_id + "&p=" + prefix + "&n=" + n_forms + "&e=" + existing_subforms + "&p_v_k=" + parent_vocabulary_key + "&p_c_k=" + parent_component_key;
+    if (property_id != "") {
+        url += "&s=" + property_id;
+    }
+
+    var old_prefix = $(accordion).attr("name");
+    /* TODO: DOUBLE-CHECK THAT THIS IS ALWAYS CREATING A NEWFORM W/ ID=0 */
+    /*old_prefix += "-" + (n_forms - 2);*/
+    old_prefix += "-" + "0";
+
+    $.ajax({
+        url     : url,
+        type    : "GET",
+        cache   : false,
+        error   : function(xhr,status,error) {
+            console.log(xhr.responseText + status + error);
+        },
+        success : function(data,status,xhr) {
+
+            var status_code = xhr.status;
+
+            if (status_code == 200 ) {
+
+                var parsed_data = $.parseJSON(data);
+                var new_prefix = parsed_data.prefix;
+                var new_label = parsed_data.label;
+
+                /* rename ids and names */
+                update_field_names(row, old_prefix, new_prefix);
+                /* insert data */
+                populate_form(row, parsed_data);
+                /* make sure that all 'loaded' fields are set to true */
+                $(row).find("input[name$='-loaded']").prop("checked", true);
+                /* update label */
+                $(row).find(".accordion_header:first .label").html(new_label);
+
+                /* initialize JQuery widgets */
+                $(row).ready(function () {
+
+                    if (is_one_to_many) {
+                        init_widgets_on_show(fieldsets, $(row).find(".collapsible_fieldset"))
+                        init_widgets_on_show(helps, $(row).find(".help_button"));
+                        init_widgets_on_show(readonlies, $(row).find(".readonly"));
+                        init_widgets_on_show(dates, $(row).find(".datetime,.date"));
+                        init_widgets_on_show(accordions, $(row).find(".accordion").not(".fake"));
+                        init_widgets_on_show(dynamic_accordions, $(row).find(".accordion .accordion_header"));
+                        init_widgets_on_show(accordion_buttons, $(row).find(".subform_toolbar button"));
+                        init_widgets_on_show(dynamic_accordion_buttons, $(row).find("button.add,button.remove,button.replace"));
+                        init_widgets_on_show(multiselects, $(row).find(".multiselect"));
+                        init_widgets_on_show(enumerations, $(row).find(".enumeration"));
+                        init_widgets_on_show(autocompletes, $(row).find(".autocomplete"));
+                        init_widgets_on_show(enablers, $(row).find(".enabler"));
+                    }
+
+                    else if (is_one_to_one) {
+                        init_widgets(fieldsets, $(row).find(".collapsible_fieldset"))
+                        init_widgets(helps, $(row).find(".help_button"));
+                        init_widgets(readonlies, $(row).find(".readonly"));
+                        init_widgets(dates, $(row).find(".datetime,.date"));
+                        init_widgets(accordions, $(row).find(".accordion").not(".fake"));
+                        init_widgets(dynamic_accordions, $(row).find(".accordion .accordion_header"));
+                        init_widgets(accordion_buttons, $(row).find(".subform_toolbar button"));
+                        init_widgets(dynamic_accordion_buttons, $(row).find("button.add,button.remove,button.replace"));
+                        init_widgets(multiselects, $(row).find(".multiselect"));
+                        init_widgets(enumerations, $(row).find(".enumeration"));
+                        init_widgets(autocompletes, $(row).find(".autocomplete"));
+                        init_widgets(enablers, $(row).find(".enabler"));
+                    }
+
+                    else {
+                        console.log("unable to determine if this is a one-to-one or a one-to-many subform; cannot initialize jquery widgets");
+                    }
+                });
+
+            }
+            else {
+
+                /*
+                 note - do not use a status code of 400 for form valiation errors
+                 that will be routed to the "error" event above
+                 instead use some valid success code other than 200 (202, for example)
+                */
+
+                var msg = xhr.getResponseHeader("msg");
+                var msg_dialog = $(document.createElement("div"));
+                msg_dialog.html(msg);
+                msg_dialog.dialog({
+                    modal: true,
+                    title : "error",
+                    hide: "explode",
+                    height: 200,
+                    width: 400,
+                    // I'm only ever showing a dialog box if there was an error in the POST
+                    // TODO: ENSURE THE ERROR CLASS PROPAGATES TO ALL CHILD NODES?
+                    dialogClass: "no_close ui-state-error",
+                    buttons: {
+                        OK: function () {
+                            $(this).dialog("close");
+                        }
+                    }
+                });
+
+                $(add_subform_dialog).html(data);
+                // re-apply all of the JQuery code to _this_ dialog
+                var parent = $(add_subform_dialog);
+                // the addition of the 'true' attribute forces initialization,
+                // even if this dialog is opened multiple times
+                init_widgets(buttons, $(parent).find("input.button"), true);
+                init_widgets(fieldsets, $(parent).find(".collapsible_fieldset"), true);
+                init_widgets(multiselects, $(parent).find(".multiselect"), true);
+                init_widgets(helps, $(parent).find(".help_button"), true);
+            }
+        }
+    });
+}
+
+function add_subform_old(row) {
+
+    /* this takes place AFTER the form is added */
+    
     var field                   = $(row).closest(".field");
     var accordion               = $(row).closest(".accordion");
     var is_one_to_one           = $(accordion).hasClass("fake");
