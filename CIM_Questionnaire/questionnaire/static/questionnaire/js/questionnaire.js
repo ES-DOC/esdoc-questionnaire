@@ -484,7 +484,7 @@ function slugify(string) {
 function update_field_names(form,old_prefix,new_prefix) {
     /* for every field in form change the name and id from "old_prefix" to "new_prefix" */
 
-    $(form).find("input,select,textarea,label").each(function() {
+    $(form).find("input,select,textarea,label,ul").each(function() {
         var _id = $(this).attr("id");
         var _name = $(this).attr("name");
         var _for = $(this).attr("for"); /* this is for labels w/in the multiselect widget */
@@ -532,3 +532,13 @@ function populate_form(form,data) {
 
 };
 
+function clear_js_widgets(form) {
+    /* matches every element w/ the "initialized_" class prefix... */
+    $(form).find("[class^='initialized_'], [class*=' initialized_']")
+        .each(function() {
+            $(this).removeClass(function (index, css) {
+                /* ...then removes those classes */
+                return (css.match (/\binitialized_\S+/g) || []).join(' ');
+            });
+        })
+}

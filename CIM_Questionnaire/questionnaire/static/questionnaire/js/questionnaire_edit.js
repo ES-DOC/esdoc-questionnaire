@@ -162,6 +162,10 @@ var enumeration_other_value = "_OTHER";
 
 function enumerations(element) {
 
+    /* as w/ standard multiselects, clear any old bindings */
+    /* in case this fn gets called when a new subform is added */
+    $(element).unbind("multiselect_change");
+
     var header = $(element).find(".multiselect_header");
     var content = $(element).find(".multiselect_content");
 
@@ -186,6 +190,13 @@ function enumerations(element) {
         var selected_items_values = $(selected_items).map(function () {
             return $(this).val();
         }).get();
+
+        $(selected_items).map(function() {
+            console.log($(this).val());
+        });
+
+        //console.log("changed multiselect_value to " + selected_items_values);
+        //console.log("indexOf " + enumeration_other_value + " = " + selected_items_values.indexOf(enumeration_other_value));
 
         if (selected_items_values.indexOf(enumeration_null_value) != -1) {
 
@@ -680,9 +691,13 @@ function add_subform(row) {
                 $(row).find("input[name$='-loaded']").prop("checked", true);
                 /* update label */
                 $(row).find(".accordion_header:first .label").html(new_label);
+                /* the copy fn copies over all classes; I need to remove the ones that prevent re-setting js */
+                clear_js_widgets(row);
 
                 /* initialize JQuery widgets */
                 $(row).ready(function () {
+
+                    init_widgets(completion_icons, $(row).find("input.required, textarea.required, select.required, div.required"));
 
                     if (is_one_to_many) {
                         init_widgets_on_show(fieldsets, $(row).find(".collapsible_fieldset"))
@@ -720,43 +735,7 @@ function add_subform(row) {
                 });
 
             }
-            else {
 
-                /*
-                 note - do not use a status code of 400 for form valiation errors
-                 that will be routed to the "error" event above
-                 instead use some valid success code other than 200 (202, for example)
-                */
-
-                var msg = xhr.getResponseHeader("msg");
-                var msg_dialog = $(document.createElement("div"));
-                msg_dialog.html(msg);
-                msg_dialog.dialog({
-                    modal: true,
-                    title : "error",
-                    hide: "explode",
-                    height: 200,
-                    width: 400,
-                    // I'm only ever showing a dialog box if there was an error in the POST
-                    // TODO: ENSURE THE ERROR CLASS PROPAGATES TO ALL CHILD NODES?
-                    dialogClass: "no_close ui-state-error",
-                    buttons: {
-                        OK: function () {
-                            $(this).dialog("close");
-                        }
-                    }
-                });
-
-                $(add_subform_dialog).html(data);
-                // re-apply all of the JQuery code to _this_ dialog
-                var parent = $(add_subform_dialog);
-                // the addition of the 'true' attribute forces initialization,
-                // even if this dialog is opened multiple times
-                init_widgets(buttons, $(parent).find("input.button"), true);
-                init_widgets(fieldsets, $(parent).find(".collapsible_fieldset"), true);
-                init_widgets(multiselects, $(parent).find(".multiselect"), true);
-                init_widgets(helps, $(parent).find(".help_button"), true);
-            }
         }
     });
 }

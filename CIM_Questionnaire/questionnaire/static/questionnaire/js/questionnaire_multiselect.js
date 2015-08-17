@@ -32,7 +32,11 @@ function multiselect_set_label(element, header, content) {
                 + " + " + (num_selected_items - multiselect_num_to_show) + " more";
     }
 
-    $(header).button("option", "label", new_label);
+    /* I HAVE NO IDEA WHY THIS IS MATCHING MULTIPLE HEADERS ?!? */
+    /*$(header).button("option", "label", new_label);*/
+    /* BUT CHANGING THE TEXT EXPLICITLY LIKE THIS WORKS */
+    /* (SEE #395) */
+    $(header).find(".ui-button-text").text(new_label);
 
     /* update accordion headers for scientific_properties... */
     var is_scientific_property = $(element).closest("div.scientific_property").length;
@@ -53,14 +57,20 @@ function multiselect_set_label(element, header, content) {
 
 function create_multiselect(element) {
 
-    var header = $(element).find(".multiselect_header");
-    var content = $(element).find(".multiselect_content");
+    var header = $(element).find(".multiselect_header:first");
+    var content = $(element).find(".multiselect_content:first");
 
     var start_open = $(element).hasClass("start_open");
     var is_multiple = $(element).hasClass("multiple");
     var is_sortable = $(element).hasClass("sortable");
     var is_enumeration = $(element).hasClass("enumeration");
     var is_required = $(element).hasClass("selection_required");
+
+    /* clear any old bindings in case this fn gets called when a new subform is added */
+    /* (multiselects are weird like that) */
+    $(element).unbind();
+    $(header).unbind();
+    $(content).unbind();
 
     /* hide the content before proceeding */
     if (! start_open) {
@@ -86,6 +96,7 @@ function create_multiselect(element) {
         var icon = $(this).find(".ui-icon:first");
 
         $(icon).toggleClass("ui-icon-triangle-1-s ui-icon-triangle-1-e");
+
         $(content).toggle();
 
         /* if you click outside of the mutliselect, close it */
@@ -110,6 +121,7 @@ function create_multiselect(element) {
     $(content).find("li").each(function() {
         var content_item = this;
         var content_input = $(content_item).find("input");
+        $(content_input).unbind();
 
         /* setup the content initially */
         if ($(content_input).prop("checked")) {
@@ -118,6 +130,7 @@ function create_multiselect(element) {
 
         /* and respond to changing content */
         $(content_input).change(function() {
+
             if (is_multiple) {
                 $(content_item).toggleClass("selected");
             }
@@ -138,7 +151,7 @@ function create_multiselect(element) {
             /* set the header text and update enumeration-specific stuff */
             multiselect_set_label(element, header, content);
             if (is_enumeration) {
-                $(element).trigger("multiselect_change")
+                $(element).trigger("multiselect_change");
             }
         });
     });
