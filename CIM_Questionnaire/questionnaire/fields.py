@@ -139,6 +139,12 @@ class MultipleSelectWidget(CheckboxSelectMultiple):
         start_tag = format_html("<ul id='{0}'>", id_) if id_ else "<ul>"
         output = [container, header, content, start_tag]
         for widget in renderer:
+            # add a class to the rendered <input> element
+            try:
+                current_classes = widget.attrs["class"]
+                widget.attrs["class"] = "%s %s" % (current_classes, "multiselect_input")
+            except KeyError:
+                widget.attrs["class"] = "multiselect_input"
             output.append(format_html("<li>{0}</li>", force_text(widget)))
         output.append("</ul></div></div>")  # end start_tag, content, container
         rendered_widget = mark_safe('\n'.join(output))
@@ -184,6 +190,12 @@ class SingleSelectWidget(RadioSelect):
         start_tag = format_html("<ul id='{0}'>", id_) if id_ else "<ul>"
         output = [container, header, content, start_tag]
         for widget in renderer:
+            # add a class to the rendered <input> element
+            try:
+                current_classes = widget.attrs["class"]
+                widget.attrs["class"] = "%s %s" % (current_classes, "multiselect_input")
+            except KeyError:
+                widget.attrs["class"] = "multiselect_input"
             output.append(format_html("<li>{0}</li>", force_text(widget)))
         output.append("</ul></div></div>")  # end start_tag, content, container
         rendered_widget = mark_safe('\n'.join(output))

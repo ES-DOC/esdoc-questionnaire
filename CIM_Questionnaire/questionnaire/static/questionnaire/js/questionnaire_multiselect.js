@@ -121,6 +121,25 @@ function create_multiselect(element) {
     $(content).find("li").each(function() {
         var content_item = this;
         var content_input = $(content_item).find("input");
+
+        /* THIS IS THE HACKIEST HACK IN ALL OF HACKVILLE */
+        /* in theory, the value of multiselect_inputs ought to be copied over */
+        /* by django-dynamic-formsets via the 'keepFieldValues' param */
+        /* but that doesn't seem to be working */
+        /* so I explicitly reset it here */
+        /* see #395 */
+
+        if (! $(content_input).val() ) {
+            var reset_value = $.trim($(content_item).text());
+            if (reset_value === "---OTHER---") {
+                reset_value = "_OTHER";
+            }
+            else if (reset_value === "---NONE---") {
+                reset_value = "_NONE";
+            }
+            $(content_input).val(reset_value);
+        }
+
         $(content_input).unbind();
 
         /* setup the content initially */

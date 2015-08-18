@@ -126,6 +126,7 @@ function dynamic_accordions(element) {
     $(accordion_unit).formset({
        prefix : prefix,
        formCssClass : "dynamic_accordion_" + prefix,  /* note that formCssClass is _required_ in this situation */
+       keepFieldValues : '.multiselect_input',  /* this does not seem to be working ?!? (see #395) */
        added : function(row) {
            added_subformset_form(row);
        },
@@ -194,9 +195,6 @@ function enumerations(element) {
         $(selected_items).map(function() {
             console.log($(this).val());
         });
-
-        //console.log("changed multiselect_value to " + selected_items_values);
-        //console.log("indexOf " + enumeration_other_value + " = " + selected_items_values.indexOf(enumeration_other_value));
 
         if (selected_items_values.indexOf(enumeration_null_value) != -1) {
 
