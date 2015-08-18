@@ -105,7 +105,11 @@ function readonlies(element) {
        //$(this).prop("disabled",true);
        $(this).focus(function() {
            this.blur();
-       })
+       });
+       $(this).click(function(e) {
+           e.preventDefault();
+           e.stopPropagation();
+       });
    });
     if ($(element).hasClass("multiselect")) {
         var header = $(element).find(".multiselect_header");

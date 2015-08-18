@@ -190,8 +190,13 @@ class MetadataStandardPropertyCustomizerForm(MetadataCustomizerForm):
 
         elif self.type == MetadataFieldTypes.RELATIONSHIP:
             update_field_widget_attributes(self.fields["relationship_show_subform"], {"class": "enabler", "onchange": "enable_customize_subform_button(this);", })
-            if not property_customizer.pk:
+            if property_proxy.relationship_target_model.is_document():
+                # documents cannot use subforms...
                 update_field_widget_attributes(self.fields["relationship_show_subform"], {"class": "readonly", "readonly": "readonly", })
+            else:
+                # non-documents must use subforms...
+                if not property_customizer.pk:
+                    update_field_widget_attributes(self.fields["relationship_show_subform"], {"class": "readonly", "readonly": "readonly", })
 
         else:
             msg = "invalid field type for standard property: '%s'" % self.type
