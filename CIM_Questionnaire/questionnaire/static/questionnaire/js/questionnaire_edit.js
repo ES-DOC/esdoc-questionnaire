@@ -27,6 +27,30 @@ function autocompletes(element) {
 }
 
 
+function references(element) {
+    var options = $(element).find("option");
+    $(options).each(function () {
+
+        $(this).click(function () {
+            var option = this;
+            var input = $("<input type='text' class='reference_option_input'/>");
+            $(input).val($(option).text());
+
+            $(input).blur(function () {
+                var input_value = $(this).val();
+                $(option).val(input_value);
+                $(option).text(input_value);  /* this implicitly removes the input element */
+                $(option).show().focus();
+            });
+
+            $(option).text("");  /* this is how I hide the option (I can't actually use .hide() b/c the input is a child element and would be hidden too) */
+            $(option).append(input);
+            $(input).show().focus().select();
+        });
+    });
+}
+
+
 function dynamic_accordion_buttons(element) {
 
     if ( $(element).hasClass("add")) {
@@ -345,6 +369,7 @@ show_pane = function(pane_key, is_view) {
                     init_widgets(inherits, $(parent).find(".inherited"));
                     init_widgets(readonlies, $(parent).find(".readonly"));
                     init_widgets(changers, $(parent).find(".changer"));  /* forces the change event; for scientific properties, this copies the value to the corresponding header */
+                    init_widgets(references, $(parent).find("select.reference"));
 
                     if (is_view) {
                         /* make things read-only */

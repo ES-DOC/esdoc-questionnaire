@@ -33,7 +33,7 @@ from django.utils.safestring import mark_safe
 from south.modelsinspector import introspector
 
 
-from CIM_Questionnaire.questionnaire.utils import EnumeratedType, EnumeratedTypeList, BIG_STRING
+from CIM_Questionnaire.questionnaire.utils import EnumeratedType, EnumeratedTypeList, BIG_STRING, QuestionnaireError
 
 #############
 # constants #
@@ -313,6 +313,124 @@ class EnumerationField(models.TextField):
         args, kwargs = introspector(self)
         return (field_class_path, args, kwargs)
 
+
+####################
+# list fields      #
+# (for references) #
+####################
+
+LIST_DEFAULT_TOKEN = '|'
+LIST_DEFAULT_CARDINALITY = u"0|*"
+LIST_DEFAULT_MAX = 10
+
+def get_min_and_max_from_cardinality(cardinality):
+    _min, _max = cardinality.split('|')
+    _min = int(_min)
+    if _max == '*':
+        _max = LIST_DEFAULT_MAX
+    else:
+        _max = int(_max)
+        if _max > LIST_DEFAULT_MAX:
+            msg = u"Invalid number of list items."
+            raise QuestionnaireError(msg)
+    return _min, _max
+
+class ListFormField(MultipleChoiceField):
+
+    def __init__(self, *args, **kwargs):
+        self.token = kwargs.pop("token")
+        self.cardinality = kwargs.pop("cardinality")
+        super(ListFormField, self).__init__(*args, **kwargs)
+
+    def to_python(self, value):
+        if not value:
+            return []
+        elif not isinstance(value, (list, tuple)):
+            raise ValidationError(self.error_messages['invalid_list'], code='invalid_list')
+        return value
+
+    def validate(self, value):
+        """
+        Validates that the input is a list or tuple.
+        """
+        if self.required and not value:
+            raise ValidationError(self.error_messages['required'], code='required')
+        # # Validate that each value in the value list is in self.choices.
+        # for val in value:
+        #     if not self.valid_value(val):
+        #         raise ValidationError(
+        #             self.error_messages['invalid_choice'],
+        #             code='invalid_choice',
+        #             params={'value': val},
+        #         )
+
+    def clean(self, value):
+        for v in value:
+            if self.token in v:
+                msg = "Invalid character ('%s') was in list item." % self.token
+                raise ValidationError(msg)
+
+        return self.token.join(value)
+
+    def set_choices(self, choices):
+        empty_choice = ("", "")
+        new_choices = []
+        _min, _max = get_min_and_max_from_cardinality(self.cardinality)
+        for i in range(_min, _max):
+            try:
+                new_choices.append((choices[i], choices[i]))
+            except IndexError:
+                new_choices.append(empty_choice)
+        self.choices = new_choices
+
+    def set_cardinality(self, cardinality):
+        self.cardinality = cardinality
+        _min, _max = get_min_and_max_from_cardinality(self.cardinality)
+        assert _min < _max, "invalid cardinality"
+
+
+class ListField(models.TextField):
+    __metaclass__ = models.SubfieldBase
+
+    def __init__(self, *args, **kwargs):
+        self.token = kwargs.pop('token', LIST_DEFAULT_TOKEN)
+        self.cardinality = kwargs.pop('cardinality', LIST_DEFAULT_CARDINALITY)
+        super(ListField, self).__init__(*args, **kwargs)
+
+    def to_python(self, value):
+        # treat None and empty strings and lists differently here
+        if not value:
+            return []
+        if isinstance(value, list):
+            return value
+        return value.split(self.token)
+
+    def get_prep_value(self, value):
+        # explicitly distinguish between None and empty strings and lists here
+        if value is None:
+            return []
+        assert(isinstance(value, list) or isinstance(value, tuple))
+        return self.token.join(value)
+
+    # def get_db_prep_value(self, value):
+    #     if not value:
+    #         return []
+    #     assert(isinstance(value, list) or isinstance(value, tuple))
+    #     return self.token.join([s for s in value])
+
+    def formfield(self, **kwargs):
+        _min, _max = get_min_and_max_from_cardinality(self.cardinality)
+        return ListFormField(
+            token=self.token,
+            cardinality=self.cardinality,
+            required=_min > 0,
+        )
+
+    def south_field_triple(self):
+        field_class_path = self.__class__.__module__ + "." + self.__class__.__name__
+        args, kwargs = introspector(self)
+        return (field_class_path, args, kwargs)
+    
 ######################
 # cardinality fields #
 ######################

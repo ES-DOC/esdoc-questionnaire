@@ -27,7 +27,7 @@ from mptt.models import MPTTModel, TreeForeignKey
 from uuid import uuid4
 
 from CIM_Questionnaire.questionnaire.models.metadata_serialization import MetadataModelSerialization, MetadataSerializationFormats
-from CIM_Questionnaire.questionnaire.fields import MetadataFieldTypes, EnumerationField, EMPTY_CHOICE, NULL_CHOICE, OTHER_CHOICE
+from CIM_Questionnaire.questionnaire.fields import MetadataFieldTypes, EnumerationField, EMPTY_CHOICE, NULL_CHOICE, OTHER_CHOICE, ListField
 from CIM_Questionnaire.questionnaire.utils import APP_LABEL, DEFAULT_VOCABULARY_KEY, DEFAULT_COMPONENT_KEY, LIL_STRING, SMALL_STRING, BIG_STRING, HUGE_STRING, QuestionnaireError
 from CIM_Questionnaire.questionnaire.utils import find_in_sequence
 from CIM_Questionnaire.questionnaire import get_version
@@ -594,9 +594,8 @@ class MetadataStandardProperty(MetadataProperty):
     enumeration_value       = EnumerationField(blank=True,null=True)
     enumeration_other_value = models.CharField(max_length=HUGE_STRING,blank=True,null=True)
     # TODO: IN RESET MAKE THIS FK QS BOUND TO THE CORRECT TYPE OF METADATAMODEL
-    relationship_value      = models.ManyToManyField("MetadataModel",blank=True,null=True)
-    #relationship_value      = models.ForeignKey("MetadataModel",blank=True,null=True)
-
+    relationship_value = models.ManyToManyField("MetadataModel",blank=True,null=True)
+    relationship_reference = ListField(blank=True, null=True)  # cardinality is set by the customizer
 
     def __unicode__(self):
         return u'%s' % (self.name)

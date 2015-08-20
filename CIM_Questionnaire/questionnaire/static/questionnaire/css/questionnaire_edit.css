@@ -62,3 +62,7 @@
 /* make these !important b/c the formset plugin re-creates them w/ inline styles upon adding & deleting */
 #questionnaire a.add-row        { display: none !important; }
 #questionnaire a.delete-row     { display: none !important; }
+
+#questionnaire .reference { min-width: 400px; overflow: scroll; }
+#questionnaire .reference option { width: 100%; }
+#questionnaire .reference input { width: 90%; margin-left: auto; margin-right: auto; }

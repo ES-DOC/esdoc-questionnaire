@@ -191,6 +191,7 @@ class MetadataAbstractStandardPropertyForm(MetadataEditingForm):
             update_field_widget_attributes(self.fields["enumeration_other_value"], {"class": "other"})
 
         elif field_type == MetadataFieldTypes.RELATIONSHIP:
+            update_field_widget_attributes(self.fields["relationship_reference"], {"class": "reference"})
             # TODO: FILTER BY PROJECT AS WELL
             proxy = MetadataStandardPropertyProxy.objects.select_related("relationship_target_model").get(pk=proxy_pk)
             self.fields["relationship_value"].queryset = MetadataModel.objects.filter(proxy=proxy.relationship_target_model)
@@ -225,7 +226,10 @@ class MetadataAbstractStandardPropertyForm(MetadataEditingForm):
         elif field_type == MetadataFieldTypes.ENUMERATION:
             return "enumeration_value"
         elif field_type == MetadataFieldTypes.RELATIONSHIP:
-            return "relationship_value"
+            if self.customizer.relationship_show_subform:
+                return "relationship_value"
+            else:
+                return "relationship_reference"
         else:
             msg = "unable to determine 'value' field for fieldtype '%s'" % (field_type)
             raise QuestionnaireError(msg)
@@ -288,7 +292,13 @@ class MetadataAbstractStandardPropertyForm(MetadataEditingForm):
             update_field_widget_attributes(self.fields["enumeration_value"], custom_widget_attributes)
 
         elif customizer.field_type == MetadataFieldTypes.RELATIONSHIP:
-            if customizer.relationship_show_subform:
+
+            if not customizer.relationship_show_subform:
+                reference_field = self.fields["relationship_reference"]
+                reference_field.set_cardinality(customizer.relationship_cardinality)
+                reference_field.set_choices(self.instance.relationship_reference)
+
+            else:
                 # TODO: BEGIN THE REALLY HORRIBLE UGLY PIECE OF CODE I DON'T LIKE
                 subform_customizer = customizer.subform_customizer
 
@@ -527,12 +537,13 @@ class MetadataStandardPropertyForm(MetadataAbstractStandardPropertyForm):
             "proxy", "field_type", "name", "order", "is_label", "id",
             # value fields...
             "atomic_value", "enumeration_value", "enumeration_other_value", "relationship_value",
+            "relationship_reference",
         ]
 
     # set of fields that will be the same for all members of a formset; allows me to cache the query (for relationship fields)
     cached_fields = []
 
-    _value_fields = ["atomic_value", "enumeration_value", "enumeration_other_value", "relationship_value", ]
+    _value_fields = ["atomic_value", "enumeration_value", "enumeration_other_value", "relationship_value", "relationship_reference", ]
     _hidden_fields = ["proxy", "field_type", "name", "order", "is_label", "id", ]
 
     def has_changed(self):
