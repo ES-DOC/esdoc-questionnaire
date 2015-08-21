@@ -780,6 +780,12 @@ class MetadataStandardPropertyCustomizer(MetadataPropertyCustomizer):
     def render_as_form(self):
         return not self.render_as_formset()
 
+    def is_reference(self):
+        if self.field_type == MetadataFieldTypes.RELATIONSHIP:
+            return self.proxy.relationship_target_model.is_document() and not self.relationship_show_subform
+        else:
+            return False
+
 
 class MetadataScientificPropertyCustomizer(MetadataPropertyCustomizer):
     class Meta:

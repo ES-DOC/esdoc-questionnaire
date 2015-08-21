@@ -24,6 +24,13 @@
         {% include "questionnaire/_property_help.html" %}
     {% endif %}
 
+    {% if property_customizer.is_reference %}
+        <!-- additional documentation about how to use the reference widget -->
+        <p class="documentation">
+            Select individual rows to add/remove/edit references to existing {{ property_customizer.verbose_name }} instances.
+        </p>
+    {% endif %}
+
 </td>
 
 <td>
