@@ -143,7 +143,7 @@ class MetadataAbstractStandardPropertyForm(MetadataEditingForm):
         abstract = True
 
     cached_fields = []
-    _value_fields = ["atomic_value", "enumeration_value", "enumeration_other_value", "relationship_value", ]
+    _value_fields = ["atomic_value", "enumeration_value", "enumeration_other_value", "relationship_value", "relationship_reference", ]
     _hidden_fields = ["proxy", "field_type", "name", "order", "is_label", "id", ]
 
     # TODO: FILTER THESE BY PROJECT & VERSION?
@@ -563,12 +563,13 @@ class MetadataStandardPropertySubForm(MetadataAbstractStandardPropertyForm):
             "proxy", "field_type", "name", "order", "is_label", "id",
             # value fields...
             "atomic_value", "enumeration_value", "enumeration_other_value", "relationship_value",
+            "relationship_reference",
         ]
 
     # set of fields that will be the same for all members of a formset; allows me to cache the query (for relationship fields)
     cached_fields = []
 
-    _value_fields = ["atomic_value", "enumeration_value", "enumeration_other_value", "relationship_value", ]
+    _value_fields = ["atomic_value", "enumeration_value", "enumeration_other_value", "relationship_value", "relationship_reference", ]
     _hidden_fields = ["proxy", "field_type", "name", "order", "is_label", "id", ]
 
     def __init__(self, *args, **kwargs):

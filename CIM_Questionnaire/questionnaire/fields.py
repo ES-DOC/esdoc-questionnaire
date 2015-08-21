@@ -376,9 +376,14 @@ class ListFormField(MultipleChoiceField):
         empty_choice = ("", "")
         new_choices = []
         _min, _max = get_min_and_max_from_cardinality(self.cardinality)
-        for i in range(_min, _max):
+        if _min == _max:
+            # this is a special case,
+            # if your cardinality is something like "5|5" then you want 5 items
+            _max = _min
+            _min = 0
+        for index in range(_min, _max):
             try:
-                new_choices.append((choices[i], choices[i]))
+                new_choices.append((choices[index], choices[index]))
             except IndexError:
                 new_choices.append(empty_choice)
         self.choices = new_choices
