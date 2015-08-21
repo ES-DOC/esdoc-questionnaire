@@ -216,10 +216,6 @@ function enumerations(element) {
             return $(this).val();
         }).get();
 
-        $(selected_items).map(function() {
-            console.log($(this).val());
-        });
-
         if (selected_items_values.indexOf(enumeration_null_value) != -1) {
 
             $(selected_items).each(function() {
