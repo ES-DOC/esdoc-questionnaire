@@ -3,6 +3,10 @@ CIM Questionnaire Change History
 For full release notes, please see https://earthsystemcog.org/projects/es-doc-models/releases_questionnaire
 
 v0.13.1.1
+* removed ability for subforms to point to existing db instances
+* added support for references
+
+v0.13.1.1
 * ensured the viewer form is read-only
 
 v0.13.1.0
