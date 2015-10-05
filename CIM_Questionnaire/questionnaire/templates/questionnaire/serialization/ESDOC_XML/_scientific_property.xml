@@ -2,7 +2,6 @@
 
 {#  property = the scientific property #}
 
-<property ontologyTypeKey="cim.1.software.ComponentProperty">
 
     <isRepresented>True</isRepresented>
     <shortName>{{ property.proxy.name }}</shortName>
@@ -33,4 +32,3 @@
         </extension>
     {% endwith %} {# /vocabulary #}
 
-</property>

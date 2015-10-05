@@ -19,11 +19,16 @@
                             <shortName>{{ category.key }}</shortName>
                             <longName>{{ category.key }}</longName>
                     {% endif %}
+                    {# nest child properties as per #401 #}
+                    <subProperties>
                         {% for property in properties %}
-                            {% with "questionnaire/serialization/ESDOC_XML/_scientific_property.xml" as template %}
-                                {% include template %}
-                            {% endwith %}
+                            <subProperty ontologyTypeKey="cim.1.software.ComponentProperty">
+                                {% with "questionnaire/serialization/ESDOC_XML/_scientific_property.xml" as template %}
+                                    {% include template %}
+                                {% endwith %}
+                            </subProperty>
                         {% endfor %}
+                    </subProperties>
                     {% if not category.is_default_category %}
                         </property>
                     {% endif %}
