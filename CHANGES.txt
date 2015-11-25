@@ -2,7 +2,17 @@ CIM Questionnaire Change History
 
 For full release notes, please see https://earthsystemcog.org/projects/es-doc-models/releases_questionnaire
 
-v0.13.1.1
+v0.15.0.0
+* major rewrite of the customizer forms including:
+** clean separation of client & server functionality
+** django-rest-framework (to provide a full-featured RESTful API)
+** angular.js (to provide a full-featured client framework for complex user interactions)
+** djangular (mixes Django forms w/ Angular forms)
+** bootstrap (makes everything pretty)
+** less (makes bootstrap customizable)
+** django-compressor (minimizes - and compiles - static files)
+
+v0.14.0.0
 * removed ability for subforms to point to existing db instances
 * added support for references
 
@@ -100,3 +110,4 @@ v0.10.0.0
 * use of fixtures to migrate dbs
 
 Beginning at v0.9.9.6 this has been rewritten as a Django Project rather than a Django Application.  It can therefore be run as it's own webserver, without having to be embedded in an existing (Django) server.
+

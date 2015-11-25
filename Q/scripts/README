@@ -1,0 +1,2 @@
+Scripts meant to be run outside of the webserver go here.
+Typically, these are things like copying or cleaning up the db.

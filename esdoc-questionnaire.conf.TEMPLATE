@@ -1,8 +1,13 @@
+[settings]
+secret_key=mYsEcReTkEy!
+static_root=static/
+allowed_hosts=localhost,127.0.0.1,questionnnaire.es-doc.org,test.questionnaire.esdoc.webfactional.com
+
 [database]
 engine=django.db.backends.postgresql_psycopg2
-name=questionnaire
-user=
-password=
+name=my_db
+user=my_db_user
+password=my_db_pwd
 host=127.0.0.1
 port=5432
 
@@ -13,14 +18,9 @@ port=11211
 [email]
 host=smtp.gmail.com
 port=587
-username=
-password=
-
-[settings]
-secret_key=
-static_root=static/
+username=me@gmail.com
+password=my_email_pwd
 
 [debug]
-debug=true
-debug_toolbar=false
-debug_profiling=false
+debug=false
+

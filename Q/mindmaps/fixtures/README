@@ -1,0 +1,4 @@
+Fixtures used for initial data loading & testing go here.
+
+When creating fixtures use the following command:
+`python Q/manage.py dumpdata mindmaps --indent=4 > Q/mindmaps/fixtures/mindmaps.json`

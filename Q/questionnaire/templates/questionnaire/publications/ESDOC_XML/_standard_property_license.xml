@@ -1,0 +1,27 @@
+{% load q_tags_publications %}
+
+{% with license_name=license|get_standard_property_by_name:"licenseName" %}
+{% with license_contact=license|get_standard_property_by_name:"licenseContact" %}
+{% with license_description=license|get_standard_property_by_name:"licenseDescription" %}
+{% with license_unrestricted=license|get_standard_property_by_name:"unrestricted" %}
+
+<license>
+    <!-- custom ESDOC_XML license format -->
+    {% if license_name %}
+        <name>{{ license_name.get_value }}</name>
+    {% endif %} {# /license_name #}
+    {% if license_contact %}
+        <contact>{{ license_contact.get_value }}</contact>
+    {% endif %} {# /license_contact #}
+    {% if license_description %}
+        <description>{{ license_description.get_value }}</description>
+    {% endif %} {# /license_description #}
+    {% if license_unrestricted %}
+        <isUnrestricted>{{ license_unrestricted.get_value }}</isUnrestricted>
+    {% endif %} {# /license_unrestricted #}
+</license>
+
+{% endwith %} {# /license_unrestricted #}
+{% endwith %} {# /license_description #}
+{% endwith %} {# /license_contact #}
+{% endwith %} {# /license_name #}

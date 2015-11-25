@@ -1,0 +1,119 @@
+{# _q_project_edit.html #}
+{# the "edit" section of the project page #}
+
+{# assumes we've already loaded the appropriate ng-controllers #}
+
+
+      <div class="info">
+          You can create a new CIM Document by selecting a document type for a particular ontology:
+      </div>
+
+      <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Ontology</th>
+                <th>Document Type</th>
+                <th>&nbsp;</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% verbatim ng %}
+                <tr>
+                    <td>
+                        <select id=document_ontology" class="form-control" required
+                                ng-model="project_controller.selected_document_ontology"
+                                ng-change="project_controller.selected_document_ontology_changed()"
+                                ng-options="o.title for o in project_controller.ontologies">
+                        </select>
+                    </td>
+                    <td>
+                        <select id="document_proxy" class="form-control" required
+                                ng-model="project_controller.selected_document_proxy"
+                                ng-change="project_controller.selected_document_proxy_changed()"
+                                ng-options="dt.title for dt in project_controller.selected_document_ontology.document_types">
+                        </select>
+                    </td>
+                    <td>
+                        <a id="create_document" class="btn btn-sm btn-info"
+                           target="_blank"
+                           ng-href="edit/{{ project_controller.selected_document_ontology.key }}/{{ project_controller.selected_document_proxy.name }}">
+                            create
+                        </a>
+                    </td>
+                </tr>
+            {% endverbatim ng %}
+        </tbody>
+      </table>
+
+      <div class="info">
+          You can modify an existing CIM Document.&nbsp;
+          <span ng-show="project_controller.has_unsynchronized_document">
+              A <span class="unsynchronized">red font</span> indicates the document is unsynchronized with this project's current set of ontologies and vocabularies.&nbsp;
+          </span>
+      </div>
+
+      <table class="table table-striped">
+          <thead>
+              <tr>
+                  <th>
+                      <span ng-click="project_controller.change_document_sort_type('ontology')">Ontology</span>
+                      <span ng-show="project_controller.document_sort_type=='ontology'">
+                          <span ng-show="project_controller.document_sort_reverse" class="glyphicon glyphicon-menu-up"></span>
+                          <span ng-hide="project_controller.document_sort_reverse" class="glyphicon glyphicon-menu-down"></span>
+                      </span>
+                  </th>
+                  <th>
+                      <span ng-click="project_controller.change_document_sort_type('proxy')">Document Type</span>
+                      <span ng-show="project_controller.document_sort_type=='proxy'">
+                          <span ng-show="project_controller.document_sort_reverse" class="glyphicon glyphicon-menu-up"></span>
+                          <span ng-hide="project_controller.document_sort_reverse" class="glyphicon glyphicon-menu-down"></span>
+                      </span>
+                  </th>
+                  <th>
+                      <span ng-click="project_controller.change_document_sort_type('name')">Name &amp; Version</span>
+                      <span ng-show="project_controller.document_sort_type=='name'">
+                          <span ng-show="project_controller.document_sort_reverse" class="glyphicon glyphicon-menu-up"></span>
+                          <span ng-hide="project_controller.document_sort_reverse" class="glyphicon glyphicon-menu-down"></span>
+                      </span>
+                  </th>
+                  <th>
+                      <span ng-click="project_controller.change_document_sort_type('modified')">Last Modified</span>
+                      <span ng-show="project_controller.document_sort_type=='modified'">
+                          <span ng-show="project_controller.document_sort_reverse" class="glyphicon glyphicon-menu-up"></span>
+                          <span ng-hide="project_controller.document_sort_reverse" class="glyphicon glyphicon-menu-down"></span>
+                      </span>
+                  </th>
+                  <th>&nbsp;</th>
+              </tr>
+          </thead>
+          <tbody>
+              <tr ng-repeat="document in project_controller.documents | orderBy:project_controller.document_sort_type:project_controller.document_sort_reverse" ng-show="document.is_active">
+                  {% verbatim ng %}
+                    <td>{{ document.ontology }}</td>
+                    <td>{{ document.proxy }}</td>
+                    <td ng-show="document.label">
+                        {{ document.label }}&nbsp;[{{ document.version }}]
+                    </td>
+                    <td ng-hide="document.label">
+                        <em>(no label provided)</em>&nbsp;&nbsp;[{{ document.version }}]
+                    </td>
+                    <td>
+                        {{ document.modified | date:'yyyy-MM-dd HH:mm:ss Z' }}
+                    </td>
+                    <td>
+                        <a target="_blank" class="btn btn-sm btn-info" href="/{{ project_controller.project.name }}/edit/{{ document.path }}">edit</a>
+                        <a target="_blank" class="btn btn-sm btn-info" href="/{{ project_controller.project.name }}/view/{{ document.path }}">view in editor</a>
+                        <button class="btn btn-sm btn-info" ng-show="document.is_complete" ng-click="project_controller.document_publish(document)">
+                            publish
+                        </button>
+                    </td>
+                  {% endverbatim ng %}
+              </tr>
+              <tr ng-hide="project_controller.documents.length">
+                  <!-- only show this part if the documents array is emtpy -->
+                  <td colspan="4">
+                      <span class="documentation">No documents found</span>
+                  </td>
+              </tr>
+          </tbody>
+      </table>

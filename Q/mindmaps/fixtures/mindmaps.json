@@ -1,0 +1,42 @@
+[
+{
+    "pk": 1, 
+    "model": "mindmaps.mindmapsource", 
+    "fields": {
+        "enabled": true, 
+        "name": "esdoc-github"
+    }
+},
+{
+    "pk": 2, 
+    "model": "mindmaps.mindmapsource", 
+    "fields": {
+        "enabled": true, 
+        "name": "ES-FDL"
+    }
+},
+{
+    "pk": 1, 
+    "model": "mindmaps.mindmapdomain", 
+    "fields": {
+        "source": 1, 
+        "domain": "https://raw.githubusercontent.com/ES-DOC"
+    }
+},
+{
+    "pk": 2, 
+    "model": "mindmaps.mindmapdomain", 
+    "fields": {
+        "source": 2, 
+        "domain": "https://raw.githubusercontent.com/IWCCT/es-fdl/"
+    }
+},
+{
+    "pk": 3, 
+    "model": "mindmaps.mindmapdomain", 
+    "fields": {
+        "source": 2, 
+        "domain": "https://github.com/IWCCT/es-fdl/"
+    }
+}
+]

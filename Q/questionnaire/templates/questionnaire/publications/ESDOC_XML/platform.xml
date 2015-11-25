@@ -1,0 +1,9 @@
+{% extends "questionnaire/publications/ESDOC_XML/publication_base.xml" %}
+
+{% block content %}
+    {% spaceless %}
+        {% with "questionnaire/publications/ESDOC_XML/_model.xml" as template %}
+            {% include template %}
+        {% endwith %}
+    {% endspaceless %}
+{% endblock %} {# /content #}

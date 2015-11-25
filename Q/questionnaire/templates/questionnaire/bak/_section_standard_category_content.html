@@ -1,0 +1,48 @@
+{% load q_tags_bak %}
+
+<div id="tab_{{model_form.prefix}}_{{category_customizer.get_key}}">
+    <div class="tab_content">
+        {% if category_customizer.description %}
+            <div class="documentation">
+                <p>
+                    {{category_customizer.description}}
+                </p>
+            </div> <!-- /.documentation -->
+        {% endif %} {# /category_customizer.description #}
+
+        <div class="form"> {# wrapping everything in a div.form so I can group together fields belonging to the same model #}
+
+            <table width="100%" border="0">
+
+                {% for property_customizer in property_customizers %}
+
+                    {# looping through the customizers initially instead of the formset itself #}
+                    {# ensures I get the correct forms (for this category) (in the correct order) out of the full set of forms #}
+
+                    {# cycle odd/even table rows only if there is not a subform w/in the row #}
+                    {% if property_customizer.relationship_show_subform %}
+                    <tr class="field" valign="top" name="{{property_customizer.name}}">
+                    {% else %}
+                    <tr class="field {% cycle 'odd' 'even' %}" valign="top" name="{{property_customizer.name}}">
+                    {% endif %}
+
+                        {% with field_tuple="name|"|add:property_customizer.name %}
+                            {%  with property_form=standard_property_formset|get_form_by_field:field_tuple %}
+
+                                {# TODO: WILL HAVE TO PASS PROPERTY FORM AS A SECTION_PARAMETER TO THE TEMPLATE WHEN ONLY SPECIFYING A PROPERTY IN THE SECTION_KEY #}
+                                {% include "questionnaire/bak/_section_standard_property.html" %}
+
+                            {% endwith %} {# /property_form #}
+                        {% endwith %}
+
+                    </tr> <!-- /.field -->
+
+                {% endfor %} {# /property_customizer #}
+
+            </table>
+
+        </div> <!-- /.form -->
+
+    </div> <!-- /.tab_content -->
+
+</div> <!-- /#tab_{{model_form.prefix}}_{{category_customizer.key}} -->

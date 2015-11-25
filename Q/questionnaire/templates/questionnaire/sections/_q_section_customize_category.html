@@ -1,0 +1,68 @@
+{# _q_section_customize_category.html #}
+{# (template is the same for both standard & scientific categories) #}
+
+{# this is a "section" template #}
+{# it is inserted as needed by ng via AJAX using the load-on-demand paradigm #}
+
+{# see the "q_load_section" django view #}
+{# see and the "service" ng directive" #}
+
+<form name="{{form.form_name}}">
+
+    <div class="hidden">
+        {% for field in form.get_hidden_fields %}
+            {{ field }}
+        {% endfor %}
+    </div>
+
+    <div class="row odd">
+        {% with field=form.name %}
+            {% include 'questionnaire/_q_customize_field.html' %}
+        {% endwith %}
+    </div>
+
+    <div class="row even">
+        {% with field=form.description %}
+            {% include 'questionnaire/_q_customize_field.html' %}
+        {% endwith %}
+    </div>
+
+    <div class="row odd">
+        {% with field=form.order %}
+
+            <!-- doing this explicitly so that order does not get re-set when I load a form -->
+            <!-- (this is copied from "_q_customize_field.html" ) -->
+
+            <div class="has-feedback form-group">
+                <span class="col-sm-3 {% if field.field.required %} required {% else %} optional {% endif %}">
+                    <span class="col-sm-1">
+                        {% with help_text=field.help_text %}
+                            {% if help_text %}
+                                {% include 'questionnaire/_q_help.html' %}
+                            {% endif %}
+                        {% endwith %} {# /help_text #}
+                    </span>
+                    <span class="col-sm-10">
+                        {{ field.label|safe }}
+                    </span>
+                </span>
+                <span class="col-sm-6 voffset-2">
+                    {# here is the different bit #}
+                    <input disabled="disabled" class="form-control" ng-disabled="true" ng-model="category['order']" type="number"/>
+                </span>
+                <span class="col-sm-3">
+                    {{ field.errors }}
+                </span>
+            </div> <!-- /.form-group -->
+
+        {% endwith %}
+    </div>
+
+{# NO LONGER LOOPING THROUGH FIELDS AUTOMATICALLY TO PREVENT "order" FROM BEING RE-SET WHENEVER THIS FORM IS LOADED #}
+{#    {% for field in form.get_category_fields %}  #}
+{#        <div class="row {% cycle 'odd' 'even' %}">  #}
+{#            {% include 'questionnaire/_q_customize_field.html' %}  #}
+{#        </div>  #}
+{#    {% endfor %}  #}
+
+</form>

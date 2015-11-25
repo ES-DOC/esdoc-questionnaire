@@ -24,12 +24,11 @@ What is esdoc-questionnaire ?
 esdoc-questionnaire is a standalone Django project that allows users to create CIM instances via webforms.  These forms are automatically generated based on the structure of the CIM.  They can also be customized for particular user communities. 
 
 
-
 What are the contents of esdoc-questionnaire ?
 --------------------------------------
 
-    \CIM_Questionnaire	Django project root
-    \examples	sample data to play with
+    \Q	Django project root
+    \samples	sample data to play with
 
 
 Further Information ?

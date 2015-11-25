@@ -1,0 +1,468 @@
+/* q_base.less */
+
+/*******************************************************************/
+/* using less allows me to:                                        */
+/* 1) have global variables I can use to change theme-level styles */
+/* 2) reference existing Bootstrap classes in my own selectors     */
+/*******************************************************************/
+
+/* original bootstrap styles */
+@import "bootstrap/bootstrap.less";
+
+/* my custom variables */
+@import "q_variables.less";
+
+/* redefine bootstrap-specific stuff */
+@import "q_bootstrap.less";
+
+/* redefine ng-specific stuff */
+@import "q_ng.less";
+
+/*******************************/
+/* fixes for ui.bootstrap (ng) */
+/*******************************/
+
+.nav, .pagination, .carousel, .panel-title a { cursor: pointer; }
+
+/**************/
+/* custom CSS */
+/**************/
+
+/* begin some top-level stuff */
+
+
+body {
+    /* whitespace is nice */
+    background-color: #ffffff;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+* {
+    /* rounded just looks better */
+    -moz-border-radius: 4px;
+    border-radius: 4px;
+}
+
+/* end some top-level stuff */
+
+/* site block is defined outside of #questionnaire */
+
+#site {
+  .alert;
+  .alert-danger;
+  .text-center;
+  padding: 8px !important;
+}
+
+/* end site block */
+
+/* so is debug block */
+
+#debug {
+  .alert;
+  .alert-danger;
+  .pull-right;
+  padding: 8px !important;
+}
+/* end debug block */
+
+/* begin alerts */
+
+/* there are two alerts systems that the Q uses: */
+/* (both utilizing the JS library "bootbox") */
+/* 1) a standard modal alert box that reads from the Django message queue */
+/* 2) a discrete popup that fades in and out for minor messages */
+/* 3) additionally, various ng controllers make use of "bootbox.alert()" directly */
+
+ .modal-content.error {
+   background: @panel-danger-heading-bg;
+   color: @panel-danger-text;
+   border: @panel-danger-border;
+ }
+ .modal-content.warning {
+   background: @panel-warning-heading-bg;
+   color: @panel-warning-text;
+   border: @panel-warning-border;
+ }
+ .modal-content.info {
+   background: @panel-info-heading-bg;
+   color: @panel-info-text;
+   border: @panel-info-border;
+ }
+ .modal-content.success {
+   background: @panel-primary-heading-bg;
+   color: @panel-primary-text;
+   border: @panel-primary-border;
+ }
+ .modal-content.default {
+   background: @panel-default-heading-bg;
+   color: @panel-default-text;
+   border: @panel-default-border;
+ }
+
+  #lil_msg {
+   .label;
+   .label-info;
+   color: @text-muted;
+   position: fixed;
+   bottom: 10%;
+   right: 0;
+   padding: 1em;
+   z-index: 9999;
+ }
+
+/* end alerts */
+
+/* begin project-specific stuff */
+
+#questionnaire {
+
+  /* wrap all custom CSS in container div */
+  /* (so it doesn't conflict w/ other stuff) */
+  /* (and b/c less allows an explicit hierarchy which is easier to read) */
+
+
+  div.header {
+    /* indent the header */
+    margin-left: 8px;
+    margin-right: 8px;
+
+    img#logo {
+      /* fixed-width for the logo */
+      width: 200px;
+    }
+
+    div#user {
+      /* stick the user section to the right */
+      .pull-right;
+      font-size: smaller !important;
+
+      * {
+        /* make all the (pseudo)buttons in the user section line up */
+        display: inline;
+      }
+
+    }
+
+  } /* /header */
+
+  div.footer {
+    /* make the footer smaller, centered, italic */
+    text-align: center;
+    font-style: italic;
+    font-size: 90%;
+    margin-top: 6px;
+    margin-left: auto;
+    margin-right: auto;
+    width: 90%;
+    /* make sure any floats are cleared before the footer */
+    clear: both;
+
+    img.project_logo {
+      height: 96px;
+      width: 96px;
+    }
+  }  /* /footer */
+
+  div.content {
+
+
+  } /* /content */
+
+  /* some help w/ forms */
+
+  label {
+    display: inline-block;
+  }
+
+  .form-group {
+    vertical-align: middle !important;
+  }
+
+  .form-control {
+    width: @field-width;
+  }
+
+  .form-control[type='checkbox'] {
+    width: auto;
+  }
+
+  textarea.form-control {
+    min-height: 34px;
+    resize: vertical;
+  }
+
+  .odd {
+      background-color: lighten(@gray-base, 98%);
+  }
+
+  .even {
+      background-color: lighten(@gray-base, 96%);
+  }
+
+  /* end some help w/ forms */
+
+  /* collapsible fieldsets */
+
+  fieldset.collapsible {
+    /* lots of "!important" notation */
+    /* b/c I'm resetting some low-level CSS stuff */
+    border: 2px solid @brand-primary !important;
+    padding: 0 1.4em 1.4em 1.4em !important;
+
+    legend {
+      font-size: @font-size-base !important;
+      font-weight: bold !important;
+      text-align: left !important;
+      color: @brand-primary !important;
+      background-color: transparent !important;
+      margin-top: 1.4em !important;
+      width: auto !important;
+      border: 0 !important;
+      cursor: pointer !important;
+    }
+  }
+
+  /* end collapsible fieldsets */
+
+  table {
+
+    .clickable_row {
+      cursor: hand;
+    }
+
+  }
+
+  /* one-off for the vocabulary customization widget */
+
+  table.vocabularies {
+      width: @field-width;
+      border: 1px solid @brand-primary !important;
+      border-radius: 4px !important; /* TODO: WHY ISN'T BORDER RADIUS BEING APPLIED? */
+      thead {
+        .btn-primary;  /* TODO: DOES .btn-primary LOOK GOOD? */
+      }
+      tbody {
+        tr {
+          .alert-info;
+        }
+      }
+  }
+
+  /* end one-off for the vocabularies customization widget */
+
+  /* one-off for the extra_fields table */
+
+  table.extra_fields {
+    .table-condensed;
+    width: @field-width;
+  }
+
+  /* end one-off for the extra_fields table */
+
+  .categories {
+
+
+    .list-group {
+      display: inline-block;
+      border: 1px solid @brand-primary;
+      padding: 2px;
+    }
+
+    .list-group-item {
+      display: inline-block;
+      border: 0px;
+      /*margin-left: 2px;*/
+      /*margin-right: 2px;*/
+      font-size: @font-size-large;
+
+    }
+
+    .label {
+      /* TODO: DOESN'T SEEM LIKE THESE STYLES ARE HAVING AN EFFECT ? */
+      button {
+        padding-top: 1px !important;
+        padding-bottom: 1px !important;
+        .glyphicon {
+          margin-top: 1px !important;
+          margin-bottom: 1px !important;
+        }
+      }
+    }
+
+    .label.enabled {
+
+    }
+
+    .label.disabled {
+      border: 1px solid @gray-dark;
+      background: @list-group-disabled-bg;
+      color: @list-group-disabled-text-color;
+      button {
+        /* the inline button w/in a category label */
+        border: 1px solid @gray-dark;
+        background: @list-group-disabled-bg;
+        color: @list-group-disabled-text-color;
+      }
+    }
+
+    .glyphicon {
+      pointer-events: all;
+    }
+  }
+
+  .title {
+    .lead;
+    .text-primary;
+    .text-center;
+    a {
+      color: inherit !important;
+    }
+  }
+
+  .documentation {
+    padding: 8px;
+    font-style: italic;
+  }
+
+  .info {
+    background: @alert-warning-bg;
+    border: 2px solid @alert-warning-border;
+    padding: 4px;
+    margin-top: 8px;
+    margin-bottom: 8px;
+    font-style: oblique;
+  }
+
+  .help {
+    cursor: pointer;
+  }
+
+  .help:hover {
+    color: @brand-primary;
+  }
+
+  .required {
+    font-weight: bold;
+  }
+
+  .optional {
+    font-weight: normal;
+  }
+
+  .synchronized {
+    color: inherit;
+  }
+
+  .unsynchronized  {
+    color: @brand-danger;
+  };
+
+  .table-nonfluid {
+    width: auto !important;
+  }
+
+  .disabled {
+    cursor: @cursor-disabled;
+  }
+
+  .sortable {
+    cursor: move;
+  }
+
+  .sortable_handle {
+    cursor: move;
+  }
+
+  .sortable_item {
+    /* this is the placeholder that appears while an item is being sorted */
+    border: 1px dashed @brand-primary;
+  }
+
+  /* accordions */
+
+  .accordion {
+    .voffset-16;
+    .accordion_group {
+
+      a:hover {
+        text-decoration: none !important;
+      }
+      .panel-info;
+      .panel-heading {
+        //height: 32px;
+        //padding-top: 4px;
+        //padding-bottom: 4px;
+      }
+
+    }
+
+    .accordion_group:hover {
+      border: 1px solid @panel-primary-heading-bg;
+    }
+
+    //.expanded {
+    //    border: 1px solid @panel-primary-heading-bg;
+    //  }
+
+
+    .expanded {}
+    .collapsed {}
+
+  }
+
+  .accordion_toolbar {
+    .pull-right;
+    .btn-toolbar;
+    button {
+      .btn-xs;
+      .btn-primary;
+    }
+  }
+
+  /* end accordions */
+
+  .voffset-2  { margin-top: 2px !important; }
+  .voffset-4  { margin-top: 4px !important; }
+  .voffset-8  { margin-top: 8px !important; }
+  .voffset-12 { margin-top: 12px !important; }
+  .voffset-16 { margin-top: 16px !important; }
+
+  .q-dirty {
+    /* sometimes I disable ng-validation and do my own */
+    border-color: @brand-danger;
+  }
+
+  /*
+  .submit {
+    .pull-right;
+
+    input {
+      &[type="submit"] {
+        .btn; .btn-primary;
+      }
+    }
+  }
+  */
+
+}
+
+/* modals may exist outside of the regular content */
+
+.modal {
+  margin-left: auto;
+  margin-right: auto;
+  .modal-dialog {
+    height: 100%;
+    width: 100%;
+  }
+  .modal-body {
+    margin-left: auto;
+    margin-right: auto;
+    width: auto !important;
+    overflow: auto;
+  }
+}
+
+/* end project-specific stuff */

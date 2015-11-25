@@ -1,0 +1,66 @@
+/* redefining bootstrap stuff */
+
+@import "bootstrap/bootstrap.less";
+@import "q_variables.less";
+
+.label-sm {
+  .h3;
+}
+
+/* give selects the same width as every other control */
+
+.bootstrap-select {
+  width: @field-width !important;
+}
+
+/* make tabs stand out a bit more */
+
+.tab-content {
+    border-left: 1px solid @nav-tabs-border-color;
+    border-right: 1px solid @nav-tabs-border-color;
+    padding: 10px;
+}
+
+.nav-tabs {
+    margin-bottom: 0;
+}
+
+/* add scrollbar as needed to popovers */
+
+.popover {
+  max-width: 600px;
+}
+
+.popover-content {
+   overflow-y: scroll;
+}
+
+/* override the default angular-loading-bar styles */
+/* (to make it more noticeable) */
+
+#loading-bar .bar {
+  background: @loading-color;
+  height: @loading-color;
+  border-bottom-right-radius: @loading-radius;
+  border-top-right-radius: @loading-radius;
+}
+
+#loading-bar .peg {
+  height: @loading-height;
+  -moz-box-shadow: @brand-success 1px 0 6px 1px;
+  -ms-box-shadow: @brand-success 1px 0 6px 1px;
+  -webkit-box-shadow: @brand-success 1px 0 6px 1px;
+  box-shadow: @loading-color 1px 0 6px 1px;
+}
+
+//#loading-bar-spinner {
+//  top: 20px;
+//  left: 20px;
+//}
+
+#loading-bar-spinner .spinner-icon {
+  width: 16px;
+  height: 16px;
+  border-top-color: @loading-color;
+  border-left-color: @loading-color;
+}

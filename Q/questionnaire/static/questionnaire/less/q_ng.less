@@ -1,0 +1,50 @@
+/* redefining ng stuff */
+
+//.ng-invalid.ng-dirty {
+//  border-color: @brand-danger;
+//}
+//
+//.ng-valid.ng-dirty {
+//  border-color: @brand-danger;
+//}
+//
+
+//.ng-invalid {
+//  border-color: @brand-danger;
+//}
+
+//.ng-valid {
+//  border-color: @brand-success;
+//}
+
+
+/* for whatever stupid reason, invalid things aren't automatically styled in boostrap */
+/* so specify my own invalid style here */
+.ng-invalid-bound.ng-pristine, .ng-invalid.ng-dirty {
+    border-color: @brand-danger;
+}
+.form-control:focus.ng-invalid-bound.ng-pristine, .form-control:focus.ng-invalid.ng-dirty {
+    box-shadow: 0px 1px 1px  @brand-danger inset, 0px 0px 8px @brand-danger;
+}
+
+
+ul.djng-form-errors {
+    margin: 0;
+    padding: 0;
+}
+
+ul.djng-field-errors {
+        margin-left: 0;
+        display: inline-block;
+        list-style-type: none;
+}
+ul.djng-field-errors li.invalid {
+        color: @brand-danger;
+}
+ul.djng-field-errors li.invalid:before {
+        content: "\2716\20";  /* adds a red cross before the error message */
+}
+ul.djng-field-errors li.valid:before {
+        color: @brand-success;
+        content: "\2714";  /* adds a green tick */
+}

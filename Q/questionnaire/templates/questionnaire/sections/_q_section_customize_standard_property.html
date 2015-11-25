@@ -1,0 +1,119 @@
+{# _q_section_customize_standard_property.html #}
+
+{# this is a "section" template #}
+{# it is inserted as needed by ng via AJAX using the load-on-demand paradigm #}
+
+{# see the "q_load_section" django view #}
+{# see and the "service" ng directive" #}
+
+<form name="{{form.form_name}}">
+
+    <div class="hidden">
+        {% for field in form.get_hidden_fields %}
+            {{ field }}
+        {% endfor %}
+    </div>
+
+    {% for field in form.get_fields_for_field_type %}
+
+        <div class="row {% cycle 'odd' 'even' %}">
+
+            {% if field.name == 'relationship_show_subform' %}
+
+                {# note that the 'relationship_subform_customization' field is grouped w/ hidden_fields above #}
+
+                <div class="has-feedback form-group">
+                    <span class="col-sm-3 {% if field.field.required %} required {% else %} optional {% endif %}">
+                        <span class="col-sm-1">
+                            {% with help_text=field.help_text %}
+                                {% if help_text %}
+                                    {% include 'questionnaire/_q_help.html' %}
+                                {% endif %}
+                            {% endwith %} {# /help_text #}
+                        </span>
+                        <span class="col-sm-10">
+                            {{ field.label|safe }}
+                        </span>
+                    </span>
+                    <span class="col-sm-6 voffset-2">
+                        {{ field }}
+                        <!-- here begins the new stuff -->
+                        <div class="voffset-8">
+
+                            <button type="button"
+                                    class="btn btn-primary btn-xs"
+                                    data-toggle="modal"
+                                    data-target="#{{form.key.value}}_subform"
+                                    ng-click="{{form.scope_prefix}}.display_subform_detail = true"
+                                    ng-disabled="!{{form.scope_prefix}}.relationship_show_subform"
+                                    title="customize how this subform is rendered">
+                                Customize Subform&nbsp;
+                                <span class="glyphicon glyphicon-new-window"></span>
+                            </button>
+
+                            {# I only want to render this "div" if I can actually use a subform for this property #}
+                            {# otherwise the call to "form.get_subform_key" seems a bit unintuitive #}
+                            {# (see the comment in that fn in "forms_customize_properties" for more info) #}
+                            <div class="modal fade"
+                                 data-backdrop="static"
+                                 id="{{form.key.value}}_subform"
+                                 role="dialog"
+                                 tabindex="-1"
+                                 ng-init="scope={{form.scope_prefix}}.relationship_subform_customization">
+                                <!-- note the "ng-init" attribute above -->
+                                <!-- this is how I keep track of where in the subform recursion I am -->
+                                <!-- it's a little bit hacky b/c I am passing a Django template variable to ng -->
+                                <!-- but it's basically my only hack in this big complex app, so I can live w/ it -->
+                                <div class="modal-dialog" role="document">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <!--<button type="button" class="close" data-dismiss="modal"></button>-->
+                                            <h4 class="modal-title">
+                                                <!-- TODO: USE DJANGO TEMPLATE VARIABLES TO CREATE A MORE SPECIFIC TITLE -->
+                                                 Customize a subform element of the CIM Questionnaire
+                                            </h4>
+                                        </div>  <!-- /.modal-header -->
+                                        <div class="modal-body">
+
+                                             <!-- this is a bit different b/c I don't have access to the ng model as much as I have access to the django form -->
+                                             <!-- TODO: I DON'T REALLY LIKE WORKING W/ THIS; I WANT TO CHANGE IT TO BE MORE NG-CENTRIC -->
+                                             <!-- TODO: I ESPECIALLY DON'T LIKE THE USE OF THE "get_subform_key" FN -->
+                                             <subform_section
+                                                 scope="{{form.scope_prefix}}"
+                                                 key="{{form.get_subform_key}}"
+                                                 section_type="subform_customization"/>
+
+                                        </div>  <!-- /.modal-body -->
+                                        <div class="modal-footer">
+                                            <button type="button"
+                                                    class="btn btn-primary"
+                                                    ng-click="{{form.scope_prefix}}.display_subform_detail = false;"
+                                                    onclick="hide_subform('{{form.key.value}}_subform')">
+                                                    <!-- I am specifically _not_ using the ng attribute "data-dismiss='modal'" b/c that will close _all_ modals -->
+                                                    <!-- instead, I use the "hide_subform" fn above to close just this specific modal -->
+                                                    <!-- TODO: ng-disabled={{form.form_name}}.$invalid -->
+                                                dismiss subform customizer
+                                            </button>
+                                        </div>  <!-- /.modal-footer -->
+                                    </div>  <!-- /.modal-content -->
+                                </div>  <!-- /.modal-dialog -->
+                            </div>  <!-- /.modal -->
+
+                        </>
+                        <!-- here ends the new stuff  -->
+                    </span>
+                    <span class="col-sm-3">
+                        <!-- don't bother rendering errors -->
+                        &nbsp;
+                    </span>
+                </div> <!-- /.form-group -->
+
+            {% else %}
+                {% include 'questionnaire/_q_customize_field.html' %}
+            {% endif %}
+
+        </div>
+
+    {% endfor %} {# /field #}
+
+</form>

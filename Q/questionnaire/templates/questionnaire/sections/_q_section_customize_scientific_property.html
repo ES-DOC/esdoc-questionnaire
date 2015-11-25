@@ -1,0 +1,79 @@
+{# _q_section_customize_standard_property.html #}
+
+{# this is a "section" template #}
+{# it is inserted as needed by ng via AJAX using the load-on-demand paradigm #}
+
+{# see the "q_load_section" django view #}
+{# see and the "service" ng directive" #}
+
+<form name="{{form.form_name}}">
+
+    <div class="hidden">
+        {% for field in form.get_hidden_fields %}
+            {{ field }}
+        {% endfor %}
+    </div>
+
+    {% for field in form.get_fields_for_field_type %}
+
+        <div class="row {% cycle 'odd' 'even' %}">
+            {% include 'questionnaire/_q_customize_field.html' %}
+        </div>
+
+    {% endfor %} {# /field #}
+
+    <fieldset class="fieldset collapsible" ng-controller="FieldsetController as extra_fields_fieldset_controller">
+        <legend class="fieldset_header" ng-click="extra_fields_fieldset_controller.is_collapsed = ! extra_fields_fieldset_controller.is_collapsed" title="click to toggle content" >
+            <span ng-hide="extra_fields_fieldset_controller.is_collapsed" class="glyphicon glyphicon-triangle-bottom"></span>
+            <span ng-show="extra_fields_fieldset_controller.is_collapsed" class="glyphicon glyphicon-triangle-right"></span>
+            Extra Attributes:&nbsp;
+        </legend>
+        <div class="fieldset_content" ng-hide="extra_fields_fieldset_controller.is_collapsed">
+
+            <div class="documentation">
+                Every scientific property can have additional information associated with it.
+            </div>
+
+            <table class="table extra_fields">
+                <thead>
+                    <tr>
+                        <th>Extra Attribute</th>
+                        <th>Display?</th>
+                        <th>Edit?</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Standard Name</td>
+                        <td>
+                            {{ form.display_extra_standard_name }}
+                        </td>
+                        <td>
+                            {{ form.edit_extra_standard_name }}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Description</td>
+                        <td>
+                            {{ form.display_extra_description }}
+                        </td>
+                        <td>
+                            {{ form.edit_extra_description }}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Scientific Units</td>
+                        <td>
+                            {{ form.display_extra_units }}
+                        </td>
+                        <td>
+                            {{ form.edit_extra_units }}
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+
+        </div>  <!-- /.fieldset_content -->
+    </fieldset> <!-- /.fieldset -->
+
+</form>

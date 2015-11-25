@@ -1,0 +1,192 @@
+{# _q_section_customize_subform.html #}
+
+{% load q_tags %}
+
+{# this is a "section" template #}
+{# it is inserted as needed by ng via AJAX using the load-on-demand paradigm #}
+
+{# see the "q_load_section" django view #}
+{# see and the "service" ng directive" #}
+
+{# NOTE THAT UNLIKE THE NON-SUBFORM TEMPLATES, THIS IS MOSTLY SELF-CONTAINED #}
+
+<div class="container-fluid">
+    <div class="col-md-12">
+
+        <div class="documentation row">
+            <div class="col-md-12">
+                Use this page to customize how the <strong>{{proxy}}</strong> Element is presented as a subform in this CIM Questionnaire.
+            </div>
+        </div>
+
+        <form name="{{form.form_name}}"
+              ng-model="{{form.scope_prefix}}"
+              class="form-horizontal"
+              novaliadate>
+
+            <fieldset class="fieldset collapsible" ng-controller="FieldsetController as document_details_fieldset_controller">
+                <legend class="fieldset_header" ng-click="document_details_fieldset_controller.is_collapsed = ! document_details_fieldset_controller.is_collapsed" title="click to toggle content" >
+                    <span ng-hide="document_details_fieldset_controller.is_collapsed" class="glyphicon glyphicon-triangle-bottom"></span>
+                    <span ng-show="document_details_fieldset_controller.is_collapsed" class="glyphicon glyphicon-triangle-right"></span>
+                    Document Details:&nbsp;
+                </legend>
+                <div class="fieldset_content" ng-hide="document_details_fieldset_controller.is_collapsed">
+
+                    <div class="documentation">
+                        This section contains information relating to the document itself.  This will affect the look-and-feel of the editor form being customized.
+                    </div>
+
+                        {% for field in form.get_document_fields %}
+                            <div class="row {% cycle 'odd' 'even' %}">
+                                {% include 'questionnaire/_q_customize_field.html' %}
+                            </div>
+                        {% endfor %} {# /field #}
+
+                </div> <!-- /.fieldset_content -->
+            </fieldset>
+
+        </form>
+
+        <fieldset class="fieldset collapsible" ng-controller="FieldsetController as property_details_fieldset_controller">
+            <legend class="fieldset_header" ng-click="property_details_fieldset_controller.is_collapsed = ! property_details_fieldset_controller.is_collapsed" title="click to toggle content" >
+                <span ng-hide="property_details_fieldset_controller.is_collapsed" class="glyphicon glyphicon-triangle-bottom"></span>
+                <span ng-show="property_details_fieldset_controller.is_collapsed" class="glyphicon glyphicon-triangle-right"></span>
+                Property Details:&nbsp;
+            </legend>
+            <div class="fieldset_content" ng-hide="property_details_fieldset_controller.is_collapsed">
+
+                <div class="documentation">
+                    This section contains information relating to the properties of the document.
+                </div>
+
+                <ul class="nav nav-tabs" role="tablist">
+                  <li role="presentation" class="active"> <!-- standard_properties tab is active by default -->
+                      <a href data-target="#tab_standard_properties" role="tab" data-toggle="tab">Standard Properties (Ontology)</a>
+                  </li>
+                </ul> <!-- /.nav-tabs -->
+
+                <div class="tab-content">
+
+                    <div role="tabpanel" class="tab-pane panel active" id="tab_standard_properties">
+                        <div class="documentation">
+                            These properties are defined by the CIM Schema.
+                        </div>
+
+                        <!-- not customizing categories at the subform level -->
+                        {# include 'questionnaire/_q_customize_subform_standard_categories.html' #}
+
+                        <div class="panel panel-default">
+                            <div class="panel-body properties"
+                                  ng-init="properties=scope.standard_properties;
+                                  ordering_type='order';">
+
+                                <div class="accordion_toolbar" ng-show="properties.length">
+                                    <div class="btn-group">
+                                        <button type="button" class="btn dropdown-toggle" data-toggle="dropdown">
+                                            <span class="glyphicon glyphicon-resize-vertical"></span>
+                                            &nbsp;sort
+                                        </button>
+                                        <ul class="dropdown-menu">
+                                            <li><a href="#" ng-click="ordering_type='name'">by name</a></li>
+                                            <!-- TODO: SHOULD "standard_property_order_type" USE CATEGORY name INSTEAD OF key ? -->
+                                            <li><a href="#"ng-click="ordering_type='category_key'">by category</a></li>
+                                            <li><a href="#" ng-click="ordering_type='field_type'">by field type</a></li>
+                                            <li><a href="#" ng-click="ordering_type='order'">by order</a></li>
+                                        </ul>
+                                    </div>
+                                  <button type="button" class="btn" title="expand all properties"
+                                          ng-click="expand_properties(properties)">
+                                      <span class="glyphicon glyphicon-triangle-bottom"></span>
+                                      &nbsp;expand all
+                                  </button>
+                                  <button type="button" class="btn" title="collapse all properties"
+                                          ng-click="collapse_properties(properties)">
+                                      <span class="glyphicon glyphicon-triangle-top"></span>
+                                      &nbsp;collapse all
+                                  </button>
+                                </div>
+                                <div style="clear: both;"></div>  <!-- TODO: WHY DOESN'T BOOTSTRAP "clearfix" APPLY HERE? -->
+
+                                <div uib-accordion close-others="false"
+                                     ui-sortable="property_customization_sortable_options"
+                                     class="accordion"
+                                     ng-model="properties"
+                                     ng-show="properties.length">
+                                    <div uib-accordion-group
+                                         class="accordion_group"
+                                         is-open="property.display_detail"
+                                         ng-repeat="property in properties | orderBy:ordering_type"
+                                         ng-init="category=get_model_by_attrs(scope.standard_categories, {'key': property.category_key})"
+                                         ng-class="property.display_detail ? 'expanded' : 'collapsed'">
+                                        <div uib-accordion-heading
+                                             class="accordion_header sortable_handle"
+                                             ng-click="property.display_detail = ! property.display_detail">
+                                            {% verbatim ng %}
+                                                <!-- naughty, naughty developer using tables and fixed widths -->
+                                                <!-- TODO: REDO THIS LAYOUT USING CONVENTIONAL BOOTSTRAP TECHNIQUES -->
+                                                <table width="1056px" border="0" title="click to toggle / drag-and-drop to reorder"> <!-- a parent element is needed so that the entire "accordion_header" is clickable -->
+                                                    <tr>
+                                                        <td width="32px;">
+                                                            <h5>
+                                                                <span ng-hide="property.display_detail" class="glyphicon glyphicon-triangle-right"></span>
+                                                                <span ng-show="property.display_detail" class="glyphicon glyphicon-triangle-bottom"></span>
+                                                            </h5>
+                                                        </td>
+                                                        <td width="300px">
+                                                            <h5>
+                                                                <strong>Name:&nbsp;&nbsp;</strong>
+                                                                {{property.name}}
+                                                            </h5>
+                                                        </td>
+                                                        <td width="340px">
+                                                            <h5>
+                                                                <strong>Category:&nbsp;&nbsp;</strong>
+                                                                {{ category.name }}
+                                                            </h5>
+                                                        </td>
+                                                        <td width="256px">
+                                                            <h5>
+                                                                <strong>Field Type:&nbsp;&nbsp;</strong>
+                                                                {{property.field_type}}
+                                                            </h5>
+                                                        </td>
+                                                        <td width="128px">
+                                                            <h5>
+                                                                <strong>Order:&nbsp;&nbsp;</strong>
+                                                                {{property.order}}
+                                                            </h5>
+                                                        </td>
+                                                    </tr>
+                                                </table>
+                                            {% endverbatim ng %}
+                                        </div>  <!-- /.accordion_heading -->
+
+                                        <div class="accordion_content" ng-init="key=property.key; index=$index">
+
+                                             <subform_property_section model_to_watch="get_model_by_attrs(properties, {'key': key})"
+                                                 scope="{{scope}}"
+                                                 index="{% verbatim ng %}{{ index }}{% endverbatim ng %}"
+                                                 key="{% verbatim ng %}{{ key }}{% endverbatim ng %}"
+                                                 section_type="subform_standard_property_customization"/>
+
+                                        </div>  <!-- /.accordion_content -->
+
+                                    </div> <!-- /.accordion_group -->
+                                </div>
+
+                                 <div class="documentation" ng-hide="properties.length">
+                                        No properties found.
+                                </div>
+
+                            </div>
+                        </div>
+
+                    </div> <!-- /.tab-pane -->
+
+                </div> <!-- /.tab-content -->
+
+            </div> <!-- /.fieldset_content -->
+        </fieldset>
+
+    </div>
+</div>

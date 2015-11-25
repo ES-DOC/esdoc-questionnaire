@@ -1,0 +1,68 @@
+{# q_model.html #}
+
+{% extends "questionnaire/q_base.html" %}
+
+{% block script %}
+    {{ block.super }}
+    <script language="JavaScript">
+        $(document).ready(
+            function() {
+
+                var parent = document.body;
+
+                init_widgets(helps, $(parent).find(".help"));
+
+            }
+        );
+    </script>
+{% endblock %} {# /script #}
+
+{% block style %}
+    {{ block.super }}
+    <style type="text/css">
+
+        .error_msg { font-size: large; }
+    </style>
+{% endblock %} {# /style #}
+
+
+{% block content %}
+
+    <div class="title">
+        Whoops!
+    </div> <!-- /#title -->
+
+    <div class="container-fluid">
+        <div class="col-md-offset-1 col-md-10">
+
+            <div class="error_msg alert alert-danger" role="alert">
+                <table border="0" width="100%">
+                    <tr valign="center">
+                        <td width="5%" style="text-align: center">
+                            <span class="glyphicon glyphicon-question-sign"></span>
+                        </td>
+                        <td width="94%">
+                            <p>
+                                Sorry, I couldn't find the page you're looking for.
+                            </p>
+                            <p>
+                                Make sure you have specified a valid
+                                <strong>project name</strong>,
+                                <strong>ontology name</strong>, and
+                                <strong>document type</strong>.
+                            </p>
+                            <p>
+                                Also, make sure you have specified whether you intend to "edit", "view", or "customize".
+                            </p>
+                            <p>
+                                <a href="{% url 'help' %}">ES-DOC Questionnaire help</a> is available.
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+
+        </div> <!-- /.col-md-8 -->
+    </div> <!-- /.container-fluid -->
+
+{% endblock %} {# /content #}

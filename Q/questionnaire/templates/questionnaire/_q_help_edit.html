@@ -1,0 +1,143 @@
+{# _q_help_edit.html #}
+
+{% load staticfiles %}
+
+<div class="panel panel-default">
+
+    <div class="panel-heading">Logging In</div>
+    <div class="panel-body">
+        <p>
+            You must be logged into the CIM Questionnaire to create, edit, or publish CIM Documents.
+            You can request a CIM Questionnaire account <a href="/register"><strong>here</strong></a>.
+        </p>
+        <p>
+            After receiving an account, you must <em>still</em> join the particular project you wish to create documents for.
+            Without being a member of the project you will only be able to "view" and not "edit" documents.
+        </p>
+    </div>
+
+    <div class="panel-heading">Creating a New Document</div>
+    <div class="panel-body">
+        <p>
+            To create a new document, first navigate to the project that you are interested in.
+            <img class="screenshot" width="1000px" src="{% static 'questionnaire/img/screenshots/project_page_edit.png' %}"/>
+            From that page, select the appropriate ontology and document type under "New Documents" and then click the "create" button.
+            This will bring you to the CIM Questionnaire Editor:
+            <img class="screenshot" width="1000px" src="{% static 'questionnaire/img/screenshots/edit.png' %}"/>
+        </p>
+    </div>
+
+
+    <div class="panel-heading">Editing an Existing Document</div>
+    <div class="panel-body">
+        <p>
+            Again, to edit an existing document, first navigate to the project that you are interested in.
+            The "Existing Documents" section lists the names of CIM Documents that have already been created for that project.
+            You may edit the document by clicking "Edit" next to that document.
+            (If you click "View in Editor" you will only be able to view the document, and will not be able to save any changes.)
+            Please do not have more than one editing session open for any given document.
+        </p>
+        <p>
+            The Editor Form used for creating and editing a CIM Document is exactly the same.
+        </p>
+    </div>
+
+    <h4>The Editor Layout</h4>
+
+    <p>
+        There are several distinct sections to the CIM Questionnaire Editor.
+    </p>
+
+    <h5>Component Hierarhcy</h5>
+
+    <p>
+        <img class="screenshot left" width="200px" src="{{ STATIC_URL }}questionnaire/img/screenshots/component_hierarchy.png"/>
+        This is a clickable tree where each branch corresponds to a sub-component of the model being documented
+    </p>
+
+    <h5>Component Panes</h5>
+
+    <p>
+        To the right of the Component Hierachy are the Component Panes.
+        These contains all of the properties belonging to the currently selected component.
+        <img class="screenshot left" width="800px" src="{{ STATIC_URL }}questionnaire/img/screenshots/component_pane.png"/>
+        There are two different categories of properties to deal with: standard and scientific.
+    </p>
+
+    <h5>Standard Properties</h5>
+
+    <p>
+        The first three tabs along the top of the Component Pane contain the standard properties of the component.
+        These are properties that come from the CIM Schema.  They are the same for every single component.
+    </p>
+
+    <p>
+        Because many standard properties would have the same value for each component, a standard property can be <em>inherited</em>.
+        This icon indicates an inherited property:
+        <img class="screenshot left" width="50px" src="{{ STATIC_URL }}questionnaire/img/screenshots/inheritance.png"/>
+        As the value of a component's inherited property changes, that value propagates to the corresponding properties of all child components.
+        To disable this feature, simply uncheck the inheritance icon.
+    </p>
+
+    <h5>Scientific Properties</h5>
+
+    <p>
+        The final tab, the one that says "Scientific Properties" contains, unsurprisingly, the scientific propoperties of the component.
+        These are the properties that come from the CIM Controlled Vocabulary.
+        Whereas standard properties are the same for each component, scientific properties vary.
+        <img class="screenshot left" width="600px" src="{{ STATIC_URL }}questionnaire/img/screenshots/scientific_properties_pane.png"/>
+        The second level of tabs within the Scientific Properties Pane (the one that begins "Mediation Services" in the above screenshot), shows the distinct categories of scientific property for the selected component.
+    </p>
+
+    <h4>Entering Information</h4>
+
+    <p>
+        Simply fill in a value for every property of each component.
+    </p>
+
+    <p>
+        You should start at the highest level of the Component Hierarchy.
+    </p>
+
+    <p>
+        Fill out all of the standard properties ("Document Properties" and "Basic Properties" and "Component Description").
+        Note that, in most cases, the "Short Name" property in the "Basic Properties" tab becomes the name of your new document once you save it.
+        And be sure to take advantage of inheritance, as described above.
+    </p>
+
+    <p>
+        Next, for each component, fill out all of the scientific properties ("Scientific Properties").
+        Initially, the input allowing you to change a scientific property's value is hidden within a collapsed accordion.
+        It is easiest to use the "expand all" button to be able to edit all of the properties that still need values.
+    </p>
+
+    <h3>Saving Your Work</h3>
+
+    <p>
+        You may save your partially complete document by clicking the "save" button at the bottom of the page while you are editing.
+        It is not necessary to do this after every change, but it is recommended to save frequently.
+    </p>
+
+    <p>
+        Every time you click "save", a new minor version of the document is saved to local storage (Example: version 0.31 -> 0.32).
+    </p>
+
+    <h3>Publishing a Document</h3>
+
+    <p>
+        Please do not publish your document until it has reached a level of completion that you are comfortable with sharing.
+    </p>
+
+    <p>
+        Publishing puts the data into a <a href="/feed">publicly accessible data feed</a>.
+        <!--When you click "publish" for a document, you will be notified of any required information that is missing, and will not be able to publish until this information is filled in.-->
+        Clicking "publish" for a document that has already been published creates a new major version, that is, version 1.x -> 2.1.
+        (An unpublished document is denoted version 0.x.)
+    </p>
+
+    <p>
+        A CIM document must be published in order for the ES-DOC Viewer and Comparator to access them.
+    </p>
+
+</div> <!-- /#help_edit -->
+

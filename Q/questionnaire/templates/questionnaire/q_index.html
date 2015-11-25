@@ -1,0 +1,83 @@
+{# q_model.html #}
+
+{% extends "questionnaire/q_base.html" %}
+
+{% load staticfiles %}
+{% load compress %}
+{% load q_tags %}
+
+
+{% block title %}
+    CIM Questionnaire
+{% endblock %} {# /title #}
+
+
+{% block scripts %}
+    {{ block.super }}
+        {% compress js %}
+            <script language="javascript" type="text/javascript" src="{% static 'questionnaire/js/q_ng_index.js' %}"></script>
+        {% endcompress %}
+{% endblock %} {# /scripts #}
+
+
+{% block content %}
+
+{# putting this ng stuff up top so it's available to the entire page #}
+
+<div ng-app="q_index">
+    <div ng-controller="IndexController as index_controller">
+
+{# wrapping everything in bootstrap grids to help w/ placement #}
+
+<div class="container-fluid">
+    <div class="col-md-12">
+
+
+    <div class="title row">
+        Welcome to the CIM Questionnaire
+    </div> <!-- /#title -->
+
+    <div class="documentation row">
+        <div class="col-md-12">
+            <p>The CIM Questionnaire provides an Editor for creating complex CIM Documents for particular Earth Science projects. Once published, those documents can be viewed and manipulated by other ES-DOC tools.</p>
+        </div>
+        <div class="col-md-12">
+            <p>If you are seeing this page, then you have not selected a project. Please select from the available projects below. Depending on the project, you may have to login to proceed.</p>
+        </div>
+        <div class="col-md-12">
+            <p>Alternatively, click on the following links for more information:</p>
+            <ul class="voffset-4">
+                <!--<li><a href="/admin/questionnaire"><b>Django Admin Interface</b></a> (for registering projects/ontologies/vocabularies/etc.)&nbsp;&nbsp;</li>-->
+                <li><a target="_blank" href="{% url 'help' %}" title="detailed information about how to use the Questionnaire"><b>CIM Questionnaire help</b></a>&nbsp;&nbsp;</li>
+                <li><a target="_blank" href="/feed" title="a listing of CIM Documents that have already been published"><b>CIM Questionnaire Published Document Feed</b></a>&nbsp;&nbsp;</li>
+            </ul>
+        </div>
+    </div> <!-- /.documentation -->
+
+    <div class="col-md-12 row">
+
+        <div class="list-group large" style="margin-left: 8px;">
+            <span class="list-group-item active">
+                Active Questionnaire Projects:&nbsp;
+                <span class="small">(click to view)</span>
+            </span>
+            {% verbatim ng %}
+                <a class="list-group-item" href="/{{ project.name }}" ng-repeat="project in index_controller.projects">
+                    <strong>{{ project.title }}</strong>
+                    <span class="documentation small">{{ project.description }}</span>
+                </a>
+                <span class="documentation" ng-hide="index_controller.projects.length">
+                    <!-- only show this part if the projects array is emtpy -->
+                    No projects found
+                </span>
+            {% endverbatim ng %}
+        </div> <!-- /.list-group -->
+
+
+    </div> <!-- /.col-md-8 -->
+</div> <!-- /.container-fluid -->
+
+    </div> <!-- / ng-controller: IndexController -->
+</div> <!-- / ng-app: q_index -->
+
+{% endblock %} {# /content #}

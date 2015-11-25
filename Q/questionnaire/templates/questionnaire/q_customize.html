@@ -1,0 +1,169 @@
+{# q_customize.html #}
+
+{% extends "questionnaire/q_base.html" %}
+
+{% load staticfiles %}
+{% load compress %}
+{% load djangular_tags %}
+{% load q_tags %}
+
+
+{% block title %}
+    CIM Questionnaire Customizer
+{% endblock %} {# /title #}
+
+
+{% block scripts %}
+    {{ block.super }}
+        <script language="JavaScript" type="text/javascript" src="{% static 'djangular/js/django-angular.js' %}"></script>
+        <script language="javascript" type="text/javascript" src="{% static 'questionnaire/js/q_ng_customizer.js' %}"></script>
+        <script language="JavaScript">
+
+            var session_key = "{{ session_key }}";  /* session_key can be used to locate items in the cache */
+            var project_id = {{ project.pk }};
+
+            var view_url_dirname = "{{ view_url_dirname }}";
+            var api_url_dirname = "{{ api_url_dirname }}";
+
+            var customization_id = {{ customization.id|default:0 }};
+            var customization_name = "{{ customization.name }}";
+            /* var customization_default = {{ customization.is_default|yesno:"true,false" }}; */
+
+            $(document).ready(
+                function() {
+
+                    /* the customizer forms can have stackable modals (when customizing subforms) */
+                    /* this is not truly supported by Bootstrap3 */
+                    /* so this bit of code addresses that */
+                    /* (got the idea from http://stackoverflow.com/a/24914782) */
+
+                   $(document)
+                       .on('show.bs.modal', '.modal', function (event) {
+                           var zIndex = 1040 + (10 * $('.modal:visible').length);
+                           $(this).css('z-index', zIndex);
+                           setTimeout(function() {
+                               $('.modal-backdrop').not('.modal-stack').css('z-index', zIndex - 1).addClass('modal-stack');
+                           }, 0);
+                       })
+                       .on('hidden.bs.modal', '.modal', function () {
+                          $('.modal:visible').length && $(document.body).addClass('modal-open');
+                       });
+
+                }
+            );
+        </script>
+{% endblock %} {# /scripts #}
+
+
+{% block content %}
+
+{# putting this ng stuff up top so it's available to the entire page #}
+{# (as well as to the includes) #}
+
+
+<div ng-app="q_customizer">
+    <div ng-controller="CustomizerController as customizer_controller">
+
+{# wrapping everything in bootstrap grids to help w/ placement #}
+
+        <div class="container-fluid">
+            <div class="col-md-12">
+
+
+            <div class="title row">
+                Customize the CIM Questionnaire for <strong>{{ proxy }}</strong> documents of the <strong>{{ project.title }}</strong> Project
+            </div> <!-- /#title -->
+
+            <div class="documentation row">
+                <div class="col-md-12">
+                    Use this page to customize how a particular CIM Document Type is presented in the CIM Questionnaire for this project.&nbsp;
+                </div>
+                <div class="col-md-12">
+                    <a href="/{{ project.name }}">{{ project.title }} Project Page.
+                </div>
+                <div class="col-md-10">
+                    <a href="{% url 'help' %}">ES-DOC Questionnaire help</a> is available.
+                </div>
+            </div> <!-- /.documentation -->
+
+            {# TODO: GET RID OF THIS ONCE THINGS ARE WORKING WELL #}
+            {% if debug %}
+                <div class="col-md-12 row">
+                    <button class="btn btn-danger btn-xs pull-right"
+                            title="print ng scope to console"
+                            ng-click="print_stuff()">
+                        <span class="glyphicon glyphicon-cog"></span>
+                    </button>
+                </div> <!-- /.row -->
+            {% endif %} {# /debug #}
+
+            <div class="col-md-12 row">
+
+                    {% csrf_token %}
+
+                    {% with form=model_customization_form %}
+                        <form name="{{form.form_name}}"
+                              ng-model="model_customization"
+                              class="form-horizontal"
+                              novaliadate>  <!-- uncomment this line to use ng / rest form submission -->
+                              <!--method="POST" action="">-->  <!-- uncomment this line to use standard django form submission -->
+                            {% include "questionnaire/_q_customize_model.html" %}
+                        </form> <!-- /model_customization_form -->
+                    {% endwith %}
+
+
+                {% include 'questionnaire/_q_customize_properties.html' %}
+
+                <!--<input class="button" type="submit" value="submit"/>-->  <!-- uncomment this line to use standard django form submission -->
+
+                <div class="form-group voffset-16">
+                    <div class="col-sm-offset-3 col-sm-7">
+                        <!-- TODO: DISABLE THIS BUTTON IF FORM IS INVALID -->
+                        <!--ng-disabled="{{ model_customization_form.form_name }}.$invalid"-->
+                        <button class="btn btn-primary"
+                                ng-click="submit_customization(model_customization_form)"
+                                title="save the current state of this customization">
+                            submit
+                        </button>
+                        <a class="btn btn-primary"
+                           target="_blank"
+                           href="/{{ project.name }}/view/{{ ontology.key }}/{{ proxy.name|lower }}/"
+                           ng-show="is_default_model_customization"
+                           title="view a blank document in the editor using the last-saved state of this customization">
+                            view in editor
+                        </a>
+                    </div>
+                </div>
+
+            </div> <!-- /.col-md-12 -->
+        </div> <!-- /.container-fluid -->
+
+    </div> <!-- /ng-controller:customizer_controller -->
+</div> <!-- /ng-app:q_customizer -->
+
+{% endblock %} {# /content #}
+
+
+{% block footer %}
+    {{ block.super }}
+    <div class="footer">
+        It uses the ontology
+        {% if ontology.url %}
+            <a target="_blank" href="{{ ontology.url }}">{{ ontology }}</a>.
+        {% else %}
+            {{ ontology }}.
+        {% endif %}
+        {% if vocabularies|length %}
+            And it uses the controlled vocabularies:
+            {% for vocabulary in vocabularies %}
+                {# TODO: THIS IS ADDING EXTRA SPACES TO THE LIST #}
+                {% if not forloop.first %},&nbsp;{% endif %}
+                    {% if vocabulary.url %}
+                        <a target="_blank" href="{{ vocabulary.url }}">{{ vocabulary }}</a>{% if forloop.last %}. {% endif %}
+                    {% else %}
+                        {{ vocabulary }}{% if forloop.last %}. {% endif %}
+                    {% endif %}
+            {% endfor %}
+        {% endif %}
+    </div>
+{% endblock %} {# /footer #}

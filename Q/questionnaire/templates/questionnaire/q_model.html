@@ -1,0 +1,78 @@
+{# q_model.html #}
+
+{% extends "questionnaire/q_base.html" %}
+
+{% load staticfiles %}
+{% load mptt_tags %}
+
+{% block scripts %}
+    <script language="javascript" type="text/javascript" src="{% static 'questionnaire/js/q_ng_model.js' %}"></script>
+    <script type="text/javascript">
+
+        /* just setup a minimum of jquery-ui functionality */
+        $(document).ready(
+            function() {
+
+                var parent = document.body;
+
+                init_widgets(helps, $(parent).find(".help"));
+
+            }
+        );
+
+    </script>
+{% endblock %} {# /scripts #}
+
+{% block content %}
+
+    <div class="title">
+        Here is a title.
+    </div> <!-- /#title -->
+
+    <div ng-app="q_model">
+        <div ng-controller="QModelController as model_controller">
+            <ul class="list-group">
+                <li class="list-group-item" ng-repeat="model in model_controller.models" ng-show="!model.sold_out">
+                    {% verbatim ng %}
+                        name: {{ model.name }}
+                        <model-title></model-title>
+                        <button ng-show="model.can_purchase">add</button>
+                        <section ng-controller="TabController as tab_controller">
+                            <ul class="nav nav-pills">
+                                <li ng-class="{active:tab_controller.isSelected(1)}">
+                                    <a href ng-click="tab_controller.selectTab(1)">description</a>
+                                </li>
+                                <li ng-class="{active:tab_controller.isSelected(2)}">
+                                    <a href ng-click="tab_controller.selectTab(2)">standard properties</a>
+                                </li>
+                            </ul>
+                            <div class="panel" ng-show="tab_controller.isSelected(1)">
+                                description
+                                <p>
+                                    {{ model.description }}
+                                </p>
+                            </div>
+                            <div class="panel" ng-show="tab_controller.isSelected(2)">
+                                standard_properties
+                                <blockquote ng-repeat="property in model.standard_properties">
+                                    name: {{ property.name }}
+                                </blockquote>
+                                <hr/>
+                                <form name="property_form" novalidate
+                                      ng-controller="PropertyController as property_controller"
+                                      ng-submit="property_form.$valid && property_controller.addProperty(model)">
+                                    <blockquote>
+                                        name: {{ property_controller.property.name }}
+                                    </blockquote>
+                                    <input type="text" ng-model="property_controller.property.name" required></input>
+                                    <input type="submit" value="submit"/>
+                                </form>
+                            </div>
+                        </section>
+                {% endverbatim ng %}
+                </li>
+            </ul>
+        </div>
+    <div>
+
+{% endblock %} {# /content #}

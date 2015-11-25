@@ -1,0 +1,1 @@
+python Q/manage.py compress && echo "yes" | python Q/manage.py collectstatic

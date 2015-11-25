@@ -1,0 +1,40 @@
+{% load q_tags_bak %}
+
+{# this containing <tr> is actually set in "_section_standard_category_content" so that I can cycle odd/even #}
+{#<tr class="field" valign="top" name="{{property_customizer.name}}">#}
+
+    {% if property_customizer.relationship_show_subform %}
+
+        <td colspan="100">
+
+            {# alright, this looks weird I know #}
+            {# but passing the template as a variable gets around Django's maximum recursion issue #}
+            {% with "questionnaire/bak/_subform.html" as template %}
+                {% include template %}
+            {% endwith %}
+
+        </td>
+
+    {% else  %}
+
+        {% include "questionnaire/bak/_standard_property.html" %}
+
+        <td class="hidden"> <!-- seems weird to have a <td> I don't display, but it seemed more weird to have content outside of the table -->
+            <div class="hidden">
+                {# the fields I explicitly set to hidden #}
+                {% for field in property_form.get_hidden_fields %}
+                    {{ field }}
+                {% endfor %} {# /field #}
+                {# and the fields that are hidden by default #}
+                {% for hidden_field in property_form.hidden_fields %}
+                    {{ hidden_field }}
+                {% endfor %} {# /hidden_field #}
+            </div> <!-- /.hidden -->
+        </td> <!-- /.hidden -->
+
+    {% endif %} {# /relationship_show_subform #}
+
+
+
+{# this containing <tr> is actually set in "_section_standard_category_content" so that I can cycle odd/even #}
+{#</tr> <!-- /.field -->#}

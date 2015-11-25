@@ -1,0 +1,10 @@
+{# _q_site.html #}
+{# template block for rendering site info #}
+
+{% load q_tags %}
+
+{% if request.current_site|site_type != "PROD" %}
+    <div id="site">
+        This is <strong>not</strong> a production site.&nbsp;&nbsp;Data may periodically be reset.
+    </div>
+{% endif %} {# /site_type != "PROD" #}

@@ -1,0 +1,68 @@
+{# q_model.html #}
+
+{% extends "questionnaire/q_base.html" %}
+
+
+{% block title %}
+    {{ block.super }}
+    Error
+{% endblock %} {# /title #}
+
+
+{% block scripts %}
+    {{ block.super }}
+    <script language="javascript">
+
+        var ERROR_CODES = {
+            "200" : "OK",
+            "301" : "Moved Permanently",
+            "302" : "Found",
+            "400" : "Bad Request",
+            "403" : "Forbidden",
+            "404" : "Not Found",
+            "408" : "Request Timeout",
+            "500" : "Internal Server Error"
+        };
+
+    </script>
+
+{% endblock %} {# /scripts #}
+
+
+{% block style %}
+    {{ block.super }}
+    <style type="text/css">
+        .error_msg { font-size: large; }
+        .status_code { font-size: small; }
+    </style>
+{% endblock %} {# /style #}
+
+
+{% block content %}
+
+    <div class="title">
+        CIM Questionnaire Error
+    </div> <!-- /#title -->
+
+    <div class="container-fluid">
+        <div class="col-md-offset-1 col-md-10">
+
+            <div class="error_msg alert alert-danger" role="alert">
+                {{ error_msg|safe }}
+                {% if status_code != 200 %}
+                    <div class="status_code">
+                        [status code
+                        {{ status_code }}
+                            <script language="JavaScript">
+                                document.write(
+                                        ": " + ERROR_CODES["{{ status_code }}"]
+                                );
+                            </script>]
+                    </div>
+                {% endif %} {# /status_code != 200 #}
+            </div>
+
+        </div> <!-- /.col-md-8 -->
+    </div> <!-- /.container-fluid -->
+
+{% endblock %} {# /content #}

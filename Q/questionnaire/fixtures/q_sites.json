@@ -1,0 +1,82 @@
+[
+{
+    "fields": {
+        "domain": "example.com",
+        "name": "example.com"
+    },
+    "model": "sites.site",
+    "pk": 1
+},
+{
+    "fields": {
+        "domain": "questionnaire.es-doc.org",
+        "name": "questionnaire.es-doc.org"
+    },
+    "model": "sites.site",
+    "pk": 2
+},
+{
+    "fields": {
+        "domain": "test.questionnaire.esdoc.webfactional.com",
+        "name": "test.questionnaire.esdoc.webfactional.com"
+    },
+    "model": "sites.site",
+    "pk": 3
+},
+{
+    "fields": {
+        "domain": "localhost:8000",
+        "name": "localhost"
+    },
+    "model": "sites.site",
+    "pk": 4
+},
+{
+    "fields": {
+        "domain": "localhost:8081",
+        "name": "test"
+    },
+    "model": "sites.site",
+    "pk": 5
+},
+{
+    "fields": {
+        "type": "",
+        "site": 1
+    },
+    "model": "questionnaire.qsite",
+    "pk": 1
+},
+{
+    "fields": {
+        "type": "PROD",
+        "site": 2
+    },
+    "model": "questionnaire.qsite",
+    "pk": 2
+},
+{
+    "fields": {
+        "type": "DEV",
+        "site": 3
+    },
+    "model": "questionnaire.qsite",
+    "pk": 3
+},
+{
+    "fields": {
+        "type": "LOCAL",
+        "site": 4
+    },
+    "model": "questionnaire.qsite",
+    "pk": 4
+},
+{
+    "fields": {
+        "type": "TEST",
+        "site": 5
+    },
+    "model": "questionnaire.qsite",
+    "pk": 5
+}
+]

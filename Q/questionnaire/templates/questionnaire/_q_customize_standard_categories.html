@@ -1,0 +1,91 @@
+{# _q_customize_standard_categories.html #}
+
+{% load q_tags %}
+
+
+<div class="panel panel-default">
+
+    <div class="panel-heading">
+        {# TODO: IT WOULD BE NICE TO SPLIT THIS VARIABLE ACROSS MULTIPLE LINES #}
+        {% with help_text='These categories will appear as tabs within the Editor.  The tab order can be changed by dragging and dropping the above widgets.  Additionally, each category can be customized by clicking the <em>pencil/edit</em> icon.  Clicking elsewhere on a category widget will toggle the visibility of all properties belonging to that category.  Use the <strong>View All</strong> button above to display properties from all categories.' %}
+            {% include 'questionnaire/_q_help.html' %}
+        {% endwith %} {# /help_text #}
+        Available Categories:&nbsp;
+    </div>
+
+    <div class="panel-body categories">
+
+        <div class="list-group" ng-model="model_customization.standard_categories" ui-sortable="category_customization_sortable_options">
+            <div class="list-group-item" ng-repeat="category in model_customization.standard_categories | orderBy:'order'">
+                <span class="label label-primary sortable_handle"
+                      ng-click="category.display_detail || (category.display_properties = ! category.display_properties)"
+                      ng-class="category.display_properties ? 'enabled' : 'disabled'"
+                      title="click to toggle properties belonging to this category">
+                    <button type="button"
+                            class="btn btn-primary btn-xs"
+                            data-toggle="modal"
+                            data-target="#{% verbatim ng %}{{category.key}}{% endverbatim ng %}"
+                            ng-click="category.display_detail = true;"
+                            title="click to further customize this category">
+                        <span class="glyphicon glyphicon-pencil"></span>
+                    </button>
+
+                    &nbsp;
+                    {% verbatim ng %}
+                        {{ category.name }}
+                    <!--<span class="badge">{{ category.num_properties }}</span>-->
+                    {% endverbatim ng %}
+                </span>
+            </div>
+            <div class="documentation" ng-hide="model_customization.standard_categories.length">
+                No categories found.
+            </div>
+        </div>
+
+        <div ng-show="model_customization.standard_categories.length">
+            <button type="button"
+                    class="btn btn-primary btn-sm"
+                    ng-click="view_all_properties_with_categories(model_customization.standard_categories)">
+                View All Properties
+            </button>
+        </div>
+
+    </div>
+
+
+    {# here are the category forms that can be activated by the above widgets #}
+    <div class="modal fade category"
+         data-backdrop="static"
+         id="{% verbatim ng %}{{category.key}}{% endverbatim ng %}"
+         role="dialog"
+         tabindex="-1"
+         ng-repeat="category in model_customization.standard_categories">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <!--<button type="button" class="close" data-dismiss="modal"></button>-->
+                    <h4 class="modal-title">Customize Category</h4>
+                </div>  <!-- /.modal-header -->
+                <div class="modal-body" ng-init="key=category.key; index=$index">
+
+                    <!--<div ng-if="category.display_detail">-->
+                    <section model_to_watch="get_model_by_attrs(model_customization.standard_categories, {'key': key})"
+                             key="{% verbatim ng %}{{ key }}{% endverbatim ng %}"
+                             index="{% verbatim ng %}{{ index }}{% endverbatim ng %}"
+                             section_type="standard_category_customization"/>
+                    <!--</div>-->
+
+                </div>  <!-- /.modal-body -->
+                <div class="modal-footer">
+                    <button type="button"
+                            class="btn btn-primary"
+                            ng-click="category.display_detail = false;"
+                            data-dismiss="modal">  {# TODO: ng-disabled="{{form.form_name}}.$invalid" #}
+                        ok
+                    </button>
+                </div>  <!-- /.modal-footer -->
+            </div>  <!-- /.modal-content -->
+        </div>  <!-- /.modal-dialog -->
+    </div>  <!-- /.modal -->
+
+</div>

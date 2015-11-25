@@ -1,0 +1,205 @@
+{# q_base_bak.html #}
+
+{% load staticfiles %}
+{% load q_tags_bak %}
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html>
+
+{% block head %}
+
+    <head>
+
+        <!-- icon -->
+        <link rel="shortcut icon" href="{% static 'questionnaire/img/favicon.ico' %}" />
+
+        <!-- ext js -->
+        <!--<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>-->
+        <!--<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.10.3/jquery-ui.min.js"></script>-->
+        <script language="javascript" type="text/javascript" src="{% static 'questionnaire/js/bak/jquery.min.js' %}"></script>
+        <script language="javascript" type="text/javascript" src="{% static 'questionnaire/js/bak/jquery-ui.min.js' %}"></script>
+
+        <script language="javascript" type="text/javascript" src="{% static 'questionnaire/js/bak/jquery.autosize.min.js' %}"></script>
+        <script language="javascript" type="text/javascript" src="{% static 'questionnaire/js/bak/jquery.deselectableradio.min.js' %}"></script>
+        <script language="javascript" type="text/javascript" src="{% static 'questionnaire/js/bak/jquery.multiopenaccordion.min.js' %}"></script>
+        <script language="javascript" type="text/javascript" src="{% static 'questionnaire/js/bak/toastr.min.js' %}"></script>
+
+        <!-- custom js -->
+        <script language="javascript" type="text/javascript" src="{% static 'questionnaire/js/bak/questionnaire_multiselect.js' %}"></script>
+        <script language="javascript" type="text/javascript" src="{% static 'questionnaire/js/bak/questionnaire.js' %}"></script>
+
+        <script language="javascript" type="text/javascript">
+
+            /* redefining javascript indexOf() fn,
+             * which doesn't exist in IE 8.0
+             */
+             if (!Array.prototype.indexOf) {
+                 Array.prototype.indexOf = function(obj, start) {
+                     for (var i = (start || 0), j = this.length; i < j; i++) {
+                         if (this[i] === obj) { return i; }
+                     }
+                     return -1;
+                 }
+             }
+
+            /* check if string endswith suffix
+             *
+             */
+             String.prototype.endsWith = function(suffix) {
+                return this.indexOf(suffix, this.length - suffix.length) !== -1;
+            };
+
+            /* redefining jquery show() and hide() fns
+             * so that I can bind event handlers to them
+             * (thanks to http://stackoverflow.com/questions/1225102/jquery-event-to-trigger-action-when-a-div-is-made-visible)
+            */
+            $.each(["show", "hide", "toggle"], function() {
+               var old_function = $.fn[this];
+               $.fn[this] = function() {
+                   var initially_hidden  = this.find(":hidden").add(this.filter(":hidden"));
+                   var initially_visible = this.find(":visible").add(this.filter(":visible"));
+                   var result = old_function.apply(this, arguments);
+                   var newly_visible = initially_hidden.filter(":visible");
+                   var newly_hidden  = initially_visible.filter(":hidden");
+                   newly_visible.each(function() {
+                       $(this).triggerHandler("show");
+                   });
+                   newly_hidden.each(function() {
+                       $(this).triggerHandler("hide");
+                   });
+                   return result;
+               }
+            });
+
+            /* setup notifications */
+            toastr.options = {
+                "closeButton": false,
+                "positionClass": "toast_center_center",
+                "timeOut": "60000",
+                "showMethod": "fadeIn",
+                "hideMethod": "fadeOut"
+            };
+            toasts = [];
+
+        </script>
+
+        <!-- page js -->
+        {% block scripts %}
+            <script language="javascript">
+                /* custom js goes here */
+             </script>
+        {% endblock %} {# /scripts #}
+
+        <!-- ext css -->
+        <link rel="stylesheet" type="text/css" href="{% static 'questionnaire/css/bak/jquery-ui.min.css' %}"/>
+        <link rel="stylesheet" type="text/css" href="{% static 'questionnaire/css/bak/toastr.min.css' %}"/>
+        <!-- custom css -->
+        <link rel="stylesheet" type="text/css" href="{% static 'questionnaire/css/bak/questionnaire.css' %}" />
+        <link rel="stylesheet" type="text/css" href="{% static 'questionnaire/css/bak/questionnaire_multiselect.css' %}" />
+
+        <!-- page css -->
+        {% block style %}
+            <style type="text/css">
+                /* custom css goes here */
+            </style>
+        {% endblock %} {# /style #}
+
+
+        <title>
+            {% block title %}
+                {# custom title goes here #}
+            {% endblock %} {# /title #}
+        </title>
+
+    </head>
+
+{% endblock %} {# / head #}
+
+<body>
+
+{% block site %}
+    {% if request.current_site|site_type != "PROD" %}
+        <div id="site" class="ui-state-error" style="width: 80%; margin: 2px auto 2px auto; text-align: center; padding: 4px;">
+            This is <strong>not</strong> a production site.&nbsp;&nbsp;Data may be periodically reset.
+        </div>
+    {% endif %} {# /site_type != "PROD" #}
+{% endblock %} {# /site #}
+
+{% block main %}
+
+    <div id="questionnaire_bak">
+
+{#  moved to the <form> element so that it is available as POST data #}
+{#        <!-- some useful stuff for AJAX calls -->#}
+{#        <input class="hidden" type="text" id="_version_key" name="version_key" value="{{ version.key }}"/>#}
+{#        <input class="hidden" type="text" id="_project_name" name="project_name" value="{{ project.name|lower }}"/>#}
+{#        <input class="hidden" type="text" id="_document_type" name="project_name" value="{{ model_proxy.name|lower }}"/>#}
+{#        <input class="hidden" type="text" id="_session_id" name="session_id" value="{{ session_id }}"/>#}
+
+            <!-- some pre-ready divs to use for popups -->
+            <!-- (more efficient than creating them from scratch) -->
+            <!-- (more efficient than having loads of custom ones) -->
+            <div class="hidden_dialog" id="msg_dialog"      title="">&nbsp;</div>
+            <div class="hidden_dialog" id="help_dialog"     title="help">&nbsp;</div>
+            <div class="hidden_dialog" id="confirm_dialog"  title="confirm">&nbsp;</div>
+            <div class="hidden_dialog" id="add_dialog"      title="add/replace"> &nbsp;</div>
+            <div class="hidden_dialog" id="remove_dialog"   title="remove">&nbsp;</div>
+            <div class="hidden_dialog" id="edit_dialog"     title="edit">&nbsp;</div>
+
+
+            {% block header %}
+                <!-- default header -->
+                <div class="header">
+                    <a href="/" title="ES-DOC Questionnaire Home"><img id="logo" src="{% static 'questionnaire/img/esdoc_logo.png' %}"/></a>
+                    {% with user=request.user %}  {# make sure to get user from request; b/c some templates pass their own "user" variable #}
+                        <!-- default user login/logout block -->
+                        <div id="user">
+                            {% if user.is_authenticated %}
+                                <span>welcome: <a href="/users/{{ user }}"><strong>{{ user }}</strong></a>&nbsp;</span>
+                                <a id="logout" class="button" href="{% url 'logout' %}?next={{ request.path }}" title="logout">logout</a>
+                            {% else %}
+                                <a id="register" class="button" title="register" href="{% url 'register' %}?next={{ request.path }}">register</a>
+                                <a id="login" class="button" href="{% url 'login' %}?next={{ request.path }}" title="login">login</a>
+                            {% endif %} {# /user.is_authenticated #}
+                        </div>
+                    {% endwith %} {# /user #}
+                </div> <!-- /.header -->
+            {% endblock %} {# /header #}
+
+            {% block messages %}
+                {% if messages %}
+                    <div id="msg">
+                        {% for message in messages %}
+                            <div class="msg">
+                                <table border="0" style="padding:4px;">
+                                    <tr valign="center">
+                                        <td style="width:32px;height:32px"class="{{ message.tags }}">&nbsp;</td>
+                                        <td>{{ message|safe }}</td>
+                                    </tr>
+                                </table>
+                            </div>
+                        {% endfor %} {# message in messages #}
+                    </div> <!-- /#msg -->
+                {% endif %} {# messages #}
+            {% endblock %} {# / messages #}
+
+            {% block content %}
+                you forgot to provide content!
+            {% endblock %} {# /content #}
+
+         {% block footer %}
+            <!-- default footer -->
+            <div class="footer">
+                This form is generated by the <a target="_blank" href="{% q_url %}">CIM Questionnaire</a> (v{% q_version %}).
+                <br/>For more information please contact: <a href="mailto:{% q_email %}">{% q_email %}</a>.
+            </div> <!-- /.footer -->
+        {% endblock %} {# /footer #}
+
+    </div>  <!-- /#questionnaire_bak -->
+
+{% endblock %} {# / main #}
+
+</body>
+
+</html>

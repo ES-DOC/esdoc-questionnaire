@@ -1,0 +1,11 @@
+{% load q_tags_bak %}
+
+ <li>
+    <a href="#tab_{{model_form.prefix}}_{{category_customizer.get_key}}">
+        {% include "questionnaire/bak/_completion.html" %}
+        {{category_customizer.name}}
+        <span style="font-size: small;">
+            ({{ property_customizers|length }})
+        </span>
+    </a>
+</li>
