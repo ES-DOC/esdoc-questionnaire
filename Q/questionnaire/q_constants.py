@@ -46,7 +46,7 @@ CACHE_ALIAS = "default"
 # where to get help...
 QUESTIONNAIRE_EMAIL = "es-doc-support@list.woc.noaa.gov"
 QUESTIONNAIRE_CODE_URL = "https://github.com/ES-DOC/esdoc-questionnaire"
-QUESTIONNAIRE_HELP_URL = "https://earthsystemcog.org/projects/es-doc-models/doc/questionnaire/works"
+QUESTIONNAIRE_HELP_URL = "https://earthsystemcog.org/projects/es-doc-models/doc/questionnaire/getting_started"
 
 # CIM-specific constants...
 
