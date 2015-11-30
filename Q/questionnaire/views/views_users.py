@@ -13,6 +13,7 @@ __author__ = "allyn.treshansky"
 from django.http import HttpResponseRedirect
 from django.shortcuts import render_to_response
 from django.template import RequestContext
+from django.contrib import messages
 from django.contrib.auth.models import User
 from django.views.decorators.debug import sensitive_post_parameters
 from honeypot.decorators import check_honeypot
@@ -109,12 +110,18 @@ def q_password(request, user_name=None):
     context = add_parameters_to_context(request)
     next_page = context.get("next", u"/users/%s" % user.username)
 
-    return password_change_view(
+    response = password_change_view(
         request,
         template_name='questionnaire/q_password.html',
         post_change_redirect=next_page,
         password_change_form=QUserPasswordForm,
     )
+
+    # if request.method == "POST" and response.status_code < 400:
+    #     msg = "Successfully changed password."
+    #     messages.add_message(request, messages.SUCCESS, msg)
+
+    return response
 
 
 @sensitive_post_parameters()

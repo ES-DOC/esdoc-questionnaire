@@ -1,7 +1,7 @@
 esdoc-questionnaire
 ===============
 
-Django project supporing the CIM Questionnaire for the esdoc eco-system.
+Django / AngularJS project supporing the CIM Questionnaire for the esdoc eco-system.
 
 
 ==================================================
@@ -27,8 +27,8 @@ esdoc-questionnaire is a standalone Django project that allows users to create C
 What are the contents of esdoc-questionnaire ?
 --------------------------------------
 
-    \Q	Django project root
-    \samples	sample data to play with
+    \Q Django project root
+    \samples sample data to play with
 
 
 Further Information ?
