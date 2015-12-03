@@ -21,6 +21,9 @@ port=587
 username=me@gmail.com
 password=my_email_pwd
 
+[virtualenv]
+path=/path/to/virtualenv
+
 [debug]
 debug=false
 
