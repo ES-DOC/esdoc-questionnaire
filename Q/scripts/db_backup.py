@@ -22,7 +22,7 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "Q.settings")
 
 import datetime
 from django.conf import settings
-from subprocess  import call, check_call, CalledProcessError
+from subprocess import call, check_call, CalledProcessError
 from Q.questionnaire.q_utils import rel, QError
 
 # global variables...
@@ -45,8 +45,6 @@ db_backend = db_conf.get("ENGINE")
 if 'postgres' in db_backend:
 
     print("backing up a postgres db...")
-
-    import ipdb; ipdb.set_trace()
 
     backup_file = os.path.join(BACKUP_DIR, "backup_{0}_{1}.sql.tgz".format(db_conf.get("NAME"), TIMESTAMP))
     backup_cmd = "/usr/bin/pg_dump"
@@ -99,7 +97,7 @@ with open(os.path.join(BACKUP_DIR, "log.txt"), 'a') as log_file:
 
     try:
         check_call(backup_args, env=ENV)
-        msg = "successfully created '{0}".format(backup_file)
+        msg = "successfully created '{0}'".format(backup_file)
         print(msg)
         log_file.write(TIMESTAMP + ": " + msg)
     except OSError:
