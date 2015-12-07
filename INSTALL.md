@@ -9,7 +9,7 @@ The system must have the following Python packages installed:
 * Python 2.7 (virtualenv --python=python2 <env dir>) [I AM NOT USING 3.4 UNTIL CONFIGPARSER IS COMPATABLE W/ THAT VERSION]
 * Django 1.8.2 (pip install django==1.8.2)
 * Django Rest Framework 3.1.3 (pip install djangorestframework)
-* Django-Filters 0.10.0 (pip install django-filters)
+* Django-Filters 0.10.0 (pip install django-filter==0.10.0)
 * A PostGres database is recommended.  However, Django also supports MySQL and SQLite3.
     * To use PostGres you must install psycopg2 (pip install psycopg2)
 * mptt (pip install django-mptt=0.7.4)

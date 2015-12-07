@@ -40,12 +40,11 @@ admin.site.register(QScientificProperty)
 
 admin.site.register(QSynchronization)
 
-admin.site.register(QPublication)
-
 # note the relative imports; this is to prevent loading __init__.py twice
 from .admin_categorization import *
 from .admin_ontologies import *
 from .admin_projects import *
 from .admin_vocabularies import *
+from .admin_publications import *
 from .admin_site import *
 from .admin_user import *
