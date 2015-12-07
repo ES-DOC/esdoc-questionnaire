@@ -25,7 +25,7 @@ import argparse
 import tempfile
 from django.conf import settings
 from subprocess import call, check_call, CalledProcessError
-from Q.questionnaire.q_utils import rel, QError
+from Q.questionnaire.q_utils import QError
 
 # get args...
 
@@ -69,10 +69,8 @@ if 'postgres' in db_backend:
         shell=True
     )
 
-    #
     # note the use of "-O" which does not try to match ownership of the original backed-up db
     # (however, "-U -W" ensures users still must be authenticated against the db being changed)
-    #
 
     restore_args = [
         "-c",
@@ -106,10 +104,10 @@ else:
 
 restore_args.insert(0, restore_cmd)
 
-# perform the actual restore
+# perform the actual restore...
 
 try:
-    check_call(restore_args)  # note, unlike the db_backup script, I do not pass an "env" argument; b/c I do not have to deal w/ sensitive passwords; b/c this script is meant to be run interactively
+    check_call(restore_args)  # note, unlike the db_backup script, I do not pass an "env" argument b/c I do not have to deal w/ sensitive passwords b/c this script is meant to be run interactively
     msg = "successfully restored '{0}".format(restore_file)
     print(msg)
 except OSError:

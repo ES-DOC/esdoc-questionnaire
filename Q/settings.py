@@ -178,7 +178,7 @@ COMPRESS_PRECOMPILERS = (
 STATICFILES_FINDERS = (
     'django.contrib.staticfiles.finders.FileSystemFinder',
     'django.contrib.staticfiles.finders.AppDirectoriesFinder',
-    # uncompressed (less) files...
+    # compressed (including less) files...
     'compressor.finders.CompressorFinder',
 )
 

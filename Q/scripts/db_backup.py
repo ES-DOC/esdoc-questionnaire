@@ -22,12 +22,12 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "Q.settings")
 
 import datetime
 from django.conf import settings
-from subprocess import call, check_call, CalledProcessError
+from subprocess import check_call, CalledProcessError
 from Q.questionnaire.q_utils import rel, QError
 
 # global variables...
 
-ENV = os.environ.copy()  # used for production environments, where I may not want to or be able to change global settings
+ENV = os.environ.copy()  # work on a copy ENV in-case I can't or don't want to change global settings
 TIMESTAMP = datetime.datetime.now().strftime("%Y-%m-%d-%H%M")
 BACKUP_DIR = rel('../backups/')
 
@@ -48,13 +48,14 @@ if 'postgres' in db_backend:
 
     backup_file = os.path.join(BACKUP_DIR, "backup_{0}_{1}.sql.tgz".format(db_conf.get("NAME"), TIMESTAMP))
     backup_cmd = "/usr/bin/pg_dump"
-    #
+
     # note the use of "-O" which does not constrain table ownership
     # however, the docs of pg_dump state:
-    #
+    #  <snip>
     #  This option is only meaningful for the plain-text format.
     #  For the archive formats, you can specify the option when you call pg_restore.
-    #
+    #  </snip>
+
     backup_args = [
         "-Ft",
         "-v",
@@ -69,8 +70,7 @@ if 'postgres' in db_backend:
         db_conf.get("NAME"),
     ]
 
-    ENV["PGPASSWORD"] = db_conf.get("PASSWORD")  # bypass directly inputting a password by using the '-w' flag and setting an environment variable
-
+    ENV["PGPASSWORD"] = db_conf.get("PASSWORD")  # bypass manually inputting pwd by using '-w' flag w/ an ENV variable
 
 elif "sqlite" in db_backend:
 
@@ -91,7 +91,7 @@ else:
 
 backup_args.insert(0, backup_cmd)
 
-# open the logfile and perform the actual backup
+# open the logfile and perform the actual backup...
 
 with open(os.path.join(BACKUP_DIR, "log.txt"), 'a') as log_file:
 
@@ -107,6 +107,8 @@ with open(os.path.join(BACKUP_DIR, "log.txt"), 'a') as log_file:
         msg = "error creating '{0}'".format(backup_file)
         print(msg)
         log_file.write(TIMESTAMP + ": " + msg)
+
+# clean up...
 
 log_file.closed
 

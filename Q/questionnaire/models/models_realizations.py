@@ -113,10 +113,10 @@ class QModel(MPTTModel):
     def publish(self, force_save=True, format=QPublicationFormats.ESDOC_XML):
 
         """
-        :param force_save: save the model (after incrementing its version); the only reason not to do this is when re-publishing something at the same version b/c of a content error
+        :param force_save: save the model (after incrementing its version);
+        the only reason not to do this is when re-publishing something at the same version b/c of a content error
         :return:
         """
-        import ipdb; ipdb.set_trace()
         assert self.is_complete
 
         major_version = int(self.get_major_version())
@@ -142,6 +142,8 @@ class QModel(MPTTModel):
 
         version = kwargs.pop("version")
 
+        # if publish was called w/ "force_save=False" then version will not have been changed relative to the last publication
+        # this means that the following code will modify an existing publication rather than create a new one
         (publication, created_publication) = QPublication.objects.get_or_create(
             model=self,
             name=str(self.guid),

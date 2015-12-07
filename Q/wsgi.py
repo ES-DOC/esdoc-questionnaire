@@ -19,7 +19,9 @@ For more information on this file, see
 https://docs.djangoproject.com/en/1.8/howto/deployment/wsgi/
 """
 
-import os, sys, site
+import os
+import sys
+import site
 from ConfigParser import SafeConfigParser, NoSectionError
 
 rel = lambda *x: os.path.join(os.path.abspath(os.path.dirname(__file__)), *x)

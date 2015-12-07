@@ -31,7 +31,7 @@ urlpatterns = patterns('',
     # admin...
     url(r'^admin/', include(admin.site.urls)),
 
-    # mindmaps...
+    # mindmaps app...
     url(r'^mindmaps/', include('mindmaps.urls')),
 
     # questionnaire app...
@@ -40,7 +40,7 @@ urlpatterns = patterns('',
     # add a custom 404 page...
     # (this is not the Django-approved way to do things)
     # (it's a catch-all regex in-case none of the above patterns match)
-    # (doing it the right way in Django requires setting DEBUG to False in settings.py)
+    # (doing it the Django-approved requires setting "DEBUG" to "False" in settings.py)
     # (but that means that other Python errors would never be displayed)
     url(r'^.*/$', 'questionnaire.views.q_404'),
 )

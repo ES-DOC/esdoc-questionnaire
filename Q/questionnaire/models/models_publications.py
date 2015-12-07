@@ -81,3 +81,5 @@ class QPublication(models.Model):
             os.makedirs(os.path.dirname(publication_path))
         with open(publication_path, "w") as file:
             file.write(self.content)
+        file.closed
+
