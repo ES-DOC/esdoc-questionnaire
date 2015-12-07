@@ -93,10 +93,18 @@ class QPropertyProxy(QProxy):
     field_type = models.CharField(max_length=SMALL_STRING, blank=False, null=True, choices=PROPERTY_TYPE_CHOICES)
 
     def is_required(self):
-        return int(self.get_cardinality_min()) > 0
+        cardinality_min = self.get_cardinality_min()
+        return int(cardinality_min) > 0
 
     def is_optional(self):
         return not self.is_required()
+
+    def is_multiple(self):
+        cardinality_max = self.get_cardinality_max()
+        return cardinality_max == u'*' or int(cardinality_max) > 1
+
+    def is_single(self):
+        return not self.is_multiple()
 
 
 class QStandardPropertyProxy(QPropertyProxy):
