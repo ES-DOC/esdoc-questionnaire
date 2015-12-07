@@ -1,7 +1,7 @@
 [settings]
 secret_key=mYsEcReTkEy!
 static_root=static/
-allowed_hosts=localhost,127.0.0.1,questionnnaire.es-doc.org,test.questionnaire.esdoc.webfactional.com
+allowed_hosts=localhost,127.0.0.1,my.prod.domain,my.dev.domain
 
 [database]
 engine=django.db.backends.postgresql_psycopg2
