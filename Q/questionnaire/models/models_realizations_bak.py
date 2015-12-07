@@ -479,13 +479,15 @@ class MetadataModel(MPTTModel):
         for standard_property in self.standard_properties.all():
             proxy = standard_property.proxy
             if proxy.is_required():
+
                 if not standard_property.is_complete():
                     return False
-            if standard_property.field_type == MetadataFieldTypes.RELATIONSHIP:
-                related_models = standard_property.relationship_value.all()
-                for related_model in related_models:
-                    if not related_model.is_complete():
-                        return False
+
+                if standard_property.field_type == MetadataFieldTypes.RELATIONSHIP:
+                    related_models = standard_property.relationship_value.all()
+                    for related_model in related_models:
+                        if not related_model.is_complete():
+                            return False
         return True
 
     def publish(self, force_save=True):
