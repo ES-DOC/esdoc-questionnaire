@@ -1,6 +1,6 @@
 [settings]
 secret_key=mYsEcReTkEy!
-static_root=static/
+static_root=/path/to/static/files/
 allowed_hosts=localhost,127.0.0.1,my.prod.domain,my.dev.domain
 
 [database]
@@ -26,4 +26,3 @@ path=/path/to/virtualenv
 
 [debug]
 debug=false
-
