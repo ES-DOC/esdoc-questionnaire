@@ -184,12 +184,19 @@ console.log("bar");
             name_value = typeof name_value !== 'undefined' ? name_value : $scope.model_customization.name;
 
             var properties = model.standard_properties;
-            $.each(properties, function(i, property) {
-                if (property[subform_indicator_attr]) {
-                    property[subform_customization_attr].name = name_value;
-                    $scope.update_names(property[subform_customization_attr], name_value);
-                }
-            });
+            if (properties) {
+                /* if this is called before ng finishes loading content */
+                /* (which is possible), then properties will be undefined */
+                /* if so the '$.each' fn below would fail so don't run it */
+                /* this is okay b/c it would only happen upon 1st page load */
+                /* in which case the name would not have had a chance to change */
+                $.each(properties, function (i, property) {
+                    if (property[subform_indicator_attr]) {
+                        property[subform_customization_attr].name = name_value;
+                        $scope.update_names(property[subform_customization_attr], name_value);
+                    }
+                });
+            }
 
         };
 

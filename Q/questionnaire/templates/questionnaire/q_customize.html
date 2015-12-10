@@ -64,40 +64,39 @@
 <div ng-app="q_customizer">
     <div ng-controller="CustomizerController as customizer_controller">
 
-{# wrapping everything in bootstrap grids to help w/ placement #}
+        {# wrapping everything in bootstrap grids to help w/ placement #}
 
         <div class="container-fluid">
             <div class="col-md-12">
 
+                <div class="title row">
+                    Customize the CIM Questionnaire for <strong>{{ proxy }}</strong> documents of the <strong>{{ project.title }}</strong> Project
+                </div> <!-- /#title -->
 
-            <div class="title row">
-                Customize the CIM Questionnaire for <strong>{{ proxy }}</strong> documents of the <strong>{{ project.title }}</strong> Project
-            </div> <!-- /#title -->
+                <div class="documentation row">
+                    <div class="col-md-12">
+                        Use this page to customize how a particular CIM Document Type is presented in the CIM Questionnaire for this project.&nbsp;
+                    </div>
+                    <div class="col-md-12">
+                        <a href="/{{ project.name }}">{{ project.title }} Project Page.</a>
+                    </div>
+                    <div class="col-md-10">
+                        <a href="{% url 'help' %}">ES-DOC Questionnaire help</a> is available.
+                    </div>
+                </div> <!-- /.documentation -->
 
-            <div class="documentation row">
-                <div class="col-md-12">
-                    Use this page to customize how a particular CIM Document Type is presented in the CIM Questionnaire for this project.&nbsp;
-                </div>
-                <div class="col-md-12">
-                    <a href="/{{ project.name }}">{{ project.title }} Project Page.
-                </div>
-                <div class="col-md-10">
-                    <a href="{% url 'help' %}">ES-DOC Questionnaire help</a> is available.
-                </div>
-            </div> <!-- /.documentation -->
+                {# TODO: GET RID OF THIS ONCE THINGS ARE WORKING WELL #}
+                {% if debug %}
+                    <div class="col-md-12 row">
+                        <button class="btn btn-danger btn-xs pull-right"
+                                title="print ng scope to console"
+                                ng-click="print_stuff()">
+                            <span class="glyphicon glyphicon-cog"></span>
+                        </button>
+                    </div> <!-- /.row -->
+                {% endif %} {# /debug #}
 
-            {# TODO: GET RID OF THIS ONCE THINGS ARE WORKING WELL #}
-            {% if debug %}
                 <div class="col-md-12 row">
-                    <button class="btn btn-danger btn-xs pull-right"
-                            title="print ng scope to console"
-                            ng-click="print_stuff()">
-                        <span class="glyphicon glyphicon-cog"></span>
-                    </button>
-                </div> <!-- /.row -->
-            {% endif %} {# /debug #}
-
-            <div class="col-md-12 row">
 
                     {% csrf_token %}
 
@@ -112,28 +111,30 @@
                     {% endwith %}
 
 
-                {% include 'questionnaire/_q_customize_properties.html' %}
+                    {% include 'questionnaire/_q_customize_properties.html' %}
 
-                <!--<input class="button" type="submit" value="submit"/>-->  <!-- uncomment this line to use standard django form submission -->
+                    <!--<input class="button" type="submit" value="submit"/>-->  <!-- uncomment this line to use standard django form submission -->
 
-                <div class="form-group voffset-16">
-                    <div class="col-sm-offset-3 col-sm-7">
-                        <!-- TODO: DISABLE THIS BUTTON IF FORM IS INVALID -->
-                        <!--ng-disabled="{{ model_customization_form.form_name }}.$invalid"-->
-                        <button class="btn btn-primary"
-                                ng-click="submit_customization(model_customization_form)"
-                                title="save the current state of this customization">
-                            submit
-                        </button>
-                        <a class="btn btn-primary"
-                           target="_blank"
-                           href="/{{ project.name }}/view/{{ ontology.key }}/{{ proxy.name|lower }}/"
-                           ng-show="is_default_model_customization"
-                           title="view a blank document in the editor using the last-saved state of this customization">
-                            view in editor
-                        </a>
+                    <div class="form-group voffset-16">
+                        <div class="col-sm-offset-3 col-sm-7">
+                            <!-- TODO: DISABLE THIS BUTTON IF FORM IS INVALID -->
+                            <!--ng-disabled="{{ model_customization_form.form_name }}.$invalid"-->
+                            <button class="btn btn-primary"
+                                    ng-click="submit_customization(model_customization_form)"
+                                    title="save the current state of this customization">
+                                submit
+                            </button>
+                            <a class="btn btn-primary"
+                               target="_blank"
+                               href="/{{ project.name }}/view/{{ ontology.key }}/{{ proxy.name|lower }}/"
+                               ng-show="is_default_model_customization"
+                               title="view a blank document in the editor using the last-saved state of this customization">
+                                view in editor
+                            </a>
+                        </div>
                     </div>
-                </div>
+
+                </div> <!-- /.col-md-12 -->
 
             </div> <!-- /.col-md-12 -->
         </div> <!-- /.container-fluid -->
