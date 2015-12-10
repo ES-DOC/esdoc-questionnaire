@@ -97,6 +97,7 @@ urlpatterns = patterns('',
     url(r'^bak/api/(?P<project_name>[^/]+)/get_new_edit_form_section/(?P<section_key>[^/]+)/$', 'questionnaire.views.views_api_bak.api_get_new_edit_form_section', name="api_get_new_edit_form_section"),
     url(r'^bak/api/(?P<project_name>[^/]+)/get_existing_edit_form_section/(?P<model_id>[^/]+)/(?P<section_key>[^/]+)/$', 'questionnaire.views.views_api_bak.api_get_existing_edit_form_section', name="api_get_existing_edit_form_section"),
     url(r'^bak/ajax/select_realization', 'questionnaire.views.views_ajax_bak.ajax_select_realization', name="ajax_select_realization"),
+    url(r'^bak/api/add_inheritance_data/$', 'questionnaire.views.views_inheritance_bak.api_add_inheritance_data', name="add_inheritance_data"),
 
     # customizations...
     url(r'^(?P<project_name>[^/]+)/customize/(?P<ontology_key>[^/]+)/(?P<document_type>[^/]+)/$', q_customize_new, name="customize_new"),

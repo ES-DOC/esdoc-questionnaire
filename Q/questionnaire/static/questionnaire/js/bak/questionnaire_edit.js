@@ -590,7 +590,8 @@ function inherit_later(source_element, target_element_ids) {
     /* (as w/ inherit_now), to avoid multiple AJAX calls */
 
     var inheritance_data = {
-        "instance_key": $("input#_instance_key").val()
+        "instance_key": $("input#_instance_key").val(),
+        "session_key": $("input#_session_key").val()
     };
 
     var element_type = $(source_element).prop("tagName").toLowerCase();
@@ -636,7 +637,7 @@ function inherit_later(source_element, target_element_ids) {
         });
     }
 
-    var url = window.document.location.protocol + "//" + window.document.location.host + "/api/add_inheritance_data/";
+    var url = window.document.location.protocol + "//" + window.document.location.host + "/bak/api/add_inheritance_data/";
 
     $.ajax({
         url: url,
