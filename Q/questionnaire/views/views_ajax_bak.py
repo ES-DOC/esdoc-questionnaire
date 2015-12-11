@@ -122,6 +122,11 @@ def ajax_select_realization(request, **kwargs):
 
     # get the data that will be used to populate the form...
     data = get_data_from_existing_edit_forms(model_formset, standard_properties_formsets, scientific_properties_formsets)
+    # AS OF V0.15 I HAVE TO EXPLICITLY FORCE LOADING
+    # NOT SURE WHY; THOUGHT THAT THE JS SHOULD DO IT FOR ME?!?
+    for key in data.keys():
+        if key.endswith("-loaded"):
+            data[key] = True
 
     # now clean it up a bit...
 

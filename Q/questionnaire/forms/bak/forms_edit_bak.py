@@ -462,7 +462,7 @@ def create_existing_edit_forms_from_models(models, model_customizer, standard_pr
 def create_new_edit_subforms_from_models(models, model_customizer, standard_properties, standard_property_customizers, scientific_properties, scientific_property_customizers, subform_prefix="", subform_min=0, subform_max=1,  increment_prefix=0, inheritance_data=None):
 
     from .forms_edit_model_bak import create_model_form_data, MetadataModelSubFormSetFactory
-    from .forms_edit_standard_properties_bak import create_standard_property_form_data, MetadataStandardPropertyInlineFormSetFactory
+    from .forms_edit_standard_properties_bak import create_standard_property_form_data, MetadataStandardPropertyInlineSubFormSetFactory  # MetadataStandardPropertyInlineFormSetFactory
     from .forms_edit_scientific_properties_bak import create_scientific_property_form_data, MetadataScientificPropertyInlineFormSetFactory
 
     model_keys = [model.get_model_key() for model in models]
@@ -490,7 +490,8 @@ def create_new_edit_subforms_from_models(models, model_customizer, standard_prop
             for standard_property, standard_property_customizer in zip(standard_properties[submodel_key], standard_property_customizers)
             if standard_property_customizer.displayed
         ]
-        standard_properties_formsets[model_prefix] = MetadataStandardPropertyInlineFormSetFactory(
+
+        standard_properties_formsets[model_prefix] = MetadataStandardPropertyInlineSubFormSetFactory(
             instance=model,
             initial=standard_properties_data,
             extra=len(standard_properties_data),

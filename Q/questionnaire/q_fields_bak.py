@@ -380,6 +380,15 @@ class ListFormField(MultipleChoiceField):
         #         )
 
     def clean(self, value):
+
+        # AS OF V0.15
+        # THIS WAS NEEDED IN CASE initial_extra WAS NOT BEING COPIED TO initial
+        # WHICH WOULD HAPPEN FOR UNLOADED FORMS
+        # BUT NOW I FORCE LOADING OF AJAX-ADDED FORMS, SO I SHOULD NEVER GET TO THIS BIT OF CODE
+        # (see views_ajax_bak.py)
+        if value is None:
+            return []
+
         for v in value:
             if self.token in v:
                 msg = "Invalid character ('%s') was in list item." % self.token

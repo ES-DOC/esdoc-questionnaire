@@ -710,7 +710,9 @@ function add_subform(row) {
                 /* insert data */
                 populate_form(row, parsed_data);
                 /* make sure that all 'loaded' fields are set to true */
+                /* AS OF V0.15 NOT SURE THIS WORKS */
                 $(row).find("input[name$='-loaded']").prop("checked", true);
+
                 /* update label */
                 $(row).find(".accordion_header:first .label").html(new_label);
                 /* the copy fn copies over all classes; I need to remove the ones that prevent re-setting js */
@@ -734,6 +736,7 @@ function add_subform(row) {
                         init_widgets_on_show(multiselects, $(row).find(".multiselect"));
                         init_widgets_on_show(autocompletes, $(row).find(".autocomplete"));
                         init_widgets_on_show(enablers, $(row).find(".enabler"));
+                        init_widgets_on_show(references, $(row).find("select.reference"));
                     }
 
                     else if (is_one_to_one) {
@@ -749,6 +752,7 @@ function add_subform(row) {
                         init_widgets(multiselects, $(row).find(".multiselect"));
                         init_widgets(autocompletes, $(row).find(".autocomplete"));
                         init_widgets(enablers, $(row).find(".enabler"));
+                        init_widgets(references, $(row).find("select.reference"));
                     }
 
                     else {
