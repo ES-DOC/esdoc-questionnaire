@@ -16,6 +16,7 @@ from django.utils.functional import curry
 
 from Q.questionnaire.forms.forms_customize import QCustomizationForm, QCustomizationInlineFormSet
 from Q.questionnaire.models.models_customizations import QModelCustomization, QStandardPropertyCustomization, QScientificPropertyCustomization
+from Q.questionnaire.models.models_customizations import QCUSTOMIZATION_UNUSED_SCIENTIFIC_PROPERTY_ENUMERATION_CHOICES
 from Q.questionnaire.models.models_proxies import QStandardPropertyProxy, QScientificPropertyProxy
 from Q.questionnaire.q_fields import QPropertyTypes, EMPTY_CHOICE, NULL_CHOICE, OTHER_CHOICE
 from Q.questionnaire.q_utils import QError, set_field_widget_attributes, update_field_widget_attributes, pretty_string, serialize_model_to_dict
@@ -325,7 +326,9 @@ class QScientificPropertyCustomizationForm(QCustomizationForm):
             update_field_widget_attributes(enumeration_choices_field, {"class": "select multiple show-tick"})
             update_field_widget_attributes(enumeration_default_field, {"class": "select multiple show-tick"})
             if is_new_property:
-                self.initial["enumeration_choices"] = choices
+                # see the comments for QCUSTOMIZATION_UNUSED_SCIENTIFIC_PROPERTY_ENUMERATION_CHOICES
+                # to understand why I remove certain enumeration_choices
+                self.initial["enumeration_choices"] = [choice for choice in choices if choice not in QCUSTOMIZATION_UNUSED_SCIENTIFIC_PROPERTY_ENUMERATION_CHOICES]
 
         else:  # field_type == QPropertyTypes.RELATIONSHIP
             msg = "ScientificProperties cannot be RELATIONSHIPS"

@@ -99,7 +99,6 @@ class QModelCustomizationList(APIView):
 
     def post(self, request, format=None):
         assert request.method == "POST"
-
         serializer = QModelCustomizationSerializer(data=request.data, context={"request": request})
         if serializer.is_valid():
             serializer.save()

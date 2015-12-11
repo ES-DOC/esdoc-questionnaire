@@ -68,7 +68,10 @@ def get_new_customization_set(project=None, ontology=None, proxy=None, vocabular
             standard_property_customization = QStandardPropertyCustomization(
                 model_customization=model_customization,
                 proxy=standard_property_proxy,
-                category=find_in_sequence(lambda category: category.proxy.has_property(standard_property_proxy), standard_category_customizations),
+                category=find_in_sequence(
+                    lambda category: category.proxy.has_property(standard_property_proxy),
+                    standard_category_customizations
+                ),
             )
             standard_property_customization.reset(standard_property_proxy)
             # HERE BEGINS THE SUBFORM BIT
@@ -110,7 +113,10 @@ def get_new_customization_set(project=None, ontology=None, proxy=None, vocabular
                         proxy=scientific_property_proxy,
                         vocabulary_key=vocabulary_key,
                         component_key=component_key,
-                        category=find_in_sequence(lambda category: category.proxy.has_property(scientific_property_proxy), scientific_category_customizations[n_categories-1:]),  # ignore the previous categories
+                        category=find_in_sequence(
+                            lambda category: category.proxy.has_property(scientific_property_proxy),
+                            scientific_category_customizations[n_categories:]  # ignore categories from previous components
+                        ),
                     )
                     scientific_property_customization.reset(scientific_property_proxy, reset_keys=False)
                 scientific_property_customizations.append(scientific_property_customization)
@@ -390,6 +396,17 @@ def serialize_customization_set(customization_set):
 # these fields are all handled behind-the-scenes
 # there is no point passing them around to serializers or forms
 QCUSTOMIZATION_NON_EDITABLE_FIELDS = ["guid", "created", "modified", ]
+
+
+# an artifact of the old Metafor mindmap to XML process is that it always adds
+# "other" and "N/A" as potential choices for every (non-boolean) property enumeration.
+# the ES-DOC Questionnaire has its own method for customizing if a property should include "OTHER" or "NONE"
+# so I make sure to remove those unused choices; odds are the user will almost never want to use them
+# and if they do, they can always manually add them back in.
+# I do this both in setting up the customization (QScientificPropertyCustomization.reset)
+# and the form (QScientificPropertyCustomizationForm.__init__)
+QCUSTOMIZATION_UNUSED_SCIENTIFIC_PROPERTY_ENUMERATION_CHOICES = ["other", "N/A", ]
+
 
 class QCustomization(models.Model):
 
@@ -982,7 +999,11 @@ class QScientificPropertyCustomization(QPropertyCustomization):
 
         # enumeration fields...
         elif self.field_type == QPropertyTypes.ENUMERATION:
-            self.enumeration_choices = proxy.enumeration_choices
+            # see the comment near QCUSTOMIZATION_UNUSED_SCIENTIFIC_PROPERTY_ENUMERATION_CHOICES
+            # to understand why I am getting rid of some of the proxy's enumeration_choices
+            enumeration_choices = proxy.enumeration_choices
+            unused_enumeration_choices = "|".join(QCUSTOMIZATION_UNUSED_SCIENTIFIC_PROPERTY_ENUMERATION_CHOICES)
+            self.enumeration_choices = enumeration_choices.replace(unused_enumeration_choices, "")
             # self.enumeration_default =
             self.enumeration_open = proxy.enumeration_open
             self.enumeration_multi = proxy.enumeration_multi

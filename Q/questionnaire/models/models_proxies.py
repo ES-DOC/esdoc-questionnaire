@@ -163,6 +163,7 @@ SCIENTIFIC_PROPERTY_CHOICES = [
     ("keyboard", "keyboard"),
 ]
 
+
 class QScientificPropertyProxy(QPropertyProxy):
 
     class Meta:
