@@ -121,6 +121,10 @@ urlpatterns = patterns('',
     url(r'^test/$', 'questionnaire.views.q_test', name="test"),
     url(r'^test/(?P<pk>[0-9]+)/$', 'questionnaire.views.q_test', name="test"),
 
+    # legacy code...
+    # TODO: AT WHAT POINT CAN I REMOVE THIS?
+    url(r'^metadata/dycore/dycoremodel/(?P<realization_label>[^/]+)/$', 'questionnaire.views.views_legacy.q_legacy_view'),
+
     # publications (ATOM feed)...
     url(r'^feed/$', QFeed(), name="feed"),
     url(r'^feed/(?P<project_name>[^/]+)/$', QFeed(), name="feed_project"),
