@@ -59,54 +59,36 @@ def q_legacy_view(request, realization_label=None):
 
     return HttpResponseRedirect(view_existing_url)
 
-def q_legacy_feed(request, project_name=None, document_type=None):
+def q_legacy_feed(request):
 
     # TODO: IS THERE A WAY TO PASS "context" TO "HttpResponseRedirect"?
     context = add_parameters_to_context(request)
 
-    try:
-        assert project_name == "dycore"
-        assert document_type == "modelcomponent"
-        ontology_key = "cim_1.10.0"
-    except:
-        msg = "Incomplete specification"
-        return q_error(request, msg)
-
     feed_url = reverse("feed_project_ontology_proxy", kwargs={
-        "project_name": project_name,
-        "ontology_key": ontology_key,
-        "document_type": document_type,
+        "project_name": "dycore",
+        "ontology_key": "cim_1.10.0",
+        "document_type": "modelcomponent",
     })
 
     return HttpResponseRedirect(feed_url)
 
 
-def q_legacy_publication(request, project_name=None, document_type=None, id=None):
+def q_legacy_publication(request, id=None):
 
     # TODO: IS THERE A WAY TO PASS "context" TO "HttpResponseRedirect"?
     context = add_parameters_to_context(request)
 
     try:
-        assert project_name == "dycore"
-        assert document_type == "dycoremodel"
-        assert id is not None
-        ontology_key = "cim_1.10.0"
-        document_type = "modelcomponent"
-    except:
-        msg = "Incomplete specification"
-        return q_error(request, msg)
-
-    try:
         realization = MetadataModel.objects.get(pk=id)
         guid = realization.guid
     except MetadataModel.DoesNotExist:
-        msg = "Invalid specification"
+        msg = "cannot find specified model"
         return q_error(request, msg)
 
     publication_url = reverse("publication_latest", kwargs={
-        "project_name": project_name,
-        "ontology_key": ontology_key,
-        "document_type": document_type,
+        "project_name": "dycore",
+        "ontology_key": "cim_1.10.0",
+        "document_type": "modelcomponent",
         "guid": guid,
     })
 
