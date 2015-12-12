@@ -43,6 +43,9 @@ class QProjectQuerySet(models.QuerySet):
     def active_projects(self):
         return self.filter(is_active=True)
 
+    def displayed_projects(self):
+        return self.filter(is_displayed=True)
+
 class QProject(models.Model):
 
     class Meta:
@@ -71,6 +74,8 @@ class QProject(models.Model):
 
     authenticated = models.BooleanField(blank=False, default=True)
     is_active = models.BooleanField(blank=False, default=True)
+    is_displayed = models.BooleanField(blank=False, default=True)
+    is_displayed.help_text = "A project that is not displayed is not included in the Index Page, although users can still navigate to it if they know its URL"
 
     vocabularies = models.ManyToManyField(
         "QVocabulary",
