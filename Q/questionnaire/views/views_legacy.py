@@ -88,9 +88,10 @@ def q_legacy_publication(request, project_name=None, document_type=None, id=None
 
     try:
         assert project_name == "dycore"
-        assert document_type == "modelcomponent"
+        assert document_type == "dycoremodel"
         assert id is not None
         ontology_key = "cim_1.10.0"
+        document_type = "modelcomponent"
     except:
         msg = "Incomplete specification"
         return q_error(request, msg)
