@@ -40,6 +40,7 @@ class QProjectAdminForm(ModelForm):
             "display_logo",
             "authenticated",
             "is_active",
+            "is_displayed",
             # "vocabularies",
         ]
 
