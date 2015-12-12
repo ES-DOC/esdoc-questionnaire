@@ -34,7 +34,7 @@
 
     <xs:complexType name="ParameterType">
         <xs:sequence>
-            <xs:element name="definition" type="DefinitionType"/>
+            <xs:element name="definition" type="DefinitionType" minOccurs="0"/>
             <xs:element name="value" maxOccurs="unbounded">
                 <xs:complexType>
                     <xs:sequence>
@@ -59,6 +59,7 @@
 
     <xs:complexType name="ParameterGroupType">
         <xs:sequence>
+            <xs:element name="definition" type="DefinitionType" minOccurs="0"/>
             <xs:choice minOccurs="0" maxOccurs="unbounded">
                 <xs:element name="parameter" type="ParameterType"/>
                 <xs:element name="constraint" type="ConstraintType"/>
