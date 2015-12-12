@@ -20,15 +20,11 @@ from Q.questionnaire.views.views_base import add_parameters_to_context
 from Q.questionnaire.views.views_errors import q_error
 from Q.questionnaire.q_utils import find_in_sequence
 
+# I just use these views to map legacy urls from the dcmip-2012 project
+# (which ran long before the ES-DOC Questionnaire was stable)
+# to current urls
+
 def q_legacy_view(request, realization_label=None):
-    """
-    I just use this view to map legacy urls from the dcmip-2012 project
-    (which ran long before the ES-DOC Questionnaire was stable)
-    to current urls
-    :param request:
-    :param realization_label:
-    :return:
-    """
 
     # TODO: IS THERE A WAY TO PASS "context" TO "HttpResponseRedirect"?
     context = add_parameters_to_context(request)
@@ -62,3 +58,55 @@ def q_legacy_view(request, realization_label=None):
     })
 
     return HttpResponseRedirect(view_existing_url)
+
+def q_legacy_feed(request, project_name=None, document_type=None):
+
+    # TODO: IS THERE A WAY TO PASS "context" TO "HttpResponseRedirect"?
+    context = add_parameters_to_context(request)
+
+    try:
+        assert project_name == "dycore"
+        assert document_type == "modelcomponent"
+        ontology_key = "cim_1.10.0"
+    except:
+        msg = "Incomplete specification"
+        return q_error(request, msg)
+
+    feed_url = reverse("feed_project_ontology_proxy", kwargs={
+        "project_name": project_name,
+        "ontology_key": ontology_key,
+        "document_type": document_type,
+    })
+
+    return HttpResponseRedirect(feed_url)
+
+
+def q_legacy_publication(request, project_name=None, document_type=None, id=None):
+
+    # TODO: IS THERE A WAY TO PASS "context" TO "HttpResponseRedirect"?
+    context = add_parameters_to_context(request)
+
+    try:
+        assert project_name == "dycore"
+        assert document_type == "modelcomponent"
+        assert id is not None
+        ontology_key = "cim_1.10.0"
+    except:
+        msg = "Incomplete specification"
+        return q_error(request, msg)
+
+    try:
+        realization = MetadataModel.objects.get(pk=id)
+        guid = realization.guid
+    except MetadataModel.DoesNotExist:
+        msg = "Invalid specification"
+        return q_error(request, msg)
+
+    publication_url = reverse("publication_latest", kwargs={
+        "project_name": project_name,
+        "ontology_key": ontology_key,
+        "document_type": document_type,
+        "guid": guid,
+    })
+
+    return HttpResponseRedirect(publication_url)
