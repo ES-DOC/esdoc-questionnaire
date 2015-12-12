@@ -26,6 +26,7 @@ class QProjectSerializer(serializers.ModelSerializer):
             'email',
             'url',
             'is_active',
+            'is_displayed',
             'authenticated',
             'vocabularies',
         )

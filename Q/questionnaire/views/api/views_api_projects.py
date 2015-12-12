@@ -33,16 +33,17 @@ class QProjectFilter(django_filters.FilterSet):
 
     class Meta:
         model = QProject
-        fields = ['name', 'is_active', ]
+        fields = ['name', 'is_active', 'is_displayed']
 
     is_active = BetterBooleanFilter(name="is_active")
+    is_displayed = BetterBooleanFilter(name="is_displayed")
 
 
 class QProjectList(generics.ListAPIView):
     queryset = QProject.objects.all()
     serializer_class = QProjectSerializer
     filter_backends = (filters.DjangoFilterBackend, filters.OrderingFilter)
-    filter_fields = ('name', 'is_active')
+    filter_fields = ('name', 'is_active', 'is_displayed')
     filter_class = QProjectFilter
     ordering_fields = ('name', 'title')
     ordering = "name"
