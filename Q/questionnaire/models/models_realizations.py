@@ -201,7 +201,7 @@ class QStandardProperty(QProperty):
     is_label = models.BooleanField(blank=False, default=False)
     name = models.CharField(max_length=LIL_STRING, blank=True)
 
-    atomic_value = models.CharField(max_length=HUGE_STRING, blank=True, null=True)
+    atomic_value = models.TextField(max_length=HUGE_STRING, blank=True, null=True)
 
 
 class QScientificProperty(QProperty):

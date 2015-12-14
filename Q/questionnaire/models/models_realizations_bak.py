@@ -805,7 +805,7 @@ class MetadataStandardProperty(MetadataProperty):
     model        = models.ForeignKey("MetadataModel",blank=False,null=True,related_name="standard_properties")
     proxy        = models.ForeignKey("QStandardPropertyProxy",blank=True,null=True)
 
-    atomic_value            = models.CharField(max_length=HUGE_STRING,blank=True,null=True)
+    atomic_value            = models.TextField(blank=True,null=True)
     enumeration_value       = EnumerationField(blank=True,null=True)
     enumeration_other_value = models.CharField(max_length=HUGE_STRING,blank=True,null=True)
     # TODO: IN RESET MAKE THIS FK QS BOUND TO THE CORRECT TYPE OF METADATAMODEL

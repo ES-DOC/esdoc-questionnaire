@@ -174,14 +174,13 @@ class MetadataScientificPropertyForm(MetadataEditingForm):
         if customizer.field_type != "ENUMERATION":
             atomic_type = customizer.atomic_type
             if atomic_type:
-                if atomic_type != MetadataAtomicFieldTypes.DEFAULT:
-                    custom_widget_class = METADATA_ATOMICFIELD_MAP[atomic_type][0]
-                    custom_widget_args = METADATA_ATOMICFIELD_MAP[atomic_type][1]
-                    self.fields["atomic_value"].widget = custom_widget_class(**custom_widget_args)
-                    # if I changed the widget, then I have to re-add the attributes that were updated in __init__ above
-                    # b/c they will have been lost (I only have to do this for atomic fields b/c the widget for enumerations cannot change)
-                    update_field_widget_attributes(self.fields["atomic_value"], {"onchange": "copy_value(this,'%s-scientific_property_value');" % self.prefix})
-                    update_field_widget_attributes(self.fields["atomic_value"], {"class": "atomic_value changer"})
+                custom_widget_class = METADATA_ATOMICFIELD_MAP[atomic_type][0]
+                custom_widget_args = METADATA_ATOMICFIELD_MAP[atomic_type][1]
+                self.fields["atomic_value"].widget = custom_widget_class(**custom_widget_args)
+                # if I changed the widget, then I have to re-add the attributes that were updated in __init__ above
+                # b/c they will have been lost (I only have to do this for atomic fields b/c the widget for enumerations cannot change)
+                update_field_widget_attributes(self.fields["atomic_value"], {"onchange": "copy_value(this,'%s-scientific_property_value');" % self.prefix})
+                update_field_widget_attributes(self.fields["atomic_value"], {"class": "atomic_value changer"})
 
                 update_field_widget_attributes(self.fields["atomic_value"], {"class": atomic_type.lower()})
 
