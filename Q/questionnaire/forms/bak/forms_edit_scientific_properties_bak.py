@@ -57,7 +57,8 @@ def create_scientific_property_form_data(model, scientific_property, scientific_
                 if is_multi:
                     scientific_property_form_data[value_field_name] = default_enumeration_value
                 else:
-                    scientific_property_form_data[value_field_name] = default_enumeration_value
+                    # TODO: WRITE SOME CHECKS SO THAT I NEVER GET INTO THIS SITUATION
+                    scientific_property_form_data[value_field_name] = default_enumeration_value[0]
 
         else:
             # atomic fields...

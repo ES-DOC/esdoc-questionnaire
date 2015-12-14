@@ -869,7 +869,7 @@ class QStandardPropertyCustomization(QPropertyCustomization):
         # enumeration fields...
         elif self.field_type == QPropertyTypes.ENUMERATION:
             self.enumeration_choices = proxy.enumeration_choices
-            # self.enumeration_default =
+            self.enumeration_default = ""
             self.enumeration_open = proxy.enumeration_open
             self.enumeration_multi = proxy.enumeration_multi
             self.enumeration_nullable = proxy.enumeration_nullable
@@ -1004,7 +1004,7 @@ class QScientificPropertyCustomization(QPropertyCustomization):
             enumeration_choices = proxy.enumeration_choices
             unused_enumeration_choices = "|".join(QCUSTOMIZATION_UNUSED_SCIENTIFIC_PROPERTY_ENUMERATION_CHOICES)
             self.enumeration_choices = enumeration_choices.replace(unused_enumeration_choices, "")
-            # self.enumeration_default =
+            self.enumeration_default = ""
             self.enumeration_open = proxy.enumeration_open
             self.enumeration_multi = proxy.enumeration_multi
             self.enumeration_nullable = proxy.enumeration_nullable

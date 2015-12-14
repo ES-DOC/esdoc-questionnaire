@@ -70,9 +70,10 @@ def create_standard_property_form_data(model, standard_property, standard_proper
                     standard_property_form_data[value_field_name] = current_enumeration_value
             elif default_enumeration_value:
                 if is_multi:
-                    standard_property_form_data[value_field_name] = default_enumeration_value.split("|")
-                else:
                     standard_property_form_data[value_field_name] = default_enumeration_value
+                else:
+                    # TODO: WRITE SOME CHECKS SO THAT I NEVER GET INTO THIS SITUATION
+                    standard_property_form_data[value_field_name] = default_enumeration_value[0]
 
         elif field_type == MetadataFieldTypes.RELATIONSHIP:
             value_field_name = "relationship_value"
