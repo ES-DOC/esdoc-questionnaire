@@ -21,8 +21,10 @@ from Q.questionnaire.views.views_errors import q_error
 from Q.questionnaire.q_utils import find_in_sequence
 
 # I just use these views to map legacy urls from the dcmip-2012 project
+# ie: "http://prod.questionnaire.esdoc.webfactional.com/metadata/dycore/dycoremodel/"
 # (which ran long before the ES-DOC Questionnaire was stable)
 # to current urls
+
 
 def q_legacy_edit(request):
 
