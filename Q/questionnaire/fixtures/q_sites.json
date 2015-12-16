@@ -49,6 +49,14 @@
 },
 {
     "fields": {
+        "domain": "prod.questionnaire.esdoc.webfactional.com",
+        "name": "prod.questionnaire.esdoc.webfactional.com"
+    },
+    "model": "sites.site",
+    "pk": 7
+},
+{
+    "fields": {
         "type": "",
         "site": 1
     },
@@ -94,5 +102,13 @@
     },
     "model": "questionnaire.qsite",
     "pk": 6
+},
+{
+    "fields": {
+        "type": "PROD",
+        "site": 7
+    },
+    "model": "questionnaire.qsite",
+    "pk": 7
 }
 ]
