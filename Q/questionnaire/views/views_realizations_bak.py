@@ -594,18 +594,7 @@ def q_view_existing(request, project_name=None, ontology_key=None, document_type
         msg = "Currently only root models can be viewed.  Please try again."
         return q_error(request, msg)
 
-    # check authentication...
-    # (not using "@login_required" b/c some projects ignore authentication)
-    if project.authenticated:
-        current_user = request.user
-        if not current_user.is_authenticated():
-            next_page = "/login/?next=%s" % request.path
-            return HttpResponseRedirect(next_page)
-        if not is_user_of(current_user, project):
-            next_page = "/%s/" % project_name
-            msg = "You have tried to view a restricted resource for this project.  Please consider joining."
-            messages.add_message(request, messages.WARNING, msg)
-            return HttpResponseRedirect(next_page)
+    # no need to check authentication for 'view' (ie: read-only) mode
 
     # get the set of vocabularies that apply to this project/ontology/proxy...
     vocabularies = customization.get_active_vocabularies()
