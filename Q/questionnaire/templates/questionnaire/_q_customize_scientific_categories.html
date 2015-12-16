@@ -73,7 +73,7 @@
                     <!--<div ng-if="category.display_detail">-->
                     <section model_to_watch="get_model_by_attrs(categories, {'key': key})"
                              key="{% verbatim ng %}{{ key }}{% endverbatim ng %}"
-                             index="{% verbatim ng %}{{ index }}{% endverbatim ng %}"
+                             index="{% verbatim ng %}{{ get_model_index(category, model_customization.scientific_categories) }}{% endverbatim ng %}"
                              section_type="scientific_category_customization"/>
                     <!--</div>-->
 

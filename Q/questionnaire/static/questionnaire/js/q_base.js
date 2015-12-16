@@ -128,7 +128,6 @@ function sort_objects_by_attr(objs, attr) {
     return sorted_objs;
 }
 
-
 /********************/
 /* end utility fns */
 /********************/

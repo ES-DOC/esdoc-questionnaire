@@ -143,7 +143,7 @@ console.log("bar");
             }
         };
 
-        /* TODO: MOVE THESE NEXT 2 FNS TO q_ng_base.js */
+        /* TODO: MOVE THESE NEXT 3 FNS TO q_ng_base.js */
 
         $scope.get_model_by_attrs = function(models, attrs) {
             var filtered_models = $filter('filter')(
@@ -159,6 +159,11 @@ console.log("bar");
                 attrs
             );
             return filtered_models;
+        };
+
+        $scope.get_model_index = function(model, models) {
+            /* returns the index of the "model" object in the "models" collection */
+            return models.indexOf(model);
         };
 
         $scope.display_vocabulary_detail = function(vocabulary_key) {
