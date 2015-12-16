@@ -2,6 +2,9 @@ CIM Questionnaire Change History
 
 For full release notes, please see https://earthsystemcog.org/projects/es-doc-models/releases_questionnaire
 
+v0.15.0.1
+* ensured "read-only" forms do not require authentication
+
 v0.15.0.0
 * major rewrite of the customizer forms including:
 ** clean separation of client & server functionality
