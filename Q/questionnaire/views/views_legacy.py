@@ -24,6 +24,24 @@ from Q.questionnaire.q_utils import find_in_sequence
 # (which ran long before the ES-DOC Questionnaire was stable)
 # to current urls
 
+def q_legacy_edit(request):
+
+    # TODO: IS THERE A WAY TO PASS "context" TO "HttpResponseRedirect"?
+    context = add_parameters_to_context(request)
+
+    project_name = "dycore"
+    ontology_key = "cim_1.10.0"
+    document_type = "modelcomponent"
+
+    edit_new_url = reverse("edit_new", kwargs={
+        "project_name": project_name,
+        "ontology_key": ontology_key,
+        "document_type": document_type,
+    })
+
+    return HttpResponseRedirect(edit_new_url)
+
+
 def q_legacy_view(request, realization_label=None):
 
     # TODO: IS THERE A WAY TO PASS "context" TO "HttpResponseRedirect"?

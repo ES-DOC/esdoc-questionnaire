@@ -123,6 +123,7 @@ urlpatterns = patterns('',
 
     # legacy code...
     # TODO: AT WHAT POINT CAN I REMOVE THIS?
+    url(r'^metadata/dycore/dycoremodel/$', 'questionnaire.views.views_legacy.q_legacy_edit'),
     url(r'^metadata/dycore/dycoremodel/(?P<realization_label>[^/]+)/$', 'questionnaire.views.views_legacy.q_legacy_view'),
     url(r'^metadata/feed/dycore/modelcomponent/$', 'questionnaire.views.views_legacy.q_legacy_feed'),
     url(r'^metadata/feed/dycore/$', 'questionnaire.views.views_legacy.q_legacy_feed'),
