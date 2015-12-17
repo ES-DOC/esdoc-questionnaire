@@ -70,6 +70,7 @@ def get_institute_code(model):
     # except AttributeError:
     #     return None
 
+
 @register.filter
 def get_standard_property_by_name(model, property_name):
     """
@@ -106,11 +107,12 @@ def get_scientific_property_by_name(model, property_name):
 def get_scientific_categories_and_properties_dictionary(scientific_properties):
     scientific_categories_and_properties_dictionary = {}
     for scientific_property in scientific_properties:
-        scientific_category_proxy = MetadataScientificCategoryProxy.objects.get(key=scientific_property.category_key, component=scientific_property.proxy.component)
+        scientific_category_proxy = scientific_property.proxy.category
         if scientific_category_proxy not in scientific_categories_and_properties_dictionary:
             scientific_categories_and_properties_dictionary[scientific_category_proxy] = []
         scientific_categories_and_properties_dictionary[scientific_category_proxy].append(scientific_property)
     return scientific_categories_and_properties_dictionary
+
 
 @register.filter
 def get_standard_properties_with_stereotypes(model, stereotype_names):
@@ -124,6 +126,7 @@ def get_standard_properties_without_stereotypes(model, stereotype_names):
     stereotype_names_list = stereotype_names.split(',')
     standard_properties = model.standard_properties.exclude(proxy__stereotype__in=stereotype_names_list)
     return standard_properties
+
 
 @register.filter
 def get_url_path(url):
@@ -150,6 +153,7 @@ def get_fully_qualified_tagname(property):
     else:
         return u"%s" % (property.name)
 
+
 @register.filter
 def get_ontology_type_key(model):
     """
@@ -161,8 +165,9 @@ def get_ontology_type_key(model):
     ontology_type_key = "cim.1.%s.%s" % (proxy.package, proxy.name[0].upper()+proxy.name[1:])
     return ontology_type_key
 
+
 PLURAL_MAP = {
-    'cactus' : 'cacti',
+    'cactus': 'cacti',
 }
 VOWELS = set('aeiou')
 
@@ -200,4 +205,3 @@ def get_plural(word):
 
     plural = root + suffix
     return plural
-
