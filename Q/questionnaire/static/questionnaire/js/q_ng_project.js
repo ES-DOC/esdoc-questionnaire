@@ -45,7 +45,7 @@
 
         project_controller.customization_sort_type = "name";
         project_controller.customization_sort_reverse = false;
-        project_controller.document_sort_type = "name";
+        project_controller.document_sort_type = "label";
         project_controller.document_sort_reverse = false;
 
 
