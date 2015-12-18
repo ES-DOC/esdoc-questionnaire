@@ -6,6 +6,7 @@ v0.15.0.1
 * ensured "read-only" forms do not require authentication
 * ensured _all_ legacy dycore URLs map to appropriate views
 * fixed bug preventing modifying scientific category customizations
+* ensured sorting of documents on project page works as expected
 * added a script to reset guids as needed
 
 v0.15.0.0
