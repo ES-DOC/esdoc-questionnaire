@@ -5,7 +5,8 @@ For full release notes, please see https://earthsystemcog.org/projects/es-doc-mo
 v0.15.0.1
 * ensured "read-only" forms do not require authentication
 * ensured _all_ legacy dycore URLs map to appropriate views
-* fixed bug w/ modifying scientific category customizations
+* fixed bug preventing modifying scientific category customizations
+* added a script to reset guids as needed
 
 v0.15.0.0
 * major rewrite of the customizer forms including:
