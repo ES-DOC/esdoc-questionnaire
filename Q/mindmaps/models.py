@@ -1,7 +1,9 @@
 from django.db import models
+from Q.mindmaps import APP_LABEL
 
 class MindMapSource(models.Model):
     class Meta:
+        app_label = APP_LABEL
         verbose_name = "MindMap Source"
         verbose_name_plural = "MindMap Sources"
 
@@ -14,6 +16,7 @@ class MindMapSource(models.Model):
 
 class MindMapDomain(models.Model):
     class Meta:
+        app_label = APP_LABEL
         verbose_name = "MindMap Domain"
         verbose_name_plural = "MindMap Domains"
 

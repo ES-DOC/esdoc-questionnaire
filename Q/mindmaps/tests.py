@@ -1,14 +1,15 @@
 import os
 
 from django.test import TestCase, Client
-
 from django.core.urlresolvers import reverse
-from urlparse import urlparse
-
-from Q.mindmaps.models import *
-from Q.mindmaps.views import *
 
 from Q.questionnaire.q_utils import FuzzyInt
+
+# relative imports to prevent known 1.7 issue
+# (https://code.djangoproject.com/ticket/22280)
+from .models import *
+from .views import *
+
 
 class TestMindMaps(TestCase):
 
@@ -26,10 +27,12 @@ class TestMindMaps(TestCase):
 
     def setUp(self):
 
-        # client for all tests (this is better-suited for testing views b/c, among other things, it has sessions, cookies, etc.)
+        # client for all tests
+        # (this is better-suited for testing views b/c, among other things, it has sessions, cookies, etc.)
         self.client = Client()
 
-        # SETUP DEFAULT MINDMAPSOURCES
+        # setup mindmap sources...
+        # (NOT BOTHERING TO USE FIXTURES FOR THIS)
         test_source = MindMapSource(name=self.test_source_name)
         test_source.save()
         for domain in self.test_domains:
@@ -45,7 +48,6 @@ class TestMindMaps(TestCase):
 
     def tearDown(self):
         # this is for resetting things that are not db-related (ie: files, etc.)
-        # but it's not needed for the db since each test is run in its own transaction
 
         parsed_url = urlparse(self.test_url)
         absolute_path = os.path.join(settings.MEDIA_ROOT, "mindmaps", parsed_url.path[1:])
@@ -61,6 +63,10 @@ class TestMindMaps(TestCase):
             except OSError:
                 # directory was not empty
                 pass
+
+    #################################
+    # some useful custom assertions #
+    #################################
 
     def assertQuerysetEqual(self, qs1, qs2):
         """Tests that two django querysets are equal"""
@@ -88,6 +94,10 @@ class TestMindMaps(TestCase):
         file_exists = os.path.exists(file_path)
 
         return self.assertEqual(file_exists,False,msg=msg)
+
+    ####################
+    # the actual tests #
+    ####################
 
     def test_views_mindmaps_index(self):
 
@@ -138,7 +148,7 @@ class TestMindMaps(TestCase):
 
         # wrap all view tests w/ a check for num db hits
         # (django testing framework adds ~15 hits of setup code)
-        query_limit = FuzzyInt(0,20)
+        query_limit = FuzzyInt(0, 20)
         with self.assertNumQueries(query_limit):
             request_url = reverse("view")
             data = {
@@ -155,7 +165,7 @@ class TestMindMaps(TestCase):
 
         # wrap all view tests w/ a check for num db hits
         # (django testing framework adds ~15 hits of setup code)
-        query_limit = FuzzyInt(0,20)
+        query_limit = FuzzyInt(0, 20)
         with self.assertNumQueries(query_limit):
             request_url = reverse("view")
             data = {
