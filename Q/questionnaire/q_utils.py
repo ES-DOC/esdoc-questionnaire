@@ -365,6 +365,29 @@ def add_parameters_to_url(path, **kwargs):
     return path + "?" + urllib.urlencode(kwargs)
 
 
+#####################
+# list manipulation #
+#####################
+
+def sort_list_by_key(list, key_name, reverse=False):
+    """
+    often when setting up initial serializations (especially during testing),
+    I pass a list of dictionaries representing a QS to some fn.
+    That list may or may not be sorted according to the underlying model's "order" attribute
+    This fn sorts the list according to the value of "key" in each list item;
+    typically, "key" should match the "order" attribute of the model
+    :param key_name: name of key to sort by
+    :param list: list to sort
+    :return:
+    """
+    sorted_list = sorted(
+        list,
+        key=lambda item: item.get(key_name),
+        reverse=reverse,
+    )
+    return sorted_list
+
+
 #############################
 # form / field manipulation #
 #############################

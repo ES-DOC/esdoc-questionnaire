@@ -397,7 +397,7 @@ def create_ontology(**kwargs):
 
     file_path = kwargs.pop("file_path", os.path.join(TEST_FILE_PATH, "test_ontology.xml"))
     _name = kwargs.pop("name", "test_ontology")
-    _version = kwargs.pop("version", None)
+    _version = kwargs.pop("version", 1)
     _description = kwargs.pop("description", None)
     _url = kwargs.pop("url", "http://www.test.com")
     _type = kwargs.pop("type", CIMTypes.CIM1.get_type())

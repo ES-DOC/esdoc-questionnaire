@@ -351,13 +351,42 @@ class Test(TestQBase):
         self.assertIn("one", test_field.widget.attrs.get("class"))
         self.assertIn("two", test_field.widget.attrs.get("class"))
 
-    @incomplete_test
     def test_get_data_from_form(self):
-        pass
+        test_model = TestUtilsModel(name="my_name", other_name="my_other_name")
+        test_form = TestUtilsForm(
+            # TODO: THIS WORKS FINE w/ "data" ARG
+            # WHAT AOBUT w/ "instance" OR "initial" ARG?
+            # instance=test_model,
+            # initial=serialize_model_to_dict(test_model)
+            data=serialize_model_to_dict(test_model)
+        )
+
+        test_data = {
+            "name": "my_name",
+            "other_name": "my_other_name",
+        }
+        self.assertDictEqual(test_data, get_data_from_form(test_form))
+
+        test_data = {
+            "name": "my_name",
+            "other_name": "test_name",
+        }
+        self.assertDictEqual(test_data, get_data_from_form(test_form, include={"other_name": "test_name"}))
 
     @incomplete_test
     def test_get_data_from_formset(self):
-        pass
+        test_models = [
+            TestUtilsModel(name="one", other_name="my_other_name"),
+            TestUtilsModel(name="two", other_name="my_other_name"),
+            TestUtilsModel(name="three", other_name="my_other_name"),
+        ]
+        test_formset = TestUtilsFormSet(
+            prefix="test_formset",
+            initial=[
+                serialize_model_to_dict(test_model)
+                for test_model in test_models
+            ]
+        )
 
     ###########################
     # (non-API) serialization #
@@ -445,3 +474,20 @@ class Test(TestQBase):
             "invalid": "invalid"
         }, test_models)
         self.assertIsNone(test_model)
+
+    def test_sort_list_by_key(self):
+
+        one = {"name": "one", "order": 3}
+        two = {"name": "two", "order": 2}
+        three = {"name": "three", "order": 1}
+
+        test_list = [one, two, three, ]
+
+        test_list_sorted_by_name = sort_list_by_key(test_list, "name")
+        self.assertListEqual(test_list_sorted_by_name, [one, three, two, ])
+        test_list_sorted_by_order = sort_list_by_key(test_list, "order")
+        self.assertListEqual(test_list_sorted_by_order, [three, two, one, ])
+        test_list_sorted_by_name_reverse = sort_list_by_key(test_list, "name", reverse=True)
+        self.assertListEqual(test_list_sorted_by_name_reverse, [two, three, one, ])
+        test_list_sorted_by_order_reverse = sort_list_by_key(test_list, "order", reverse=True)
+        self.assertListEqual(test_list_sorted_by_order_reverse, [one, two, three, ])
