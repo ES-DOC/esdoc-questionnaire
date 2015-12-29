@@ -26,3 +26,4 @@ path=/path/to/virtualenv
 
 [debug]
 debug=false
+profile=false
