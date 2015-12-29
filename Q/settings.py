@@ -118,6 +118,8 @@ MIDDLEWARE_CLASSES = (
     'django.middleware.security.SecurityMiddleware',
     # allows site to be set dynamically based on request URL...
     'questionnaire.middleware.dynamic_sites.DynamicSitesMiddleware',
+    # profiling...
+    'pyinstrument.middleware.ProfilerMiddleware',
 )
 
 ROOT_URLCONF = 'urls'
@@ -220,6 +222,11 @@ CACHES = {
 }
 
 SESSION_SERIALIZER = 'django.contrib.sessions.serializers.PickleSerializer'
+
+# PROFILING...
+# can either use "signal" or "setprofile" mode, as per https://github.com/joerick/pyinstrument#signal-or-setprofile-mode
+# ("signal" mode has less overhead, but requires a single-threaded application)
+PYINSTRUMENT_USE_SIGNAL = False
 
 # API...
 REST_FRAMEWORK = {

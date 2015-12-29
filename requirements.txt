@@ -11,3 +11,4 @@ Pillow==2.9.0
 lxml==3.4.4
 pytz==2015.4
 selenium==2.47.0
+pyinstrument==0.13.1

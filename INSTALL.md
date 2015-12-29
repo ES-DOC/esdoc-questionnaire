@@ -21,6 +21,7 @@ The system must have the following Python packages installed:
 * python-memcached (pip install python-memcached)
 * pytz (pip install pytz)
 * selenium (for testing; pip install selenium)
+* pyinstrument (for profiling; pip install pyinstrument)
 
 ## DOWNLOAD
 
