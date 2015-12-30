@@ -32,6 +32,9 @@ parser.read(CONF_PATH)
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "Q.settings")
 
+# ensure that Apache & Django use the same Q configuration file
+assert os.path.basename(CONF_PATH) in open(rel("settings.py")).read()
+
 try:
     # if I am using mod_wsgi w/ a virtualenv
     # then make sure to activate the environment prior to running the application
