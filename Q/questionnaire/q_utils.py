@@ -26,6 +26,7 @@ import urllib
 import re
 import os
 
+from Q.questionnaire import q_logger
 from Q.questionnaire.q_constants import *
 
 rel = lambda *x: os.path.join(os.path.abspath(os.path.dirname(__file__)), *x)
@@ -44,7 +45,11 @@ class QError(Exception):
     """
 
     def __init__(self, msg='unspecified questionnaire error'):
+        super(QError, self).__init__(msg)
+
         self.msg = msg
+
+        q_logger.exception(self)
 
     def __str__(self):
         return "QError: " + self.msg

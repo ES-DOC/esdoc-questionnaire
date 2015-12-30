@@ -231,6 +231,48 @@ if PROFILE:
         'pyinstrument.middleware.ProfilerMiddleware',
     )
 
+# LOGGING...
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            # logging format can be found here: https://docs.python.org/3/library/logging.html#logrecord-attributes
+            'format': "[%(asctime)s] %(levelname)s [%(filename)s#%(funcName)s:%(lineno)s] %(message)s",
+            'datefmt': "%d %b %Y %H:%M:%S",
+        },
+        'simple': {
+            'format': '%(levelname)s %(message)s',
+        },
+    },
+    'handlers': {
+        'file': {
+            'level': 'DEBUG',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': rel("logs/q_log.log"),
+            'maxBytes': 8000000,  # rotate files every 8 MBs
+            'backupCount': 9,  # keep the last 9 logs
+            'formatter': 'verbose',
+        },
+    },
+    # don't bother filtering anything; just log all messages
+    'filters': {},
+    'loggers': {
+        # don't log django messages...
+        # 'django': {
+        #     'handlers': ['file'],
+        #     'propagate': True,
+        #     'level': 'DEBUG',
+        # },
+        # do log questionnaire messages...
+        'questionnaire': {
+            'handlers': ['file'],
+            'level': 'DEBUG',  # log DEBUG and higher (everything)
+        },
+    },
+}
+
+
 # API...
 REST_FRAMEWORK = {
     # TODO: GET PAGINATION WORKING

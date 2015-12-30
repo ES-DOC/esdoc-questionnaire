@@ -17,12 +17,20 @@ init module for "questionnaire" application.
 deals w/ version info and other stuff.
 """
 
+import logging
+
 ###########################
 # what is the app called? #
 ###########################
 
 APP_LABEL = "questionnaire"
 default_app_config = 'questionnaire.apps.QConfig'
+
+#########################
+# where do messages go? #
+#########################
+
+q_logger = logging.getLogger(APP_LABEL)
 
 ####################################
 # what version is the app/project? #
