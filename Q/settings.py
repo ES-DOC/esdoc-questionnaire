@@ -249,7 +249,8 @@ LOGGING = {
         'file': {
             'level': 'DEBUG',
             'class': 'logging.handlers.RotatingFileHandler',
-            'filename': rel("logs/q_log.log"),
+            # use separate log files depending on whether the code is running in "test" mode
+            'filename': rel("logs/q_log.log") if 'test' not in sys.argv else rel("logs/q_test_log.log"),
             'maxBytes': 8000000,  # rotate files every 8 MBs
             'backupCount': 9,  # keep the last 9 logs
             'formatter': 'verbose',
@@ -271,7 +272,6 @@ LOGGING = {
         },
     },
 }
-
 
 # API...
 REST_FRAMEWORK = {
