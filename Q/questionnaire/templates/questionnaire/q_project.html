@@ -80,10 +80,10 @@
                 <span class="col-md-10"><a href="mailto:{{ project.email }}">{{ project.email }}</a></span>
             {% endif %} {# /project.email #}
 
-            {% if has_published %}
+            {# if has_published #}
                 <span class="col-md-2"><strong>Document Feed:</strong></span>
                 <span class="col-md-10"><a href="/feed/{{ project.name }}">{{ request.get_host }}/feed/{{ project.name }}</a></span>
-            {% endif %} {# /has_published #}
+            {# endif #} {# /has_published #}
 
             {% if not project.authenticated %}
                 <span class="col-md-12"><strong>Project does not require authentication.  Any user can create or modify a document or a customization.</strong></span>
