@@ -63,7 +63,7 @@ class QProject(models.Model):
     name = models.CharField(max_length=LIL_STRING, blank=False, unique=True, validators=[validate_no_spaces, validate_no_bad_chars, validate_no_reserved_words, ])
     title = models.CharField(max_length=LIL_STRING, blank=False)
     description = models.TextField(blank=True)
-    email = models.EmailField(blank=True, verbose_name="Contact Email")
+    email = models.EmailField(blank=False, verbose_name="Contact Email")
     url = models.URLField(blank=True)
     # a logo submitted via the admin will be automatically resized to LOGO_SIZE
     # also, the "max_length" arg allows arbitrarily long filenames
