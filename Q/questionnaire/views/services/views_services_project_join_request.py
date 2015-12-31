@@ -26,7 +26,6 @@ def q_project_join_request(request, project_name=None):
     :param project_name:
     :return:
     """
-
     valid_request, msg = validate_request(request)
     if not valid_request:
         return HttpResponseForbidden(msg)
@@ -54,7 +53,9 @@ def q_project_join_request(request, project_name=None):
     if project_join_request(project, user, site=request.current_site):
         msg = "Your request has been sent to the project administrator for review"
         if was_already_pending:
-            msg += " again.<p><em>You have sent this request before.  Please contact the project administrator if things are moving too slowly.</em></p>"
+            msg += " again.<p><em>You have sent this request before.  Please contact the project administrator [<a href='mailto:{email}'>{email}</a>] if things are moving too slowly</em>.</p>".format(
+                email=project.email
+            )
         else:
             msg += "."
         messages.add_message(request, messages.INFO, msg)
