@@ -117,9 +117,9 @@ def q_password(request, user_name=None):
         password_change_form=QUserPasswordForm,
     )
 
-    # if request.method == "POST" and response.status_code < 400:
-    #     msg = "Successfully changed password."
-    #     messages.add_message(request, messages.SUCCESS, msg)
+    if request.method == "POST" and response.status_code < 400:  # 400 and above are errors
+        msg = "Successfully changed password."
+        messages.add_message(request, messages.SUCCESS, msg)
 
     return response
 
