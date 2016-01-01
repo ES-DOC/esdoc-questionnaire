@@ -132,7 +132,7 @@ class QVocabulary(models.Model):
 
         self.old_component_proxies = list(self.component_proxies.all())  # list forces qs evaluation immediately
         self.new_component_proxies = []
-        self.component_order = 1
+        self.component_order = 0
         for i, component_proxy_node in enumerate(xpath_fix(vocabulary_content,"./component")):
             # rather than loop over all components ("//component"),
             # I do this recursively in order to keep track of the full component hierarchy
