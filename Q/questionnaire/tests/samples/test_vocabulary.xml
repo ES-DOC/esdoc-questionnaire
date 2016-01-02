@@ -6,7 +6,7 @@
     <parametergroup name="General Attributes" rawName="" esgName="" componentView="false"/>
     <component name="TestModelKeyProperties" rawName="TestModel_KeyProperties" esgName="KeyProperties">
       <parametergroup name="General Attributes" rawName="TestModel_KeyPropertiesAttributes" esgName="KeyPropertiesAttributes" componentView="false">
-        <parameter name="name" rawName="name" esgName="name" choice="keyboard">
+        <parameter name="name1" rawName="name1" esgName="name1" choice="keyboard">
           <definition status="provided">I am free text.</definition>
           <value format="string"/>
         </parameter>
@@ -38,13 +38,13 @@
         </constraint>
       </parametergroup>
       <parametergroup name="CategoryOne" rawName="CategoryOne" esgName="CategoryOne" componentView="false">
-        <parameter name="name" rawName="name" esgName="name" choice="keyboard">
+        <parameter name="name2" rawName="name2" esgName="name2" choice="keyboard">
           <definition status="provided">I am free text.</definition>
           <value format="string"/>
         </parameter>
       </parametergroup>
       <parametergroup name="CategoryTwo" rawName="CategoryTwo" esgName="CategoryTwo" componentView="false">
-        <parameter name="name" rawName="name" esgName="name" choice="keyboard">
+        <parameter name="name3" rawName="name3" esgName="name3" choice="keyboard">
           <definition status="provided">I am free text.</definition>
           <value format="string"/>
         </parameter>
@@ -53,7 +53,7 @@
     <component name="PretendSubModel" rawName="PretendSubModel" esgName="PretendSubModel">
       <parametergroup name="General Attributes" rawName="" esgName="" componentView="false"/>
       <parametergroup name="CategoryOne" rawName="CategoryOne" esgName="CategoryOne" componentView="false">
-        <parameter name="name" rawName="name" esgName="name" choice="keyboard">
+        <parameter name="name4" rawName="name4" esgName="name4" choice="keyboard">
           <definition status="provided">I am free text.</definition>
           <value format="string"/>
         </parameter>
@@ -62,7 +62,7 @@
     <component name="SubModel" rawName="SubModel" esgName="SubModel">
       <parametergroup name="General Attributes" rawName="" esgName="" componentView="false"/>
       <parametergroup name="CategoryOne" rawName="CategoryOne" esgName="CategoryOne" componentView="false">
-        <parameter name="name" rawName="name" esgName="name" choice="keyboard">
+        <parameter name="name5" rawName="name5" esgName="name5" choice="keyboard">
           <definition status="provided">I am free text.</definition>
           <value format="string"/>
         </parameter>
@@ -70,7 +70,7 @@
       <component name="SubSubModel" rawName="SubSubModel" esgName="SubSubModel">
         <parametergroup name="General Attributes" rawName="" esgName="" componentView="false"/>
         <parametergroup name="CategoryOne" rawName="CategoryOne" esgName="CategoryOne" componentView="false">
-          <parameter name="name" rawName="name" esgName="name" choice="keyboard">
+          <parameter name="name6" rawName="name6" esgName="name6" choice="keyboard">
             <definition status="provided">I am free text.</definition>
             <value format="string"/>
           </parameter>

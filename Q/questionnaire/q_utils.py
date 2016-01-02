@@ -380,7 +380,7 @@ def sort_list_by_key(list, key_name, reverse=False):
     I pass a list of dictionaries representing a QS to some fn.
     That list may or may not be sorted according to the underlying model's "order" attribute
     This fn sorts the list according to the value of "key" in each list item;
-    typically, "key" should match the "order" attribute of the model
+    typically, "key" would match the "order" attribute of the model
     :param key_name: name of key to sort by
     :param list: list to sort
     :return:
