@@ -1,6 +1,6 @@
 ####################
 #   ES-DOC CIM Questionnaire
-#   Copyright (c) 2015 ES-DOC. All rights reserved.
+#   Copyright (c) 2016 ES-DOC. All rights reserved.
 #
 #   University of Colorado, Boulder
 #   http://cires.colorado.edu/
@@ -173,7 +173,7 @@ def get_cached_customization(request):
         customization_set = get_cached_object(request.session, cached_customization_set_key)
     except QError:
         # TODO: THIS SECTION JUST EXISTS FOR DEBUGGING
-        session_key = "cef3f8d5-f8f9-4490-b396-3c8e7e25aece"
+        session_key = "bf505bfb-42b4-46c7-bca0-d5774bc518e3"
         cached_customization_set_key = "{0}_customization_set".format(session_key)
         customization_set = get_cached_object(request.session, cached_customization_set_key)
 

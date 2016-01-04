@@ -1,6 +1,6 @@
 ####################
 #   ES-DOC CIM Questionnaire
-#   Copyright (c) 2015 ES-DOC. All rights reserved.
+#   Copyright (c) 2016 ES-DOC. All rights reserved.
 #
 #   University of Colorado, Boulder
 #   http://cires.colorado.edu/
@@ -27,6 +27,9 @@ def q_test(request, pk=None):
     :return:
     """
     _dict = {}
+    from Q.questionnaire import q_logger
+    q_logger.info("hello world from q_test")
+
     return render_to_response('questionnaire/q_test.html', _dict, context_instance=RequestContext(request))
 
     document_type = "modelcomponent"

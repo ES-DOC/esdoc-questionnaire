@@ -1,6 +1,6 @@
 ####################
 #   Django-CIM-Forms
-#   Copyright (c) 2012 CoG. All rights reserved.
+#   Copyright (c) 2016 CoG. All rights reserved.
 #
 #   Developed by: Earth System CoG
 #   University of Colorado, Boulder
@@ -10,14 +10,6 @@
 ####################
 
 __author__="allyn.treshansky"
-__date__ ="Jun 10, 2013 5:49:37 PM"
-
-"""
-.. module:: feed_filters
-
-Summary of module goes here
-
-"""
 
 import os
 from django import template

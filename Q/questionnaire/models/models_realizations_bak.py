@@ -1,4 +1,3 @@
-
 ####################
 #   CIM_Questionnaire
 #   Copyright (c) 2013 CoG. All rights reserved.
