@@ -45,6 +45,11 @@ TEST_FILES = [
     "test_vocabulary.xml",
 ]
 
+# allows me to "trick" the test runner into thinking the test client sent an AJAX request
+TEST_AJAX_REQUEST = {
+    "HTTP_X_REQUESTED_WITH": "XMLHttpRequest",
+}
+
 ###############################################
 # models used for test-specific functionality #
 ###############################################

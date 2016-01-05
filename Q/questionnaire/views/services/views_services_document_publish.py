@@ -18,7 +18,6 @@ from Q.questionnaire.views.services.views_services_base import validate_request
 from Q.questionnaire.models.models_realizations_bak import MetadataModel
 
 
-
 def q_document_publish(request):
 
     valid_request, msg = validate_request(request)
