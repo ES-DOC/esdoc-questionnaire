@@ -84,8 +84,11 @@ GUIDS_BY_PROJECT = {
     ],
 }
 
+from lxml import etree as et
+from lxml.etree import XMLSyntaxError
 from Q.questionnaire.models import *
-from Q.questionnaire.q_utils import find_in_sequence
+from Q.questionnaire.models.models_publications import QPublicationFormats
+from Q.questionnaire.q_utils import find_in_sequence, get_index
 
 for project_name, guid_dictionaries in GUIDS_BY_PROJECT.iteritems():
     project = QProject.objects.get(name=project_name)
@@ -99,6 +102,22 @@ for project_name, guid_dictionaries in GUIDS_BY_PROJECT.iteritems():
             realization.save()
             for publication in realization.publications.all():
                 publication.name = guid
+                try:
+                    publication_content = et.fromstring(publication.content.encode("utf-8"))
+                    if publication.format == QPublicationFormats.CIM_XML:
+                        # old style of publications uses namespaces...
+                        namespaces = publication_content.nsmap
+                        namespaces["cim"] = namespaces.pop(None)
+                        publication_content_id = get_index(publication_content.xpath("//cim:documentID", namespaces=namespaces), 0)
+                    else:
+                        # new style of publications is better...
+                        publication_content_id = get_index(publication_content.xpath("//id"), 0)
+                    if publication_content_id is not None:
+                        publication_content_id.text = guid
+                        publication.content = et.tostring(publication_content)
+                except XMLSyntaxError:
+                    print("There is a problem w/ a publication version '{0}' for the '{1}' realization in project '{2}'".format(publication.version, label, project_name))
+                    pass
                 publication.save()
         else:
             print("Could not find a realization w/ label '{0}' in project '{1}'; skipping".format(label, project_name))
