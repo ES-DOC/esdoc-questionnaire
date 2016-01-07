@@ -47,7 +47,7 @@ def q_document_publish(request):
     publication = model.publish(force_save=True)
 
     if publication:
-        msg = "You have successfully published this document.  It should appear in the ES-DOC Archive within 6 hours."
+        msg = "You have successfully published this document.  It should appear in the ES-DOC Archive within 3 hours."
         messages.add_message(request, messages.INFO, msg)
 
     else:
