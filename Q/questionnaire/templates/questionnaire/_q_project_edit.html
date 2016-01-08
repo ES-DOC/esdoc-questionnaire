@@ -70,11 +70,14 @@
                       </span>
                   </th>
                   <th>
-                      <span ng-click="project_controller.change_document_sort_type('label')">Name &amp; Version</span>
+                      <span ng-click="project_controller.change_document_sort_type('label')">Name</span>
                       <span ng-show="project_controller.document_sort_type=='label'">
                           <span ng-show="project_controller.document_sort_reverse" class="glyphicon glyphicon-menu-up"></span>
                           <span ng-hide="project_controller.document_sort_reverse" class="glyphicon glyphicon-menu-down"></span>
                       </span>
+                  </th>
+                  <th>
+                      <span>Version</span>
                   </th>
                   <th>
                       <span ng-click="project_controller.change_document_sort_type('modified')">Last Modified</span>
@@ -92,10 +95,13 @@
                     <td>{{ document.ontology }}</td>
                     <td>{{ document.proxy }}</td>
                     <td ng-show="document.label">
-                        {{ document.label }}&nbsp;[{{ document.version }}]
+                        {{ document.label }}
                     </td>
                     <td ng-hide="document.label">
-                        <em>(no label provided)</em>&nbsp;&nbsp;[{{ document.version }}]
+                        <em>(no label provided)</em>
+                    </td>
+                    <td>
+                        {{ document.version }}
                     </td>
                     <td>
                         {{ document.modified | date:'yyyy-MM-dd HH:mm:ss Z' }}
