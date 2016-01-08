@@ -61,29 +61,41 @@
                   <th>
                       <span ng-click="project_controller.change_customization_sort_type('ontology')">Ontology</span>
                       <span ng-show="project_controller.customization_sort_type=='ontology'">
-                          <span ng-show="project_controller.customization_sort_reverse" class="glyphicon glyphicon-menu-up"></span>
-                          <span ng-hide="project_controller.customization_sort_reverse" class="glyphicon glyphicon-menu-down"></span>
+                          <span ng-show="project_controller.customization_sort_reverse" class="glyphicon glyphicon-sort-by-alphabet-alt"></span>
+                          <span ng-hide="project_controller.customization_sort_reverse" class="glyphicon glyphicon-sort-by-alphabet"></span>
+                      </span>
+                      <span ng-hide="project_controller.customization_sort_type=='ontology'">
+                          <span class="glyphicon glyphicon-sort text-muted"></span>
                       </span>
                   </th>
                   <th>
                       <span ng-click="project_controller.change_customization_sort_type('proxy')">Document Type</span>
                       <span ng-show="project_controller.customization_sort_type=='proxy'">
-                          <span ng-show="project_controller.customization_sort_reverse" class="glyphicon glyphicon-menu-up"></span>
-                          <span ng-hide="project_controller.customization_sort_reverse" class="glyphicon glyphicon-menu-down"></span>
+                          <span ng-show="project_controller.customization_sort_reverse" class="glyphicon glyphicon-sort-by-alphabet-alt"></span>
+                          <span ng-hide="project_controller.customization_sort_reverse" class="glyphicon glyphicon-sort-by-alphabet"></span>
+                      </span>
+                      <span ng-hide="project_controller.customization_sort_type=='proxy'">
+                          <span class="glyphicon glyphicon-sort text-muted"></span>
                       </span>
                   </th>
                   <th>
                       <span ng-click="project_controller.change_customization_sort_type('name')">Name</span>
                       <span ng-show="project_controller.customization_sort_type=='name'">
-                          <span ng-show="project_controller.customization_sort_reverse" class="glyphicon glyphicon-menu-up"></span>
-                          <span ng-hide="project_controller.customization_sort_reverse" class="glyphicon glyphicon-menu-down"></span>
+                          <span ng-show="project_controller.customization_sort_reverse" class="glyphicon glyphicon-sort-by-alphabet-alt"></span>
+                          <span ng-hide="project_controller.customization_sort_reverse" class="glyphicon glyphicon-sort-by-alphabet"></span>
+                      </span>
+                      <span ng-hide="project_controller.customization_sort_type=='name'">
+                          <span class="glyphicon glyphicon-sort text-muted"></span>
                       </span>
                   </th>
                   <th>
                       <span ng-click="project_controller.change_customization_sort_type('modified')">Last Modified</span>
                       <span ng-show="project_controller.customization_sort_type=='modified'">
-                          <span ng-show="project_controller.customization_sort_reverse" class="glyphicon glyphicon-menu-up"></span>
-                          <span ng-hide="project_controller.customization_sort_reverse" class="glyphicon glyphicon-menu-down"></span>
+                          <span ng-show="project_controller.customization_sort_reverse" class="glyphicon glyphicon-sort-by-order-alt"></span>
+                          <span ng-hide="project_controller.customization_sort_reverse" class="glyphicon glyphicon-sort-by-order"></span>
+                      </span>
+                      <span ng-hide="project_controller.customization_sort_type=='modified'">
+                          <span class="glyphicon glyphicon-sort text-muted"></span>
                       </span>
                   </th>
                   <th>&nbsp;</th>
