@@ -9,6 +9,9 @@
       <span ng-show="project_controller.has_unsynchronized_document">
           A <span class="unsynchronized">red font</span> indicates the document is unsynchronized with this project's current set of ontologies and vocabularies.&nbsp;
       </span>
+      <span ng-show="project_controller.has_incomplete_document">
+        A pushpin icon indicates the document is incomplete.&nbsp;
+      </span>
   </div>
 
   <table class="table table-striped">
@@ -65,11 +68,15 @@
               {% verbatim ng %}
                 <td>{{ document.ontology }}</td>
                 <td>{{ document.proxy }}</td>
-                <td ng-show="document.label">
-                    {{ document.label }}
-                </td>
-                <td ng-hide="document.label">
-                    <em>(no label provided)</em>
+                <td>
+                    <span ng-show="document.label">
+                        {{ document.label }}
+                    </span>
+                    <span ng-hide="document.label">
+                        <em>(no label provided)</em>
+                    </span>
+                    &nbsp;<span ng-show="!document.is_complete"
+                                class="glyphicon glyphicon-pushpin"/>
                 </td>
                 <td>
                     {{ document.version }}

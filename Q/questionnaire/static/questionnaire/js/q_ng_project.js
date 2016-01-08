@@ -52,6 +52,7 @@
         project_controller.has_default_customization = false;
         project_controller.has_unsynchronized_customization = false;
         project_controller.has_unsynchronized_document = false;
+        project_controller.has_incomplete_document = false;
 
         /* after all this work to get $watch working, it turns out not to fire for selects */
         /* so I just bind ng-select to the fns below */
@@ -124,7 +125,12 @@
                     $.each(project_controller.documents, function(i, d) {
                         if (d.synchronization.length) {
                             project_controller.has_unsynchronized_document = true;
-                            return false;  // break out of the loop
+                        }
+                        if (!d.is_complete) {
+                            project_controller.has_incomplete_document = true;
+                        }
+                        if (project_controller.has_unsynchronized_document && project_controller.has_incomplete_document) {
+                            return false;  // break out of the loop if we've already found matches
                         }
                     });
                 })
