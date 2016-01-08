@@ -349,6 +349,12 @@ class MetadataModel(MPTTModel):
     def get_model_key(self):
         return u"%s_%s" % (self.vocabulary_key, self.component_key)
 
+    def get_last_publication_date(self):
+        if self.is_published:
+            last_publication = self.publications.all()[0]
+            return last_publication.created
+        return None
+
     def reset(self):
         # this resets values according to the proxy
         # to reset values according to the customizer, you must go through the corresponding form

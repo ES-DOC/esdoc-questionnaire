@@ -39,8 +39,8 @@
                   <span>Version</span>
               </th>
               <th>
-                  <span ng-click="project_controller.change_document_sort_type('modified')">Last Modified</span>
-                  <span ng-show="project_controller.document_sort_type=='modified'">
+                  <span ng-click="project_controller.change_document_sort_type('published')">Last Published</span>
+                  <span ng-show="project_controller.document_sort_type=='published'">
                       <span ng-show="project_controller.document_sort_reverse" class="glyphicon glyphicon-menu-up"></span>
                       <span ng-hide="project_controller.document_sort_reverse" class="glyphicon glyphicon-menu-down"></span>
                   </span>
@@ -62,8 +62,11 @@
                 <td>
                     {{ document.version }}
                 </td>
-                <td>
-                    {{ document.modified | date:'yyyy-MM-dd HH:mm:ss Z' }}
+                <td ng-show="document.published">
+                    {{ document.published | date:'yyyy-MM-dd HH:mm:ss Z' }}
+                </td>
+                <td ng-hide="document.published">
+                    <em>(document unpublished)</em>
                 </td>
                 <td>
                     <a class="btn btn-sm btn-info" target="_blank" href="/{{ project_controller.project.name }}/view/{{ document.path }}">view in editor</a>

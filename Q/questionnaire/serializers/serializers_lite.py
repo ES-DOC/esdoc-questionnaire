@@ -32,7 +32,7 @@ class MetadataModelSerializerLite(serializers.ModelSerializer):
             "id", "guid", "created", "modified", "name", "version",
             "description", "ontology", "proxy", "project", "is_document",
             "is_complete", "is_root", "is_published", "is_active",
-            "synchronization", "label", "path",
+            "published", "synchronization", "label", "path",
         )
 
     proxy = serializers.StringRelatedField(read_only=True)
@@ -41,6 +41,7 @@ class MetadataModelSerializerLite(serializers.ModelSerializer):
     ontology = serializers.SerializerMethodField()  # method_name="get_ontology"
     is_complete = serializers.SerializerMethodField()  # method_name="get_is_complete"
     is_active = serializers.SerializerMethodField()  # method_name="get_is_active"
+    published = serializers.SerializerMethodField()  # method_name="get_published"
     synchronization = serializers.SerializerMethodField()  # method_name="get_synchronization"
     label = serializers.SerializerMethodField()  # method_name="get_label"
     path = serializers.SerializerMethodField()  # method_name="get_path"
@@ -59,6 +60,9 @@ class MetadataModelSerializerLite(serializers.ModelSerializer):
 
     def get_is_active(self, obj):
         return obj.active
+
+    def get_published(self, obj):
+        return obj.get_last_publication_date()
 
     def get_synchronization(self, obj):
         return []
