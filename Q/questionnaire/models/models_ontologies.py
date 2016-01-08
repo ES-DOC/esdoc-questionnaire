@@ -14,6 +14,7 @@ from django.db import models
 from django.contrib import messages
 from django.conf import settings
 from django.dispatch import Signal
+from django.utils import timezone
 from lxml import etree as et
 from uuid import uuid4
 import os
@@ -125,6 +126,7 @@ class QOntology(models.Model):
         self._original_key = self.key
 
     def save(self, *args, **kwargs):
+        self.modified = timezone.now()
         _current_key = self.get_key()
         if _current_key != self._original_key:
             self.key = self.get_key()

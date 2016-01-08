@@ -13,6 +13,7 @@ __author__ = 'allyn.treshansky'
 from django.db import models
 from mptt.models import MPTTModel, TreeForeignKey
 from django.template.loader import render_to_string
+from django.utils import timezone
 from uuid import uuid4
 
 from Q.questionnaire import APP_LABEL
@@ -105,9 +106,12 @@ class QModel(MPTTModel):
             return None
 
     def save(self, *args, **kwargs):
+        self.modified = timezone.now()
+
         increment_version = kwargs.pop("increment_version", True)
         if increment_version:
             self.increment_minor_version()
+
         super(QModel, self).save(*args, **kwargs)
 
     def publish(self, force_save=True, format=QPublicationFormats.ESDOC_XML):

@@ -15,6 +15,7 @@ from django.contrib import messages
 from django.conf import settings
 from django.dispatch import Signal
 from django.template.defaultfilters import slugify
+from django.utils import timezone
 from lxml import etree as et
 from uuid import uuid4
 import os
@@ -103,6 +104,10 @@ class QVocabulary(models.Model):
             return u"%s [%s]" % (self.name, self.version)
         else:
             return u"%s" % (self.name)
+
+    def save(self, *args, **kwargs):
+        self.modified = timezone.now()
+        super(QVocabulary, self).save(*args, **kwargs)
 
     def clean(self):
         # force name to be lowercase

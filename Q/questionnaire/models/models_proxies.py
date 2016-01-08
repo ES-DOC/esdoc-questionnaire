@@ -12,6 +12,7 @@ __author__ = 'allyn.treshansky'
 
 from django.db import models
 from django.template.defaultfilters import slugify
+from django.utils import timezone
 from mptt.models import MPTTModel, TreeForeignKey
 from uuid import uuid4
 
@@ -60,6 +61,9 @@ class QProxy(models.Model):
 
         return pretty_string(self.name)
 
+    def save(self, *args, **kwargs):
+        self.modified = timezone.now()
+        super(QProxy, self).save(*args, **kwargs)
 
 class QModelProxy(QProxy):
 

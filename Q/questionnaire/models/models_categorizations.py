@@ -14,6 +14,7 @@ from django.db import models
 from django.conf import settings
 from django.dispatch import Signal
 from django.contrib import messages
+from django.utils import timezone
 from django.template.defaultfilters import slugify
 from uuid import uuid4
 from lxml import etree as et
@@ -95,6 +96,10 @@ class QCategorization(models.Model):
             return u"%s [%s]" % (self.name, self.version)
         else:
             return u"%s" % (self.name)
+
+    def save(self, *args, **kwargs):
+        self.modified = timezone.now()
+        super(QCategorization, self).save(*args, **kwargs)
 
     def clean(self):
         # force name to be lowercase

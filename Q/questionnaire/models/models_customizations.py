@@ -14,6 +14,7 @@ from django.db import models
 from django.db.models.fields import FieldDoesNotExist
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.utils.translation import ugettext_lazy as _
+from django.utils import timezone
 from uuid import uuid4, UUID as generate_uuid
 
 from collections import OrderedDict
@@ -422,6 +423,10 @@ class QCustomization(models.Model):
     def __unicode__(self):
         return u"%s" % self.name
 
+    def save(self, *args, **kwargs):
+        self.modified = timezone.now()
+        super(QCustomization, self).save(*args, **kwargs)
+
     def __init__(self, *args, **kwargs):
         super(QCustomization, self).__init__(*args, **kwargs)
 
@@ -583,6 +588,7 @@ class QModelCustomization(QCustomization):
     def save(self, *args, **kwargs):
         # force all (custom) "clean" methods to run
         self.full_clean()
+
         super(QModelCustomization, self).save(*args, **kwargs)
 
     def get_vocabularies(self):
