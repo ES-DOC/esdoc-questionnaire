@@ -15,7 +15,6 @@ from django.contrib import messages
 from django.conf import settings
 from django.dispatch import Signal
 from django.template.defaultfilters import slugify
-from django.utils import timezone
 from lxml import etree as et
 from uuid import uuid4
 import os
@@ -84,7 +83,7 @@ class QVocabulary(models.Model):
 
     guid = models.UUIDField(default=uuid4, editable=False)
     created = models.DateTimeField(auto_now_add=True, editable=False)
-    modified = models.DateTimeField(auto_now_add=True, editable=False)
+    modified = models.DateTimeField(auto_now=True, editable=False)
 
     name = models.CharField(max_length=LIL_STRING, blank=False, validators=[validate_no_spaces, validate_no_bad_chars])
     version = QVersionField(blank=False)
@@ -104,10 +103,6 @@ class QVocabulary(models.Model):
             return u"%s [%s]" % (self.name, self.version)
         else:
             return u"%s" % (self.name)
-
-    def save(self, *args, **kwargs):
-        self.modified = timezone.now()
-        super(QVocabulary, self).save(*args, **kwargs)
 
     def clean(self):
         # force name to be lowercase

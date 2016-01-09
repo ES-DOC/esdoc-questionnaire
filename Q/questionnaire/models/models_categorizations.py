@@ -14,7 +14,6 @@ from django.db import models
 from django.conf import settings
 from django.dispatch import Signal
 from django.contrib import messages
-from django.utils import timezone
 from django.template.defaultfilters import slugify
 from uuid import uuid4
 from lxml import etree as et
@@ -79,7 +78,7 @@ class QCategorization(models.Model):
 
     guid = models.UUIDField(default=uuid4, editable=False)
     created = models.DateTimeField(auto_now_add=True, editable=False)
-    modified = models.DateTimeField(auto_now_add=True, editable=False)
+    modified = models.DateTimeField(auto_now=True, editable=False)
 
     name = models.CharField(max_length=LIL_STRING, blank=False)
     version = QVersionField(blank=True, null=True)
@@ -96,10 +95,6 @@ class QCategorization(models.Model):
             return u"%s [%s]" % (self.name, self.version)
         else:
             return u"%s" % (self.name)
-
-    def save(self, *args, **kwargs):
-        self.modified = timezone.now()
-        super(QCategorization, self).save(*args, **kwargs)
 
     def clean(self):
         # force name to be lowercase

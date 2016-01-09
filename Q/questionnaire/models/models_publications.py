@@ -12,7 +12,6 @@ __author__ = 'allyn.treshansky'
 
 from django.db import models
 from django.conf import settings
-from django.utils import timezone
 import os
 
 from Q.questionnaire.q_utils import EnumeratedType, EnumeratedTypeList
@@ -49,7 +48,7 @@ class QPublication(models.Model):
 
     name = models.CharField(max_length=64, blank=False)
     created = models.DateTimeField(auto_now_add=True, editable=False)
-    modified = models.DateTimeField(auto_now_add=True, editable=False)
+    modified = models.DateTimeField(auto_now=True, editable=False)
     version = models.IntegerField(blank=False)
 
     format = models.CharField(
@@ -64,10 +63,6 @@ class QPublication(models.Model):
 
     def __unicode__(self):
         return u"%s_%s" % (self.name, self.version)
-
-    def save(self, *args, **kwargs):
-        self.modified = timezone.now()
-        super(QPublication, self).save(*args, **kwargs)
 
     def get_file_path(self):
         file_name = u"%s_%s.xml" % (self.name, self.version)
