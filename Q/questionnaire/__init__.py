@@ -38,8 +38,8 @@ q_logger = logging.getLogger(APP_LABEL)
 
 __version_info__ = {
     'major': 0.15,
-    'minor': 0,
-    'patch': 1,
+    'minor': 1,
+    'patch': 0,
 }
 
 

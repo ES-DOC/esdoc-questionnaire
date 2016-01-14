@@ -2,6 +2,11 @@ CIM Questionnaire Change History
 
 For full release notes, please see https://earthsystemcog.org/projects/es-doc-models/releases_questionnaire
 
+v0.15.1.0
+* improved the look-and-feel of the Project Page
+* fixed a bug preventing the 'last modification time' of models from being saved propertly
+* added a formal logging system
+
 v0.15.0.1
 * ensured "read-only" forms do not require authentication
 * ensured _all_ legacy dycore URLs map to appropriate views
