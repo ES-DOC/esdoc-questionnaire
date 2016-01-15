@@ -99,14 +99,14 @@ with open(os.path.join(BACKUP_DIR, "log.txt"), 'a') as log_file:
         check_call(backup_args, env=ENV)
         msg = "successfully created '{0}'".format(backup_file)
         print(msg)
-        log_file.write(TIMESTAMP + ": " + msg)
+        log_file.write("{0}: {1}\n".format(TIMESTAMP, msg))
     except OSError:
         msg = "unable to find {0}".format(backup_cmd)
         raise QError(msg)
     except CalledProcessError as e:
         msg = "error creating '{0}'".format(backup_file)
         print(msg)
-        log_file.write(TIMESTAMP + ": " + msg)
+        log_file.write("{0}: {1}\n".format(TIMESTAMP, msg))
 
 # clean up...
 
