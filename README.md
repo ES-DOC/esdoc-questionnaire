@@ -28,7 +28,7 @@ What are the contents of esdoc-questionnaire ?
 --------------------------------------
 
     \Q Django project root
-    \samples sample data to play with
+    \media sample data to play with & generated data to register
 
 
 Further Information ?
