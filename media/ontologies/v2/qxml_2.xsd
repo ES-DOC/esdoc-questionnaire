@@ -4,14 +4,15 @@
 
     <xs:annotation>
         <xs:documentation>
-            This schema defines the format of CIM Version files for the CIM Questionnaire.
+            This schema defines the format of CIM2 Ontology files (QXML) for the CIM Questionnaire.
         </xs:documentation>
     </xs:annotation>
 
-    <xs:element name="version">
+    <xs:element name="ontology">
         <xs:complexType>
             <xs:sequence>
-                <xs:element name="name" type="xs:string"/>
+                <xs:element name="name" type="xs:string" minOccurs="1"/>
+                <xs:element name="version" type="xs:string" minOccurs="0"/>
                 <xs:element name="description" type="xs:string" minOccurs="0"/>
                 <xs:element name="classes">
                     <xs:complexType>
@@ -36,22 +37,26 @@
                 </xs:complexType>
             </xs:element>
         </xs:sequence>
+        <xs:attribute name="package" type="xs:string" use="required"/>
         <xs:attribute name="stereotype" type="xs:string" use="optional"/>
-        <xs:attribute name="namespace" type="xs:string" use="optional"/>
-        <xs:attribute name="package" type="xs:string" use="required"/>        
     </xs:complexType>
 
     <xs:complexType name="AttributeType">
         <xs:sequence>
             <xs:element name="name" type="xs:string"/>
-            <xs:element name="description" type="xs:string" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="description" type="xs:string" minOccurs="0"/>
+            <xs:element name="cardinality" minOccurs="1">
+                <xs:complexType>
+                    <xs:attribute name="min" use="required"/>
+                    <xs:attribute name="max" use="required"/>
+                </xs:complexType>
+            </xs:element>
             <xs:element name="type">
                 <xs:simpleType>
                     <xs:restriction base="xs:string">
                         <xs:enumeration value="ATOMIC"/>
-                        <xs:enumeration value="RELATIONSHIP"/>
                         <xs:enumeration value="ENUMERATION"/>
-                        <xs:enumeration value="PROPERTY"/>
+                        <xs:enumeration value="RELATIONSHIP"/>
                     </xs:restriction>
                 </xs:simpleType>
             </xs:element>
@@ -62,26 +67,24 @@
                 />
             </xs:choice>
         </xs:sequence>
-        <xs:attribute name="is_label" type="xs:boolean"/>
+        <xs:attribute name="package" type="xs:string" use="required"/>
         <xs:attribute name="stereotype" type="xs:string" use="optional"/>
-        <xs:attribute name="namespace" type="xs:string" use="optional"/>
-        <xs:attribute name="required" type="xs:boolean" use="optional"/>
+        <xs:attribute name="is_label" type="xs:boolean" use="optional"/>
     </xs:complexType>
 
     <xs:complexType name="AtomicType">
         <xs:sequence>
-            <xs:element name="atomic_type" minOccurs="0" maxOccurs="1">
+            <xs:element name="atomic_type" minOccurs="1">
                 <xs:simpleType>
                     <xs:restriction base="xs:string">
-                        <xs:enumeration value=""/>
                         <xs:enumeration value="BOOLEAN"/>
                         <xs:enumeration value="DATE"/>
                         <xs:enumeration value="DATETIME"/>
                         <xs:enumeration value="DECIMAL"/>
                         <xs:enumeration value="EMAIL"/>
                         <xs:enumeration value="INTEGER"/>
-                        <xs:enumeration value="STRING"/>
                         <!-- default -->
+                        <xs:enumeration value="STRING"/>
                         <xs:enumeration value="TEXT"/>
                         <xs:enumeration value="TIME"/>
                         <xs:enumeration value="URL"/>
@@ -93,22 +96,24 @@
 
     <xs:complexType name="EnumerationType">
         <xs:sequence>
-            <xs:element name="choice" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="choice" minOccurs="0" maxOccurs="unbounded">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="value" minOccurs="1"/>
+                        <xs:element name="description" minOccurs="0"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
         </xs:sequence>
-        <xs:attribute name="open" type="xs:boolean"/>
-        <xs:attribute name="multi" type="xs:boolean"/>
-        <xs:attribute name="nullable" type="xs:boolean"/>
+        <xs:attribute name="enumeration_name" type="xs:string" use="optional"/>
+        <xs:attribute name="is_open" type="xs:boolean" use="required"/>
+        <xs:attribute name="is_multi" type="xs:boolean" use="required"/>
+        <xs:attribute name="is_nillable" type="xs:boolean" use="required"/>
     </xs:complexType>
 
     <xs:complexType name="RelationshipType">
         <xs:sequence>
-            <xs:element name="cardinality" minOccurs="0" maxOccurs="1">
-                <xs:complexType>
-                    <xs:attribute name="min" use="required"/>
-                    <xs:attribute name="max" use="required"/>
-                </xs:complexType>
-            </xs:element>
-            <xs:element name="target" type="NonEmptyStringType" minOccurs="1" maxOccurs="1"/>
+            <xs:element name="target" type="NonEmptyStringType" minOccurs="1"/>
         </xs:sequence>
     </xs:complexType>
 
