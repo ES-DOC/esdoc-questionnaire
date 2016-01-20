@@ -14,6 +14,7 @@ from django.db import models
 from django.contrib import messages
 from django.conf import settings
 from django.dispatch import Signal
+from django.core.exceptions import ValidationError
 from lxml import etree as et
 from uuid import uuid4
 import os
@@ -23,7 +24,7 @@ from Q.questionnaire import APP_LABEL
 from Q.questionnaire.q_fields import QFileField, QVersionField, QPropertyTypes, QAtomicPropertyTypes
 from Q.questionnaire.models.models_customizations import QModelCustomization
 from Q.questionnaire.models.models_proxies import QModelProxy, QStandardPropertyProxy
-from Q.questionnaire.q_utils import validate_file_extension, validate_file_schema, validate_no_spaces, validate_no_bad_chars, xpath_fix, remove_spaces_and_linebreaks, get_index
+from Q.questionnaire.q_utils import QError, validate_file_extension, validate_file_schema, validate_no_spaces, validate_no_bad_chars, xpath_fix, remove_spaces_and_linebreaks, get_index
 from Q.questionnaire.q_constants import *
 
 ###################
@@ -48,6 +49,9 @@ UPLOAD_PATH = os.path.join(APP_LABEL, UPLOAD_DIR)  # this will be concatenated w
 ####################
 # local validators #
 ####################
+
+# these are no longer being used, b/c file validation is dependant on what type of ontology this is (CIM1 vs CIM2)
+# therefore, validation takes place w/in the "clean" fn - when I have access to the type field as well as the file field
 
 def validate_ontology_file_extension(value):
     valid_extensions = ["xml"]
@@ -101,12 +105,12 @@ class QOntology(models.Model):
     # I need to handle CIM 1.x differently than CIM 2.x
     type = models.CharField(max_length=LIL_STRING, blank=False, choices=[(ct.get_type(), ct.get_name()) for ct in CIMTypes])
 
-    # "key" is a way of uniquely but intuitively referring to this ontology in a URL
+    # "key" is a way of uniquely but intuitively referring to this ontology in a URL and elsewhere
     key = models.CharField(max_length=SMALL_STRING, blank=False, editable=False)
 
     url = models.URLField(blank=False)
     url.help_text = "This URL may be used as the namespace of serialized XML documents"
-    file = QFileField(blank=False, upload_to=UPLOAD_PATH, validators=[validate_ontology_file_extension, validate_ontology_file_schema, ])
+    file = QFileField(blank=False, upload_to=UPLOAD_PATH)
 
     categorization = models.ForeignKey("QCategorization", blank=True, null=True, related_name="ontologies", on_delete=models.SET_NULL)
 
@@ -136,6 +140,25 @@ class QOntology(models.Model):
         # this avoids hacky methods of ensuring case-insensitive uniqueness
         self.name = self.name.lower()
 
+        # also, validate the file according to the QXML Schema
+        # (I can't do this using "validate_ontology_file_schema" above)
+        # (b/c the specific schema used changes based on the type of QOntology)
+        if self.is_cim2():
+            schema_path = os.path.join(settings.STATIC_ROOT, APP_LABEL, "xml/qxml_2.xsd")
+        elif self.is_cim1():
+            schema_path = os.path.join(settings.STATIC_ROOT, APP_LABEL, "xml/qxml_1.xsd")
+        else:
+            msg = "Unable to determine the ontology type"
+            raise QError(msg)
+
+        try:
+            import ipdb; ipdb.set_trace()
+            validate_file_schema(self.file, schema_path)
+        except ValidationError as e:
+            raise ValidationError({"file": str(e)})
+
+        return super(QOntology, self).clean()
+
     def get_key(self):
         return u"%s_%s" % (self.name, self.version)
 
@@ -150,10 +173,12 @@ class QOntology(models.Model):
         if self.is_cim2():
             self.register_cim2(**kwargs)
 
-        else:  # self.is_cim1()
-            # if something is not explicitly set to CIM 2.x,
-            # just assume I can treat it like CIM 1.x
+        elif self.is_cim1():
             self.register_cim1(**kwargs)
+
+        else:
+            msg = "Unable to determine the ontology type"
+            raise QError(msg)
 
         self.is_registered = True
         self.last_registered_version = self.version

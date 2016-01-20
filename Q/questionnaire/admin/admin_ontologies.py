@@ -37,7 +37,7 @@ class QOntologyAdminForm(ModelForm):
     class Meta:
         model = QOntology
 
-        fields = ("name", "version", "description", "url", "file", "categorization", "is_registered", "model_proxies", )
+        fields = ("name", "version", "type", "description", "url", "file", "categorization", "is_registered", "model_proxies", )
         readonly_fields = ("is_registered", "model_proxies")
 
     model_proxies = ModelMultipleChoiceField(
