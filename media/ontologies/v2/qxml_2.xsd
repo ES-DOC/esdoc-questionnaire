@@ -96,11 +96,17 @@
 
     <xs:complexType name="EnumerationType">
         <xs:sequence>
-            <xs:element name="choice" minOccurs="0" maxOccurs="unbounded">
+            <xs:element name="choices">
                 <xs:complexType>
                     <xs:sequence>
-                        <xs:element name="value" minOccurs="1"/>
-                        <xs:element name="description" minOccurs="0"/>
+                        <xs:element name="choice" minOccurs="0" maxOccurs="unbounded">
+                            <xs:complexType>
+                                <xs:sequence>
+                                    <xs:element name="value" minOccurs="1"/>
+                                    <xs:element name="description" minOccurs="0"/>
+                                </xs:sequence>
+                            </xs:complexType>
+                        </xs:element>
                     </xs:sequence>
                 </xs:complexType>
             </xs:element>
