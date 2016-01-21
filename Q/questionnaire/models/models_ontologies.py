@@ -25,6 +25,7 @@ from Q.questionnaire.q_fields import QFileField, QVersionField, QPropertyTypes, 
 from Q.questionnaire.models.models_customizations import QModelCustomization
 from Q.questionnaire.models.models_proxies import QModelProxy, QStandardPropertyProxy
 from Q.questionnaire.q_utils import QError, validate_file_extension, validate_file_schema, validate_no_spaces, validate_no_bad_chars, xpath_fix, remove_spaces_and_linebreaks, get_index
+from Q.questionnaire.q_fields import Version
 from Q.questionnaire.q_constants import *
 
 ###################
@@ -68,6 +69,30 @@ def validate_ontology_file_schema(value):
 
 registered_ontology_signal = Signal(providing_args=["realization", "customization", ])
 
+###################
+# some helper fns #
+###################
+
+def get_name_and_version_from_key(key):
+    """
+    given a string representing some QOntology key,
+    splits it into its constituent parts: a name and a version
+    note that the version in the key can be underspecified
+    (for example, "1.10" should match "1.10.0"
+    :param key:
+    :return:
+    """
+    match = re.match("^(.*)_(\d+\.\d+\.\d+|\d+\.\d+|\d+)$", key)  # not the most elegant regex, but you get the point
+
+    if not match:
+        msg = "'{0}' is an invalid key; it should be of the format 'name_version'".format(key)
+        raise QError(msg)
+
+    name, underspecified_version = match.groups()
+    version = Version(underspecified_version).fully_specified()
+
+    return name, version
+
 ####################
 # the actual class #
 ####################
@@ -82,6 +107,19 @@ class QOntologyQuerySet(models.QuerySet):
     def registered(self):
         return self.filter(is_registered=True)
 
+    def get_by_key(self, key):
+        """
+        returns a QOntology matching a given key; owever, that key can be underspecified.
+        (see "get_name_and_version_from_key" above)
+        :param key: QOntology key
+        :return: QOntology or None
+        """
+
+        name, version = get_name_and_version_from_key(key)
+        try:
+            return self.filter(name=name, version=version)
+        except QOntology.DoesNotExist:
+            return self.none()
 
 class QOntology(models.Model):
 
@@ -141,8 +179,8 @@ class QOntology(models.Model):
         self.name = self.name.lower()
 
         # also, validate the file according to the QXML Schema
-        # (I can't do this using "validate_ontology_file_schema" above)
-        # (b/c the specific schema used changes based on the type of QOntology)
+        # (I can't set up this validation in the field definition)
+        # (b/c the specific schema to validate against changes based on the type of QOntology)
         if self.is_cim2():
             schema_path = os.path.join(settings.STATIC_ROOT, APP_LABEL, "xml/qxml_2.xsd")
         elif self.is_cim1():

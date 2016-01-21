@@ -222,17 +222,33 @@ class Version(object):
     def major(self):
         string = str(self)
         numbers = [int(n) for n in string.split(".")]
-        return numbers[0]
+        try:
+            return numbers[0]
+        except IndexError:
+            return 0
 
     def minor(self):
         string = str(self)
         numbers = [int(n) for n in string.split(".")]
-        return numbers[1]
+        try:
+            return numbers[1]
+        except IndexError:
+            return 0
 
     def patch(self):
         string = str(self)
         numbers = [int(n) for n in string.split(".")]
-        return numbers[2]
+        try:
+            return numbers[2]
+        except IndexError:
+            return 0
+
+    def fully_specified(self):
+        return "{0}.{1}.{2}".format(
+            self.major(),
+            self.minor(),
+            self.patch(),
+        )
 
     @classmethod
     def string_to_int(cls, string):

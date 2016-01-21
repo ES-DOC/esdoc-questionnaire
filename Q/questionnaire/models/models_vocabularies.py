@@ -33,6 +33,8 @@ from Q.questionnaire.q_constants import *
 UPLOAD_DIR = "vocabularies"
 UPLOAD_PATH = os.path.join(APP_LABEL, UPLOAD_DIR)  # this will be concatenated w/ MEDIA_ROOT by FileField
 
+# these 2 default values _must_ have the same number of underscores in them
+# (or else "get_vocabulary_key_from_model_key" & "get_component_key_from_model_key" won't work)
 DEFAULT_VOCABULARY_KEY = "DEFAULT_VOCABULARY"
 DEFAULT_COMPONENT_KEY = "DEFAULT_COMPONENT"
 

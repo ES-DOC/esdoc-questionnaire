@@ -58,7 +58,9 @@ def validate_view_arguments(project_name=None, ontology_key=None, document_type=
 
     # try to get the ontology...
     try:
-        ontology = QOntology.objects.get(key=ontology_key, is_registered=True)
+        # this bit allows underspecification of the ontology version...
+        ontology = QOntology.objects.get_by_key(ontology_key).get(is_registered=True)
+        # ontology = QOntology.objects.get(key=ontology_key, is_registered=True)
     except QOntology.DoesNotExist:
         msg = "Cannot find the ontology '%s'.  Has it been registered?" % ontology_key
         validity = False

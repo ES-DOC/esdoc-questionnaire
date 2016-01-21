@@ -52,6 +52,23 @@ class TestQOntolgoy(TestQBase):
         self.assertEqual(self.test_ontology_cim_1.get_key(), test_key)
         self.assertEqual(QOntology.objects.get(key=test_key), self.test_ontology_cim_1)
 
+    def test_ontology_get_name_and_version_from_key(self):
+
+        with self.assertRaises(QError):
+            get_name_and_version_from_key("invalid_key")
+
+        name, version = get_name_and_version_from_key("test_ontology_1")
+        self.assertEqual(name, "test_ontology")
+        self.assertEqual(version, "1.0.0")
+
+        name, version = get_name_and_version_from_key("test_ontology_1.2")
+        self.assertEqual(name, "test_ontology")
+        self.assertEqual(version, "1.2.0")
+
+        name, version = get_name_and_version_from_key("test_ontology_1.2.3")
+        self.assertEqual(name, "test_ontology")
+        self.assertEqual(version, "1.2.3")
+
     def test_ontology_validity_cim1(self):
         invalid_ontology = create_ontology(
             filename="test_ontology_2.xml",
