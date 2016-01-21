@@ -116,10 +116,7 @@ class QOntologyQuerySet(models.QuerySet):
         """
 
         name, version = get_name_and_version_from_key(key)
-        try:
-            return self.filter(name=name, version=version)
-        except QOntology.DoesNotExist:
-            return self.none()
+        return self.filter(name=name, version=version)
 
 class QOntology(models.Model):
 
