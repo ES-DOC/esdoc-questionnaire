@@ -152,7 +152,6 @@ class QOntology(models.Model):
             raise QError(msg)
 
         try:
-            import ipdb; ipdb.set_trace()
             validate_file_schema(self.file, schema_path)
         except ValidationError as e:
             raise ValidationError({"file": str(e)})

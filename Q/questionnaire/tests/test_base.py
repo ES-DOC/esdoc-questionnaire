@@ -38,12 +38,7 @@ TEST_FIXTURE_PATH = rel("fixtures/q_testdata.json")
 # but for some tests, I want to actually go through the upload/(re)register/delete process
 # hence these files...
 
-TEST_FILE_PATH = rel("tests/samples")
-TEST_FILES = [
-    "test_categorization.xml",
-    "test_ontology.xml",
-    "test_vocabulary.xml",
-]
+TEST_FILE_PATH = rel("tests/media")
 
 # allows me to "trick" the test runner into thinking the test client sent an AJAX request
 TEST_AJAX_REQUEST = {
@@ -400,14 +395,16 @@ def create_ontology(**kwargs):
 
     from Q.questionnaire.models.models_ontologies import QOntology, CIMTypes
 
-    file_path = kwargs.pop("file_path", os.path.join(TEST_FILE_PATH, "test_ontology.xml"))
+    _filename = kwargs.pop("filename")
+    _type = kwargs.pop("type")
     _name = kwargs.pop("name", "test_ontology")
     _version = kwargs.pop("version", 1)
     _description = kwargs.pop("description", None)
     _url = kwargs.pop("url", "http://www.test.com")
-    _type = kwargs.pop("type", CIMTypes.CIM1.get_type())
 
-    ontology_file = open(file_path)
+    ontology_file_path = kwargs.pop("file_path", os.path.join(TEST_FILE_PATH, _filename))
+    ontology_file = open(ontology_file_path)
+
     ontology = QOntology(
         name=_name,
         version=_version,
