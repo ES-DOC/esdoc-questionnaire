@@ -31,13 +31,21 @@ class TestQOntolgoy(TestQBase):
             type=CIMTypes.CIM1.get_type(),
         )
 
+        self.test_ontology_cim_2 = create_ontology(
+            filename="test_ontology_2.xml",
+            name="test_ontology",
+            version="2.0",
+            type=CIMTypes.CIM2.get_type(),
+        )
+
     def tearDown(self):
 
         # don't do the base tearDown
         # super(TestQOntolgoy, self).tearDown()
 
-        # delete the test ontology
+        # delete the test ontologies
         remove_ontology(ontology=self.test_ontology_cim_1)
+        remove_ontology(ontology=self.test_ontology_cim_2)
 
     def test_ontology_get_key(self):
 
@@ -141,6 +149,13 @@ class TestQOntolgoy(TestQBase):
         with self.assertRaises(ValidationError):
             # this is an invalid CIM2 file (it is a CIM1 file)
             invalid_ontology.full_clean()
+
+    def test_ontology_register_cim2(self):
+
+        import ipdb; ipdb.set_trace()
+        self.assertFalse(self.test_ontology_cim_2.is_registered)
+        self.test_ontology_cim_2.register()
+        self.assertTrue(self.test_ontology_cim_2.is_registered)
 
     @incomplete_test
     def test_ontology_reregister(self):
