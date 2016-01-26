@@ -393,7 +393,7 @@ class QOntology(models.Model):
 
             model_proxy_ontology = self
             model_proxy_name = xpath_fix(model_proxy, "name/text()")[0]
-            model_proxy_package = get_index(xpath_fix(model_proxy, "@package"), 0)
+            model_proxy_package = xpath_fix(model_proxy, "@package")[0]
             model_proxy_stereotype = get_index(xpath_fix(model_proxy, "@stereotype"), 0)
             model_proxy_documentation = get_index(xpath_fix(model_proxy, "description/text()"), 0)
             if model_proxy_documentation:
@@ -402,6 +402,7 @@ class QOntology(models.Model):
                 model_proxy_documentation = u""
 
             (new_model_proxy, created_model_proxy) = QModelProxy.objects.get_or_create(
+                package=model_proxy_package,
                 ontology=model_proxy_ontology,
                 name=model_proxy_name,
             )
@@ -410,7 +411,6 @@ class QOntology(models.Model):
                 recategorization_needed = True
 
             new_model_proxy.order = i + 1
-            new_model_proxy.package = model_proxy_package
             new_model_proxy.stereotype = model_proxy_stereotype
             new_model_proxy.documentation = model_proxy_documentation
             new_model_proxy.save()
@@ -423,7 +423,8 @@ class QOntology(models.Model):
 
                 property_proxy_name = re.sub(r'\.', '_', str(xpath_fix(property_proxy, "name/text()")[0]))
                 property_proxy_field_type = xpath_fix(property_proxy, "type/text()")[0]
-                property_proxy_package = get_index(xpath_fix(property_proxy, "@package"), 0)
+                # TODO: I AM NOT CURRENTLY USING PACKAGES FOR PROPERTIES, SHOULD I?
+                property_proxy_package = xpath_fix(property_proxy, "@package")[0]
                 property_proxy_stereotype = get_index(xpath_fix(property_proxy, "@stereotype"), 0)
                 # TODO: MAY NEED TO REVISIT HOW LABELS WORK IN CIM2
                 property_proxy_is_label = get_index(xpath_fix(property_proxy, "@is_label"), 0)
@@ -449,7 +450,10 @@ class QOntology(models.Model):
                     # TODO: HOW DO I COPE W/ ENUMERATION CHOICES W/ DESCRIPTIONS ?
                     property_proxy_enumeration_choices.append(xpath_fix(property_proxy_enumeration_choice, "value/text()")[0])
                 # relationship properties...
-                property_proxy_relationship_target_name = get_index(xpath_fix(property_proxy, "relationship/target/text()"), 0)
+                property_proxy_relationship_target_names = "|".join(
+                    # note that each target_name is fully-qualified
+                    xpath_fix(property_proxy, "relationship/targets/target/text()")
+                )
 
                 (new_property_proxy, created_property) = QStandardPropertyProxy.objects.get_or_create(
                     model_proxy=new_model_proxy,
@@ -474,7 +478,7 @@ class QOntology(models.Model):
                 if property_proxy_enumeration_is_nillable:
                     new_property_proxy.enumeration_is_nillable = property_proxy_enumeration_is_nillable == "true"
                 new_property_proxy.enumeration_choices = "|".join(property_proxy_enumeration_choices)
-                new_property_proxy.relationship_target_name = property_proxy_relationship_target_name
+                new_property_proxy.relationship_target_names = property_proxy_relationship_target_names
                 new_property_proxy.save()
                 new_property_proxies.append(new_property_proxy)
 

@@ -138,6 +138,10 @@ class QStandardPropertyProxy(QPropertyProxy):
     relationship_target_name = models.CharField(max_length=BIG_STRING, blank=True, null=True)  # set during registration
     relationship_target_model = models.ForeignKey("QModelProxy", blank=True, null=True)  # set during reset (after all models have been registered)
 
+    # new in v0.16.0.0...
+    relationship_target_names = models.TextField(blank=False, default="")  # set during registration
+    relationship_target_models = models.ManyToManyField("QModelProxy", blank=True, related_name="+")  # set during reset (after all models have been registered)
+
     def reset(self):
 
         if self.field_type == QPropertyTypes.ATOMIC:
@@ -147,14 +151,20 @@ class QStandardPropertyProxy(QPropertyProxy):
             pass
 
         elif self.field_type == QPropertyTypes.RELATIONSHIP:
+            self.relationship_target_models.clear()
             ontology = self.model_proxy.ontology
-            target_name = self.relationship_target_name
-            try:
-                target_model = QModelProxy.objects.get(ontology=ontology, name__iexact=target_name)
-                self.relationship_target_model = target_model
-            except QModelProxy.DoesNotExist:
-                msg = "unable to locate model '%s' in ontology '%s'" % (target_name, ontology)
-                raise QError(msg)
+            target_names = self.relationship_target_names.split('|')
+            for target_name in target_names:
+                try:
+                    if '.' in target_name:
+                        package, name = target_name.split('.')
+                        target_model = QModelProxy.objects.get(ontology=ontology, package__iexact=package, name__iexact=name)
+                    else:
+                        target_model = QModelProxy.objects.get(ontology=ontology, name__iexact=target_name)
+                    self.relationship_target_models.add(target_model)
+                except QModelProxy.DoesNotExist:
+                    msg = "unable to locate model '%s' in ontology '%s'" % (target_name, ontology)
+                    raise QError(msg)
 
 
 SCIENTIFIC_PROPERTY_CHOICES = [
