@@ -79,6 +79,12 @@ class QModel(MPTTModel):
     def is_unsynchronized(self):
         return not self.is_synchronized()
 
+    def is_cim1(self):
+        return self.proxy.is_cim1()
+
+    def is_cim2(self):
+        return self.proxy.is_cim2()
+
     def get_major_version(self):
         major, minor = self.version.split(".")
         return major
@@ -202,6 +208,12 @@ class QStandardProperty(QProperty):
     name = models.CharField(max_length=LIL_STRING, blank=True)
 
     atomic_value = models.TextField(max_length=HUGE_STRING, blank=True, null=True)
+
+    def is_cim1(self):
+        return self.proxy.is_cim1()
+
+    def is_cim2(self):
+        return self.proxy.is_cim2()
 
 
 class QScientificProperty(QProperty):

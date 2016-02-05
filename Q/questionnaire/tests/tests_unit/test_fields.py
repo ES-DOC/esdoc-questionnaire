@@ -237,3 +237,29 @@ class Test(TestQBase):
             test_field_model.version = "1.2.3.4"
             test_field_model.save()
 
+    def test_version_field_contribute_to_class(self):
+        test_field_model = TestFieldsModel(name="test")
+        test_field_model.version = "1.2.3"
+        test_field_model.save()
+        test_field_model.refresh_from_db()
+
+        major = test_field_model.get_version_major()
+        self.assertEqual(major, 1)
+
+        minor = test_field_model.get_version_minor()
+        self.assertEqual(minor, 2)
+
+        patch = test_field_model.get_version_patch()
+        self.assertEqual(patch, 3)
+
+    def test_version_field_underspecified(self):
+        test_field_model = TestFieldsModel(name="test")
+        test_field_model.version = "1.2"
+        test_field_model.save()
+        test_field_model.refresh_from_db()
+
+        fully_specified_version = Version("1.2.0")
+        self.assertEqual(fully_specified_version, test_field_model.version)
+
+        patch = test_field_model.get_version_patch()
+        self.assertEqual(patch, 0)

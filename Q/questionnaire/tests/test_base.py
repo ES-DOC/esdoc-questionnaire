@@ -65,6 +65,7 @@ class TestModel(models.Model):
         # THIS IS IMPORTANT: since migrations have been incorporated into v1.7,
         # I can no longer use the app_label of a listed (and therefore migrated) application;
         # instead, I comment it out and let any subclasses use the local test application
+        # TODO: I AM GETTING DEPRECATION WARNINGS ABOUT THIS
         # app_label = APP_LABEL
         abstract = True
 
@@ -368,20 +369,29 @@ class TestQBase(TestCase):
 def create_categorization(**kwargs):
 
     from Q.questionnaire.models.models_categorizations import QCategorization
+    from Q.questionnaire.q_utils import CIMTypes
 
-    file_path = kwargs.pop("file_path", os.path.join(TEST_FILE_PATH, "test_categorization.xml"))
+    _filename = kwargs.pop("filename")
+    _type = kwargs.pop("type")
     _name = kwargs.pop("name", "test_categorization")
-    _version = kwargs.pop("version", None)
+    _version = kwargs.pop("version", 1)
     _description = kwargs.pop("description", None)
 
-    categorization_file = open(file_path)
-    categorization = QCategorization(
-        name=_name,
-        version=_version,
-        description=_description,
-        file=SimpleUploadedFile(categorization_file.name, categorization_file.read())
-    )
-    categorization.save()
+    categorization_file_path = kwargs.pop("file_path", os.path.join(TEST_FILE_PATH, _filename))
+
+    with open(categorization_file_path, "r") as categorization_file:
+
+        categorization = QCategorization(
+            name=_name,
+            version=_version,
+            description=_description,
+            type=_type,
+            file=SimpleUploadedFile(categorization_file.name, categorization_file.read())
+        )
+        categorization.save()
+
+    categorization_file.closed
+
     return categorization
 
 
@@ -403,17 +413,21 @@ def create_ontology(**kwargs):
     _url = kwargs.pop("url", "http://www.test.com")
 
     ontology_file_path = kwargs.pop("file_path", os.path.join(TEST_FILE_PATH, _filename))
-    ontology_file = open(ontology_file_path)
 
-    ontology = QOntology(
-        name=_name,
-        version=_version,
-        description=_description,
-        url=_url,
-        type=_type,
-        file=SimpleUploadedFile(ontology_file.name, ontology_file.read())
-    )
-    ontology.save()
+    with open(ontology_file_path, "r") as ontology_file:
+
+        ontology = QOntology(
+            name=_name,
+            version=_version,
+            description=_description,
+            url=_url,
+            type=_type,
+            file=SimpleUploadedFile(ontology_file.name, ontology_file.read())
+        )
+        ontology.save()
+
+    ontology_file.closed
+
     return ontology
 
 

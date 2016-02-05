@@ -50,6 +50,18 @@ QUESTIONNAIRE_HELP_URL = "https://earthsystemcog.org/projects/es-doc-models/doc/
 
 # CIM-specific constants...
 
+# valid reasons to leave a property value blank reasons (taken from seeGrid)
+
+NIL_PREFIX = "nil"
+NIL_REASONS = [
+
+    "Inapplicable",  # there is no value
+    "Missing",  # the correct value is not readily available to the sender of this data. Furthermore, a correct value may not exist
+    "Template",  # the value will be available later
+    "Unknown",  # the correct value is not known to, and not computable by, the sender of this data. However, a correct value probably exists
+    "Withheld",  # the value is not divulged
+]
+
 #: the set of document types recognized by the questionnaire
 CIM_DOCUMENT_TYPES = [
     "modelcomponent",
@@ -84,3 +96,5 @@ SUPPORTED_DOCUMENTS = [
     "statisticalmodelcomponent",
     "platform",
 ]
+
+

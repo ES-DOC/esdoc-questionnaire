@@ -544,6 +544,12 @@ class QModelCustomization(QCustomization):
     def is_unsynchronized(self):
         return not self.is_synchronized()
 
+    def is_cim1(self):
+        return self.proxy.is_cim1()
+
+    def is_cim2(self):
+        return self.proxy.is_cim2()
+
     def reset(self, proxy):
 
         self.proxy = proxy
@@ -840,6 +846,12 @@ class QStandardPropertyCustomization(QPropertyCustomization):
     relationship_show_subform.help_text = "Checking this will cause the property to be rendered as a nested subform within the parent form; All properties of this model will be available to view and edit in that subform.\
                                           Unchecking it will cause the attribute to be rendered as a simple <em>reference</em> widget."
     relationship_subform_customization = models.ForeignKey("QModelCustomization", blank=True, null=True, related_name="property_customizer")
+
+    def is_cim1(self):
+        return self.proxy.is_cim1()
+
+    def is_cim2(self):
+        return self.proxy.is_cim2()
 
     def reset(self, proxy):
 

@@ -30,6 +30,8 @@ import os
 import re
 
 from Q.questionnaire.q_utils import EnumeratedType, EnumeratedTypeList, QError
+from Q.questionnaire.q_constants import NIL_PREFIX, NIL_REASONS
+
 
 
 # these fields are automatically added by MPTT (usually, I want to ignore processing them)
@@ -41,6 +43,20 @@ EMPTY_CHOICE = [("", "---------")]
 NULL_CHOICE = [("_NONE", "---NONE---")]
 #: the bit to add onto a field's choices when an explicit OTHER choice is required
 OTHER_CHOICE = [("_OTHER", "---OTHER---")]
+
+###################
+# nillable fields #
+###################
+
+class QNillableType(EnumeratedType):
+
+    def __str__(self):
+        return self.get_name()
+
+QNillableTypes = EnumeratedTypeList([
+    QNillableType(nil_reason.upper(), "{0}:{1}".format(NIL_PREFIX, nil_reason))
+    for nil_reason in NIL_REASONS
+])
 
 #######################################
 # the types of fields used by the CIM #
@@ -302,6 +318,7 @@ class QVersionFormField(CharField):
 class QVersionField(models.IntegerField):
 
     # TODO: models w/ this field have to call refresh_from_db if set manually
+    # TODO: (ie: if set in tests)
 
     def formfield(self, **kwargs):
         default_kwargs = {
@@ -344,6 +361,57 @@ class QVersionField(models.IntegerField):
         (see https://docs.djangoproject.com/en/1.8/howto/custom-model-fields/)
         """
         return self.to_python(value)
+
+    def contribute_to_class(self, cls, name, **kwargs):
+        """
+        adds "get/<field_name>_major/minor/patch" fns to the class
+        :param cls:
+        :param name:
+        :param kwargs:
+        :return:
+        """
+        super(QVersionField, self).contribute_to_class(cls, name, **kwargs)
+
+        def _get_major(instance, field_name=name):
+            """
+            notice how I pass the name of the field from the parent "contribute_to_class" fn;
+            this lets me access it from the instance
+            :param instance:
+            :param field_name:
+            :return:
+            """
+            version_value = getattr(instance, field_name)
+            return version_value.major()
+
+        def _get_minor(instance, field_name=name):
+            """
+            notice how I pass the name of the field from the parent "contribute_to_class" fn;
+            this lets me access it from the instance
+            :param instance:
+            :param field_name:
+            :return:
+            """
+            version_value = getattr(instance, field_name)
+            return version_value.minor()
+
+        def _get_patch(instance, field_name=name):
+            """
+            notice how I pass the name of the field from the parent "contribute_to_class" fn;
+            this lets me access it from the instance
+            :param instance:
+            :param field_name:
+            :return:
+            """
+            version_value = getattr(instance, field_name)
+            return version_value.patch()
+
+        get_major_fn_name = u"get_{0}_major".format(name)
+        get_minor_fn_name = u"get_{0}_minor".format(name)
+        get_patch_fn_name = u"get_{0}_patch".format(name)
+        setattr(cls, get_major_fn_name, types.MethodType(_get_major, None, cls))
+        setattr(cls, get_minor_fn_name, types.MethodType(_get_minor, None, cls))
+        setattr(cls, get_patch_fn_name, types.MethodType(_get_patch, None, cls))
+
 
 ######################
 # cardinality fields #

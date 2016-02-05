@@ -82,6 +82,12 @@ class QModelProxy(QProxy):
     def is_document(self):
         return self.stereotype and self.stereotype.lower() == "document"
 
+    def is_cim1(self):
+        return self.ontology.is_cim1()
+
+    def is_cim2(self):
+        return self.ontology.is_cim2()
+
 
 class QPropertyProxy(QProxy):
 
@@ -90,6 +96,7 @@ class QPropertyProxy(QProxy):
         abstract = True
 
     cardinality = QCardinalityField(blank=False)
+    is_nillable = models.BooleanField(default=True)
     field_type = models.CharField(max_length=SMALL_STRING, blank=False, null=True, choices=PROPERTY_TYPE_CHOICES)
 
     def is_required(self):
@@ -142,6 +149,12 @@ class QStandardPropertyProxy(QPropertyProxy):
     relationship_target_names = models.TextField(blank=False, default="")  # set during registration
     relationship_target_models = models.ManyToManyField("QModelProxy", blank=True, related_name="+")  # set during reset (after all models have been registered)
 
+    def is_cim1(self):
+        return self.model_proxy.is_cim1()
+
+    def is_cim2(self):
+        return self.model_proxy.is_cim2()
+
     def reset(self):
 
         if self.field_type == QPropertyTypes.ATOMIC:
@@ -163,6 +176,7 @@ class QStandardPropertyProxy(QPropertyProxy):
                         target_model = QModelProxy.objects.get(ontology=ontology, name__iexact=target_name)
                     self.relationship_target_models.add(target_model)
                 except QModelProxy.DoesNotExist:
+                    import ipdb; ipdb.set_trace()
                     msg = "unable to locate model '%s' in ontology '%s'" % (target_name, ontology)
                     raise QError(msg)
 

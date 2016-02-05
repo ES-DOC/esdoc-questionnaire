@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<categorization xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:noNamespaceSchemaLocation="categorization.xsd">
+<categorization>
+    <name>cim</name>
+    <version>1.8.1</version>
+    <description>A categorization file to go w/ the CIM 1.8.1 Ontology</description>
     <categories>
         <category>
             <name>Document Properties</name>

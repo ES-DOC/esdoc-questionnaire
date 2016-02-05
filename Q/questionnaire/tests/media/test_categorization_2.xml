@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<categorization>
+    <name>test_categorization</name>
+    <version>2.0</version>
+    <description>This is a pretend CIM categorization used for testing purposes only. If you are seeing
+        this in the production site, then something has gone horribly wrong.</description>
+    <categories>
+        <category>
+            <name>Category One</name>
+            <description>I am category one.</description>
+            <order>1</order>
+            <key>category-one</key>
+        </category>
+        <category>
+            <name>Category Two</name>
+            <description>I am category two.</description>
+            <order>2</order>
+            <key>category-two</key>
+        </category>
+        <category>
+            <name>Category Three</name>
+            <description>I am category three - I am unused.</description>
+            <order>3</order>
+            <key>category-three</key>
+        </category>
+
+    </categories>
+    <models>
+        <model>
+            <name>science.modelComponent</name>
+            <fields>
+                <field>
+                    <name>string</name>
+                    <category_key>category-one</category_key>
+                </field>
+                <field>
+                    <name>boolean</name>
+                    <category_key>category-two</category_key>
+                </field>
+                <field>
+                    <name>date</name>
+                    <category_key>category-one</category_key>
+                </field>
+                <field>
+                    <name>enumeration</name>
+                    <category_key>category-two</category_key>
+                </field>
+                <field>
+                    <name>author</name>
+                    <category_key>category-one</category_key>
+                </field>
+                <field>
+                    <name>contact</name>
+                    <category_key>category-two</category_key>
+                </field>
+            </fields>
+        </model>
+
+        <model>
+            <name>shared.responsibleParty</name>
+            <fields>
+                <field>
+                    <name>individualName</name>
+                    <category_key>category-one</category_key>
+                </field>
+                <field>
+                    <name>contactInfo</name>
+                    <category_key>category-two</category_key>
+                </field>
+            </fields>
+        </model>
+
+        <model>
+            <name>shared.contactType</name>
+            <fields>
+                <field>
+                    <name>phone</name>
+                    <category_key>category-one</category_key>
+                </field>
+                <field>
+                    <name>address</name>
+                    <category_key>category-two</category_key>
+                </field>
+            </fields>
+        </model>
+
+    </models>
+</categorization>

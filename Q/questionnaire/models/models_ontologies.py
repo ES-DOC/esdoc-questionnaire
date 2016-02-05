@@ -20,29 +20,17 @@ from uuid import uuid4
 import os
 import re
 
-from Q.questionnaire import APP_LABEL
+from Q.questionnaire import APP_LABEL, q_logger
 from Q.questionnaire.q_fields import QFileField, QVersionField, QPropertyTypes, QAtomicPropertyTypes
 from Q.questionnaire.models.models_customizations import QModelCustomization
 from Q.questionnaire.models.models_proxies import QModelProxy, QStandardPropertyProxy
-from Q.questionnaire.q_utils import QError, validate_file_extension, validate_file_schema, validate_no_spaces, validate_no_bad_chars, xpath_fix, remove_spaces_and_linebreaks, get_index
+from Q.questionnaire.q_utils import QError, CIMTypes, validate_file_extension, validate_file_schema, validate_no_spaces, validate_no_bad_chars, xpath_fix, remove_spaces_and_linebreaks, get_index
 from Q.questionnaire.q_fields import Version
 from Q.questionnaire.q_constants import *
 
 ###################
 # local constants #
 ###################
-
-from Q.questionnaire.q_utils import EnumeratedType, EnumeratedTypeList
-
-class CIMType(EnumeratedType):
-
-    def __unicode__(self):
-        return u"%s" % (self.get_name())
-
-CIMTypes = EnumeratedTypeList([
-    CIMType("CIM1", "CIM 1.x"),
-    CIMType("CIM2", "CIM 2.x"),
-])
 
 UPLOAD_DIR = "ontologies"
 UPLOAD_PATH = os.path.join(APP_LABEL, UPLOAD_DIR)  # this will be concatenated w/ MEDIA_ROOT by FileField
@@ -52,7 +40,7 @@ UPLOAD_PATH = os.path.join(APP_LABEL, UPLOAD_DIR)  # this will be concatenated w
 ####################
 
 # these are no longer being used, b/c file validation is dependant on what type of ontology this is (CIM1 vs CIM2)
-# therefore, validation takes place w/in the "clean" fn - when I have access to the type field as well as the file field
+# therefore, validation takes place w/in the "clean" fn - when I have access to an instance's type as well as its file
 
 def validate_ontology_file_extension(value):
     valid_extensions = ["xml"]
@@ -107,7 +95,7 @@ class QOntologyQuerySet(models.QuerySet):
     def registered(self):
         return self.filter(is_registered=True)
 
-    def get_by_key(self, key):
+    def filter_by_key(self, key):
         """
         returns a QOntology matching a given key; owever, that key can be underspecified.
         (see "get_name_and_version_from_key" above)
@@ -116,6 +104,8 @@ class QOntologyQuerySet(models.QuerySet):
         """
 
         name, version = get_name_and_version_from_key(key)
+        # this should only return a single object, but I use 'filter' instead of 'get'
+        # so that I can still chain the return value
         return self.filter(name=name, version=version)
 
 class QOntology(models.Model):
@@ -145,13 +135,13 @@ class QOntology(models.Model):
     key = models.CharField(max_length=SMALL_STRING, blank=False, editable=False)
 
     url = models.URLField(blank=False)
-    url.help_text = "This URL may be used as the namespace of serialized XML documents"
+    url.help_text = "This URL might be used as the namespace of serialized XML documents"
     file = QFileField(blank=False, upload_to=UPLOAD_PATH)
 
     categorization = models.ForeignKey("QCategorization", blank=True, null=True, related_name="ontologies", on_delete=models.SET_NULL)
 
     is_registered = models.BooleanField(blank=False, default=False)
-    last_registered_version = QVersionField(blank=True, null=True)
+    last_registered_version = QVersionField(blank=True, null=True)  # used to enforce only re-registering "patch" releases
 
     def __unicode__(self):
 
@@ -167,7 +157,7 @@ class QOntology(models.Model):
     def save(self, *args, **kwargs):
         _current_key = self.get_key()
         if _current_key != self._original_key:
-            self.key = self.get_key()
+            self.key = _current_key
         super(QOntology, self).save(*args, **kwargs)
         self._original_key = self.key
 
@@ -195,7 +185,7 @@ class QOntology(models.Model):
         return super(QOntology, self).clean()
 
     def get_key(self):
-        return u"%s_%s" % (self.name, self.version)
+        return "{0}_{1}".format(self.name, self.version)
 
     def is_cim1(self):
         return self.type == CIMTypes.CIM1
@@ -204,6 +194,19 @@ class QOntology(models.Model):
         return self.type == CIMTypes.CIM2
 
     def register(self, **kwargs):
+
+        request = kwargs.get("request")
+
+        if self.last_registered_version:
+            last_registered_version_major = self.last_registered_version.get_version_major()
+            last_registered_version_minor = self.last_registered_version.get_version_minor()
+            current_version_major = self.version.get_version_major()
+            current_version_minor = self.version.get_version_minor()
+            if last_registered_version_major != current_version_major or last_registered_version_minor != current_version_minor:
+                if request:
+                    msg = "You are not allowed to re-register anything other than a new patch version."
+                    messages.add_message(request, messages.ERROR, msg)
+                return
 
         try:
             if self.is_cim2():
@@ -215,8 +218,12 @@ class QOntology(models.Model):
             else:
                 msg = "Unable to determine the ontology type"
                 raise QError(msg)
-        except IOError:
-            # if something goes wrong, don't set "is_registered" to True
+        except Exception as e:
+            # if something goes wrong, record it in the logs, return immediately & don't set "is_registered" to True
+            # (but don't crash)
+            q_logger.error(e)
+            if request:
+                messages.add_message(request, messages.ERROR, str(e))
             return
 
         self.is_registered = True
@@ -230,6 +237,8 @@ class QOntology(models.Model):
                 sender=self,
                 customization=customization
             )
+
+        # TODO: DO THE SAME THING FOR EXISTING DOCUMENTATIONS
 
     def register_cim1(self, **kwargs):
 
@@ -246,6 +255,15 @@ class QOntology(models.Model):
             raise e
 
         recategorization_needed = False
+
+        # name can be anything...
+        ontology_name = get_index(xpath_fix(ontology_content, "name/text()"), 0)
+        # version is not specified in CIM1.x
+        ontology_version = get_index(xpath_fix(ontology_content, "version/text()"), 0)
+        # description can overwrite the instance field...
+        ontology_description = get_index(xpath_fix(ontology_content, "description/text()"), 0)
+        if ontology_description:
+            self.description = remove_spaces_and_linebreaks(ontology_description)
 
         old_model_proxies = list(self.model_proxies.all())  # list forces qs evaluation immediately
         new_model_proxies = []
@@ -329,7 +347,10 @@ class QOntology(models.Model):
                         new_property_proxy.cardinality = u"1|1"
                 new_property_proxy.atomic_type = property_proxy_atomic_type
                 new_property_proxy.enumeration_choices = "|".join(property_proxy_enumeration_choices)
-                new_property_proxy.relationship_target_name = property_proxy_relationship_target_name
+                if property_proxy_relationship_target_name:
+                    new_property_proxy.relationship_target_names = property_proxy_relationship_target_name
+                else:
+                    new_property_proxy.property_proxy_relationship_target_names = ""
                 new_property_proxy.save()
                 new_property_proxies.append(new_property_proxy)
 
@@ -376,7 +397,7 @@ class QOntology(models.Model):
         ontology_name = get_index(xpath_fix(ontology_content, "name/text()"), 0)
         # version should match(ish) the instance field...
         ontology_version = get_index(xpath_fix(ontology_content, "version/text()"), 0)
-        if Version(self.version).major() != Version(ontology_version).major():
+        if self.version.major() != Version(ontology_version).major():
             msg = "The major version of this ontology instance does not match the major version of the QXML file"
             if request:
                 messages.add_message(request, messages.WARNING, msg)
@@ -424,7 +445,7 @@ class QOntology(models.Model):
                 property_proxy_name = re.sub(r'\.', '_', str(xpath_fix(property_proxy, "name/text()")[0]))
                 property_proxy_field_type = xpath_fix(property_proxy, "type/text()")[0]
                 # TODO: I AM NOT CURRENTLY USING PACKAGES FOR PROPERTIES, SHOULD I?
-                property_proxy_package = xpath_fix(property_proxy, "@package")[0]
+                property_proxy_package = get_index(xpath_fix(property_proxy, "@package"), 0)
                 property_proxy_stereotype = get_index(xpath_fix(property_proxy, "@stereotype"), 0)
                 # TODO: MAY NEED TO REVISIT HOW LABELS WORK IN CIM2
                 property_proxy_is_label = get_index(xpath_fix(property_proxy, "@is_label"), 0)
@@ -469,7 +490,10 @@ class QOntology(models.Model):
                 new_property_proxy.documentation = property_proxy_documentation
                 new_property_proxy.is_label = property_proxy_is_label == "true"
                 new_property_proxy.stereotype = property_proxy_stereotype
-                new_property_proxy.cardinality = u"%s|%s" % (property_proxy_cardinality_min, property_proxy_cardinality_max)
+                new_property_proxy.cardinality = "{0}|{1}".format(
+                    property_proxy_cardinality_min,
+                    property_proxy_cardinality_max if property_proxy_cardinality_max != "N" else "*",
+                )
                 new_property_proxy.atomic_type = property_proxy_atomic_type
                 if property_proxy_enumeration_is_open:
                     new_property_proxy.enumeration_is_open = property_proxy_enumeration_is_open == "true"

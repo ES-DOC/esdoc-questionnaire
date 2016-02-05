@@ -118,6 +118,26 @@ class EnumeratedTypeList(list):
         # otherwise return a value greater than the last position of the orderList
         return len(et_list)+1
 
+#####################
+# types of metadata #
+#####################
+
+# the CIM underwent a major change from v1.x to v2.x
+# sometimes it's useful to know which type of metadata I'm dealing w/
+
+# TODO: THIS DOESN'T SEEM LIKE THE BEST PLACE TO DEFINE THIS CLASS
+# TODO: BUT DEFINING IT ELSEWHERE BRINGS W/ IT CIRCULAR DEPENDENCY ISSUES
+
+class CIMType(EnumeratedType):
+
+    def __unicode__(self):
+        return u"%s" % (self.get_name())
+
+CIMTypes = EnumeratedTypeList([
+    CIMType("CIM1", "CIM 1.x"),
+    CIMType("CIM2", "CIM 2.x"),
+])
+
 
 ##############
 # validators #

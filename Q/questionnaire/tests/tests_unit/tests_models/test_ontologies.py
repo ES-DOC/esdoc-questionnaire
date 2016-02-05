@@ -16,7 +16,7 @@ from Q.questionnaire.q_utils import serialize_model_to_dict, sort_list_by_key
 from Q.questionnaire.models.models_ontologies import *
 
 
-class TestQOntolgoy(TestQBase):
+class TestQOntology(TestQBase):
 
     def setUp(self):
 
@@ -38,6 +38,10 @@ class TestQOntolgoy(TestQBase):
             type=CIMTypes.CIM2.get_type(),
         )
 
+        # TODO: SEE THE COMMENT IN "q_fields.py" ABOUT SETTING VERSION MANUALLY...
+        self.test_ontology_cim_2.refresh_from_db()
+        self.test_ontology_cim_1.refresh_from_db()
+
     def tearDown(self):
 
         # don't do the base tearDown
@@ -49,6 +53,7 @@ class TestQOntolgoy(TestQBase):
 
     def test_ontology_get_key(self):
 
+        # TODO: SHOULD THESE BE FULLY SPECIFIED?
         test_key = "test_ontology_1.0"
         self.assertEqual(self.test_ontology_cim_1.get_key(), test_key)
         self.assertEqual(QOntology.objects.get(key=test_key), self.test_ontology_cim_1)
@@ -115,23 +120,27 @@ class TestQOntolgoy(TestQBase):
             self.assertDictEqual(actual_model_proxy_data, test_model_proxy_data)
 
         actual_property_proxies_data = [
-            serialize_model_to_dict(property_proxy, exclude=["id", "guid", "created", "modified"])
+
+
+            # notice I am excluding "relationship_target_name" & "relationship_target_model";
+            # they are deprecated in favor of "relationship_target_names" & "relationship_target_models" as of v0.16.0.0
+            serialize_model_to_dict(property_proxy, exclude=["id", "guid", "created", "modified", "relationship_target_name", "relationship_target_model"])
             for property_proxy in test_property_proxies
         ]
 
         test_property_proxies_data = sort_list_by_key(
             [
-                {'field_type': u'ATOMIC', 'atomic_default': None, 'enumeration_nullable': False, 'name': u'string', 'stereotype': None, 'relationship_target_model': None, 'relationship_target_name': None, 'enumeration_choices': u'', 'documentation': u'I am a string', 'namespace': None, 'atomic_type': u'DEFAULT', 'order': 1, 'is_label': True, 'enumeration_open': False, 'cardinality': u'0|1', 'model_proxy': test_model_proxies[0].pk, 'enumeration_multi': False},
-                {'field_type': u'ATOMIC', 'atomic_default': None, 'enumeration_nullable': False, 'name': u'individualName', 'stereotype': None, 'relationship_target_model': None, 'relationship_target_name': None, 'enumeration_choices': u'', 'documentation': u'', 'namespace': None, 'atomic_type': u'DEFAULT', 'order': 1, 'is_label': True, 'enumeration_open': False, 'cardinality': u'0|1', 'model_proxy': test_model_proxies[1].pk, 'enumeration_multi': False},
-                {'field_type': u'ATOMIC', 'atomic_default': None, 'enumeration_nullable': False, 'name': u'phone', 'stereotype': None, 'relationship_target_model': None, 'relationship_target_name': None, 'enumeration_choices': u'', 'documentation': u'', 'namespace': None, 'atomic_type': u'DEFAULT', 'order': 1, 'is_label': False, 'enumeration_open': False, 'cardinality': u'0|1', 'model_proxy': test_model_proxies[2].pk, 'enumeration_multi': False},
-                {'field_type': u'ATOMIC', 'atomic_default': None, 'enumeration_nullable': False, 'name': u'boolean', 'stereotype': None, 'relationship_target_model': None, 'relationship_target_name': None, 'enumeration_choices': u'', 'documentation': u'I am a boolean', 'namespace': None, 'atomic_type': u'BOOLEAN', 'order': 2, 'is_label': False, 'enumeration_open': False, 'cardinality': u'0|1', 'model_proxy': test_model_proxies[0].pk, 'enumeration_multi': False},
-                {'field_type': u'RELATIONSHIP', 'atomic_default': None, 'enumeration_nullable': False, 'name': u'contactInfo', 'stereotype': None, 'relationship_target_model': self.test_ontology_cim_1.model_proxies.get(name__iexact="contactType").pk, 'relationship_target_name': u'contactType', 'enumeration_choices': u'', 'documentation': u'', 'namespace': None, 'atomic_type': None, 'order': 2, 'is_label': False, 'enumeration_open': False, 'cardinality': u'1|1', 'model_proxy': test_model_proxies[1].pk, 'enumeration_multi': False},
-                {'field_type': u'ATOMIC', 'atomic_default': None, 'enumeration_nullable': False, 'name': u'address', 'stereotype': None, 'relationship_target_model': None, 'relationship_target_name': None, 'enumeration_choices': u'', 'documentation': u'', 'namespace': None, 'atomic_type': u'TEXT', 'order': 2, 'is_label': False, 'enumeration_open': False, 'cardinality': u'0|1', 'model_proxy': test_model_proxies[2].pk, 'enumeration_multi': False},
-                {'field_type': u'ATOMIC', 'atomic_default': None, 'enumeration_nullable': False, 'name': u'date', 'stereotype': None, 'relationship_target_model': None, 'relationship_target_name': None, 'enumeration_choices': u'', 'documentation': u'I am a date', 'namespace': None, 'atomic_type': u'DATE', 'order': 3, 'is_label': False, 'enumeration_open': False, 'cardinality': u'0|1', 'model_proxy': test_model_proxies[0].pk, 'enumeration_multi': False},
-                {'field_type': u'ATOMIC', 'atomic_default': None, 'enumeration_nullable': False, 'name': u'uncategorized', 'stereotype': None, 'relationship_target_model': None, 'relationship_target_name': None, 'enumeration_choices': u'', 'documentation': u'I am an uncategorized string', 'namespace': None, 'atomic_type': u'DEFAULT', 'order': 4, 'is_label': False, 'enumeration_open': False, 'cardinality': u'0|1', 'model_proxy': test_model_proxies[0].pk, 'enumeration_multi': False},
-                {'field_type': u'ENUMERATION', 'atomic_default': None, 'enumeration_nullable': False, 'name': u'enumeration', 'stereotype': None, 'relationship_target_model': None, 'relationship_target_name': None, 'enumeration_choices': u'one|two|three', 'documentation': u'I am an enumreation', 'namespace': None, 'atomic_type': None, 'order': 5, 'is_label': False, 'enumeration_open': False, 'cardinality': u'0|1', 'model_proxy': test_model_proxies[0].pk, 'enumeration_multi': False},
-                {'field_type': u'RELATIONSHIP', 'atomic_default': None, 'enumeration_nullable': False, 'name': u'author', 'stereotype': None, 'relationship_target_model': self.test_ontology_cim_1.model_proxies.get(name__iexact="responsibleParty").pk, 'relationship_target_name': u'responsibleParty', 'enumeration_choices': u'', 'documentation': u'I am a relationship', 'namespace': None, 'atomic_type': None, 'order': 6, 'is_label': False, 'enumeration_open': False, 'cardinality': u'0|1', 'model_proxy': test_model_proxies[0].pk, 'enumeration_multi': False},
-                {'field_type': u'RELATIONSHIP', 'atomic_default': None, 'enumeration_nullable': False, 'name': u'contact', 'stereotype': None, 'relationship_target_model': self.test_ontology_cim_1.model_proxies.get(name__iexact="responsibleParty").pk, 'relationship_target_name': u'responsibleParty', 'enumeration_choices': u'', 'documentation': u'I am a relationship', 'namespace': None, 'atomic_type': None, 'order': 7, 'is_label': False, 'enumeration_open': False, 'cardinality': u'0|*', 'model_proxy': test_model_proxies[0].pk, 'enumeration_multi': False},
+                {'field_type': u'ATOMIC', 'atomic_default': None, 'enumeration_nullable': False, 'name': u'string', 'stereotype': None, 'relationship_target_models': [], 'relationship_target_names': u'', 'enumeration_choices': u'', 'documentation': u'I am a string', 'namespace': None, 'atomic_type': u'DEFAULT', 'order': 1, 'is_label': True, 'enumeration_open': False, 'cardinality': u'0|1', 'model_proxy': test_model_proxies[0].pk, 'enumeration_multi': False, 'is_nillable': True, },
+                {'field_type': u'ATOMIC', 'atomic_default': None, 'enumeration_nullable': False, 'name': u'individualName', 'stereotype': None, 'relationship_target_models': [], 'relationship_target_names': u'', 'enumeration_choices': u'', 'documentation': u'', 'namespace': None, 'atomic_type': u'DEFAULT', 'order': 1, 'is_label': True, 'enumeration_open': False, 'cardinality': u'0|1', 'model_proxy': test_model_proxies[1].pk, 'enumeration_multi': False, 'is_nillable': True, },
+                {'field_type': u'ATOMIC', 'atomic_default': None, 'enumeration_nullable': False, 'name': u'phone', 'stereotype': None, 'relationship_target_models': [], 'relationship_target_names': u'', 'enumeration_choices': u'', 'documentation': u'', 'namespace': None, 'atomic_type': u'DEFAULT', 'order': 1, 'is_label': False, 'enumeration_open': False, 'cardinality': u'0|1', 'model_proxy': test_model_proxies[2].pk, 'enumeration_multi': False, 'is_nillable': True, },
+                {'field_type': u'ATOMIC', 'atomic_default': None, 'enumeration_nullable': False, 'name': u'boolean', 'stereotype': None, 'relationship_target_models': [], 'relationship_target_names': u'', 'enumeration_choices': u'', 'documentation': u'I am a boolean', 'namespace': None, 'atomic_type': u'BOOLEAN', 'order': 2, 'is_label': False, 'enumeration_open': False, 'cardinality': u'0|1', 'model_proxy': test_model_proxies[0].pk, 'enumeration_multi': False, 'is_nillable': True, },
+                {'field_type': u'RELATIONSHIP', 'atomic_default': None, 'enumeration_nullable': False, 'name': u'contactInfo', 'stereotype': None, 'relationship_target_models': [self.test_ontology_cim_1.model_proxies.get(name__iexact="contactType").pk], 'relationship_target_names': u'contactType', 'enumeration_choices': u'', 'documentation': u'', 'namespace': None, 'atomic_type': None, 'order': 2, 'is_label': False, 'enumeration_open': False, 'cardinality': u'1|1', 'model_proxy': test_model_proxies[1].pk, 'enumeration_multi': False, 'is_nillable': True, },
+                {'field_type': u'ATOMIC', 'atomic_default': None, 'enumeration_nullable': False, 'name': u'address', 'stereotype': None, 'relationship_target_models': [], 'relationship_target_names': u'', 'enumeration_choices': u'', 'documentation': u'', 'namespace': None, 'atomic_type': u'TEXT', 'order': 2, 'is_label': False, 'enumeration_open': False, 'cardinality': u'0|1', 'model_proxy': test_model_proxies[2].pk, 'enumeration_multi': False, 'is_nillable': True, },
+                {'field_type': u'ATOMIC', 'atomic_default': None, 'enumeration_nullable': False, 'name': u'date', 'stereotype': None, 'relationship_target_models': [], 'relationship_target_names': u'', 'enumeration_choices': u'', 'documentation': u'I am a date', 'namespace': None, 'atomic_type': u'DATE', 'order': 3, 'is_label': False, 'enumeration_open': False, 'cardinality': u'0|1', 'model_proxy': test_model_proxies[0].pk, 'enumeration_multi': False, 'is_nillable': True, },
+                {'field_type': u'ATOMIC', 'atomic_default': None, 'enumeration_nullable': False, 'name': u'uncategorized', 'stereotype': None, 'relationship_target_models': [], 'relationship_target_names': u'', 'enumeration_choices': u'', 'documentation': u'I am an uncategorized string', 'namespace': None, 'atomic_type': u'DEFAULT', 'order': 4, 'is_label': False, 'enumeration_open': False, 'cardinality': u'0|1', 'model_proxy': test_model_proxies[0].pk, 'enumeration_multi': False, 'is_nillable': True, },
+                {'field_type': u'ENUMERATION', 'atomic_default': None, 'enumeration_nullable': False, 'name': u'enumeration', 'stereotype': None, 'relationship_target_models': [], 'relationship_target_names': u'', 'enumeration_choices': u'one|two|three', 'documentation': u'I am an enumreation', 'namespace': None, 'atomic_type': None, 'order': 5, 'is_label': False, 'enumeration_open': False, 'cardinality': u'0|1', 'model_proxy': test_model_proxies[0].pk, 'enumeration_multi': False, 'is_nillable': True, },
+                {'field_type': u'RELATIONSHIP', 'atomic_default': None, 'enumeration_nullable': False, 'name': u'author', 'stereotype': None, 'relationship_target_models': [self.test_ontology_cim_1.model_proxies.get(name__iexact="responsibleParty").pk], 'relationship_target_names': u'responsibleParty', 'enumeration_choices': u'', 'documentation': u'I am a relationship', 'namespace': None, 'atomic_type': None, 'order': 6, 'is_label': False, 'enumeration_open': False, 'cardinality': u'0|1', 'model_proxy': test_model_proxies[0].pk, 'enumeration_multi': False, 'is_nillable': True, },
+                {'field_type': u'RELATIONSHIP', 'atomic_default': None, 'enumeration_nullable': False, 'name': u'contact', 'stereotype': None, 'relationship_target_models': [self.test_ontology_cim_1.model_proxies.get(name__iexact="responsibleParty").pk], 'relationship_target_names': u'responsibleParty', 'enumeration_choices': u'', 'documentation': u'I am a relationship', 'namespace': None, 'atomic_type': None, 'order': 7, 'is_label': False, 'enumeration_open': False, 'cardinality': u'0|*', 'model_proxy': test_model_proxies[0].pk, 'enumeration_multi': False, 'is_nillable': True, },
             ],
             "order",
         )
@@ -152,10 +161,56 @@ class TestQOntolgoy(TestQBase):
 
     def test_ontology_register_cim2(self):
 
-        import ipdb; ipdb.set_trace()
         self.assertFalse(self.test_ontology_cim_2.is_registered)
         self.test_ontology_cim_2.register()
         self.assertTrue(self.test_ontology_cim_2.is_registered)
+
+        test_model_proxies = self.test_ontology_cim_2.model_proxies.all()
+        test_property_proxies = QStandardPropertyProxy.objects.filter(model_proxy__ontology=self.test_ontology_cim_2)
+
+        actual_model_proxies_data = [
+            serialize_model_to_dict(model_proxy, exclude=["id", "guid", "created", "modified"])
+            for model_proxy in test_model_proxies
+        ]
+
+        test_model_proxies_data = sort_list_by_key(
+            [
+                {'name': u'modelComponent', 'stereotype': u'document', 'package': u'science', 'documentation': u'A ModelCompnent is nice.', 'namespace': None, 'ontology': self.test_ontology_cim_2.pk, 'order': 1},
+                {'name': u'responsibleParty', 'stereotype': None, 'package': u'shared', 'documentation': u'a stripped-down responsible party to use for testing purposes.', 'namespace': None, 'ontology': self.test_ontology_cim_2.pk, 'order': 2},
+                {'name': u'contactType', 'stereotype': None, 'package': u'shared', 'documentation': u'a stripped-down contactType just for testing purposes.', 'namespace': None, 'ontology': self.test_ontology_cim_2.pk, 'order': 3},
+            ],
+            "order",
+        )
+
+        for actual_model_proxy_data, test_model_proxy_data in zip(actual_model_proxies_data, test_model_proxies_data):
+            self.assertDictEqual(actual_model_proxy_data, test_model_proxy_data)
+
+        actual_property_proxies_data = [
+            # notice I am excluding "relationship_target_name" & "relationship_target_model";
+            # they are deprecated in favor of "relationship_target_names" & "relationship_target_models" as of v0.16.0.0
+            serialize_model_to_dict(property_proxy, exclude=["id", "guid", "created", "modified", "relationship_target_name", "relationship_target_model"])
+            for property_proxy in test_property_proxies
+        ]
+
+        test_property_proxies_data = sort_list_by_key(
+            [
+                {'is_nillable': True, 'field_type': u'ATOMIC', 'atomic_default': None, 'enumeration_nullable': False, 'name': u'string', 'stereotype': None, 'relationship_target_models': [], 'relationship_target_names': u'', 'enumeration_choices': u'', 'documentation': u'I am a string', 'namespace': None, 'atomic_type': u'DEFAULT', 'order': 1, 'is_label': True, 'enumeration_open': False, 'cardinality': u'1|1', 'model_proxy': test_model_proxies[0].pk, 'enumeration_multi': False},
+                {'is_nillable': True, 'field_type': u'ATOMIC', 'atomic_default': None, 'enumeration_nullable': False, 'name': u'individualName', 'stereotype': None, 'relationship_target_models': [], 'relationship_target_names': u'', 'enumeration_choices': u'', 'documentation': u'', 'namespace': None, 'atomic_type': u'DEFAULT', 'order': 1, 'is_label': True, 'enumeration_open': False, 'cardinality': u'1|1', 'model_proxy': test_model_proxies[1].pk, 'enumeration_multi': False},
+                {'is_nillable': True, 'field_type': u'ATOMIC', 'atomic_default': None, 'enumeration_nullable': False, 'name': u'phone', 'stereotype': None, 'relationship_target_models': [], 'relationship_target_names': u'', 'enumeration_choices': u'', 'documentation': u'', 'namespace': None, 'atomic_type': u'DEFAULT', 'order': 1, 'is_label': False, 'enumeration_open': False, 'cardinality': u'0|1', 'model_proxy': test_model_proxies[2].pk, 'enumeration_multi': False},
+                {'is_nillable': True, 'field_type': u'ATOMIC', 'atomic_default': None, 'enumeration_nullable': False, 'name': u'boolean', 'stereotype': None, 'relationship_target_models': [], 'relationship_target_names': u'', 'enumeration_choices': u'', 'documentation': u'I am a boolean', 'namespace': None, 'atomic_type': u'BOOLEAN', 'order': 2, 'is_label': False, 'enumeration_open': False, 'cardinality': u'0|1', 'model_proxy': test_model_proxies[0].pk, 'enumeration_multi': False},
+                {'is_nillable': True, 'field_type': u'RELATIONSHIP', 'atomic_default': None, 'enumeration_nullable': False, 'name': u'contactInfo', 'stereotype': None, 'relationship_target_models': [proxy.pk for proxy in self.test_ontology_cim_2.model_proxies.filter(package="shared", name__iexact="contactType")], 'relationship_target_names': u'shared.contactType', 'enumeration_choices': u'', 'documentation': u'', 'namespace': None, 'atomic_type': None, 'order': 2, 'is_label': False, 'enumeration_open': False, 'cardinality': u'1|1', 'model_proxy': test_model_proxies[1].pk, 'enumeration_multi': False},
+                {'is_nillable': True, 'field_type': u'ATOMIC', 'atomic_default': None, 'enumeration_nullable': False, 'name': u'address', 'stereotype': None, 'relationship_target_models': [], 'relationship_target_names': u'', 'enumeration_choices': u'', 'documentation': u'', 'namespace': None, 'atomic_type': u'TEXT', 'order': 2, 'is_label': False, 'enumeration_open': False, 'cardinality': u'0|1', 'model_proxy': test_model_proxies[2].pk, 'enumeration_multi': False},
+                {'is_nillable': True, 'field_type': u'ATOMIC', 'atomic_default': None, 'enumeration_nullable': False, 'name': u'date', 'stereotype': None, 'relationship_target_models': [], 'relationship_target_names': u'', 'enumeration_choices': u'', 'documentation': u'I am a date', 'namespace': None, 'atomic_type': u'DATE', 'order': 3, 'is_label': False, 'enumeration_open': False, 'cardinality': u'0|1', 'model_proxy': test_model_proxies[0].pk, 'enumeration_multi': False},
+                {'is_nillable': True, 'field_type': u'ATOMIC', 'atomic_default': None, 'enumeration_nullable': False, 'name': u'uncategorized', 'stereotype': None, 'relationship_target_models': [], 'relationship_target_names': u'', 'enumeration_choices': u'', 'documentation': u'I am an uncategorized string', 'namespace': None, 'atomic_type': u'DEFAULT', 'order': 4, 'is_label': False, 'enumeration_open': False, 'cardinality': u'0|1', 'model_proxy': test_model_proxies[0].pk, 'enumeration_multi': False},
+                {'is_nillable': True, 'field_type': u'ENUMERATION', 'atomic_default': None, 'enumeration_nullable': False, 'name': u'enumeration', 'stereotype': None, 'relationship_target_models': [], 'relationship_target_names': u'', 'enumeration_choices': u'one|two|three', 'documentation': u'I am an enumreation', 'namespace': None, 'atomic_type': None, 'order': 5, 'is_label': False, 'enumeration_open': False, 'cardinality': u'1|*', 'model_proxy': test_model_proxies[0].pk, 'enumeration_multi': False},
+                {'is_nillable': True, 'field_type': u'RELATIONSHIP', 'atomic_default': None, 'enumeration_nullable': False, 'name': u'author', 'stereotype': None, 'relationship_target_models': [proxy.pk for proxy in self.test_ontology_cim_2.model_proxies.filter(package="shared", name__iexact="responsibleParty")], 'relationship_target_names': u'shared.responsibleParty', 'enumeration_choices': u'', 'documentation': u'I am a relationship', 'namespace': None, 'atomic_type': None, 'order': 6, 'is_label': False, 'enumeration_open': False, 'cardinality': u'0|1', 'model_proxy': test_model_proxies[0].pk, 'enumeration_multi': False},
+                {'is_nillable': True, 'field_type': u'RELATIONSHIP', 'atomic_default': None, 'enumeration_nullable': False, 'name': u'contact', 'stereotype': None, 'relationship_target_models': [proxy.pk for proxy in self.test_ontology_cim_2.model_proxies.filter(package="shared", name__iexact="responsibleParty")], 'relationship_target_names': u'shared.responsibleParty', 'enumeration_choices': u'', 'documentation': u'I am a relationship', 'namespace': None, 'atomic_type': None, 'order': 7, 'is_label': False, 'enumeration_open': False, 'cardinality': u'0|*', 'model_proxy': test_model_proxies[0].pk, 'enumeration_multi': False},
+            ],
+            "order",
+        )
+
+        for actual_property_proxy_data, test_property_proxy_data in zip(actual_property_proxies_data, test_property_proxies_data):
+            self.assertDictEqual(actual_property_proxy_data, test_property_proxy_data)
 
     @incomplete_test
     def test_ontology_reregister(self):
