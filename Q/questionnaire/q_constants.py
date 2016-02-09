@@ -44,9 +44,10 @@ RESERVED_WORDS = [
 CACHE_ALIAS = "default"
 
 # where to get help...
-QUESTIONNAIRE_EMAIL = "es-doc-support@list.woc.noaa.gov"
-QUESTIONNAIRE_CODE_URL = "https://github.com/ES-DOC/esdoc-questionnaire"
-QUESTIONNAIRE_HELP_URL = "https://earthsystemcog.org/projects/es-doc-models/doc/questionnaire/getting_started"
+# THESE ARE NOW DEFINED EXTERNALLY
+# QUESTIONNAIRE_EMAIL =
+# QUESTIONNAIRE_CODE_URL =
+# QUESTIONNAIRE_HELP_URL =
 
 # CIM-specific constants...
 
@@ -91,10 +92,37 @@ CIM_PROPERTY_STEREOTYPES = [
 ]
 
 #: the set of document types that can be fully processed (ie: end-to-end) by the questionnaire
-SUPPORTED_DOCUMENTS = [
-    "modelcomponent",
-    "statisticalmodelcomponent",
-    "platform",
-]
+SUPPORTED_DOCUMENTS = {
+    "CIM1": [
+        "modelcomponent",
+        "statisticalmodelcomponent",
+        "platform",
+    ],
+    "CIM2": [
+        # "Conformance",
+        # "Temporal_Constraint",
+        "Simulation",
+        "Ensemble",
+        # "Party",
+        # "Domain_Properties",
+        # "Scientific_Domain",
+        # "Output_Temporal_Requirement",
+        # "Performance",
+        # "Project",
+        # "Multi_Time_Ensemble",
+        # "Ensemble_Requirement",
+        # "Uber_Ensemble",
+        # "Multi_Ensemble",
+        # "Machine",
+        "Model",
+        # "Numerical_Experiment",
+        # "Numerical_Requirement",
+        "Downscaling",
+        # "Simulation_Plan",
+        # "Dataset",
+        # "Forcing_Constraint",
+    ],
+}
+
 
 

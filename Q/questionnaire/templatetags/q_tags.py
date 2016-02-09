@@ -17,6 +17,7 @@ defines custom template tags
 """
 
 from django import template
+from django.conf import settings
 from django.db.models.query import QuerySet
 from django.core.serializers import serialize
 import json
@@ -38,11 +39,11 @@ def q_version():
 
 @register.simple_tag
 def q_url():
-    return QUESTIONNAIRE_CODE_URL
+    return settings.Q_CODE_URL
 
 @register.simple_tag
 def q_email():
-    return QUESTIONNAIRE_EMAIL
+    return settings.Q_EMAIL
 
 @register.simple_tag
 def profanities():

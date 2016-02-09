@@ -17,6 +17,7 @@ All URL patterns for questionnaire app.
 """
 
 from django.conf.urls import patterns, url, include
+from django.conf import settings
 from django.views.generic.base import RedirectView
 from rest_framework.urlpatterns import format_suffix_patterns
 
@@ -24,7 +25,6 @@ from Q.questionnaire.views import *
 from Q.questionnaire.views.api import *
 from Q.questionnaire.views.services import *
 from Q.questionnaire.views.views_feed import QFeed, q_publication
-from Q.questionnaire.q_constants import QUESTIONNAIRE_HELP_URL
 
 user_list = UserViewSet.as_view({
     'get': 'list',
@@ -90,7 +90,7 @@ urlpatterns = patterns('',
     url(r'^services/', include(services_urls)),
 
     # help...
-    url(r'^help/$', RedirectView.as_view(url=QUESTIONNAIRE_HELP_URL, permanent=True), name="help"),
+    url(r'^help/$', RedirectView.as_view(url=settings.Q_HELP_URL, permanent=True), name="help"),
 
     # TODO: REMOVE THIS
     # PRE v0.15 CODE
