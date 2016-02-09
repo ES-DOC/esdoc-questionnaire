@@ -284,3 +284,8 @@ REST_FRAMEWORK = {
         'rest_framework.filters.DjangoFilterBackend',
     ),
 }
+
+# where to get help...
+Q_EMAIL = parser.get('help', 'email')
+Q_CODE_URL = parser.get('help', 'code_url')
+Q_HELP_URL = parser.get('help', 'help_url')
