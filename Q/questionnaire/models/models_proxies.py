@@ -20,6 +20,10 @@ from Q.questionnaire.q_fields import PROPERTY_TYPE_CHOICES, ATOMIC_PROPERTY_TYPE
 from Q.questionnaire.q_utils import QError, validate_no_spaces, pretty_string
 from Q.questionnaire.q_constants import *
 
+def get_new_proxy_set(ontology=None, vocabularies=[]):
+    msg = "Proxies are created by registration, not by calling get_new_proxy_set."
+    raise NotImplementedError(msg)
+
 def get_existing_proxy_set(ontology=None, proxy=None, vocabularies=[]):
 
     # TODO: DEAL W/ STANDARD & SCIENTIFIC PROXIES
@@ -88,6 +92,35 @@ class QModelProxy(QProxy):
     def is_cim2(self):
         return self.ontology.is_cim2()
 
+    @classmethod
+    def recurse_through_proxies(cls, fn, obj, **kwargs):
+        """
+        calls a fn recursively on every QProxyModel in this hierarchy
+        (hierarchy is made up of relationship fields that point to other QModelProxies)
+        this is useful when trying to assess an entire proxy_set at once
+        :param fn: fn to call recursively
+        :param obj: QModelProxy object to check
+        :return: list of fn results
+        """
+        results = kwargs.pop("results", [])
+        already_checked_proxies = kwargs.pop("already_checked_proxies", [])
+
+        results.append(fn(obj))
+        already_checked_proxies.append(obj.guid)
+
+        for standard_property in obj.standard_properties.filter(field_type=QPropertyTypes.RELATIONSHIP):
+            for standard_property_target in standard_property.relationship_target_models.all():
+                if standard_property_target.guid not in already_checked_proxies:
+                    return QModelProxy.recurse_through_proxies(fn, standard_property_target, results=results, already_checked_proxies=already_checked_proxies)
+
+        return results
+
+    def has_multiple_targets(self):
+        for standard_property in self.standard_properties.filter(field_type=QPropertyTypes.RELATIONSHIP):
+            if standard_property.relationship_target_models.count() > 1:
+                return True
+        return False
+
 
 class QPropertyProxy(QProxy):
 
@@ -97,6 +130,7 @@ class QPropertyProxy(QProxy):
 
     cardinality = QCardinalityField(blank=False)
     is_nillable = models.BooleanField(default=True)
+    is_recursive = models.BooleanField(default=False)
     field_type = models.CharField(max_length=SMALL_STRING, blank=False, null=True, choices=PROPERTY_TYPE_CHOICES)
 
     def is_required(self):

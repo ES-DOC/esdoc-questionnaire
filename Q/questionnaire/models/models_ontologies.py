@@ -198,10 +198,10 @@ class QOntology(models.Model):
         request = kwargs.get("request")
 
         if self.last_registered_version:
-            last_registered_version_major = self.last_registered_version.get_version_major()
-            last_registered_version_minor = self.last_registered_version.get_version_minor()
-            current_version_major = self.version.get_version_major()
-            current_version_minor = self.version.get_version_minor()
+            last_registered_version_major = self.get_last_registered_version_major()
+            last_registered_version_minor = self.get_last_registered_version_minor()
+            current_version_major = self.get_version_major()
+            current_version_minor = self.get_version_minor()
             if last_registered_version_major != current_version_major or last_registered_version_minor != current_version_minor:
                 if request:
                     msg = "You are not allowed to re-register anything other than a new patch version."
@@ -395,6 +395,7 @@ class QOntology(models.Model):
 
         # name can be anything...
         ontology_name = get_index(xpath_fix(ontology_content, "name/text()"), 0)
+
         # version should match(ish) the instance field...
         ontology_version = get_index(xpath_fix(ontology_content, "version/text()"), 0)
         if self.version.major() != Version(ontology_version).major():
@@ -410,10 +411,12 @@ class QOntology(models.Model):
         old_model_proxies = list(self.model_proxies.all())  # list forces qs evaluation immediately
         new_model_proxies = []
 
-        for i, model_proxy in enumerate(xpath_fix(ontology_content, "//classes/class")):
+        for i, model_proxy in enumerate(xpath_fix(ontology_content, "//classes/class"), start=1):
 
             model_proxy_ontology = self
             model_proxy_name = xpath_fix(model_proxy, "name/text()")[0]
+            # if model_proxy_name == "multi_time_ensemble":
+            #     import ipdb;ipdb.set_trace()
             model_proxy_package = xpath_fix(model_proxy, "@package")[0]
             model_proxy_stereotype = get_index(xpath_fix(model_proxy, "@stereotype"), 0)
             model_proxy_documentation = get_index(xpath_fix(model_proxy, "description/text()"), 0)
@@ -431,7 +434,7 @@ class QOntology(models.Model):
             if created_model_proxy:
                 recategorization_needed = True
 
-            new_model_proxy.order = i + 1
+            new_model_proxy.order = i
             new_model_proxy.stereotype = model_proxy_stereotype
             new_model_proxy.documentation = model_proxy_documentation
             new_model_proxy.save()
@@ -440,7 +443,7 @@ class QOntology(models.Model):
             old_property_proxies = list(new_model_proxy.standard_properties.all())  # list forces qs evaluation immediately
             new_property_proxies = []
 
-            for j, property_proxy in enumerate(xpath_fix(model_proxy, "attributes/attribute")):
+            for j, property_proxy in enumerate(xpath_fix(model_proxy, "attributes/attribute"), start=1):
 
                 property_proxy_name = re.sub(r'\.', '_', str(xpath_fix(property_proxy, "name/text()")[0]))
                 property_proxy_field_type = xpath_fix(property_proxy, "type/text()")[0]
@@ -471,6 +474,7 @@ class QOntology(models.Model):
                     # TODO: HOW DO I COPE W/ ENUMERATION CHOICES W/ DESCRIPTIONS ?
                     property_proxy_enumeration_choices.append(xpath_fix(property_proxy_enumeration_choice, "value/text()")[0])
                 # relationship properties...
+                property_proxy_relationship_is_recursive = get_index(xpath_fix(property_proxy, "relationship/@is_recursive"), 0)
                 property_proxy_relationship_target_names = "|".join(
                     # note that each target_name is fully-qualified
                     xpath_fix(property_proxy, "relationship/targets/target/text()")
@@ -485,7 +489,7 @@ class QOntology(models.Model):
                 if created_property:
                     recategorization_needed = True
 
-                new_property_proxy.order = j + 1
+                new_property_proxy.order = j
                 new_property_proxy.package = property_proxy_package
                 new_property_proxy.documentation = property_proxy_documentation
                 new_property_proxy.is_label = property_proxy_is_label == "true"
@@ -502,6 +506,8 @@ class QOntology(models.Model):
                 if property_proxy_enumeration_is_nillable:
                     new_property_proxy.enumeration_is_nillable = property_proxy_enumeration_is_nillable == "true"
                 new_property_proxy.enumeration_choices = "|".join(property_proxy_enumeration_choices)
+                if property_proxy_relationship_is_recursive:
+                    new_property_proxy.is_recursive = property_proxy_relationship_is_recursive == "true"
                 new_property_proxy.relationship_target_names = property_proxy_relationship_target_names
                 new_property_proxy.save()
                 new_property_proxies.append(new_property_proxy)
