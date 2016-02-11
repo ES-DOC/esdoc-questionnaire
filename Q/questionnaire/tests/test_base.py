@@ -12,6 +12,7 @@ __author__ = 'allyn.treshansky'
 
 from django.db import models, connection, connections, DEFAULT_DB_ALIAS
 from django.db.models.query import QuerySet
+from django.conf import settings
 from django.core.management import call_command
 from django.core.management.color import no_style
 from django.core.cache import caches
@@ -165,6 +166,9 @@ class TestQBase(TestCase):
 
     @classmethod
     def setUpTestData(cls):
+        # clear the logfile..
+        log_file_name = settings.LOGGING["handlers"]["file"]["filename"]
+        open(log_file_name, 'w').close()
         # load fixture data...
         call_command('loaddata', TEST_FIXTURE_PATH, verbosity=0)
         # setup other data...
