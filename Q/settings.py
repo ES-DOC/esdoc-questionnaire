@@ -30,7 +30,7 @@ import sys
 rel = lambda *x: os.path.join(os.path.abspath(os.path.dirname(__file__)), *x)
 
 # Path to the configuration file containing secret values.
-CONF_PATH = os.path.join(os.path.expanduser('~'), '.config', 'esdoc-questionnaire.conf')
+CONF_PATH = os.path.join(os.path.expanduser('~'), '.config', 'cim2-questionnaire.conf')
 parser = SafeConfigParser()
 parser.read(CONF_PATH)
 
@@ -80,7 +80,6 @@ except NoOptionError:
 # (so this value doesn't matter)
 DEFAULT_SITE_ID = 1
 
-
 # Application definition
 
 INSTALLED_APPS = (
@@ -106,6 +105,17 @@ INSTALLED_APPS = (
     # viewing remote mindmaps...
     'mindmaps',
 )
+if 'test' in sys.argv:
+    # additional test models (not stored in db)...
+    # (see comment in "test_base.TestModel")
+    INSTALLED_APPS += (
+        'questionnaire.tests',
+        'questionnaire.tests.tests_unit',
+        'questionnaire.tests.tests_unit.tests_forms',
+        'questionnaire.tests.tests_unit.tests_models',
+        'questionnaire.tests.tests_unit.tests_views',
+    )
+
 
 MIDDLEWARE_CLASSES = (
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -171,7 +181,13 @@ STATIC_ROOT = rel(parser.get('settings', 'static_root', raw=True))
 STATIC_URL = '/static/'
 COMPRESS_ENABLED = True
 COMPRESS_OFFLINE = True
+# IN SOME CASES, EXPLICIT LOCATION OF CACHED COMPRESSED STATIC FILES IS REQUIRED
+# (see http://django-compressor.readthedocs.io/en/latest/remote-storages/)
+# COMMENT OUT THE FOLLOWING 1 LINE...
 COMPRESS_ROOT = rel(STATIC_ROOT, "questionnaire/")
+# AND UN-COMMENT OUT THE FOLLOWING 2 LINES...
+# COMPRESS_ROOT = STATIC_ROOT
+# COMPRESS_URL = STATIC_URL
 COMPRESS_PRECOMPILERS = (
     ('text/less', 'lessc {infile} {outfile}'),
 )
@@ -284,3 +300,8 @@ REST_FRAMEWORK = {
         'rest_framework.filters.DjangoFilterBackend',
     ),
 }
+
+# where to get help...
+Q_EMAIL = parser.get('help', 'email')
+Q_CODE_URL = parser.get('help', 'code_url')
+Q_HELP_URL = parser.get('help', 'help_url')

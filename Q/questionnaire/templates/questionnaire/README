@@ -1,7 +1,0 @@
-As a convention,
- * templates beginning w/ "_q" are questionnaire templates meant to be used w/in the context of other templates
- * templates beginning w/ "q_" are questionnaire templates that act as main pages (which may include the aforementioned "_q" templates)
- * templates beginning w/ "_q_section" are inserted via AJAX using the load-on-demand paradigm
-all others are special and included at your (my) own risk.
-
-All of the main page templates extend "q_base.html"
