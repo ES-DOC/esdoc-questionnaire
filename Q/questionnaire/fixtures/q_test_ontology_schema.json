@@ -1,0 +1,437 @@
+[
+    {
+        "fields": {
+            "username": "esdoc", 
+            "first_name": "", 
+            "last_name": "", 
+            "is_active": true, 
+            "is_superuser": true, 
+            "is_staff": true, 
+            "last_login": "2016-04-13T20:55:21.165Z", 
+            "groups": [], 
+            "user_permissions": [], 
+            "password": "pbkdf2_sha256$20000$HTUuFyBqBYxO$zohD4etHWUaJzT7The4ToUyVw3fzi9VhtqpVh3BSKhg=", 
+            "email": "allyn.treshansky@noaa.gov", 
+            "date_joined": "2016-04-13T13:39:27.386Z"
+        }, 
+        "model": "auth.user", 
+        "pk": 1
+    }, 
+    {
+        "fields": {
+            "domain": "example.com", 
+            "name": "example.com"
+        }, 
+        "model": "sites.site", 
+        "pk": 1
+    }, 
+    {
+        "fields": {
+            "user": 1, 
+            "projects": []
+        }, 
+        "model": "questionnaire.quserprofile", 
+        "pk": 1
+    }, 
+    {
+        "fields": {
+            "type": "", 
+            "site": 1
+        }, 
+        "model": "questionnaire.qsite", 
+        "pk": 1
+    }, 
+    {
+        "fields": {
+            "file": "questionnaire/ontologies/ontology_schema.xml", 
+            "categorization": 1, 
+            "name": "test", 
+            "created": "2016-04-13T13:41:18.363Z", 
+            "url": "http://www.foo.com", 
+            "modified": "2016-04-13T13:41:58.396Z", 
+            "is_registered": true, 
+            "version": "1.0.0", 
+            "key": "test_1.0.0", 
+            "guid": "320be71f-203d-41d8-8bc8-af88d6de85c7", 
+            "ontology_type": "SCHEMA", 
+            "last_registered_version": "1.0.0", 
+            "description": "This is a pretend CIM version used for testing purposes only. If you are seeing this in the production site, then something has gone horribly wrong."
+        }, 
+        "model": "questionnaire.qontology", 
+        "pk": 1
+    }, 
+    {
+        "fields": {
+            "is_registered": true, 
+            "created": "2016-04-13T13:41:40.710Z", 
+            "modified": "2016-04-13T13:42:15.469Z", 
+            "name": "test", 
+            "version": "1.0.0", 
+            "file": "questionnaire/categorizations/categorization.xml", 
+            "guid": "d6cb32e7-fc05-4c49-93de-eb9bf98b1641", 
+            "last_registered_version": "1.0.0", 
+            "description": "This is a pretend CIM categorization used for testing purposes only. If you are seeing this in the production site, then something has gone horribly wrong."
+        }, 
+        "model": "questionnaire.qcategorization", 
+        "pk": 1
+    }, 
+    {
+        "fields": {
+            "authenticated": true, 
+            "description": "", 
+            "title": "Test", 
+            "url": "", 
+            "is_active": true, 
+            "display_logo": false, 
+            "is_displayed": true, 
+            "logo": "", 
+            "email": "allyn.treshansky@noaa.gov", 
+            "name": "testaroonie"
+        }, 
+        "model": "questionnaire.qproject", 
+        "pk": 1
+    }, 
+    {
+        "fields": {
+            "project": 1, 
+            "ontology": 1
+        }, 
+        "model": "questionnaire.qprojectontology", 
+        "pk": 1
+    }, 
+    {
+        "fields": {
+            "guid": "cbe1480b-797e-4e92-942a-c97a02dfa3fd", 
+            "name": "model", 
+            "stereotype": "document", 
+            "created": "2016-04-13T13:41:57.841Z", 
+            "documentation": "", 
+            "modified": "2016-04-13T13:41:57.967Z", 
+            "package": "science", 
+            "is_specialized": false, 
+            "ontology": 1, 
+            "order": 1
+        }, 
+        "model": "questionnaire.qmodelproxy", 
+        "pk": 1
+    }, 
+    {
+        "fields": {
+            "guid": "304c43b1-264d-4f09-a924-814074d458dd", 
+            "name": "recursive_thing", 
+            "stereotype": null, 
+            "created": "2016-04-13T13:41:57.983Z", 
+            "documentation": "", 
+            "modified": "2016-04-13T13:41:58.077Z", 
+            "package": "shared", 
+            "is_specialized": false, 
+            "ontology": 1, 
+            "order": 2
+        }, 
+        "model": "questionnaire.qmodelproxy", 
+        "pk": 2
+    }, 
+    {
+        "fields": {
+            "guid": "ad2fc350-effd-4073-bbc9-502bae06d0d1", 
+            "name": "other_thing_one", 
+            "stereotype": null, 
+            "created": "2016-04-13T13:41:58.092Z", 
+            "documentation": "", 
+            "modified": "2016-04-13T13:41:58.143Z", 
+            "package": "shared", 
+            "is_specialized": false, 
+            "ontology": 1, 
+            "order": 3
+        }, 
+        "model": "questionnaire.qmodelproxy", 
+        "pk": 3
+    }, 
+    {
+        "fields": {
+            "guid": "0fb84ab6-8f38-401f-b05d-281fc45bd7cb", 
+            "name": "other_thing_two", 
+            "stereotype": null, 
+            "created": "2016-04-13T13:41:58.159Z", 
+            "documentation": "", 
+            "modified": "2016-04-13T13:41:58.220Z", 
+            "package": "shared", 
+            "is_specialized": false, 
+            "ontology": 1, 
+            "order": 4
+        }, 
+        "model": "questionnaire.qmodelproxy", 
+        "pk": 4
+    }, 
+    {
+        "fields": {
+            "categorization": 1, 
+            "name": "Category One", 
+            "created": "2016-04-13T13:42:15.022Z", 
+            "documentation": "I am category one.", 
+            "modified": "2016-04-13T13:42:15.094Z", 
+            "is_specialized": false, 
+            "guid": "169ae349-2c68-4e0f-afc6-2bab3c7abdde", 
+            "order": 1
+        }, 
+        "model": "questionnaire.qcategoryproxy", 
+        "pk": 1
+    }, 
+    {
+        "fields": {
+            "categorization": 1, 
+            "name": "Category Two", 
+            "created": "2016-04-13T13:42:15.109Z", 
+            "documentation": "I am category two.", 
+            "modified": "2016-04-13T13:42:15.311Z", 
+            "is_specialized": false, 
+            "guid": "0d2529a8-d4ea-4f0c-b587-35b9fa0d7232", 
+            "order": 2
+        }, 
+        "model": "questionnaire.qcategoryproxy", 
+        "pk": 2
+    }, 
+    {
+        "fields": {
+            "categorization": 1, 
+            "name": "Category Three", 
+            "created": "2016-04-13T13:42:15.351Z", 
+            "documentation": "I am category three.", 
+            "modified": "2016-04-13T13:42:15.402Z", 
+            "is_specialized": false, 
+            "guid": "36c77ebc-468f-4ef0-8076-3b722d32d7de", 
+            "order": 3
+        }, 
+        "model": "questionnaire.qcategoryproxy", 
+        "pk": 3
+    }, 
+    {
+        "fields": {
+            "categorization": 1, 
+            "name": "Uncategorized", 
+            "created": "2016-04-13T13:42:15.416Z", 
+            "documentation": "", 
+            "modified": "2016-04-13T13:42:15.427Z", 
+            "is_specialized": false, 
+            "guid": "449309a6-ae0b-49d5-b6e9-08fe8352e8b4", 
+            "order": 4
+        }, 
+        "model": "questionnaire.qcategoryproxy", 
+        "pk": 4
+    }, 
+    {
+        "fields": {
+            "category": 1, 
+            "field_type": "ATOMIC", 
+            "guid": "ced5f841-032f-4dde-ba86-e9f390f9754d", 
+            "documentation": "", 
+            "name": "name", 
+            "stereotype": null, 
+            "relationship_target_models": [], 
+            "created": "2016-04-13T13:41:57.899Z", 
+            "modified": "2016-04-13T13:42:15.064Z", 
+            "enumeration": null, 
+            "model_proxy": 1, 
+            "order": 1, 
+            "is_specialized": false, 
+            "is_nillable": true, 
+            "enumeration_multi": false, 
+            "enumeration_open": false, 
+            "relationship_target_names": "", 
+            "cardinality": "1|1", 
+            "atomic_default": null, 
+            "atomic_type": "DEFAULT"
+        }, 
+        "model": "questionnaire.qpropertyproxy", 
+        "pk": 1
+    }, 
+    {
+        "fields": {
+            "category": 2, 
+            "field_type": "ENUMERATION", 
+            "guid": "ac8bb48d-a68b-4b69-b3ef-04c52d80cc59", 
+            "documentation": "A test enumeration.", 
+            "name": "enumeration", 
+            "stereotype": null, 
+            "relationship_target_models": [], 
+            "created": "2016-04-13T13:41:57.927Z", 
+            "modified": "2016-04-13T13:42:15.126Z", 
+            "enumeration": "[{u'documentation': u'documentation for one.', u'order': 1, u'value': u'one'}, {u'documentation': u'documentation for two.', u'order': 2, u'value': u'two'}, {u'documentation': u'documentation for three.', u'order': 3, u'value': u'three'}]", 
+            "model_proxy": 1, 
+            "order": 2, 
+            "is_specialized": false, 
+            "is_nillable": true, 
+            "enumeration_multi": false, 
+            "enumeration_open": false, 
+            "relationship_target_names": "", 
+            "cardinality": "0|1", 
+            "atomic_default": null, 
+            "atomic_type": "DEFAULT"
+        }, 
+        "model": "questionnaire.qpropertyproxy", 
+        "pk": 2
+    }, 
+    {
+        "fields": {
+            "category": 3, 
+            "field_type": "RELATIONSHIP", 
+            "guid": "e1c54263-3f0f-4c10-b40c-7700f75e48d1", 
+            "documentation": "A relationship property; there are lots of spaces in this documentation.", 
+            "name": "thing", 
+            "stereotype": null, 
+            "relationship_target_models": [
+                2
+            ], 
+            "created": "2016-04-13T13:41:57.948Z", 
+            "modified": "2016-04-13T13:42:15.369Z", 
+            "enumeration": null, 
+            "model_proxy": 1, 
+            "order": 3, 
+            "is_specialized": false, 
+            "is_nillable": true, 
+            "enumeration_multi": false, 
+            "enumeration_open": false, 
+            "relationship_target_names": "shared.recursive_thing", 
+            "cardinality": "0|1", 
+            "atomic_default": null, 
+            "atomic_type": "DEFAULT"
+        }, 
+        "model": "questionnaire.qpropertyproxy", 
+        "pk": 3
+    }, 
+    {
+        "fields": {
+            "category": 1, 
+            "field_type": "ATOMIC", 
+            "guid": "b869c18b-3b4a-48ca-ab3a-251e786b5b3f", 
+            "documentation": "", 
+            "name": "name", 
+            "stereotype": null, 
+            "relationship_target_models": [], 
+            "created": "2016-04-13T13:41:58.010Z", 
+            "modified": "2016-04-13T13:42:15.080Z", 
+            "enumeration": null, 
+            "model_proxy": 2, 
+            "order": 1, 
+            "is_specialized": false, 
+            "is_nillable": true, 
+            "enumeration_multi": false, 
+            "enumeration_open": false, 
+            "relationship_target_names": "", 
+            "cardinality": "1|1", 
+            "atomic_default": null, 
+            "atomic_type": "DEFAULT"
+        }, 
+        "model": "questionnaire.qpropertyproxy", 
+        "pk": 4
+    }, 
+    {
+        "fields": {
+            "category": 2, 
+            "field_type": "RELATIONSHIP", 
+            "guid": "b639e62c-4b76-4fd9-822c-ebb9badc0886", 
+            "documentation": "", 
+            "name": "child", 
+            "stereotype": null, 
+            "relationship_target_models": [
+                2
+            ], 
+            "created": "2016-04-13T13:41:58.037Z", 
+            "modified": "2016-04-13T13:42:15.148Z", 
+            "enumeration": null, 
+            "model_proxy": 2, 
+            "order": 2, 
+            "is_specialized": false, 
+            "is_nillable": true, 
+            "enumeration_multi": false, 
+            "enumeration_open": false, 
+            "relationship_target_names": "shared.recursive_thing", 
+            "cardinality": "0|*", 
+            "atomic_default": null, 
+            "atomic_type": "DEFAULT"
+        }, 
+        "model": "questionnaire.qpropertyproxy", 
+        "pk": 5
+    }, 
+    {
+        "fields": {
+            "category": 3, 
+            "field_type": "RELATIONSHIP", 
+            "guid": "3baf1223-2f4c-4dcf-a5b8-f0707043b5d4", 
+            "documentation": "", 
+            "name": "multiple_targets", 
+            "stereotype": null, 
+            "relationship_target_models": [
+                3, 
+                4
+            ], 
+            "created": "2016-04-13T13:41:58.059Z", 
+            "modified": "2016-04-13T13:42:15.390Z", 
+            "enumeration": null, 
+            "model_proxy": 2, 
+            "order": 3, 
+            "is_specialized": false, 
+            "is_nillable": true, 
+            "enumeration_multi": false, 
+            "enumeration_open": false, 
+            "relationship_target_names": "shared.other_thing_one|shared.other_thing_two", 
+            "cardinality": "0|1", 
+            "atomic_default": null, 
+            "atomic_type": "DEFAULT"
+        }, 
+        "model": "questionnaire.qpropertyproxy", 
+        "pk": 6
+    }, 
+    {
+        "fields": {
+            "category": 4, 
+            "field_type": "ATOMIC", 
+            "guid": "c80c309c-e3ef-49e4-ba06-44a588d4fb00", 
+            "documentation": "", 
+            "name": "name", 
+            "stereotype": null, 
+            "relationship_target_models": [], 
+            "created": "2016-04-13T13:41:58.117Z", 
+            "modified": "2016-04-13T13:42:15.458Z", 
+            "enumeration": null, 
+            "model_proxy": 3, 
+            "order": 1, 
+            "is_specialized": false, 
+            "is_nillable": true, 
+            "enumeration_multi": false, 
+            "enumeration_open": false, 
+            "relationship_target_names": "", 
+            "cardinality": "1|1", 
+            "atomic_default": null, 
+            "atomic_type": "DEFAULT"
+        }, 
+        "model": "questionnaire.qpropertyproxy", 
+        "pk": 7
+    }, 
+    {
+        "fields": {
+            "category": 4, 
+            "field_type": "ATOMIC", 
+            "guid": "cb514026-f71c-4618-9442-041dec8c401d", 
+            "documentation": "", 
+            "name": "name", 
+            "stereotype": null, 
+            "relationship_target_models": [], 
+            "created": "2016-04-13T13:41:58.195Z", 
+            "modified": "2016-04-13T13:42:15.444Z", 
+            "enumeration": null, 
+            "model_proxy": 4, 
+            "order": 1, 
+            "is_specialized": false, 
+            "is_nillable": true, 
+            "enumeration_multi": false, 
+            "enumeration_open": false, 
+            "relationship_target_names": "", 
+            "cardinality": "1|1", 
+            "atomic_default": null, 
+            "atomic_type": "DEFAULT"
+        }, 
+        "model": "questionnaire.qpropertyproxy", 
+        "pk": 8
+    }
+]

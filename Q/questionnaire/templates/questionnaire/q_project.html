@@ -1,0 +1,155 @@
+{# q_project.html #}
+
+{% extends "questionnaire/q_base.html" %}
+
+{% load staticfiles %}
+{% load compress %}
+{% load q_tags_ng %}
+
+
+{% block title %}
+    {{ project.title }}
+    {{ block.super }}
+{% endblock %} {# /title #}
+
+
+{% block scripts %}
+    {{ block.super }}
+    <script language="javascript" type="text/javascript" src="{% static 'questionnaire/js/q_ng_project.js' %}"></script>
+    <script language="JavaScript">
+        var project_id = {{ project.pk }}
+    </script>
+{% endblock %} {# /scripts #}
+
+
+{% block style %}
+    {{ block.super }}
+    <style type="text/css">
+        .ng-dirty { border-color: #CCCCCC !important; } /* don't bother validating form fields on this page */
+    </style>
+{% endblock %} {# / style #}
+
+
+{% block content %}
+
+{# putting this ng stuff up top so it's available to the entire page #}
+{# (as well as to the includes) #}
+
+<div ng-app="q_project">
+    <div ng-controller="ProjectController as project_controller">
+
+{# wrapping everything in bootstrap grids to help w/ placement #}
+
+<div class="container-fluid">
+    <div class="col-md-12">
+
+{# adding Django CSRF stuff here #}
+{# even though this page doesn't use Django forms #}
+{# in-case it's required for ng AJAX calls #}
+
+{% csrf_token %}
+
+
+    <div class="title row">
+        {{ project.title }} CIM Questionnaire Project
+    </div> <!-- /#title -->
+
+
+    <div class="documentation row">
+        <div class="col-md-10">
+            This is the Project Page for the
+            {% if project.url %}
+            <a href="{{ project.url }}">{{ project.title }}</a>
+            {% else %}
+            {{ project.title }}
+            {% endif %} {# /project.url #}
+            project.
+        </div>
+        <div class="col-md-10">
+            <a href="{% url 'help' %}">ES-DOC Questionnaire help</a> is available.
+        </div>
+        <div class="col-md-10 voffset-8">
+
+            {% if project.description %}
+                <span class="col-md-2"><strong>Project Description:</strong></span>
+                <span class="col-md-10">{{ project.description }}</span>
+            {% endif %} {# /project.description #}
+
+            {% if project.email %}
+                <span class="col-md-2"><strong>Project Contact:</strong></span>
+                <span class="col-md-10"><a href="mailto:{{ project.email }}">{{ project.email }}</a></span>
+            {% endif %} {# /project.email #}
+
+            {# if has_published #}  {# always display feed #}
+                <span class="col-md-2"><strong>Document Feed:</strong></span>
+                <span class="col-md-10"><a href="/feed/{{ project.name }}">{{ request.get_host }}/feed/{{ project.name }}</a></span>
+            {# endif #} {# /has_published #}
+
+            {% if not project.authenticated %}
+                <span class="col-md-12"><strong>Project does not require authentication.  Any user can create or modify a document or a customization.</strong></span>
+            {% endif %} {# /project.authenticated #}
+
+            {% if can_join %}
+                <div class="col-md-4">
+                    <button class="btn btn-xs btn-primary voffset-4"
+                            title="Your request will be sent to the project administrator for review."
+                            ng-click="project_controller.project_join_request('{{ user.pk }}')">
+                            Join {{ project.title }} Project
+                    </button>
+                </div>
+            {% endif %} {# /can_join #}
+
+        </div>
+    </div> <!-- /.documentation -->
+
+
+    <div class="col-md-12 row">
+
+        <div class="panel panel-default">
+            <div class="panel-body">
+
+                <ul class="nav nav-tabs" role="tablist">
+                      {% if can_view and not can_edit %}
+                          <li role="presentation" class="active"><a href="#tab_view" aria-controls="home" role="tab" data-toggle="tab">View an existing CIM Document</a></li>
+                      {% endif %} {# /can_view and not can_edit #}
+                      {% if can_edit %}
+                          <li role="presentation" class="active"><a href="#tab_edit" aria-controls="home" role="tab" data-toggle="tab">Edit or Create a CIM Document</a></li>
+                      {% endif %} {# /can_edit #}
+                      {% if can_customize %}
+                          <li role="presentation"><a href="#tab_customize" aria-controls="home" role="tab" data-toggle="tab">Customize the CIM Questionnaire</a></li>
+                      {% endif %} {# /can_customize #}
+                </ul> <!-- /.nav-tabs -->
+
+                <div class="tab-content">
+                    {% if can_view and not can_edit %}
+                        <div role="tabpanel" class="tab-pane panel active" id="tab_view">
+                            {% include "questionnaire/_q_project_view.html" %}
+                        </div> <!-- /.tab-pane -->
+                    {% endif %} {# /can_view and not can_edit #}
+                    {% if can_edit %}
+                        <div role="tabpanel" class="tab-pane panel active" id="tab_edit">
+                            {% include "questionnaire/_q_project_edit.html" %}
+                        </div> <!-- /.tab-pane -->
+                    {% endif %} {# /can_edit #}
+                    {% if can_customize %}
+                        <div role="tabpanel" class="tab-pane panel" id="tab_customize">
+                            {% include "questionnaire/_q_project_customize.html" %}
+                        </div> <!-- /.tab-pane -->
+                    {% endif %} {# /can_customize #}
+                </div> <!-- /.tab-content -->
+
+            </div> <!-- /.panel-body -->
+        </div> <!-- /.panel -->
+
+
+    </div>
+
+
+    </div> <!-- /.col-md-12 -->
+</div> <!-- /.container-fluid -->
+
+
+    </div> <!-- /ng-controller:project_controller -->
+</div> <!-- /ng-app:q_project -->
+
+{% endblock %} {# /content #}

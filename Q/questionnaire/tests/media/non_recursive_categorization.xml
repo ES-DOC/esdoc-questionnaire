@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<categorization>
+    <name>non_recursive_categorization</name>
+    <version>1.0</version>
+    <description>This is a pretend CIM categorization used for testing purposes only. If you are
+        seeing this in the production site, then something has gone horribly wrong.</description>
+    <categories>
+        <category>
+            <name>Category One</name>
+            <description>I am category one.</description>
+            <order>1</order>
+            <key>category-one</key>
+        </category>
+        <category>
+            <name>Category Two</name>
+            <description>I am category two.</description>
+            <order>2</order>
+            <key>category-two</key>
+        </category>
+    </categories>
+    <models>
+        <model>
+            <name>science.parent</name>
+            <fields>
+                <field>
+                    <name>parent_name</name>
+                    <category_key>category-one</category_key>
+                </field>
+                <field>
+                    <name>child</name>
+                    <category_key>category-two</category_key>
+                </field>
+            </fields>
+        </model>
+        <model>
+            <name>shared.child</name>
+            <fields>
+                <field>
+                    <name>child_name</name>
+                    <category_key>category-one</category_key>
+                </field>
+            </fields>
+        </model>
+    </models>
+</categorization>

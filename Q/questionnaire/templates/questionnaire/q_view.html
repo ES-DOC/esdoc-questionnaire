@@ -1,0 +1,172 @@
+{# q_view.html #}
+
+{% extends "questionnaire/q_base.html" %}
+
+{% load staticfiles %}
+{% load compress %}
+{% load djangular_tags %}
+{% load q_tags %}
+
+{% block title %}
+    CIM Questionnaire Viewer
+{% endblock %} {# /title #}
+
+{% block scripts %}
+    {{ block.super }}
+        <script language="JavaScript" type="text/javascript" src="{% static 'djangular/js/django-angular.js' %}"></script>
+        <script language="javascript" type="text/javascript" src="{% static 'questionnaire/js/q_ng_editor.js' %}"></script>
+        <script language="JavaScript">
+
+            var session_key = "{{ session_key }}";  /* session_key can be used to locate items in the cache */
+            var project_id = {{ project.pk }};
+
+            var view_url_dirname = "{{ view_url_dirname }}";
+            var api_url_dirname = "{{ api_url_dirname }}";
+
+            var realization_id = {{ realization.id|default:0 }};
+            var realization_name = "{{ realization.get_label }}";
+
+            var read_only = {{ read_only }};
+
+            $(document).ready(
+                function() {
+
+                    /* the customizer forms can have stackable modals (when customizing subforms) */
+                    /* this is not _really_ supported by Bootstrap3 */
+                    /* so this bit of code addresses that */
+                    /* (got the idea from http://stackoverflow.com/a/24914782) */
+
+                   $(document)
+                       .on('show.bs.modal', '.modal', function (event) {
+                           var zIndex = 1040 + (10 * $('.modal:visible').length);
+                           $(this).css('z-index', zIndex);
+                           setTimeout(function() {
+                               $('.modal-backdrop').not('.modal-stack').css('z-index', zIndex - 1).addClass('modal-stack');
+                           }, 0);
+                       })
+                       .on('hidden.bs.modal', '.modal', function () {
+                          $('.modal:visible').length && $(document.body).addClass('modal-open');
+                       });
+
+                }
+            );
+
+        </script>
+{% endblock %} {# /scripts #}
+
+{% block content %}
+
+<div ng-app="q_editor">
+
+    {# HERE IS THE PARENT CONTROLLER #}
+    <div ng-controller="EditorController as editor_controller">
+
+        {# wrapping everything in bootstrap grids to help w/ placement #}
+
+        <div class="container-fluid">
+            <div class="col-md-12">
+
+                {% block content-title %}
+                <div class="title row">
+                    Viewing {{ customization.model_title|a_or_an }} <em>read-only</em> <strong>{{ customization.model_title }}</strong> instance for the <a href="/{{ project.name }}" title="ES-DOC Questionnaire Project Home Page"><strong>{{ project.title }}</strong></a> Project
+                </div> <!-- /.title -->
+                {% endblock %} {# /content-title #}
+
+                {% block content-documentation %}
+                <div class="documentation row">
+                    <div class="col-md-12">
+                        Use this page to view a {{ customization.model_title }} document.
+                    </div>
+                    <div class="col-md-10">
+                        <a href="{% url 'help' %}">ES-DOC Questionnaire help</a> is available.
+                    </div>
+                </div> <!-- /.documentation -->
+                {% endblock %} {# /content-documentation #}
+
+                <div class="col-md-12 row">
+
+                    {% csrf_token %}
+
+                    {# HERE IS THE TOP-LEVEL MODEL CONTROLLER #}
+                    <div ng-controller="ModelEditorController as model_editor_controller"
+                         current_model_path="_DATA">
+
+                        <div class="panel panel-success">
+
+                            <div class="panel-header clearfix">
+                                <span class="text-primary pull-right voffset-4">
+                                    <!-- this span is copied from "_q_help.html" & hard-coded b/c I can't pass a multiline-variable to the "_q_help.html" template -->
+                                    <span class="help glyphicon glyphicon-info-sign"
+                                          data-toggle="popover"
+                                          data-container="body"
+                                          data-content="
+                                           <p>
+                                               Use this checkbox to toggle the indication of incomplete sections.
+                                           </p>
+                                           <p>
+                                               When selected, any section with required properties that have <em>not</em> been filled in will be indicated by this icon:
+                                               <span class='glyphicon glyphicon-pushpin glyphicon-danger'/>.
+                                           </p>
+                                           <p>
+                                               Only documents with no incomplete properties can be published.
+                                           </p>
+                                          ">
+                                    </span>
+                                    <label for="completion_status_0" style="font-weight: normal;">
+                                        view completion status
+                                        <input id="completion_status_0" type="checkbox" ng-click="show_completion_status = !show_completion_status"/>
+                                    </label>
+                                    &nbsp;
+                                </span>
+                            </div>  <!-- /.panel-header -->
+
+                            <div class="panel-body panel-success">
+
+                                <section model_to_watch="current_model"
+                                         key="{% verbatim ng %}{{ current_model.key }}{% endverbatim ng %}"
+                                         section_type="model_realization"/>
+
+                            </div> <!-- /.panel-body -->
+                        </div>  <!-- /.panel -->
+
+                    </div>  <!-- /.ng-controller=ModelRealizationController -->
+
+                </div>
+
+            </div>
+        </div>
+
+        {% block content-submit %}
+            <!-- no content submission buttons for view -->
+        {% endblock %} {# /content-submit #}
+
+{# ########################################## #}
+{# TODO: DELETE THIS BIT ONCE CODE IS WORKING #}
+{% if request.current_site|site_type != "PROD" %}
+    <div class="col-md-12 row debug">
+        <button class="btn btn-danger btn-xs pull-right"
+                title="print ng scope to console"
+                ng-click="print_stuff()">
+            <span class="glyphicon glyphicon-cog"></span>
+        </button>
+    </div> <!-- /.debug -->
+{% endif %} {# /site_type != "PROD" #}
+{# ########################################## #}
+
+    </div>  <!-- /ng-controller=EditorController -->
+
+</div>  <!-- /#q_editor -->
+
+{% endblock %} {# /content #}
+
+{% block footer %}
+    {{ block.super }}
+    <div class="footer">
+        It uses the ontology
+        {% if ontology.url %}
+            <a target="_blank" href="{{ ontology.url }}">{{ ontology }}</a>.
+        {% else %}
+            {{ ontology }}.
+        {% endif %}
+    </div>
+{% endblock %} {# /footer #}

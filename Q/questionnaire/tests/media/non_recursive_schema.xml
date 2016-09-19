@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ontology>
+    <name>non-recursive ontology</name>
+    <version>2.0</version>
+    <description>This is a pretend CIM version used for testing purposes only. If you are seeing
+        this in the production site, then something has gone horribly wrong.</description>
+    <classes>
+        <class package="science" stereotype="document">
+            <name>parent</name>
+            <description/>
+            <attributes>
+                <attribute is_label="true" is_nillable="true">
+                    <name>parent_name</name>
+                    <description/>
+                    <cardinality min="1" max="1"/>
+                    <type>ATOMIC</type>
+                    <atomic>
+                        <atomic_type>STRING</atomic_type>
+                    </atomic>
+                </attribute>
+                <attribute is_nillable="true">
+                    <name>child</name>
+                    <description>A relationship property;          
+                    there are lots of spaces in this documentation.</description>
+                    <cardinality min="0" max="1"/>
+                    <type>RELATIONSHIP</type>
+                    <relationship is_recursive="true">
+                        <targets>
+                            <target>shared.child</target>
+                        </targets>
+                    </relationship>
+                </attribute>
+            </attributes>
+        </class>
+        <class package="shared">
+            <name>child</name>
+            <description/>
+            <attributes>
+                <attribute is_nillable="true">
+                    <name>child_name</name>
+                    <cardinality min="1" max="1"/>
+                    <type>ATOMIC</type>
+                    <atomic>
+                        <atomic_type>STRING</atomic_type>
+                    </atomic>
+                </attribute>
+            </attributes>
+        </class>
+    </classes>
+</ontology>

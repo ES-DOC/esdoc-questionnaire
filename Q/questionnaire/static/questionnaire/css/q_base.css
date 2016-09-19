@@ -1,0 +1,35 @@
+/* custom CSS for CIM Questionnaire */
+
+/****************/
+/* begin errors */
+/****************/
+
+/* errors should be a stacked list w/ no bullets or spacing */
+
+#questionnaire .error_wrapper {
+    display: inline;
+    padding: 0px;
+}
+#questionnaire .error_wrapper .errorlist {
+    display: inline;
+    list-style-type: none;
+    padding: 0px;
+    margin: 0px;
+}
+#questionnaire .error_wrapper .errorlist li {
+    display: inline;
+}
+
+/**************/
+/* end errors */
+/**************/
+
+
+#questionnaire .submit {
+    float: right;
+}
+
+
+/*********************/
+/* end content stuff */
+/*********************/

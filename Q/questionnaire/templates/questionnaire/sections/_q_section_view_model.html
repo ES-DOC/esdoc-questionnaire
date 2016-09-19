@@ -1,0 +1,97 @@
+{# _q_section_view_model.html #}
+
+{# this is a "section" template #}
+{# it is inserted as needed by ng via AJAX using the load-on-demand paradigm #}
+
+{# see the "q_load_section" django view #}
+{# and see the "service" ng directive" #}
+
+{% load q_tags %}
+
+<!-- note it is super-important to set 'current_model' to the current scope -->
+<!-- this is how I get recursion to work; all ng variables are based off of 'current_model' -->
+
+<div class="panel panel-info model_form">
+
+    <form name="{{form.form_name}}"
+          class="form-horizontal"
+          watch-form-validity="models_validity"
+          novalidate>
+
+        <fieldset ng-disabled="is_read_only()">  {# "read_only" is passed in via the view #}
+
+           {# I AM ADDING "ng-init" EXPLICITLY TO FIELDS AS NEEDED #}
+           {# RATHER THAN TO THE ENTIRE FORM W/ "form.get_initial_data|jsonify|safe" #}
+           {# SEE "forms_edit.py#set_default_field_value" FOR MORE INFO #}
+
+            <div class="hidden">
+                {% for field in form.get_hidden_fields %}
+                    {{ field }}
+                {% endfor %}
+            </div>
+
+            {# in general (as mentioned in the comment above), I set default values directly on form fields #}
+            {# in this case, however, I use the customization directly b/c the "description" field #}
+            {# is not displayed as part of the model_form #}
+            {% with description=form.customization.model_description %}
+                {% if description %}
+                    <div class="well well-sm well-info" style="margin: 4px;">
+                        <span class="documentation">
+                            {{ description }}
+                        </span>
+                    </div>  <!-- /.panel-heading -->
+                {% endif %}
+            {% endwith %}
+
+            <div class="panel-body">
+
+                {# this is a strange mix of Django & ng, but that is by design... #}
+                {# ng makes things efficient & RESTful while Django handles customization #}
+                {# TODO: although, is there any way to make it less icky? #}
+
+                <ul class="list-group">
+                    {% for form in formset %}
+                        <div ng-controller="PropertyEditorController as property_editor_controller"
+                             current_model_path="{% verbatim ng %}{{ current_model_path }}{% endverbatim ng %}.properties[{{ form.get_serialized_order }}]"> <!-- forloop.counter0 }}]"> --> <!-- TODO: I DO NOT LIKE HAVING TO CALL .get_serialized_order -->
+                            {% if form.is_hidden == True %}
+                                <!-- still include the form even if the property has been customized to be hidden -->
+                                <!-- so that the ng-model gets updated in case there was a custom default value -->
+                                <div class="hidden">
+                                    <div class="property_form">
+                                        {{ form }}
+                                    </div>  <!-- /.property_form -->
+                                </div>
+
+                            {% else %}
+                                <li class="list-group-item {% cycle 'odd' 'even' %}">
+                                    <div class="property_form">
+                                        <div class="hidden">
+                                            {% for field in form.get_hidden_fields %}
+                                                {{ field }}
+                                            {% endfor %}
+                                        </div>
+                                        {% with field_type=form.get_field_type %}
+                                            {% if field_type == "ATOMIC" %}
+                                                {% include "questionnaire/_q_view_property_atomic.html" %}
+                                            {% elif field_type == "ENUMERATION" %}
+                                                {% include "questionnaire/_q_view_property_enumeration.html" %}
+                                            {% else %} {# field_type == "RELATIONSHIP" #}
+                                                {% include "questionnaire/_q_view_property_relationship.html" %}
+                                            {% endif %}
+                                        {% endwith %}  {# /field_type #}
+                                    </div>  <!-- /.property_form -->
+                                </li>
+
+                            {% endif %}  {# /form.is_hidden #}
+
+                        </div>  <!-- /.ng-controller=PropertyController -->
+                    {% endfor %}
+                </ul>
+
+            </div>
+
+        </fieldset> <!-- / ng-disabled="read_only" -->
+
+    </form>
+
+</div>  <!-- /.model_form -->

@@ -1,0 +1,93 @@
+{# q_edit.html #}
+
+{% extends "questionnaire/q_view.html" %}
+
+{% load staticfiles %}
+{% load compress %}
+{% load djangular_tags %}
+{% load q_tags %}
+
+{% block title %}
+    CIM Questionnaire Editor
+{% endblock %} {# /title #}
+
+{% block scripts %}
+    {{ block.super }}
+        <script language="JavaScript" type="text/javascript" src="{% static 'djangular/js/django-angular.js' %}"></script>
+        <script language="javascript" type="text/javascript" src="{% static 'questionnaire/js/q_ng_editor.js' %}"></script>
+        <script language="JavaScript">
+
+            var session_key = "{{ session_key }}";  /* session_key can be used to locate items in the cache */
+            var project_id = {{ project.pk }};
+
+            var view_url_dirname = "{{ view_url_dirname }}";
+            var api_url_dirname = "{{ api_url_dirname }}";
+
+            var realization_id = {{ realization.id|default:0 }};
+            var realization_name = "{{ realization.get_label }}";
+
+            var read_only = {{ read_only }};
+
+            $(document).ready(
+                function() {
+
+                    /* the customizer forms can have stackable modals (when customizing subforms) */
+                    /* this is not _really_ supported by Bootstrap3 */
+                    /* so this bit of code addresses that */
+                    /* (got the idea from http://stackoverflow.com/a/24914782) */
+
+                   $(document)
+                       .on('show.bs.modal', '.modal', function (event) {
+                           var zIndex = 1040 + (10 * $('.modal:visible').length);
+                           $(this).css('z-index', zIndex);
+                           setTimeout(function() {
+                               $('.modal-backdrop').not('.modal-stack').css('z-index', zIndex - 1).addClass('modal-stack');
+                           }, 0);
+                       })
+                       .on('hidden.bs.modal', '.modal', function () {
+                          $('.modal:visible').length && $(document.body).addClass('modal-open');
+                       });
+
+                }
+            );
+
+        </script>
+{% endblock %} {# /scripts #}
+
+{# HERE IS THE CONTENT; NOTE THAT MOST OF IT IS HANDLED IN "q_view.html" #}
+
+    {% block content-title %}
+        <div class="title row">
+            Editing {{ customization.model_title|a_or_an }} <strong>{{ customization.model_title }}</strong> instance for the <a href="/{{ project.name }}" title="ES-DOC Questionnaire Project Home Page"><strong>{{ project.title }}</strong></a> Project
+        </div> <!-- /.title -->
+    {% endblock %} {# /content-title #}
+
+    {% block content-documentation %}
+        <div class="documentation row">
+            <div class="col-md-12">
+                Use this page to create or modify a {{ customization.model_title }} document.
+                When you have finished filling in all properties, click the "submit" button at the bottom of the page to store a local copy.
+                Invalid entries are indicated using a <span style="color: #ff0000; font-weight: bold;">red</span> font.
+            </div>
+            <div class="col-md-10">
+                <a href="{% url 'help' %}">ES-DOC Questionnaire help</a> is available.
+            </div>
+        </div> <!-- /.documentation -->
+    {% endblock %} {# /content-documentation #}
+
+
+    {% block content-submit %}
+        <div class="form-group voffset-16">
+            <div class="col-sm-offset-3 col-sm-7">
+                <button class="btn btn-primary"
+                        ng-click="submit_realization()"
+                        title="save the current state of this document">
+                    <!-- notice how this button uses the "submit_realization" fn from the parent "editor_controller" -->
+                    <!-- (instead of the child "model_controller") -->
+                    submit
+                </button>
+            </div>
+        </div>
+    {% endblock %} {# /content-submit #}
+
+{# HERE ENDS THE CONTENT #}

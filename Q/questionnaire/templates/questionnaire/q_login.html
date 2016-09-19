@@ -1,0 +1,96 @@
+{# q_login.html #}
+
+{% extends "questionnaire/q_base.html" %}
+
+{% load staticfiles %}
+
+
+{% block title %}
+    CIM Questionnaire Login
+{% endblock %} {# /title #}
+
+
+{% block scripts %}
+    {{ base.super }}
+    <script language="javascript">
+
+    /* just setup a minimum of jquery-ui functionality */
+    $(document).ready(
+        function() {
+
+            var parent = document.body;
+
+            init_widgets(helps, $(parent).find(".help"));
+
+        }
+    );
+
+    </script>
+{% endblock %} {# /scripts #}
+
+
+{% block user %}
+    <!-- no user block for q_login -->
+{% endblock %} {# /user #}
+
+{% block content %}
+
+    <div class="title">
+        Please login to the CIM Questionnaire
+    </div> <!-- /#title -->
+
+    <div class="documentation">
+        <p class="info">
+            For the best experience, please use Firefox or Chrome.  These are the browsers we support.
+        </p>
+    </div>
+
+    <div class="container-fluid">
+        <div class="col-md-8">
+
+            <form class="form-horizontal" method="POST" action="">
+
+                {% csrf_token %}
+
+                {% if form.non_field_errors %}
+                    <div class="alert alert-danger" role="alert">
+                        {{ form.non_field_errors }}
+                    </div>
+                {% endif %} {# /form.non_field_errors #}
+
+                {% for field in form %}
+                    <div class="form-group {% cycle 'odd' 'even' %}">
+                        <span class="col-sm-2">
+                            {% with help_text=field.help_text %}
+                                {% if help_text %}
+                                    <span class="col-sm-1">
+                                        {% include 'questionnaire/_q_help.html' %}
+                                    </span>
+                                    <span class="col-sm-8">
+                                        {{ field.label }}:
+                                    </span>
+                                {% else %}
+                                    {{ field.label }}:
+                                {% endif %} {# /help_text #}
+                            {% endwith %} {# /help_text #}
+                        </span>
+                        <div class="col-sm-8">
+                           {{ field }}
+                           {% if field.errors %}
+                               {% include 'questionnaire/_q_error.html' %}
+                           {% endif %} {# / field.errors #}
+                        </div>
+                    </div> <!-- /.form-group -->
+                {% endfor %} {# /field #}
+
+                <div class="form-group">
+                    <div class="col-sm-offset-2 col-sm-8">
+                        <button type="submit" class="btn btn-primary">submit</button>
+                    </div>
+                </div>
+
+            </form> <!-- /.form-horizontal -->
+        </div> <!-- /.col-md-6 -->
+    </div> <!-- /.container -->
+
+{% endblock %} {# /content #}

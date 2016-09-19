@@ -1,0 +1,105 @@
+{# _q_project_view.html #}
+{# the "view" section of the project page #}
+
+{# assumes we've already loaded the appropriate ng-controllers #}
+
+      <div class="info">
+          You can view a <u>read-only</u> existing CIM document.&nbsp;
+          If you wish to create or edit a CIM document, you may need to register for a Questionnaire account and then join this project.&nbsp
+          <span ng-show="project_controller.has_incomplete_document">
+              A pushpin icon indicates the document is incomplete.&nbsp;
+          </span>
+          <span ng-show="project_controller.has_unsynchronized_document">
+              A <span class="unsynchronized">red font</span> indicates the document is unsynchronized with this project's current set of ontologies and vocabularies.&nbsp;
+          </span>
+      </div>
+
+  <table class="table table-striped">
+      <thead>
+          <tr>
+              <th ng-click="project_controller.change_document_sort_type('ontology')">
+                  <span>Ontology</span>
+                  <span ng-show="project_controller.document_sort_type=='ontology'">
+                      <span ng-show="project_controller.document_sort_reverse" class="glyphicon glyphicon-sort-by-alphabet-alt"></span>
+                      <span ng-hide="project_controller.document_sort_reverse" class="glyphicon glyphicon-sort-by-alphabet"></span>
+                  </span>
+                  <span ng-hide="project_controller.document_sort_type=='ontology'">
+                      <span class="glyphicon glyphicon-sort text-muted"></span>
+                  </span>
+              </th>
+              <th ng-click="project_controller.change_document_sort_type('proxy')">
+                  <span>Document Type</span>
+                  <span ng-show="project_controller.document_sort_type=='proxy'">
+                      <span ng-show="project_controller.document_sort_reverse" class="glyphicon glyphicon-sort-by-alphabet-alt"></span>
+                      <span ng-hide="project_controller.document_sort_reverse" class="glyphicon glyphicon-sort-by-alphabet"></span>
+                  </span>
+                  <span ng-hide="project_controller.document_sort_type=='proxy'">
+                      <span class="glyphicon glyphicon-sort text-muted"></span>
+                  </span>
+              </th>
+              <th ng-click="project_controller.change_document_sort_type('label')">
+                  <span>Document Label</span>
+                  <span ng-show="project_controller.document_sort_type=='label'">
+                      <span ng-show="project_controller.document_sort_reverse" class="glyphicon glyphicon-sort-by-alphabet-alt"></span>
+                      <span ng-hide="project_controller.document_sort_reverse" class="glyphicon glyphicon-sort-by-alphabet"></span>
+                  </span>
+                  <span ng-hide="project_controller.document_sort_type=='label'">
+                      <span class="glyphicon glyphicon-sort text-muted"></span>
+                  </span>
+              </th>
+              <th>
+                  <spa>Version</spa
+              </th>
+              <th ng-click="project_controller.change_document_sort_type('published')">
+                  <span>Last Published</span>
+                  <span ng-show="project_controller.document_sort_type=='published'">
+                      <span ng-show="project_controller.document_sort_reverse" class="glyphicon glyphicon-sort-by-order-alt"></span>
+                      <span ng-hide="project_controller.document_sort_reverse" class="glyphicon glyphicon-sort-by-order"></span>
+                  </span>
+                  <span ng-hide="project_controller.document_sort_type=='published'">
+                      <span class="glyphicon glyphicon-sort text-muted"></span>
+                  </span>
+              </th>
+              <th>&nbsp;</th>
+          </tr>
+      </thead>
+      <tbody>
+         <tr ng-repeat="document in project_controller.documents | orderBy:project_controller.document_sort_type:project_controller.document_sort_reverse"
+                  ng-class="document.synchronization.length ? 'unsynchronized' : 'synchronized'"
+                  ng-show="document.is_active">
+              {% verbatim ng %}
+                <td>{{ document.ontology }}</td>
+                <td>{{ document.proxy }}</td>
+                <td>
+                    <span ng-show="document.label">
+                        {{ document.label }}
+                    </span>
+                    <span ng-hide="document.label">
+                        <em>(label incomplete)</em>
+                    </span>
+                    &nbsp;<span ng-show="!document.is_complete"
+                                class="glyphicon glyphicon-pushpin"
+                                title="This document is incomplete."/>
+                </td>
+                <td>
+                    {{ document.version }}
+                </td>
+                <td ng-show="document.is_published">
+                    {{ document.published | date:'yyyy-MM-dd HH:mm:ss Z' }}
+                </td>
+                <td ng-hide="document.is_published">
+                    <em>(document unpublished)</em>
+                </td>
+                <td>
+                    <a class="btn btn-sm btn-info" target="_blank" href="/{{ project_controller.project.name }}/view/{{ document.path }}">view in editor</a>
+                </td>
+              {% endverbatim ng %}
+          </tr>
+          <tr ng-hide="project_controller.documents.length">
+              <!-- only show this part if the documents array is emtpy -->
+              <td colspan="5">
+                  <span class="documentation">No documents found</span>
+              </td>
+          </tr>
+      </tbody>
+  </table>

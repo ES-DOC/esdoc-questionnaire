@@ -1,0 +1,128 @@
+{% load q_tags %}
+
+{% with field=form.relationship_values %}
+
+    <div class="has-feedback form-group">
+
+        <span class="col-sm-12">
+
+            {% if form.use_subforms %}
+
+                <div id="{{field.auto_id}}">
+                    <fieldset class="fieldset collapsible" ng-controller="FieldsetController as fieldset_controller">
+                        <legend class="fieldset_header" ng-click="fieldset_controller.is_collapsed = ! fieldset_controller.is_collapsed" title="click to toggle content" >
+                            <span ng-hide="fieldset_controller.is_collapsed" class="glyphicon glyphicon-triangle-bottom"></span>
+                            <span ng-show="fieldset_controller.is_collapsed" class="glyphicon glyphicon-triangle-right"></span>
+
+                            {% with help_text=field.help_text %}
+                                {% if help_text and form.inline_help == False %}
+                                    {% include 'questionnaire/_q_help.html' %}
+                                {% endif %}
+                            {% endwith %}  {# /help_text #}
+
+                            <span class="{% if field.field.required %} required {% else %} optional {% endif %}">
+                                {{ field.label|safe }}:&nbsp;
+                            </span>
+
+                        </legend>
+                        <div class="fieldset_content" ng-hide="fieldset_controller.is_collapsed">
+
+                            {% if form.is_multiple %}
+                                {# I don't actually have to do anything special for single/multiple forms #}
+                                {# everything is contained in accordions regardless #}
+                            {% else %}
+                                {# I don't actually have to do anything special for single/multiple forms #}
+                                {# everything is contained in accordions regardless #}
+                            {% endif %}  {# /form.is_multiple #}
+
+                            <div uib-accordion close-others="false"
+                                 class="accordion"
+                                 ng-model="current_model.relationship_values"
+                                 ng-show="current_model.relationship_values.length">
+
+                                <div uib-accordion-group
+                                     class="accordion_group"
+                                     is-open="current_model.display_detail"
+                                     ng-repeat="target in current_model.relationship_values track by $index"
+                                     ng-class="target.display_detail ? 'expanded' : 'collapsed'">
+
+                                    <div uib-accordion-heading
+                                         class="accordion_header">
+                                        <!-- I have to explicitly wrap the accordion_header in an element -->
+                                        <!-- in order to catch the "ng-click" event -->
+                                        <!-- (the customizer got this functionality for free as a side-effect of "ui-sortable" -->
+                                        <div ng-click="target.display_detail = ! target.display_detail">
+                                            <span ng-hide="target.display_detail" class="glyphicon glyphicon-triangle-right"></span>
+                                            <span ng-show="target.display_detail" class="glyphicon glyphicon-triangle-bottom"></span>
+                                            &nbsp;
+                                            {# here is the heading #}
+                                            {# TODO: REPLACE THIS W/ SOMETHING LIKE get_label #}
+                                            {{ form.customization.property_title }}
+
+                                        </div>
+                                    </div>  <!-- /.accordion_header -->
+
+                                    <div class="accordion_content" ng-init="target_key=target.key; target_index=$index">
+
+                                        <div class="pull-right">
+                                            {# notice in ng-click, I don't have to wrap "target_index" w/ verbatim tags b/c I'm already in "ng mode" #}
+                                            <button type="button" class="btn btn-info btn-sm "
+                                                ng-disabled="current_model.relationship_values.length == cardinality_min"
+                                                ng-click="remove_relationship_value('{{ form.customization.property_title }}', target_index)">
+                                                remove&nbsp;
+                                                <span class="glyphicon glyphicon-minus-sign"/>
+                                            </button>
+                                            <br/><br/> <!-- I don't know why it is so difficult to add vertical space here -->
+                                        </div> <div class="clearfix voffset-16"></div>
+
+                                        {# HERE IS THE SUB-FORM MODEL CONTROLLER #}
+                                        {# (recall that the top-level model controller is hard-coded in "q_view.html"; this is the one that gets added recursively for relationship properties) #}
+                                        <div ng-controller="ModelEditorController as model_editor_controller"
+                                             current_model_path="{% verbatim ng %}{{ current_model_path}}{% endverbatim ng %}.relationship_values[{% verbatim ng %}{{ target_index }}{% endverbatim ng %}]">
+
+                                            <section model_to_watch="target"
+                                                     key="{% verbatim ng %}{{ target_key }}{% endverbatim ng %}"
+                                                     index="{% verbatim ng %}{{ target_index }}{% endverbatim ng %}"
+                                                     section_type="model_realization"/>
+
+                                        </div> <!-- / model_editor_controller -->
+
+                                    </div>  <!-- /.accordion_content -->
+
+                                </div>  <!-- /.accordion_group -->
+
+                            </div> <!-- /.accordion -->
+
+                            <div>
+                                <button type="button" class="btn btn-info btn-sm"
+                                        ng-disabled="current_model.relationship_values.length == cardinality_max"
+                                        ng-click="add_relationship_value('{{ form.customization.property_title }}')">
+                                    add&nbsp;
+                                    <span class="glyphicon glyphicon-plus-sign"/>
+                                </button>
+                            </div>
+
+                            <span class="documentation text-muted pull-right">
+                                {% verbatim ng %}
+                                    ({{ current_model.relationship_values.length }}
+                                    of a possible
+                                    {{ cardinality_max }}
+                                    {{ is_multiple() ? "properties" : "property" }})
+                                {% endverbatim ng %}
+                            </span>
+
+                        </div>
+                    </fieldset>
+                </div>
+
+            {% endif %}
+
+            {% if form.use_references %}
+                reference
+            {% endif %}
+
+        </span>
+
+    </div> <!-- /.form-group -->
+
+{% endwith %}

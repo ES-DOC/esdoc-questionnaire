@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- configuration.xsd -->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+
+    <xs:annotation>
+        <xs:documentation>
+            This schema defines the format of CIM2 Ontology files (QXML) for the CIM Questionnaire.
+        </xs:documentation>
+    </xs:annotation>
+
+    <xs:element name="ontology">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="name" type="xs:string" minOccurs="1"/>
+                <xs:element name="version" type="xs:string" minOccurs="0"/>
+                <xs:element name="description" type="xs:string" minOccurs="0"/>
+                <xs:element name="classes">
+                    <xs:complexType>
+                        <xs:sequence>
+                            <xs:element name="class" type="ClassType" maxOccurs="unbounded"/>
+                        </xs:sequence>
+                    </xs:complexType>
+                </xs:element>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:complexType name="ClassType">
+        <xs:sequence>
+            <xs:element name="name" type="xs:string"/>
+            <xs:element name="description" type="xs:string" minOccurs="0"/>
+            <xs:element name="attributes">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="attribute" type="AttributeType" maxOccurs="unbounded"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+        </xs:sequence>
+        <xs:attribute name="package" type="xs:string" use="required"/>
+        <xs:attribute name="stereotype" type="xs:string" use="optional"/>
+    </xs:complexType>
+
+    <xs:complexType name="AttributeType">
+        <xs:sequence>
+            <xs:element name="name" type="xs:string"/>
+            <xs:element name="description" type="xs:string" minOccurs="0"/>
+            <xs:element name="cardinality" minOccurs="1">
+                <xs:complexType>
+                    <xs:attribute name="min" use="required"/>
+                    <xs:attribute name="max" use="required"/>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="type">
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:enumeration value="ATOMIC"/>
+                        <xs:enumeration value="ENUMERATION"/>
+                        <xs:enumeration value="RELATIONSHIP"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:choice>
+                <xs:element name="atomic" type="AtomicType" minOccurs="0" maxOccurs="1"/>
+                <xs:element name="enumeration" type="EnumerationType" minOccurs="0" maxOccurs="1"/>
+                <xs:element name="relationship" type="RelationshipType" minOccurs="0" maxOccurs="1"
+                />
+            </xs:choice>
+        </xs:sequence>
+        <xs:attribute name="package" type="xs:string" use="optional"/>
+        <xs:attribute name="stereotype" type="xs:string" use="optional"/>
+        <xs:attribute name="is_label" type="xs:boolean" use="optional"/>
+        <xs:attribute name="is_nillable" type="xs:boolean" use="optional"/>
+    </xs:complexType>
+
+    <xs:complexType name="AtomicType">
+        <xs:sequence>
+            <xs:element name="atomic_type" minOccurs="1">
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:enumeration value="BOOLEAN"/>
+                        <xs:enumeration value="DATE"/>
+                        <xs:enumeration value="DATETIME"/>
+                        <xs:enumeration value="DECIMAL"/>
+                        <xs:enumeration value="EMAIL"/>
+                        <xs:enumeration value="INTEGER"/>
+                        <!-- default -->
+                        <xs:enumeration value="STRING"/>
+                        <xs:enumeration value="TEXT"/>
+                        <xs:enumeration value="TIME"/>
+                        <xs:enumeration value="URL"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="EnumerationType">
+        <xs:sequence>
+            <xs:element name="choices">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="choice" minOccurs="0" maxOccurs="unbounded">
+                            <xs:complexType>
+                                <xs:sequence>
+                                    <xs:element name="value" minOccurs="1"/>
+                                    <xs:element name="description" minOccurs="0"/>
+                                </xs:sequence>
+                            </xs:complexType>
+                        </xs:element>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+        </xs:sequence>
+        <xs:attribute name="enumeration_name" type="xs:string" use="optional"/>
+        <xs:attribute name="is_open" type="xs:boolean" use="required"/>
+        <xs:attribute name="is_multi" type="xs:boolean" use="optional"/> <!-- no longer needed for CIM2 -->
+    </xs:complexType>
+
+    <xs:complexType name="RelationshipType">
+        <xs:sequence>
+            <xs:element name="targets">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="target" minOccurs="1" maxOccurs="unbounded"
+                            type="FullyQualifiedNameType"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+        </xs:sequence>
+        <xs:attribute name="is_recursive" type="xs:boolean" use="optional"/>
+    </xs:complexType>
+
+    <xs:simpleType name="NonEmptyStringType">
+        <xs:restriction base="xs:string">
+            <xs:minLength value="1"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="FullyQualifiedNameType">
+        <!-- matches "<package>.<name>" -->
+        <xs:restriction base="xs:string">
+            <xs:minLength value="3"/>
+            <xs:pattern value="[a-zA-Z0-9\-_]+\.[a-zA-Z0-9\-_]+"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+</xs:schema>

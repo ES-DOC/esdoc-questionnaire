@@ -1,0 +1,149 @@
+{# _q_section_customize_property.html #}
+
+{# this is a "section" template #}
+{# it is inserted as needed by ng via AJAX using the load-on-demand paradigm #}
+
+{# see the "q_load_section" django view #}
+{# and see the "service" ng directive" #}
+
+{% load q_tags %}
+
+<form name="{{form.form_name}}" watch-form-validity="properties_validity">
+
+    {# note the 'watch_form_validity' directive above #}
+    {# this maps the form's validity to a ng scope variable #}
+    {# and that variable can be referenced _before_ this section is loaded #}
+
+    <div class="hidden">
+        {% for field in form.get_hidden_fields %}
+            {{ field }}
+        {% endfor %}
+    </div>
+
+    {% for field in form.get_fields_for_field_type %}
+
+        <div class="row {% cycle 'odd' 'even' %}">
+
+            {% if field.name == 'relationship_show_subform' %}
+
+                <div class="has-feedback form-group">
+                    <span class="col-sm-3 {% if field.field.required %} required {% else %} optional {% endif %}">
+                        <span class="col-sm-1">
+                            {% with help_text=field.help_text %}
+                                {% if help_text %}
+                                    {% include 'questionnaire/_q_help.html' %}
+                                {% endif %}
+                            {% endwith %} {# /help_text #}
+                        </span>
+                        <span class="col-sm-10">
+                            {{ field.label|safe }}
+                        </span>
+                    </span>
+                    <div class="col-sm-6 voffset-2">
+
+                        {{ field }}
+
+                        <!-------------------------------->
+                        <!-- here begins the icky stuff -->
+                        <!-------------------------------->
+
+                        <div class="voffset-8">
+                            <ul class="list-group small" ng-show="property.relationship_show_subform" style="width: 400px !important;">
+                                <li class="list-group-item list-group-item-info">
+                                    Potential targets for this relationship:
+                                </li>
+                                <li class="list-group-item clearfix"
+                                    ng-repeat="target_model in property.relationship_target_model_customizations">
+                                    {% verbatim ng %}
+                                        {{ target_model.proxy_name }}
+                                    {% endverbatim ng %}
+                                    &nbsp;&nbsp;
+                                    <button type="button"
+                                            class="btn btn-primary btn-xs pull-right"
+                                            data-toggle="modal"
+                                            data-target="#{% verbatim ng %}{{ target_model.key }}{% endverbatim ng %}_subform"
+                                            ng-click="display_subform_for_target_model($event, target_model)"
+                                            ng-disabled="!property.relationship_show_subform"
+                                            title="customize how this subform is rendered">
+                                        Customize Subform&nbsp;
+                                        <span class="glyphicon glyphicon-new-window"></span>
+                                    </button>
+                                </li> <!-- /.list-group-item -->
+                            </ul> <!-- /.list-group -->
+
+                            <div class="modal fade"
+                                 data-backdrop="static"
+                                 ng-repeat="target_model in property.relationship_target_model_customizations"
+                                 id="{% verbatim ng %}{{ target_model.key }}{% endverbatim ng %}_subform"
+                                 role="dialog"
+                                 tabindex="-1">
+                                <div class="modal-dialog"
+                                     role="document"
+                                     ng-init="model_key=target_model.key; model_index=$index">
+
+                                    <!-- HERE IS THE NESTED CONTROLLER FOR THE SUBFORM -->
+                                    <!-- NOTICE HOW I PASS THE CURRENT SCOPE ("current_model_path") USING PREVIOUSLY STORED NG-VARIABLES -->
+                                    <!-- THE CONTROLLER CALLS "get_model_from_path" INTERNALLY TO MAP IT TO THE GLOBAL "_DATA" JSON OBJECT -->
+                                    <!-- (THIS IS WAY BETTER THAN OVERLOADING DJANGO FORMS OR TRYING TO _REVERSE ENGINEER_ THE PATH FROM THE LOCAL NG-VARIABLE "target_model") -->
+                                    <!-- (THE FORMER IS CONFUSING AND ERROR-PRONE, THE LATTER IS INNEFFICIENT) -->
+
+                                    <div class="modal-content"
+                                         ng-controller="ModelCustomizerController as model_customizer_controller"
+                                         current_model_path="{% verbatim ng %}{{ current_model_path }}.properties[{{ property_index }}].relationship_target_model_customizations[{{ model_index }}]{% endverbatim ng %}">
+
+                                        <div class="modal-header">
+                                            <!--<button type="button" class="close" data-dismiss="modal"></button>-->
+                                            <h4 class="modal-title">
+                                                Customize the CIM Questionnaire for an instance of the <strong>{% verbatim ng %}{{ current_model.proxy_name }}{% endverbatim ng %}</strong> element
+                                                (in the context of the <strong>{% verbatim ng %} {{ property.proxy_name }} {% endverbatim ng %}</strong> property)
+                                            </h4>
+                                        </div>  <!-- /.modal-header -->
+                                        <div class="modal-body" >
+
+                                            <section model_to_watch="current_model"
+                                                     key="{% verbatim ng %}{{ model_key }}{% endverbatim ng %}"
+                                                     index="{% verbatim ng %}{{ model_index }}{% endverbatim ng %}"
+                                                     section_type="subform_customization"/>
+
+                                        </div> <!-- /.modal-body -->
+                                        <div class="modal-footer">
+                                            <button type="button"
+                                                    class="btn btn-primary"
+                                                    ng-click="current_model.display_detail = false"
+                                                    ng-disabled="!models_validity"
+                                                    onclick="$(this).closest('.modal').modal('hide')">
+                                                    <!-- I am specifically _not_ using the ng attribute "data-dismiss='modal'" b/c that will close _all_ modals -->
+                                                    <!-- instead, I use some inline JQuery on the onclick event; it finds the parent modal and explicitly closes it-and-only-it -->
+                                                Dismiss Subform Customizer
+                                            </button>
+                                        </div> <!-- /.modal-footer -->
+                                    </div> <!-- /.modal-content.ng-controller:ModelCustomizerController -->
+                                </div> <!-- /.modal-dialog -->
+                            </div> <!-- /.modal -->
+
+                        </div>
+
+                        <!------------------------------>
+                        <!-- here ends the icky stuff -->
+                        <!------------------------------>
+
+                    </div>
+
+                    <span class="col-sm-3">
+                        <!-- don't bother rendering errors for any of this subform nonsense -->
+                        &nbsp;
+                    </span>
+
+                </div> <!-- /.form-group -->
+
+            {% else %}
+
+                {% include 'questionnaire/_q_customize_field.html' %}
+
+            {% endif %} {# /field.name == 'relationship_show_subform' #}
+
+        </div> <!-- /.row -->
+
+    {% endfor %} {# /field #}
+
+</form>
