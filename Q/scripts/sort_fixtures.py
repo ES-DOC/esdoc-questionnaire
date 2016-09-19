@@ -8,7 +8,7 @@
 #   This project is distributed according to the terms of the MIT license [http://www.opensource.org/licenses/MIT].
 ####################
 
-__author__="allyn.treshansky"
+__author__ = "allyn.treshansky"
 
 """
 stand-alone script to sort fixtures, so that models are listed in the correct order
@@ -92,16 +92,15 @@ def get_model_key(model):
 app = get_app(APP_LABEL)
 models = get_models(app)
 
-# order questionnaire models so that users, sites, ontologies, categorizations, vocabularies, projects, projectvocabularies & synchronizations, are 1st
+# order questionnaire models so that users, sites, ontologies, categorizations, projects, projectontologies (through model) & synchronizations, are 1st
 # the order of the remaining models doesn't matter
 models_to_order = [
     QUserProfile,
     QSite,
     QOntology,
     QCategorization,
-    QVocabulary,
     QProject,
-    QProjectVocabulary,
+    QProjectOntology,
     QSynchronization,
 ]
 
