@@ -2,6 +2,11 @@ CIM Questionnaire Change History
 
 For full release notes, please see https://earthsystemcog.org/projects/es-doc-models/releases_questionnaire
 
+v0.16.0.0
+* support for CIM2
+* support for "nillable" properties
+* initial support for owned customizations & realizations
+
 v0.15.1.0
 * improved the look-and-feel of the Project Page
 * fixed a bug preventing the 'last modification time' of models from being saved propertly

@@ -32,7 +32,7 @@ Download the software at the desired version from the github repository
 * Generate a configuration file. The preferred location is ``$HOME/.config/esdoc-questionnaire.conf``. A custom location may be used in which case the ``settings.py`` variable ``CONF_PATH`` should be modified to match the location of the file. 
 ** a template is available in the repository's top-level director called ``esdoc-questionnaire.conf.TEMPLATE``
 ** a Django secret key can be generated at: http://www.miniwebtool.com/django-secret-key-generator/
-
+* in some cases, compression of static files must be made explicit - uncomment out the relevant lines in "settings.py"
 ## INITIALIZATION
 
 ```sh
