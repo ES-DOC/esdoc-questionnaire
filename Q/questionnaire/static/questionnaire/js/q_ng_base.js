@@ -489,8 +489,7 @@
                     $scope.current_model[$scope.enumerationName] = current_choices;
                     // if this enumeration is required, then trigger the change event
                     if ($scope.enumerationRequired) {
-                        console.log("should do stuff now");
-                        $scope.enumerationFunction();
+                        $scope.enumerationFunction()();
                     }
 
                 };

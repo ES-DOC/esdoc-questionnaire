@@ -271,7 +271,6 @@
         });
 
         $scope.update_property_completion = function() {
-            console.log($scope.cardinality_min)
             var cardinality_min = $scope.cardinality_min;
             if (cardinality_min) {
                 /* if ths property is required then check some things... */
@@ -293,7 +292,6 @@
                         }
 
                         else if (field_type == "ENUMERATION") {
-                            console.log("foo")
                             var enumeration_value = $scope.current_model['enumeration_value']
                             if (enumeration_value.length ) {
                                 if (enumeration_value.indexOf("_OTHER") != -1) {

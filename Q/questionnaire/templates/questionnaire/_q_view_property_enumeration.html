@@ -34,7 +34,7 @@
 {{form.is_complete}}<br/>
             <div enumeration
                  enumeration-required="{{ form.is_required|jsonify }}"
-                 enumeration-fn="{% verbatim ng %}{{ update_property_completion() }}{% endverbatim ng %}"
+                 enumeration-function="update_property_completion"
                  enumeration-choices="{{ form.enumeration_value.field.get_complete_choices }}"
                  enumeration-name="'{{ form.enumeration_value.name }}'"
                  enumeration-multiple="{{ form.enumeration_value.field.get_is_multiple }}">
