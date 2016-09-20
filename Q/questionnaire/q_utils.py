@@ -374,10 +374,8 @@ class Version(object):
 
     def __iadd__(self, other):
         # increment a version
-        if isinstance(other, basestring):
-            other = Version(other)
         if not isinstance(other, Version):
-            raise QError("unable to increment version")
+            other = Version(str(other))
         return Version("{0}.{1}.{2}".format(
             self.major() + other.major(),
             self.minor() + other.minor(),
@@ -387,10 +385,8 @@ class Version(object):
     def __isub__(self, other):
         # decrement a version
         # (just like __iadd__, except checks we don't go negative)
-        if isinstance(other, basestring):
-            other = Version(other)
         if not isinstance(other, Version):
-            raise QError("unable to decrement version")
+            other = Version(str(other))
         new_major = self.major() - other.major()
         new_minor = self.minor() - other.minor()
         new_patch = self.patch() - other.patch()

@@ -1,0 +1,1 @@
+{% extends "questionnaire/publications/CIM2_XML/publication_base.xml" %}

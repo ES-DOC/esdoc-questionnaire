@@ -20,7 +20,7 @@ The actual CIM Models & Properties to create
 from django.db import models
 from django.db.models.fields import FieldDoesNotExist
 from django.contrib.auth.models import User
-from django.core.exceptions import ValidationError
+from django.template.loader import render_to_string
 from django.utils.translation import ugettext_lazy as _
 
 from uuid import uuid4, UUID as generate_uuid
@@ -28,7 +28,8 @@ from collections import OrderedDict
 from mptt.models import MPTTModel, TreeForeignKey
 
 from Q.questionnaire import APP_LABEL, q_logger
-from Q.questionnaire.models.models_customizations import QModelCustomization, QPropertyCustomization, get_customization_by_fn_recusively
+from Q.questionnaire.models.models_customizations import QModelCustomization, QPropertyCustomization
+from Q.questionnaire.models.models_publications import QPublication, QPublicationFormats
 from Q.questionnaire.serializers.serializers_base import enumeration_field_to_enumeration_serialization
 from Q.questionnaire.q_fields import QVersionField, QCardinalityField, QEnumerationField, QPropertyTypes, QNillableTypes, QUnsavedRelatedManager, allow_unsaved_fk
 from Q.questionnaire.q_utils import QError, Version, EnumeratedType, EnumeratedTypeList, pretty_string, find_in_sequence, serialize_model_to_dict
@@ -554,6 +555,50 @@ class QModel(MPTTModel, QRealization):
     def is_unsynchronized(self):
         return not self.is_synchronized()
 
+    def publish(self, **kwargs):
+        """
+        :param force_save: save the model (after incrementing its version);
+        the only reason not to do this is when re-publishing something at the same version b/c of a content error
+        :return:
+        """
+
+        force_save = kwargs.pop("force_save", True)
+        publication_format = kwargs.pop("format", QPublicationFormats.CIM2_XML)
+
+        assert self.is_document
+        assert self.is_complete
+
+        import ipdb; ipdb.set_trace()
+
+        if force_save:
+            # reset the minor.patch version...
+            self.version -= "0.{0}.{1}".format(self.version.minor(), self.version.patch())
+            # and increment the major version...
+            self.version += "1.0.0"
+
+        (publication, create_publication) = QPublication.objects.get_or_create(
+            name=self.guid,
+            version=self.version,
+            format=publication_format,
+            model=self,
+        )
+        publication_dict = {
+            "project": self.project,
+            "ontology": self.ontology,
+            "proxy": self.proxy,
+            "model": self,
+        }
+        publication_template_path = "{0}/publications/{1}/{2}.xml".format(APP_LABEL, publication_format, self.proxy.name)
+        publication_content = render_to_string(publication_template_path, publication_dict)
+        publication.content = publication_content
+        publication.save()
+
+        self.is_published = True
+        if force_save:
+            self.save()
+
+        return publication
+
     def reset(self):
 
         # this resets values according to the proxy
@@ -570,15 +615,6 @@ class QModel(MPTTModel, QRealization):
         self.is_active = True
 
         self.is_complete = False
-
-    def save(self, *args, **kwargs):
-        import ipdb; ipdb.set_trace()
-        update_is_complete = kwargs.pop("is_complete", True)
-        if update_is_complete:
-            completion = [p.get_completion for p in self.properties.all()]
-            self.is_complete = all(completion)
-
-        super(QModel, self).save(*args, **kwargs)
 
     def set_owner(self, new_owner):
         # used w/ "recurse_through_realization" in global fn "set_owner" above

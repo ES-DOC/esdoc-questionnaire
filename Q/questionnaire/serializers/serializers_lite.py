@@ -74,7 +74,7 @@ class QModelRealizationSerializerLite(serializers.ModelSerializer):
         fields = (
             "id", "guid", "created", "modified", "is_published", "is_complete", "is_active",
             "description", "version", "ontology", "proxy", "project",
-            "synchronization", "path",
+            "last_published", "synchronization", "path",
         )
 
     # these relationships use StringRelatedField, which means it returns the __unicode__ fn
@@ -90,6 +90,7 @@ class QModelRealizationSerializerLite(serializers.ModelSerializer):
     )
 
     path = serializers.SerializerMethodField()  # method_name="get_path"
+    last_published = serializers.SerializerMethodField()  # method_name="get_last_published"
     # is_complete = serializers.SerializerMethodField()  # method_name="get_is_complete"
 
     def get_version(self, obj):
@@ -122,6 +123,17 @@ class QModelRealizationSerializerLite(serializers.ModelSerializer):
             obj.id,
         )
         return path
+
+    def get_last_published(self, obj):
+        """
+        returns the date of publication of the last publication created based on this realization
+        :param obj:
+        :return:
+        """
+        if obj.is_published:
+            last_publication = obj.publications.order_by("modified").last()
+            return last_publication.modified
+        return None
 
     # def get_is_complete(self, obj):
     #     """
