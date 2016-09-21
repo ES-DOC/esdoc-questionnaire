@@ -110,8 +110,8 @@ urlpatterns = patterns('',
     url(r'^feed/(?P<project_name>[^/]+)/$', QFeed(), name="feed_project"),
     url(r'^feed/(?P<project_name>[^/]+)/(?P<ontology_key>[^/]+)/$', QFeed(), name="feed_project_ontology"),
     url(r'^feed/(?P<project_name>[^/]+)/(?P<ontology_key>[^/]+)/(?P<document_type>[^/]+)/$', QFeed(), name="feed_project_ontology_proxy"),
-    # url(r'^feed/(?P<project_name>[^/]+)/(?P<ontology_key>[^/]+)/(?P<document_type>[^/]+)/(?P<publication_name>[^/]+)/$', q_publication, name="publication_latest"),
-    # url(r'^feed/(?P<project_name>[^/]+)/(?P<ontology_key>[^/]+)/(?P<document_type>[^/]+)/(?P<publication_name>[^/]+)/(?P<publication_version>[^/]+)/$', q_publication, name="publication_version"),
+    url(r'^feed/(?P<project_name>[^/]+)/(?P<ontology_key>[^/]+)/(?P<document_type>[^/]+)/(?P<publication_name>[^/]+)/$', q_publication, name="publication_latest"),
+    url(r'^feed/(?P<project_name>[^/]+)/(?P<ontology_key>[^/]+)/(?P<document_type>[^/]+)/(?P<publication_name>[^/]+)/(?P<publication_version>[^/]+)/$', q_publication, name="publication_version"),
 
     # projects...
     url(r'^(?P<project_name>[^/]+)/$', q_project, name="project"),

@@ -12,8 +12,9 @@ __author__ = "allyn.treshansky"
 
 from django.contrib.syndication.views import Feed, FeedDoesNotExist
 from django.utils.feedgenerator import Atom1Feed
-from django.http import HttpResponse
+from django.utils.translation import ugettext_lazy as _
 from django.core.urlresolvers import reverse
+from django.http import HttpResponse
 
 from Q.questionnaire.models import QProject, QOntology, QModelProxy, QModel, QPublication
 from Q.questionnaire.views.views_errors import q_error
@@ -72,8 +73,6 @@ class QFeed(Feed):
 
     feed_type = Atom1Feed
     link = "/feed/"  # not sure how this is used
-    title_template = "questionnaire/feed/_q_feed_item_title.html"
-    description_template = "questionnaire/feed/_q_feed_item_description.html"
 
     def get_object(self, request, project_name=None, ontology_key=None, document_type=None):
         """
@@ -115,13 +114,87 @@ class QFeed(Feed):
 
         return QPublication.objects.filter(model__in=publications).order_by("-created")
 
-        # TODO: STOP USING TEMPLATES; HARD-CODE THIS
-        # using template for finer control over title format (see above)
-        # def item_title(self, item):
-        #      title_string = u"%s" % (item)
-        #      return title_string
+    def item_title(self, item):
+        return "{0} [version: {1}]".format(item.name, item.version)
 
-        # TODO: STOP USING TEMPLATES; HARD-CODE THIS
-        # using template for finer control over description format (see above)
-        # def item_description(self, item):
-        #     pass
+    def item_description(self, item):
+        description_template = _(
+            "<ul>"
+            "   <li><strong>type:</strong>&nbsp;{document_type}</li>"
+            "   <li><strong>project:</strong>&nbsp;{project}</li>"
+            "   <li><strong>ontology:</strong>&nbsp;{ontology}</li>"
+            "   <li><strong>publication date:</strong>&nbsp;{publication_date}</li>"
+            "</ul>"
+            "<strong>label:</strong>&nbsp;{label}<br/>"
+            "<strong>description:</strong>&nbsp;{description}<br/>"
+            "<hr/>"
+        ).format(**{
+            "document_type": item.model.proxy,
+            "project": item.model.project.title,
+            "ontology": item.model.ontology,
+            "publication_date": item.created.strftime("%d %B %Y @%H:%M"),
+            # TODO:
+            "label": None,
+            # TODO:
+            "description": None,
+        })
+        return description_template
+
+    def item_link(self, item):
+        model = item.model
+        url_args = [
+            model.project.name,  # project
+            model.ontology.get_key(),  # ontology
+            model.proxy.name,  # document_type
+            item.name,  # publication name
+            item.version.fully_specified(),  # publication_version
+        ]
+        item_url = reverse("publication_version", args=url_args)
+        return item_url
+
+
+#########################
+# single feed instances #
+#########################
+
+def q_publication(request, project_name=None, ontology_key=None, document_type=None, publication_name=None, publication_version=None):
+
+    # validate arguments...
+    # (if this view is invoked from the above feed, these checks are superfluous)
+    # (but if a user accesses this view directly, they are needed)
+    validity, project, ontology, proxy, msg = validate_view_arguments(
+        project_name=project_name,
+        ontology_key=ontology_key,
+        document_type=document_type
+    )
+    if not validity:
+        return q_error(request, msg)
+
+    # try to get the actual model...
+    try:
+        model = QModel.objects.get(
+            project=project,
+            ontology=ontology,
+            proxy=proxy,
+            guid=publication_name,
+        )
+    except (ValueError, QModel.DoesNotExist):
+        msg = "Unable to find specified model."
+        return q_error(request, msg)
+    if not model.is_published:
+        msg = "This model is not yet published"
+        return q_error(request, msg)
+
+    publications = QPublication.objects.order_by("created")
+    if publication_version:
+        # if a version was specified, look for that specific publication...
+        try:
+            publication = publications.get(version=publication_version)
+        except QPublication.DoesNotExist:
+            msg = "Unable to find model published at version {0}".format(publication_version)
+            return q_error(request, msg)
+    else:
+        # if no version was specified, just get the latest one...
+        publication = publications.last()
+
+    return HttpResponse(publication.content, content_type="text/xml")

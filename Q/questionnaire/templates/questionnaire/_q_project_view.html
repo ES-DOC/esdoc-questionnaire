@@ -85,7 +85,7 @@
                     {{ document.version }}
                 </td>
                 <td ng-show="document.is_published">
-                    {{ document.published | date:'yyyy-MM-dd HH:mm:ss Z' }}
+                    {{ document.last_published | date:'yyyy-MM-dd HH:mm:ss Z' }}
                 </td>
                 <td ng-hide="document.is_published">
                     <em>(document unpublished)</em>
