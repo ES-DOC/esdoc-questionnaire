@@ -11,6 +11,7 @@
 __author__ = 'allyn.treshansky'
 
 from django.forms.widgets import Select, SelectMultiple
+from django.forms.fields import BooleanField
 from django.forms.models import modelformset_factory, ModelMultipleChoiceField
 from django.utils.translation import ugettext_lazy as _
 from django.utils.safestring import mark_safe
@@ -48,10 +49,11 @@ class QPropertyRealizationForm(QRealizationForm):
             'relationship_values',
             'is_nil',
             'nil_reason',
-            'is_complete'
+            'is_complete',
+            'is_required',
         ]
 
-    _hidden_fields = ["proxy", "name", "order", "field_type", ]  # "cardinality", "is_complete", ]
+    _hidden_fields = ["proxy", "name", "order", "field_type", ]  # "cardinality", "is_complete", "is_required", ]
     _atomic_fields = ["atomic_value", "is_nil", "nil_reason", ]
     _enumeration_fields = ["enumeration_value", "enumeration_other_value", "is_nil", "nil_reason", ]
     _relationship_fields = ["relationship_values", "is_nil", "nil_reason", ]
@@ -59,6 +61,11 @@ class QPropertyRealizationForm(QRealizationForm):
 
     # this is a reverse field, so I need to define it explicitly here
     relationship_values = ModelMultipleChoiceField(queryset=QModel.objects.none())
+
+    # this is a computed field; it is not part of the underlying QPropertyRealization
+    # however, it is also computed on the QPropertyRealizationSerializer (based on the proxy during the "reset" fn)
+    # and can be overwritten in this form during the "customize" fn
+    is_required = BooleanField(required=False, label="Is required")
 
     def get_hidden_fields(self):
         """
@@ -95,7 +102,6 @@ class QPropertyRealizationForm(QRealizationForm):
             "<p>Some properties can be intentionally left blank, provided there is a valid reason for doing so.</p>"
             "<p>Checking this box will reveal a drop-down menu allowing a reason to be specified.</p>"
             "<p>If a reason is specified, then any value on the left will be ignored during publication.</p>"))
-
 
         # nil_reason_field = self.fields["nil_reason"]
         # nil_reason_field.label = mark_safe(_(
@@ -144,6 +150,7 @@ class QPropertyRealizationForm(QRealizationForm):
         self.inline_help = customization.inline_help
         self.is_nillable = customization.is_nillable
         self.is_required = customization.is_required
+        self.set_default_field_value("is_required", self.is_required)
 
         if field_type == QPropertyTypes.ATOMIC:
             atomic_type = customization.atomic_type
@@ -161,7 +168,6 @@ class QPropertyRealizationForm(QRealizationForm):
                 if atomic_default:
                     self.set_default_field_value("atomic_value", atomic_default)
                     self.set_default_field_value("is_complete", True)
-
 
             atomic_suggestions = customization.atomic_suggestions.split('|')
             if atomic_suggestions:
@@ -181,6 +187,9 @@ class QPropertyRealizationForm(QRealizationForm):
                 update_field_widget_attributes(value_field, {
                     "ng-blur": "update_property_completion()",  # ng-blur waits until focus is lost (rather than firing for every single in-progress change)
                 })
+            else:
+                self.set_default_field_value("is_complete", True)
+
 
         elif field_type == QPropertyTypes.ENUMERATION:
             enumeration_value_field = self.fields["enumeration_value"]
@@ -210,6 +219,9 @@ class QPropertyRealizationForm(QRealizationForm):
                 update_field_widget_attributes(enumeration_other_value_field, {
                     "ng-blur": "update_property_completion()",
                 })
+            else:
+                self.set_default_field_value("is_complete", True)
+
 
         else:  # field_type == QPropertyTypes.RELATIONSHIP
             self.use_subforms = customization.use_subforms()

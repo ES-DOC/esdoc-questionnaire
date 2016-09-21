@@ -112,6 +112,7 @@ class QPropertyRealizationSerializer(QRealizationSerializer):
             'key',
             # TODO: 'is_multiple' IS COMPUTED IN THE NG CONTROLLER; NO NEED TO REPLICATE IT HERE
             'is_multiple',
+            'is_required',
             'possible_relationship_targets',
             'display_detail',
         )
@@ -131,6 +132,7 @@ class QPropertyRealizationSerializer(QRealizationSerializer):
     key = serializers.SerializerMethodField(read_only=True)  # name="get_key"
     # is_complete = serializers.SerializerMethodField(read_only=True)  # name="get_is_complete"
     is_multiple = serializers.SerializerMethodField(read_only=True)  # name="get_is_multiple"
+    is_required = serializers.SerializerMethodField(read_only=True)  # name="get_is_required
     possible_relationship_targets = serializers.SerializerMethodField(read_only=True)  # name="get_possible_relationship_targets"
     display_detail = serializers.SerializerMethodField(read_only=True)  # name="get_display_detail"
 
@@ -146,6 +148,17 @@ class QPropertyRealizationSerializer(QRealizationSerializer):
 
     def get_is_multiple(self, obj):
         return obj.is_multiple()
+
+    def get_is_required(self, obj):
+        """
+        helps w/ determining completeness; if a property is not required then I don't bother adjusting the is_complete property
+        even if it is set to nillable
+        this serialization determines requiredness based on the default (proxy) cardinality
+        however, the form can override this during customization
+        :param obj:
+        :return:
+        """
+        return int(obj.get_cardinality_min()) > 0
 
     def get_display_detail(self, obj):
         """

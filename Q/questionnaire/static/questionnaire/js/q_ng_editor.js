@@ -325,9 +325,8 @@
         };
 
         /* deal w/ nillable properties */
-
         $scope.$watch('current_model.is_nil', function(new_is_nil, old_is_nil) {
-            if (new_is_nil != old_is_nil) {
+            if ((new_is_nil != old_is_nil) && $scope.current_model['is_required']) {
                 $scope.update_property_completion();
             }
         });
