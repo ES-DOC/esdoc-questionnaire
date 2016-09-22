@@ -18,6 +18,7 @@ from django.http import HttpResponse
 
 from Q.questionnaire.models import QProject, QOntology, QModelProxy, QModel, QPublication
 from Q.questionnaire.views.views_errors import q_error
+from Q.questionnaire.q_utils import QError
 
 
 def validate_view_arguments(project_name=None, ontology_key=None, document_type=None):
@@ -74,14 +75,25 @@ class QFeed(Feed):
     feed_type = Atom1Feed
     link = "/feed/"  # not sure how this is used
 
+    def __call__(self, request, *args, **kwargs):
+        """
+        this lil wrapper fn just exists to catch any validation errors in get_object below
+        (otherwise, "super.__call__" will ignore the error and still generate a feed)
+        :param request:
+        :param args:
+        :param kwargs:
+        :return:
+        """
+        try:
+            super(QFeed, self).__call__(request, *args, **kwargs)
+        except QError as e:
+            return q_error(request, e.msg)
+
     def get_object(self, request, project_name=None, ontology_key=None, document_type=None):
         """
         get_object parses the request sent from urls.py
         it also sets some internal variables so that items() knows which models to expose
         """
-
-        # TODO: THIS DOES NOT HANDLE INVALID ARGUMENTS CORRECTLY
-        # TODO: SEE http://stackoverflow.com/questions/25817904/django-generate-error-on-atom-feed-request
         # check the arguments...
         validity, self.project, self.ontology, self.proxy, msg = validate_view_arguments(
             project_name=project_name,
@@ -89,7 +101,9 @@ class QFeed(Feed):
             document_type=document_type
         )
         if not validity:
-            return q_error(request, msg)
+            # don't return q_error here (b/c this fn is being called by __call__ above)
+            # instead, raise a unique error & catch it above
+            raise QError(msg)
 
         self.title = "Published CIM Documents"
         if self.project:
