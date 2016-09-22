@@ -226,6 +226,8 @@ class QPropertyRealizationForm(QRealizationForm):
         else:  # field_type == QPropertyTypes.RELATIONSHIP
             self.use_subforms = customization.use_subforms()
             self.use_references = customization.use_references()
+            if not self.is_required:
+                self.set_default_field_value("is_complete", True)
 
         value_field.help_text = customization.documentation
         value_field.label = customization.property_title

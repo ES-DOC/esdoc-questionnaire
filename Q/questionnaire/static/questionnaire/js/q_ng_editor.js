@@ -181,7 +181,6 @@
             $scope.current_model['is_complete'] = properties_completion.every(function(is_complete) {
                 return is_complete;
             });
-            console.log("did something");
         };
 
         /* TODO: THIS CODE IS REPEATED IN BOTH CONTROLLERS; I SHOULD MOVE IT TO A SINGLE PLACE ($global_services?) */
@@ -276,7 +275,7 @@
                 /* if ths property is required then check some things... */
 
                     if ($scope.current_model['is_nil']) {
-                        /* something that s required but explicitly set to "nil" is still considered complete */
+                        /* something that is required but explicitly set to "nil" is still considered complete */
                         $scope.current_model['is_complete'] = true;
                     }
                     else {
@@ -326,6 +325,9 @@
 
         /* deal w/ nillable properties */
         $scope.$watch('current_model.is_nil', function(new_is_nil, old_is_nil) {
+//            if (new_is_nil != old_is_nil) {
+//                $scope.update_model_completion();
+//            }
             if ((new_is_nil != old_is_nil) && $scope.current_model['is_required']) {
                 $scope.update_property_completion();
             }
