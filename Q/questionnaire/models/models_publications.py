@@ -43,6 +43,7 @@ class QPublication(models.Model):
     class Meta:
         app_label = APP_LABEL
         abstract = False
+        unique_together = ("name", "version")
         verbose_name = "Questionnaire Publication"
         verbose_name_plural = "Questionnaire Publications"
 
