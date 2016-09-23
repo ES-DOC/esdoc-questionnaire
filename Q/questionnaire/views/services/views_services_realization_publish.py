@@ -30,8 +30,6 @@ def q_realization_publish(request):
         msg = "unable to locate document with id={0}".format(realization_model_id)
         return HttpResponseBadRequest(msg)
 
-    import ipdb; ipdb.set_trace()
-
     if not realization.is_active:
         msg = u"This document has been disabled."
         return HttpResponseBadRequest(msg)
