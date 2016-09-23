@@ -59,10 +59,10 @@ class QPublication(models.Model):
     content = models.TextField()
 
     def __str__(self):
-        return "{0}_{1}".format(self.name, self.version)
+        return "{0}_{1}".format(self.name, self.get_version_major())
 
     def get_file_path(self):
-        file_name = "{0}.xml".foramt(str(self))
+        file_name = "{0}.xml".format(str(self))
         file_path = os.path.join(
             settings.MEDIA_ROOT,
             PUBLICATION_UPLOAD_PATH,
@@ -75,6 +75,6 @@ class QPublication(models.Model):
         publication_path = self.get_file_path()
         if not os.path.exists(os.path.dirname(publication_path)):
             os.makedirs(os.path.dirname(publication_path))
-        with open(publication_path, "w") as file:
-            file.write(self.content)
-        file.closed
+        with open(publication_path, "w") as f:
+            f.write(self.content)
+        f.closed
