@@ -568,8 +568,6 @@ class QModel(MPTTModel, QRealization):
         assert self.is_document
         assert self.is_complete
 
-        import ipdb; ipdb.set_trace()
-
         if force_save:
             # reset the minor.patch version...
             self.version -= "0.{0}.{1}".format(self.version.minor(), self.version.patch())

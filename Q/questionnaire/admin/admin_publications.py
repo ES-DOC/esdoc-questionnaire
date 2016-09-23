@@ -36,7 +36,6 @@ def write_publications(modeladmin, request, queryset):
     for publication in queryset:
         try:
             publication.write()
-            import ipdb; ipdb.set_trace()
             messages.add_message(request, messages.SUCCESS, "successfully wrote {0}".format(publication.get_file_path()))
         except:
             messages.add_message(request, messages.ERROR, "error writing {0}".format(publication.get_file_path()))

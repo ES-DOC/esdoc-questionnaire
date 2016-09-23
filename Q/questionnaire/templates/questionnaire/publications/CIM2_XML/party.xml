@@ -1,0 +1,22 @@
+{% extends "questionnaire/publications/CIM2_XML/publication_base.xml" %}
+
+{% block content %}
+
+{% for property in model.properties.all %}
+
+    {% with property_type=property.field_type %}
+
+        {% if property_type == "ATOMIC" %}
+            atomic
+        {% elif property_type == "ENUMERATION" %}
+            enumeration
+        {% else %} {# property_type == "RELATIONSHIP" #}
+            relationship
+        {% endif %}
+
+    {% endwith %}  {# /property_type #}
+
+
+{% endfor %} {# /property #}
+
+{% endblock content %}
