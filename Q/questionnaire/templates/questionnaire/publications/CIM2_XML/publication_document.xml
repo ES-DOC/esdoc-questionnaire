@@ -1,0 +1,22 @@
+{% load q_tags %}
+{% load q_tags_publications %}
+
+{# includes all meta tags for a CIM2 stand-alone documwnt #}
+
+<meta ontologyTypeKey="cim.2.shared.DocMetaInfo">
+    <author ontologyTypeKey="cim.2.shared.Party">
+        {% with "questionnaire/publications/%s/party.xml"|format:publication_format as template %}
+        TODO: HOW TO ADD A PARTY W/OUT INFINITE RECURSION ?!?
+            {{template}}
+        {% endwith %}
+    </author>
+    <createDate>{{ model.created|date:"c" }}</createDate>
+    <updateDate>{{ model.modified|date:"c" }}</updateDate>
+    <id>{{ model.guid }}</id>
+    <version>{{ model.get_version_major }}</version>
+    <institute>{{ model|publication_institute }}</institute>
+    <language>en</language>
+    <project>{{ project }}</project>
+    <source>{% publication_source %}</source>
+    <type>{{ proxy|get_ontology_type_key }}</type>
+</meta>

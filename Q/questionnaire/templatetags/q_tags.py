@@ -140,7 +140,8 @@ def format(value, arg):
     """
     try:
         if value is not None:
-            return (str(arg)) % value
+            # return (str(arg)) % value
+            return (str(value)) % arg
         else:
             return ""
     except (ValueError, TypeError):

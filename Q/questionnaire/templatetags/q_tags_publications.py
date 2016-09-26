@@ -17,8 +17,23 @@ defines template tags to use w/ XML serializations of realizations
 """
 
 from django import template
+from Q.questionnaire.q_constants import *
 
 register = template.Library()
+
+
+@register.simple_tag
+def publication_source():
+    return PUBLICATION_SOURCE
+
+
+@register.filter
+def publication_institute(model):
+    institute = model.owner.profile.institute
+    if institute:
+        return institute.name
+    return None
+
 
 @register.filter
 def get_ontology_type_key(model_proxy):

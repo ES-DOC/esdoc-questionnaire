@@ -57,7 +57,15 @@ CACHE_ALIAS = "default"
 # QUESTIONNAIRE_CODE_URL =
 # QUESTIONNAIRE_HELP_URL =
 
-# CIM-specific constants...
+##################################
+# Publication-specific constants #
+##################################
+
+PUBLICATION_SOURCE = "questionnaire"
+
+##########################
+# CIM-specific constants #
+##########################
 
 # valid reasons to leave a property value blank (taken from seeGrid)
 

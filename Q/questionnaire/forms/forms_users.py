@@ -79,7 +79,7 @@ class QUserProfileForm(ModelForm):
 
     class Meta:
         model = QUserProfile
-        fields = ["first_name", "last_name", "email", ]
+        fields = ["first_name", "last_name", "email", "institute", ]
 
     first_name = CharField(label="First Name", required=False, validators=[validate_no_bad_chars, ])
     last_name = CharField(label="Last Name", required=False, validators=[validate_no_bad_chars, ])

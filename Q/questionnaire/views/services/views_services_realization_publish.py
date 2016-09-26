@@ -44,8 +44,9 @@ def q_realization_publish(request):
         publication = realization.publish(force_save=True)
         msg = "You have successfully published this document.  It should appear in the ES-DOC Archive within 4 hours."
         messages.add_message(request, messages.INFO, msg)
-    except:
+    except Exception as e:
         msg = "Error publishing document."
         messages.add_message(request, messages.ERROR, msg)
+        raise QError(e.message)  # explicitly raise an error so that the msg is copied to console
 
     return JsonResponse({"msg": msg})

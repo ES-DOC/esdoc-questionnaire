@@ -15,8 +15,9 @@ from django.contrib import admin
 from Q.questionnaire.models.models_proxies import QModelProxy, QCategoryProxy, QPropertyProxy
 from Q.questionnaire.models.models_customizations import QModelCustomization, QCategoryCustomization, QPropertyCustomization
 from Q.questionnaire.models.models_realizations import QModel, QProperty
+from Q.questionnaire.models.models_institutes import QInstitute
 
-# TODO: W/ THE EXCEPTION OF QPublication, ALL OF THESE CAN BE DELETED ONCE I'M SURE EVERYTHING IS WORKING
+# TODO: W/ THE EXCEPTION OF QInstitute, ALL OF THESE CAN BE DELETED ONCE I'M SURE EVERYTHING IS WORKING
 # TODO: UNTIL THAT TIME, I MARK THESE MODELS IN THE ADMIN BY PREFACING THEIR "verbose_name_plural" w/ '_'
 
 admin.site.register(QModelProxy)
@@ -27,6 +28,8 @@ admin.site.register(QCategoryCustomization)
 admin.site.register(QPropertyCustomization)
 admin.site.register(QModel)
 admin.site.register(QProperty)
+
+admin.site.register(QInstitute)
 
 # note the relative imports; this is to prevent loading __init__.py twice
 from .admin_categorizations import *

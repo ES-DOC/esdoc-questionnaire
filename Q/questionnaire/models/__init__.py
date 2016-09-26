@@ -14,6 +14,7 @@ __author__ = 'allyn.treshansky'
 
 from Q.questionnaire.models.models_categorizations import QCategorization
 from Q.questionnaire.models.models_customizations import QModelCustomization, QCategoryCustomization, QPropertyCustomization
+from Q.questionnaire.models.models_institutes import QInstitute
 from Q.questionnaire.models.models_ontologies import QOntology
 from Q.questionnaire.models.models_projects import QProject, QProjectOntology
 from Q.questionnaire.models.models_proxies import QModelProxy, QCategoryProxy, QPropertyProxy

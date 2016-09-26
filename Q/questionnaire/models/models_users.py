@@ -13,6 +13,7 @@ __author__ = 'allyn.treshansky'
 from django.db import models
 from django.contrib.auth.models import User
 
+
 from Q.questionnaire import APP_LABEL
 
 class QUserProfile(models.Model):
@@ -28,6 +29,9 @@ class QUserProfile(models.Model):
 
     # extra profile info associated w/ a Questionnaire User...
     projects = models.ManyToManyField("QProject", blank=True, verbose_name="Project Membership")
+    institute = models.ForeignKey("QInstitute", blank=True, null=True, verbose_name="Institution", limit_choices_to={
+        "is_active": True,
+    })
 
     def __unicode__(self):
         return u"%s" % (self.user)

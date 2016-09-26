@@ -561,7 +561,6 @@ class QModel(MPTTModel, QRealization):
         the only reason not to do this is when re-publishing something at the same version b/c of a content error
         :return:
         """
-
         force_save = kwargs.pop("force_save", True)
         publication_format = kwargs.pop("format", QPublicationFormats.CIM2_XML)
 
@@ -585,6 +584,7 @@ class QModel(MPTTModel, QRealization):
             "ontology": self.ontology,
             "proxy": self.proxy,
             "model": self,
+            "publication_format": publication_format,
         }
         publication_template_path = "{0}/publications/{1}/{2}.xml".format(APP_LABEL, publication_format, self.proxy.name)
         publication_content = render_to_string(publication_template_path, publication_dict)
