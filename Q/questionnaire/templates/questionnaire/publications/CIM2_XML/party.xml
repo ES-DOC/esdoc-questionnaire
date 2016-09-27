@@ -1,5 +1,8 @@
 {% extends "questionnaire/publications/CIM2_XML/publication_base.xml" %}
 
+{% load q_tags %}
+{% load q_tags_publications %}
+
 {% block content %}
 
 {% for property in model.properties.all %}
@@ -7,9 +10,16 @@
     {% with property_type=property.field_type %}
 
         {% if property_type == "ATOMIC" %}
-            atomic
+            <{{ property.proxy.name }}>
+{% with value=property|get_property_publication_value:publication_format %}
+{{value|safe}}
+{% endwith %}
+            </{{ property.proxy.name }}>
         {% elif property_type == "ENUMERATION" %}
-            enumeration
+
+            <{{ property.proxy.name }}>
+enumeration
+            </{{ property.proxy.name }}>
         {% else %} {# property_type == "RELATIONSHIP" #}
             relationship
         {% endif %}

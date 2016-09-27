@@ -111,11 +111,12 @@ def index(sequence, i):
 @register.filter
 def jsonify(object):
     """
-    returns a JSON representation of a [set of] objects
+    returns a JSON representation of [a set of] object[s]
     :param object:
     :return:
     """
     # note: ng provides a "json" filter that can do this too
+    # note: but Django doesn't [https://code.djangoproject.com/ticket/17419]
     if isinstance(object, QuerySet):
         return serialize('json', object)
     return json.dumps(object)

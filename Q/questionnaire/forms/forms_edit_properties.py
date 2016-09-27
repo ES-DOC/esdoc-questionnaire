@@ -214,9 +214,11 @@ class QPropertyRealizationForm(QRealizationForm):
 
             if self.is_required:
                 update_field_widget_attributes(enumeration_value_field, {
+                    # this doesn't actually do anything; the <enumeration> ng-directive manages completion internally
                     "ng-blur": "update_property_completion()",
                 })
                 update_field_widget_attributes(enumeration_other_value_field, {
+                    # this, however, does do someting
                     "ng-blur": "update_property_completion()",
                 })
             else:
@@ -301,8 +303,8 @@ class QPropertyRealizationFormSet(QRealizationFormSet):
 
         additional_default_form_arguments.update({
             # this may seem counter-intuitive; you would expect scope_prefix to be something like "current_model.properties[i]"
-            # but b/c a local ng controller is created for each form in the formset, that property is actually bound to "current_model"
-            # so I reset the scope_prefix here
+            # but b/c a local ng controller is created for _each_ form in the formset, that property is actually bound to a JavaScript variable called "current_model"
+            # so I reset the scope_prefix here accordingly...
             'scope_prefix': "current_model",
         })
         return additional_default_form_arguments

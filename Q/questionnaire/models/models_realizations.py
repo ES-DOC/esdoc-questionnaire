@@ -31,7 +31,7 @@ from Q.questionnaire import APP_LABEL, q_logger
 from Q.questionnaire.models.models_customizations import QModelCustomization, QPropertyCustomization
 from Q.questionnaire.models.models_publications import QPublication, QPublicationFormats
 from Q.questionnaire.serializers.serializers_base import enumeration_field_to_enumeration_serialization
-from Q.questionnaire.q_fields import QVersionField, QCardinalityField, QEnumerationField, QPropertyTypes, QNillableTypes, QUnsavedRelatedManager, allow_unsaved_fk
+from Q.questionnaire.q_fields import QVersionField, QCardinalityField, QEnumerationField, QPropertyTypes, QNillableTypes, QUnsavedRelatedManager, allow_unsaved_fk, ENUMERATION_OTHER_CHOICE, ENUMERATION_OTHER_PREFIX
 from Q.questionnaire.q_utils import QError, Version, EnumeratedType, EnumeratedTypeList, pretty_string, find_in_sequence, serialize_model_to_dict
 from Q.questionnaire.q_constants import *
 
@@ -698,7 +698,10 @@ class QProperty(QRealization):
         if self.field_type == QPropertyTypes.ATOMIC:
             return self.atomic_value
         elif self.field_type == QPropertyTypes.ENUMERATION:
-            return self.enumeration_value
+            return [
+                value if value != ENUMERATION_OTHER_CHOICE[0] else "{0}:{1}".format(ENUMERATION_OTHER_PREFIX, self.enumeration_other_value)
+                for value in self.enumeration_value
+            ]
         else:  # self.field_type == QPropertyTYpes.RELATIONSHIP
             return self.relationship_values.all()
 

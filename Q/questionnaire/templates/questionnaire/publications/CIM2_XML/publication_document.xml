@@ -7,6 +7,7 @@
     <author ontologyTypeKey="cim.2.shared.Party">
         {% with "questionnaire/publications/%s/party.xml"|format:publication_format as template %}
         TODO: HOW TO ADD A PARTY W/OUT INFINITE RECURSION ?!?
+        TODO: PROBABLY BY RELYING ON "is_root"
             {{template}}
         {% endwith %}
     </author>

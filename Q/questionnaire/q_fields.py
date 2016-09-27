@@ -355,6 +355,7 @@ QNillableTypes = EnumeratedTypeList([
 ######################
 
 ENUMERATION_TITLE_LIMIT = 2
+ENUMERATION_OTHER_PREFIX = "other"
 ENUMERATION_OTHER_CHOICE = ("_OTHER", "---OTHER---")
 ENUMERATION_OTHER_PLACEHOLDER_TEXT = "Please enter a custom value"
 ENUMERATION_OTHER_DOCUMENTATION = "<em>Select this option to add a custom value for this property.</em>"
