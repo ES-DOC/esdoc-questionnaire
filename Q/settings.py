@@ -30,7 +30,7 @@ import sys
 rel = lambda *x: os.path.join(os.path.abspath(os.path.dirname(__file__)), *x)
 
 # Path to the configuration file containing secret values.
-CONF_PATH = os.path.join(os.path.expanduser('~'), '.config', 'cim2-questionnaire.conf')
+CONF_PATH = os.path.join(os.path.expanduser('~'), '.config', 'esdoc-questionnaire.conf')
 parser = SafeConfigParser()
 parser.read(CONF_PATH)
 
