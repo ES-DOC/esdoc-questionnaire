@@ -31,8 +31,7 @@
         </span>
 
         <span class="col-sm-6 voffset-2">
-{{form.is_complete}}<br/>
-{{form.is_required}}<br/>
+{#{{form.is_complete}}<br/>{{form.is_required}}<br/>#}
             <div enumeration
                  enumeration-required="{{ form.is_required.value|jsonify }}"
                  enumeration-function="update_property_completion"
