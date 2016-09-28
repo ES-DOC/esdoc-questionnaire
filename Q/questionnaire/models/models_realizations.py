@@ -586,7 +586,9 @@ class QModel(MPTTModel, QRealization):
             "model": self,
             "publication_format": publication_format,
         }
-        publication_template_path = "{0}/publications/{1}/{2}.xml".format(APP_LABEL, publication_format, self.proxy.name)
+        # as of v0.16.0.0, I no longer have a unique template for each potential model type
+        # instead I just have one generic "publication_model.xml" template hard-coded here
+        publication_template_path = "{0}/publications/{1}/{2}".format(APP_LABEL, publication_format, "publication_model.xml")
         publication_content = render_to_string(publication_template_path, publication_dict)
         publication.content = publication_content
         publication.save()

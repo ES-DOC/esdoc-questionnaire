@@ -40,6 +40,55 @@ def publication_institute(model):
     return None
 
 
+PLURAL_MAP = {
+    'cactus': 'cacti',
+    'octopus': 'octopi',
+    'child': 'children',
+}
+VOWELS = set('aeiou')
+
+
+@register.filter
+def plural(word):
+    """
+    returns the plural form of a word
+    :param word:
+    :return:
+    """
+    # TODO: IS THERE A NON-HARD-CODED WAY TO DO THIS?
+    # TODO: DOES PYESDOC INCLUDE THIS INFORMATION DURING PARSING?
+    if not word:
+        return u""
+
+    plural = PLURAL_MAP.get(word)
+    if plural:
+        return plural
+
+    root = word
+    try:
+        if word[-1] == 'y' and word[-2] not in VOWELS:
+            root = word[:-1]
+            suffix = 'ies'
+        elif word[-1] == 's':
+            if word[-2] in VOWELS:
+                if word[-3:] == 'ius':
+                    root = word[:-2]
+                    suffix = 'i'
+                else:
+                    root = word[:-1]
+                    suffix = 'ses'
+            else:
+                suffix = 'es'
+        elif word[-2:] in ('ch', 'sh'):
+            suffix = 'es'
+        else:
+            suffix = 's'
+    except IndexError:
+        suffix = 's'
+
+    plural = root + suffix
+    return plural
+
 @register.filter
 def get_ontology_type_key(model_proxy):
     ontology = model_proxy.ontology

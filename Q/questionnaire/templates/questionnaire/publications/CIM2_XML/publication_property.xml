@@ -1,0 +1,24 @@
+{% load q_tags %}
+{% load q_tags_publications %}
+
+{% if property_type != "RELATIONSHIP" %}
+
+    {{ property|get_property_publication_value:publication_format }}
+
+{% else %} {# property_type == "RELATIONSHIP" #}
+
+    <{{ property.proxy.name|plural }}>
+        {% for target in property.relationship_values.all %}  {# b/c this is a reverse relationship, I have to explicitly call ".all" #}
+            <{{ property.proxy.name }}>
+                {# "project", "ontology", & "publication_format" will be the same as the parent model; it is only "proxy" & "model" that are changed #}
+                {% with model=target proxy=target.proxy %}
+                    {% with "questionnaire/publications/%s/publication_model.xml"|format:publication_format as template %}
+                        {% include template %}
+                    {% endwith %}
+                {% endwith %}  {# /model, proxy #}
+            </{{ property.proxy.name }}>
+        {% endfor %}  {# /target #}
+    </{{ property.proxy.name|plural }}>
+
+{% endif %} {# /property_type #}
+
