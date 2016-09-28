@@ -85,7 +85,8 @@ class QFeed(Feed):
         :return:
         """
         try:
-            super(QFeed, self).__call__(request, *args, **kwargs)
+            response = super(QFeed, self).__call__(request, *args, **kwargs)
+            return response
         except QError as e:
             return q_error(request, e.msg)
 
@@ -118,15 +119,15 @@ class QFeed(Feed):
         returns all serializations for all published models in the db
         can be restricted by project/version/proxy
         """
-        publications = QModel.objects.published_documents()
+        realizations = QModel.objects.published_documents()
         if self.project:
-            publications = publications.filter(project=self.project)
+            realizations = realizations.filter(project=self.project)
             if self.ontology:
-                publications = publications.filter(ontology=self.ontology)
+                realizations = realizations.filter(ontology=self.ontology)
                 if self.proxy:
-                    publications = publications.filter(proxy=self.proxy)
+                    realizations = realizations.filter(proxy=self.proxy)
 
-        return QPublication.objects.filter(model__in=publications).order_by("-created")
+        return QPublication.objects.filter(model__in=realizations).order_by("-created")
 
     def item_title(self, item):
         return "{0} [version: {1}]".format(item.name, item.version)

@@ -24,11 +24,11 @@ class TestQCustomization(TestQBase):
 
         # don't do the base setUp (it would interfere w/ the ids of the ontology created below)
         # super(TestQOntolgoy, self).setUp()
-
+        import ipdb; ipdb.set_trace()
         self.test_project = create_project(
             name="test_project",
             title="Test Project",
-            email="allyn.treshansky@noaa.gov",
+            email="allyn.treshansky@colorado.edu",
             description="A test project to use while testing recursions",
         )
         self.test_categorization = create_categorization(
@@ -93,6 +93,7 @@ class TestQCustomization(TestQBase):
 
     def test_reset_property(self):
 
+        import ipdb; ipdb.set_trace()
         model_proxy = self.test_ontology_schema.model_proxies.get(name="model")
 
         atomic_property_proxy = QPropertyProxy.objects.get(name__iexact="name", model_proxy=model_proxy)

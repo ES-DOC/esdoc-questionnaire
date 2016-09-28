@@ -965,6 +965,7 @@ class QPropertyCustomization(QCustomization):
         self.is_required = proxy.is_required()
         self.is_hidden = False
         self.is_editable = True
+        self.is_nillable = not proxy.is_required()
         self.documentation = proxy.documentation
         self.inline_help = False
 
