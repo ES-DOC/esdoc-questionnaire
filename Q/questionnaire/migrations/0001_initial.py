@@ -57,8 +57,8 @@ class Migration(migrations.Migration):
             options={
                 'ordering': ('order',),
                 'abstract': False,
-                'verbose_name': '_Questionnairee Category Customization',
-                'verbose_name_plural': '_Questionnairee Category Customizations',
+                'verbose_name': '_Questionnaire Customization: Category',
+                'verbose_name_plural': '_Questionnaire Customizations: Categories',
             },
         ),
         migrations.CreateModel(
@@ -77,8 +77,23 @@ class Migration(migrations.Migration):
             options={
                 'ordering': ('order',),
                 'abstract': False,
-                'verbose_name': '_Questionnaire Category Proxy',
-                'verbose_name_plural': '_Questionnaire Category Proxies',
+                'verbose_name': '_Questionnaire Proxy: Category',
+                'verbose_name_plural': '_Questionnaire Proxies: Categories',
+            },
+        ),
+        migrations.CreateModel(
+            name='QInstitute',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('name', models.CharField(max_length=512)),
+                ('description', models.TextField(null=True, blank=True)),
+                ('is_active', models.BooleanField(default=True)),
+            ],
+            options={
+                'ordering': ('name',),
+                'abstract': False,
+                'verbose_name': 'Questionnaire Institute',
+                'verbose_name_plural': 'Questionnaire Institutes',
             },
         ),
         migrations.CreateModel(
@@ -90,11 +105,12 @@ class Migration(migrations.Migration):
                 ('modified', models.DateTimeField(auto_now=True)),
                 ('name', models.CharField(max_length=128, blank=True)),
                 ('description', models.TextField(blank=True)),
-                ('version', Q.questionnaire.q_fields.QVersionField()),
+                ('version', Q.questionnaire.q_fields.QVersionField(null=True, blank=True)),
                 ('is_document', models.BooleanField(default=False)),
                 ('is_root', models.BooleanField(default=False)),
                 ('is_published', models.BooleanField(default=False)),
                 ('is_active', models.BooleanField(default=True)),
+                ('is_complete', models.BooleanField(default=False)),
                 ('lft', models.PositiveIntegerField(editable=False, db_index=True)),
                 ('rght', models.PositiveIntegerField(editable=False, db_index=True)),
                 ('tree_id', models.PositiveIntegerField(editable=False, db_index=True)),
@@ -103,7 +119,7 @@ class Migration(migrations.Migration):
             options={
                 'ordering': ('created',),
                 'abstract': False,
-                'verbose_name': 'Questionnaire Model Realization',
+                'verbose_name': 'Questionnaire Realization: Model',
                 'verbose_name_plural': '_Questionnaire Realizations: Models',
             },
         ),
@@ -125,8 +141,8 @@ class Migration(migrations.Migration):
             options={
                 'ordering': ('order',),
                 'abstract': False,
-                'verbose_name': '_Questionnaire Model Customization',
-                'verbose_name_plural': '_Questionnaire Model Customizations',
+                'verbose_name': '_Questionnaire Customization: Model',
+                'verbose_name_plural': '_Questionnaire Customizations: Models',
             },
         ),
         migrations.CreateModel(
@@ -146,8 +162,8 @@ class Migration(migrations.Migration):
             options={
                 'ordering': ('order',),
                 'abstract': False,
-                'verbose_name': '_Questionnaire Model Proxy',
-                'verbose_name_plural': '_Questionnaire Model Proxies',
+                'verbose_name': '_Questionnaire Proxy: Model',
+                'verbose_name_plural': '_Questionnaire Proxies: Models',
             },
         ),
         migrations.CreateModel(
@@ -235,8 +251,9 @@ class Migration(migrations.Migration):
                 ('order', models.PositiveIntegerField(null=True, blank=True)),
                 ('field_type', models.CharField(max_length=512, choices=[(b'ATOMIC', b'Atomic'), (b'RELATIONSHIP', b'Relationship'), (b'ENUMERATION', b'Enumeration')])),
                 ('cardinality', Q.questionnaire.q_fields.QCardinalityField(default=b'0|1', max_length=8)),
+                ('is_complete', models.BooleanField(default=False)),
                 ('atomic_value', models.TextField(null=True, blank=True)),
-                ('enumeration_value', Q.questionnaire.q_fields.QEnumerationField(null=True, blank=True)),
+                ('enumeration_value', Q.questionnaire.q_fields.QEnumerationField(null=True)),
                 ('enumeration_other_value', models.CharField(max_length=1024, null=True, blank=True)),
                 ('is_nil', models.BooleanField(default=False)),
                 ('nil_reason', models.CharField(default=b'UNKNOWN', max_length=512, choices=[(b'UNKNOWN', b'The correct value is not known, and not computable by, the sender of this data.  However, a correct value probably exists.'), (b'MISSING', b'The correct value is not readily available to the sender of this data. Furthermore, a correct value may not exist.'), (b'INAPPLICABLE', b'There is no value.'), (b'TEMPLATE', b'The value will be available later.'), (b'WITHHELD', b'The value is not divulged.')])),
@@ -245,8 +262,8 @@ class Migration(migrations.Migration):
             options={
                 'ordering': ('order',),
                 'abstract': False,
-                'verbose_name': 'Questionnaire Property Realization',
-                'verbose_name_plural': '_Questionnaire Property: Models',
+                'verbose_name': 'Questionnaire Realization: Property',
+                'verbose_name_plural': '_Questionnaire Realizations: Properties',
             },
         ),
         migrations.CreateModel(
@@ -267,7 +284,7 @@ class Migration(migrations.Migration):
                 ('order', models.PositiveIntegerField(null=True, blank=True)),
                 ('field_type', models.CharField(max_length=512, choices=[(b'ATOMIC', b'Atomic'), (b'RELATIONSHIP', b'Relationship'), (b'ENUMERATION', b'Enumeration')])),
                 ('atomic_default', models.CharField(max_length=512, null=True, verbose_name="What is the default value of this property?<div class='documentation'>Note that this only applies to new and not existing documents</div>", blank=True)),
-                ('atomic_type', models.CharField(default=b'DEFAULT', help_text=b'By default, all fields are rendered as strings.  However, a field can be customized to accept longer snippets of text, dates, email addresses, etc.', max_length=512, verbose_name=b'How should this field be rendered?', choices=[(b'DEFAULT', b'Character Field (default)'), (b'BOOLEAN', b'Boolean Field'), (b'DATE', b'Date Field'), (b'DECIMAL', b'Decimal Field'), (b'EMAIL', b'Email Field'), (b'INTEGER', b'Integer Field'), (b'TEXT', b'Text Field (large block of text as opposed to a small string)'), (b'URL', b'URL Field')])),
+                ('atomic_type', models.CharField(default=b'DEFAULT', help_text=b'By default, all fields are rendered as strings.  However, a field can be customized to accept longer snippets of text, dates, email addresses, etc.', max_length=512, verbose_name=b'How should this field be rendered?', choices=[(b'DEFAULT', b'Character Field (default)'), (b'BOOLEAN', b'Boolean Field'), (b'DATE', b'Date Field'), (b'DATETIME', b'Date Time Field'), (b'DECIMAL', b'Decimal Field'), (b'EMAIL', b'Email Field'), (b'INTEGER', b'Integer Field'), (b'TEXT', b'Text Field (large block of text as opposed to a small string)'), (b'TIME', b'Time Field'), (b'URL', b'URL Field')])),
                 ('atomic_suggestions', models.TextField(blank=True, help_text=b'Please enter a "|" separated list of words or phrases.  (These suggestions will only take effect for text fields.)', null=True, verbose_name=b'Are there any suggestions you would like to offer as auto-completion options?', validators=[Q.questionnaire.q_utils.ValidateNoBadSuggestionChars()])),
                 ('enumeration_open', models.BooleanField(default=False, verbose_name=b'Can a user can specify a custom "OTHER" value?')),
                 ('relationship_show_subform', models.BooleanField(default=False, help_text='Checking this will cause the property to be rendered as a nested subform within the parent form;All properties of this model will be available to view and edit in that subform.Unchecking it will cause the attribute to be rendered as a <em>reference</em> widget.', verbose_name="Should this property be rendered in its own subform?<div class='documentation'>Note that a relationship to another CIM Document cannot use subforms, while a relationship to anything else must use subforms.</div>")),
@@ -277,8 +294,8 @@ class Migration(migrations.Migration):
             options={
                 'ordering': ('order',),
                 'abstract': False,
-                'verbose_name': '_Questionnaire Property Customization',
-                'verbose_name_plural': '_Questionnaire Property Customization',
+                'verbose_name': '_Questionnaire Customization: Property',
+                'verbose_name_plural': '_Questionnaire Customizations: Properties',
             },
         ),
         migrations.CreateModel(
@@ -297,20 +314,20 @@ class Migration(migrations.Migration):
                 ('is_nillable', models.BooleanField(default=True)),
                 ('field_type', models.CharField(max_length=256, choices=[(b'ATOMIC', b'Atomic'), (b'RELATIONSHIP', b'Relationship'), (b'ENUMERATION', b'Enumeration')])),
                 ('atomic_default', models.CharField(max_length=512, null=True, blank=True)),
-                ('atomic_type', models.CharField(default=b'DEFAULT', max_length=256, choices=[(b'DEFAULT', b'Character Field (default)'), (b'BOOLEAN', b'Boolean Field'), (b'DATE', b'Date Field'), (b'DECIMAL', b'Decimal Field'), (b'EMAIL', b'Email Field'), (b'INTEGER', b'Integer Field'), (b'TEXT', b'Text Field (large block of text as opposed to a small string)'), (b'URL', b'URL Field')])),
+                ('atomic_type', models.CharField(default=b'DEFAULT', max_length=256, choices=[(b'DEFAULT', b'Character Field (default)'), (b'BOOLEAN', b'Boolean Field'), (b'DATE', b'Date Field'), (b'DATETIME', b'Date Time Field'), (b'DECIMAL', b'Decimal Field'), (b'EMAIL', b'Email Field'), (b'INTEGER', b'Integer Field'), (b'TEXT', b'Text Field (large block of text as opposed to a small string)'), (b'TIME', b'Time Field'), (b'URL', b'URL Field')])),
                 ('enumeration', Q.questionnaire.q_fields.QJSONField(null=True, blank=True)),
                 ('enumeration_open', models.BooleanField(default=False)),
                 ('enumeration_multi', models.BooleanField(default=False)),
                 ('relationship_target_names', models.TextField(default=b'')),
                 ('category', models.ForeignKey(related_name='property_proxies', blank=True, to='questionnaire.QCategoryProxy', null=True)),
                 ('model_proxy', models.ForeignKey(related_name='property_proxies', to='questionnaire.QModelProxy')),
-                ('relationship_target_models', models.ManyToManyField(related_name='+', to='questionnaire.QModelProxy', blank=True)),
+                ('relationship_target_models', models.ManyToManyField(related_name='parent_property_proxies', to='questionnaire.QModelProxy', blank=True)),
             ],
             options={
                 'ordering': ('order',),
                 'abstract': False,
-                'verbose_name': '_Questionnaire Property Proxy',
-                'verbose_name_plural': '_Questionnaire Property Proxies',
+                'verbose_name': '_Questionnaire Proxy: Property',
+                'verbose_name_plural': '_Questionnaire Proxies: Properties',
             },
         ),
         migrations.CreateModel(
@@ -331,6 +348,24 @@ class Migration(migrations.Migration):
                 'abstract': False,
                 'verbose_name': '_Questionnaire Property Thing (testing only)',
                 'verbose_name_plural': '_Questionnaire Property Thing (testing only)',
+            },
+        ),
+        migrations.CreateModel(
+            name='QPublication',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('name', models.UUIDField()),
+                ('created', models.DateTimeField(auto_now_add=True)),
+                ('modified', models.DateTimeField(auto_now=True)),
+                ('version', Q.questionnaire.q_fields.QVersionField()),
+                ('format', models.CharField(max_length=128, choices=[(b'CIM2_XML', b'CIM2 XML')])),
+                ('content', models.TextField()),
+                ('model', models.ForeignKey(related_name='publications', to='questionnaire.QModel')),
+            ],
+            options={
+                'abstract': False,
+                'verbose_name': 'Questionnaire Publication',
+                'verbose_name_plural': 'Questionnaire Publications',
             },
         ),
         migrations.CreateModel(
@@ -364,6 +399,7 @@ class Migration(migrations.Migration):
             name='QUserProfile',
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('institute', models.ForeignKey(verbose_name=b'Institution', blank=True, to='questionnaire.QInstitute', null=True)),
                 ('projects', models.ManyToManyField(to='questionnaire.QProject', verbose_name=b'Project Membership', blank=True)),
                 ('user', models.OneToOneField(related_name='profile', to=settings.AUTH_USER_MODEL)),
             ],
@@ -500,6 +536,10 @@ class Migration(migrations.Migration):
         ),
         migrations.AlterUniqueTogether(
             name='qcategorization',
+            unique_together=set([('name', 'version')]),
+        ),
+        migrations.AlterUniqueTogether(
+            name='qpublication',
             unique_together=set([('name', 'version')]),
         ),
         migrations.AlterUniqueTogether(
