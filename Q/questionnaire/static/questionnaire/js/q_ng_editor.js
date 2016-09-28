@@ -249,6 +249,20 @@
             return $scope.is_loaded;
         };
 
+        /* TODO: I DON'T LIKE DEFINING THIS FN HERE; IT OUGHT TO HAVE GLOBAL SCOPE */
+        /* TODO: OR, BETTER YET, BE PART OF THE <enumeration> DIRECTIVE ITSELF */
+        /* TODO: OR HAVE THE FN CALL IN "forms_edit_properties.QPropertyRealizationForm#customize" CONVERT THE INITIAL VALUE TO AN ARRAY */
+        $scope.check_enumeration = function(arg, value) {
+            /* checks if a particular value is in an enumeration */
+            /* note that depending on when this fn is called `value` may not yet be an array */
+            /* (it is serialized as a '|' deliminated string and only converted to a JS array through the <enumeration> directive) */
+            if (value.constructor != Array) {
+                value = value.split('|');
+            }
+            var arg_in_value = $.inArray(arg, value);
+            return arg_in_value > 0;
+        };
+
         /* yes, confusingly, the above code has just set "current_model" to be a specific property */
         /* (it uses "model" in the Django sense of the word and "property" in the CIM sense of the word) */
 
@@ -325,9 +339,6 @@
 
         /* deal w/ nillable properties */
         $scope.$watch('current_model.is_nil', function(new_is_nil, old_is_nil) {
-//            if (new_is_nil != old_is_nil) {
-//                $scope.update_model_completion();
-//            }
             if ((new_is_nil != old_is_nil) && $scope.current_model['is_required']) {
                 $scope.update_property_completion();
             }

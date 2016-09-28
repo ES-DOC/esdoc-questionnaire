@@ -203,10 +203,9 @@ class QPropertyRealizationForm(QRealizationForm):
             #     enumeration_value_field.widget = SelectMultiple(choices=enumeration_value_field.choices)
             # else:
             #     enumeration_value_field.widget = Select(choices=enumeration_value_field.choices)
-
             set_field_widget_attributes(enumeration_other_value_field, {
                 "placeholder": ENUMERATION_OTHER_PLACEHOLDER_TEXT,
-                "ng-show": "value_in_array('{0}', current_model.enumeration_value)".format(ENUMERATION_OTHER_CHOICE[0]),
+                "ng-show": "check_enumeration('{0}', current_model.enumeration_value)".format(ENUMERATION_OTHER_CHOICE[0]),
             })
             update_field_widget_attributes(enumeration_other_value_field, {
                 "ng-disabled": "current_model.is_nil"
