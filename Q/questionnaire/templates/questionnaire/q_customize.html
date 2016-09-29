@@ -59,127 +59,129 @@
     {# HERE IS THE PARENT CONTROLLER #}
     <div ng-controller="CustomizerController as customizer_controller">
 
-        {# wrapping everything in bootstrap grids to help w/ placement #}
+        {# wrapping everything in a fieldset that can be deactivated during AJAX calls #}
+        <fieldset id="q_blocker" ng-disabled="blocking()">
 
-        <div class="container-fluid">
-            <div class="col-md-12">
+            {# wrapping everything in bootstrap grids to help w/ placement #}
+            <div class="container-fluid">
+                <div class="col-md-12">
 
-                <div class="title row">
-                    Customize the CIM Questionnaire for <strong>{{ proxy }}</strong> documents of the <a href="/{{ project.name }}" title="ES-DOC Questionnaire Project Home Page"><strong>{{ project.title }}</strong></a> Project
-                </div> <!-- /.title -->
+                    <div class="title row">
+                        Customize the CIM Questionnaire for <strong>{{ proxy }}</strong> documents of the <a href="/{{ project.name }}" title="ES-DOC Questionnaire Project Home Page"><strong>{{ project.title }}</strong></a> Project
+                    </div> <!-- /.title -->
 
-                <div class="documentation row">
-                    <div class="col-md-12">
-                        Use this page to customize how a particular CIM Document Type is presented in the CIM Questionnaire for this project.&nbsp;
-                    </div>
-                    <div class="col-md-12">
-                        <a href="/{{ project.name }}">{{ project.title }} Project Page.</a>
-                    </div>
-                    <div class="col-md-10">
-                        <a href="{% url 'help' %}">ES-DOC Questionnaire help</a> is available.
-                    </div>
-                </div> <!-- /.documentation -->
-
-                <div class="col-md-12 row">
-
-                    {% csrf_token %}
-
-                    {# HERE IS THE TOP-LEVEL MODEL CONTROLLER #}
-                    <div ng-controller="ModelCustomizerController as model_customizer_controller"
-                         current_model_path="_DATA">
-
-                        <form name="{{form.form_name}}"
-                              class="form-horizontal"
-                              watch_form_validity="models_validity"
-                              novalidate>
-
-                            {# the template code for the MODEL fields are hard-coded here; #}
-                            {# there is no separate template for them (such as "_q_customize_model.html") #}
-                            {# this is b/c... 1) the code is simple, and 2) the code is not reusable for subforms #}
-                            {# this paradigm is repeated in "sections/_q_section_customize_subform.html" #}
-
-                            <div class="hidden">
-                                {% for field in form.get_hidden_fields %}
-                                    {{ field }}
-                                {% endfor %}
-                            </div> <!-- /.hidden -->
-
-                            <div id="{{form.form_name}}_customization_fields">
-                                <fieldset class="fieldset collapsible" ng-controller="FieldsetController as customization_details_fieldset_controller">
-                                    <legend class="fieldset_header" ng-click="customization_details_fieldset_controller.is_collapsed = ! customization_details_fieldset_controller.is_collapsed" title="click to toggle content" >
-                                        <span ng-hide="customization_details_fieldset_controller.is_collapsed" class="glyphicon glyphicon-triangle-bottom"></span>
-                                        <span ng-show="customization_details_fieldset_controller.is_collapsed" class="glyphicon glyphicon-triangle-right"></span>
-                                        Customization Details:&nbsp;
-                                    </legend>
-                                    <div class="fieldset_content" ng-hide="customization_details_fieldset_controller.is_collapsed">
-
-                                        <div class="documentation">
-                                            This section contains information relating to the customization itself, as opposed to the editor form being customized.
-                                        </div>
-
-                                        {% for field in form.get_customization_fields %}
-                                            <div class="row {% cycle 'odd' 'even' %}">
-                                                {% include 'questionnaire/_q_customize_field.html' %}
-                                            </div>
-                                        {% endfor %} {# /field #}
-
-                                    </div> <!-- /.fieldset_content -->
-                                </fieldset>
-                            </div>  <!-- /customization_fields -->
-
-                            <div id="{{form.form_name}}_document_fields">
-                                <fieldset class="fieldset collapsible" ng-controller="FieldsetController as document_details_fieldset_controller">
-                                    <legend class="fieldset_header" ng-click="document_details_fieldset_controller.is_collapsed = ! document_details_fieldset_controller.is_collapsed" title="click to toggle content" >
-                                        <span ng-hide="document_details_fieldset_controller.is_collapsed" class="glyphicon glyphicon-triangle-bottom"></span>
-                                        <span ng-show="document_details_fieldset_controller.is_collapsed" class="glyphicon glyphicon-triangle-right"></span>
-                                        Document Details:&nbsp;
-                                    </legend>
-                                    <div class="fieldset_content" ng-hide="document_details_fieldset_controller.is_collapsed">
-
-                                        <div class="documentation">
-                                            This section contains information relating to the document itself.  This will affect the look-and-feel of the editor form being customized.
-                                        </div>
-
-                                        {% for field in form.get_document_fields %}
-                                            <div class="row {% cycle 'odd' 'even' %}">
-                                                {% include 'questionnaire/_q_customize_field.html' %}
-                                            </div>
-                                        {% endfor %} {# /field #}
-
-                                    </div> <!-- /.fieldset_content -->
-                                </fieldset>
-                            </div>  <!-- /document_fields -->
-
-                        </form>
-
-                        {% include 'questionnaire/_q_customize_properties.html' %}
-
-                        <div class="form-group voffset-16">
-                            <div class="col-sm-offset-3 col-sm-7">
-                                <button class="btn btn-primary"
-                                        ng-click="submit_customization()"
-                                        ng-disabled="!models_validity"
-                                        title="save the current state of this customization">
-                                    <!-- notice how this button uses the "submit_customization" fn from the parent "customizer_controller" -->
-                                    <!-- (instead of the child "model_customizer_controller") -->
-                                    submit
-                                </button>
-                                <a class="btn btn-primary"
-                                   target="_blank"
-                                   href="/{{ project.name }}/view/{{ ontology.key }}/{{ proxy.name|lower }}/"
-                                   ng-show="is_default_model_customization"
-                                   title="view a blank document in the editor using the last-saved state of this customization">
-                                    view in editor
-                                </a>
-                            </div>
+                    <div class="documentation row">
+                        <div class="col-md-12">
+                            Use this page to customize how a particular CIM Document Type is presented in the CIM Questionnaire for this project.&nbsp;
                         </div>
+                        <div class="col-md-12">
+                            <a href="/{{ project.name }}">{{ project.title }} Project Page.</a>
+                        </div>
+                        <div class="col-md-10">
+                            <a href="{% url 'help' %}">ES-DOC Questionnaire help</a> is available.
+                        </div>
+                    </div> <!-- /.documentation -->
 
-                    </div> <!-- /ng-controller:ModelCustomizerController -->
+                    <div class="col-md-12 row">
+
+                        {% csrf_token %}
+
+                        {# HERE IS THE TOP-LEVEL MODEL CONTROLLER #}
+                        <div ng-controller="ModelCustomizerController as model_customizer_controller"
+                             current_model_path="_DATA">
+
+                            <form name="{{form.form_name}}"
+                                  class="form-horizontal"
+                                  watch_form_validity="models_validity"
+                                  novalidate>
+
+                                {# the template code for the MODEL fields are hard-coded here; #}
+                                {# there is no separate template for them (such as "_q_customize_model.html") #}
+                                {# this is b/c... 1) the code is simple, and 2) the code is not reusable for subforms #}
+                                {# this paradigm is repeated in "sections/_q_section_customize_subform.html" #}
+
+                                <div class="hidden">
+                                    {% for field in form.get_hidden_fields %}
+                                        {{ field }}
+                                    {% endfor %}
+                                </div> <!-- /.hidden -->
+
+                                <div id="{{form.form_name}}_customization_fields">
+                                    <fieldset class="fieldset collapsible" ng-controller="FieldsetController as customization_details_fieldset_controller">
+                                        <legend class="fieldset_header" ng-click="customization_details_fieldset_controller.is_collapsed = ! customization_details_fieldset_controller.is_collapsed" title="click to toggle content" >
+                                            <span ng-hide="customization_details_fieldset_controller.is_collapsed" class="glyphicon glyphicon-triangle-bottom"></span>
+                                            <span ng-show="customization_details_fieldset_controller.is_collapsed" class="glyphicon glyphicon-triangle-right"></span>
+                                            Customization Details:&nbsp;
+                                        </legend>
+                                        <div class="fieldset_content" ng-hide="customization_details_fieldset_controller.is_collapsed">
+
+                                            <div class="documentation">
+                                                This section contains information relating to the customization itself, as opposed to the editor form being customized.
+                                            </div>
+
+                                            {% for field in form.get_customization_fields %}
+                                                <div class="row {% cycle 'odd' 'even' %}">
+                                                    {% include 'questionnaire/_q_customize_field.html' %}
+                                                </div>
+                                            {% endfor %} {# /field #}
+
+                                        </div> <!-- /.fieldset_content -->
+                                    </fieldset>
+                                </div>  <!-- /customization_fields -->
+
+                                <div id="{{form.form_name}}_document_fields">
+                                    <fieldset class="fieldset collapsible" ng-controller="FieldsetController as document_details_fieldset_controller">
+                                        <legend class="fieldset_header" ng-click="document_details_fieldset_controller.is_collapsed = ! document_details_fieldset_controller.is_collapsed" title="click to toggle content" >
+                                            <span ng-hide="document_details_fieldset_controller.is_collapsed" class="glyphicon glyphicon-triangle-bottom"></span>
+                                            <span ng-show="document_details_fieldset_controller.is_collapsed" class="glyphicon glyphicon-triangle-right"></span>
+                                            Document Details:&nbsp;
+                                        </legend>
+                                        <div class="fieldset_content" ng-hide="document_details_fieldset_controller.is_collapsed">
+
+                                            <div class="documentation">
+                                                This section contains information relating to the document itself.  This will affect the look-and-feel of the editor form being customized.
+                                            </div>
+
+                                            {% for field in form.get_document_fields %}
+                                                <div class="row {% cycle 'odd' 'even' %}">
+                                                    {% include 'questionnaire/_q_customize_field.html' %}
+                                                </div>
+                                            {% endfor %} {# /field #}
+
+                                        </div> <!-- /.fieldset_content -->
+                                    </fieldset>
+                                </div>  <!-- /document_fields -->
+
+                            </form>
+
+                            {% include 'questionnaire/_q_customize_properties.html' %}
+
+                            <div class="form-group voffset-16">
+                                <div class="col-sm-offset-3 col-sm-7">
+                                    <button class="btn btn-primary"
+                                            ng-click="submit_customization()"
+                                            ng-disabled="!models_validity"
+                                            title="save the current state of this customization">
+                                        <!-- notice how this button uses the "submit_customization" fn from the parent "customizer_controller" -->
+                                        <!-- (instead of the child "model_customizer_controller") -->
+                                        submit
+                                    </button>
+                                    <a class="btn btn-primary"
+                                       target="_blank"
+                                       href="/{{ project.name }}/view/{{ ontology.key }}/{{ proxy.name|lower }}/"
+                                       ng-show="is_default_model_customization"
+                                       title="view a blank document in the editor using the last-saved state of this customization">
+                                        view in editor
+                                    </a>
+                                </div>
+                            </div>
+
+                        </div> <!-- /ng-controller:ModelCustomizerController -->
+
+                    </div> <!-- /.col-md-12 -->
 
                 </div> <!-- /.col-md-12 -->
-
-            </div> <!-- /.col-md-12 -->
-        </div> <!-- /.container-fluid -->
+            </div> <!-- /.container-fluid -->
 
 {# ########################################## #}
 {# TODO: DELETE THIS BIT ONCE CODE IS WORKING #}
@@ -194,6 +196,7 @@
 {% endif %} {# /site_type != "PROD" #}
 {# ########################################## #}
 
+        </fieldset> <!-- /#q_blocker -->
     </div> <!-- /ng-controller:CustomizerController -->
 </div> <!-- /ng-app:q_customizer -->
 

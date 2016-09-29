@@ -31,6 +31,10 @@
 
     app.controller("EditorController", ['$scope', '$global_services', '$attrs', '$http', '$cookies', '$location', '$filter', function($scope, $global_services, $attrs, $http, $cookies, $location, $filter) {
 
+        $scope.blocking = function() {
+            return $global_services.getBlocking();
+        };
+
         $scope.show_completion_status = false;
 
         /* TODO: DELETE THIS ONCE EVERYTHING WORKS */
@@ -70,6 +74,7 @@
         };
 
         $scope.submit_realization = function() {
+            $global_services.setBlocking(true);
             var model = $global_services.getData();
             var old_realization_id = realization_id;
 
@@ -105,7 +110,6 @@
                     /* otherwise, display a standard "success" msg here */
                     show_msg("Successfully saved document", "success");
                 }
-
             })
             .error(function (data) {
                 /* just in case this is an unexpected server error, log the content */
@@ -118,6 +122,9 @@
                 /* TODO: HOWEVER, I'LL STILL HAVE TO SOLVE THE GENERAL CASE FOR THE EDITING FORMS */
 
                 show_msg("Error saving document", "error");
+            })
+            .finally(function() {
+                $global_services.setBlocking(true);
             });
 
         };
@@ -414,6 +421,7 @@
         $scope.add_relationship_value_aux = function(target_proxy_id) {
             /* this does the actual adding */
             /* it gets called if "add_relationship_value" returns a valid target_proxy_id */
+            $global_services.setBlocking(true);
             var url = "/services/realization_add_relationship_value/";
             var data = "session_key=" + session_key + "&target_proxy_id=" + target_proxy_id + "&key=" + $scope.current_model.key;
             $http({
@@ -421,15 +429,18 @@
                 url: url,
                 headers: {'Content-Type': 'application/x-www-form-urlencoded'},
                 data: data
-            }).then(
+            })
+            .then(
                 function(result) {
                     /* success */
                     var new_relationship_value = result.data;
                     $scope.current_model[relationship_subform_field_name].push(new_relationship_value);
+                    $global_services.setBlocking(false);
                 },
                 function(error) {
                     /* error */
                     console.log(error.data);
+                    $global_services.setBlocking(false);
                 }
            )
         };
@@ -451,6 +462,7 @@
             /* this removes the model from the server cache */
             /* strictly speaking, this isn't needed b/c the client JSON object will replace the server cache upon saving, */
             /* but this fn also forces the code to "do something" which provides a loading bar and refreshes the display */
+            $global_services.setBlocking(true);
             var url = "/services/realization_remove_relationship_value/";
             var data = "session_key=" + session_key + "&target_index=" + target_index + "&key=" + $scope.current_model.key;
             $http({
@@ -461,10 +473,12 @@
             }).then(
                 function(result) {
                     /* success */
+                    $global_services.setBlocking(false);
                 },
                 function(error) {
                     /* error */
                     console.log(error.data);
+                    $global_services.setBlocking(false);
                 }
            )
         };

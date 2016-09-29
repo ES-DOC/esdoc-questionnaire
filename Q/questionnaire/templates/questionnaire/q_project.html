@@ -38,8 +38,10 @@
 <div ng-app="q_project">
     <div ng-controller="ProjectController as project_controller">
 
-{# wrapping everything in bootstrap grids to help w/ placement #}
+{# wrapping everything in a fieldset that can be deactivated during AJAX calls #}
+<fieldset id="q_blocker" ng-disabled="blocking()">
 
+{# wrapping everything in bootstrap grids to help w/ placement #}
 <div class="container-fluid">
     <div class="col-md-12">
 
@@ -49,11 +51,9 @@
 
 {% csrf_token %}
 
-
     <div class="title row">
         {{ project.title }} CIM Questionnaire Project
     </div> <!-- /#title -->
-
 
     <div class="documentation row">
         <div class="col-md-10">
@@ -102,7 +102,6 @@
         </div>
     </div> <!-- /.documentation -->
 
-
     <div class="col-md-12 row">
 
         <div class="panel panel-default">
@@ -141,13 +140,12 @@
             </div> <!-- /.panel-body -->
         </div> <!-- /.panel -->
 
-
     </div>
-
 
     </div> <!-- /.col-md-12 -->
 </div> <!-- /.container-fluid -->
 
+</fieldset>  <!-- /#q_blocker -->
 
     </div> <!-- /ng-controller:project_controller -->
 </div> <!-- /ng-app:q_project -->

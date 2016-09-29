@@ -18,7 +18,11 @@
     /* so I include it and use it in rare occasions */
     /* see http://toddmotto.com/digging-into-angulars-controller-as-syntax/ */
 
-    app.controller("ProjectController", [ "$http", "$cookies", "$scope", function($http, $cookies, $scope) {
+    app.controller("ProjectController", [ "$http", "$global_services", "$cookies", "$scope", function($http, $global_services, $cookies, $scope) {
+
+        $scope.blocking = function() {
+            return $global_services.getBlocking();
+        };
 
         /* look here, I am passing "project_id" to this controller */
         /* it is used throughout the code, as a query parameter to the RESTful API */
@@ -170,6 +174,7 @@
         project_controller.load();
 
         this.document_publish = function(document) {
+            $global_services.setBlocking(true);
             var publish_document_request_url = "/services/realization_publish/";
             var publish_document_request_data = $.param({
                 "document_id": document.id
@@ -190,11 +195,15 @@
             .error(function(data) {
                 console.log(data);
                 check_msg();
+            })
+            .finally(function() {
+                $global_services.setBlocking(false);
             });
 
         };
 
         this.project_join_request = function(user_id) {
+            $global_services.setBlocking(true);
             var project_join_request_url =
                 "/services/" + project_controller.project.name +
                 "/project_join_request/";
@@ -216,6 +225,9 @@
             .error(function(data) {
                 console.log(data);
                 check_msg();
+            })
+            .finally(function() {
+                $global_services.setBlocking(false);
             });
 
         };
@@ -227,7 +239,7 @@
                     show_lil_msg("Good thinking.");
                 }
                 else {
-
+                    $global_services.setBlocking(true);
                     var customization_delete_url = "/services/customization_delete/";
                     var customization_delete_data = $.param({
                         "customization_id": customization.id
@@ -256,6 +268,9 @@
                     .error(function(data) {
                         console.log(data);
                         check_msg();
+                    })
+                    .finally(function() {
+                        $global_services.setBlocking(false);
                     });
                 }
             });
@@ -268,7 +283,9 @@
                     show_lil_msg("Maybe next time.");
                 }
                 else {
+                    $global_services.setBlocking(true);
                     alert("TODO!")
+                    $global_services.setBlocking(false);
                 }
             });
         }

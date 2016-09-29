@@ -79,6 +79,8 @@
         /* global app-wide variables */
         /*****************************/
 
+        var _blocking = false;
+
         var _is_loaded = false;
 
 	    var _DATA =  {};  /* (top-level controller resets this via AJAX) */
@@ -250,6 +252,14 @@
             /* work out if data has been loaded */
             isLoaded: function() {
                 return _is_loaded;
+            },
+            /* work out if interaction should be blocked */
+            getBlocking: function() {
+                return _blocking;
+            },
+            /* toggle interaction */
+            setBlocking: function(blocking) {
+                _blocking = blocking;
             },
             /* get the entire model at once */
             getData: function() {

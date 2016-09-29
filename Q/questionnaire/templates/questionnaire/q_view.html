@@ -61,8 +61,10 @@
     {# HERE IS THE PARENT CONTROLLER #}
     <div ng-controller="EditorController as editor_controller">
 
-        {# wrapping everything in bootstrap grids to help w/ placement #}
+        {# wrapping everything in a fieldset that can be deactivated during AJAX calls #}
+        <fieldset id="q_blocker" ng-disabled="blocking()">
 
+        {# wrapping everything in bootstrap grids to help w/ placement #}
         <div class="container-fluid">
             <div class="col-md-12">
 
@@ -152,6 +154,8 @@
     </div> <!-- /.debug -->
 {% endif %} {# /site_type != "PROD" #}
 {# ########################################## #}
+
+    </fieldset>  <!-- /#q_blocker -->
 
     </div>  <!-- /ng-controller=EditorController -->
 

@@ -36,6 +36,10 @@
 
     app.controller("CustomizerController", ['$scope', '$global_services', '$attrs', '$http', '$cookies', '$location', '$filter', function($scope, $global_services, $attrs, $http, $cookies, $location, $filter) {
 
+        $scope.blocking = function() {
+            return $global_services.getBlocking();
+        };
+
         /* TODO: DELETE THIS ONCE EVERYTHING WORKS */
         $scope.print_stuff = function() {
             /* print the current state of stuff */
@@ -69,6 +73,8 @@
         /* that's okay; the other controllers use a watch on $global_services.isLoaded() before loading their local variables */
 
        $scope.submit_customization = function() {
+
+            $global_services.setBlocking(true);
             var model = $global_services.getData();
             var old_customization_name = customization_name;
 
@@ -88,7 +94,7 @@
                 url: $scope.api_url,
                 data: model
             })
-            .success(function (data) {
+            .success(function(data) {
 
                 /* I have to explicitly re-set 'id' & 'name' based on data b/c 'id' is not bound to an ng form element */
                 customization_id = data.id;
@@ -109,19 +115,20 @@
                 }
 
             })
-            .error(function (data) {
+            .error(function(data) {
                 /* just in case this is an unexpected server error, log the content */
                 console.log(data);
 
-                /* I AM HERE */
                 /* TODO: DEAL W/ SERVER ERRORS IN DATA; MAP TO FORMS */
                 /* TODO: I KNOW THAT THE ONLY SERVER ERRORS CAN BE ON THE PARENT FORM, CUSTOMIZATION SECTION */
                 /* TODO: (THEY ARE INVALID "name" & INVALID "is_default") */
                 /* TODO: HOWEVER, I'LL STILL HAVE TO SOLVE THE GENERAL CASE FOR THE EDITING FORMS */
 
                 show_msg("Error saving customization", "error");
+            })
+            .finally(function() {
+                $global_services.setBlocking(false);
             });
-
         };
 
     }]);
