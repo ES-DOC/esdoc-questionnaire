@@ -19,6 +19,7 @@ all of the custom fields used by the questionnaire forms
 
 from django.db import models
 from django.conf import settings
+from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
 from django.core.files.storage import FileSystemStorage
 from django.forms import ValidationError, CharField
 from django.forms.fields import Field, ChoiceField, MultipleChoiceField, MultiValueField
@@ -61,9 +62,6 @@ def allow_unsaved_fk(model_class, field_names):
     field_saved_values = {}
     for field_name in field_names:
         model_field = model_class._meta.get_field(field_name)
-        # saved = model_field.allow_unsaved_instance_assignment
-        # yield
-        # model_field.allow_unsaved_instance_assignment = saved
         field_saved_values[model_field] = model_field.allow_unsaved_instance_assignment
         model_field.allow_unsaved_instance_assignment = True
 
@@ -75,135 +73,136 @@ def allow_unsaved_fk(model_class, field_names):
 
 class QUnsavedManager(models.Manager):
     """
-    a manager to cope w/ unsaved models being used in m2m fields
-    (actually, it is used w/ the reverse of fk fields which are m21 fields)
-    if the model is new, it stores the field content in an instance variable
+    a manager to cope w/ UNSAVED models being used in m2m fields (actually, it is used w/ the reverse of fk fields)
+    (this is not meant to be possible in Django)
+    The manager accomplishes this by storing the would-be field content in an instance variable;
+    in the case of unsaved models, this is purely done to get around Django ickiness
+    in the case of saved models, this is done so that QuerySets are never cloned (which would overwrite in-progress data)
+    a side-effect of this technique is that the output of this manager is not chainable;
+    but the Q doesn't use standard Django methods for saving models (instead serializing from JSON), so I don't really care
     """
 
-    def _use_unsaved_values(self):
-        if hasattr(self, "instance") and self.instance.pk is None:
-            return True
-        return False
+    def get_cached_qs_name(self):
+        return "_cached_{0}".format(self.get_real_field_manager().name)
 
-    def _get_unsaved_values(self):
-        unsaved_related_field_name = self.get_unsaved_related_field_name()
-        if not hasattr(self.instance, unsaved_related_field_name):
-            self._set_unsaved_values()
-        return getattr(self.instance, self.get_unsaved_related_field_name())
+    def get_real_field_manager(self):
+        """
+        overwrite this as needed for different types of managers
+        :return: the _real_ model manager used by this field
+        """
+        field_name = self.field_name
+        return getattr(self.instance, field_name)
 
-    def _set_unsaved_values(self, unsaved_values=None):
-        if unsaved_values is None:
-            unsaved_values = []
-        setattr(self.instance, self.get_unsaved_related_field_name(), unsaved_values)
+    def count(self):
+        return len(self.get_query_set())
 
-    def get_unsaved_related_field_name(self):
-        msg = "{0} must define a custom 'get_unsaved_related_field_name' method.".format(self.__class__.__name__)
-        raise NotImplementedError(msg)
+    def all(self):
+        return self.get_query_set()
 
-    # I cannot simply overload the 'add' or 'remove' fns
-    # b/c this manager is created dynamically in "django.db.models.fields.related.py#create_foreign_related_manager"
+    def get(self, *args, **kwargs):
+        filtered_qs = self.filter_potentially_unsaved(*args, **kwargs)
+        n_filtered_qs = len(filtered_qs)
+        if n_filtered_qs == 0:
+            msg = "{0} matching query does not exist".format(self.model)
+            raise ObjectDoesNotExist(msg)
+        elif n_filtered_qs > 1:
+            msg = "get() returned more than 1 {0} -- it returned {1}!".format(self.model, n_filtered_qs)
+            raise MultipleObjectsReturned(msg)
+        else:
+            return filtered_qs.pop()
+
+    def order_by(self, key, **kwargs):
+        cached_qs = self.get_query_set()
+        sorted_qs = sorted(
+            cached_qs,
+            key=lambda o: getattr(o, key),
+            reverse=kwargs.pop("reverse", False),
+        )
+        return sorted_qs
+
+    def get_query_set(self):
+        instance = self.instance
+        cached_qs_name = self.get_cached_qs_name()
+        if not hasattr(instance, cached_qs_name):
+            field_manager = self.get_real_field_manager()
+            saved_qs = field_manager.all()
+            unsaved_qs = []
+            cached_qs = list(saved_qs) + unsaved_qs
+            setattr(instance, cached_qs_name, cached_qs)
+        return getattr(instance, cached_qs_name)
+
+    # unlike the above fns, I cannot simply overload the 'add' or 'remove' fns
+    # b/c managers are created dynamically in "django.db.models.fields.related.py#create_foreign_related_manager"
     # Django is annoying
 
     def add_potentially_unsaved(self, *objs):
-        if self._use_unsaved_values():
-            instance = self.instance
-            objs = list(objs)
-            for obj in objs:
-                if not isinstance(obj, self.model):
-                    raise TypeError("'%s' instance expected, got %r" % (self.model._meta.object_name, obj))
-                unsaved_related_field_name = self.get_unsaved_related_field_name()
-                existing_unsaved_values = self._get_unsaved_values()
-                if obj not in existing_unsaved_values:
-                    setattr(
-                        instance,
-                        unsaved_related_field_name,
-                        existing_unsaved_values + [obj],
-                    )
-        else:
-            self.add(*objs)
-            # super(QUnsavedRelatedManager, self).add(*objs)
+        instance = self.instance
+        cached_qs = self.get_query_set()
+        objs = list(objs)
 
-    def remove_potentially_unsaved(self, obj):
-        if self._use_unsaved_values():
-            instance = self.instance
+        unsaved_objs = [o for o in objs if o.pk is None or instance.pk is None]  # (unsaved can refer to either the models to add or the model to add to)
+        saved_objs = [o for o in objs if o not in unsaved_objs]
+
+        for obj in objs:
             if not isinstance(obj, self.model):
                 raise TypeError("'%s' instance expected, got %r" % (self.model._meta.object_name, obj))
-            unsaved_related_field_name = self.get_unsaved_related_field_name()
-            unsaved_values = self._get_unsaved_values()
-            unsaved_values.remove(obj)
-            setattr(
-                instance,
-                unsaved_related_field_name,
-                unsaved_values,
-            )
-        else:
-            self.remove(obj)
-            # super(QUnsavedRelatedManager, self).remove(obj)
-
-    # I overload 'all' & 'count' & 'clear'
-
-    def all(self):
-        if self._use_unsaved_values():
-            return self._get_unsaved_values()
-        # TODO: CALLING SUPER RESULTS IN INFINITE RECURSION ?
-        # return super(QUnsavedRelatedManager, self).all()
-        return self.get_queryset().all()
-
-    def count(self):
-        if self._use_unsaved_values():
-            return len(self._get_unsaved_values())
-        # TODO: CALLING SUPER RESULTS IN INFINITE RECURSION ?
-        # return super(QUnsavedRelatedManager, self).count()
-        return self.get_queryset().count()
-
-    def clear(self):
-        import ipdb; ipdb.set_trace()
-        if self._use_unsaved_values():
-            self._set_unsaved_values([])
-        # TODO: CALLING SUPER RESULTS IN INFINITE RECURSION ?
-        # return super(QUnsavedRelatedManager, self).clear()
-
-    # TODO: CONSIDER OVERLOADING OTHER FNS AS NEEDED
-
-    # def get_queryset(self):
-    #     if self._use_unsaved_values():
-    #         return self._get_unsaved_values()
-    #     return super(QUnsavedForeignKeyRelatedManager, self).get_queryset()
-
-class QUnsavedM2MManager(QUnsavedManager):
-
-    def __call__(self, **kwargs):
-        import ipdb; ipdb.set_trace()
-        pass
-
-    def __get__(self, instance, instance_type=None):
-
-        if instance is None:
-            return self
-
-        manager = self.related_manager_cls(
-            model=self.field.rel.to,
-            query_field_name=self.field.related_query_name(),
-            prefetch_cache_name=self.field.name,
-            instance=instance,
-            symmetrical=self.field.rel.symmetrical,
-            source_field_name=self.field.m2m_field_name(),
-            target_field_name=self.field.m2m_reverse_field_name(),
-            reverse=False,
-            through=self.field.rel.through,
+            if obj not in cached_qs:
+                cached_qs.append(obj)
+        setattr(
+            instance,
+            self.get_cached_qs_name(),
+            cached_qs,
         )
 
-        return manager
+        # even though I am not saving models w/ these custom managers in the normal Django way,
+        # I go ahead and add what I can using normal Django methods (just to avoid any confusion later)...
+        if saved_objs:
+            self.add(*saved_objs)
+
+    def remove_potentially_unsaved(self, *objs):
+        instance = self.instance
+        cached_qs = self.get_query_set()
+        objs = list(objs)
+
+        unsaved_objs = [o for o in objs if o.pk is None or instance.pk is None]  # (unsaved can refer to either the models to add or the model to add to)
+        saved_objs = [o for o in objs if o not in unsaved_objs]
+
+        for obj in objs:
+            cached_qs.remove(obj)
+        setattr(
+            instance,
+            self.get_cached_qs_name(),
+            cached_qs,
+        )
+
+        # even though I am not saving models w/ these custom managers in the normal Django way,
+        # I go ahead and remove what I can using normal Django methods (just to avoid any confusion later)...
+        if saved_objs:
+            self.remove(*saved_objs)
+
+    # and I have to define filter separately, b/c the parent 'filter' fn is used internally by other code
+
+    def filter_potentially_unsaved(self, *args, **kwargs):
+        cached_qs = self.get_query_set()
+        filtered_qs = filter(
+            lambda o: all([getattr(o, key) == value for key, value in kwargs.items()]),
+            cached_qs
+        )
+        return filtered_qs
 
 
 class QUnsavedRelatedManager(QUnsavedManager):
-    """
-    a manager to cope w/ unsaved models being used in m2m fields
-    (actually, it is used w/ the reverse of fk fields which are m21 fields)
-    if the model is new, it stores the field content in an instance variable
-    """
 
     use_for_related_fields = True
+
+    def get_real_field_manager(self):
+        """
+        overwritten from parent manager class
+        :return:
+        """
+        related_field = self.model.get_field(self.field_name).related
+        related_field_name = related_field.name
+        return getattr(self.instance, related_field_name)
 
 
 #######################################

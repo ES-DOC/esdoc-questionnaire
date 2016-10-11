@@ -362,6 +362,44 @@ class PathNode(object):
         return self._project
 
 
+def get_realization_path(realization, **kwargs):
+    path = kwargs.get("path", deque())
+    if isinstance(realization, QProperty):
+        path.appendleft(PathNode(RealizationTypes.PROPERTY, realization.guid, realization.proxy))
+        return get_realization_path(realization.model, path=path)
+    elif isinstance(realization, QModel):
+        path.appendleft(PathNode(RealizationTypes.MODEL, realization.guid, realization.proxy, realization.proxy))
+        parent_property = realization.relationship_property
+        if parent_property:
+            return get_realization_path(parent_property, path=path)
+        return path
+    else:
+        msg = "I don't know how to find the path for {0}".format(realization)
+        raise QError(msg)
+
+
+def walk_realization_path(realization, path, fn=None):
+    # start w/ the top-level node (there must be at least one)
+    node = path.popleft()
+    # and double-check that we're looking through the correct realization...
+    assert node.get_guid() == realization.guid
+
+    # then walk forwards along the remaining path moving through the realizations...
+    while len(path):
+        node = path.popleft()
+        node_type = node.get_type()
+        if node_type == RealizationTypes.PROPERTY:
+            assert isinstance(realization, QModel)  # (if I'm looking for a property, I must be at a model)
+            realization = realization.properties(manager="allow_unsaved_properties_manager").get(proxy=node.get_proxy())
+        elif node_type == RealizationTypes.MODEL:
+            assert isinstance(realization, QProperty)  # (if I'm looking for a model, I must be at a [RELATIONSHIP] property)
+            realization = realization.relationship_values(manager="allow_unsaved_relationship_values_manager").get(proxy=node.get_proxy())
+
+    if fn is not None:
+        fn(realization)
+
+    return realization
+
 ##############
 # base class #
 ##############
@@ -392,6 +430,8 @@ class QRealization(models.Model):
         if equality_result is NotImplemented:
             return equality_result
         return not equality_result
+
+    # TODO: REPLACE THESE NEXT 2 FNS W/ THE ABOVE GLOBAL get_path / walk_path FNS...
 
     def get_default_customization(self):
         """
@@ -469,6 +509,7 @@ class QRealization(models.Model):
 # model realizations #
 ######################
 
+
 class QModelQuerySet(models.QuerySet):
     """
     As of Django 1.7 I can use custom querysets as managers
@@ -490,6 +531,7 @@ class QModelQuerySet(models.QuerySet):
     def shared_documents(self, user):
         return self.root_documents().filter(shared_owners__in=[user.pk])
 
+
 class QModel(MPTTModel, QRealization):
 
     class Meta:
@@ -500,12 +542,7 @@ class QModel(MPTTModel, QRealization):
         ordering = ("created", )
 
     class _QRelationshipValuesUnsavedRelatedManager(QUnsavedRelatedManager):
-
-        def get_unsaved_related_field_name(self):
-            _field = QModel.get_field("relationship_property")
-            _related_field_name = _field.related.name
-            _unsaved_related_field_name = "_unsaved_{0}".format(_related_field_name)
-            return _unsaved_related_field_name
+        field_name = "relationship_property"
 
     # custom managers...
     # according to Django [https://docs.djangoproject.com/en/1.9/topics/db/managers/#custom-managers-and-model-inheritance], the 1st manager specified is the default manager; so I must explicitly reset "objects" here
@@ -628,6 +665,7 @@ class QModel(MPTTModel, QRealization):
 # property realizations #
 #########################
 
+
 class QProperty(QRealization):
 
     class Meta:
@@ -638,12 +676,7 @@ class QProperty(QRealization):
         ordering = ("order", )
 
     class _QPropertyUnsavedRelatedManager(QUnsavedRelatedManager):
-
-        def get_unsaved_related_field_name(self):
-            _field = QProperty.get_field("model")
-            _related_field_name = _field.related.name
-            _unsaved_related_field_name = "_unsaved_{0}".format(_related_field_name)
-            return _unsaved_related_field_name
+        field_name = "model"
 
     # custom managers...
     # according to Django [https://docs.djangoproject.com/en/1.9/topics/db/managers/#custom-managers-and-model-inheritance], the 1st manager specified is the default manager; so I must explicitly reset "objects" here
@@ -790,7 +823,6 @@ class QProperty(QRealization):
     #         # a non-required property is complete by default
     #         # TODO: WHAT ABOUT PROPERTIES THAT ARE _CUSTOMIZED_ TO BE REQUIRED ?!?
     #         return True
-
 
     def is_multiple(self):
         cardinality_max = self.get_cardinality_max()

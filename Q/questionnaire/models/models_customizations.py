@@ -437,6 +437,7 @@ def get_customization_by_fn_recusively(fn, current_property_customizations, cust
                     if matching_customization:
                         return matching_customization
 
+
 def recurse_through_customizations(fn, current_model_customization, customization_types, **kwargs):
     """
     recursively applies fn recursively to all customization types
@@ -471,6 +472,7 @@ def recurse_through_customizations(fn, current_model_customization, customizatio
                         customization_types,
                         previously_recursed_customizations=previously_recursed_customizations,
                     )
+
 
 def set_name(model_customization, new_name):
     recurse_through_customizations(
@@ -571,6 +573,7 @@ class QCustomization(models.Model):
         unique_together = self._meta.unique_together
         return list(unique_together)
 
+
 #######################
 # model customization #
 #######################
@@ -602,12 +605,7 @@ class QModelCustomization(QCustomization):
         verbose_name_plural = "_Questionnaire Customizations: Models"
 
     class _QModelCustomizationUnsavedRelatedManager(QUnsavedRelatedManager):
-
-        def get_unsaved_related_field_name(self):
-            _field = QModelCustomization.get_field("relationship_source_property_customization")
-            _related_field_name = _field.related.name
-            _unsaved_related_field_name = "_unsaved_{0}".format(_related_field_name)
-            return _unsaved_related_field_name
+        field_name = "relationship_source_property_customization"
 
     # custom managers...
     objects = QModelCustomizationQuerySet.as_manager()
@@ -728,9 +726,9 @@ class QModelCustomization(QCustomization):
         self.full_clean()
         super(QModelCustomization, self).save(*args, **kwargs)
 
-    ###########################################
-    # some fns which are called from handlers #
-    ###########################################
+    ##################################################
+    # some fns which are called from signal handlers #
+    ##################################################
 
     def updated_ontology(self):
 
@@ -747,6 +745,7 @@ class QModelCustomization(QCustomization):
             if property_proxy.required and not property_customizer.required:
                 property_customizer.required = True
                 property_customizer.save()
+
 
 ##########################
 # category customization #
@@ -782,12 +781,7 @@ class QCategoryCustomization(QCustomization):
         verbose_name_plural = "_Questionnaire Customizations: Categories"
 
     class _QCategoryCustomizationUnsavedRelatedManager(QUnsavedRelatedManager):
-
-        def get_unsaved_related_field_name(self):
-            _field = QCategoryCustomization.get_field("model_customization")
-            _related_field_name = _field.related.name
-            _unsaved_related_field_name = "_unsaved_{0}".format(_related_field_name)
-            return _unsaved_related_field_name
+        field_name = "model_customization"
 
     # custom managers...
     objects = QCategoryCustomizationQuerySet.as_manager()
@@ -840,20 +834,10 @@ class QPropertyCustomization(QCustomization):
         verbose_name_plural = "_Questionnaire Customizations: Properties"
 
     class _QPropertyCustomizationUnsavedRelatedManager(QUnsavedRelatedManager):
-
-        def get_unsaved_related_field_name(self):
-            _field = QPropertyCustomization.get_field("model_customization")
-            _related_field_name = _field.related.name
-            _unsaved_related_field_name = "_unsaved_{0}".format(_related_field_name)
-            return _unsaved_related_field_name
+        field_name = "model_customization"
 
     class _QCategoryCustomizationUnsavedRelatedManager(QUnsavedRelatedManager):
-
-        def get_unsaved_related_field_name(self):
-            _field = QPropertyCustomization.get_field("category")
-            _related_field_name = _field.related.name
-            _unsaved_related_field_name = "_unsaved_{0}".format(_related_field_name)
-            return _unsaved_related_field_name
+        field_name = "category"
 
     # custom managers...
     # according to Django [https://docs.djangoproject.com/en/1.9/topics/db/managers/#custom-managers-and-model-inheritance], the 1st manager specified is the default manager; so I must explicitly reset "objects" here
@@ -985,7 +969,6 @@ class QPropertyCustomization(QCustomization):
         # RELATIONSHIP fields...
         else:  # self.field_type == QPropertyTypes.RELATIONSHIP:
             self.relationship_show_subform = not self.use_references()
-
 
     def set_name(self, new_name):
         # used w/ "recurse_through_customization" in global fn "set_name" above

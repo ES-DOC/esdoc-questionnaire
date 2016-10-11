@@ -12,6 +12,7 @@ __author__ = 'allyn.treshansky'
 
 from django.db import models, connection, connections, transaction, DEFAULT_DB_ALIAS
 from django.db.models.query import QuerySet
+from django.db.models.fields import FieldDoesNotExist
 from django.conf import settings
 from django.core.management import call_command
 from django.core.management.color import no_style
@@ -99,6 +100,17 @@ class TestModel(models.Model):
         finally:
             cursor.close()
 
+    @classmethod
+    def get_field(cls, field_name):
+        """
+        convenience fn for getting the Django Field instance from a model class
+        note that this is a classmethod; when called from an instance it will just convert that instance to its class
+        """
+        try:
+            field = cls._meta.get_field_by_name(field_name)
+            return field[0]
+        except FieldDoesNotExist:
+            return None
 
 ##########################################
 # a way of testing the number of queries #
@@ -499,3 +511,6 @@ def create_realization(**kwargs):
         assert realization_serializer.is_valid(), "Invalid QModelRealizationSerializer (in create_realization)"
 
         return realization_serializer.save()
+
+
+

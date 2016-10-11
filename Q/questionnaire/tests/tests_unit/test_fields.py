@@ -33,7 +33,6 @@ from Q.questionnaire.q_fields import *
 UPLOAD_DIR = "tests"
 UPLOAD_PATH = os.path.join(APP_LABEL, UPLOAD_DIR)  # this will be concatenated w/ MEDIA_ROOT by FileField
 
-
 class TestUnsavedTestUnsavedFieldsModelOneRelatedManger(QUnsavedRelatedManager):
 
     def get_unsaved_related_field_name(self):
@@ -125,6 +124,22 @@ class TestUnsavedFieldsModelFive(TestModel):
     objects = models.Manager()
     name = models.CharField(blank=True, max_length=BIG_STRING, unique=True)
 
+
+class TestUnsavedFieldsModelParent(TestModel):
+
+    name = models.CharField(blank=True, max_length=BIG_STRING, unique=True)
+
+class TestUnsavedFieldsModelChild(TestModel):
+
+    class _TestUnsavedChildrenManager(QUnsavedRelatedManager):
+        field_name = "parent"
+
+    objects = models.Manager()
+    allow_unsaved_children_manager = _TestUnsavedChildrenManager()
+
+    name = models.CharField(blank=True, max_length=BIG_STRING, unique=True)
+    parent = models.ForeignKey("TestUnsavedFieldsModelParent", blank=True, null=True, related_name="children")
+
 TEST_MODELS = {
     "test_fields_model": TestFieldsModel,
     "test_unsaved_fields_model_one": TestUnsavedFieldsModelOne,
@@ -132,6 +147,8 @@ TEST_MODELS = {
     "test_unsaved_fields_model_three": TestUnsavedFieldsModelThree,
     "test_unsaved_fields_model_four": TestUnsavedFieldsModelFour,
     "test_unsaved_fields_model_five": TestUnsavedFieldsModelFive,
+    "test_unsaved_fields_model_parent": TestUnsavedFieldsModelParent,
+    "test_unsaved_fields_models_child": TestUnsavedFieldsModelChild,
 }
 
 
@@ -184,51 +201,154 @@ class Test(TestQBase):
     # test unsaved fields #
     #######################
 
-    def test_unsaved_fk_field(self):
-        test_model_one = TestUnsavedFieldsModelOne(name="one")
-        test_model_two = TestUnsavedFieldsModelTwo(name="two")
+    # ordinary code would be something like: test.model_parent.add(*[test_model_child1, test_model_child2,])
+    # but Django balks at relationships between unsaved models
+    # so just checking that my custom code can handle unsaved models
+    # (it doesn't actually have to write to the db, it just needs to store the correct relationships in memory)
 
-        with self.assertRaises(ValueError):
-            test_model_one.link_to_testunsavedfieldsmodeltwo = test_model_two
+    def test_m2m_manager_unsaved(self):
 
-        with allow_unsaved_fk(TestUnsavedFieldsModelOne, ["link_to_testunsavedfieldsmodeltwo"]):
-            test_model_one.link_to_testunsavedfieldsmodeltwo = test_model_two
-            self.assertEqual(test_model_one.link_to_testunsavedfieldsmodeltwo, test_model_two)
+        parent_model = TestUnsavedFieldsModelParent(name="parent")
+        child_model1 = TestUnsavedFieldsModelChild(name="child1")
+        child_model2 = TestUnsavedFieldsModelChild(name="child2")
 
-    def test_unsaved_reverse_fk_field(self):
-        test_model_one = TestUnsavedFieldsModelOne(name="one")
-        test_model_two = TestUnsavedFieldsModelTwo(name="two")
+        # test all & count...
+        self.assertListEqual(parent_model.children(manager="allow_unsaved_children_manager").all(), [])
+        self.assertEqual(parent_model.children(manager="allow_unsaved_children_manager").count(), 0)
 
-        # adding models to the reverse fk field normally should fail...
-        with self.assertRaises(ValueError):
-            test_model_two.link_to_testunsavedfieldsmodelone.add(test_model_one)
+        # test adding...
+        parent_model.children(manager="allow_unsaved_children_manager").add_potentially_unsaved(*[child_model1, child_model2])
+        self.assertListEqual(parent_model.children(manager="allow_unsaved_children_manager").all(), [child_model1, child_model2])
+        self.assertEqual(parent_model.children(manager="allow_unsaved_children_manager").count(), 2)
 
-        # adding models to the reverse fk field via the special manager should succeed...
-        test_model_two.link_to_testunsavedfieldsmodelone(manager="test_manager").add_potentially_unsaved(test_model_one)
+        # test (unchainable) filtering...
+        child_model_list = parent_model.children(manager="allow_unsaved_children_manager").filter_potentially_unsaved(name="child1")
+        no_model_list = parent_model.children(manager="allow_unsaved_children_manager").filter_potentially_unsaved(name="no name")
+        self.assertEqual(len(child_model_list), 1)
+        self.assertEqual(len(no_model_list), 0)
+        with self.assertRaises(AttributeError):
+            child_model_list.filter(name="child1")
 
-        self.assertEqual(test_model_two.link_to_testunsavedfieldsmodelone(manager="test_manager").count(), 1)
-        self.assertListEqual(test_model_two.link_to_testunsavedfieldsmodelone(manager="test_manager").all(), [test_model_one])
+        # test ordering...
+        reversed_child_model_list = parent_model.children(manager="allow_unsaved_children_manager").order_by("name", reverse=True)
+        self.assertListEqual(reversed_child_model_list, [child_model2, child_model1])
 
-    def test_unsaved_m2m_field_old(self):
-        test_model_one = TestUnsavedFieldsModelOne(name="one")
-        test_model_three = TestUnsavedFieldsModelThree(name="three")
+        # test removing...
+        parent_model.children(manager="allow_unsaved_children_manager").remove_potentially_unsaved(child_model1)
+        self.assertListEqual(parent_model.children(manager="allow_unsaved_children_manager").all(), [child_model2])
 
-        # adding models to the m2m field normally should fail...
-        with self.assertRaises(ValueError):
-            test_model_three.test_unsaved_fields_model_ones.add(test_model_one)
+        # test getting...
+        child_model = parent_model.children(manager="allow_unsaved_children_manager").get(name="child2")
+        with self.assertRaises(ObjectDoesNotExist):
+            parent_model.children(manager="allow_unsaved_children_manager").get(name="no name")
+        self.assertEqual(child_model, child_model2)
 
-        import ipdb; ipdb.set_trace()
-        test_model_three.test_unsaved_fields_model_ones(manager="test_manager").add_potentially_unsaved(test_model_one)
+        # test caching...
+        self.assertEqual(id(child_model), id(child_model2))
 
-    def test_unsaved_m2m_field(self):
-        import ipdb; ipdb.set_trace()
-        test_model_four = TestUnsavedFieldsModelFour(name="four")
-        test_model_five = TestUnsavedFieldsModelFive(name="five")
+    def test_m2m_manager_saved(self):
+        parent_model = TestUnsavedFieldsModelParent(name="parent")
+        child_model1 = TestUnsavedFieldsModelChild(name="child1")
+        child_model2 = TestUnsavedFieldsModelChild(name="child2")
 
-        with self.assertRaises(ValueError):
-            test_model_four.test_m2m_field.add(test_model_five)
+        parent_model.save()
+        child_model1.save()
+        child_model2.save()
+        parent_model.children.add(child_model1)
 
-        test_model_four.test_m2m_field(manager="test_manager")
+        # test all & count...
+        self.assertListEqual(parent_model.children(manager="allow_unsaved_children_manager").all(), [child_model1])
+        self.assertEqual(parent_model.children(manager="allow_unsaved_children_manager").count(), 1)
+
+        # test adding...
+        parent_model.children(manager="allow_unsaved_children_manager").add_potentially_unsaved(*[child_model1, child_model2])
+        self.assertListEqual(parent_model.children(manager="allow_unsaved_children_manager").all(), [child_model1, child_model2])
+        self.assertEqual(parent_model.children(manager="allow_unsaved_children_manager").count(), 2)
+
+        # test (unchainable) filtering...
+        child_model_list = parent_model.children(manager="allow_unsaved_children_manager").filter_potentially_unsaved(name="child1")
+        no_model_list = parent_model.children(manager="allow_unsaved_children_manager").filter_potentially_unsaved(name="no name")
+        self.assertEqual(len(child_model_list), 1)
+        self.assertEqual(len(no_model_list), 0)
+        with self.assertRaises(AttributeError):
+            child_model_list.filter(name="child1")
+
+        # test ordering...
+        reversed_child_model_list = parent_model.children(manager="allow_unsaved_children_manager").order_by("name", reverse=True)
+        self.assertListEqual(reversed_child_model_list, [child_model2, child_model1])
+
+        # test removing...
+        parent_model.children(manager="allow_unsaved_children_manager").remove_potentially_unsaved(child_model1)
+        self.assertListEqual(parent_model.children(manager="allow_unsaved_children_manager").all(), [child_model2])
+
+        # test getting...
+        child_model = parent_model.children(manager="allow_unsaved_children_manager").get(name="child2")
+        with self.assertRaises(ObjectDoesNotExist):
+            parent_model.children(manager="allow_unsaved_children_manager").get(name="no name")
+        self.assertEqual(child_model, child_model2)
+
+        # test caching...
+        self.assertEqual(id(child_model), id(child_model2))
+
+    def test_m2m_manager_mixed(self):
+        parent_model = TestUnsavedFieldsModelParent(name="parent")
+        child_model1 = TestUnsavedFieldsModelChild(name="child1")
+        child_model2 = TestUnsavedFieldsModelChild(name="child2")
+
+        child_model1.save()
+        child_model2.save()
+
+        # test all & count...
+        self.assertListEqual(parent_model.children(manager="allow_unsaved_children_manager").all(), [])
+        self.assertEqual(parent_model.children(manager="allow_unsaved_children_manager").count(), 0)
+
+        # test adding...
+        parent_model.children(manager="allow_unsaved_children_manager").add_potentially_unsaved(
+            *[child_model1, child_model2])
+        self.assertListEqual(parent_model.children(manager="allow_unsaved_children_manager").all(),
+                             [child_model1, child_model2])
+        self.assertEqual(parent_model.children(manager="allow_unsaved_children_manager").count(), 2)
+
+        # test (unchainable) filtering...
+        child_model_list = parent_model.children(manager="allow_unsaved_children_manager").filter_potentially_unsaved(
+            name="child1")
+        no_model_list = parent_model.children(manager="allow_unsaved_children_manager").filter_potentially_unsaved(
+            name="no name")
+        self.assertEqual(len(child_model_list), 1)
+        self.assertEqual(len(no_model_list), 0)
+        with self.assertRaises(AttributeError):
+            child_model_list.filter(name="child1")
+
+        # test ordering...
+        reversed_child_model_list = parent_model.children(manager="allow_unsaved_children_manager").order_by("name",
+                                                                                                             reverse=True)
+        self.assertListEqual(reversed_child_model_list, [child_model2, child_model1])
+
+        # test removing...
+        parent_model.children(manager="allow_unsaved_children_manager").remove_potentially_unsaved(child_model1)
+        self.assertListEqual(parent_model.children(manager="allow_unsaved_children_manager").all(), [child_model2])
+
+        # test getting...
+        child_model = parent_model.children(manager="allow_unsaved_children_manager").get(name="child2")
+        with self.assertRaises(ObjectDoesNotExist):
+            parent_model.children(manager="allow_unsaved_children_manager").get(name="no name")
+        self.assertEqual(child_model, child_model2)
+
+        # test caching...
+        self.assertEqual(id(child_model), id(child_model2))
+
+    # def test_unsaved_fk_field(self):
+    #     test_model_one = TestUnsavedFieldsModelOne(name="one")
+    #     test_model_two = TestUnsavedFieldsModelTwo(name="two")
+    #
+    #     with self.assertRaises(ValueError):
+    #         test_model_one.link_to_testunsavedfieldsmodeltwo = test_model_two
+    #
+    #     with allow_unsaved_fk(TestUnsavedFieldsModelOne, ["link_to_testunsavedfieldsmodeltwo"]):
+    #         test_model_one.link_to_testunsavedfieldsmodeltwo = test_model_two
+    #         self.assertEqual(test_model_one.link_to_testunsavedfieldsmodeltwo, test_model_two)
+    #
+    #
 
     ###################
     # test file field #
@@ -240,86 +360,86 @@ class Test(TestQBase):
         else:
             return os.path.join(settings.MEDIA_ROOT, UPLOAD_PATH)
 
-    def test_qfilefield_creation(self):
-
-        # ensure correct storage method and help text are set
-
-        test_file_content = "test file"
-        test_file = SimpleUploadedFile("test", test_file_content)
-
-        test_field_model = TestFieldsModel(name="test", file=test_file)
-        test_field_model.save()
-        self.assertTrue(os.path.isfile(self.get_file_path(test_file)))
-
-        test_file_field = test_field_model.file
-        self.assertTrue(isinstance(test_file_field.storage, OverwriteStorage))
-        self.assertEqual(test_file_field.field.help_text, QFileField.default_help_text)
-
-    def test_qfilefield_deletion(self):
-
-        # files should be deleted when no other class instances are using them
-
-        test_file_content = "test file"
-        test_file = SimpleUploadedFile("test", test_file_content)
-
-        test_field_model_1 = TestFieldsModel(name="one", file=test_file)
-        test_field_model_2 = TestFieldsModel(name="two", file=test_file)
-        test_field_model_1.save()
-        test_field_model_2.save()
-        self.assertTrue(os.path.isfile(self.get_file_path(test_file)))
-
-        # deleting the 1st model shouldn't delete the file
-        # (b/c the 2nd model is still using it)
-        test_field_model_1.delete()
-        self.assertTrue(os.path.isfile(self.get_file_path(test_file)))
-
-        # deleting the 2nd model should delete the file
-        # (b/c no other models are still using it)
-        test_field_model_2.delete()
-        self.assertFalse(os.path.isfile(self.get_file_path(test_file)))
-
-    def test_overwrite_storage(self):
-
-        # files w/ different names should co-exist
-        # files w/ same names should be overwritten
-        test_file_1_content = "test file one"
-        test_file_2_content = "test file two"
-        test_file_3_content = "test file three"
-        test_file_1 = SimpleUploadedFile("same_name", test_file_1_content)
-        test_file_2 = SimpleUploadedFile("different_name", test_file_2_content)
-        test_file_3 = SimpleUploadedFile("same_name", test_file_3_content)
-
-        # begin w/ an empty directory...
-        test_file_dir = self.get_file_path()
-        self.assertEqual(len(os.listdir(test_file_dir)), 0)
-        test_field_model = TestFieldsModel()
-
-        # assign test_file_1;
-        # the file should be copied to the correct path
-        test_field_model.file = test_file_1
-        test_field_model.save()
-        self.assertTrue(os.path.isfile(self.get_file_path(test_file_1)))
-        self.assertEqual(len(os.listdir(test_file_dir)), 1)
-        self.assertEqual(test_field_model.file.read(), test_file_1_content)
-
-        # assign test_file_2;
-        # the file should be copied to the correct path
-        # but the previous file should still exist
-        test_field_model.file = test_file_2
-        test_field_model.save()
-        self.assertTrue(os.path.isfile(self.get_file_path(test_file_2)))
-        self.assertEqual(len(os.listdir(test_file_dir)), 2)
-        self.assertEqual(test_field_model.file.read(), test_file_2_content)
-
-        # assign test_file_3;
-        # the file should be copied to the correct path
-        # and should replace the existing file w/ the same name
-        test_field_model.file = test_file_3
-        test_field_model.save()
-        self.assertTrue(os.path.isfile(self.get_file_path(test_file_3)))
-        self.assertEqual(len(os.listdir(test_file_dir)), 2)
-        self.assertEqual(test_field_model.file.read(), test_file_3_content)
-
+    # def test_qfilefield_creation(self):
+    #
+    #     # ensure correct storage method and help text are set
+    #
+    #     test_file_content = "test file"
+    #     test_file = SimpleUploadedFile("test", test_file_content)
+    #
+    #     test_field_model = TestFieldsModel(name="test", file=test_file)
+    #     test_field_model.save()
+    #     self.assertTrue(os.path.isfile(self.get_file_path(test_file)))
+    #
+    #     test_file_field = test_field_model.file
+    #     self.assertTrue(isinstance(test_file_field.storage, OverwriteStorage))
+    #     self.assertEqual(test_file_field.field.help_text, QFileField.default_help_text)
+    #
+    # def test_qfilefield_deletion(self):
+    #
+    #     # files should be deleted when no other class instances are using them
+    #
+    #     test_file_content = "test file"
+    #     test_file = SimpleUploadedFile("test", test_file_content)
+    #
+    #     test_field_model_1 = TestFieldsModel(name="one", file=test_file)
+    #     test_field_model_2 = TestFieldsModel(name="two", file=test_file)
+    #     test_field_model_1.save()
+    #     test_field_model_2.save()
+    #     self.assertTrue(os.path.isfile(self.get_file_path(test_file)))
+    #
+    #     # deleting the 1st model shouldn't delete the file
+    #     # (b/c the 2nd model is still using it)
+    #     test_field_model_1.delete()
+    #     self.assertTrue(os.path.isfile(self.get_file_path(test_file)))
+    #
+    #     # deleting the 2nd model should delete the file
+    #     # (b/c no other models are still using it)
+    #     test_field_model_2.delete()
+    #     self.assertFalse(os.path.isfile(self.get_file_path(test_file)))
+    #
+    # def test_overwrite_storage(self):
+    #
+    #     # files w/ different names should co-exist
+    #     # files w/ same names should be overwritten
+    #     test_file_1_content = "test file one"
+    #     test_file_2_content = "test file two"
+    #     test_file_3_content = "test file three"
+    #     test_file_1 = SimpleUploadedFile("same_name", test_file_1_content)
+    #     test_file_2 = SimpleUploadedFile("different_name", test_file_2_content)
+    #     test_file_3 = SimpleUploadedFile("same_name", test_file_3_content)
+    #
+    #     # begin w/ an empty directory...
+    #     test_file_dir = self.get_file_path()
+    #     self.assertEqual(len(os.listdir(test_file_dir)), 0)
+    #     test_field_model = TestFieldsModel()
+    #
+    #     # assign test_file_1;
+    #     # the file should be copied to the correct path
+    #     test_field_model.file = test_file_1
+    #     test_field_model.save()
+    #     self.assertTrue(os.path.isfile(self.get_file_path(test_file_1)))
+    #     self.assertEqual(len(os.listdir(test_file_dir)), 1)
+    #     self.assertEqual(test_field_model.file.read(), test_file_1_content)
+    #
+    #     # assign test_file_2;
+    #     # the file should be copied to the correct path
+    #     # but the previous file should still exist
+    #     test_field_model.file = test_file_2
+    #     test_field_model.save()
+    #     self.assertTrue(os.path.isfile(self.get_file_path(test_file_2)))
+    #     self.assertEqual(len(os.listdir(test_file_dir)), 2)
+    #     self.assertEqual(test_field_model.file.read(), test_file_2_content)
+    #
+    #     # assign test_file_3;
+    #     # the file should be copied to the correct path
+    #     # and should replace the existing file w/ the same name
+    #     test_field_model.file = test_file_3
+    #     test_field_model.save()
+    #     self.assertTrue(os.path.isfile(self.get_file_path(test_file_3)))
+    #     self.assertEqual(len(os.listdir(test_file_dir)), 2)
+    #     self.assertEqual(test_field_model.file.read(), test_file_3_content)
+    #
     ##########################
     # test cardinality field #
     ##########################
@@ -401,30 +521,30 @@ class Test(TestQBase):
         patch = test_field_model.get_version_patch()
         self.assertEqual(patch, 0)
 
-    # ##########################
-    # # test enumeration field #
-    # ##########################
-    #
-    # def test_enumeration_field(self):
-    #
-    #     test_enumeration = [
-    #         {"order": 3, "value": u"three", "documentation": None},
-    #         {"order": 2, "value": u"two", "documentation": u"The second thing."},
-    #         {"order": 1, "value": u"one", "documentation": u"The first thing."},
-    #     ]
-    #
-    #     test_field_model = TestFieldsModel(name="test")
-    #     test_field_model.enumeration = test_enumeration
-    #     test_field_model.save()
-    #     test_field_model.refresh_from_db()
-    #
-    #     test_enumeration_members = test_field_model.get_enumeration_members()
-    #
-    #     self.assertDictEqual(test_enumeration_members[0], test_enumeration[2])
-    #     self.assertDictEqual(test_enumeration_members[1], test_enumeration[1])
-    #     self.assertDictEqual(test_enumeration_members[2], test_enumeration[0])
-    #
-    #     with self.assertRaises(ValidationError):
-    #         test_field_model.enumeration = [{"invalid": "stuff"}, ]
-    #         test_field_model.save()
-    #         test_field_model.refresh_from_db()
+    # # ##########################
+    # # # test enumeration field #
+    # # ##########################
+    # #
+    # # def test_enumeration_field(self):
+    # #
+    # #     test_enumeration = [
+    # #         {"order": 3, "value": u"three", "documentation": None},
+    # #         {"order": 2, "value": u"two", "documentation": u"The second thing."},
+    # #         {"order": 1, "value": u"one", "documentation": u"The first thing."},
+    # #     ]
+    # #
+    # #     test_field_model = TestFieldsModel(name="test")
+    # #     test_field_model.enumeration = test_enumeration
+    # #     test_field_model.save()
+    # #     test_field_model.refresh_from_db()
+    # #
+    # #     test_enumeration_members = test_field_model.get_enumeration_members()
+    # #
+    # #     self.assertDictEqual(test_enumeration_members[0], test_enumeration[2])
+    # #     self.assertDictEqual(test_enumeration_members[1], test_enumeration[1])
+    # #     self.assertDictEqual(test_enumeration_members[2], test_enumeration[0])
+    # #
+    # #     with self.assertRaises(ValidationError):
+    # #         test_field_model.enumeration = [{"invalid": "stuff"}, ]
+    # #         test_field_model.save()
+    # #         test_field_model.refresh_from_db()
