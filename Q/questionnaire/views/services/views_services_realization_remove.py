@@ -10,8 +10,8 @@
 
 __author__ = "allyn.treshansky"
 
-from django.http import HttpResponseForbidden, HttpResponseBadRequest, JsonResponse
-from django.contrib import messages
+from django.http import HttpResponseForbidden, JsonResponse
+# from django.contrib import messages
 
 from Q.questionnaire.models.models_realizations import get_model_realization_by_fn, get_property_realization_by_fn
 from Q.questionnaire.views.views_base import get_key_from_request, get_cached_object
@@ -61,7 +61,9 @@ def q_realization_remove_relationship_value(request):
     request.session[cached_realizations_key] = cached_realizations
 
     # and return a success msg...
-    # TODO: WHY DOESN'T THIS MSG DISPLAY IMMEDIATELY?
     msg = "Successfully removed object"
-    messages.add_message(request, messages.SUCCESS, msg)
+    # (don't need to explicitly render this msg using Django messaging framework)
+    # (b/c it will be obvious to the user that a model was removed since a subform will dissappear)
+    # (and, anyway, there is no corresponding msg that is used when a model is added to a property)
+    # messages.add_message(request, messages.SUCCESS, msg)
     return JsonResponse({"msg": msg})
