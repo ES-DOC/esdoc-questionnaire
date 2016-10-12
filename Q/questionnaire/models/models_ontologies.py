@@ -377,6 +377,8 @@ class QOntology(models.Model):
                 self.parse_schema()
             else:
                 self.parse_specialization()
+            self.is_registered = True
+            self.last_registered_version = self.version
         except Exception as e:
             # if something goes wrong, record it in the logs, return immediately & don't set "is_registered" to True
             # (but don't crash)
@@ -384,9 +386,6 @@ class QOntology(models.Model):
             if request:
                 messages.add_message(request, messages.ERROR, str(e))
             return
-
-        self.is_registered = True
-        self.last_registered_version = self.version
 
         # # if I re-registered an ontology and there were existing customizations associated w/ it
         # # then I better update those customizations so that they have the right content
