@@ -366,11 +366,13 @@
             scope: {
                 enumerationName: '=',
                 enumerationRequired: '=',
+                enumerationDisabled: '=',
                 enumerationChoices: '=',
                 enumerationMultiple: '=?',
                 enumerationFunction: '&'
             },
             template: function (element, attrs) {
+                var is_disabled = attrs["enumerationDisabled"];  /* TODO: THERE MUST BE A MORE NG-APPROVED WAY OF GETTING ATTRS INTO TEMPLATES */
                 var template = '' +
                     '<div class="enumeration">' +
                     '   <button class="btn btn-primary" type="button" ng-click="open = !open">' +
@@ -382,8 +384,8 @@
                     '   </button>' +
                     '   <ul class="list-group" ng-show="open">' +
                     '       <li class="list-group-item" ng-repeat="choice in enumerationChoices" ng-class="{\'selected\': choice.active}">' +
-                    '           <label ng-class="{\'disabled\': current_model.is_nil}">' +
-                    '               <input type="checkbox" ng-model="choice.active" ng-disabled="current_model.is_nil" ng-click="selectChoice(choice)"/>&nbsp;' +
+                    '           <label ng-class="{\'disabled\': ' + is_disabled + ' || current_model.is_nil}">' +
+                    '               <input type="checkbox" ng-model="choice.active" ng-disabled="' + is_disabled + ' || current_model.is_nil" ng-click="selectChoice(choice)"/>&nbsp;' +
                     '               {{ choice.name }}' +
                     '               <span ng-show="choice.documentation" class="help glyphicon glyphicon-info-sign pull-right" data-container="body" data-toggle="popover" data-placement="right" data-content="{{ choice.documentation }}"/>' +
                     '           </label>' +

@@ -34,6 +34,7 @@
 {#{{form.is_complete}}<br/>{{form.is_required}}<br/>#}
             <div enumeration
                  enumeration-required="{{ form.is_required.value|jsonify }}"
+                 enumeration-disabled="{{ form.enumeration_value.field.editable|yesno:'false,true' }}"
                  enumeration-function="update_property_completion"
                  enumeration-choices="{{ form.enumeration_value.field.get_complete_choices }}"
                  enumeration-name="'{{ form.enumeration_value.name }}'"

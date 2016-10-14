@@ -189,7 +189,23 @@ class QPropertyRealizationForm(QRealizationForm):
                 })
             else:
                 self.set_default_field_value("is_complete", True)
-
+            if not customization.is_editable:
+                set_field_widget_attributes(value_field, {
+                    "ng-disabled": "true",
+                    "readonly": "readonly",
+                })
+                set_field_widget_attributes(self.fields["is_nil"], {
+                    "ng-disabled": "true",
+                    "readonly": "readonly",
+                })
+                set_field_widget_attributes(self.fields["nil_reason"], {
+                    "ng-disabled": "true",
+                    "readonly": "readonly",
+                })
+            else:
+                set_field_widget_attributes(value_field, {
+                    "ng-disabled": "current_model.is_nil"
+                })
 
         elif field_type == QPropertyTypes.ENUMERATION:
             enumeration_value_field = self.fields["enumeration_value"]
@@ -210,45 +226,63 @@ class QPropertyRealizationForm(QRealizationForm):
             update_field_widget_attributes(enumeration_other_value_field, {
                 "ng-disabled": "current_model.is_nil"
             })
-
             if self.is_required:
                 update_field_widget_attributes(enumeration_value_field, {
                     # this doesn't actually do anything; the <enumeration> ng-directive manages completion internally
                     "ng-blur": "update_property_completion()",
                 })
                 update_field_widget_attributes(enumeration_other_value_field, {
-                    # this, however, does do someting
+                    # this, however, does do something
                     "ng-blur": "update_property_completion()",
                 })
             else:
                 self.set_default_field_value("is_complete", True)
-
+            if not customization.is_editable:
+                set_field_widget_attributes(enumeration_value_field, {
+                    "ng-disabled": "true",
+                    "readonly": "readonly",
+                })
+                set_field_widget_attributes(enumeration_other_value_field, {
+                    "ng-disabled": "true",
+                    "readonly": "readonly",
+                })
+                set_field_widget_attributes(self.fields["is_nil"], {
+                    "ng-disabled": "true",
+                    "readonly": "readonly",
+                })
+                set_field_widget_attributes(self.fields["nil_reason"], {
+                    "ng-disabled": "true",
+                    "readonly": "readonly",
+                })
+            else:
+                set_field_widget_attributes(enumeration_value_field, {
+                    "ng-disabled": "current_model.is_nil"
+                })
+                set_field_widget_attributes(enumeration_other_value_field, {
+                    "ng-disabled": "current_model.is_nil"
+                })
 
         else:  # field_type == QPropertyTypes.RELATIONSHIP
             self.use_subforms = customization.use_subforms()
             self.use_references = customization.use_references()
             if not self.is_required:
                 self.set_default_field_value("is_complete", True)
+            if not customization.is_editable:
+                set_field_widget_attributes(self.fields["is_nil"], {
+                    "ng-disabled": "true",
+                    "readonly": "readonly",
+                })
+                set_field_widget_attributes(self.fields["nil_reason"], {
+                    "ng-disabled": "true",
+                    "readonly": "readonly",
+                })
+            else:
+                pass
 
         value_field.help_text = customization.documentation
         value_field.label = customization.property_title
         value_field.required = customization.is_required
-        if not customization.is_editable:
-            update_field_widget_attributes(value_field, {
-                "ng-disabled": "true",
-                "readonly": "readonly",
-            })
-            update_field_widget_attributes(self.fields["is_nil"], {
-                "ng-disabled": "true",
-                "readonly": "readonly",
-            })
-            update_field_widget_attributes(self.fields["nil_reason"], {
-                "ng-disabled": "true",
-                "readonly": "readonly",
-            })
-        update_field_widget_attributes(value_field, {
-            "ng-disabled": "current_model.is_nil"
-        })
+        value_field.editable = customization.is_editable
 
         self.customization = customization
 
