@@ -3,8 +3,16 @@ CIM Questionnaire Change History
 For full release notes, please see https://earthsystemcog.org/projects/es-doc-models/releases_questionnaire
 
 v0.16.0.0
-* support for CIM2
+* major rewrite of the editor forms to use the same codebase as the customizer forms
+* support for creating and publishing simple CIM2 documents
 * support for "nillable" properties
+* support for relationship properties to point to different types of targets
+* support for relationship properties to point to targets that have recursive relationships
+* support for enumeration properties to include documentation for each enumeration choice
+* changed the look-and-feel of read-only fields & forms
+* prevented user interaction while AJAX calls are in-progress
+* improved error-handling for invalid ATOM feed requests
+* ability to "underspecify" an ontology version (ie: "cim_2" instead of "cim_2_0_0")
 * initial support for owned customizations & realizations
 
 v0.15.1.0
