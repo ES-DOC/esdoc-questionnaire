@@ -109,7 +109,7 @@ class QUnsavedManager(models.Manager):
             msg = "get() returned more than 1 {0} -- it returned {1}!".format(self.model, n_filtered_qs)
             raise MultipleObjectsReturned(msg)
         else:
-            return filtered_qs.pop()
+            return filtered_qs[0]
 
     def order_by(self, key, **kwargs):
         cached_qs = self.get_query_set()

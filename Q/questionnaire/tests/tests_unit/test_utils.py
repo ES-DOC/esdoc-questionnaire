@@ -37,6 +37,7 @@ class TestUtilsModel(TestModel):
     def __unicode__(self):
         return u"{0}".format(self.name)
 
+
 class TestRecursiveModel(TestModel):
     name = models.CharField(blank=True, max_length=BIG_STRING, unique=False)
     child = models.ForeignKey("TestRecursiveModel", blank=True, null=True)

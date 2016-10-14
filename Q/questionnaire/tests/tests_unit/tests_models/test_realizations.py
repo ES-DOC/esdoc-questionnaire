@@ -222,7 +222,6 @@ class TestQRealization(TestQBase):
             obj.test_field = "I am still a test field"
             return True
 
-        import ipdb; ipdb.set_trace()
         output1 = recurse_through_realizations(_test_fn1, test_model_realization, [RealizationTypes.MODEL, RealizationTypes.CATEGORY, RealizationTypes.PROPERTY])
         self.assertEqual(test_model_realization.test_field, "I am a test field")
         output2 = recurse_through_realizations(_test_fn2, test_model_realization, [RealizationTypes.MODEL, RealizationTypes.CATEGORY, RealizationTypes.PROPERTY])

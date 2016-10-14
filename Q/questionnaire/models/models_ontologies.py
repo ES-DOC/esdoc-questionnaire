@@ -380,7 +380,7 @@ class QOntology(models.Model):
             self.is_registered = True
             self.last_registered_version = self.version
         except Exception as e:
-            # if something goes wrong, record it in the logs, return immediately & don't set "is_registered" to True
+            # if something goes wrong, record it in the logs and return immediately
             # (but don't crash)
             q_logger.error(e)
             if request:
