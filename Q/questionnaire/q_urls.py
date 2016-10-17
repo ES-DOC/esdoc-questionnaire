@@ -24,7 +24,7 @@ from rest_framework.urlpatterns import format_suffix_patterns
 from Q.questionnaire.views import *
 from Q.questionnaire.views.api import *
 from Q.questionnaire.views.services import *
-# from Q.questionnaire.views.views_feed import QFeed, q_publication
+from Q.questionnaire.views.views_feed import QFeed, q_publication
 
 api_urls = patterns('',
 

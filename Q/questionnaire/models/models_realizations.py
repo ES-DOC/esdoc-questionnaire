@@ -586,6 +586,9 @@ class QModel(MPTTModel, QRealization):
     #     )
     #     return all(completion)
 
+    def get_label(self):
+        raise NotImplementedError
+
     def is_synchronized(self):
         return self.synchronization.count() == 0  # checks if qs is empty
 

@@ -42,7 +42,7 @@ DATE_FORMAT_JS = "dd-MMM-yyyy"
 RESERVED_WORDS = [
     "admin", "static", "site_media",
     "user", "login", "logout", "register",
-    "questionnaire", "mindmaps", "metadata",
+    "questionnaire", "legacy", "metadata", "mindmaps",
     "customize", "edit", "view", "help",
     "api", "services",
     "test", "bak",

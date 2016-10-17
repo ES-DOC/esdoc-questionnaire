@@ -22,7 +22,7 @@ v0.15.1.0
 
 v0.15.0.1
 * ensured "read-only" forms do not require authentication
-* ensured _all_ legacy dycore URLs map to appropriate views
+* ensured _all_ legacy Dycore URLs map to appropriate views
 * fixed bug preventing modifying scientific category customizations
 * ensured sorting of documents on project page works as expected
 * added a script to reset guids as needed
@@ -54,7 +54,6 @@ v0.13.0.0
 * refactored category customization code in light of the above change
 
 v0.12.2.0
-
 * rewrote custom EnumerationField class; changed the way that drop-down menus function
 * redesigned Project Index Page
 * ensured changing a customization propagates to existing documents
@@ -63,12 +62,10 @@ v0.12.2.0
 
 
 v0.12.1.0
-
 * fixed errors in serialization
 * fixed errors w/ saving non-loaded property formsets
 
 v0.12.0.0
-
 * restructured testing framework to use fixtures
 * optimized editor form by only loading content on-demand
 * improved help text as needed
@@ -76,64 +73,51 @@ v0.12.0.0
 * added "version" attribute to MetadataVersion
 
 v0.11.3.4
-
 * fixed the way that subform cardinality is determined
 
 v0.11.3.3
-
 * accordion headers for subforms no longer have repeated text
 
 v0.11.3.2
-
 * serialization to XML is not broken by missing elements
 
 v0.11.3.1
-
 * update existing customizations as CVs are added/removed from projects
 
 v0.11.3.0
-
 * ability to export pyesdoc-compatible XML documents
 * improved the category customizer sections
 
 v0.11.2.0
-
 * ability to handle documents without controlled vocabularies
 * ability to customize standard & scientific categories
 * ability to render documents without a "root" component
 
 v0.11.1.0
-
 * ability to save subforms
 
 v0.11.0.1
-
 * patch to add user documentation
 
 v0.11.0.0
-
 * entire rewrite to improve efficiency
 
 v0.10.2.0
-
 * scripts for automatic backup/restore of databases
 
 v0.10.1.1
-
 * support of features in "statistical downscaling controlled vocabulary"
 
 v0.10.0.2
-
 * ability for controlled vocabularies to be used by multiple projects
 
 v0.10.0.1
-
 * explicitly specified location of ATOM feeds
 
 v0.10.0.0
-
 * updated versioning structure to be inline w/ other ES-DOC projects
 * use of fixtures to migrate dbs
 
-Beginning at v0.9.9.6 this has been rewritten as a Django Project rather than a Django Application.  It can therefore be run as it's own webserver, without having to be embedded in an existing (Django) server.
+Beginning at v0.9.9.6 this has been rewritten as a Django Project rather than a Django Application.
+It can therefore be run as it's own webserver, without having to be embedded in an existing (Django) server.
 

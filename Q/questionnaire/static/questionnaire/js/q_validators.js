@@ -53,10 +53,11 @@ function validate_no_spaces(value) {
 
 
 function validate_no_reserved_words(value) {
+    /* TODO: DEFINE THIS ONCE INSTEAD OF HERE AND "q_constants.py" */
     var RESERVED_WORDS = [
         "admin", "static", "site_media",
         "user", "login", "logout", "register",
-        "questionnaire", "mindmaps", "metadata",
+        "questionnaire", "legacy", "metadata", "mindmaps",
         "customize", "edit", "view", "help",
         "api", "services",
         "test", "bak",
