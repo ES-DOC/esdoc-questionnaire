@@ -45,7 +45,7 @@ class QSite(models.Model):
         verbose_name_plural = 'Questionnaire Sites'
 
     # 1to1 relationship w/ standard Django Site...
-    site = models.OneToOneField(Site, related_name="q_site")
+    site = models.OneToOneField(Site, on_delete=models.CASCADE, related_name="q_site")
 
     # extra info associated w/ a Questionnaire Site...
     type = models.CharField(
@@ -54,12 +54,14 @@ class QSite(models.Model):
         choices=[(type.get_type(), type.get_name()) for type in QSiteTypes]
     )
 
-    def __unicode__(self):
-        return u"{0}".format(self.site)
+    def __str__(self):
+        return "{0}".format(self.site)
 
     def get_type(self):
         return self.type
 
+    # def save(self, *args, **kwargs):
+    #     super(QSite, self).save(*args, **kwargs)
 
 def get_site_type(site):
     try:

@@ -1,14 +1,6 @@
 [
 {
     "fields": {
-        "domain": "example.com",
-        "name": "example.com"
-    },
-    "model": "sites.site",
-    "pk": 1
-},
-{
-    "fields": {
         "domain": "questionnaire.es-doc.org",
         "name": "questionnaire.es-doc.org"
     },
@@ -54,14 +46,6 @@
     },
     "model": "sites.site",
     "pk": 7
-},
-{
-    "fields": {
-        "type": "",
-        "site": 1
-    },
-    "model": "questionnaire.qsite",
-    "pk": 1
 },
 {
     "fields": {
