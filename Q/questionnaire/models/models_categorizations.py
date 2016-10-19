@@ -144,7 +144,7 @@ class QCategorization(models.Model):
         # version should match(ish) the instance field...
         categorization_version = get_index(xpath_fix(categorization_content, "version/text()"), 0)
         if self.version.major() != Version(categorization_version).major():
-            msg = "The major version of this categorization instance does not match the major version of the categorization file file"
+            msg = "The major version of this categorization instance does not match the major version of the categorization file"
             if request:
                 messages.add_message(request, messages.WARNING, msg)
         # description can overwrite the instance field...
@@ -171,11 +171,12 @@ class QCategorization(models.Model):
             )
 
             new_category_proxy.documentation = category_proxy_documentation
-            new_category_proxy.order = category_proxy_order or i
+            # new_category_proxy.order = category_proxy_order or i
+            new_category_proxy.order = i if not category_proxy_order else int(category_proxy_order)
 
             if not created_category:
                 # remove any existing relationships (going to replace them during this registration)...
-                new_category_proxy.properties.clear()
+                new_category_proxy.property_proxies.clear()
 
             for j, field in enumerate(xpath_fix(categorization_content, "//field[category_key='{0}']".format(category_proxy_key))):
 
