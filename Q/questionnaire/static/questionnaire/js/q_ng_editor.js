@@ -108,7 +108,6 @@
                     /* the above branch automatically gets a pending msg by virtue of the new page load */
                     /* in this branch, I have to manually check for a pending msg b/c I don't reload the page */
                     check_msg();
-
                 }
             })
             .error(function (data) {
