@@ -105,10 +105,10 @@
                     /* TODO: BUT THAT REQUIRES SETTING UP ROUTES */
                 }
                 else {
-                    /* if I "load" a new page as a result of submission, */
-                    /* then the Django messaging framework will have a msg waiting for me */
-                    /* otherwise, display a standard "success" msg here */
-                    show_msg("Successfully saved document", "success");
+                    /* the above branch automatically gets a pending msg by virtue of the new page load */
+                    /* in this branch, I have to manually check for a pending msg b/c I don't reload the page */
+                    check_msg();
+
                 }
             })
             .error(function (data) {
