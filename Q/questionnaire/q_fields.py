@@ -83,7 +83,13 @@ class QUnsavedManager(models.Manager):
     """
 
     def get_cached_qs_name(self):
-        return "_cached_{0}".format(self.get_real_field_manager().name)
+        """
+        overwrite this as needed for different types of managers
+        :return: a unique name to represent the cached queryset of saved & unsaved instances
+        """
+        return "_cached_{0}".format(
+            self.field_name
+        )
 
     def get_real_field_manager(self):
         """
@@ -195,14 +201,24 @@ class QUnsavedRelatedManager(QUnsavedManager):
 
     use_for_related_fields = True
 
+
+    def get_cached_qs_name(self):
+        """
+        overwrite this as needed for different types of managers
+        :return: a unique name to represent the cached queryset of saved & unsaved instances
+        """
+        related_field = self.model.get_field(self.field_name).related
+        return "_cached_{0}".format(
+            related_field.name
+        )
+
     def get_real_field_manager(self):
         """
         overwritten from parent manager class
         :return:
         """
         related_field = self.model.get_field(self.field_name).related
-        related_field_name = related_field.name
-        return getattr(self.instance, related_field_name)
+        return getattr(self.instance, related_field.name)
 
 
 #######################################

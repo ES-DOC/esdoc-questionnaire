@@ -545,7 +545,6 @@ class QModel(MPTTModel, QRealization):
         field_name = "relationship_property"
 
     # custom managers...
-    # according to Django [https://docs.djangoproject.com/en/1.9/topics/db/managers/#custom-managers-and-model-inheritance], the 1st manager specified is the default manager; so I must explicitly reset "objects" here
     objects = QModelQuerySet.as_manager()
     allow_unsaved_relationship_values_manager = _QRelationshipValuesUnsavedRelatedManager()
 

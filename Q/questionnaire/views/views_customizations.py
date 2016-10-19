@@ -27,11 +27,12 @@ MODEL_CUSTOMIZATION_FORM_MAP = {
     # map of various useful bits of info needed to (re)create forms
     # strictly speaking, this isn't needed for the top-level view...
     # but a similar method is used for the section views (see "views_services_load_section.py")...
-    # so I'm using this contrived map to keep the codebase similar in the two files
+    # so I'm using this contrived map to keep the codebase similar in the 2 files.
     "form_class": QModelCustomizationForm,
     "form_name": _("model_customization_form_{safe_key}"),
     "form_scope_prefix": "current_model",
 }
+
 
 def q_customize_new(request, project_name=None, ontology_key=None, document_type=None):
 

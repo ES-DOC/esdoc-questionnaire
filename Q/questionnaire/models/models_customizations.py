@@ -611,12 +611,12 @@ class QModelCustomization(QCustomization):
     objects = QModelCustomizationQuerySet.as_manager()
     allow_unsaved_relationship_target_model_customizations_manager = _QModelCustomizationUnsavedRelatedManager()
 
+    owner = models.ForeignKey(User, blank=False, null=True, related_name="owned_customizations", on_delete=models.SET_NULL)
+    shared_owners = models.ManyToManyField(User, blank=True, related_name="shared_customizations")
+
     project = models.ForeignKey("QProject", blank=False, related_name="model_customizations")
     ontology = models.ForeignKey("QOntology", blank=False, null=False)
     proxy = models.ForeignKey("QModelProxy", blank=False, null=False)
-
-    owner = models.ForeignKey(User, blank=False, null=True, related_name="owned_customizations", on_delete=models.SET_NULL)
-    shared_owners = models.ManyToManyField(User, blank=True, related_name="shared_customizations")
 
     description = models.TextField(
         blank=True,
