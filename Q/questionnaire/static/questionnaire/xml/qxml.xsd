@@ -29,10 +29,12 @@
         <xs:sequence>
             <xs:element name="name" type="xs:string"/>
             <xs:element name="description" type="xs:string" minOccurs="0"/>
+            <xs:element name="label" type="LabelType" minOccurs="0" maxOccurs="1"/>
             <xs:element name="attributes">
                 <xs:complexType>
                     <xs:sequence>
-                        <xs:element name="attribute" type="AttributeType" minOccurs="0" maxOccurs="unbounded"/>
+                        <xs:element name="attribute" type="AttributeType" minOccurs="0"
+                            maxOccurs="unbounded"/>
                     </xs:sequence>
                 </xs:complexType>
             </xs:element>
@@ -71,6 +73,20 @@
         <xs:attribute name="stereotype" type="xs:string" use="optional"/>
         <xs:attribute name="is_label" type="xs:boolean" use="optional"/>
         <xs:attribute name="is_nillable" type="xs:boolean" use="optional"/>
+    </xs:complexType>
+
+    <xs:complexType name="LabelType">
+        <xs:sequence>
+            <xs:element name="text" type="xs:string" minOccurs="1" maxOccurs="1"/>
+            <xs:element name="fields" minOccurs="1" maxOccurs="1">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="field" minOccurs="0" maxOccurs="unbounded"
+                            type="xs:string"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+        </xs:sequence>
     </xs:complexType>
 
     <xs:complexType name="AtomicType">
@@ -114,7 +130,8 @@
         </xs:sequence>
         <xs:attribute name="enumeration_name" type="xs:string" use="optional"/>
         <xs:attribute name="is_open" type="xs:boolean" use="required"/>
-        <xs:attribute name="is_multi" type="xs:boolean" use="optional"/> <!-- no longer needed for CIM2 -->
+        <xs:attribute name="is_multi" type="xs:boolean" use="optional"/>
+        <!-- no longer needed for CIM2 -->
     </xs:complexType>
 
     <xs:complexType name="RelationshipType">
