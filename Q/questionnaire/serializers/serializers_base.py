@@ -278,7 +278,9 @@ class QListSerializer(ListSerializer):
             for instance in instances
         }
         data_mapping = {
-            data['id']: data
+            # data['id']: data
+            # just in-case I am dealing w/ unsaved data...
+            data.get('id', None): data
             for data in validated_data
         }
 
