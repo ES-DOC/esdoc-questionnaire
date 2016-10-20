@@ -193,12 +193,12 @@ class TestQBase(TestCase):
 
         self.test_user = User.objects.create_user(
             username="test_user",
-            email="allyn.treshansky@noaa.gov",
+            email="allyn.treshansky@colorado.edu",
             password="password",
         )
         self.superuser = User.objects.create_superuser(
             username="admin",
-            email="allyn.treshansky@noaa.gov",
+            email="allyn.treshansky@colorado.edu",
             password="password",
         )
         self.assertTrue(self.superuser.is_superuser)

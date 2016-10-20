@@ -15,10 +15,9 @@ from functools import wraps
 def disable_for_fixtures(signal_handler):
     """
     Decorator that turns off signal handlers when loading fixture data.
-    This is particularly useful for models w/ 1to1 relationship fields
-    b/c those automatically created related models will have some pk
-    that I can't know in advance in the fixture - this decorator lets me
-    load all models via the fixture w/out any automatic signal code getting in the way
+    This is particularly useful for models w/ 1to1 relationship fields,
+    b/c those automatically created related models will have some pk that I can't know in advance in the fixture -
+    this decorator lets me load all models via the fixture w/out any automatic signal code getting in the way
     [this excellent idea came from: http://stackoverflow.com/questions/15624817/have-loaddata-ignore-or-disable-post-save-signals]
     """
 
