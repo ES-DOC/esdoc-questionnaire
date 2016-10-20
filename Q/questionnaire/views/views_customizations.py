@@ -20,6 +20,7 @@ from django.contrib import messages
 from Q.questionnaire.models.models_users import is_admin_of, is_user_of, is_member_of
 from Q.questionnaire.forms.forms_customize_models import QModelCustomizationForm
 from Q.questionnaire.models.models_customizations import get_new_customizations, get_existing_customizations, set_owner
+from Q.questionnaire.views.views_legacy import redirect_legacy_projects
 from Q.questionnaire.views.views_base import add_parameters_to_context, validate_view_arguments, get_key_from_request, get_or_create_cached_object
 from Q.questionnaire.views.views_errors import q_error
 
@@ -34,6 +35,7 @@ MODEL_CUSTOMIZATION_FORM_MAP = {
 }
 
 
+@redirect_legacy_projects
 def q_customize_new(request, project_name=None, ontology_key=None, document_type=None):
 
     # save any request parameters...
@@ -112,6 +114,7 @@ def q_customize_new(request, project_name=None, ontology_key=None, document_type
     return render_to_response('questionnaire/q_customize.html', _dict, context_instance=context)
 
 
+@redirect_legacy_projects
 def q_customize_existing(request, project_name=None, ontology_key=None, document_type=None, customization_name=None):
 
     # save any request parameters...

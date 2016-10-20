@@ -13,11 +13,13 @@ __author__ = "allyn.treshansky"
 from django.shortcuts import render_to_response
 
 from Q.questionnaire.views.views_base import add_parameters_to_context
+from Q.questionnaire.views.views_legacy import redirect_legacy_projects
 from Q.questionnaire.views.views_errors import q_error
 from Q.questionnaire.models.models_users import is_pending_of, is_member_of, is_user_of, is_admin_of
 from Q.questionnaire.models.models_projects import QProject
 
 
+@redirect_legacy_projects
 def q_project(request, project_name=None):
 
     context = add_parameters_to_context(request)

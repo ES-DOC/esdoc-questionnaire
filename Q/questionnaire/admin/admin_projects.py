@@ -41,6 +41,7 @@ class QProjectAdminForm(ModelForm):
             "authenticated",
             "is_active",
             "is_displayed",
+            "is_legacy",
             # "ontologies",
         ]
 

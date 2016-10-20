@@ -21,6 +21,7 @@ from Q.questionnaire.models.models_users import is_admin_of, is_user_of, is_memb
 from Q.questionnaire.models.models_customizations import QModelCustomization, get_existing_customizations
 from Q.questionnaire.models.models_realizations import get_new_realizations, get_existing_realizations, set_owner
 from Q.questionnaire.views.views_base import add_parameters_to_context, get_key_from_request, get_or_create_cached_object, validate_view_arguments as validate_view_arguments_base
+from Q.questionnaire.views.views_legacy import redirect_legacy_projects
 from Q.questionnaire.views.views_errors import q_error
 
 # MODEL_REALIZATION_FORM_MAP = {
@@ -74,6 +75,7 @@ def validate_view_arguments(project_name=None, ontology_key=None, document_type=
     return validity, project, ontology, model_proxy, customization, msg
 
 
+@redirect_legacy_projects
 def q_edit_new(request, project_name=None, ontology_key=None, document_type=None):
 
     # save any request parameters...
@@ -160,6 +162,7 @@ def q_edit_new(request, project_name=None, ontology_key=None, document_type=None
     return render_to_response('questionnaire/q_edit.html', _dict, context_instance=context)
 
 
+@redirect_legacy_projects
 def q_edit_existing(request, project_name=None, ontology_key=None, document_type=None, realization_pk=None):
     # save any request parameters...
     # (in case of redirection)

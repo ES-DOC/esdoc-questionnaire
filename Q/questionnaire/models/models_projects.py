@@ -29,9 +29,11 @@ GROUP_PERMISSIONS = {
     "admin": ["view", "edit", "customize", ],  # able to view, create, edit documents & customizations
 }
 
+
 def generate_upload_to(instance, filename):
     # file will be uploaded to MEDIA_ROOT/<APP_LABEL>/projects/<project_name>/<filename>
     return os.path.join(APP_LABEL, "projects", instance.name, filename)
+
 
 class QProjectQuerySet(models.QuerySet):
     """
@@ -45,6 +47,7 @@ class QProjectQuerySet(models.QuerySet):
 
     def displayed_projects(self):
         return self.filter(is_displayed=True)
+
 
 class QProject(models.Model):
 
@@ -73,7 +76,10 @@ class QProject(models.Model):
     display_logo = models.BooleanField(blank=False, default=False)
 
     authenticated = models.BooleanField(blank=False, default=True)
+    is_legacy = models.BooleanField(blank=False, default=False)
+    is_legacy.help_text = "A legacy project is one that still uses CIM1 and requests must therefore be routed through the legacy site.  Do not check this unless you really know what you're doing."
     is_active = models.BooleanField(blank=False, default=True)
+    is_active.help_text = "A project that is not active cannot be used"
     is_displayed = models.BooleanField(blank=False, default=True)
     is_displayed.help_text = "A project that is not displayed is not included in the Index Page, although users can still navigate to it if they know its URL"
 
