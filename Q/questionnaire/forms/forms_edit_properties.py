@@ -53,7 +53,7 @@ class QPropertyRealizationForm(QRealizationForm):
             'is_required',
         ]
 
-    _hidden_fields = ["proxy", "name", "order", "field_type", ]  # "cardinality", "is_complete", "is_required", ]
+    _hidden_fields = ["proxy", "name", "order", "field_type", "is_complete", ]  # "cardinality", "is_required", ]
     _atomic_fields = ["atomic_value", "is_nil", "nil_reason", ]
     _enumeration_fields = ["enumeration_value", "enumeration_other_value", "is_nil", "nil_reason", ]
     _relationship_fields = ["relationship_values", "is_nil", "nil_reason", ]
