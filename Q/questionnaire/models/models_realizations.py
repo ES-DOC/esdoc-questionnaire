@@ -180,21 +180,11 @@ def get_property_realization_by_fn(fn, current_model_realization):
     )
     if property:
         return property
-
-    if current_model_realization.is_new():
+    else:
         return get_realization_by_fn_recusively(
             fn,
             current_model_realization.properties(manager="allow_unsaved_properties_manager").all(),
             RealizationTypes.PROPERTY,
-        )
-    else:  # current_model_realization.is_existing()
-        raise NotImplementedError("todo")
-        return find_in_sequence(
-            fn,
-            QProperty.objects.filter(
-                model__project=current_model_realization.project,
-                # name=current_model_realization.name,
-            )
         )
 
 def get_realization_by_fn_recusively(fn, current_property_realizations, realization_type, **kwargs):
