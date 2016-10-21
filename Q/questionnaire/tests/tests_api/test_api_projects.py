@@ -25,31 +25,29 @@ from Q.questionnaire.q_constants import *
 class Test(TestQBase):
 
     def setUp(self):
+        # no need to call the parent stuff
+        # super(Test, self).setUp()
 
         # override some parent attributes w/ API-specific factory...
         self.factory = APIRequestFactory()
         self.client = APIClient()
 
-        # no need to call the parent stuff
-        # super(Test, self).setUp()
-
     def tearDown(self):
-        pass
-
         # no need to call the parent stuff...
         # super(Test, self).tearDown()
+        pass
 
     #########
     # tests #
     #########
 
-    def test_api_get(self):
+    def test_api_get_from_fixture(self):
 
-        self.test_project = create_project(
-            name="test_project",
-            title="Test Project",
-            email="allyn.treshansky@noaa.gov",
-        )
+        # self.test_project = create_project(
+        #     name="test_project",
+        #     title="Test Project",
+        #     email="allyn.treshansky@noaa.gov",
+        # )
 
         response = self.client.get(
             "/api/projects/?is_active=true&is_displayed=true&ordering=title"
@@ -57,27 +55,59 @@ class Test(TestQBase):
         self.assertEqual(response.status_code, 200)
 
         content = json.loads(response.content)
-        self.assertDictEqual(
-            content,
-            {
-                "count": 1,
-                "next": None,
-                "previous": None,
-                "results": [
-                    {
-                        "id": 1,
-                        "name": "test_project",
-                        "title": "Test Project",
-                        "description": "",
-                        "email": "allyn.treshansky@noaa.gov",
-                        "url": "",
-                        "is_active": True,
-                        "is_displayed": True,
-                        "authenticated": True,
-                        "ontologies": []
-                    }
-                ]
-            }
-        )
 
 
+        {u'count': 3, u'previous': None, u'results': [
+            {u'authenticated': True, u'description': u'A test project.', u'title': u'ESPS', u'url': u'',
+             u'is_active': True, u'id': 3, u'ontologies': [], u'is_displayed': True,
+             u'email': u'allyn.treshansky@colorado.edu', u'name': u'esps'},
+            {u'authenticated': True, u'description': u'A test project', u'title': u'Test Project', u'url': u'',
+             u'is_active': True, u'id': 1, u'ontologies': [], u'is_displayed': True,
+             u'email': u'allyn.treshansky@colorado.edu', u'name': u'test_project'}], u'next': None}
+
+        cmip6_project_data = {
+            'id': 2,
+            'name': 'cmip6',
+            'title': 'CMIP6',
+            'description': 'A test project.',
+            'email': 'allyn.treshansky@colorado.edu',
+            'url': '',
+            'is_active': True,
+            'is_displayed': True,
+            'is_legacy': False,
+            'authenticated': True,
+            'ontologies': [],
+        }
+
+        esps_project_data = {
+            'id': 3,
+            'name': 'esps',
+            'title': 'ESPS',
+            'description': 'A test project.',
+            'email': 'allyn.treshansky@colorado.edu',
+            'url': '',
+            'is_active': True,
+            'is_displayed': True,
+            'is_legacy': True,
+            'authenticated': True,
+            'ontologies': [],
+        }
+
+        test_project_data = {
+            'id': 1,
+            'name': 'test_project',
+            'title': 'Test Project',
+            'description': 'A test project.',
+            'email': 'allyn.treshansky@colorado.edu',
+            'url': '',
+            'is_active': True,
+            'is_displayed': True,
+            'is_legacy': False,
+            'authenticated': True,
+            'ontologies': [],
+        }
+
+        self.assertEqual(content["count"], 3)
+        self.assertDictEqual(content["results"][0], cmip6_project_data)
+        self.assertDictEqual(content["results"][1], esps_project_data)
+        self.assertDictEqual(content["results"][2], test_project_data)

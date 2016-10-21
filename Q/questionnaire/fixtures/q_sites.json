@@ -49,6 +49,15 @@
 },
 {
     "fields": {
+        "domain": "cim2.questionnaire.es-doc.org",
+        "name": "cim2.questionnaire.es-doc.org"
+    },
+    "model": "sites.site",
+    "pk": 8
+},
+
+{
+    "fields": {
         "type": "PROD",
         "site": 2
     },
@@ -87,12 +96,20 @@
     "model": "questionnaire.qsite",
     "pk": 6
 },
+    {
+        "fields": {
+            "type": "PROD",
+            "site": 7
+        },
+        "model": "questionnaire.qsite",
+        "pk": 7
+},
 {
     "fields": {
         "type": "PROD",
-        "site": 7
+        "site": 8
     },
     "model": "questionnaire.qsite",
-    "pk": 7
+    "pk": 8
 }
 ]

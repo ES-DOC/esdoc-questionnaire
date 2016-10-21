@@ -8,8 +8,6 @@
 #   This project is distributed according to the terms of the MIT license [http://www.opensource.org/licenses/MIT].
 ####################
 
-__author__ = "allyn.treshansky"
-
 """
 stand-alone script to sort fixtures, so that models are listed in the correct order
 this is required b/c of a known bug in Django [see https://code.djangoproject.com/ticket/6726]
@@ -18,6 +16,8 @@ this is required b/c of a known bug in Django [see https://code.djangoproject.co
 import django
 import sys
 import os
+
+__author__ = "allyn.treshansky"
 
 rel = lambda *x: os.path.join(os.path.abspath(os.path.dirname(__file__)), *x)
 
@@ -29,9 +29,7 @@ django.setup()
 
 import getopt
 import json
-
 from django.db.models import get_app, get_models
-
 from Q.questionnaire import APP_LABEL
 from Q.questionnaire.models import *
 
@@ -78,6 +76,7 @@ f.closed
 # some helper fns #
 ###################
 
+
 def get_model_key(model):
     """
     given a model, returns its full Python path
@@ -92,11 +91,12 @@ def get_model_key(model):
 app = get_app(APP_LABEL)
 models = get_models(app)
 
-# order questionnaire models so that users, sites, ontologies, categorizations, projects, projectontologies (through model) & synchronizations, are 1st
+# order questionnaire models so that certain models are 1st
 # the order of the remaining models doesn't matter
 models_to_order = [
-    QUserProfile,
+    QInstitute,
     QSite,
+    QUserProfile,
     QOntology,
     QCategorization,
     QProject,
@@ -127,8 +127,3 @@ assert(len(ordered_fixture) == len(fixture))
 ################
 
 print(json.dumps(ordered_fixture, indent=4))
-
-
-
-
-

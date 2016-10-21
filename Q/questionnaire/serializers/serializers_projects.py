@@ -27,6 +27,7 @@ class QProjectSerializer(serializers.ModelSerializer):
             'url',
             'is_active',
             'is_displayed',
+            'is_legacy',
             'authenticated',
             'ontologies',
         )

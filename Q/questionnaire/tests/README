@@ -1,0 +1,10 @@
+Many of the tests work off of a test fixture, "q_testdata.json".
+
+The test fixture has the following content:
+* 2 registered ontologies (w/ 2 associated categorizations): cim2 & test_ontology
+* 1 (non-super) user: allynt
+* 3 projects: test_project, esps (legacy), & cmip6
+* the standard set of institutes, sites, & synchronizations (from fixtures)
+* no customizations, realizations, or publications
+
+Many tests, however, them create their own objects on-the-fly.
