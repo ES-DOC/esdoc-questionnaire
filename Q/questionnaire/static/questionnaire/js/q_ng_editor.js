@@ -61,13 +61,15 @@
             $global_services.load($scope.api_url);
         }
         else {
-            /* if this is a new realization, the url will need to be changed to get the already cached serialization */
+            /* if this is a new realization, the standard django-rest-framework API will not work, */
+            /* so I use this custom view to return a JSON serialization of the already cached serialization */
             $global_services.load(
                 $scope.api_url + "cache/?session_key=" + session_key
             )
         }
+
         /* those were asynchronous calls */
-        /* that's okay; the other controllers use a watch on $global_services.isLoaded() before loading their local variables */
+        /* that's okay; the other controllers use a watch on $global_services.isLoaded() before configuring any local variables */
 
         $scope.is_read_only = function() {
             return read_only;
@@ -89,7 +91,7 @@
 
             $http({
                 method: request_method,
-                /* this line is NOT needed; I'm not simulating form data, I'm passing pure JSON */
+                /* this line is NOT needed b/c I'm not simulating form data, I'm passing pure JSON */
                 /*headers: {'Content-Type': 'application/x-www-form-urlencoded'},*/
                 url: $scope.api_url,
                 data: model
@@ -114,11 +116,10 @@
                 /* just in case this is an unexpected server error, log the content */
                 console.log(data);
 
-                /* I AM HERE */
                 /* TODO: DEAL W/ SERVER ERRORS IN DATA; MAP TO FORMS */
-                /* TODO: I KNOW THAT THE ONLY SERVER ERRORS CAN BE ON THE PARENT FORM, CUSTOMIZATION SECTION */
+                /* TODO: I KNOW THAT THE ONLY SERVER ERRORS CAN BE ON THE TOP-LEVEL CUSTOMIZATION FORM */
                 /* TODO: (THEY ARE INVALID "name" & INVALID "is_default") */
-                /* TODO: HOWEVER, I'LL STILL HAVE TO SOLVE THE GENERAL CASE FOR THE EDITING FORMS */
+                /* TODO: HOWEVER, I STILL OUGHT TO SOLVE THE GENERAL CASE JUST IN CASE */
 
                 show_msg("Error saving document", "error");
             })
@@ -155,7 +156,8 @@
 
         /* load initial data */
         $scope.is_loaded = false;
-        $scope.$watch(function () {
+        $scope.$watch(
+            function () {
                 return $global_services.isLoaded();
             },
             /* only load local stuff after $global_services has loaded stuff */
@@ -194,7 +196,7 @@
             /* this is important; I have to add a watch to this function */
             /* b/c otherwise it would be called immediately before the above loading has taken place */
             /* in that case, "$scope.current_model" could still be bound to the parent's model */
-            /* and all sorts of trouble & hilarity would ensue */
+            /* and all sorts of trouble & hilarity might ensue */
             $scope.$watch("is_loaded", function(is_loaded) {
                 var initialized_key = "initialized_" + key;
                 if (is_loaded && typeof $scope[initialized_key] == "undefined") {
@@ -228,7 +230,8 @@
 
         /* load initial data */
         $scope.is_loaded = false;
-        $scope.$watch(function () {
+        $scope.$watch(
+            function () {
                 return $global_services.isLoaded();
             },
             /* only load local stuff after $global_services has loaded stuff */
@@ -251,23 +254,6 @@
                 }
             }
         );
-        $scope.isLoaded = function() {
-            return $scope.is_loaded;
-        };
-
-        /* TODO: I DON'T LIKE DEFINING THIS FN HERE; IT OUGHT TO HAVE GLOBAL SCOPE */
-        /* TODO: OR, BETTER YET, BE PART OF THE <enumeration> DIRECTIVE ITSELF */
-        /* TODO: OR HAVE THE FN CALL IN "forms_edit_properties.QPropertyRealizationForm#customize" CONVERT THE INITIAL VALUE TO AN ARRAY */
-        $scope.check_enumeration = function(arg, value) {
-            /* checks if a particular value is in an enumeration */
-            /* note that depending on when this fn is called `value` may not yet be an array */
-            /* (it is serialized as a '|' deliminated string and only converted to a JS array through the <enumeration> directive) */
-            if (value.constructor != Array) {
-                value = value.split('|');
-            }
-            var arg_in_value = $.inArray(arg, value);
-            return arg_in_value > 0;
-        };
 
         /* yes, confusingly, the above code has just set "current_model" to be a specific property */
         /* (it uses "model" in the Django sense of the word and "property" in the CIM sense of the word) */
@@ -278,6 +264,10 @@
                    return $scope.current_model;
                }
             });
+        };
+
+        $scope.isLoaded = function() {
+            return $scope.is_loaded;
         };
 
         /* deal w/ tracking completion */
@@ -332,7 +322,6 @@
 
                         }
 
-
                     }
 
             }
@@ -353,6 +342,26 @@
         /* deal w/ atomic properties */
 
         /* deal w/ enumeration properties */
+
+        /* TODO: I DON'T LIKE DEFINING THIS FN HERE; IT OUGHT TO HAVE GLOBAL SCOPE */
+        /* TODO: OR, BETTER YET, BE PART OF THE <enumeration> DIRECTIVE ITSELF */
+        /* TODO: OR HAVE THE FN CALL IN "forms_edit_properties.QPropertyRealizationForm#customize" CONVERT THE INITIAL VALUE TO AN ARRAY */
+        $scope.check_enumeration = function(arg, value) {
+            /* checks if a particular value is in an enumeration */
+            /* note that depending on when this fn is called `value` may not yet be an array */
+            /* (it is serialized as a '|' deliminated string and only converted to a JS array through the <enumeration> directive) */
+            if (value.constructor != Array) {
+                value = value.split('|');
+            }
+            var arg_in_value = $.inArray(arg, value);
+            return arg_in_value > 0;
+        };
+
+        /* TODO: MOVE THIS TO A BASE FILE */
+        $scope.value_in_array = function(value, array) {
+            //console.log("looking for: '" + value + "' in: " + array);
+            return $.inArray(value, array) != -1;
+        };
 
         /* deal w/ relationship properties */
 
@@ -445,7 +454,7 @@
         };
 
         $scope.remove_relationship_value = function(property_title, target_index) {
-            var dialog_title = 'Are you sure you want to remove this <b>' + property_title + '</b>?<br/><i>You cannot undo this operation.</i>';
+            var dialog_title = 'Are you sure you want to remove this <b>' + property_title + '</b> and all of its content?<br/><i>You cannot undo this operation.</i>';
             bootbox.confirm(dialog_title, function(result) {
                 if (result) {
                     $scope.current_model[relationship_subform_field_name].splice(target_index, 1);
@@ -482,14 +491,6 @@
            )
         };
 
-        /* deal w/ enumerations */
-
-        /* TODO: MOVE THIS TO A BASE FILE */
-        $scope.value_in_array = function(value, array) {
-            //console.log("looking for: '" + value + "' in: " + array);
-            return $.inArray(value, array) != -1;
-        };
-
         /* deal w/ customizing properties */
 
         /* TODO: THIS CODE IS REPEATED IN BOTH CONTROLLERS; I SHOULD MOVE IT TO A SINGLE PLACE ($global_services?) */
@@ -497,7 +498,7 @@
             /* this is important; I have to add a watch to this function */
             /* b/c otherwise it would be called immediately before the above loading has taken place */
             /* in that case, "$scope.current_model" could still be bound to the parent's model */
-            /* and all sorts of trouble & hilarity would ensue */
+            /* and all sorts of trouble & hilarity might ensue */
             $scope.$watch("is_loaded", function(is_loaded) {
                 var initialized_key = "initialized_" + key;
                 if (is_loaded && typeof $scope[initialized_key] == "undefined") {
