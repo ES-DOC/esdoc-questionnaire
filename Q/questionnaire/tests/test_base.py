@@ -34,11 +34,14 @@ from Q.questionnaire.q_constants import *
 # constants #
 #############
 
-TEST_FIXTURE_PATH = rel("fixtures/q_testdata.json")
+# most tests use registered ontologies, but the unregistered fixture is still there just in-case...
 
-# for most tests, I will use "real" (fixture) data
+TEST_UNREGISTERED_FIXTURE_PATH = rel("fixtures/q_testdata_unregistered.json")
+TEST_REGISTERED_FIXTURE_PATH = rel("fixtures/q_testdata_registered.json")
+
+# for some tests, I will use "real" (fixture) data
 # but for some tests, I want to actually go through the upload/(re)register/delete process
-# hence these files...
+# hence these raw files in TEST_FILE_PATH...
 
 TEST_FILE_PATH = rel("tests/media")
 
@@ -182,7 +185,7 @@ class TestQBase(TestCase):
         log_file_name = settings.LOGGING["handlers"]["file"]["filename"]
         open(log_file_name, 'w').close()
         # load fixture data...
-        call_command('loaddata', TEST_FIXTURE_PATH, verbosity=0)
+        call_command('loaddata', TEST_REGISTERED_FIXTURE_PATH, verbosity=0)
         # setup other data...
         pass
 

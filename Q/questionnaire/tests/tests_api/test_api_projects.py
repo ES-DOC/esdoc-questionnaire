@@ -56,15 +56,6 @@ class Test(TestQBase):
 
         content = json.loads(response.content)
 
-
-        {u'count': 3, u'previous': None, u'results': [
-            {u'authenticated': True, u'description': u'A test project.', u'title': u'ESPS', u'url': u'',
-             u'is_active': True, u'id': 3, u'ontologies': [], u'is_displayed': True,
-             u'email': u'allyn.treshansky@colorado.edu', u'name': u'esps'},
-            {u'authenticated': True, u'description': u'A test project', u'title': u'Test Project', u'url': u'',
-             u'is_active': True, u'id': 1, u'ontologies': [], u'is_displayed': True,
-             u'email': u'allyn.treshansky@colorado.edu', u'name': u'test_project'}], u'next': None}
-
         cmip6_project_data = {
             'id': 2,
             'name': 'cmip6',
@@ -76,7 +67,7 @@ class Test(TestQBase):
             'is_displayed': True,
             'is_legacy': False,
             'authenticated': True,
-            'ontologies': [],
+            'ontologies': [2],
         }
 
         esps_project_data = {
@@ -104,7 +95,7 @@ class Test(TestQBase):
             'is_displayed': True,
             'is_legacy': False,
             'authenticated': True,
-            'ontologies': [],
+            'ontologies': [1],
         }
 
         self.assertEqual(content["count"], 3)
