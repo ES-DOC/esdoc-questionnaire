@@ -101,9 +101,13 @@ def get_new_realizations(project=None, ontology=None, model_proxy=None, **kwargs
 def get_existing_realizations(project=None, ontology=None, model_proxy=None, model_id=None, **kwargs):
 
     model = QModel.objects.get(pk=model_id)
-    assert model.ontology == ontology
-    assert model.proxy == model_proxy
-    assert model.project == project
+
+    if project and model.project != project:
+        raise QModel.DoesNotExist
+    if ontology and model.ontology != ontology:
+        raise QModel.DoesNotExist
+    if model_proxy and model.proxy != model_proxy:
+        raise QModel.DoesNotExist
 
     return model
 
