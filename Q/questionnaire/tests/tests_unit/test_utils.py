@@ -333,53 +333,10 @@ class Test(TestQBase):
     # model manipulation #
     ######################
 
-    def test_copy_model_fields(self):
-
-        test_model_copy_name = "copied_model"
-        test_model = TestRecursiveModel(name="one")
-
-        test_model_copy = copy_model(
-            test_model,
-            fields={
-                "name": test_model_copy_name,
-            }
-        )
-
-        self.assertEqual(test_model_copy.name, test_model_copy_name)
-
-    def test_copy_model_new(self):
-
-        test_parent_model = TestRecursiveModel(name="one")
-        test_child_model = TestRecursiveModel(name="two")
-
-        with allow_unsaved_fk(TestRecursiveModel, ["child", ]):
-            test_parent_model.child = test_child_model
-
-        test_parent_model_copy = copy_model(test_parent_model)
-
-        self.assertEqual(test_parent_model_copy.name, test_parent_model.name)
-        self.assertEqual(test_parent_model_copy.child.name, test_parent_model.child.name)
-        self.assertIsNone(test_parent_model_copy.pk)
-
-    def test_copy_model_existing(self):
-
-        test_parent_model = TestRecursiveModel(name="one")
-        test_child_model = TestRecursiveModel(name="two")
-
-        test_parent_model.save()
-        test_child_model.save()
-
-        test_parent_model.child = test_child_model
-        test_parent_model.save()
-
-        test_parent_model_copy = copy_model(test_parent_model)
-
-        self.assertEqual(test_parent_model_copy.name, test_parent_model.name)
-        self.assertEqual(test_parent_model_copy.child, test_parent_model.child)
-        self.assertIsNone(test_parent_model_copy.pk)
-
-        test_parent_model_copy.save()
-        self.assertNotEqual(test_parent_model.pk, test_parent_model_copy.pk)
+    def test_copy_model(self):
+        with self.assertRaises(QError):
+            test_model = TestUtilsModel(name="test")
+            copy_model(test_model)
 
     #############################
     # form / field manipulation #

@@ -21,6 +21,7 @@ from django.db.models.fields.related import ForeignKey, ManyToManyField
 from django.utils.deconstruct import deconstructible
 from django.forms.fields import MultiValueField
 from django.forms.models import BaseInlineFormSet
+from functools import wraps
 from copy import deepcopy
 from lxml import etree as et
 import urllib
@@ -54,6 +55,19 @@ class QError(Exception):
 
     def __str__(self):
         return "QError: " + self.msg
+
+def legacy_code(func):
+    """
+    decorator that raises an error if a fn is run
+    used to mark sections of code as "legacy"
+    """
+
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        msg = "{0} is legacy code".format(func.__name__)
+        raise QError(msg)
+
+    return wrapper
 
 
 ####################
@@ -604,6 +618,7 @@ def sort_list_by_key(list, key_name, reverse=False):
 # model manipulation #
 ######################
 
+@legacy_code
 def copy_model(model, fields={}):
     """
     Copies an existing model but modifies the fields
@@ -613,6 +628,7 @@ def copy_model(model, fields={}):
     :param fields: the fields to overwrite
     :return:
     """
+
     new_model = deepcopy(model)
     new_model.pk = None
 
