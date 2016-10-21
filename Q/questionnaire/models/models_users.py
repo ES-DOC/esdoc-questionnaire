@@ -8,13 +8,12 @@
 #   This project is distributed according to the terms of the MIT license [http://www.opensource.org/licenses/MIT].
 ####################
 
-__author__ = 'allyn.treshansky'
-
 from django.db import models
 from django.contrib.auth.models import User
+from Q.questionnaire import APP_LABEL, q_logger
 
+__author__ = 'allyn.treshansky'
 
-from Q.questionnaire import APP_LABEL
 
 class QUserProfile(models.Model):
 
@@ -33,8 +32,8 @@ class QUserProfile(models.Model):
         "is_active": True,
     })
 
-    def __unicode__(self):
-        return u"%s" % (self.user)
+    def __str__(self):
+        return "{0}".format(self.user)
 
     def is_admin_of(self, project):
         project_admin_group = project.get_group("admin")
@@ -103,11 +102,13 @@ class QUserProfile(models.Model):
         self.remove_user_permissions(project)
         self.remove_admin_permissions(project)
 
+
 def is_admin_of(user, project):
     if user.is_authenticated():
         return user.is_superuser or user.profile.is_admin_of(project)
     else:
         return False
+
 
 def is_member_of(user, project):
     if user.is_authenticated():
@@ -115,11 +116,13 @@ def is_member_of(user, project):
     else:
         return False
 
+
 def is_pending_of(user, project):
     if user.is_authenticated():
         return user.profile.is_pending_of(project)
     else:
         return False
+
 
 def is_user_of(user, project):
     if user.is_authenticated():
@@ -127,9 +130,13 @@ def is_user_of(user, project):
     else:
         return False
 
+#######################
+# user / project code #
+#######################
 
 from django.core.mail import send_mail
 from django.conf import settings
+
 
 def project_join_request(project, user, site=None):
 
@@ -154,5 +161,5 @@ def project_join_request(project, user, site=None):
         return True
 
     except Exception as e:
-        print(e)
+        q_logger.error(e)
         return False
