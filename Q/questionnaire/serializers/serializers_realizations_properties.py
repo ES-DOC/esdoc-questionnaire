@@ -23,7 +23,7 @@ from rest_framework.exceptions import ValidationError as RestValidationError
 from rest_framework import serializers
 
 from uuid import UUID as generate_uuid
-
+from Q.questionnaire.q_fields import QPropertyTypes
 from Q.questionnaire.serializers.serializers_base import QEnumerationSerializerField
 from Q.questionnaire.serializers.serializers_realizations import QRealizationSerializer, QRealizationListSerializer, QRealizationManagedRelatedField
 from Q.questionnaire.models.models_realizations import QModel, QProperty
@@ -164,7 +164,7 @@ class QPropertyRealizationSerializer(QRealizationSerializer):
         """
         not a _real_ field
         just helps me w/ interactivity
-        I always load the customizer w/ display_detail = False
+        I always load the editor w/ display_detail = False
         :param obj:
         :return:
         """

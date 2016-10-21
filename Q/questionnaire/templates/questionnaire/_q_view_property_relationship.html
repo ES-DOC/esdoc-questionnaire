@@ -34,7 +34,9 @@
                                 {# I don't actually have to do anything special for single/multiple forms #}
                                 {# everything is contained in accordions regardless #}
                             {% endif %}  {# /form.is_multiple #}
+
 {#{{form.is_complete}}<br/>{{form.is_required}}<br/>#}
+
                             <div uib-accordion close-others="false"
                                  class="accordion"
                                  ng-model="current_model.relationship_values"
@@ -42,18 +44,18 @@
 
                                 <div uib-accordion-group
                                      class="accordion_group"
-                                     is-open="current_model.display_detail"
+                                     is-open="target.display_properties"
                                      ng-repeat="target in current_model.relationship_values track by $index"
-                                     ng-class="target.display_detail ? 'expanded' : 'collapsed'">
+                                     ng-class="target.display_properties ? 'expanded' : 'collapsed'">
 
                                     <div uib-accordion-heading
                                          class="accordion_header">
                                         <!-- I have to explicitly wrap the accordion_header in an element -->
                                         <!-- in order to catch the "ng-click" event -->
                                         <!-- (the customizer got this functionality for free as a side-effect of "ui-sortable" -->
-                                        <div ng-click="target.display_detail = ! target.display_detail">
-                                            <span ng-hide="target.display_detail" class="glyphicon glyphicon-triangle-right"></span>
-                                            <span ng-show="target.display_detail" class="glyphicon glyphicon-triangle-bottom"></span>
+                                        <div ng-click="target.display_properties = ! target.display_properties">
+                                            <span ng-hide="target.display_properties" class="glyphicon glyphicon-triangle-right"></span>
+                                            <span ng-show="target.display_properties" class="glyphicon glyphicon-triangle-bottom"></span>
                                             &nbsp;
                                             {# here is the heading #}
                                             {# TODO: REPLACE THIS W/ SOMETHING LIKE get_label #}

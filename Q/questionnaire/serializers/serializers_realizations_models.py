@@ -76,7 +76,7 @@ class QModelRealizationSerializer(QRealizationSerializer):
         """
         not a _real_ field
         just helps me w/ interactivity
-        I always load the customizer w/ display_detail = False
+        I always load the editor w/ display_detail = False
         :param obj:
         :return:
         """
@@ -86,7 +86,7 @@ class QModelRealizationSerializer(QRealizationSerializer):
         """
         not a _real_ field
         just helps me w/ interactivity
-        I always load the customizer w/ display_properties = False
+        I always load the editor w/ display_properties = False
         :param obj:
         :return:
         """
