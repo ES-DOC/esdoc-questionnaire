@@ -264,8 +264,8 @@ class QListSerializer(ListSerializer):
 
     def create(self, validated_data):
         return [self.child.create(attrs) for attrs in validated_data]
-        # using "bulk_create" is probably faster,
-        # but I really ought to defer to the "child.create" fn in-case it has any special behaviors
+        # using "bulk_create" below is probably faster,
+        # but I really ought to defer to the "child.create" fn above in-case it has any special behaviors
         # child_class = self.child.get_model()
         # return child_class.objects.bulk_create([child_class(**item) for item in validated_data])
 
@@ -277,10 +277,12 @@ class QListSerializer(ListSerializer):
             instance.id: instance
             for instance in instances
         }
+
         data_mapping = {
             # data['id']: data
-            # just in-case I am dealing w/ unsaved data...
-            data.get('id', None): data
+            # just in-case I am dealing w/ unsaved data,
+            # use the 'id' fn to come up w/ a key that won't conflict w/ 'instance_mapping' or anything else in 'data_mapping'
+            data.get('id', id(data)): data
             for data in validated_data
         }
 
