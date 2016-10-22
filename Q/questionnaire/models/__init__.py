@@ -22,5 +22,4 @@ from Q.questionnaire.models.models_publications import QPublication
 from Q.questionnaire.models.models_realizations import QModel, QProperty
 from Q.questionnaire.models.models_sites import QSite
 from Q.questionnaire.models.models_synchronization import QSynchronization
-from Q.questionnaire.models.models_things import QModelThing, QPropertyThing
 from Q.questionnaire.models.models_users import QUserProfile
