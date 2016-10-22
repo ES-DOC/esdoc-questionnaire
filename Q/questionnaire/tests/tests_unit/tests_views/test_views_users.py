@@ -77,11 +77,8 @@ class Test(TestQBase):
         self.assertEqual(response.status_code, 400)
 
     def test_q_register_redirect(self):
-        """
-        just like test_q_register_post, but tries to fill out the "honeypot" field
-        :return:
-        """
-        redirect_to = "/test/"
+
+        redirect_to = "/test_project/"
         query_limit = FuzzyInt(0, 10)
         with self.assertNumQueries(query_limit):
             request_url = add_parameters_to_url(
