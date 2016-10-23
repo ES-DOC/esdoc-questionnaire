@@ -24,7 +24,7 @@ class TestQCategorization(TestQBase):
         # create some test categorizations...
         self.test_categorization = create_categorization(
             filename="categorization.xml",
-            name="test_categorization",
+            name="test_cat",  # the categorization from the fixture is called "test_categorization", so I can't use that same name here
             version="1.0",
         )
         # create some test ontologies...
@@ -74,10 +74,10 @@ class TestQCategorization(TestQBase):
         ]
 
         test_category_proxies_properties_data = [
-            [QPropertyProxy.objects.get(name__iexact="name", model_proxy__name__iexact="model").pk, QPropertyProxy.objects.get(name__iexact="name", model_proxy__name__iexact="recursive_thing").pk],
-            [QPropertyProxy.objects.get(name__iexact="enumeration", model_proxy__name__iexact="model").pk, QPropertyProxy.objects.get(name__iexact="child", model_proxy__name__iexact="recursive_thing").pk],
-            [QPropertyProxy.objects.get(name__iexact="thing", model_proxy__name__iexact="model").pk, QPropertyProxy.objects.get(name__iexact="multiple_targets", model_proxy__name__iexact="recursive_thing").pk],
-            [QPropertyProxy.objects.get(name__iexact="name", model_proxy__name__iexact="other_thing_one").pk, QPropertyProxy.objects.get(name__iexact="name", model_proxy__name__iexact="other_thing_two").pk],
+            [QPropertyProxy.objects.get(model_proxy__ontology=self.test_ontology_schema, name__iexact="name", model_proxy__name__iexact="model").pk, QPropertyProxy.objects.get(model_proxy__ontology=self.test_ontology_schema, name__iexact="name", model_proxy__name__iexact="recursive_thing").pk],
+            [QPropertyProxy.objects.get(model_proxy__ontology=self.test_ontology_schema, name__iexact="enumeration", model_proxy__name__iexact="model").pk, QPropertyProxy.objects.get(model_proxy__ontology=self.test_ontology_schema, name__iexact="child", model_proxy__name__iexact="recursive_thing").pk],
+            [QPropertyProxy.objects.get(model_proxy__ontology=self.test_ontology_schema, name__iexact="thing", model_proxy__name__iexact="model").pk, QPropertyProxy.objects.get(model_proxy__ontology=self.test_ontology_schema, name__iexact="multiple_targets", model_proxy__name__iexact="recursive_thing").pk],
+            [QPropertyProxy.objects.get(model_proxy__ontology=self.test_ontology_schema, name__iexact="name", model_proxy__name__iexact="other_thing_one").pk, QPropertyProxy.objects.get(model_proxy__ontology=self.test_ontology_schema, name__iexact="name", model_proxy__name__iexact="other_thing_two").pk],
         ]
 
         test_category_proxies_data = sort_list_by_key(
