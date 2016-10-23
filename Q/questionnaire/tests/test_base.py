@@ -24,6 +24,7 @@ from django.test.client import RequestFactory
 from django.test.utils import CaptureQueriesContext
 from unittest.util import safe_repr
 from difflib import ndiff
+import inspect
 import os
 import pprint
 
@@ -268,15 +269,16 @@ class TestQBase(TestCase):
             try:
                 self.assertEqual(d1_type, d2_type, msg=msg)
             except AssertionError:
-                # I need a quick check just in case I am comparing different types of strings
+                # If I was checking strings & unicode objects or querysets & lists then the above assertion would have failed
+                # so check those 2 special cases here...
                 string_types = [str, unicode, ]
-                if not (d1_type in string_types and d2_type in string_types):
+                if d1_type in string_types and d2_type in string_types:
+                    self.assertEqual(str(d1_value), str(d2_value))
+                elif QuerySet in inspect.getmro(d1_type) or QuerySet in inspect.getmro(d2_type): # lil bit of indirection here b/c custom managers acting as querysets might have been created dynamically
+                    self.assertQuerysetEqual(d1_value, d2_value)
+                else:
+                    # ...and if it still fails, then go ahead and raise the original error
                     raise AssertionError(msg)
-
-            if d1_type == QuerySet:
-                self.assertQuerysetEqual(d1_value, d2_value)
-            else:
-                self.assertEqual(d1_value, d2_value)
 
     def assertFileExists(self, file_path, **kwargs):
         """Tests that a file exists"""
