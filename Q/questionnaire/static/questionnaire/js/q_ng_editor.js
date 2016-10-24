@@ -354,7 +354,7 @@
                 value = value.split('|');
             }
             var arg_in_value = $.inArray(arg, value);
-            return arg_in_value > 0;
+            return arg_in_value >= 0;
         };
 
         /* TODO: MOVE THIS TO A BASE FILE */
