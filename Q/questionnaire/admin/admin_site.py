@@ -8,17 +8,16 @@
 #   This project is distributed according to the terms of the MIT license [http://www.opensource.org/licenses/MIT].
 ####################
 
-__author__ = 'allyn.treshansky'
-
-
 from django.forms import ModelForm
 from django.core.exceptions import ValidationError
 from django.contrib import admin
 from django.contrib.admin.sites import AlreadyRegistered
 from django.contrib.sites.models import Site
 from django.db.models import Q
-
 from Q.questionnaire.models.models_sites import QSite
+
+__author__ = 'allyn.treshansky'
+
 
 class SiteAdminForm(ModelForm):
     class Meta:
@@ -48,10 +47,12 @@ class QSiteInline(admin.StackedInline):
     verbose_name = "Questionnaire Site Type"
     verbose_name_plural = "Questionnaire Site Types"
 
+
 class QSiteAdmin(admin.ModelAdmin):
     inlines = (QSiteInline, )
     form = SiteAdminForm
 
+# when db is 1st setup, built-in Site may be registered before Q classes
 try:
     admin.site.register(Site, QSiteAdmin)
 except AlreadyRegistered:

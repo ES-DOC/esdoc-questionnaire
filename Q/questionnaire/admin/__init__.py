@@ -37,3 +37,4 @@ from .admin_ontologies import *
 from .admin_projects import *
 from .admin_publications import *
 from .admin_site import *
+from .admin_user import *
