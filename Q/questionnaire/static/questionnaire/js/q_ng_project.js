@@ -160,10 +160,12 @@
                 .success(function (data) {
                     var ontologies = data.results;
                     project_controller.ontologies = ontologies;
-                    project_controller.selected_document_ontology = ontologies[0];
-                    project_controller.selected_document_proxy = ontologies[0].document_types[0];
-                    project_controller.selected_customization_ontology = ontologies[0];
-                    project_controller.selected_customization_proxy = ontologies[0].document_types[0];
+                    if (data.count) {
+                        project_controller.selected_document_ontology = ontologies[0];
+                        project_controller.selected_document_proxy = ontologies[0].document_types[0];
+                        project_controller.selected_customization_ontology = ontologies[0];
+                        project_controller.selected_customization_proxy = ontologies[0].document_types[0];
+                    }
 
                 })
                 .error(function (data) {
