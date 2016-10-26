@@ -128,7 +128,8 @@ def q_edit_new(request, project_name=None, ontology_key=None, document_type=None
             "customization": model_customization,
         }
     )
-    set_owner(model_realization, current_user)
+    if current_user.is_authenticated():
+        set_owner(model_realization, current_user)
 
     # TODO: THIS IS A ONE-OFF TO GET ME THROUGH THE MEDIUM-TERM
     # TODO: IN THE LONG-TERM I OUGHT TO FIGURE OUT HOW TO AUTOMATICALLY WORK OUT HOW/WHEN TO SET "is_root"

@@ -76,8 +76,10 @@ def q_customize_new(request, project_name=None, ontology_key=None, document_type
             "key": model_proxy.name,
         }
     )
-    set_owner(model_customization, current_user)
     model_customization_key = model_customization.get_key()
+
+    if current_user.is_authenticated():
+        set_owner(model_customization, current_user)
 
     # I generate the model_customization_form at this top-level
     # all other forms are generated as needed via the "load_section" view
