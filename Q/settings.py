@@ -128,8 +128,8 @@ MIDDLEWARE_CLASSES = (
     'django.middleware.security.SecurityMiddleware',
     # allows site to be set dynamically based on request URL...
     'questionnaire.middleware.dynamic_sites.DynamicSitesMiddleware',
-    # intercepts request to see if user needs to change password...
-    'questionnaire.middleware.change_password.ChangePasswordMiddleware',
+#    # intercepts request to see if user needs to change password...
+#    # 'questionnaire.middleware.change_password.ChangePasswordMiddleware',
 )
 
 ROOT_URLCONF = 'urls'
