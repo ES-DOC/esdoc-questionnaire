@@ -128,6 +128,8 @@ MIDDLEWARE_CLASSES = (
     'django.middleware.security.SecurityMiddleware',
     # allows site to be set dynamically based on request URL...
     'questionnaire.middleware.dynamic_sites.DynamicSitesMiddleware',
+    # intercepts request to see if user needs to change password...
+    'questionnaire.middleware.change_password.ChangePasswordMiddleware',
 )
 
 ROOT_URLCONF = 'urls'
@@ -205,6 +207,9 @@ MEDIA_ROOT = rel('site_media/')
 # Make sure to use a trailing slash.
 MEDIA_URL = '/site_media/'
 
+# use the standard Django Authentication Module (may want to change for oauth consumption)
+AUTH_USER_MODEL = 'auth.User'
+
 # email stuff...
 # (note the use of EMAIL_BACKEND in the "test" section above)
 EMAIL_HOST = parser.get('email', 'host')
@@ -235,7 +240,7 @@ CACHES = {
     }
 }
 
-SESSION_SERIALIZER = 'django.contrib.sessions.serializers.PickleSerializer'
+SESSION_SERIALIZER = 'django.contrib.sessions.serializers.PickleSerializer'  # using PickleSerializer instead of JSONSerializer b/c I cache various things in the session that don't have built-in JSON serializations
 
 # PROFILING...
 PROFILE = parser.getboolean('debug', 'profile')

@@ -614,6 +614,34 @@ def sort_list_by_key(list, key_name, reverse=False):
     )
     return sorted_list
 
+#######################
+# object manipulation #
+#######################
+
+from django.utils.functional import empty as uninitialized_lazy_object
+LAZY_OBJECT_NAME = "_wrapped"  # defined here in-case Django changes "django.utils.functional.LazyObject" in the future
+
+
+def evaluate_lazy_object(obj):
+    """
+    if this is a LazyObject, then get the actual object rather than the lazy indirection
+    written in support of #523 to cope w/ pickling changes _after_ serializing a session
+    (recall I cache stuff on the session)
+    :param obj: object to evaluate
+    :return: evaluated object
+    """
+    wrapped_obj = getattr(obj, LAZY_OBJECT_NAME, None)
+    if wrapped_obj is None:
+        # if it isn't a lazy object then just return the original object...
+        return obj
+    if wrapped_obj is uninitialized_lazy_object:
+        # if it is a lazy object but, hasn't been initialized yet
+        # then initialize it & return it
+        obj._setup()
+        return getattr(obj, LAZY_OBJECT_NAME)
+    # return the lazy object...
+    return wrapped_obj
+
 ######################
 # model manipulation #
 ######################
@@ -771,7 +799,6 @@ def get_data_from_formset(formset, include={}):
 
     return data
 
-
 #################
 # serialization #
 #################
@@ -780,6 +807,7 @@ def get_data_from_formset(formset, include={}):
 # but sometimes, I don't want that complexity
 # in that case, the built-in "model_to_dict" fn doesn't handle m2m fields well
 # so I use this instead...
+
 
 def serialize_model_to_dict(model, **kwargs):
     include = kwargs.pop("include", {})  # a dict of pre-computed values to replace
@@ -879,6 +907,7 @@ def get_key_from_value(dct, value):
 ########################
 
 # TODO: THIS CAN BE REMOVED ONCE REALIZATIONS ARE CONVERTED TO RESTFUL STUFF
+
 
 def get_joined_keys_dict(dct):
     """

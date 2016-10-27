@@ -22,6 +22,7 @@ from Q.questionnaire.models.models_customizations import QModelCustomization, ge
 from Q.questionnaire.models.models_realizations import get_new_realizations, get_existing_realizations, set_owner
 from Q.questionnaire.views.views_base import add_parameters_to_context, get_key_from_request, get_or_create_cached_object, validate_view_arguments as validate_view_arguments_base
 from Q.questionnaire.views.views_legacy import redirect_legacy_projects
+from Q.questionnaire.q_utils import evaluate_lazy_object
 from Q.questionnaire.views.views_errors import q_error
 
 # MODEL_REALIZATION_FORM_MAP = {
@@ -93,7 +94,7 @@ def q_edit_new(request, project_name=None, ontology_key=None, document_type=None
 
     # check authentication...
     # (not using "@login_required" b/c some projects ignore authentication)
-    current_user = request.user
+    current_user = evaluate_lazy_object(request.user)
     if project.authenticated:
         if not current_user.is_authenticated():
             next_page = "/login/?next=%s" % request.path
