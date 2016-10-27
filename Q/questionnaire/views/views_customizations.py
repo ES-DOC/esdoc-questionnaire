@@ -54,7 +54,7 @@ def q_customize_new(request, project_name=None, ontology_key=None, document_type
 
     # check authentication...
     # (not using "@login_required" b/c some projects ignore authentication)
-    current_user = evaluate_lazy_object(request.user)
+    current_user = request.user
     if project.authenticated:
         if not current_user.is_authenticated():
             next_page = "/login/?next=%s" % request.path
@@ -80,7 +80,7 @@ def q_customize_new(request, project_name=None, ontology_key=None, document_type
     model_customization_key = model_customization.get_key()
 
     if current_user.is_authenticated():
-        set_owner(model_customization, current_user)
+        set_owner(model_customization, evaluate_lazy_object(current_user))
 
     # I generate the model_customization_form at this top-level
     # all other forms are generated as needed via the "load_section" view

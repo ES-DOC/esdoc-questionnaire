@@ -94,7 +94,7 @@ def q_edit_new(request, project_name=None, ontology_key=None, document_type=None
 
     # check authentication...
     # (not using "@login_required" b/c some projects ignore authentication)
-    current_user = evaluate_lazy_object(request.user)
+    current_user = request.user
     if project.authenticated:
         if not current_user.is_authenticated():
             next_page = "/login/?next=%s" % request.path
@@ -130,7 +130,7 @@ def q_edit_new(request, project_name=None, ontology_key=None, document_type=None
         }
     )
     if current_user.is_authenticated():
-        set_owner(model_realization, current_user)
+        set_owner(model_realization, evaluate_lazy_object(current_user))
 
     # TODO: THIS IS A ONE-OFF TO GET ME THROUGH THE MEDIUM-TERM
     # TODO: IN THE LONG-TERM I OUGHT TO FIGURE OUT HOW TO AUTOMATICALLY WORK OUT HOW/WHEN TO SET "is_root"
