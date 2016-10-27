@@ -40,6 +40,7 @@ python Q/manage.py syncdb
 python Q/manage.py migrate
 python Q/manage.py loaddata Q/questionnaire/fixtures/q_sites.json
 python Q/manage.py loaddata Q/questionnaire/fixtures/q_synchronization.json
+python Q/manage.py loaddata Q/questionnaire/fixtures/q_institutes.json
 python Q/manage.py compress
 python Q/manage.py collectstatic
 ```
