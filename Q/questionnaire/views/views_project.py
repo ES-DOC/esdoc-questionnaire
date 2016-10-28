@@ -42,7 +42,7 @@ def q_project(request, project_name=None):
     can_view = True  # is_member_of(current_user, project) or not project_authenticated
     can_edit = not project_authenticated or (is_user_of(current_user, project) or is_admin_of(current_user, project))
     can_customize = not project_authenticated or is_admin_of(current_user, project)
-    can_join = current_user.is_authenticated() and not (is_member_of(current_user, project) and is_user_of(current_user, project) and is_admin_of(current_user, project))
+    can_join = current_user.is_authenticated() and not (is_member_of(current_user, project) or is_user_of(current_user, project) or is_admin_of(current_user, project))
     can_delete = is_admin_of(current_user, project)
 
     # gather all the extra information required by the template
