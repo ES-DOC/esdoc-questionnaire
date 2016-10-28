@@ -8,8 +8,6 @@
 #   This project is distributed according to the terms of the MIT license [http://www.opensource.org/licenses/MIT].
 ####################
 
-__author__ = 'allyn.treshansky'
-
 """
 .. module:: q_utils
 
@@ -31,12 +29,15 @@ import os
 from Q.questionnaire import q_logger
 from Q.questionnaire.q_constants import *
 
-rel = lambda *x: os.path.join(os.path.abspath(os.path.dirname(__file__)), *x)
+__author__ = 'allyn.treshansky'
 
+
+rel = lambda *x: os.path.join(os.path.abspath(os.path.dirname(__file__)), *x)
 
 ##################
 # error handling #
 ##################
+
 
 class QError(Exception):
     """
@@ -55,6 +56,7 @@ class QError(Exception):
 
     def __str__(self):
         return "QError: " + self.msg
+
 
 def legacy_code(func):
     """
@@ -159,6 +161,7 @@ class EnumeratedTypeList(list):
 # TODO: THIS DOESN'T SEEM LIKE THE BEST PLACE TO DEFINE THIS CLASS
 # TODO: BUT DEFINING IT ELSEWHERE BRINGS W/ IT CIRCULAR DEPENDENCY ISSUES
 
+
 class CIMType(EnumeratedType):
 
     def __unicode__(self):
@@ -176,6 +179,7 @@ CIMTypes = EnumeratedTypeList([
 # in order for these validators to be handled by migration,
 # I have to explicitly add a "deconstruct" fn
 # (see https://code.djangoproject.com/ticket/21275#comment:3)
+
 
 @deconstructible
 class QValidator(object):
@@ -206,6 +210,7 @@ BAD_SUGGESTION_CHARS = "\ / < > % # % { } [ ] $ ' \""
 BAD_SUGGESTION_CHARS_REGEX = "[\\\/<>&#%{}\[\]\$'\"]"
 BAD_SUGGESTION_CHARS_LIST = ", ".join(BAD_SUGGESTION_CHARS.split(' '))
 
+
 class ValidateNoBadChars(QValidator):
 
     name = "ValidateNoBadChars"
@@ -217,6 +222,7 @@ class ValidateNoBadChars(QValidator):
 
 validate_no_bad_chars = ValidateNoBadChars()
 
+
 class ValidateNoBadSuggestionChars(QValidator):
 
     name = "ValidateNoBadSuggestionChars"
@@ -227,6 +233,7 @@ class ValidateNoBadSuggestionChars(QValidator):
             raise ValidationError(self.msg)
 
 validate_no_bad_suggestion_chars = ValidateNoBadSuggestionChars()
+
 
 class ValidateNotBlank(QValidator):
     """
@@ -242,6 +249,7 @@ class ValidateNotBlank(QValidator):
 
 validate_not_blank = ValidateNotBlank()
 
+
 class ValidateNoSpaces(QValidator):
     """
     validator function to use with charFields;
@@ -256,6 +264,7 @@ class ValidateNoSpaces(QValidator):
 
 validate_no_spaces = ValidateNoSpaces()
 
+
 class ValidateNoReservedWords(QValidator):
     """
     validator function to use with charFields;
@@ -269,6 +278,7 @@ class ValidateNoReservedWords(QValidator):
             raise ValidationError(self.msg)
 
 validate_no_reserved_words = ValidateNoReservedWords()
+
 
 class ValidateNoProfanities(QValidator):
     """
@@ -294,6 +304,7 @@ validate_no_profanities = ValidateNoProfanities()
 
 # validators below this line use simple fns
 # (they don't work w/ client-side validation)
+
 
 def validate_password(value):
     # passwords have a minimum length...
@@ -339,6 +350,7 @@ def validate_file_schema(value, schema_path):
 #########################
 # dealing w/ versioning #
 #########################
+
 
 class Version(object):
 
@@ -480,10 +492,10 @@ class Version(object):
 
         return ".".join(number_strings)
 
-
 ####################
 # xml manipulation #
 ####################
+
 
 def xpath_fix(node, xpath):
     """Helper function to address lxml smart strings memory leakage issue.
@@ -531,6 +543,7 @@ def get_attribute_without_namespace(node,attribute_name):
             return value
     return None
 
+
 def get_index(lst, i):
     """
     gets index from list only if it exists
@@ -544,10 +557,10 @@ def get_index(lst, i):
     except IndexError:
         return None
 
-
 #######################
 # string manipulation #
 #######################
+
 
 def remove_spaces_and_linebreaks(str):
     return ' '.join(str.split())
@@ -570,10 +583,10 @@ def pretty_string(string):
 
     return s3.title()
 
-
 ####################
 # url manipulation #
 ####################
+
 
 def add_parameters_to_url(path, **kwargs):
     """
@@ -581,10 +594,10 @@ def add_parameters_to_url(path, **kwargs):
     """
     return path + "?" + urllib.urlencode(kwargs)
 
-
 #####################
 # list manipulation #
 #####################
+
 
 def sort_list_by_key(list, key_name, reverse=False):
     """
@@ -646,6 +659,7 @@ def evaluate_lazy_object(obj):
 # model manipulation #
 ######################
 
+
 @legacy_code
 def copy_model(model, fields={}):
     """
@@ -675,6 +689,7 @@ def copy_model(model, fields={}):
 #############################
 # form / field manipulation #
 #############################
+
 
 def set_field_widget_attributes(field, widget_attributes):
     """
@@ -713,6 +728,7 @@ def update_field_widget_attributes(field, widget_attributes):
                 field.widget_css_classes = "%s %s" % (current_widget_css_classes, value)
             except AttributeError:
                 field.widget_css_classes = value
+
 
 def get_data_from_form(form, include={}):
     """
@@ -835,13 +851,13 @@ def deserialize_dict_to_model(model, dct):
     for key, value in dct.iteritems():
         setattr(model, key, value)
 
-
 #################
 # FuzzyIntegers #
 #################
 
 # this is a very clever idea for comparing integers against min/max bounds
 # credit goes to http://lukeplant.me.uk/blog/posts/fuzzy-testing-with-assertnumqueries/
+
 
 class FuzzyInt(int):
 
@@ -857,6 +873,8 @@ class FuzzyInt(int):
     def __repr__(self):
         return "[%d..%d]" % (self.lowest, self.highest)
 
+    # TODO: ADD GT / GTE / LT / LTE
+    # TODO: ADD NOTIMPLEMENTED ERROR FOR LOGICAL / BITWISE OPERATORS
 
 #############################################
 # finds matching item in list               #
@@ -864,11 +882,13 @@ class FuzzyInt(int):
 # b/c it doesn't traverse the whole list)   #
 #############################################
 
+
 def find_in_sequence(fn, sequence):
     for item in sequence:
         if fn(item) == True:
             return item
     return None
+
 
 def find_dict_in_sequence(dct, sequence):
 
@@ -882,6 +902,7 @@ def find_dict_in_sequence(dct, sequence):
         return True
 
     return find_in_sequence(lambda item: _is_dict_in_item(item), sequence)
+
 
 def get_key_from_value(dct, value):
     """
@@ -906,9 +927,8 @@ def get_key_from_value(dct, value):
 # flatten a dictionary #
 ########################
 
-# TODO: THIS CAN BE REMOVED ONCE REALIZATIONS ARE CONVERTED TO RESTFUL STUFF
 
-
+@legacy_code
 def get_joined_keys_dict(dct):
     """
     Convert 2D dictionary to 1D dictionary joining keys by an underscore.
