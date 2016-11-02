@@ -135,6 +135,9 @@ class QPropertyRealizationForm(QRealizationForm):
 
             enumeration_value_field.add_complete_choice(ENUMERATION_OTHER_CHOICE, documentation=ENUMERATION_OTHER_DOCUMENTATION)
 
+        else:  # field_type == QPropertyTypes.RELATIONSHIP
+            pass
+
     def customize(self, customization=None):
         if not customization:
             realization = self.instance

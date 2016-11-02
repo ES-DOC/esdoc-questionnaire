@@ -81,7 +81,10 @@
                                         {# (recall that the top-level model controller is hard-coded in "q_view.html"; this is the one that gets added recursively for relationship properties) #}
                                         <div ng-controller="ModelEditorController as model_editor_controller"
                                              current_model_path="{% verbatim ng %}{{ current_model_path}}{% endverbatim ng %}.relationship_values[{% verbatim ng %}{{ target_index }}{% endverbatim ng %}]">
-
+                                            {% if form.is_meta == True %}
+                                                <!-- this is a meta class -->
+                                                <!-- but I don't have to do anything different b/c I have already hidden any meta properties -->
+                                            {% endif %}
                                             <section model_to_watch="target"
                                                      key="{% verbatim ng %}{{ target_key }}{% endverbatim ng %}"
                                                      index="{% verbatim ng %}{{ target_index }}{% endverbatim ng %}"

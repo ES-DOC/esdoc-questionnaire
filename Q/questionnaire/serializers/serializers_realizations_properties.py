@@ -114,6 +114,7 @@ class QPropertyRealizationSerializer(QRealizationSerializer):
             'is_required',
             'possible_relationship_targets',
             'display_detail',
+            'is_meta',
         )
 
     enumeration_value = QEnumerationSerializerField(allow_null=True)
@@ -134,6 +135,7 @@ class QPropertyRealizationSerializer(QRealizationSerializer):
     is_required = serializers.SerializerMethodField(read_only=True)  # name="get_is_required
     possible_relationship_targets = serializers.SerializerMethodField(read_only=True)  # name="get_possible_relationship_targets"
     display_detail = serializers.SerializerMethodField(read_only=True)  # name="get_display_detail"
+    is_meta = serializers.SerializerMethodField(read_only=True)  # name="get_is_meta"
 
     def get_key(self, obj):
         # using a SerailizerMethodField instead of guid directly b/c guid is a non-editable field
@@ -168,6 +170,13 @@ class QPropertyRealizationSerializer(QRealizationSerializer):
         :return:
         """
         return False
+
+    def get_is_meta(self, obj):
+        """
+        :param obj:
+        :return:
+        """
+        return obj.is_meta
 
     def to_internal_value(self, data):
         internal_value = super(QPropertyRealizationSerializer, self).to_internal_value(data)

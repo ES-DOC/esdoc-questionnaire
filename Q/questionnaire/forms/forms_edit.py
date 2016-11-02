@@ -38,6 +38,10 @@ class QRealizationForm(QForm):
             # TODO: DO THAT CHECK HERE AND SAVE EFFORT
             self.add_custom_potential_errors_to_field(field_name)
 
+        # I USE THE "IS_META" PROPERTY TO HIDE FORMS
+        # (BUT THE UNDERLYING JSON ALWAYS EXISTS)
+        self.is_meta = self.instance.is_meta
+
         self.customize(customization=customization)
 
     def set_default_field_value(self, field_name, value):

@@ -17,6 +17,7 @@
 
             <div class="documentation">
                 This section contains information relating to the properties of this document.
+                This icon <span class="glyphicon glyphicon-file"></span> indicates that the property is a "meta" property and will not be directly editable by the user.
             </div>
 
             {% include 'questionnaire/_q_customize_categories.html' %}
@@ -100,8 +101,11 @@
                                                 <h5>
                                                     <strong>Order:&nbsp;&nbsp;</strong>
                                                     {{property.order}}
+                                                    <!-- show a special icon if this is a meta property to dissuade users from messing w/ it -->
+                                                    <span ng-show="current_model.is_meta || property.is_meta" class="glyphicon glyphicon-file pull-right"></span>
                                                 </h5>
                                             </td>
+
                                         </tr>
                                     </table>
                                 {% endverbatim ng %}

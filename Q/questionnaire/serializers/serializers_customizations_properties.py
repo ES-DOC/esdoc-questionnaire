@@ -117,6 +117,7 @@ class QPropertyCustomizationSerializer(QCustomizationSerializer):
             'category_key',
             'display_detail',
             'use_subforms',
+            'is_meta',
         )
 
     key = serializers.SerializerMethodField(read_only=True)  # name="get_key"
@@ -124,6 +125,7 @@ class QPropertyCustomizationSerializer(QCustomizationSerializer):
     category_key = serializers.SerializerMethodField(read_only=True)  # name="get_category_key"
     display_detail = serializers.SerializerMethodField(read_only=True)  # name="get_display_detail"
     use_subforms = serializers.SerializerMethodField(read_only=True)  # name="get_use_subforms"
+    is_meta = serializers.SerializerMethodField(read_only=True)  # name="get_is_meta"
 
     # enumeration_choices = QEnumerationSerializerField(allow_null=True)
     # enumeration_default = QEnumerationSerializerField(allow_null=True)
@@ -176,6 +178,14 @@ class QPropertyCustomizationSerializer(QCustomizationSerializer):
         :return:
         """
         return obj.use_subforms()
+
+    def get_is_meta(self, obj):
+        """
+
+        :param obj:
+        :return:
+        """
+        return obj.is_meta
 
     def to_internal_value(self, data):
         internal_value = super(QPropertyCustomizationSerializer, self).to_internal_value(data)

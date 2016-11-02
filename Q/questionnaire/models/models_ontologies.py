@@ -208,8 +208,12 @@ class QOntology(models.Model):
 
         recategorization_needed = False
 
-        # name can be anything...
+        # name should match the instance field...
         ontology_name = get_index(xpath_fix(ontology_content, "name/text()"), 0)
+        if self.name != ontology_name:
+            msg = "The name of this ontology instance does not match the name of the QXML file"
+            if request:
+                messages.add_message(request, messages.WARNING, msg)
 
         # version should match(ish) the instance field...
         ontology_version = get_index(xpath_fix(ontology_content, "version/text()"), 0)
@@ -218,7 +222,7 @@ class QOntology(models.Model):
             if request:
                 messages.add_message(request, messages.WARNING, msg)
 
-        # description can overwrite the instance field...
+        # description can overwrite the instance field (ie: the field set in the admin interface)...
         ontology_description = get_index(xpath_fix(ontology_content, "description/text()"), 0)
         if ontology_description:
             self.description = remove_spaces_and_linebreaks(ontology_description)
@@ -226,29 +230,35 @@ class QOntology(models.Model):
         old_model_proxies = list(self.model_proxies.all())  # list forces qs evaluation immediately
         new_model_proxies = []
 
+        model_proxy_schema = self
         for i, model_proxy in enumerate(xpath_fix(ontology_content, "//classes/class"), start=1):
             model_proxy_package = xpath_fix(model_proxy, "@package")[0]
-            model_proxy_schema = self
-            model_proxy_name = xpath_fix(model_proxy, "name/text()")[0]
             model_proxy_stereotype = get_index(xpath_fix(model_proxy, "@stereotype"), 0)
+            model_proxy_is_meta = get_index(xpath_fix(model_proxy, "@is_meta"), 0)
+
+            model_proxy_name = xpath_fix(model_proxy, "name/text()")[0]
             model_proxy_documentation = get_index(xpath_fix(model_proxy, "description/text()"), 0)
-            if model_proxy_documentation:
+            if model_proxy_documentation is not None:
                 model_proxy_documentation = remove_spaces_and_linebreaks(model_proxy_documentation)
             else:
-                model_proxy_documentation = u""
+                model_proxy_documentation = ""
 
             (new_model_proxy, created_model_proxy) = QModelProxy.objects.get_or_create(
+                # these 3 fields are the "defining" ones (other fields can change w/out creating new proxies)
                 package=model_proxy_package,
                 ontology=model_proxy_schema,
                 name=model_proxy_name,
             )
 
-            if created_model_proxy:
-                recategorization_needed = True
-
             new_model_proxy.order = i
             new_model_proxy.stereotype = model_proxy_stereotype
             new_model_proxy.documentation = model_proxy_documentation
+            if model_proxy_is_meta is not None:
+                new_model_proxy.is_meta = model_proxy_is_meta == "true"
+
+            if created_model_proxy:
+                recategorization_needed = True
+
             new_model_proxy.save()
             new_model_proxies.append(new_model_proxy)
 
@@ -256,57 +266,56 @@ class QOntology(models.Model):
             new_property_proxies = []
 
             for j, property_proxy in enumerate(xpath_fix(model_proxy, "attributes/attribute"), start=1):
-                property_proxy_name = re.sub(r'\.', '_', str(xpath_fix(property_proxy, "name/text()")[0]))
-                property_proxy_field_type = xpath_fix(property_proxy, "type/text()")[0]
+                property_proxy_package = get_index(xpath_fix(property_proxy, "@package"), 0)
                 property_proxy_stereotype = get_index(xpath_fix(property_proxy, "@stereotype"), 0)
+                property_proxy_is_nillable = get_index(xpath_fix(property_proxy, "@is_nillable"), 0)
+                property_proxy_is_meta = get_index(xpath_fix(property_proxy, "@is_meta"), 0)
+
+                property_proxy_name = re.sub(r'\.', '_', str(xpath_fix(property_proxy, "name/text()")[0]))
                 property_proxy_documentation = get_index(xpath_fix(property_proxy, "description/text()"), 0)
-                if property_proxy_documentation:
+                if property_proxy_documentation is not None:
                     property_proxy_documentation = remove_spaces_and_linebreaks(property_proxy_documentation)
                 else:
-                    property_proxy_documentation = u""
+                    property_proxy_documentation = ""
                 property_proxy_cardinality_min = get_index(xpath_fix(property_proxy, "cardinality/@min"), 0)
                 property_proxy_cardinality_max = get_index(xpath_fix(property_proxy, "cardinality/@max"), 0)
-                property_proxy_is_nillable = get_index(xpath_fix(property_proxy, "@is_nillable"), 0)
+                property_proxy_field_type = xpath_fix(property_proxy, "type/text()")[0]
 
                 (new_property_proxy, created_property) = QPropertyProxy.objects.get_or_create(
+                    # these 3 fields are the "defining" ones (other fields can change w/out creating new proxies)
+                    # TODO: WHAT ABOUT "package"?
                     model_proxy=new_model_proxy,
                     name=property_proxy_name,
                     field_type=property_proxy_field_type
                 )
 
-                if created_property:
-                    recategorization_needed = True
-
                 new_property_proxy.order = j
-                new_property_proxy.documentation = property_proxy_documentation
                 new_property_proxy.stereotype = property_proxy_stereotype
+                new_property_proxy.documentation = property_proxy_documentation
+                if property_proxy_is_nillable is not None:
+                    new_property_proxy.is_nillable = property_proxy_is_nillable == "true"
+                if property_proxy_is_meta is not None:
+                    new_property_proxy.is_meta = property_proxy_is_meta == "true"
                 new_property_proxy.cardinality = "{0}|{1}".format(
                     property_proxy_cardinality_min,
                     property_proxy_cardinality_max if property_proxy_cardinality_max != "N" else "*",
                 )
-                new_property_proxy.is_nillable = property_proxy_is_nillable
 
                 # atomic properties...
                 property_proxy_atomic_type = get_index(xpath_fix(property_proxy, "atomic/atomic_type/text()"), 0)
-                if property_proxy_atomic_type:
+                if property_proxy_atomic_type is not None:
                     if property_proxy_atomic_type == u"STRING":
                         property_proxy_atomic_type = u"DEFAULT"
                     property_proxy_atomic_type = QAtomicPropertyTypes.get(property_proxy_atomic_type)
                     new_property_proxy.atomic_type = property_proxy_atomic_type
 
-                # relationship properties...
-                property_proxy_relationship_target_names = "|".join(
-                    # note that each target_name is fully-qualified
-                    xpath_fix(property_proxy, "relationship/targets/target/text()")
-                )
-                new_property_proxy.relationship_target_names = property_proxy_relationship_target_names
-
                 # enumeration properties...
                 property_proxy_enumeration_is_open = get_index(xpath_fix(property_proxy, "enumeration/@is_open"), 0)
-                property_proxy_enumeration_is_multi = get_index(xpath_fix(property_proxy, "enumeration/@is_multi"), 0)
-                if property_proxy_enumeration_is_open:
+                if property_proxy_enumeration_is_open is not None:
                     new_property_proxy.enumeration_is_open = property_proxy_enumeration_is_open == "true"
-                if property_proxy_enumeration_is_multi:
+                # TODO: FACTOR OUT THIS PROPERTY IN FAVOR OF USING "cardinality" DIRECTLY, AS PER #429
+                property_proxy_enumeration_is_multi = get_index(xpath_fix(property_proxy, "enumeration/@is_multi"), 0)
+                if property_proxy_enumeration_is_multi is not None:
                     new_property_proxy.enumeration_is_multi = property_proxy_enumeration_is_multi == "true"
                 property_proxy_enumeration = []
                 for k, enumeration_member_proxy in enumerate(xpath_fix(property_proxy, "enumeration/choices/choice"), start=1):
@@ -320,6 +329,15 @@ class QOntology(models.Model):
                     }
                     property_proxy_enumeration.append(property_proxy_enumeration_member)
                 new_property_proxy.enumeration = property_proxy_enumeration
+
+                # relationship properties...
+                property_proxy_relationship_target_names = "|".join(
+                    xpath_fix(property_proxy, "relationship/targets/target/text()")
+                )
+                new_property_proxy.relationship_target_names = property_proxy_relationship_target_names
+
+                if created_property:
+                    recategorization_needed = True
 
                 new_property_proxy.save()
                 new_property_proxies.append(new_property_proxy)

@@ -52,12 +52,14 @@ class QModelRealizationSerializer(QRealizationSerializer):
             'key',
             'display_detail',
             'display_properties',
+            'is_meta',
         )
 
     key = serializers.SerializerMethodField(read_only=True)  # name="get_key"
     # is_complete = serializers.SerializerMethodField(read_only=True)  # name="get_is_complete"
     display_detail = serializers.SerializerMethodField(read_only=True)  # name="get_display_detail"
     display_properties = serializers.SerializerMethodField(read_only=True)  # name="get_display_properties"
+    is_meta = serializers.SerializerMethodField(read_only=True)  # name="get_is_meta"
 
     version = QVersionSerializerField(allow_null=True)
 
@@ -91,6 +93,13 @@ class QModelRealizationSerializer(QRealizationSerializer):
         :return:
         """
         return False
+
+    def get_is_meta(self, obj):
+        """
+        :param obj:
+        :return:
+        """
+        return obj.is_meta
 
     def create(self, validated_data):
         """

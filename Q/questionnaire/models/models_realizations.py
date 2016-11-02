@@ -499,6 +499,10 @@ class QRealization(models.Model):
         msg = "{0} must define a custom 'reset' method.".format(self.__class__.__name__)
         raise NotImplementedError(msg)
 
+    @property
+    def is_meta(self):
+        return self.proxy.is_meta
+
 ######################
 # model realizations #
 ######################

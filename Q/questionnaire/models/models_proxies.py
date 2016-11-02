@@ -66,6 +66,7 @@ class QProxy(models.Model):
     documentation = models.TextField(blank=True, null=True)
     order = models.PositiveIntegerField(blank=True, null=True)
 
+    is_meta = models.BooleanField(default=False)
     is_specialized = models.BooleanField(default=False)
 
     def __eq__(self, other):

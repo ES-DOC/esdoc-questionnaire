@@ -51,11 +51,20 @@
 
                 <ul class="list-group">
                     {% for form in formset %}
+
                         <div ng-controller="PropertyEditorController as property_editor_controller"
                              current_model_path="{% verbatim ng %}{{ current_model_path }}{% endverbatim ng %}.properties[{{ form.get_serialized_order }}]"> <!-- forloop.counter0 }}]"> --> <!-- TODO: I DO NOT LIKE HAVING TO CALL .get_serialized_order -->
-                            {% if form.is_hidden == True %}
+                            {% if form.is_meta == True %}
+                                <!-- still include the form even if this is a meta property -->
+                                <!-- so that the ng-model gets updated by customized values -->
+                                <div class="hidden">
+                                    <div class="property_form">
+                                        {{ form }}
+                                    </div>  <!-- /.property_form -->
+                                </div>
+                            {% elif form.is_hidden == True %}
                                 <!-- still include the form even if the property has been customized to be hidden -->
-                                <!-- so that the ng-model gets updated in case there was a custom default value -->
+                                <!-- so that the ng-model gets updated by customized values -->
                                 <div class="hidden">
                                     <div class="property_form">
                                         {{ form }}

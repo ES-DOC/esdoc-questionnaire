@@ -73,6 +73,7 @@ def get_new_customizations(project=None, ontology=None, model_proxy=None, **kwar
 
     category_customizations = []
     for catgegory_proxy in ontology.categorization.category_proxies.all():
+    # for catgegory_proxy in ontology.categorization.category_proxies.filter(is_meta=False):
         category_proxy_key = "{0}.{1}".format(model_proxy_key, catgegory_proxy.name)
         with allow_unsaved_fk(QCategoryCustomization, ["model_customization"]):
             if category_proxy_key not in customizations:
@@ -90,6 +91,7 @@ def get_new_customizations(project=None, ontology=None, model_proxy=None, **kwar
 
     property_customizations = []
     for property_proxy in model_proxy.property_proxies.all():
+    # for property_proxy in model_proxy.property_proxies.filter(is_meta=False):
         property_proxy_key = "{0}.{1}".format(model_proxy_key, property_proxy.name)
         with allow_unsaved_fk(QPropertyCustomization, ["model_customization", "category"]):
             # close this context manager before using the custom related manager
@@ -119,6 +121,7 @@ def get_new_customizations(project=None, ontology=None, model_proxy=None, **kwar
             subform_key = "{0}.{1}".format(model_proxy.name, property_proxy.name)  # this property in this model (only 1 level deep)
             target_model_customizations = []
             for target_model_proxy in property_proxy.relationship_target_models.all():
+            # for target_model_proxy in property_proxy.relationship_target_models.filter(is_meta=False):
                 target_model_proxy_key = "{0}.{1}".format(subform_key, target_model_proxy.name)
                 if target_model_proxy_key not in customizations:
                     target_model_customization = get_new_customizations(
@@ -560,6 +563,10 @@ class QCustomization(models.Model):
 
     def is_new(self):
         return self.pk is None
+
+    @property
+    def is_meta(self):
+        return self.proxy.is_meta
 
     def reset(self):
         msg = "{0} must define a custom 'reset' method.".format(self.__class__.__name__)

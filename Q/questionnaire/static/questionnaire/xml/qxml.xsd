@@ -41,6 +41,7 @@
         </xs:sequence>
         <xs:attribute name="package" type="xs:string" use="required"/>
         <xs:attribute name="stereotype" type="xs:string" use="optional"/>
+        <xs:attribute name="is_meta" type="xs:boolean" use="optional"/>
     </xs:complexType>
 
     <xs:complexType name="AttributeType">
@@ -72,6 +73,7 @@
         <xs:attribute name="package" type="xs:string" use="optional"/>
         <xs:attribute name="stereotype" type="xs:string" use="optional"/>
         <xs:attribute name="is_nillable" type="xs:boolean" use="optional"/>
+        <xs:attribute name="is_meta" type="xs:boolean" use="optional"/>
     </xs:complexType>
 
     <xs:complexType name="LabelType">

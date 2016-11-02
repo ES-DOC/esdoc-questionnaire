@@ -51,6 +51,7 @@ class QModelCustomizationSerializer(QCustomizationSerializer):
             'key',
             'proxy_name',
             'display_detail',  # obviously, this is only relevant for subforms
+            'is_meta',
         )
 
         # there is no need to explicitly add QUniqueTogetherValidator
@@ -65,6 +66,7 @@ class QModelCustomizationSerializer(QCustomizationSerializer):
     key = serializers.SerializerMethodField(read_only=True)  # name="get_key"
     proxy_name = serializers.SerializerMethodField(read_only=True)  # name="get_proxy_name"
     display_detail = serializers.SerializerMethodField(read_only=True)  # name="get_display_detail"
+    is_meta = serializers.SerializerMethodField(read_only=True)  # name="get_is_meta"
 
     shared_owners = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
 
@@ -93,6 +95,14 @@ class QModelCustomizationSerializer(QCustomizationSerializer):
         :return:
         """
         return False
+
+    def get_is_meta(self, obj):
+        """
+
+        :param obj:
+        :return:
+        """
+        return obj.is_meta
 
     def create(self, validated_data):
         """
