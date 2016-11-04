@@ -122,6 +122,7 @@ def serialize_new_realizations(current_model_realization, **kwargs):
             # "is_complete": current_model_realization.is_complete(),
             "display_detail": False,
             "display_properties": False,
+            "is_meta": current_model_realization.is_meta,
         },
         exclude=QREALIZATION_NON_EDITABLE_FIELDS + ["synchronization", ]
     )
@@ -139,6 +140,7 @@ def serialize_new_realizations(current_model_realization, **kwargs):
                 # TODO: 'is_multiple' IS COMPUTED IN THE NG CONTROLLER; NO NEED TO REPLICATE IT HERE
                 "is_multiple": property_realization.is_multiple(),
                 "display_detail": False,
+                "is_meta": property_realization.is_meta,
             },
             exclude=QREALIZATION_NON_EDITABLE_FIELDS,
         )
@@ -287,6 +289,13 @@ def recurse_through_realizations(fn, current_model_realization, realization_type
         )
 
     return value
+
+def inject_meta_properties(model_realization):
+    recurse_through_realizations(
+        lambda m: m.inject_meta_properties(),
+        model_realization,
+        [RealizationTypes.MODEL]
+    )
 
 def set_owner(model_realization, new_owner):
     recurse_through_realizations(
@@ -610,6 +619,7 @@ class QModel(MPTTModel, QRealization):
             # and increment the major version...
             self.version += "1.0.0"
 
+        import ipdb; ipdb.set_trace()
         (publication, create_publication) = QPublication.objects.get_or_create(
             name=self.guid,
             version=self.version,

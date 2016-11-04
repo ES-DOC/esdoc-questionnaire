@@ -204,6 +204,7 @@ def serialize_new_customizations(current_model_customization, **kwargs):
                 "key": current_model_customization.get_key(),
                 "proxy_name": str(current_model_customization.proxy),
                 "display_detail": False,
+                "is_meta": current_model_customization.is_meta,
             },
             exclude=QCUSTOMIZATION_NON_EDITABLE_FIELDS + ["synchronization", ]
         )
@@ -224,6 +225,7 @@ def serialize_new_customizations(current_model_customization, **kwargs):
                     "proxy_name": str(category_customization.proxy),
                     "display_properties": True,
                     "display_detail": False,
+                    "is_meta": category_customization.is_meta,
                 },
                 exclude=QCUSTOMIZATION_NON_EDITABLE_FIELDS
             )
@@ -248,6 +250,7 @@ def serialize_new_customizations(current_model_customization, **kwargs):
                     "display_detail": False,
                     # "enumeration_choices": standard_property_customization.get_enumeration_choices_value(),
                     "use_subforms": use_subforms,
+                    "is_meta": property_customization.is_meta,
                 },
                 exclude=QCUSTOMIZATION_NON_EDITABLE_FIELDS
             )

@@ -28,6 +28,9 @@ class QCustomizationForm(QForm):
             # TODO: DO THAT CHECK HERE AND SAVE EFFORT
             self.add_custom_potential_errors_to_field(field_name)
 
+        # I USE THE "IS_META" PROPERTY TO TAG FORMS
+        self.is_meta = self.instance.is_meta
+
     def validate_unique(self):
         model_customization = self.instance
         try:
