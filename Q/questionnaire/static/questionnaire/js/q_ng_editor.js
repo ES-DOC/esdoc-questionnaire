@@ -183,9 +183,13 @@
 
         $scope.update_model_completion = function() {
             /* computes a model's completion based on its properties' completion */
-            var properties_completion = $scope.current_model['properties'].map(function(property) {
-                return property.is_complete;
-            });
+            var properties_completion = $scope.current_model['properties'].reduce(function(value, property) {
+                /* using 'reduce' above instead of 'map' in order to exclude meta properties */
+                if (! property.is_meta) {
+                    value.push(property.is_complete)
+                }
+                return value;
+            }, [])
             $scope.current_model['is_complete'] = properties_completion.every(function(is_complete) {
                 return is_complete;
             });
