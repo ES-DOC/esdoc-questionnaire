@@ -200,7 +200,7 @@ def q_publication(request, project_name=None, ontology_key=None, document_type=N
         msg = "This model is not yet published"
         return q_error(request, msg)
 
-    publications = QPublication.objects.order_by("created")
+    publications = QPublication.objects.filter(model=model).order_by("version")
     if publication_version:
         # if a version was specified, look for that specific publication...
         try:
