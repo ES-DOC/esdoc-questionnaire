@@ -102,6 +102,17 @@ def get_ontology_type_key(model_proxy):
 
 
 @register.filter
+def get_potentially_unsaved_properties(model_realization):
+    return model_realization.properties(manager="allow_unsaved_properties_manager").all()
+
+
+@register.filter
+def get_potentially_unsaved_models(property_realization):
+    assert property_realization.field_type == QPropertyTypes.RELATIONSHIP
+    return property_realization.relationship_values(manager="allow_unsaved_relationship_values_manager").all()
+
+
+@register.filter
 def get_property_publication_value(property_realization, publication_format):
     """
     returns a property value for a property

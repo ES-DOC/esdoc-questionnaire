@@ -6,11 +6,13 @@
 {% block content %}
 
     {% for property in model.properties.all %}
-        {% with property_type=property.field_type %}
-            {% with "questionnaire/publications/%s/publication_property.xml"|format:publication_format as template %}
-                {% include template %}
-            {% endwith %}
-        {% endwith %}  {# /property_type #}
+        {% if not property.is_meta %}
+            {% with property_type=property.field_type %}
+                {% with "questionnaire/publications/%s/publication_property.xml"|format:publication_format as template %}
+                    {% include template %}
+                {% endwith %}
+            {% endwith %}  {# /property_type #}
+        {% endif %}  {# /property.is_meta #}
     {% endfor %}  {# /property #}
 
 {% endblock content %}

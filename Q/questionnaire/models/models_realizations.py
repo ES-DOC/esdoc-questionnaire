@@ -595,6 +595,77 @@ class QModel(MPTTModel, QRealization):
     def get_label(self):
         raise NotImplementedError
 
+    def inject_meta_properties(self):
+        # used w/ "recurse_through_realization" in global fn "inject_meta_properties" above
+        if self.is_root:
+            # meta_properties = self.properties(manager="allow_unsaved_properties_manager").filter_potentially_unsaved(is_meta=True)
+            meta_properties = self.properties(manager="meta_properties").all()
+            for meta_property in meta_properties:
+                assert meta_property.field_type == QPropertyTypes.RELATIONSHIP
+                meta_property.reset()
+                meta_property_target_proxy = meta_property.proxy.relationship_target_models.first()
+                meta_property_target = get_new_realizations(
+                    project=self.project,
+                    ontology=self.ontology,
+                    model_proxy=meta_property_target_proxy,
+                    key=meta_property_target_proxy.name,
+                )
+                # now that I've created a meta property, inject it w/ appropriate content...
+                meta_property_target_properties = meta_property_target.properties(manager="allow_unsaved_properties_manager").all()
+                meta_property_target_create_date = find_in_sequence(lambda p: p.name == "create_date", meta_property_target_properties)
+                assert meta_property_target_create_date is not None and meta_property_target_create_date.field_type == QPropertyTypes.ATOMIC
+                meta_property_target_create_date.atomic_value = self.created.ctime()
+                meta_property_target_update_date = find_in_sequence(lambda p: p.name == "update_date", meta_property_target_properties)
+                assert meta_property_target_update_date is not None and meta_property_target_update_date.field_type == QPropertyTypes.ATOMIC
+                meta_property_target_update_date.atomic_value = self.modified.ctime()
+                meta_property_target_id = find_in_sequence(lambda p: p.name == "id", meta_property_target_properties)
+                assert meta_property_target_id is not None and meta_property_target_id.field_type == QPropertyTypes.ATOMIC
+                meta_property_target_id.atomic_value = self.get_key()
+                meta_property_target_version = find_in_sequence(lambda p: p.name == "version", meta_property_target_properties)
+                assert meta_property_target_version is not None and meta_property_target_version.field_type == QPropertyTypes.ATOMIC
+                meta_property_target_version.atomic_value = self.get_version_major()
+                meta_property_target_institute = find_in_sequence(lambda p: p.name == "institute", meta_property_target_properties)
+                assert meta_property_target_institute is not None and meta_property_target_institute.field_type == QPropertyTypes.ATOMIC
+                meta_property_target_institute.atomic_value = self.owner.profile.institute
+                meta_property_target_project = find_in_sequence(lambda p: p.name == "project", meta_property_target_properties)
+                assert meta_property_target_project is not None and meta_property_target_project.field_type == QPropertyTypes.ATOMIC
+                meta_property_target_project.atomic_value = self.project.name
+                meta_property_target_source = find_in_sequence(lambda p: p.name == "source", meta_property_target_properties)
+                assert meta_property_target_source is not None and meta_property_target_source.field_type == QPropertyTypes.ATOMIC
+                meta_property_target_source.atomic_value = PUBLICATION_SOURCE
+                meta_property_target_type = find_in_sequence(lambda p: p.name == "type", meta_property_target_properties)
+                assert meta_property_target_type is not None and meta_property_target_type.field_type == QPropertyTypes.ATOMIC
+                meta_property_target_type.atomic_value = "{0}.{1}.{2}.{3}".format(
+                    meta_property_target.proxy.ontology.name.lower(),
+                    meta_property_target.proxy.ontology.get_version_major(),
+                    meta_property_target.proxy.package.lower(),
+                    meta_property_target.proxy.name.title(),
+                )
+                meta_property_target_author = find_in_sequence(lambda p: p.name == "author", meta_property_target_properties)
+                assert meta_property_target_author is not None and meta_property_target_author.field_type == QPropertyTypes.RELATIONSHIP
+                meta_property_target_author_target_proxy = meta_property_target_author.proxy.relationship_target_models.first()
+                meta_property_target_author_target = get_new_realizations(
+                    project=self.project,
+                    ontology=self.ontology,
+                    model_proxy=meta_property_target_author_target_proxy,
+                    key=meta_property_target_author_target_proxy.name,
+                )
+                meta_property_target_author_target_properties = meta_property_target_author_target.properties(manager="allow_unsaved_properties_manager").all()
+                meta_property_target_author_target_name = find_in_sequence(lambda p: p.name == "name", meta_property_target_author_target_properties)
+                assert meta_property_target_author_target_name is not None and meta_property_target_author_target_name.field_type == QPropertyTypes.ATOMIC
+                meta_property_target_author_target_name.atomic_value = self.owner.get_full_name() or self.owner.username
+                # meta_property_target_author_target_address = find_in_sequence(lambda p: p.name == "address", meta_property_target_author_target_properties)
+                # assert meta_property_target_author_target_address is not None and meta_property_target_author_target_address.field_type == QPropertyTypes.ATOMIC
+                # meta_property_target_author_target_address = ?!?
+                meta_property_target_author_target_email = find_in_sequence(lambda p: p.name == "email", meta_property_target_author_target_properties)
+                assert meta_property_target_author_target_email is not None and meta_property_target_author_target_email.field_type == QPropertyTypes.ATOMIC
+                meta_property_target_author_target_email.atomic_value = self.owner.email
+                meta_property_target_author_target_organisation = find_in_sequence(lambda p: p.name == "organisation", meta_property_target_author_target_properties)
+                assert meta_property_target_author_target_organisation is not None and meta_property_target_author_target_organisation.field_type == QPropertyTypes.ATOMIC
+                # meta_property_target_author_target_organisation = ?!?
+                meta_property_target_author.relationship_values(manager="allow_unsaved_relationship_values_manager").add_potentially_unsaved(meta_property_target_author_target)
+                meta_property.relationship_values(manager="allow_unsaved_relationship_values_manager").add_potentially_unsaved(meta_property_target)
+
     def is_synchronized(self):
         return self.synchronization.count() == 0  # checks if qs is empty
 
@@ -619,7 +690,10 @@ class QModel(MPTTModel, QRealization):
             # and increment the major version...
             self.version += "1.0.0"
 
-        import ipdb; ipdb.set_trace()
+        # TODO: I AM DOING THIS HARD-CODED IN THE TEMPLATE
+        # TODO: I SHOULD CHANGE TO DOING IT GENERICALLY HERE
+        # inject_meta_properties(self)
+
         (publication, create_publication) = QPublication.objects.get_or_create(
             name=self.guid,
             version=self.version,
