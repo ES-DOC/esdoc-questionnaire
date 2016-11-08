@@ -37,8 +37,8 @@
     }, 
     {
         "fields": {
-            "domain": "example.com", 
-            "name": "example.com"
+            "domain": "testserver",
+            "name": "testserver"
         }, 
         "model": "sites.site", 
         "pk": 1
@@ -290,7 +290,7 @@
     }, 
     {
         "fields": {
-            "type": "", 
+            "type": "TEST",
             "site": 1
         }, 
         "model": "questionnaire.qsite", 
@@ -1726,7 +1726,8 @@
         "fields": {
             "guid": "2168451b-73c3-47d7-8abb-062dba351462", 
             "name": "model", 
-            "stereotype": "document", 
+            "stereotype": "document",
+            "is_meta": true,
             "created": "2016-10-21T17:17:37.138Z", 
             "documentation": "", 
             "modified": "2016-10-21T17:17:37.161Z", 
