@@ -1,0 +1,18 @@
+[
+{
+    "pk": 1, 
+    "model": "mindmaps.mindmapsource", 
+    "fields": {
+        "enabled": true, 
+        "name": "esdoc-github"
+    }
+},
+{
+    "pk": 1, 
+    "model": "mindmaps.mindmapdomain", 
+    "fields": {
+        "source": 1, 
+        "domain": "https://raw.githubusercontent.com/ES-DOC"
+    }
+}
+]
