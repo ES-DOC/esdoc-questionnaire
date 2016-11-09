@@ -51,13 +51,13 @@
 
                     <div class="col-md-12 row">
 
-                        <div class="list-group large" style="margin-left: 8px;">
+                        <div class="list-group large" style="margin-left: 8px;" id="projects">
                             <span class="list-group-item active">
                                 Active Questionnaire Projects:&nbsp;
                                 <span class="small">(click to view)</span>
                             </span>
                             {% verbatim ng %}
-                                <a class="list-group-item" href="/{{ project.name }}" ng-repeat="project in index_controller.projects">
+                                <a class="list-group-item project" href="/{{ project.name }}" ng-repeat="project in index_controller.projects">
                                     <strong>{{ project.title }}</strong>
                                     <span class="documentation small">{{ project.description }}</span>
                                 </a>

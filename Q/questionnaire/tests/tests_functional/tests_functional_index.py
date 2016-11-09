@@ -27,16 +27,16 @@ class Test(TestFunctionalBase):
 
     def test_index_renders(self):
         """
+        just test some basic top-level stuff on the index page
         :return:
         """
 
-        import ipdb;ipdb.set_trace()
         index_url = reverse("index", kwargs={})
         self.set_url(index_url)
 
         # test it has the right title...
         title = self.webdriver.title
-        test_title = "CIM Questionnaire"
+        test_title = "ES-DOC Questionnaire"
         self.assertEqual(title, test_title)
 
         # test it has the right version (in the footer)...
@@ -44,17 +44,18 @@ class Test(TestFunctionalBase):
         version = get_version()
         self.assertIn(version, footer.text)
 
-        # test it has a link to the Django Admin (in the footer)...
-        link_text = "Django Admin Interface"
-        self.assertIn(link_text, footer.text)
-
         # test it has the right site notice...
         site_section = self.webdriver.find_element_by_id("site")
         self.assertIsNotNone(site_section)
 
         # test the user block exists (and a user is not logged in)...
         user_section = self.webdriver.find_element_by_id("user")
-        user_buttons = user_section.find_elements_by_css_selector("a.button")
+        user_buttons = user_section.find_elements_by_css_selector("a.label")
         self.assertEqual(len(user_buttons), 2)
         self.assertEqual(user_buttons[0].text, "register")
         self.assertEqual(user_buttons[1].text, "login")
+
+        # test that there are some projects...
+        projects_section = self.webdriver.find_element_by_id("projects")
+        projects = projects_section.find_elements_by_css_selector("a.project")
+        self.assertGreater(len(projects), 0)

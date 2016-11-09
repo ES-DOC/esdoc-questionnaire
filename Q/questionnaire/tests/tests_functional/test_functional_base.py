@@ -12,6 +12,7 @@ __author__ = 'allyn.treshansky'
 
 
 from django.test import LiveServerTestCase
+from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 from django.core.exceptions import ImproperlyConfigured
 import os
 
@@ -38,8 +39,10 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions
 
+from Q.questionnaire.tests.test_base import TEST_REGISTERED_FIXTURE_PATH
 
-class TestFunctionalBase(LiveServerTestCase):
+
+class TestFunctionalBase(StaticLiveServerTestCase):
     """
     base class for functional tests; Uses selenium to drive a Firefox instance.
     By convention, some tests that are common to multiple pages
@@ -47,7 +50,7 @@ class TestFunctionalBase(LiveServerTestCase):
     (so that they're not run automatically but can be called explicitly).
     """
 
-    fixtures = ['questionnaire_testdata.json']
+    fixtures = [os.path.basename(TEST_REGISTERED_FIXTURE_PATH)]
 
     @classmethod
     def setUpClass(cls):
