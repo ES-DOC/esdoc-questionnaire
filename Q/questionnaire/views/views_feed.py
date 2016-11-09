@@ -205,7 +205,7 @@ def q_publication(request, project_name=None, ontology_key=None, document_type=N
         # if a version was specified, look for that specific publication...
         try:
             publication = publications.get(version=publication_version)
-        except QPublication.DoesNotExist:
+        except (QPublication.DoesNotExist, ValueError) as e:  # DoesNotExist error if there is no publication at that version, ValueError if publication_version is malformed
             msg = "Unable to find model published at version {0}".format(publication_version)
             return q_error(request, msg)
     else:
