@@ -1,0 +1,35 @@
+{% extends "mindmaps/mindmaps_base.html" %}
+
+{% block title %}
+
+    ES-DOC MindMap Viewer
+
+{% endblock %} {# /title #}
+
+{% block content %}
+
+    <div class="title">
+        ES-DOC MindMap Viewer
+    </div> <!-- /.title -->
+
+    <div class="documentation">
+        <p>
+            This application allows users to view an ES-DOC Specialization in MindMap format.
+        </p>
+    </div>
+
+    <fieldset>
+        <div class="fieldset_content" style="font-weight: bold; margin-top: 8px; margin-bottom: 8px;">
+            Here are the known specializations for the <span style="font-size: large;">{{ project_name }}</span> project:
+            <ul>
+                {% for realm in project_mindmaps.realms %}
+                    <li>
+                        <a href="/mindmaps/view/?url={{realm.mindmap}}">{{realm.name}}</a>
+                    </li>
+                {% endfor %}  {# /realm #}
+            </ul>
+        </div>
+    </fieldset>
+
+{% endblock %} {# /content #}
+

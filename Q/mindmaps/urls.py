@@ -18,9 +18,7 @@ from .views import *
 # admin.autodiscover()
 
 urlpatterns = patterns('',
-
     url(r'^$', mindmaps_index, name="index"),
     url(r'^view/$', mindmaps_view, name="view"),
-    url(r'^test/$', mindmaps_test, name="test"),
-
+    url(r'^(?P<project_name>[^/]+)/$', mindmaps_project, name="project"),
 )

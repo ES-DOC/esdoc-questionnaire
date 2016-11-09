@@ -11,11 +11,8 @@
 __author__ = "allyn.treshansky"
 
 from django.template import RequestContext
-
 from django.conf import settings
-
 from django.shortcuts import render_to_response, loader
-
 from django.http import *
 
 from urlparse import urlparse
@@ -27,18 +24,9 @@ from Q.questionnaire import get_version as get_questionnaire_version
 from Q.mindmaps import get_version as get_mindmaps_version
 
 from .models import MindMapSource
+from .constants import *
 
 hash_block_size = 65536
-
-def mindmaps_test(request):
-
-    # gather all the extra information required by the template
-    _dict = {
-        "questionnaire_version": get_questionnaire_version(),
-    }
-
-    return render_to_response('mindmaps/mindmaps_test.html', _dict, context_instance=RequestContext(request))
-
 
 def mindmaps_index(request):
 
@@ -70,6 +58,24 @@ def mindmaps_error(request, **kwargs):
     response = HttpResponse(template.render(context), status=status_code)
 
     return response
+
+
+def mindmaps_project(request, project_name=None):
+
+    project_name = project_name.lower()
+    if project_name not in MINDMAP_PROJECTS:
+        error_msg = "invalid project name: %s" % project_name
+        return mindmaps_error(request, msg=error_msg)
+
+    _dict = {
+        "questionnaire_version": get_questionnaire_version(),
+        "mindmaps_version": get_mindmaps_version(),
+        "project_name": project_name,
+        "project_mindmaps": MINDMAP_PROJECTS[project_name],
+    }
+
+    return render_to_response('mindmaps/mindmaps_project.html', _dict, context_instance=RequestContext(request))
+
 
 def mindmaps_view(request, **kwargs):
 
