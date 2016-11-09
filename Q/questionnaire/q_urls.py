@@ -28,9 +28,6 @@ from Q.questionnaire.views.views_feed import QFeed, q_publication
 
 api_urls = patterns('',
 
-    # list all pre-defined api urls...
-    url(r'^$', api_root),
-
     # getting project info...
     url(r'^projects/$', QProjectList.as_view(), name="project-list"),
     url(r'^projects/(?P<pk>[0-9]+)/$', QProjectDetail.as_view(), name="project-detail"),
@@ -52,6 +49,10 @@ api_urls = patterns('',
     url(r'^realizations/cache/$', get_cached_realizations, name="realization-cache"),
     url(r'^realizations/(?P<pk>[0-9]+)/$', QModelRealizationDetail.as_view(), name="realization-detail"),
 )
+
+if settings.DEBUG:
+    # only expose pre-defined api urls in debug mode...
+    api_urls += patterns('', url(r'^$', api_root))
 
 # automatically add support for different serialization formats (JSON is default)...
 api_urls = format_suffix_patterns(api_urls)
