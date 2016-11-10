@@ -22,6 +22,7 @@ The system must have the following Python packages installed:
 * pytz (pip install pytz)
 * selenium (for testing; pip install selenium)
 * pyinstrument (for profiling; pip install pyinstrument)
+* pyesdoc
 
 ## DOWNLOAD
 
