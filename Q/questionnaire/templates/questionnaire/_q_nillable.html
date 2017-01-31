@@ -1,0 +1,43 @@
+{# used by the custom "nillable" inclusion template tag #}
+
+{# this is mostly NG code, as opposed to Djangular code #}
+{# this is b/c I'm not sure how to insert the tooltip documentation for each "nil_reason" into a formfield #}
+{# doing it explicitly in Bootstrap here works fine #}
+
+<div class="panel panel-default">
+
+    <div class="panel-heading panel-xs">
+        <label for="{{form.is_nil.auto_id}}">
+            {{ form.is_nil }}
+            <span style="font-weight: normal;">
+                Should this property be intentionally ignored?
+            </span>
+        </label>
+        {# don't show help; this is pretty self-explanatory #}
+        {# {% with help_text=is_nil_field.help_text %}      #}
+        {#     {% include 'questionnaire/_q_help.html' %}   #}
+        {# {% endwith %}                                    #}
+    </div>  <!-- /.panel-heading -->
+
+    <div class="panel-body" ng-show="current_model.is_nil">
+        <span style="font-weight: normal;">
+            <em>Why is there no value?</em>
+        </span>
+        <div class="btn-group">
+            {% for nil_reason_name, nil_reason_description in nil_reasons %}
+                <label class="radio-inline"
+                       for="{{ form.nil_reason.auto_id }}_{{ forloop.counter0 }}"
+                       data-toggle="tooltip"
+                       title="{{ nil_reason_description }}">
+                    <input type="radio"
+                           id="{{ form.nil_reason.auto_id }}_{{ forloop.counter0 }}"
+                           value="{{ nil_reason_name|upper }}"
+                           ng-model="current_model.nil_reason"/>
+                    {{ nil_reason_name }}
+                </label><br/>  <!-- TODO: USE STANDARD BOOTSTRAP METHOD OF MAKING THIS BUTTON GROUP VERTICAL (INSTEAD OF <br/>) -->
+            {% endfor %}
+        </div>
+
+    </div>  <!-- /.panel-body -->
+
+</div>  <!-- /.panel -->
