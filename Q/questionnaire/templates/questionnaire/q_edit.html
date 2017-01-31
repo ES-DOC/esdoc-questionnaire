@@ -4,7 +4,7 @@
 
 {% load staticfiles %}
 {% load compress %}
-{% load djangular_tags %}
+{% load djng_tags %}
 {% load q_tags %}
 
 {% block title %}
@@ -13,80 +13,62 @@
 
 {% block scripts %}
     {{ block.super }}
-        <script language="JavaScript" type="text/javascript" src="{% static 'djangular/js/django-angular.js' %}"></script>
-        <script language="javascript" type="text/javascript" src="{% static 'questionnaire/js/q_ng_editor.js' %}"></script>
-        <script language="JavaScript">
+    <script type="text/javascript" src="{% static 'questionnaire/js/q_ng_edit.js' %}"></script>
+    <script language="JavaScript">
 
-            var session_key = "{{ session_key }}";  /* session_key can be used to locate items in the cache */
-            var project_id = {{ project.pk }};
+        var session_key = "{{ session_key }}";
+        var project_id = {{ project.pk }};
+        var realization_id = {{ realization.pk|default:0 }};
 
-            var view_url_dirname = "{{ view_url_dirname }}";
-            var api_url_dirname = "{{ api_url_dirname }}";
+        var api_url_dirname = "{{ api_url_dirname }}";
+        var view_url_dirname = "{{ view_url_dirname }}";
 
-            var realization_id = {{ realization.id|default:0 }};
+        var read_only = {{ read_only }};
 
-            var read_only = {{ read_only }};
+        $(document).ready(
+            function() {
+                var parent = document.body;
+                init_widgets(splitters, $(parent).find(".splitter"));
+            }
+        );
 
-            $(document).ready(
-                function() {
+    </script>
+{% endblock %}  {# /scripts #}
 
-                    /* the customizer forms can have stackable modals (when customizing subforms) */
-                    /* this is not _really_ supported by Bootstrap3 */
-                    /* so this bit of code addresses that */
-                    /* (got the idea from http://stackoverflow.com/a/24914782) */
+{% block content_title %}
+    <div class="title">
+        Editing {{ customization.model_title|a_or_an }} <strong>{{ customization.model_title }}</strong> instance for the <a href="/{{ project.name }}" title="ES-DOC Questionnaire Project Home Page"><strong>{{ project.title }}</strong></a> Project
+    </div> <!-- /.title -->
+{% endblock %}  {# /content_title #}
 
-                   $(document)
-                       .on('show.bs.modal', '.modal', function (event) {
-                           var zIndex = 1040 + (10 * $('.modal:visible').length);
-                           $(this).css('z-index', zIndex);
-                           setTimeout(function() {
-                               $('.modal-backdrop').not('.modal-stack').css('z-index', zIndex - 1).addClass('modal-stack');
-                           }, 0);
-                       })
-                       .on('hidden.bs.modal', '.modal', function () {
-                          $('.modal:visible').length && $(document.body).addClass('modal-open');
-                       });
+{% block content_documentation %}
+    <div class="documentation">
+        <p>
+            Use this page to edit a {{ customization.model_title }} document.&nbsp;&nbsp;
+            When you have finished filling in all properties, click the "submit" button at the bottom of the page to store a local copy.&nbsp;&nbsp;
+        </p>
+        </p>
+            <a href="/{{ project.name }}">{{ project.title }} Project Page</a>.
+        </p>
+        <p>
+            <a href="{% url 'help' %}">ES-DOC Questionnaire help</a> is available.
+        </p>
+    </div> <!-- /.documentation -->
+{% endblock %}  {# /content_documentation #}
 
-                }
-            );
+{# all of the actual content is inherited from the "q_view.html" template #}
 
-        </script>
-{% endblock %} {# /scripts #}
-
-{# HERE IS THE CONTENT; NOTE THAT MOST OF IT IS HANDLED IN "q_view.html" #}
-
-    {% block content-title %}
-        <div class="title row">
-            Editing {{ customization.model_title|a_or_an }} <strong>{{ customization.model_title }}</strong> instance for the <a href="/{{ project.name }}" title="ES-DOC Questionnaire Project Home Page"><strong>{{ project.title }}</strong></a> Project
-        </div> <!-- /.title -->
-    {% endblock %} {# /content-title #}
-
-    {% block content-documentation %}
-        <div class="documentation row">
-            <div class="col-md-12">
-                Use this page to create or modify a {{ customization.model_title }} document.
-                When you have finished filling in all properties, click the "submit" button at the bottom of the page to store a local copy.
-                Invalid entries are indicated using a <span style="color: #ff0000; font-weight: bold;">red</span> font.
-            </div>
-            <div class="col-md-10">
-                <a href="{% url 'help' %}">ES-DOC Questionnaire help</a> is available.
-            </div>
-        </div> <!-- /.documentation -->
-    {% endblock %} {# /content-documentation #}
-
-
-    {% block content-submit %}
-        <div class="form-group voffset-16">
-            <div class="col-sm-offset-3 col-sm-7">
-                <button class="btn btn-primary"
-                        ng-click="submit_realization()"
-                        title="save the current state of this document">
-                    <!-- notice how this button uses the "submit_realization" fn from the parent "editor_controller" -->
-                    <!-- (instead of the child "model_controller") -->
+{% block content_submit %}
+    <div class="row">
+        <div class="col-lg-offset-1 col-md-offset-1">
+            <div class="form-group voffset-16">
+                <!-- the whole concept of marking invalid form elements doesn't quite translate from the customizer to here -->
+                <!-- so "ng-disabled" doesn't really apply here and "submit_realization" takes no form name arguments -->
+                <button class="btn btn-primary" ng-click="submit_realization()" ng-disabled="!form_validity"
+                        title="save the current state of this realization">
                     submit
                 </button>
             </div>
-        </div>
-    {% endblock %} {# /content-submit #}
-
-{# HERE ENDS THE CONTENT #}
+        </div>  <!-- /col -->
+    </div>  <!-- /row -->
+{% endblock %} {# /content_submit #}

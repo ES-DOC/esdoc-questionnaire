@@ -15,17 +15,6 @@ function validate_no_bad_chars(value) {
     }
 }
 
-function validate_no_bad_suggestion_chars(value) {
-    var BAD_SUGGESTION_CHARS_REGEX = /[\\\/\*<>%#\{\}\[\]$'"]/g;
-
-    if (value.match(BAD_SUGGESTION_CHARS_REGEX)) {
-        return false;
-    }
-    else {
-        return true;
-    }
-}
-
 function validate_not_blank(value) {
 
     var SPACES_REGEX = /\s/g;
@@ -51,18 +40,10 @@ function validate_no_spaces(value) {
     }
 }
 
+/* assumes that RESERVED_WORDS has been defined in q_base.html */
+/* using a custom tag that provides external content loaded by Django */
 
 function validate_no_reserved_words(value) {
-    /* TODO: DEFINE THIS ONCE INSTEAD OF HERE AND "q_constants.py" */
-    var RESERVED_WORDS = [
-        "admin", "static", "site_media",
-        "user", "login", "logout", "register",
-        "questionnaire", "legacy", "metadata", "mindmaps",
-        "customize", "edit", "view", "help",
-        "api", "services",
-        "test", "bak",
-    ]
-
     if (RESERVED_WORDS.indexOf(value) != -1) {
         return false;
     }
@@ -71,12 +52,10 @@ function validate_no_reserved_words(value) {
     }
 }
 
-/* assume that PROFANITIES_LIST has been defined in q_base.html */
+/* assumes that PROFANITIES_LIST has been defined in q_base.html */
 /* using a custom tag that provides external content loaded by Django */
-/* var PROFANITIES = [...] */
 
 function validate_no_profanities(value) {
-
     for (var i=0; i<PROFANITIES_LIST.length; i++) {
         profanity = PROFANITIES_LIST[i];
         /* this tries to avoid the "scunthorpe problem" by only checking for complete words */

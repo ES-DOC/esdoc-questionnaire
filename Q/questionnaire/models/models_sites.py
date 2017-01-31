@@ -1,6 +1,6 @@
 ####################
 #   ES-DOC CIM Questionnaire
-#   Copyright (c) 2016 ES-DOC. All rights reserved.
+#   Copyright (c) 2017 ES-DOC. All rights reserved.
 #
 #   University of Colorado, Boulder
 #   http://cires.colorado.edu/
@@ -8,7 +8,6 @@
 #   This project is distributed according to the terms of the MIT license [http://www.opensource.org/licenses/MIT].
 ####################
 
-__author__ = 'allyn.treshansky'
 
 """
 .. module:: models_sites
@@ -17,12 +16,14 @@ Q-specific sites
 
 """
 
-from django.db import models
 from django.contrib.sites.models import Site
+from django.db import models
 
 from Q.questionnaire import APP_LABEL
-from Q.questionnaire.q_constants import LIL_STRING
 from Q.questionnaire.q_utils import EnumeratedType, EnumeratedTypeList
+from Q.questionnaire.q_constants import *
+
+__author__ = 'allyn.treshansky'
 
 
 class QSiteType(EnumeratedType):
@@ -62,6 +63,7 @@ class QSite(models.Model):
 
     # def save(self, *args, **kwargs):
     #     super(QSite, self).save(*args, **kwargs)
+
 
 def get_site_type(site):
     try:

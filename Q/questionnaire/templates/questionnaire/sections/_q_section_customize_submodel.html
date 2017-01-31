@@ -1,4 +1,4 @@
-{# _q_section_customize_category.html #}
+{# _q_section_customize_submodel.html #}
 
 {# this is a "section" template #}
 {# it is inserted as needed by ng via AJAX using the load-on-demand paradigm #}
@@ -6,49 +6,46 @@
 {# see the "q_load_section" django view #}
 {# and see the "section" ng directive" #}
 
-<form name="{{form.form_name}}"
-      class="form-horizontal"
-      watch_form_validity="categories_validity"
-      novalidate>
+<div class="panel panel-default">
+    <div class="panel-body">
 
-    <!-- don't include the "name" field -->
-    <!-- b/c if it hasn't been set yet, it will make the form invalid -->
-    <!-- and the "watch_form_validity" directive will never return "true" -->
-    <!--<div class="hidden">-->
-        <!--{% for field in form.hidden_fields %}-->
-            <!--{{ field }}-->
-        <!--{% endfor %}-->
-    <!--</div>-->
+        <form name="{{form.form_name}}"
+              class="form-horizontal"
+              watch_form_validity="models_validity"
+              novalidate>
 
-    {% for field in form.category_fields %}
-        <div class="row {% cycle 'odd' 'even' %}">
-            {% if field.name != "order" %}
-                {% include 'questionnaire/_q_customize_field.html' %}
-            {% else %}
+            <!-- don't include form.customization_fields -->
+            <!-- (b/c this is just a subform -->
 
-                {# I have to override the default "order" form field #}
-                {# to ensure it doesn't change the value of the JSON model in the client #}
-                {# based on the initial value of the Django form in the server #}
-                {# (this is mostly copied verbatim from "_q_customize_field.html") #}
-                <span class="col-lg-1 col-md-1 text-right">
-                    {% if field.help_text %}
-                        <help help_text="{{field.help_text|safe}}"></help>
-                    {% endif %}
-                </span>
-                <span class="col-lg-3 col-md-3 {% if field.field.required %} required {% else %} optional {% endif %} ">
-                    {{ field.label|safe }}
-                </span>
-                <span class="col-lg-5 col-md-5 voffset-2">
-                    {# here is the different bit #}
-                    <input disabled="disabled" class="form-control form-control-small" ng-disabled="true" ng-model="category['order']"/>
-                </span>
-                <span class="col-lg-2 col-md-2">
-                    {{ field.errors}}
-                </span>
+            <div id="{{form.form_name}}_document_fields">
+                <fieldset class="fieldset collapsible"
+                          ng-controller="FieldsetController as document_details_fieldset_controller"
+                          ng-class="document_details_fieldset_controller.is_collapsed ? 'collapsed' : 'expanded'">
+                    <legend class="fieldset_header" ng-click="document_details_fieldset_controller.is_collapsed = ! document_details_fieldset_controller.is_collapsed" title="click to toggle content">
+                        <span ng-hide="document_details_fieldset_controller.is_collapsed" class="glyphicon glyphicon-triangle-bottom"></span>
+                        <span ng-show="document_details_fieldset_controller.is_collapsed" class="glyphicon glyphicon-triangle-right"></span>
+                        Document Details:&nbsp;
+                    </legend>
+                    <div class="fieldset_content" ng-hide="document_details_fieldset_controller.is_collapsed">
 
-            {% endif %}  {# /field.name != "order" #}
+                        <div class="documentation">
+                            This section contains information relating to the document itself.  This will affect the look-and-feel of the editor form being customized.
+                        </div>
 
-        </div>
-    {% endfor %} {# /field #}
+                        {% for field in form.document_fields %}
+                            <div class="row {% cycle 'odd' 'even' %}">
+                                {% include 'questionnaire/_q_customize_field.html' %}
+                            </div>
+                        {% endfor %} {# /field #}
 
-</form>
+                    </div>  <!-- /.fieldset_content -->
+                </fieldset>
+            </div>  <!-- /document_fields -->
+            <br/>
+
+        </form>
+
+        {% include 'questionnaire/_q_customize_properties.html' %}
+
+    </div>  <!-- /.panel-body -->
+</div>  <!-- /.panel -->

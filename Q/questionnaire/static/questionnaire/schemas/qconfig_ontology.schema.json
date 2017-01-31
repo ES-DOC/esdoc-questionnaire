@@ -1,6 +1,6 @@
 {
-  "title": "CIM2",
-  "description": "Schema for CIM2 Ontology",
+  "title": "QConfig",
+  "description": "Schema for CIM2 Ontology (works w/ a specialization or a schema) defined for use in the ES-DOC Questionnaire",
   "type": "object",
   "properties": {
     "name": {
@@ -15,158 +15,242 @@
     "ontology_type": {
       "type": "string"
     },
+    "ontology_base": {
+      "type": "string"
+    },
     "date": {
       "type": "string"
     },
     "classes": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "properties": {
-          "name": {
+      "type": "object",
+      "properties": {
+        "inherited": {
+          "type": "array",
+          "items": {
             "type": "string"
           },
-          "package": {
+          "uniqueItems": true
+        },
+        "excluded": {
+          "type": "array",
+          "items": {
             "type": "string"
           },
-          "is_document": {
-            "type": "boolean"
-          },
-          "is_meta": {
-            "type": "boolean"
-          },
-          "documentation": {
-            "type": "string"
-          },
-          "label": {
+          "uniqueItems": true
+        },
+        "defined": {
+          "type": "array",
+          "items": {
             "type": "object",
             "properties": {
-              "text": {
+              "name": {
                 "type": "string"
               },
-              "fields": {
-                "type": "array",
-                "items": {
-                  "type": "string"
-                }
-              }
-            }
-          },
-          "properties": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "name": {
-                  "type": "string"
-                },
-                "package": {
-                  "type": "string"
-                },
-                "is_meta": {
-                  "type": "boolean"
-                },
-                "documentation": {
-                  "type": "string"
-                },
-                "cardinality": {
-                  "type": "string"
-                },
-                "is_nillable": {
-                  "type": "boolean"
-                },
-                "property_type": {
-                  "type": "string"
-                },
-                "atomic_type": {
-                  "type": "string"
-                },
-                "enumeration_target": {
-                  "type": "string"
-                },
-                "enumeration_is_open": {
-                  "type": "boolean"
-                },
-                "relationship_targets": {
-                  "type": "array",
-                  "items": {
+              "package": {
+                "type": "string"
+              },
+              "id": {
+                "type": "string"
+              },
+              "is_document": {
+                "type": "boolean"
+              },
+              "is_meta": {
+                "type": "boolean"
+              },
+              "documentation": {
+                "type": "string"
+              },
+              "label": {
+                "type": "object",
+                "properties": {
+                  "text": {
                     "type": "string"
                   },
-                  "uniqueItems": true
+                  "fields": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
                 }
               },
-              "additionalProperties": false,
-              "required": [
-                "name",
-                "package",
-                "is_meta",
-                "cardinality",
-                "is_nillable",
-                "property_type"
-              ]
-            }
-          }
-        },
-        "additionalProperties": false,
-        "required": [
-          "name",
-          "package",
-          "is_document",
-          "is_meta"
-        ]
-
-      }
-    },
-    "enums": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string"
-          },
-          "package": {
-            "type": "string"
-          },
-          "documentation": {
-            "type": "string"
-          },
-          "members": {
-            "type": "array",
-            "items": {
-              "type": "object",
+              "categories": {
+                "type": "object",
+                "properties": {
+                  "inherited": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "uniqueItems": true
+                  },
+                  "excluded": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "uniqueItems": true
+                  },
+                  "defined": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string"
+                        },
+                        "id": {
+                          "type": "string"
+                        },
+                        "documentation": {
+                          "type": "string"
+                        }
+                      },
+                      "additionalProperties": false,
+                      "required": [
+                        "name",
+                        "id"
+                      ]
+                    }
+                  }
+                },
+                "additionalProperties": false,
+                "required": [
+                  "inherited",
+                  "excluded",
+                  "defined"
+                ]
+              },
               "properties": {
-                "value": {
-                  "type": "string"
+                "type": "object",
+                "properties": {
+                  "inherited": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "uniqueItems": true
+                  },
+                  "excluded": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "uniqueItems": true
+                  },
+                  "defined": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string"
+                        },
+                        "id": {
+                          "type": "string"
+                        },
+                        "is_meta": {
+                          "type": "boolean"
+                        },
+                        "documentation": {
+                          "type": "string"
+                        },
+                        "category_id": {
+                          "type": "string"
+                        },
+                        "cardinality": {
+                          "type": "string"
+                        },
+                        "is_nillable": {
+                          "type": "boolean"
+                        },
+                        "property_type": {
+                          "type": "string"
+                        },
+                        "atomic_type": {
+                          "type": "string"
+                        },
+                        "enumeration_is_open": {
+                          "type": "boolean"
+                        },
+                        "enumeration_members": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "value": {
+                                "type": "string"
+                              },
+                              "order": {
+                                "type": "number"
+                              },
+                              "documentation": {
+                                "type": "string"
+                              }
+                            },
+                            "additionalProperties": false,
+                            "required": [
+                              "value",
+                              "order"
+                            ]
+                          }
+                        },
+                        "relationship_targets": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          },
+                          "uniqueItems": true
+                        },
+                        "values": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "is_hierarchical": {
+                          "type": "boolean"
+                        }
+                      },
+                      "additionalProperties": false,
+                      "required": [
+                        "name",
+                        "property_type"
+                      ]
+                    }
+                  }
                 },
-                "order": {
-                  "type": "number"
-                },
-                "documentation": {
-                  "type": "string"
-                }
-              },
-              "additionalProperties": false,
-              "required": [
-                "value",
-                "order"
-              ]
-            }
+                "additionalProperties": false,
+                "required": [
+                  "inherited",
+                  "excluded",
+                  "defined"
+                ]
+              }
+            },
+            "additionalProperties": false,
+            "required": [
+              "name",
+              "package",
+              "categories",
+              "properties"
+            ]
           }
-        },
-        "additionalProperties": false,
-        "required": [
-          "name",
-          "package"
-        ]
-      }
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "inherited",
+        "excluded",
+        "defined"
+      ]
     }
   },
   "additionalProperties": false,
   "required": [
     "name",
     "version",
-    "ontology_type",
-    "classes"
+    "ontology_type"
   ]
 }

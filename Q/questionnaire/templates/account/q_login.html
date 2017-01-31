@@ -14,7 +14,6 @@
 
 {% block scripts %}
     {{ block.super }}
-    <script type="text/javascript" src="{% static 'questionnaire/js/q_ng_index.js' %}"></script>
     <script language="JavaScript">
         $(document).ready(
             function() {
@@ -39,6 +38,8 @@
     </div> <!-- /#title -->
 
     <div class="documentation">
+        Please use this form to sign into the ES-DOC Questionnaire.
+        <p>Need an account?  Then please <a href="{% url 'account_signup' %}">sign up</a>.</p>
         <p class="info">For the best experience, please use Firefox or Chrome.  These are the browsers we support.</p>
     </div>
 
@@ -46,6 +47,10 @@
 
         {% csrf_token %}
         {% render_honeypot_field %}
+
+        {# the Q tends to explicitly store this item on the request object #}
+        {# but allauth embeds it in forms like this #}
+        <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}" />
 
         <table class="table">
             {% if form.non_field_errors %}

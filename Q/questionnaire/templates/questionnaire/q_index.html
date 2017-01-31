@@ -1,6 +1,6 @@
 {# index.html #}
 
-{% extends "things/base.html" %}
+{% extends "questionnaire/q_base.html" %}
 
 {% load staticfiles %}
 {% load compress %}
@@ -11,8 +11,7 @@
 
 {% block scripts %}
     {{ block.super }}
-    <script type="text/javascript" src="{% static 'things/js/q_ng_base.js' %}"></script>
-    <script type="text/javascript" src="{% static 'things/js/q_ng_editor.js' %}"></script>
+    <script type="text/javascript" src="{% static 'questionnaire/js/q_ng_index.js' %}"></script>
     <script language="JavaScript">
 
         var session_key = "{{ session_key }}";
@@ -27,8 +26,6 @@
 
                 var parent = document.body;
                 init_widgets(helps, $(parent).find(".help"));
-                init_widgets(splitters, $(parent).find(".splitter"));
-
             }
         );
 
@@ -36,41 +33,50 @@
 {% endblock %}  {# /scripts #}
 
 {% block content %}
-    <div ng-app="q_editor">
-        <div ng-controller="EditorController as editor_controller">
+    <div ng-app="q_index">
+        <div ng-controller="IndexController as index_controller">
 
-            <div class="splitter">
-                <div class="panel panel-info">
+            <div class="row">
+                <div class="col-lg-10 col-lg-offset-1 col-md-10 col-md-offset-1">
 
-                    <tree nodes="hierarchy">here is some text to be replaced</tree>
+                    <div class="title">
+                        Welcome to the ES-DOC Questionnaire
+                    </div> <!-- /.title -->
 
-                </div>
-                <div class="panel panel-info">
+                    <div class="documentation">
 
-              <a href="#" class="btn btn-default">Default</a>
-              <a href="#" class="btn btn-primary">Primary</a>
-              <a href="#" class="btn btn-success">Success</a>
-              <a href="#" class="btn btn-info">Info</a>
-              <a href="#" class="btn btn-warning">Warning</a>
-              <a href="#" class="btn btn-danger">Danger</a>
-              <a href="#" class="btn btn-link">Link</a>
+                        <p>The ES-DOC Questionnaire provides an editor for creating complex CIM Documents for particular Earth Science projects. Once published, those documents can be viewed and manipulated by other ES-DOC tools.</p>
 
+                        <p>If you are seeing this page, then you have not selected a project. Please select from the available projects below. Depending on the project, you may have to login to proceed.</p>
+
+                        <p>Alternatively, click on the following links for more information:</p>
+                            <ul class="voffset-4">
+                                <li><a target="_blank" href="{% url 'help' %}" title="detailed information about how to use the Questionnaire"><b>ES-DOC Questionnaire help</b></a>&nbsp;&nbsp;</li>
+                                <li><a target="_blank" href="/feed" title="a listing of CIM Documents that have already been published"><b>ES-DOC Questionnaire Published Document Feed</b></a>&nbsp;&nbsp;</li>
+                            </ul>
+
+                    </div> <!-- /.documentation -->
+
+                    <div class="list-group large" id="projects">
+                        <span class="list-group-item active">
+                            Active Questionnaire Projects:&nbsp;
+                            <span class="small">(click to view)</span>
+                        </span>
+                        {% verbatim ng %}
+                            <a class="list-group-item project" href="/{{ project.name }}" ng-repeat="project in index_controller.projects">
+                                <strong>{{ project.title }}</strong>
+                                <span class="documentation small">{{ project.description }}</span>
+                            </a>
+                            <span class="documentation" ng-hide="index_controller.projects.length">
+                                <!-- only show this part if the projects array is emtpy -->
+                                No projects found
+                            </span>
+                        {% endverbatim ng %}
+                    </div> <!-- /.list-group -->
 
                 </div>
             </div>
 
-
-            {# ########################################## #}
-            {# TODO: DELETE THIS BIT ONCE CODE IS WORKING #}
-
-                <div class="row">
-                    <button class="btn btn-danger btn-xs pull-right" title="print ng scope to console" ng-click="print_stuff()">
-                        <span class="glyphicon glyphicon-cog"></span>
-                    </button>
-                </div>
-
-            {# ########################################## #}
-
         </div>
-    </div>  <!-- /ng-app=q_editor -->
+    </div>  <!-- /ng-app=q_index -->
 {% endblock %}  {# /content #}

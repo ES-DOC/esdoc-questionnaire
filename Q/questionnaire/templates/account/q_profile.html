@@ -4,7 +4,7 @@
 
 {% load staticfiles %}
 {% load compress %}
-{% load honeypot %}
+{% load q_tags %}
 
 {% load url from future %}
 
@@ -14,7 +14,6 @@
 
 {% block scripts %}
     {{ block.super }}
-    <script type="text/javascript" src="{% static 'questionnaire/js/q_ng_index.js' %}"></script>
     <script language="JavaScript">
         $(document).ready(
             function() {
@@ -25,15 +24,140 @@
     </script>
 {% endblock %}  {# /scripts #}
 
+{% block user %}
+    {{ block.super }}
+{% endblock %}  {# /user #}
+
 {% block content %}
 
-<div class="row">
-<div class="col-lg-8 col-lg-offset-2 col-md-8 col-md-offset-2">
+<fieldset {% if read_only %} disabled="true" {% endif %}>
 
-I am a profile
+    <form method="POST" action="{% url 'account_email' %}" class="email_list">
 
-</div>
-</div>
+    {% csrf_token %}
 
+    <div class="row">
+
+        <div class="col-lg-8 col-lg-offset-2 col-md-8 col-md-offset-2">
+
+            <div class="title">
+                ES-DOC Questionnaire User
+            </div> <!-- /#title -->
+
+            <p>
+                Information about the ES-DOC user: <strong>{{user}}</strong>
+            </p>
+
+            {% if not read_only %}
+                {% if not is_verified %}
+                    <table>
+                        <tr valign="middle">
+                            <td>
+                                <span class="glyphicon glyphicon-warning-sign"></span>
+                            </td>
+                            <td>
+                                &nbsp;This email address has not yet been verified.  The user may be unable to access certain resources.
+                                <br/>
+                                &nbsp;
+                                <input type="submit" name="action_send" value="resend verification" class="btn btn-xs btn-info"/>
+                            </td>
+                        </tr>
+                    </table>
+                {% else %}
+                    <p>
+                        <a href="{% url 'account_email' %}">change email</a>
+                    </p>
+                {% endif %}  {# /is_verified #}
+                {% if request.user == user %}
+                    <p>
+                        <a href="{% url 'account_change_password' %}">change password</a>
+                    </p>
+                {% endif %}  {# /request.user == user #}
+            {% endif %}  {# /not read_only #}
+
+
+            <div class="row">
+
+                <div class="col-lg-5 col-md-5">
+
+                    <table class="table">
+                        {% if form.non_field_errors %}
+                            <tr>
+                                <td colspan="3">
+                                    <div class="error_wrapper alert alert-danger" role="alert">
+                                        {{ form.non_field_errors }}
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endif %}
+                        {% for field in form %}
+                            <tr class="{% cycle 'odd' 'even' %}">
+                                <td>
+                                    {% with help_text=field.help_text %}
+                                        {% if help_text %}
+                                            {% include 'questionnaire/_q_help.html' %}
+                                        {% endif %} {# /help_text #}
+                                    {% endwith %} {# /help_text #}
+                                </td>
+                                <td>
+                                    <span class="required">{{ field.label }}:&nbsp;</span>
+                                </td>
+                                <td>
+                                    {{ field }}
+                                    {% if field.errors %}
+                                        {% include 'questionnaire/_q_error.html' %}
+                                    {% endif %} {# / field.errors #}
+                                </td>
+                            </tr>
+                        {% endfor %} {# /field #}
+                    </table>
+
+                    {% if not read_only %}
+                        <div class="submit">
+                            <input type="submit" value="update" class="btn btn-primary"/>
+                        </div> <!-- /.submit -->
+                    {% endif %}  {# /read_only #}
+
+                </div>  <!-- /col -->
+
+                <div class="col-lg-5 col-lg-offset-2 col-md-5 col-md-offset-2">
+
+                   <div class="list-group small">
+                        <span class="list-group-item active">Project Affiliations:</span>
+                        {% if projects.count %}
+                            {% for project in projects %}
+                                <li class="list-group-item">
+                                    <span class="badge">
+                                        {% if user|is_admin_of:project %}
+                                            admin
+                                        {% elif user|is_user_of:project %}
+                                            user
+                                        {% else %}
+                                            member
+                                        {% endif %}
+                                    </span>
+                                    <a href="/{{ project.name }}">
+                                        {{ project.title }}
+                                    </a>
+                                </li>
+                            {% endfor %} {# /project #}
+                        {% else %}
+                            <li class="list-group-item">
+                                <span class="documentation text-muted">No project affiliations found.</span>
+                            </li>
+                        {% endif %}
+                    </div> <!-- /.list-group -->
+
+                </div>  <!-- /col -->
+
+            </div>  <!-- /row -->
+
+        </div>  <!-- /col -->
+
+    </div>  <!-- /row -->
+
+    </form>
+
+</fieldset>
 
 {% endblock %}  {# /content #}

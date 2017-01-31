@@ -1,6 +1,6 @@
 ####################
 #   ES-DOC CIM Questionnaire
-#   Copyright (c) 2016 ES-DOC. All rights reserved.
+#   Copyright (c) 2017 ES-DOC. All rights reserved.
 #
 #   University of Colorado, Boulder
 #   http://cires.colorado.edu/
@@ -8,11 +8,11 @@
 #   This project is distributed according to the terms of the MIT license [http://www.opensource.org/licenses/MIT].
 ####################
 
-__author__ = 'allyn.treshansky'
-
 from rest_framework import serializers
-from Q.questionnaire.models.models_realizations import QModel
+
 from Q.questionnaire.models.models_customizations import QModelCustomization
+from Q.questionnaire.models.models_realizations import QModelRealization
+from Q.questionnaire.serializers.serializers_base import QVersionSerializerField
 
 
 class QModelCustomizationSerializerLite(serializers.ModelSerializer):
@@ -26,22 +26,19 @@ class QModelCustomizationSerializerLite(serializers.ModelSerializer):
     class Meta:
         model = QModelCustomization
         fields = (
-            "id", "guid", "created", "modified", "name",
-            "description", "ontology", "proxy", "project", "is_default",
-            "synchronization", "path",
+            "id", "key", "created", "modified",
+            "name", "documentation", "proxy", "project", "is_default",
+            "path", "ontology", "synchronization",
         )
 
-    # these relationships use StringRelatedField, which means it returns the __unicode__ fn
-    ontology = serializers.StringRelatedField(read_only=True)
     proxy = serializers.StringRelatedField(read_only=True)
-
+    path = serializers.SerializerMethodField()  # method_name="get_path"
+    ontology = serializers.SerializerMethodField()  # method_name="get_ontology"
     synchronization = serializers.SlugRelatedField(
         many=True,
         read_only=True,
         slug_field="type",
     )
-
-    path = serializers.SerializerMethodField()  # method_name="get_path"
 
     def get_path(self, obj):
         """
@@ -51,7 +48,7 @@ class QModelCustomizationSerializerLite(serializers.ModelSerializer):
         :return:
         """
         # project_name = obj.project.name.lower()
-        ontology_key = obj.ontology.get_key().lower()
+        ontology_key = obj.proxy.ontology.key
         document_type = obj.proxy.name.lower()
         path = "{0}/{1}/{2}".format(
             ontology_key,
@@ -59,6 +56,9 @@ class QModelCustomizationSerializerLite(serializers.ModelSerializer):
             obj.name,
         )
         return path
+
+    def get_ontology(self, obj):
+        return str(obj.proxy.ontology)
 
 
 class QModelRealizationSerializerLite(serializers.ModelSerializer):
@@ -70,18 +70,18 @@ class QModelRealizationSerializerLite(serializers.ModelSerializer):
     """
 
     class Meta:
-        model = QModel
+        model = QModelRealization
         fields = (
-            "id", "guid", "created", "modified", "is_published", "is_complete", "is_active",
-            "description", "version", "ontology", "proxy", "project",
-            "last_published", "synchronization", "path",
+            "id", "key", "created", "modified",
+            "project", "proxy", "label", "is_complete", "is_published", "is_root", "version", "is_active",
+            "last_published", "path", "ontology", "synchronization",
         )
 
-    # these relationships use StringRelatedField, which means it returns the __unicode__ fn
-    ontology = serializers.StringRelatedField(read_only=True)
     proxy = serializers.StringRelatedField(read_only=True)
-
-    version = serializers.SerializerMethodField(read_only=True)  # name="get_version"
+    version = QVersionSerializerField()
+    last_published = serializers.SerializerMethodField()
+    path = serializers.SerializerMethodField()
+    ontology = serializers.SerializerMethodField()
 
     synchronization = serializers.SlugRelatedField(
         many=True,
@@ -89,23 +89,11 @@ class QModelRealizationSerializerLite(serializers.ModelSerializer):
         slug_field="type",
     )
 
-    path = serializers.SerializerMethodField()  # method_name="get_path"
-    last_published = serializers.SerializerMethodField()  # method_name="get_last_published"
-    # is_complete = serializers.SerializerMethodField()  # method_name="get_is_complete"
-
-    def get_version(self, obj):
-        """
-        returns a nicely formated version field to display on the project page
-        (recall that for documents, I only care about major & minor versions - not patch versions)
-        :param obj:
-        :return:
-        """
-        if not obj.version:
-            return None
-        return "{0}.{1}".format(
-            obj.get_version_major(),
-            obj.get_version_minor(),
-        )
+    def get_last_published(self, obj):
+        if obj.is_published:
+            last_publication = obj.publications.order_by("modified").last()
+            return last_publication.modified
+        return None
 
     def get_path(self, obj):
         """
@@ -115,7 +103,7 @@ class QModelRealizationSerializerLite(serializers.ModelSerializer):
         :return:
         """
         # project_name = obj.project.name.lower()
-        ontology_key = obj.ontology.get_key().lower()
+        ontology_key = obj.proxy.ontology.key
         document_type = obj.proxy.name.lower()
         path = "{0}/{1}/{2}".format(
             ontology_key,
@@ -124,25 +112,5 @@ class QModelRealizationSerializerLite(serializers.ModelSerializer):
         )
         return path
 
-    def get_last_published(self, obj):
-        """
-        returns the date of publication of the last publication created based on this realization
-        :param obj:
-        :return:
-        """
-        if obj.is_published:
-            last_publication = obj.publications.order_by("modified").last()
-            return last_publication.modified
-        return None
-
-    # def get_is_complete(self, obj):
-    #     """
-    #     returns whether or not the obj is complete;
-    #     only complete objects can be published
-    #     :param obj:
-    #     :return:
-    #     """
-    #     # strictly speaking, this fn is not needed b/c DRF is clever enough
-    #     # to call a fn w/ the same name as a corresponding serialization field name
-    #     # ...but I am pedantic
-    #     return obj.is_complete()
+    def get_ontology(self, obj):
+        return str(obj.proxy.ontology)

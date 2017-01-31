@@ -1,19 +1,20 @@
-__author__ = 'allyn.treshansky'
+####################
+#   ES-DOC CIM Questionnaire
+#   Copyright (c) 2017 ES-DOC. All rights reserved.
+#
+#   University of Colorado, Boulder
+#   http://cires.colorado.edu/
+#
+#   This project is distributed according to the terms of the MIT license [http://www.opensource.org/licenses/MIT].
+####################
 
 from django.db import models
-from django.contrib import messages
 from django.conf import settings
-from django.dispatch import Signal
-
-from lxml import etree as et
-from uuid import uuid4
 import os
-import re
 
 from Q.questionnaire import APP_LABEL, q_logger
-from Q.questionnaire.q_fields import QFileField, QVersionField, QAtomicPropertyTypes
-from Q.questionnaire.models.models_proxies import QModelProxy, QPropertyProxy
-from Q.questionnaire.q_utils import QError, EnumeratedType, EnumeratedTypeList, Version, validate_file_extension, validate_file_schema, validate_no_spaces, validate_no_bad_chars, xpath_fix, remove_spaces_and_linebreaks, get_index
+from Q.questionnaire.q_fields import QVersionField
+from Q.questionnaire.q_utils import EnumeratedType, EnumeratedTypeList
 from Q.questionnaire.q_constants import *
 
 
@@ -23,6 +24,7 @@ from Q.questionnaire.q_constants import *
 
 PUBLICATION_UPLOAD_DIR = "publications"
 PUBLICATION_UPLOAD_PATH = os.path.join(APP_LABEL, PUBLICATION_UPLOAD_DIR)
+
 
 class QPublicactionFormat(EnumeratedType):
 
@@ -54,7 +56,7 @@ class QPublication(models.Model):
 
     format = models.CharField(max_length=LIL_STRING, blank=False, choices=[(pf.get_type(), pf.get_name()) for pf in QPublicationFormats])
 
-    model = models.ForeignKey("QModel", blank=False, null=False, related_name="publications")
+    model = models.ForeignKey("QModelRealization", blank=False, null=False, related_name="publications")
 
     content = models.TextField()
 

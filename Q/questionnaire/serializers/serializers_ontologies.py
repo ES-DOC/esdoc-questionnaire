@@ -1,6 +1,6 @@
 ####################
 #   ES-DOC CIM Questionnaire
-#   Copyright (c) 2016 ES-DOC. All rights reserved.
+#   Copyright (c) 2017 ES-DOC. All rights reserved.
 #
 #   University of Colorado, Boulder
 #   http://cires.colorado.edu/
@@ -8,34 +8,58 @@
 #   This project is distributed according to the terms of the MIT license [http://www.opensource.org/licenses/MIT].
 ####################
 
-__author__ = 'allyn.treshansky'
-
+from django.core.exceptions import ValidationError as DjangoValidationError
+from rest_framework.exceptions import ValidationError as RestValidationError
 from rest_framework import serializers
+from uuid import UUID as generate_uuid
 
+from Q.questionnaire.serializers.serializers_base import QListSerializer, QSerializer, QVersionSerializerField
 from Q.questionnaire.models.models_ontologies import QOntology
-from Q.questionnaire.q_constants import SUPPORTED_DOCUMENTS
+from Q.questionnaire.q_utils import serialize_model_to_dict
+from Q.questionnaire.q_constants import *
 
-# this is a pretty stripped-down serializer
-# but it's only needed for the Project Page
-# (to populate the "create new document/customization" widgets)
 
-class QOntologySerializer(serializers.ModelSerializer):
+################
+# base classes #
+################
+
+
+class QOntologySerializer(QSerializer):
 
     class Meta:
         model = QOntology
         fields = (
-            "id", "guid", "created", "modified",
-            "name", "version", "url", "key", "description", "is_registered",
-            "file", "categorization", "ontology_type",
-            "title", "document_types"
+            'id',
+            'name',
+            'version',
+            'documentation',
+            'file',
+            'title',
+            "url",
+            'created',
+            'modified',
+            'ontology_type',
+            'is_registered',
+            'is_active',
+            'key',
+            'document_types',
         )
+      
+        # there is no need to explicitly add QUniqueTogetherValidator
+        # b/c that is done automatically in "QSerializer.get_unique_together_validators()"
+        # validators = [
+        #     QUniqueTogetherValidator(
+        #         queryset=QModelCustomization.objects.all(),
+        #         # fields=('name', 'version'),
+        #     )
+        # ]
 
+    version = QVersionSerializerField()
     title = serializers.SerializerMethodField()  # method_name="get_title"
-#    projects = serializers.SerializerMethodField(method_name="get_supported_projects")
     document_types = serializers.SerializerMethodField(method_name="get_supported_document_types")
 
     def get_title(self, obj):
-        return str(obj)  # the __str__ method already does what I want, so just convert obj to a string
+        return str(obj)
 
     def get_supported_document_types(self, obj):
         """
@@ -45,25 +69,17 @@ class QOntologySerializer(serializers.ModelSerializer):
         :return:
         """
         supported_document_model_proxies = obj.model_proxies.filter(
-            stereotype__iexact="document",
+            is_document=True,
             name__iregex=r'(' + '|'.join(["^{0}$".format(sd) for sd in SUPPORTED_DOCUMENTS["CIM2"]]) + ')',
         ).order_by("name")
         return [
-            {
-                "id": model_proxy.pk,
-                "name": model_proxy.name.lower(),
-                "title": str(model_proxy),
-                # "ontology_id": obj.pk,
-            }
+            serialize_model_to_dict(
+                model_proxy,
+                include={
+                    "title": str(model_proxy),
+                    "name": model_proxy.name.lower()
+                },
+                exclude=["guid", "created", "modified", "ontology"]
+            )
             for model_proxy in supported_document_model_proxies
         ]
-
-#    def get_supported_projects(self, obj):
-#        """
-#        returns the ids of the projects that support this ontology
-#        (recall that QProject has a "through" model w/ QProjectOntology representing that relationship)
-#        (this works off of the reverse of that m2m field)
-#        :param obj:
-#        :return:
-#        """
-#        return obj.qproject_set.values_list("id", flat=True)

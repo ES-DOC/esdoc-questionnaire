@@ -1,21 +1,12 @@
 ####################
 #   ES-DOC CIM Questionnaire
-#   Copyright (c) 2016 ES-DOC. All rights reserved.
+#   Copyright (c) 2017 ES-DOC. All rights reserved.
 #
 #   University of Colorado, Boulder
 #   http://cires.colorado.edu/
 #
 #   This project is distributed according to the terms of the MIT license [http://www.opensource.org/licenses/MIT].
 ####################
-
-__author__ = "allyn.treshansky"
-
-"""
-.. module:: __init__
-
-init module for "questionnaire" application.
-deals w/ version info and other stuff.
-"""
 
 import logging
 
@@ -38,8 +29,8 @@ q_logger = logging.getLogger(APP_LABEL)
 
 __version_info__ = {
     'major': 0.16,
-    'minor': 0,
-    'patch': 1,
+    'minor': 1,
+    'patch': 0,
 }
 
 

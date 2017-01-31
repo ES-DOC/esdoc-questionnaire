@@ -1,6 +1,6 @@
 ####################
 #   ES-DOC CIM Questionnaire
-#   Copyright (c) 2016 ES-DOC. All rights reserved.
+#   Copyright (c) 2017 ES-DOC. All rights reserved.
 #
 #   University of Colorado, Boulder
 #   http://cires.colorado.edu/
@@ -8,25 +8,21 @@
 #   This project is distributed according to the terms of the MIT license [http://www.opensource.org/licenses/MIT].
 ####################
 
-__author__ = 'allyn.treshansky'
-
-
-from django.core.exceptions import ValidationError as DjangoValidationError, ObjectDoesNotExist
+from django.core.exceptions import ObjectDoesNotExist, ValidationError as DjangoValidationError
 from django.db.models.fields.related import RelatedField
 from django.utils.translation import ugettext_lazy as _
 
 from rest_framework import serializers
-from rest_framework.serializers import ModelSerializer, ListSerializer, Field as SerializerField, LIST_SERIALIZER_KWARGS
-from rest_framework.relations import MANY_RELATION_KWARGS, ManyRelatedField
+from rest_framework.serializers import ModelSerializer, ListSerializer, Field as SerializerField
 from rest_framework.validators import UniqueTogetherValidator
 from rest_framework.exceptions import ValidationError
-from rest_framework.fields import empty
 
-from Q.questionnaire.q_utils import QError, Version, pretty_string
+from Q.questionnaire.q_utils import QError, Version, pretty_string, legacy_code
 
 ################################
 # custom serializer validators #
 ################################
+
 
 class QUniqueTogetherValidator(UniqueTogetherValidator):
     """
@@ -127,64 +123,10 @@ class QUniqueTogetherValidator(UniqueTogetherValidator):
 # custom serializer fields #
 ############################
 
-# defining these outside of the SerializerField class
-# b/c I want to use this same functionality when I serialize the _cached_ realizations
-# (this happens outside of DRF (see "models_realizations.py#serialize_new_realizations"))
-
-
-def enumeration_serialization_to_enumeration_field(serialized_value):
-    if isinstance(serialized_value, list):
-        field_value = "|".join(serialized_value)
-        # field_value = "|".join([v for v in serialized_value if v])  # this removes empty strings from the list
-    elif isinstance(serialized_value, basestring):
-        field_value = serialized_value
-    return field_value
-
-
-def enumeration_field_to_enumeration_serialization(field_value):
-    if isinstance(field_value, list):
-        serialized_value = field_value
-        # serialized_value = [v for v in field_value if v]  # this removes empty strings from list
-    else:
-        try:
-            serialized_value = field_value.split('|')
-        except:
-            serialized_value = []
-    return serialized_value
-
-
-class QEnumerationSerializerField(SerializerField):
-    """
-    model QEnumerationField is based on a TextField
-    but QEnumerationFormField correctly deals w/ lists
-    however, I need to ensure that the output of the _serializer_ fields
-    converts the text back into a list (the underlying model field will store it as text)
-    """
-
-    # TODO: I EXPECTED THIS TO SAVE ENUMERATIONS AS "one|two|three"
-    # TODO: BUT IT SAVES THEM AS "[u'one', u'two', u'three']"
-    # TODO: ALL THE SURROUNDING CODE SEEMS TO WORK, SO DOES IT REALLY MATTER?
-
-    def to_representation(self, obj):
-        return enumeration_serialization_to_enumeration_field(obj)
-
-    def to_internal_value(self, data):
-        return enumeration_field_to_enumeration_serialization(data)
-
-
-def what_QVersionSerializerField_used_to_do(serialized_value):
-    if isinstance(serialized_value, Version):
-        return serialized_value.fully_specified()
-    else:
-        # TODO: JUST DOUBLE-CHECKING THINGS HERE, I'M NOT ENTIRELY CLEAR ON THE ORDER THAT THINGS GET SERIALIZED...
-        # (it seems that it varies based on whether this is a new or existing model)
-        assert isinstance(serialized_value, int)
-        return Version.int_to_string(serialized_value)
-
 
 class QVersionSerializerField(SerializerField):
     """
-    as above, QVersionField is based on an IntegerField
+    QVersionField is based on an IntegerField
     but the client deals w/ strings
     so make sure I convert them appropriately
     """
@@ -193,6 +135,10 @@ class QVersionSerializerField(SerializerField):
         # given a Pythonic representation of a version, return a serialized representation
         assert isinstance(obj, Version)
         return obj.fully_specified()
+        # if isinstance(obj, Version):
+        #     return obj.fully_specified()
+        # if isinstance(obj, basestring):
+        #     return Version(obj).fully_specified()
 
     def to_internal_value(self, data):
         # given a serialized representation of a version, return a Pythonic representation
@@ -206,16 +152,11 @@ class QVersionSerializerField(SerializerField):
         return Version(Version.int_to_string(data))
 
 
-Q_MANY_RELATION_KWARGS = MANY_RELATION_KWARGS + ("manager",)
-
-# TODO: THE FACT THAT THIS USES A MANAGER IS NO LONGER RELEVANT
-# TODO: SO CHANGE IT'S NAME ACCORDINGLY
-
-class QManagedRelatedField(serializers.RelatedField):
+class QRelatedSerializerField(serializers.RelatedField):
 
     def __init__(self, **kwargs):
-        manager = kwargs.pop("manager", None)
-        super(QManagedRelatedField, self).__init__(**kwargs)
+        manager = kwargs.pop("manager")
+        super(QRelatedSerializerField, self).__init__(**kwargs)
         self.manager = manager
 
     @classmethod
@@ -237,30 +178,26 @@ class QManagedRelatedField(serializers.RelatedField):
         """
         # list_kwargs = {'child_relation': cls(*args, **kwargs)}
         # for key in kwargs.keys():
-        #     if key in Q_MANY_RELATION_KWARGS:
+        #     if key in MANY_RELATION_KWARGS:
         #         list_kwargs[key] = kwargs[key]
-        # many_related_field = QManyManagedRelatedField(**list_kwargs)
-        # return many_related_field
+        # return ManyRelatedField(**list_kwargs)
         list_kwargs = {'child': cls(*args, **kwargs)}
-        meta = getattr(cls, 'Meta', None)
-        list_serializer_class = getattr(meta, 'list_serializer_class', ListSerializer)
+        list_serializer_class = getattr(cls.Meta, 'list_serializer_class', ListSerializer)
         return list_serializer_class(*args, **list_kwargs)
+
+    # these abstract methods are implemented in the fields that inherit from QRelatedSerializerField, like QCustomizationRelatedField
+    # def to_representation(self, value):
+    #     pass
+    #
+    # def to_internal_value(self, data):
+    #     pass
 
 ######################
 # custom serializers #
 ######################
 
-class QListSerializer(ListSerializer):
 
-    # THIS IS NO LONGER NEEDED B/C "instance" IS SET IN "QSerializer.to_internal_value" BELOW
-    # def bind(self, field_name, parent):
-    #     super(QListSerializer, self).bind(field_name, parent)
-    #     if hasattr(parent, "initial_data"):
-    #         initial_list_data = parent.initial_data.get(field_name)
-    #         if initial_list_data:
-    #             self.initial_data = (child_data for child_data in initial_list_data)  # this is a generator so I can access the initial data of each child in turn via "next()"
-    #         else:
-    #             self.initial_data = None
+class QListSerializer(ListSerializer):
 
     def create(self, validated_data):
         return [self.child.create(attrs) for attrs in validated_data]
@@ -279,9 +216,8 @@ class QListSerializer(ListSerializer):
         }
 
         data_mapping = {
-            # data['id']: data
             # just in-case I am dealing w/ unsaved data,
-            # use the 'id' fn to come up w/ a key that won't conflict w/ 'instance_mapping' or anything else in 'data_mapping'
+            # use the built-in 'id' fn to come up w/ a key that won't conflict w/ 'instance_mapping' or anything else in 'data_mapping'
             data.get('id', id(data)): data
             for data in validated_data
         }
@@ -310,6 +246,7 @@ class QSerializer(ModelSerializer):
     def get_model(self):
         return self.Meta.model
 
+    @legacy_code
     def remove_superfluous_data(self, data_dict):
         """
         gets rid of any fields in the serializer's data
@@ -321,45 +258,24 @@ class QSerializer(ModelSerializer):
                 data_dict.pop(field_name)
         return data_dict
 
-    def is_valid(self, *args, **kwargs):
-        # I MAY WANT TO OVERRIDE THIS FOR CUSTOM VALIDATION
-        # import ipdb; ipdb.set_trace()
-        return super(QSerializer, self).is_valid(*args, **kwargs)
-
-    def validate(self, attrs):
-        # I MAY WANT TO OVERRIDE THIS FOR CUSTOM VALIDATION
-        # import ipdb; ipdb.set_trace()
-        return super(QSerializer, self).validate(attrs)
-
-    def run_validation(self, data=empty):
-        # I MAY WANT TO OVERRIDE THIS FOR CUSTOM VALIDATION
-        # import ipdb; ipdb.set_trace()
-        return super(QSerializer, self).run_validation(data)
-    #     """
-    #     This is just like the parent class 'run_validation' fn,
-    #     except it goes ahead and completes validation on all fields even if there is an exception
-    #     This allows all errors to be rendered nicely in the templates
-    #     """
-    #     (is_empty_value, data) = self.validate_empty_values(data)
-    #     if is_empty_value:
-    #         return data
+    # def is_valid(self, *args, **kwargs):
+    #     # I MAY WANT TO OVERRIDE THIS FOR CUSTOM VALIDATION
+    #     # import ipdb; ipdb.set_trace()
+    #     return super(QSerializer, self).is_valid(*args, **kwargs)
     #
-    #     value = self.to_internal_value(data)
-    #     try:
-    #         # HERE IS WHAT I WOULD CHANGE...
-    #         # DON'T BREAK ON THE 1ST EXCEPTION!
-    #         # RUN ALL VALIDATORS AND CHECK ALL VALUES!
-    #         self.run_validators(value)
-    #         value = self.validate(value)
-    #         assert value is not None, '.validate() should return the validated data'
-    #     except (ValidationError, DjangoValidationError) as e:
-    #         raise ValidationError(detail=get_validation_error_detail(e))
+    # def validate(self, attrs):
+    #     # I MAY WANT TO OVERRIDE THIS FOR CUSTOM VALIDATION
+    #     # import ipdb; ipdb.set_trace()
+    #     return super(QSerializer, self).validate(attrs)
     #
-    #     return value
+    # def run_validation(self, data=empty):
+    #     # I MAY WANT TO OVERRIDE THIS FOR CUSTOM VALIDATION
+    #     # import ipdb; ipdb.set_trace()
+    #     return super(QSerializer, self).run_validation(data)
 
     def to_internal_value(self, data):
 
-        # this is as good a place as any to set the instance
+        # this is as good a place as any to set the instance...
         try:
             model_class = self.get_model()
             self.instance = model_class.objects.get(pk=data.get("id"))
@@ -367,42 +283,6 @@ class QSerializer(ModelSerializer):
             pass
 
         return super(QSerializer, self).to_internal_value(data)
-        #
-        # if not isinstance(data, dict):
-        #     message = self.error_messages['invalid'].format(
-        #         datatype=type(data).__name__
-        #     )
-        #     raise ValidationError({
-        #         api_settings.NON_FIELD_ERRORS_KEY: [message]
-        #     })
-        #
-        # ret = OrderedDict()
-        # errors = OrderedDict()
-        # fields = [
-        #     field for field in self.fields.values()
-        #     if (not field.read_only) or (field.default is not empty)
-        # ]
-        #
-        # for field in fields:
-        #     validate_method = getattr(self, 'validate_' + field.field_name, None)
-        #     primitive_value = field.get_value(data)
-        #     try:
-        #         validated_value = field.run_validation(primitive_value)
-        #         if validate_method is not None:
-        #             validated_value = validate_method(validated_value)
-        #     except ValidationError as exc:
-        #         errors[field.field_name] = exc.detail
-        #     except DjangoValidationError as exc:
-        #         errors[field.field_name] = list(exc.messages)
-        #     except SkipField:
-        #         pass
-        #     else:
-        #         set_value(ret, field.source_attrs, validated_value)
-        #
-        # if errors:
-        #     raise ValidationError(errors)
-        #
-        # return ret
 
     def get_unique_together_validators(self):
         """

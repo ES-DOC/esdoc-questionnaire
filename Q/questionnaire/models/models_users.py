@@ -1,6 +1,6 @@
 ####################
 #   ES-DOC CIM Questionnaire
-#   Copyright (c) 2016 ES-DOC. All rights reserved.
+#   Copyright (c) 2017 ES-DOC. All rights reserved.
 #
 #   University of Colorado, Boulder
 #   http://cires.colorado.edu/
@@ -8,11 +8,16 @@
 #   This project is distributed according to the terms of the MIT license [http://www.opensource.org/licenses/MIT].
 ####################
 
-from django.db import models
+from allauth.account.models import EmailAddress
 from django.contrib.auth.models import User
+from django.db import models
 from Q.questionnaire import APP_LABEL, q_logger
 
-__author__ = 'allyn.treshansky'
+# This is a custom UserProfile for the Q
+# it includes Q-specific things
+# I still use the built-in Django User for managing users
+# however, I use django-allauth for authentication
+# this lets me share users w/ registered OAuth providers (in the long-term)
 
 
 class QUserProfile(models.Model):
@@ -28,12 +33,24 @@ class QUserProfile(models.Model):
 
     # extra profile info associated w/ a Questionnaire User...
     projects = models.ManyToManyField("QProject", blank=True, verbose_name="Project Membership")
+    change_password = models.BooleanField(default=False, verbose_name="Change password at next logon")
+    description = models.TextField(blank=True, null=True, verbose_name="Description")
     institute = models.ForeignKey("QInstitute", blank=True, null=True, verbose_name="Institution", limit_choices_to={
         "is_active": True,
     })
 
+    @property
+    def is_verified(self):
+        if self.user.is_authenticated and not self.user.is_superuser:
+            try:
+                email = EmailAddress.objects.get(email=self.user.email)
+                return email.verified
+            except EmailAddress.DoesNotExist:
+                pass
+        return False
+
     def __str__(self):
-        return "{0}".format(self.user)
+        return str(self.user)
 
     def is_admin_of(self, project):
         project_admin_group = project.get_group("admin")

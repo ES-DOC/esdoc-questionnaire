@@ -4,8 +4,7 @@
 
 {% load staticfiles %}
 {% load compress %}
-{% load djangular_tags %}
-{% load q_tags %}
+{% load djng_tags %}
 
 {% block title %}
     ES-DOC Questionnaire Customizer
@@ -13,203 +12,186 @@
 
 {% block scripts %}
     {{ block.super }}
-        <script language="JavaScript" type="text/javascript" src="{% static 'djangular/js/django-angular.js' %}"></script>
-        <script language="javascript" type="text/javascript" src="{% static 'questionnaire/js/q_ng_customizer.js' %}"></script>
-        <script language="JavaScript">
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/angular-ui-sortable/0.15.0/sortable.min.js" integrity="sha256-IpGBPsTmIf0hT/d23EnI1a9zAe8+lSJH2KMtfmyyEh0=" crossorigin="anonymous"></script>
+    <script type="text/javascript" src="{% static 'questionnaire/js/q_ng_customize.js' %}"></script>
+    <script language="JavaScript">
 
-            var session_key = "{{ session_key }}";  /* session_key can be used to locate items in the cache */
-            var project_id = {{ project.pk }};
+        var session_key = "{{ session_key }}";
+        var project_id = {{ project.pk }};
+        var customization_id = {{ customization.pk|default:0 }};
+        var customization_name = "{{ customization.name }}";
 
-            var view_url_dirname = "{{ view_url_dirname }}";
-            var api_url_dirname = "{{ api_url_dirname }}";
+        var api_url_dirname = "{{ api_url_dirname }}";
+        var view_url_dirname = "{{ view_url_dirname }}";
 
-            var customization_id = {{ customization.id|default:0 }};
-            var customization_name = "{{ customization.name }}";
+        $(document).ready(
+            function() {
 
-            $(document).ready(
-                function() {
+                /* the customizer forms can have stackable modals (when customizing subforms) */
+                /* this is not _really_ supported by Bootstrap3 */
+                /* so this bit of code addresses that */
+                /* (got the idea from http://stackoverflow.com/a/24914782) */
 
-                    /* the customizer forms can have stackable modals (when customizing subforms) */
-                    /* this is not _really_ supported by Bootstrap3 */
-                    /* so this bit of code addresses that */
-                    /* (got the idea from http://stackoverflow.com/a/24914782) */
+                $(document).on('show.bs.modal', '.modal', function (event) {
+                    //var zIndex = 1040 + (10 * $('.modal:visible').length);
+                    var zIndex = Math.max.apply(null, Array.prototype.map.call(document.querySelectorAll('*'), function(el) {
+                        return +el.style.zIndex;
+                    })) + 10;
+                    $(this).css('z-index', zIndex);
+                    setTimeout(function() {
+                        $('.modal-backdrop').not('.modal-stack').css('z-index', zIndex - 1).addClass('modal-stack');
+                    }, 0);
+                })
+                $(document).on('hidden.bs.modal', '.modal', function () {
+                    $('.modal:visible').length && $(document.body).addClass('modal-open');
+                });
 
-                   $(document)
-                       .on('show.bs.modal', '.modal', function (event) {
-                           var zIndex = 1040 + (10 * $('.modal:visible').length);
-                           $(this).css('z-index', zIndex);
-                           setTimeout(function() {
-                               $('.modal-backdrop').not('.modal-stack').css('z-index', zIndex - 1).addClass('modal-stack');
-                           }, 0);
-                       })
-                       .on('hidden.bs.modal', '.modal', function () {
-                          $('.modal:visible').length && $(document.body).addClass('modal-open');
-                       });
+            }
+        );
 
-                }
-            );
-
-        </script>
-{% endblock %} {# /scripts #}
+    </script>
+{% endblock %}  {# /scripts #}
 
 {% block content %}
+    <div ng-app="q_customize">
+        <div ng-controller="CustomizerController as customizer_controller">
 
-<div ng-app="q_customizer">
+            {# wrapping everything in a fieldset that can be deactivated during AJAX calls #}
+            <fieldset id="q_blocker" ng-disabled="blocking()">
 
-    {# HERE IS THE PARENT CONTROLLER #}
-    <div ng-controller="CustomizerController as customizer_controller">
+                <div class="row">
+                    <div class="col-lg-12 col-md-12">
 
-        {# wrapping everything in a fieldset that can be deactivated during AJAX calls #}
-        <fieldset id="q_blocker" ng-disabled="blocking()">
+                        <div class="title">
+                            Customize the ES-DOC Questionnaire for <strong>{{ proxy }}</strong> documents of the <a href="/{{ project.name }}" title="ES-DOC Questionnaire Project Home Page"><strong>{{ project.title }}</strong></a> Project
+                        </div> <!-- /.title -->
 
-            {# wrapping everything in bootstrap grids to help w/ placement #}
-            <div class="container-fluid">
-                <div class="col-md-12">
+                        <div class="documentation">
+                            <p>
+                                Use this page to customize how a particular ES-DOC Document Type is presented in the ES-DOC Questionnaire for this project.&nbsp;
+                            </p>
+                            </p>
+                                <a href="/{{ project.name }}">{{ project.title }} Project Page.</a>
+                            </p>
+                            <p>
+                                <a href="{% url 'help' %}">ES-DOC Questionnaire help</a> is available.
+                            </p>
+                        </div> <!-- /.documentation -->
 
-                    <div class="title row">
-                        Customize the ES-DOC Questionnaire for <strong>{{ proxy }}</strong> documents of the <a href="/{{ project.name }}" title="ES-DOC Questionnaire Project Home Page"><strong>{{ project.title }}</strong></a> Project
-                    </div> <!-- /.title -->
+                        <div class="panel panel-default">
+                            <div class="panel-body">
 
-                    <div class="documentation row">
-                        <div class="col-md-12">
-                            Use this page to customize how a particular ES-DOC Document Type is presented in the ES-DOC Questionnaire for this project.&nbsp;
-                        </div>
-                        <div class="col-md-12">
-                            <a href="/{{ project.name }}">{{ project.title }} Project Page.</a>
-                        </div>
-                        <div class="col-md-10">
-                            <a href="{% url 'help' %}">ES-DOC Questionnaire help</a> is available.
-                        </div>
-                    </div> <!-- /.documentation -->
+                                {# here is the top-level model controller #}
+                                {# others may be created for subforms via the load-on-demand paradigm #}
+                                <div ng-controller="ModelCustomizerController as model_customizer_controller"
+                                     current_model_path="_DATA">
 
-                    <div class="col-md-12 row">
+                                    <form name="{{form.form_name}}"
+                                          class="form-horizontal"
+                                          watch_form_validity="models_validity"
+                                          novalidate>
 
-                        {% csrf_token %}
+                                        {% csrf_token %}
 
-                        {# HERE IS THE TOP-LEVEL MODEL CONTROLLER #}
-                        <div ng-controller="ModelCustomizerController as model_customizer_controller"
-                             current_model_path="_DATA">
+                                        <div class="hidden">
+                                            {% for field in form.hidden_fields %}
+                                                {{ field }}
+                                            {% endfor %}
+                                        </div> <!-- /.hidden -->
 
-                            <form name="{{form.form_name}}"
-                                  class="form-horizontal"
-                                  watch_form_validity="models_validity"
-                                  novalidate>
+                                        <div id="{{form.form_name}}_customization_fields">
+                                            <fieldset class="fieldset collapsible"
 
-                                {# the template code for the MODEL fields are hard-coded here; #}
-                                {# there is no separate template for them (such as "_q_customize_model.html") #}
-                                {# this is b/c... 1) the code is simple, and 2) the code is not reusable for subforms #}
-                                {# this paradigm is repeated in "sections/_q_section_customize_subform.html" #}
+                                                      ng-class="customization_details_fieldset_controller.is_collapsed ? 'collapsed' : 'expanded'">
+                                                <legend class="fieldset_header" ng-click="customization_details_fieldset_controller.is_collapsed = ! customization_details_fieldset_controller.is_collapsed" title="click to toggle content">
+                                                    <span ng-hide="customization_details_fieldset_controller.is_collapsed" class="glyphicon glyphicon-triangle-bottom"></span>
+                                                    <span ng-show="customization_details_fieldset_controller.is_collapsed" class="glyphicon glyphicon-triangle-right"></span>
+                                                    Customization Details:&nbsp;
+                                                </legend>
+                                                <div class="fieldset_content" ng-hide="customization_details_fieldset_controller.is_collapsed">
 
-                                <div class="hidden">
-                                    {% for field in form.get_hidden_fields %}
-                                        {{ field }}
-                                    {% endfor %}
-                                </div> <!-- /.hidden -->
+                                                    <div class="documentation">
+                                                        This section contains information relating to the customization itself, as opposed to the editor form being customized.
+                                                    </div>
 
-                                <div id="{{form.form_name}}_customization_fields">
-                                    <fieldset class="fieldset collapsible" ng-controller="FieldsetController as customization_details_fieldset_controller">
-                                        <legend class="fieldset_header" ng-click="customization_details_fieldset_controller.is_collapsed = ! customization_details_fieldset_controller.is_collapsed" title="click to toggle content" >
-                                            <span ng-hide="customization_details_fieldset_controller.is_collapsed" class="glyphicon glyphicon-triangle-bottom"></span>
-                                            <span ng-show="customization_details_fieldset_controller.is_collapsed" class="glyphicon glyphicon-triangle-right"></span>
-                                            Customization Details:&nbsp;
-                                        </legend>
-                                        <div class="fieldset_content" ng-hide="customization_details_fieldset_controller.is_collapsed">
+                                                    {% for field in form.customization_fields %}
+                                                        <div class="row {% cycle 'odd' 'even' %}">
+                                                            {% include 'questionnaire/_q_customize_field.html' %}
+                                                        </div>
+                                                    {% endfor %} {# /field #}
 
-                                            <div class="documentation">
-                                                This section contains information relating to the customization itself, as opposed to the editor form being customized.
+                                                </div> <!-- /.fieldset_content -->
+                                            </fieldset>
+                                        </div>  <!-- /customization_fields -->
+                                        <br/>
+
+                                        <div id="{{form.form_name}}_document_fields">
+                                            <fieldset class="fieldset collapsible"
+                                                      ng-controller="FieldsetController as document_details_fieldset_controller"
+                                                      ng-class="document_details_fieldset_controller.is_collapsed ? 'collapsed' : 'expanded'">
+                                                <legend class="fieldset_header" ng-click="document_details_fieldset_controller.is_collapsed = ! document_details_fieldset_controller.is_collapsed" title="click to toggle content">
+                                                    <span ng-hide="document_details_fieldset_controller.is_collapsed" class="glyphicon glyphicon-triangle-bottom"></span>
+                                                    <span ng-show="document_details_fieldset_controller.is_collapsed" class="glyphicon glyphicon-triangle-right"></span>
+                                                    Document Details:&nbsp;
+                                                </legend>
+                                                <div class="fieldset_content" ng-hide="document_details_fieldset_controller.is_collapsed">
+
+                                                    <div class="documentation">
+                                                        This section contains information relating to the document itself.  This will affect the look-and-feel of the editor form being customized.
+                                                    </div>
+
+                                                    {% for field in form.document_fields %}
+                                                        <div class="row {% cycle 'odd' 'even' %}">
+                                                            {% include 'questionnaire/_q_customize_field.html' %}
+                                                        </div>
+                                                    {% endfor %} {# /field #}
+
+                                                </div> <!-- /.fieldset_content -->
+                                            </fieldset>
+                                        </div>  <!-- /document_fields -->
+                                        <br/>
+
+                                    </form>
+
+                                    {% include 'questionnaire/_q_customize_properties.html' %}
+
+                                    <div class="row">
+                                        <div class="col-lg-offset-1 col-md-offset-1">
+                                            <div class="form-group voffset-16">
+                                                <button class="btn btn-primary" ng-click="submit_customization({{form.form_name}})" ng-disabled="!models_validity"
+                                                        title="save the current state of this customization">
+                                                    submit
+                                                </button>
                                             </div>
+                                        </div>  <!-- /col -->
+                                    </div>  <!-- /row -->
 
-                                            {% for field in form.get_customization_fields %}
-                                                <div class="row {% cycle 'odd' 'even' %}">
-                                                    {% include 'questionnaire/_q_customize_field.html' %}
-                                                </div>
-                                            {% endfor %} {# /field #}
+                                </div>  <!-- /ng-controller=ModelCustomizerController -->
 
-                                        </div> <!-- /.fieldset_content -->
-                                    </fieldset>
-                                </div>  <!-- /customization_fields -->
+                            </div>  <!-- /.panel-body -->
+                        </div>  <!-- /.panel -->
 
-                                <div id="{{form.form_name}}_document_fields">
-                                    <fieldset class="fieldset collapsible" ng-controller="FieldsetController as document_details_fieldset_controller">
-                                        <legend class="fieldset_header" ng-click="document_details_fieldset_controller.is_collapsed = ! document_details_fieldset_controller.is_collapsed" title="click to toggle content" >
-                                            <span ng-hide="document_details_fieldset_controller.is_collapsed" class="glyphicon glyphicon-triangle-bottom"></span>
-                                            <span ng-show="document_details_fieldset_controller.is_collapsed" class="glyphicon glyphicon-triangle-right"></span>
-                                            Document Details:&nbsp;
-                                        </legend>
-                                        <div class="fieldset_content" ng-hide="document_details_fieldset_controller.is_collapsed">
+                    </div>  <!-- /col -->
+                </div>  <!-- /row -->
 
-                                            <div class="documentation">
-                                                This section contains information relating to the document itself.  This will affect the look-and-feel of the editor form being customized.
-                                            </div>
+            </fieldset>  <!-- /#q_blocker -->
 
-                                            {% for field in form.get_document_fields %}
-                                                <div class="row {% cycle 'odd' 'even' %}">
-                                                    {% include 'questionnaire/_q_customize_field.html' %}
-                                                </div>
-                                            {% endfor %} {# /field #}
+            {# TODO: DELETE THIS BIT ONCE CODE IS WORKING #}
+            <div class="row">
+                <button class="btn btn-danger btn-xs pull-right" title="print ng scope to console" ng-click="print_stuff()">
+                    <span class="glyphicon glyphicon-cog"></span>
+                </button>
+            </div>
 
-                                        </div> <!-- /.fieldset_content -->
-                                    </fieldset>
-                                </div>  <!-- /document_fields -->
-
-                            </form>
-
-                            {% include 'questionnaire/_q_customize_properties.html' %}
-
-                            <div class="form-group voffset-16">
-                                <div class="col-sm-offset-3 col-sm-7">
-                                    <button class="btn btn-primary"
-                                            ng-click="submit_customization()"
-                                            ng-disabled="!models_validity"
-                                            title="save the current state of this customization">
-                                        <!-- notice how this button uses the "submit_customization" fn from the parent "customizer_controller" -->
-                                        <!-- (instead of the child "model_customizer_controller") -->
-                                        submit
-                                    </button>
-                                    <a class="btn btn-primary"
-                                       target="_blank"
-                                       href="/{{ project.name }}/view/{{ ontology.key }}/{{ proxy.name|lower }}/"
-                                       ng-show="is_default_model_customization"
-                                       title="view a blank document in the editor using the last-saved state of this customization">
-                                        view in editor
-                                    </a>
-                                </div>
-                            </div>
-
-                        </div> <!-- /ng-controller:ModelCustomizerController -->
-
-                    </div> <!-- /.col-md-12 -->
-
-                </div> <!-- /.col-md-12 -->
-            </div> <!-- /.container-fluid -->
-
-{# ########################################## #}
-{# TODO: DELETE THIS BIT ONCE CODE IS WORKING #}
-{% if request.current_site|site_type != "PROD" %}
-    <div class="col-md-12 row debug">
-        <button class="btn btn-danger btn-xs pull-right"
-                title="print ng scope to console"
-                ng-click="print_stuff()">
-            <span class="glyphicon glyphicon-cog"></span>
-        </button>
-    </div> <!-- /.debug -->
-{% endif %} {# /site_type != "PROD" #}
-{# ########################################## #}
-
-        </fieldset> <!-- /#q_blocker -->
-    </div> <!-- /ng-controller:CustomizerController -->
-</div> <!-- /ng-app:q_customizer -->
-
-{% endblock %} {# /content #}
+        </div>  <!-- /ng-controller=customizer_controller -->
+    </div>  <!-- /ng-app=q_customize -->
+{% endblock %}  {# /content #}
 
 {% block footer %}
     {{ block.super }}
-    <div class="footer">
-        It uses the ontology
-        {% if ontology.url %}
-            <a target="_blank" href="{{ ontology.url }}">{{ ontology }}</a>.
-        {% else %}
-            {{ ontology }}.
-        {% endif %}
-    </div>
-{% endblock %} {# /footer #}
+    {% if ontology.url %}
+        <br/>It uses the ontology <a href="{{ontology.url}}">{{ ontology }}</a>.
+    {% else %}
+        <br/>It uses the ontology {{ ontology }}.
+    {% endif %}  {# /ontology.url #}
+{% endblock %}  {# /footer #}

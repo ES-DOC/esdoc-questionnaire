@@ -4,15 +4,19 @@
 {% load q_tags_publications %}
 
 {% block content %}
-
-    {% for property in model.properties.all %}
-        {% if not property.is_meta %}
-            {% with property_type=property.field_type %}
-                {% with "questionnaire/publications/%s/publication_property.xml"|format:publication_format as template %}
-                    {% include template %}
-                {% endwith %}
-            {% endwith %}  {# /property_type #}
-        {% endif %}  {# /property.is_meta #}
-    {% endfor %}  {# /property #}
-
+    {% for category in model.categories.all %}
+        {% if not category.is_uncategorized %}
+            <{{ category.proxy.name|format_name_for_publication:publication_format }}>
+        {% endif %}
+            {% for property in category.properties.all %}
+                {% if not property.is_meta %}
+                    {% with "questionnaire/publications/%s/publication_property.xml"|format:publication_format as template %}
+                        {% include template %}
+                    {% endwith %}
+                {% endif %}
+            {% endfor %}
+        {% if not category.is_uncategorized %}
+            </{{ category.proxy.name|format_name_for_publication:publication_format }}>
+        {% endif %}
+    {% endfor %}
 {% endblock content %}

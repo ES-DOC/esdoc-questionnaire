@@ -1,6 +1,6 @@
 ####################
 #   ES-DOC CIM Questionnaire
-#   Copyright (c) 2016 ES-DOC. All rights reserved.
+#   Copyright (c) 2017 ES-DOC. All rights reserved.
 #
 #   University of Colorado, Boulder
 #   http://cires.colorado.edu/
@@ -8,37 +8,33 @@
 #   This project is distributed according to the terms of the MIT license [http://www.opensource.org/licenses/MIT].
 ####################
 
-__author__ = 'allyn.treshansky'
-
-from django.forms import widgets
 from django.db.models import QuerySet
+from django.forms import widgets
 from django.utils.html import format_html
 from django.utils.encoding import force_text
-from django.utils.functional import cached_property
 
 from django.forms.fields import BooleanField
 from django.forms.widgets import CheckboxInput
-from django.forms.models import ModelForm, BaseModelFormSet, BaseInlineFormSet
+from django.forms.models import BaseModelForm, BaseModelFormSet
 
-from djangular.forms import NgModelFormMixin, NgFormValidationMixin, NgModelForm
-from djangular.forms.angular_base import TupleErrorList
-from djangular.styling.bootstrap3.forms import Bootstrap3ModelForm
-from djangular.forms.angular_base import SafeTuple
+from djng.forms import NgModelFormMixin, NgFormValidationMixin, NgModelForm
+from djng.forms.angular_base import TupleErrorList, SafeTuple
+from djng.styling.bootstrap3.forms import Bootstrap3ModelForm
 
 from Q.questionnaire.q_utils import update_field_widget_attributes, set_field_widget_attributes
-from Q.questionnaire.q_utils import QValidator
+from Q.questionnaire.q_utils import QValidator, legacy_code
 
-from djangular.styling.bootstrap3.field_mixins import BooleanFieldMixin
-from djangular.styling.bootstrap3.widgets import CheckboxInput as BootstrapCheckBoxInput
+from djng.styling.bootstrap3.field_mixins import BooleanFieldMixin
+from djng.styling.bootstrap3.widgets import CheckboxInput as BootstrapCheckBoxInput
 
 
-# TODO: IS THIS FN USED?
+@legacy_code
 def bootstrap_form(form):
-
     for field_name, field in form.fields.iteritems():
         bootstrap_field(field)
 
-# TODO: IS THIS FN USED?
+
+@legacy_code
 def bootstrap_field(field):
     bootstrap_classes = {
         "class": "form-control",
@@ -49,35 +45,86 @@ def bootstrap_field(field):
             "placeholder": field.label,
         })
 
-# TODO: IS THIS FN USED?
+
+@legacy_code
 def unbootstrap_field(field):
     if isinstance(field, BooleanField):
         # field.label = field.verbose_name
         # field.widget = CheckboxInput()
         pass
 
+# using djangular forms is pretty cool; it automatically maps ng & bootstrap content to the fields.
+# But I override some of the default functionality: in particular, error-handling.
+# This allows me to render client-side errors in a djangular-consistent way.
+# Using the "add_custom_errors" fn below, I add to the existing djangular error constructs w/ any Q-specific content;
+# assuming that there are corresponding JS fns (see "q_validators.js"), this will just work for client errors
+# However, working w/ server errors is much more complex...
+# The "add_custom_errors" fn, adds placeholders for server-generated error content
+# additionally "add_server_errors_to_field" adds the "servererror" directive to fields as needed
+# if a server error occurs, the DRF API views will return a JSON array of errors...
+# it is the responsibility of the ng submit fn (for example, "CustomizerController.submit_customizaation") to alter the validity of djangular fields
+# it is also the responsibility of the ng submit fn to add the returned JSON content to the global "$scope.server_errors" array which is used to fill in the aforementioned placeholders
+# finally, the "servererror" directive adds a watch to the underlying ng-model for each field - the 1st time it changes after a server error, its validity is reset
+# ...and it's just that easy
+
 class QForm(Bootstrap3ModelForm, NgModelFormMixin, NgFormValidationMixin):
 # class QForm(Bootstrap3ModelForm, NgFormValidationMixin):
-# class QModelForm(NgModelForm, NgFormValidationMixin):
-# class QModelForm(NgFormValidationMixin, NgModelForm):
+# class QForm(NgModelForm, NgFormValidationMixin):
+# class QForm(NgFormValidationMixin, NgModelForm):
 
     class Meta:
         abstract = True
 
-    def __init__(self, *args, **kwargs):
-        form_name = kwargs.get("form_name", None)
-        assert form_name, "QForm must have a unique name."
+    required_css_class = 'djng-field-required'
 
+    def __init__(self, *args, **kwargs):
+        # every QForm has a unique "form_name"... the load-on-demand paradigm passes this in using the "name" kwarg
+        if "form_name" not in kwargs:
+            kwargs["form_name"] = kwargs.pop("name", None)
+        assert kwargs.get("form_name", None) is not None, "QForm must have a unique name."
         super(QForm, self).__init__(*args, **kwargs)
-        # add the possibility of rendering a server error on _all_ fields
-        for field_name, field in self.fields.items():
-            set_field_widget_attributes(field, {
-                "servererror": "true",
-            })
-            # originally, I thought that I could specify a formset-specific "ng-model" attribute here
-            # but that gets overwritten;
-            # "ng-model" is set at the very-last-minute in djangular using the "get_widget_attrs" fn
-            # so I overwrite _that_ fn below
+        # I thought that I could specify a formset-specific "ng-model" attribute here but it just gets overwritten:
+        # "ng-model" gets set at the last-minute by djangular in "get_widget_attrs", so I overwrite _that_ fn below
+
+    # TODO: THIS PROBABLY DOESN'T NEED TO BE ITS OWN FN, I CAN JUST CALL "set_field_widget_attributes" DIRECTLY IN A FORM'S __init__ FN
+    def add_server_errors_to_field(self, field_name):
+        # adds the possibility of rendering a server error on a given field
+        field = self.fields[field_name]
+        set_field_widget_attributes(field, {
+            "servererror": "true",
+        })
+
+    def unbootstrap_fields(self, field_names):
+        for field_name in field_names:
+            self.unbootstrap_field(field_name)
+
+    def unbootstrap_field(self, field_name):
+
+        # QForm form inherits from Bootstrap3ModelForm;
+        # this means that funny things happen automatically when rendering fields
+        # this fn can undo those things on a per-field basis
+
+        form_field = self.fields[field_name]
+        model_field = self.instance.get_field(field_name)
+
+        if isinstance(form_field, BooleanField):
+            # boolean fields include the label_tag as part of the widget and delete the label on the main field
+            # that's not desired Q behavior (it messes up alignment of form labels & widgets)
+            # so this code puts everything back
+            form_field.widget = CheckboxInput(attrs=form_field.widget.attrs)
+            form_field.label = model_field.verbose_name
+
+        else:
+            # TODO: ANY OTHER FIXES FOR OTHER FIELD TYPES?
+            pass
+
+    @property
+    def is_new(self):
+        return self.instance.pk is None
+
+    @property
+    def is_existing(self):
+        return not self.is_new()
 
     def get_widget_attrs(self, bound_field):
         """
@@ -104,6 +151,31 @@ class QForm(Bootstrap3ModelForm, NgModelFormMixin, NgFormValidationMixin):
         for key, fmtstr in self.ng_directives.items():
             attrs[key] = fmtstr % ng
         return attrs
+
+    def get_qualified_form_field_name(self, field_name):
+        """
+        gets a field name suitable for ng use when binding to form
+        (must match the names in error handling)
+        :param field_name:
+        :return:
+        """
+        identifier = self.add_prefix(field_name)
+        return format_html("{0}['{1}']", self.form_name, identifier)
+
+    def get_qualified_model_field_name(self, field_name):
+        """
+        gets a field name suitable for ng use when binding to model
+        (must match the names in $scope)
+        :param field_name:
+        :return:
+        """
+        # if self.is_formset():
+        #     # the prefix is already handled implicitly in formsets
+        #     identifier = field_name
+        # else:
+        #     identifier = self.add_prefix(field_name)
+        identifier = field_name  # THIS ALLOWS ME TO STILL HAVE A UNIQUE PREFIX
+        return format_html("{0}['{1}']", self.scope_prefix, identifier)
 
     def get_current_field_value(self, *args):
         """
@@ -140,31 +212,6 @@ class QForm(Bootstrap3ModelForm, NgModelFormMixin, NgFormValidationMixin):
                     msg = 'The key "{0}" was not found in "data" or "initial" for form of type {1} with prefix "{2}".'.format(key, type(self), self.prefix)
                     raise KeyError(msg)
         return ret
-
-    def get_qualified_form_field_name(self, field_name):
-        """
-        gets a field name suitable for ng use when binding to form
-        (must match the names in error handling)
-        :param field_name:
-        :return:
-        """
-        identifier = self.add_prefix(field_name)
-        return format_html("{0}['{1}']", self.form_name, identifier)
-
-    def get_qualified_model_field_name(self, field_name):
-        """
-        gets a field name suitable for ng use when binding to model
-        (must match the names in $scopoe)
-        :param field_name:
-        :return:
-        """
-        # if self.is_formset():
-        #     # the prefix is already handled implicitly in formsets
-        #     identifier = field_name
-        # else:
-        #     identifier = self.add_prefix(field_name)
-        identifier = field_name  # THIS ALLOWS ME TO STILL HAVE A UNIQUE PREFIX
-        return format_html("{0}['{1}']", self.scope_prefix, identifier)
 
     def get_fields_from_list(self, field_names_list):
         """
@@ -228,10 +275,9 @@ class QForm(Bootstrap3ModelForm, NgModelFormMixin, NgFormValidationMixin):
         server_error = "servererror"
         if server_error in bound_field.field.widget.attrs:
             # TODO: I'M NOT SURE WHY I NEED "{% verbatim ng %}" WHEN ADDED DIRECTLY TO THE TEMPLATE, BUT NOT HERE
-            # server_error_msg = "{% verbatim ng %} {{ server_errors.model_customization.whatever }} {% endverbatim ng %}"
+            # server_error_msg = "{% verbatim ng %} {{ server_errors.form_name['field_name'] }} {% endverbatim ng %}"
             # to escape curly brackets, I have to double them...
-            # server_error_msg = "{{{{ server_errors.model_customization.{0} }}}}".format(bound_field.name)
-            server_error_msg = "{{{{ server_errors.{0} }}}}".format(self.get_qualified_model_field_name(bound_field.name))
+            server_error_msg = "{{{{ server_errors.{0} }}}}".format(self.get_qualified_form_field_name(bound_field.name))
             existing_errors.append(
                 SafeTuple((identifier, self.field_error_css_classes, '$dirty', '$error.server', "invalid", server_error_msg))
             )
@@ -243,7 +289,7 @@ class QForm(Bootstrap3ModelForm, NgModelFormMixin, NgFormValidationMixin):
         form_field = self.fields[field_name]
         model_field = self.instance.get_field(field_name)
 
-        # only check fields that have a correspondance to the model,
+        # only check fields that have a correspondence to the model,
         # and that can be edited by the user...
         if model_field is not None and model_field.editable:
 
@@ -255,35 +301,6 @@ class QForm(Bootstrap3ModelForm, NgModelFormMixin, NgFormValidationMixin):
             # and I store the validators for later use in get_field_errors() above
             setattr(form_field, "custom_potential_errors", custom_validators)
 
-    def unbootstrap_fields(self, field_names):
-        for field_name in field_names:
-            self.unbootstrap_field(field_name)
-
-    def unbootstrap_field(self, field_name):
-
-        # QForm form inherits from Bootstrap3ModelForm;
-        # this means that funny things happen automatically when rendering fields
-        # this fn can undo those things on a per-field basis
-
-        form_field = self.fields[field_name]
-        model_field = self.instance.get_field(field_name)
-
-        if isinstance(form_field, BooleanField):
-            # boolean fields include the label_tag as part of the widget and delete the label on the main field
-            # that's not desired Q behavior (it messes up alignment of form labels & widgets)
-            # so this code puts everything back
-            form_field.widget = CheckboxInput(attrs=form_field.widget.attrs)
-            form_field.label = model_field.verbose_name
-
-        else:
-            # TODO: ANY OTHER FIXES FOR OTHER FIELD TYPES?
-            pass
-
-    def is_new(self):
-        return self.instance.pk is None
-
-    def is_existing(self):
-        return not self.is_new()
 
 class QFormSet(BaseModelFormSet):
 
@@ -411,171 +428,3 @@ class QFormSet(BaseModelFormSet):
         prefix = super(QFormSet, self).add_prefix(index)
         ng_prefix = prefix.replace('-', '_')
         return ng_prefix
-
-##########
-# originally, a lot of effort was spent getting Djangular Forms to work in InlineFormSets
-# however, this is no longer the case so this code is commented out
-# however, still, it's good code and I keep it here in-case things ever change
-##########
-
-# class QInlineFormSet(BaseInlineFormSet):
-#
-#     # a label and some help_text can be defined on the entire formset
-#     # (to be used in the templates)
-#     label = ""
-#     help_text = ""
-#
-#     def __init__(self, *args, **kwargs):
-#         initial = kwargs.get("initial")
-#         queryset = kwargs.get("queryset")
-#         label = kwargs.pop("label", None)
-#         help_text = kwargs.pop("help_text", None)
-#         kwargs.update({
-#             # makes sure that child forms render errors correctly...
-#             # TODO: THIS IS ACTUALLY THE FIX FOR A BUG IN DJANGULAR (https://github.com/jrief/django-angular/issues/197)
-#             # TODO: I SHOULD PATCH THAT PROJECT
-#             "error_class": TupleErrorList,
-#         })
-#         super(QInlineFormSet, self).__init__(*args, **kwargs)
-#
-#         self.current_form_index = 0
-#         self.label = label or self.label
-#         self.help_text = help_text or self.help_text
-#
-#         if initial and not queryset:
-#             # djangular assumes that "initial" data will be used to populate default formset values
-#             # but I use it to transfer proxy data to forms; this works well w/ the "extra" kwargs
-#             # anyway, self.initial gets overwritten somewhere in the djangular setup
-#             # this code resets it so that other djangular fns (like get_initial_data) will work
-#             assert self.extra == self.total_form_count() == len(initial)
-#             self.num_forms = len(initial)
-#             self.initial = self.initial_extra
-#         if queryset and not initial:
-#             assert self.total_form_count() == queryset.count()
-#             self.num_forms = queryset.count()
-#
-#     # thought about caching the forms fn
-#     # turns out, BaseFormSet already uses the "@cached_property" decorator
-#
-#     def get_next_form(self):
-#         next_form = self.forms[self.current_form_index % self.num_forms]
-#         self.current_form_index += 1
-#         return next_form
-#
-#     def get_form_by_field(self, field_name, field_value):
-#         for form in self.forms:
-#             if form.get_current_field_value(field_name) == field_value:
-#                 return form
-#         return None
-#
-#     def get_forms_by_field(self, field_name, field_value):
-#         forms = []
-#         for form in self.forms:
-#             if form.get_current_field_value(field_name) == field_value:
-#                 forms.append(form)
-#         return forms
-#
-#     def get_initial_data(self):
-#         initial_data = [
-#             form.get_initial_data()
-#             for form in self.forms
-#         ]
-#         return initial_data
-#
-#     # this took a while to figure out
-#     # I need to add some special kwargs when instantiating a child form
-#     # but that actually gets handled by the 3rd parent in the inheritance tree's "_construct_form" fn
-#     # (QInlineFormSet::BaseInlineFormset::BaseModelFormSet::BaseFormset)
-#     # this "_construct_form" fn does all of the stuff that BaseInlineFormSet & BaseModelFormset do in their "_construct_form" fn
-#     # then it calls "_construct_q_form" which is does slightly different stuff than BaseFormset does in its "_construct_form" fn
-#
-#     def _construct_form(self, i, **kwargs):
-#         """
-#         just like BaseInlineFormSet method
-#         except calls "_construct_q_form" below
-#         :param i:
-#         :param kwargs:
-#         :return:
-#         """
-#         # form = super(BaseInlineFormSet, self)._construct_form(i, **kwargs)
-#         # this bit comes from BaseModelFormSet...
-#         if self.is_bound and i < self.initial_form_count():
-#             pk_key = "%s-%s" % (self.add_prefix(i), self.model._meta.pk.name)
-#             pk = self.data[pk_key]
-#             pk_field = self.model._meta.pk
-#             to_python = self._get_to_python(pk_field)
-#             pk = to_python(pk)
-#             kwargs['instance'] = self._existing_object(pk)
-#         if i < self.initial_form_count() and 'instance' not in kwargs:
-#             kwargs['instance'] = self.get_queryset()[i]
-#         if i >= self.initial_form_count() and self.initial_extra:
-#             # Set initial values for extra forms
-#             try:
-#                 kwargs['initial'] = self.initial_extra[i - self.initial_form_count()]
-#             except IndexError:
-#                 pass
-#         # ...end this bit comes from BaseModelFormset
-#
-#         # here's what I do instead of "BaseFormSet._construct_form()"...
-#         form = self._construct_q_form(i, **kwargs)
-#
-#         if self.save_as_new:
-#             # Remove the primary key from the form's data, we are only
-#             # creating new instances
-#             form.data[form.add_prefix(self._pk_field.name)] = None
-#
-#             # Remove the foreign key from the form's data
-#             form.data[form.add_prefix(self.fk.name)] = None
-#
-#         # Set the fk value here so that the form can do its validation.
-#         fk_value = self.instance.pk
-#         if self.fk.rel.field_name != self.fk.rel.to._meta.pk.name:
-#             fk_value = getattr(self.instance, self.fk.rel.field_name)
-#             fk_value = getattr(fk_value, 'pk', fk_value)
-#         setattr(form.instance, self.fk.get_attname(), fk_value)
-#         return form
-#
-#     def _construct_q_form(self, i, **kwargs):
-#         """
-#         just like BaseFormSet _construct_form
-#         except adds some kwargs to "defaults" for QForm instances
-#         called by "_construct_form" above
-#         """
-#
-#         defaults = {
-#             'auto_id': self.auto_id,
-#             'prefix': self.add_prefix(i),
-#             'error_class': self.error_class,  # see above; error_class = TupleErrorList
-#             # the next 2 lines of code are the different bits...
-#             # TODO: THIS ISN'T QUITE RIGHT YET, IS IT?
-#             'scope_prefix': "%s[%d]" % (self.scope_prefix, i),
-#             'form_name': "%s_%s" % (self.formset_name, i),  # ensure a unique form name, and doesn't use hyphens (which are invalid in js and, therefore, ng)
-#
-#         }
-#         if self.is_bound:
-#             defaults['data'] = self.data
-#             defaults['files'] = self.files
-#         if self.initial and 'initial' not in kwargs:
-#             try:
-#                 defaults['initial'] = self.initial[i]
-#             except IndexError:
-#                 pass
-#         # Allow extra forms to be empty, unless they're part of
-#         # the minimum forms.
-#         if i >= self.initial_form_count() and i >= self.min_num:
-#             defaults['empty_permitted'] = True
-#         defaults.update(kwargs)
-#         form = self.form(**defaults)
-#         self.add_fields(form, i)
-#         return form
-#
-#     def add_prefix(self, index):
-#         """
-#         ng can't cope w/ hyphens in variable names, b/c that's invalid javascript
-#         (although, really, it's just the form names that this is an issue for; and that's been hard-coded in _construct_form above)
-#         :param index:
-#         :return:
-#         """
-#         prefix = super(QInlineFormSet, self).add_prefix(index)
-#         ng_prefix = prefix.replace('-', '_')
-#         return ng_prefix

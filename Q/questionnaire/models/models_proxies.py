@@ -1,76 +1,87 @@
-__author__ = 'allyn.treshansky'
+####################
+#   ES-DOC CIM Questionnaire
+#   Copyright (c) 2017 ES-DOC. All rights reserved.
+#
+#   University of Colorado, Boulder
+#   http://cires.colorado.edu/
+#
+#   This project is distributed according to the terms of the MIT license [http://www.opensource.org/licenses/MIT].
+####################
 
 from django.db import models
-from django.template.defaultfilters import slugify
-from mptt.models import MPTTModel, TreeForeignKey
+from django.utils.translation import ugettext_lazy as _
+
 from uuid import uuid4
 
 from Q.questionnaire import APP_LABEL, q_logger
-from Q.questionnaire.q_fields import QCardinalityField, QJSONField, QPropertyTypes, QAtomicPropertyTypes
-from Q.questionnaire.q_utils import QError, EnumeratedType, EnumeratedTypeList, pretty_string
+from Q.questionnaire.q_fields import QPropertyTypes, QAtomicTypes, QJSONField
+from Q.questionnaire.q_utils import QError, pretty_string, validate_no_spaces, legacy_code
 from Q.questionnaire.q_constants import *
 
-###############
-# global vars #
-###############
+###################
+# local constants #
+###################
 
-class ProxyType(EnumeratedType):
+UNCATEGORIZED_CATEGORY_PROXY_NAME = "uncategorized"
+UNCATEGORIZED_CATEGORY_PROXY_PACKAGE = "uncategorized"
 
-    def __unicode__(self):
-        return u"%s" % (self.get_name())
-
-ProxyTypes = EnumeratedTypeList([
-    ProxyType("MODEL", "Model Proxy"),
-    ProxyType("CATEGORY", "Category Proxy"),
-    ProxyType("PROPERTY", "Property Proxy"),
-])
-
-##############
-# global fns #
-##############
-
-def get_default_parent_model_proxy(current_proxy, proxy_type):
-    if proxy_type == ProxyTypes.PROPERTY:
-        return get_default_parent_model_proxy_aux(current_proxy.model_proxy)
-    elif proxy_type == ProxyTypes.CATEGORY:
-        raise NotImplementedError()
-        # model_proxies = [p.model_proxy for p in current_proxy.property_proxies.all()]
-        # for model_proxy in model_proxies:
-        #     pass
-    else:  # proxy_type == ProxyTypes.MODEL
-        return get_default_parent_model_proxy_aux(current_proxy)
-
-def get_default_parent_model_proxy_aux(current_model_proxy):
-    # works its way up the recursive hierarchy until a root document model proxy is found
-    pass
+###################
+# some helper fns #
+###################
 
 
-######################
-# the actual classes #
-######################
+def get_enumeration_choices_schema():
+    classes_schema = QCONFIG_SCHEMA["properties"]["classes"]["properties"]["defined"]["items"]
+    properties_schema = classes_schema["properties"]["properties"]["properties"]["defined"]["items"]
+    enumeration_members_schema = properties_schema["properties"]["enumeration_members"]
+    return enumeration_members_schema
+
+
+def get_label_schema():
+    classes_schema = QCONFIG_SCHEMA["properties"]["classes"]["properties"]["defined"]["items"]
+    classes_label_schema = classes_schema["properties"]["label"]
+    return classes_label_schema
+
+
+def get_values_schema():
+    classes_schema = QCONFIG_SCHEMA["properties"]["classes"]["properties"]["defined"]["items"]
+    properties_schema = classes_schema["properties"]["properties"]["properties"]["defined"]["items"]
+    properties_values_schema = properties_schema["properties"]["values"]
+    return properties_values_schema
+
+#####################
+# the actual models #
+#####################
+
 
 class QProxy(models.Model):
 
     class Meta:
         app_label = APP_LABEL
         abstract = True
-        verbose_name = "_Questionnaire Proxy"
-        verbose_name_plural = "_Questionnaire Proxies"
-        # ordering = ("order", )  # this is an abstract class, 'ordering' attribute belongs on concrete classes
 
     guid = models.UUIDField(default=uuid4, editable=False)
     created = models.DateTimeField(auto_now_add=True, editable=False)
     modified = models.DateTimeField(auto_now=True, editable=False)
 
+    order = models.PositiveIntegerField(blank=True, null=True)
+    is_meta = models.NullBooleanField()
+
     name = models.CharField(max_length=SMALL_STRING, blank=False)
     documentation = models.TextField(blank=True, null=True)
-    order = models.PositiveIntegerField(blank=True, null=True)
 
-    is_meta = models.BooleanField(default=False)
-    is_specialized = models.BooleanField(default=False)
+    cim_id = models.CharField(
+        blank=True, null=True,
+        max_length=SMALL_STRING, validators=[validate_no_spaces],
+        help_text=_(
+            "A unique, CIM-specific, identifier.  "
+            "This is distinct from the automatically-generated key.  "
+            "It is required for distinguishing specialized objects of the same class."
+        )
+    )
 
     def __eq__(self, other):
-        if isinstance(other, QProxy ):
+        if isinstance(other, QProxy):
             return self.guid == other.guid
         return NotImplemented
 
@@ -83,13 +94,27 @@ class QProxy(models.Model):
     def __str__(self):
         return pretty_string(self.name)
 
-    def get_fully_qualified_key(self, parent_key=None):
-        msg = "{0} must define a custom 'get_fully_qualified_key' method.".format(self.__class__.__name__)
-        raise NotImplementedError(msg)
+    @property
+    def key(self):
+        # convert self.guid to str b/c UUID does not play nicely w/ JSON
+        return str(self.guid)
 
-    def reset(self):
+    def reset(self, **kwargs):
         msg = "{0} must define a custom 'reset' method.".format(self.__class__.__name__)
         raise NotImplementedError(msg)
+
+
+class QModelProxyManager(models.Manager):
+
+    # used when getting inherited / excluded models from an ontology...
+
+    def in_fully_qualified_names(self, fully_qualified_names):
+        all_model_proxies = self.get_queryset()
+        fully_qualified_pks = [
+            all_model_proxies.get(name=name, package=package).pk
+            for package, name in [fully_qualified_name.split('.') for fully_qualified_name in fully_qualified_names]
+        ]
+        return all_model_proxies.filter(pk__in=fully_qualified_pks)
 
 
 class QModelProxy(QProxy):
@@ -98,30 +123,37 @@ class QModelProxy(QProxy):
         app_label = APP_LABEL
         abstract = False
         verbose_name = "_Questionnaire Proxy: Model"
-        verbose_name_plural = "_Questionnaire Proxies: Models"
-        ordering = ("order", )
+        verbose_name_plural = "_Questionnaire Proxy: Models"
+        unique_together = ("ontology", "name", "package", "cim_id")
+        # TODO: I HAD TO ADD "ordering" TO THE META OPTIONS ONCE THE CIM2 GENERATORS NO LONGER CREATED PROXIES IN A SENSIBLE ORDER
+        # TODO: FIRSTLY, I WOULD LIKE TO ADD THIS PROPERTY TO THE ABSTRACT BASE CLASS INSTEAD OF EACH CHILD CLASS EXPLICITLY
+        # TODO: SECONDLY, THIS INTRODUCES AN EXTRA DB HIT FOR EVERY PROXY QS
+        # TODO: THIRDLY, IN PREVIOUS VERSIONS OF THE Q I DID AWAY W/ EXPLICLIT ORDERING (IN ORDER TO ALLOW INSTANCES TO BE RE-ORDERED IN THE CLIENT); SHOULDN'T I STILL BE DOING THAT?
+        ordering = ["order"]
 
-    ontology = models.ForeignKey("QOntology", blank=False, null=False, related_name="model_proxies")
+    objects = QModelProxyManager()
 
-    package = models.CharField(max_length=SMALL_STRING, blank=True, null=True)
-    stereotype = models.CharField(
-        choices=[(slugify(cs), cs) for cs in CIM_MODEL_STEREOTYPES],
-        max_length=BIG_STRING, blank=True, null=True,
-    )
+    ontology = models.ForeignKey("QOntology", blank=True, null=True, related_name="model_proxies")
 
-    def get_fully_qualified_key(self, prefix=None):
-        fully_qualified_key = "{0}.{1}".format(self.ontology.get_fully_qualified_key(), self.guid)
-        if prefix:
-            return "{0}.{1}".format(prefix, fully_qualified_key)
-        return fully_qualified_key
+    package = models.CharField(max_length=SMALL_STRING, blank=False)
 
-    def is_document(self):
-        if self.stereotype:
-            return self.stereotype.lower() == "document"
-        return False
+    is_document = models.NullBooleanField()
+    label = QJSONField(blank=True, null=True, schema=get_label_schema)
 
-    def reset(self):
-        self.is_specialized = self.ontology.is_specialization()
+    def fully_qualified_key(self):
+        return "{0}.{1}".format(
+            self.ontology.guid,
+            self.key,
+        )
+
+    @property
+    def has_hierarchical_properties(self):
+        return self.property_proxies.hierarchical().count() > 0
+
+    def reset(self, **kwargs):
+        force_save = kwargs.pop("force_save", False)
+        if force_save:
+            self.save()
 
 
 class QCategoryProxy(QProxy):
@@ -130,28 +162,51 @@ class QCategoryProxy(QProxy):
         app_label = APP_LABEL
         abstract = False
         verbose_name = "_Questionnaire Proxy: Category"
-        verbose_name_plural = "_Questionnaire Proxies: Categories"
-        ordering = ("order", )
+        verbose_name_plural = "_Questionnaire Proxy: Categories"
+        unique_together = ("model_proxy", "name", "cim_id")
+        # TODO: SEE THE COMMENTS REGARDING "ordering" FOR QModelProxy ABOVE
+        ordering = ["order"]
 
-    categorization = models.ForeignKey("QCategorization", blank=False, related_name="category_proxies")
+    model_proxy = models.ForeignKey("QModelProxy", blank=False, related_name="category_proxies")
 
-    # property_proxies is accessed via the reverse lookup from the 'category' field of 'QPropertyProxy'
+    is_uncategorized = models.BooleanField(default=False)
+    is_uncategorized.help_text = _(
+        "An 'uncategorized' category is one which was not specified by the CIM; it acts as a placeholder within which to nest properties in the Questionnaire."
+    )
 
-    # 'name,' 'order,' & 'description,' fields are inherited from QProxy
-
-    def get_fully_qualified_key(self, prefix=None):
-        fully_qualified_key = "{0}".format(self.guid)
-        if prefix:
-            return "{0}.{1}".format(prefix, fully_qualified_key)
-        return fully_qualified_key
-
-    def get_key(self):
-        # even though categories have human-readable keys defined in categorization files,
-        # internally, I want to use guids just to make them similar to all other proxies
-        return str(self.guid)
+    def fully_qualified_key(self):
+        return "{0}.{1}".format(
+            self.model_proxy.get_fully_qualified_key(),
+            self.key,
+        )
 
     def has_property(self, property_proxy):
         return property_proxy in self.property_proxies.all()
+
+    def reset(self, **kwargs):
+        force_save = kwargs.pop("force_save", False)
+        if force_save:
+            self.save()
+
+
+class QPropertyProxyManager(models.Manager):
+
+    # used when getting inherited / excluded properties from an ontology...
+
+    # NO LONGER USED; PROPERTIES NO LONGER HAVE QUALIFYING PACKAGES, SO INSTEAD I CAN JUST CALL SOMETHING LIKE
+    # "property_proxies.filter(name__in=list_of_property_names)"
+    @legacy_code
+    def in_fully_qualified_names(self, fully_qualified_names):
+        all_property_proxies = self.get_queryset()
+        fully_qualified_pks = [
+            all_property_proxies.get(name=name, package=package).pk
+            for package, name in [fully_qualified_name.split('.') for fully_qualified_name in fully_qualified_names]
+            ]
+        return all_property_proxies.filter(pk__in=fully_qualified_pks)
+
+    def hierarchical(self):
+        return self.get_queryset().filter(is_hierarchical=True)
+
 
 class QPropertyProxy(QProxy):
 
@@ -159,63 +214,83 @@ class QPropertyProxy(QProxy):
         app_label = APP_LABEL
         abstract = False
         verbose_name = "_Questionnaire Proxy: Property"
-        verbose_name_plural = "_Questionnaire Proxies: Properties"
-        ordering = ("order", )
+        verbose_name_plural = "_Questionnaire Proxy: Properties"
+        unique_together = ("model_proxy", "name")
+        # TODO: SEE THE COMMENTS REGARDING "ordering" FOR QModelProxy ABOVE
+        ordering = ["order"]
+
+    objects = QPropertyProxyManager()
 
     model_proxy = models.ForeignKey("QModelProxy", blank=False, related_name="property_proxies")
+    category_proxy = models.ForeignKey("QCategoryProxy", blank=True, null=True, related_name="property_proxies")
+    # as w/ relationships below, it takes 2 fields to setup categories...
+    # the id is specified in the specialization & used in the "QPropertyProxy.reset" fn to actually link to the correct category_proxy
+    category_id = models.CharField(blank=True, null=True, max_length=SMALL_STRING)
 
-    stereotype = models.CharField(
-        choices=[(slugify(cs), cs) for cs in CIM_PROPERTY_STEREOTYPES],
-        max_length=BIG_STRING, blank=True, null=True,
-    )
-
-    cardinality = QCardinalityField(blank=False)
-    is_nillable = models.BooleanField(default=True)
     field_type = models.CharField(
+        max_length=SMALL_STRING, blank=False,
         choices=[(pt.get_type(), pt.get_name()) for pt in QPropertyTypes],
-        max_length=SMALL_STRING, blank=False,
     )
-    category = models.ForeignKey("QCategoryProxy", blank=True, null=True, related_name="property_proxies")
+    # despite all of the effort going into QCardinalityField, I never actually expose it
+    # so I am just using basic built-in fields instead (b/c they were needlessly complicated)...
+    cardinality_min = models.CharField(max_length=2, blank=False, choices=CARDINALITY_MIN_CHOICES)
+    cardinality_max = models.CharField(max_length=2, blank=False, choices=CARDINALITY_MAX_CHOICES)
+    is_nillable = models.BooleanField(default=True)
 
-    # ATOMIC fields...
-    atomic_default = models.CharField(max_length=BIG_STRING, blank=True, null=True)
+    is_hierarchical = models.BooleanField(default=False)
+
+    # the schema is generic enough that I can store the default value of any proxy field_type here...
+    values = QJSONField(blank=True, null=True, schema=get_values_schema)
+
+    # atomic_default
     atomic_type = models.CharField(
-        choices=[(pt.get_type(), pt.get_name()) for pt in QAtomicPropertyTypes],
-        default=QAtomicPropertyTypes.DEFAULT.get_type(),
-        max_length=SMALL_STRING, blank=False,
+        max_length=SMALL_STRING, blank=True, null=True,
+        choices=[(at.get_type(), at.get_name()) for at in QAtomicTypes],
     )
+    enumeration_is_open = models.BooleanField(default=False)
+    enumeration_choices = QJSONField(blank=True, null=True, schema=get_enumeration_choices_schema)
+    # it takes 2 fields to setup relationships...
+    # (b/c I can't add models until all proxies have been registered)
+    relationship_target_names = QJSONField(blank=True, null=True)  # overloading JSON just to store a list (b/c Django doesn't have a built-in list field)
+    relationship_target_models = models.ManyToManyField("QModelProxy", blank=True)
 
-    # ENUMERATION fields...
-    enumeration = QJSONField(blank=True, null=True)
-    enumeration_open = models.BooleanField(default=False)
-    enumeration_multi = models.BooleanField(default=False)
+    def fully_qualified_key(self):
+        return "{0}.{1}".format(
+            self.model_proxy.get_fully_qualified_key(),
+            self.key,
+        )
 
-    # RELATIONSHIP fields...
-    relationship_target_names = models.TextField(blank=False, default="")  # set during registration
-    #relationship_target_models = models.ManyToManyField("QModelProxy", blank=True, related_name="+")  # set during reset (after everything has been registered)
-    relationship_target_models = models.ManyToManyField("QModelProxy", blank=True, related_name="parent_property_proxies")  # set during reset (after everything has been registered)
-
-    def get_fully_qualified_key(self, prefix=None):
-        fully_qualified_key = "{0}.{1}".format(self.model_proxy.get_fully_qualified_key(), self.guid)
-        if prefix:
-            return "{0}.{1}".format(prefix, fully_qualified_key)
-        return fully_qualified_key
-
-    def is_multiple(self):
-        cardinality_max = self.get_cardinality_max()
-        return cardinality_max == u'*' or int(cardinality_max) > 1
-
+    @property
     def is_optional(self):
-        return not self.is_required()
+        return int(self.cardinality_min) == 0
 
+    @property
     def is_required(self):
-        cardinality_min = self.get_cardinality_min()
-        return int(cardinality_min) > 0
+        return not self.is_optional
 
+    @property
+    def is_infinite(self):
+        return self.cardinality_max == CARDINALITY_INFINITE
+
+    @property
+    def is_multiple(self):
+        return self.is_infinite or int(self.cardinality_max) > 1
+
+    @property
     def is_single(self):
-        return not self.is_multiple()
+        return int(self.cardinality_max) == 1
 
-    def reset(self):
+    def reset(self, **kwargs):
+        force_save = kwargs.pop("force_save", False)
+
+        ontology = self.model_proxy.ontology
+
+        category_id = self.category_id
+        if category_id:
+            self.category_proxy = self.model_proxy.category_proxies.get(cim_id=category_id)
+
+        if self.is_hierarchical:
+            assert self.field_type == QPropertyTypes.RELATIONSHIP
 
         if self.field_type == QPropertyTypes.ATOMIC:
             pass
@@ -223,53 +298,35 @@ class QPropertyProxy(QProxy):
         elif self.field_type == QPropertyTypes.ENUMERATION:
             pass
 
-        elif self.field_type == QPropertyTypes.RELATIONSHIP:
-
-            ontology = self.model_proxy.ontology
-
+        else:  # self.field_type == QPropertyTypes.RELATIONSHIP
             self.relationship_target_models.clear()
-            target_names = self.relationship_target_names.split('|')
-            for target_name in target_names:
-                try:
-                    if '.' in target_name:
-                        package, name = target_name.split('.')
-                        target_model = QModelProxy.objects.get(
+            for relationship_target in self.relationship_target_names:
+                relationship_target_package, relationship_target_name = relationship_target.split('.')
+                if self.values:
+                    # if this is specialized, there will be further constraints on which target objects to point to...
+                    for relationship_target_value in self.values:
+                        try:
+                            relationship_target_model = QModelProxy.objects.get(
+                                ontology=ontology,
+                                package=relationship_target_package,
+                                name=relationship_target_name,
+                                cim_id=relationship_target_value
+                            )
+                            self.relationship_target_models.add(relationship_target_model)
+                        except QModelProxy.DoesNotExist:
+                            msg = "unable to locate model '{0}'".format(relationship_target)
+                            raise QError(msg)
+                else:
+                    # if this is not specialized, just use the unconstrained target...
+                    try:
+                        relationship_target_model = QModelProxy.objects.get(
                             ontology=ontology,
-                            package__iexact=package,
-                            name__iexact=name
+                            package=relationship_target_package,
+                            name=relationship_target_name
                         )
-                    else:
-                        target_model = QModelProxy.objects.get(
-                            ontology=ontology,
-                            name__iexact=target_name
-                        )
-                    self.relationship_target_models.add(target_model)
-                except QModelProxy.DoesNotExist:
-                    msg = "unable to locate model '{0}'".format(target_name)
-                    raise QError(msg)
-
-    # TODO: THESE NEXT 2 FNS ARE REPEATED IN QPropetyCustomization
-
-    def use_references(self):
-        """
-        As of v0.14 all RELATIONSHIPS to a CIM Document _must_ use a reference
-        :return: Boolean
-        """
-        if self.field_type == QPropertyTypes.RELATIONSHIP:
-            target_models_are_documents = [tm.is_document() for tm in self.relationship_target_models.all()]
-            # double-check that all targets are the same type of class...
-            assert len(set(target_models_are_documents)) == 1
-            return all(target_models_are_documents)
-        return False
-
-    def use_subforms(self):
-        """
-        As of v0.14 all RELATIONSHIPS to a CIM Entity (non-Document) _must_ use a subform
-        :return: Boolean
-        """
-        if self.field_type == QPropertyTypes.RELATIONSHIP:
-            target_models_are_documents = [tm.is_document() for tm in self.relationship_target_models.all()]
-            # double-check that all targets are the same type of class...
-            assert len(set(target_models_are_documents)) == 1
-            return not any(target_models_are_documents)
-        return False
+                        self.relationship_target_models.add(relationship_target_model)
+                    except QModelProxy.DoesNotExist:
+                        msg = "unable to locate model '{0}'".format(relationship_target)
+                        raise QError(msg)
+        if force_save:
+            self.save()

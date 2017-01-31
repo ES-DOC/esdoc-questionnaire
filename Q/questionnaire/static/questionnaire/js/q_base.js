@@ -1,11 +1,92 @@
-/* js common to entire questionnaire */
-/* (no ng code here) */
+/* q_base.js */
 
+/* the Q mostly uses Angular for the client */
+/* preferably angular-ui-bootstrap */
+/* sometimes it uses Bootstrap directly for look-and-feel stuff */
+/* but sometimes, when all else fails, it uses pure JQuery or JavaScript */
+/* that code is defined here */
 
-/******************/
-/* begin messages */
-/******************/
+/**************************************/
+/* begin jquery widget initialization */
+/**************************************/
 
+/* b/c the Q is so dynamic, new JQuery widgets may need to be initialized at run-time */
+/* these fns takes care of that */
+
+function init_widgets(init_fn, elements, force_init) {
+    force_init = typeof force_init !== 'undefined' ? force_init : false;
+    var initialized_widget_class_name = "initialized_" + init_fn.name;
+    $(elements).each(function() {
+        if (! $(this).hasClass(initialized_widget_class_name) || (force_init)) {
+            init_fn(this);
+            $(this).addClass(initialized_widget_class_name)
+        }
+    });
+}
+
+function helps(element) {
+    var help_type = $(element).attr("data-toggle").toLowerCase();
+    if ( help_type == "tooltip") {
+        $(element).tooltip({
+            'placement': 'auto',
+            'html': true
+        })
+    }
+    else if ( help_type == "popover") {
+        $(element).popover({
+            'placement': 'auto',
+            'html': true,
+            'trigger': 'manual'
+        }).click(function(e) {
+            $(this).popover('toggle');
+            e.preventDefault();
+            e.stopPropagation();
+        });
+    }
+    else {
+        console.log("error: unknown help type: " + help_type)
+    }
+}
+
+function selects(element) {
+    /* this is NOT for dealing w/ enumeration fields */
+    /* it is just for making standard selects a bit prettier */
+    var multiple = $(element).hasClass("multiple");
+    var single = $(element).hasClass("single");
+    $(element).selectpicker({
+        'dropupAuto': false,
+        'selectedTextFormat': "count>3",
+        'size': 10,
+        'title': "Select Options"
+    }).selectpicker('render');
+}
+
+function splitters(element) {
+console.log("setup splitter")
+$(element).split({orientation: "vertical"});
+//    var container = $(element).closest("div.panel");
+//    $(element).height(
+//        $(container).height()
+//    ).split({
+//        orientation: "vertical",
+//        limit: $(container).width() * 0.10,
+//        position: "20%"
+//    });
+//    /* TODO: BIND THIS TO SOME REALISTIC EVENT THAT WILL BE CALLED BY THE Q */
+//    $(container).resize(function() {
+//        $(element).height(
+//            $(this).height()
+//        );
+//    });
+}
+
+/**************************************/
+/* end jquery widget initialization */
+/**************************************/
+
+/**************************/
+/* begin message handling */
+/**************************/
 
 function show_lil_msg(content) {
     var lil_msg = $("div#lil_msg");
@@ -17,13 +98,11 @@ function show_lil_msg(content) {
         .fadeOut();
 };
 
-
 function show_msg(text, status) {
     status = typeof status !== 'undefined' ? status : "default";
     var box = bootbox.alert(text);
     box.find(".modal-content").addClass(status);
 }
-
 
 function check_msg() {
     /* gets all pending Django messages */
@@ -45,78 +124,9 @@ function check_msg() {
     });
 };
 
-
-/****************/
-/* end messages */
-/****************/
-
-
-/**************************************/
-/* begin jquery widget initialization */
-/**************************************/
-
-
-function init_widgets(init_fn, elements, force_init) {
-
-    force_init = typeof force_init !== 'undefined' ? force_init : false;
-
-    var initialized_widget_class_name = "initialized_" + init_fn.name;
-
-    $(elements).each(function() {
-
-        if (! $(this).hasClass(initialized_widget_class_name) || (force_init)) {
-            init_fn(this);
-            $(this).addClass(initialized_widget_class_name)
-        }
-
-    });
-
-}
-
-
-function helps(element) {
-    var element_type = $(element).attr("data-toggle").toLowerCase();
-    if ( element_type == "tooltip") {
-        $(element).tooltip({
-            'placement': 'auto',
-            'html': true
-        })
-    }
-    else if ( element_type == "popover") {
-        $(element).popover({
-            'placement': 'auto',
-            'html': true,
-            'trigger': 'manual'
-        }).click(function(e) {
-            $(this).popover('toggle');
-            e.preventDefault();
-            e.stopPropagation();
-        });
-    }
-    else {
-        console.log("error: unknown help type: " + element_type)
-    }
-}
-
-
-function selects(element) {
-    var multiple = $(element).hasClass("multiple");
-    /* var single = $(element).hasClass("single"); */
-    $(element).selectpicker({
-        'dropupAuto': false,
-        'selectedTextFormat': "count>3",
-        'title': "Select Options"
-        /* I AM HERE */
-    })
-}
-
-function datetimes(element) {
-    console.log("initializing a datetime")
-}
-
-/************************************/
-/* end jquery widget initialization */
-/************************************/
+/************************/
+/* end message handling */
+/************************/
 
 
 /*********************/
@@ -132,16 +142,6 @@ function sort_objects_by_attr(objs, attr) {
     return sorted_objs;
 }
 
-function get_ancestor_element_by_id(el, id) {
-    var ancestor_element = $(el).closest("#" + id);
-    return ancestor_element;
-}
-
-function value_in_array(value, array) {
-    //console.log("looking for: '" + value + "' in: " + array);
-    return $.inArray(value, array) != -1;
-}
-
-/********************/
+/*******************/
 /* end utility fns */
-/********************/
+/*******************/

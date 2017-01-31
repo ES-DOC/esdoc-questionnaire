@@ -1,6 +1,6 @@
 ####################
 #   ES-DOC CIM Questionnaire
-#   Copyright (c) 2016 ES-DOC. All rights reserved.
+#   Copyright (c) 2017 ES-DOC. All rights reserved.
 #
 #   University of Colorado, Boulder
 #   http://cires.colorado.edu/
@@ -8,52 +8,38 @@
 #   This project is distributed according to the terms of the MIT license [http://www.opensource.org/licenses/MIT].
 ####################
 
-__author__ = "allyn.treshansky"
-
-"""
-.. module:: test_utils
-
-Tests for utilities
-"""
-
 from django.db import models, transaction
 from django.forms.models import modelform_factory, modelformset_factory
 from django.test.client import RequestFactory
 import tempfile
 
 from Q.questionnaire.tests.test_base import TestQBase, TestModel, incomplete_test
-from Q.questionnaire.q_fields import allow_unsaved_fk
 from Q.questionnaire.q_utils import *
 
-############################################
-# some silly models and forms to use tests #
-############################################
+##########################
+# some silly test models #
+##########################
+
 
 class TestUtilsModel(TestModel):
 
     name = models.CharField(blank=True, max_length=BIG_STRING, unique=True)
     other_name = models.CharField(blank=True, max_length=BIG_STRING, unique=False)
 
-    def __unicode__(self):
-        return u"{0}".format(self.name)
-
-
-class TestRecursiveModel(TestModel):
-    name = models.CharField(blank=True, max_length=BIG_STRING, unique=False)
-    child = models.ForeignKey("TestRecursiveModel", blank=True, null=True)
-
-TEST_MODELS = {
-    "test_utils_model": TestUtilsModel,
-    "test_recursive_model": TestRecursiveModel,
-}
+    def __str__(self):
+        return self.name
 
 TestUtilsForm = modelform_factory(TestUtilsModel, exclude=[])
 TestUtilsFormSet = modelformset_factory(TestUtilsModel, TestUtilsForm)
 
+TEST_MODELS = {
+    "test_utils_model": TestUtilsModel,
+}
 
 ####################################
 # some silly test enumerated types #
 ####################################
+
 
 class TestType(EnumeratedType):
     pass
@@ -64,9 +50,10 @@ TestTypes = EnumeratedTypeList([
     TestType("THREE", "three"),
 ])
 
-##############################################
-# a silly test fn to run w/ find_in_sequence #
-##############################################
+#############################
+# some silly test fn to use #
+#############################
+
 
 class TestFindInSequenceFunction(object):
 
@@ -77,9 +64,15 @@ class TestFindInSequenceFunction(object):
         cls.n += 1
         return item == test_value
 
+
+@legacy_code
+def test_legacy_fn():
+    return True
+
 ##############################################
 # some silly validators to use w/ QValidator #
 ##############################################
+
 
 class TestValidator1(QValidator):
     # has no msg; cannot be used
@@ -104,6 +97,7 @@ class TestValidator3(QValidator):
 ##############################
 # the actual test base class #
 ##############################
+
 
 class Test(TestQBase):
 
@@ -142,16 +136,20 @@ class Test(TestQBase):
     def test_q_error(self):
         error_msg = "this is a test message"
         try:
-            raise(QError(error_msg))
+            raise (QError(error_msg))
         except QError as e:
             self.assertEqual(
                 str(e),
                 "QError: {0}".format(error_msg)
             )
 
-    ####################
-    # enumerated types #
-    ####################
+    def test_legacy_code(self):
+        with self.assertRaises(QError):
+            test_legacy_fn()
+
+    #########################
+    # test enumerated types #
+    #########################
 
     def test_enumerated_types(self):
 
@@ -176,14 +174,206 @@ class Test(TestQBase):
         self.assertIsNone(TestTypes.get("INVALID_KEY"))
 
         # although there is support for enumerated type ordering, I don't actually care
-        # so no tests for that functionality here
+        # so there are no tests for that functionality here
+
+    ############################
+    # test string manipulation #
+    ############################
+
+    def test_remove_spaces_and_linebreaks(self):
+        valid_string = "This is a valid string."
+        string_with_spaces = "This  is      a valid    string."
+        string_with_linebreaks = "This \n is \n a \n valid \n string."
+        string_with_spaces_and_linebreaks = "This  is  \n    a valid    string."
+
+        self.assertEqual(valid_string, remove_spaces_and_linebreaks(valid_string))
+        self.assertEqual(valid_string, remove_spaces_and_linebreaks(string_with_spaces))
+        self.assertEqual(valid_string, remove_spaces_and_linebreaks(string_with_linebreaks))
+        self.assertEqual(valid_string, remove_spaces_and_linebreaks(string_with_spaces_and_linebreaks))
+
+    def test_pretty_string(self):
+        test_pretty_string = "I Am A Pretty String"
+        test_ugly_string = "iAmAPrettyString"
+
+        self.assertEqual(test_pretty_string, pretty_string(test_ugly_string))
+
+    ##############################
+    # test sequence manipulation #
+    ##############################
+
+    def test_find_in_sequence(self):
+
+        test_sequence = [1, 2, 3, 4, 5, ]
+
+        TestFindInSequenceFunction.n = 0
+        test_item = find_in_sequence(lambda item: TestFindInSequenceFunction.fn(item, 2), test_sequence)
+        self.assertEqual(test_item, 2)
+        self.assertEqual(TestFindInSequenceFunction.n, 2)
+
+        TestFindInSequenceFunction.n = 0
+        test_item = find_in_sequence(lambda item: TestFindInSequenceFunction.fn(item, 6), test_sequence)
+        self.assertIsNone(test_item)
+        self.assertEqual(TestFindInSequenceFunction.n, len(test_sequence))
+
+    def test_find_dict_in_sequence(self):
+
+        test_model_names = ["one", "two", "three"]
+        for test_model_name in test_model_names:
+            test_model = TestUtilsModel(name=test_model_name)
+            test_model.save()
+
+        test_models = TestUtilsModel.objects.all()
+        self.assertEqual(len(test_models), len(test_model_names))
+
+        test_model = find_dict_in_sequence({
+            "name": "one"
+        }, test_models)
+        self.assertEqual(test_model, TestUtilsModel.objects.get(name="one"))
+
+        test_model = find_dict_in_sequence({
+            "name": "invalid"
+        }, test_models)
+        self.assertIsNone(test_model)
+
+        test_model = find_dict_in_sequence({
+            "invalid": "invalid"
+        }, test_models)
+        self.assertIsNone(test_model)
+
+    def test_sort_list_by_key(self):
+
+        one = {"name": "one", "order": 3}
+        two = {"name": "two", "order": 2}
+        three = {"name": "three", "order": 1}
+
+        test_list = [one, two, three, ]
+
+        test_list_sorted_by_name = sort_sequence_by_key(test_list, "name")
+        self.assertListEqual(test_list_sorted_by_name, [one, three, two, ])
+        test_list_sorted_by_order = sort_sequence_by_key(test_list, "order")
+        self.assertListEqual(test_list_sorted_by_order, [three, two, one, ])
+        test_list_sorted_by_name_reverse = sort_sequence_by_key(test_list, "name", reverse=True)
+        self.assertListEqual(test_list_sorted_by_name_reverse, [two, three, one, ])
+        test_list_sorted_by_order_reverse = sort_sequence_by_key(test_list, "order", reverse=True)
+        self.assertListEqual(test_list_sorted_by_order_reverse, [one, two, three, ])
+
+    ################################
+    # test form/field manipulation #
+    ################################
+
+    def test_set_field_widget_attributes(self):
+        test_model = TestUtilsModel(name="my_name", other_name="my_other_name")
+        test_form = TestUtilsForm(instance=test_model)
+        test_field = test_form.fields["name"]
+
+        set_field_widget_attributes(test_field, {"class": "one"})
+        self.assertIn("one", test_field.widget.attrs.get("class"))
+        self.assertNotIn("two", test_field.widget.attrs.get("class"))
+
+        set_field_widget_attributes(test_field, {"class": "two"})
+        self.assertNotIn("one", test_field.widget.attrs.get("class"))
+        self.assertIn("two", test_field.widget.attrs.get("class"))
+
+    def test_update_field_widget_attributes(self):
+
+        test_model = TestUtilsModel(name="my_name", other_name="my_other_name")
+        test_form = TestUtilsForm(instance=test_model)
+        test_field = test_form.fields["name"]
+
+        update_field_widget_attributes(test_field, {"class": "one"})
+        self.assertIn("one", test_field.widget.attrs.get("class"))
+        self.assertNotIn("two", test_field.widget.attrs.get("class"))
+
+        update_field_widget_attributes(test_field, {"class": "two"})
+        self.assertIn("one", test_field.widget.attrs.get("class"))
+        self.assertIn("two", test_field.widget.attrs.get("class"))
+
+    #########################
+    # test url manipulation #
+    #########################
+
+    def test_add_parameters_to_url(self):
+        test_parameters = {
+            "one": "a",
+            "two": 2,
+            "three": True,
+        }
+        test_url = add_parameters_to_url("www.test.com", **test_parameters)
+        factory = RequestFactory()
+        test_request = factory.get(test_url)
+        self.assertEqual(test_request.GET.get("one"), u"a")
+        self.assertEqual(test_request.GET.get("two"), u"2")
+        self.assertEqual(test_request.GET.get("three"), u"True")
+
+    ############################
+    # test object manipulation #
+    ############################
+
+    @incomplete_test
+    def test_evaluate_lazy_object(self):
+        pass
+
+    ################################
+    # test (non-DRF) serialization #
+    ################################
+
+    def test_serialize_model_to_dict(self):
+        test_model = TestUtilsModel(name="my_name", other_name="my_other_name")
+
+        test_data = {
+            "id": test_model.pk,
+            "name": test_model.name,
+            "other_name": test_model.other_name,
+        }
+        self.assertDictEqual(test_data, serialize_model_to_dict(test_model))
+
+        test_data = {
+            "id": test_model.pk,
+            "name": test_model.name,
+        }
+        self.assertDictEqual(test_data, serialize_model_to_dict(test_model, exclude=["other_name"]))
+
+        test_data = {
+            "id": test_model.pk,
+            "name": test_model.name,
+            "other_name": "test",
+        }
+        self.assertDictEqual(test_data, serialize_model_to_dict(test_model, include={"other_name": "test"}))
+
+    #################
+    # test versions #
+    #################
+
+    def test_version_increment(self):
+        test_version = Version("1.2.3")
+        test_version += "1.2.3"
+        self.assertEqual(test_version.fully_specified(), "2.4.6")
+
+    def test_version_decrement(self):
+        test_version = Version("1.2.3")
+        test_version -= "1.2.3"
+        self.assertEqual(test_version.fully_specified(), "0.0.0")
+        with self.assertRaises(AssertionError):
+            test_version -= "1.2.3"
+
+    ##################
+    # test FuzzyInts #
+    ##################
+
+    def test_fuzzy_int(self):
+        test_fuzz = FuzzyInt(0, 10)
+
+        self.assertEqual(test_fuzz, 0)
+        self.assertEqual(test_fuzz, 5)
+        self.assertEqual(test_fuzz, 10)
+        self.assertNotEqual(test_fuzz, -1)
+        self.assertNotEqual(test_fuzz, 11)
 
     ###################
     # test validators #
     ###################
 
     def test_qvalidator_object(self):
-
         valid_value = "test"
         invalid_value = "invalid"
 
@@ -235,19 +425,18 @@ class Test(TestQBase):
         validate_no_profanities(non_profanity)
 
     def test_validate_password(self):
-
         test_password = "x"
-        self.assertLess(len(test_password), PASSWORD_LENGTH)
+        self.assertLess(len(test_password), MIN_PASSWORD_LENGTH)
         with self.assertRaises(ValidationError):
             validate_password(test_password)
 
         test_password = "password without non letters"
-        self.assertGreater(len(test_password), PASSWORD_LENGTH)
+        self.assertGreater(len(test_password), MIN_PASSWORD_LENGTH)
         with self.assertRaises(ValidationError):
             validate_password(test_password)
 
         test_password = "validpassword123"
-        self.assertGreater(len(test_password), PASSWORD_LENGTH)
+        self.assertGreater(len(test_password), MIN_PASSWORD_LENGTH)
         validate_password(test_password)
 
     def test_validate_file_extension(self):
@@ -263,265 +452,3 @@ class Test(TestQBase):
     @incomplete_test
     def test_validate_file_schema(self):
         pass
-
-    ####################
-    # xml manipulation #
-    ####################
-
-    @incomplete_test
-    def test_xpath_fix(self):
-        pass
-
-    @incomplete_test
-    def test_get_tag_without_namespace(self):
-        pass
-
-    @incomplete_test
-    def test_get_attribute_without_namespace(self):
-        pass
-
-    def test_get_index(self):
-
-        list_item = get_index(["a", "b", "c"], 0)
-        self.assertEqual(list_item, "a")
-
-        list_item = get_index(["a", "b", "c"], 10)
-        self.assertEqual(list_item, None)
-
-        list_item = get_index([], 0)
-        self.assertEqual(list_item, None)
-
-    #######################
-    # string manipulation #
-    #######################
-
-    def test_remove_spaces_and_linebreaks(self):
-        valid_string = "This is a valid string."
-        string_with_spaces = "This  is      a valid    string."
-        string_with_linebreaks = "This \n is \n a \n valid \n string."
-        string_with_spaces_and_linebreaks = "This  is  \n    a valid    string."
-
-        self.assertEqual(valid_string, remove_spaces_and_linebreaks(valid_string))
-        self.assertEqual(valid_string, remove_spaces_and_linebreaks(string_with_spaces))
-        self.assertEqual(valid_string, remove_spaces_and_linebreaks(string_with_linebreaks))
-        self.assertEqual(valid_string, remove_spaces_and_linebreaks(string_with_spaces_and_linebreaks))
-
-    def test_pretty_string(self):
-        test_pretty_string = "I Am A Pretty String"
-        test_ugly_string = "iAmAPrettyString"
-
-        self.assertEqual(test_pretty_string, pretty_string(test_ugly_string))
-
-    ####################
-    # url manipulation #
-    ####################
-
-    def test_add_parameters_to_url(self):
-        test_parameters = {
-            "one": "a",
-            "two": 2,
-            "three": True,
-        }
-        test_url = add_parameters_to_url("www.test.com", **test_parameters)
-        factory = RequestFactory()
-        test_request = factory.get(test_url)
-        self.assertEqual(test_request.GET.get("one"), u"a")
-        self.assertEqual(test_request.GET.get("two"), u"2")
-        self.assertEqual(test_request.GET.get("three"), u"True")
-
-    ######################
-    # model manipulation #
-    ######################
-
-    def test_copy_model(self):
-        with self.assertRaises(QError):
-            test_model = TestUtilsModel(name="test")
-            copy_model(test_model)
-
-    #############################
-    # form / field manipulation #
-    #############################
-
-    def test_set_field_widget_attributes(self):
-        test_model = TestUtilsModel(name="my_name", other_name="my_other_name")
-        test_form = TestUtilsForm(instance=test_model)
-        test_field = test_form.fields["name"]
-
-        set_field_widget_attributes(test_field, {"class": "one"})
-        self.assertIn("one", test_field.widget.attrs.get("class"))
-        self.assertNotIn("two", test_field.widget.attrs.get("class"))
-
-        set_field_widget_attributes(test_field, {"class": "two"})
-        self.assertNotIn("one", test_field.widget.attrs.get("class"))
-        self.assertIn("two", test_field.widget.attrs.get("class"))
-
-    def test_update_field_widget_attributes(self):
-
-        test_model = TestUtilsModel(name="my_name", other_name="my_other_name")
-        test_form = TestUtilsForm(instance=test_model)
-        test_field = test_form.fields["name"]
-
-        update_field_widget_attributes(test_field, {"class": "one"})
-        self.assertIn("one", test_field.widget.attrs.get("class"))
-        self.assertNotIn("two", test_field.widget.attrs.get("class"))
-
-        update_field_widget_attributes(test_field, {"class": "two"})
-        self.assertIn("one", test_field.widget.attrs.get("class"))
-        self.assertIn("two", test_field.widget.attrs.get("class"))
-
-    def test_get_data_from_form(self):
-        test_model = TestUtilsModel(name="my_name", other_name="my_other_name")
-        test_form = TestUtilsForm(
-            # TODO: THIS WORKS FINE w/ "data" ARG
-            # WHAT AOBUT w/ "instance" OR "initial" ARG?
-            # instance=test_model,
-            # initial=serialize_model_to_dict(test_model)
-            data=serialize_model_to_dict(test_model)
-        )
-
-        test_data = {
-            "name": "my_name",
-            "other_name": "my_other_name",
-        }
-        self.assertDictEqual(test_data, get_data_from_form(test_form))
-
-        test_data = {
-            "name": "my_name",
-            "other_name": "test_name",
-        }
-        self.assertDictEqual(test_data, get_data_from_form(test_form, include={"other_name": "test_name"}))
-
-    @incomplete_test
-    def test_get_data_from_formset(self):
-        test_models = [
-            TestUtilsModel(name="one", other_name="my_other_name"),
-            TestUtilsModel(name="two", other_name="my_other_name"),
-            TestUtilsModel(name="three", other_name="my_other_name"),
-        ]
-        test_formset = TestUtilsFormSet(
-            prefix="test_formset",
-            initial=[
-                serialize_model_to_dict(test_model)
-                for test_model in test_models
-            ]
-        )
-
-    ###########################
-    # (non-API) serialization #
-    ###########################
-
-    def test_serialize_model_to_dict(self):
-        test_model = TestUtilsModel(name="my_name", other_name="my_other_name")
-
-        test_data = {
-            "id": test_model.pk,
-            "name": test_model.name,
-            "other_name": test_model.other_name,
-        }
-        self.assertDictEqual(test_data, serialize_model_to_dict(test_model))
-
-        test_data = {
-            "id": test_model.pk,
-            "name": test_model.name,
-        }
-        self.assertDictEqual(test_data, serialize_model_to_dict(test_model, exclude=["other_name"]))
-
-        test_data = {
-            "id": test_model.pk,
-            "name": test_model.name,
-            "other_name": "test",
-        }
-        self.assertDictEqual(test_data, serialize_model_to_dict(test_model, include={"other_name": "test"}))
-
-    @incomplete_test
-    def test_deserialize_dict_to_model(self):
-        pass
-
-    #################
-    # FuzzyIntegers #
-    #################
-
-    def test_fuzzy_int(self):
-        test_fuzz = FuzzyInt(0, 10)
-
-        self.assertEqual(test_fuzz, 0)
-        self.assertEqual(test_fuzz, 5)
-        self.assertEqual(test_fuzz, 10)
-        self.assertNotEqual(test_fuzz, -1)
-        self.assertNotEqual(test_fuzz, 11)
-
-    #####################
-    # list manipulation #
-    #####################
-
-    def test_find_in_sequence(self):
-
-        test_sequence = [1, 2, 3, 4, 5, ]
-
-        TestFindInSequenceFunction.n = 0
-        test_item = find_in_sequence(lambda item: TestFindInSequenceFunction.fn(item, 2), test_sequence)
-        self.assertEqual(test_item, 2)
-        self.assertEqual(TestFindInSequenceFunction.n, 2)
-
-        TestFindInSequenceFunction.n = 0
-        test_item = find_in_sequence(lambda item: TestFindInSequenceFunction.fn(item, 6), test_sequence)
-        self.assertIsNone(test_item)
-        self.assertEqual(TestFindInSequenceFunction.n, len(test_sequence))
-
-    def test_find_dict_in_sequence(self):
-
-        test_model_names = ["one", "two", "three"]
-        for test_model_name in test_model_names:
-            test_model = TestUtilsModel(name=test_model_name)
-            test_model.save()
-
-        test_models = TestUtilsModel.objects.all()
-        self.assertEqual(len(test_models), len(test_model_names))
-
-        test_model = find_dict_in_sequence({
-            "name": "one"
-        }, test_models)
-        self.assertEqual(test_model, TestUtilsModel.objects.get(name="one"))
-
-        test_model = find_dict_in_sequence({
-            "name": "invalid"
-        }, test_models)
-        self.assertIsNone(test_model)
-
-        test_model = find_dict_in_sequence({
-            "invalid": "invalid"
-        }, test_models)
-        self.assertIsNone(test_model)
-
-    def test_sort_list_by_key(self):
-
-        one = {"name": "one", "order": 3}
-        two = {"name": "two", "order": 2}
-        three = {"name": "three", "order": 1}
-
-        test_list = [one, two, three, ]
-
-        test_list_sorted_by_name = sort_list_by_key(test_list, "name")
-        self.assertListEqual(test_list_sorted_by_name, [one, three, two, ])
-        test_list_sorted_by_order = sort_list_by_key(test_list, "order")
-        self.assertListEqual(test_list_sorted_by_order, [three, two, one, ])
-        test_list_sorted_by_name_reverse = sort_list_by_key(test_list, "name", reverse=True)
-        self.assertListEqual(test_list_sorted_by_name_reverse, [two, three, one, ])
-        test_list_sorted_by_order_reverse = sort_list_by_key(test_list, "order", reverse=True)
-        self.assertListEqual(test_list_sorted_by_order_reverse, [one, two, three, ])
-
-    ############
-    # versions #
-    ############
-
-    def test_version_increment(self):
-        test_version = Version("1.2.3")
-        test_version += "1.2.3"
-        self.assertEqual(test_version.fully_specified(), "2.4.6")
-
-    def test_version_decrement(self):
-        test_version = Version("1.2.3")
-        test_version -= "1.2.3"
-        self.assertEqual(test_version.fully_specified(), "0.0.0")
-        with self.assertRaises(AssertionError):
-            test_version -= "1.2.3"

@@ -1,33 +1,21 @@
-<!-- this is a single node of the structure created by the "tree" directive defined in "q_ng_base.js" -->
+<!-- this is a single pane of the structure created by the "hierarchy" directive defined in "q_ng_edit.js" -->
+<!-- it is used in conjunction w/ the "tree" directive defined in "q_ng_edit.js" -->
 
-<div ng-repeat="node in nodes">
-    <div class="list-group-item">
-        node
-    </div>
-</div>
-<!--<div ng-repeat="node in nodes">-->
-    <!--<div class="list-group-item" ng-class="{'selected': node.is_selected, 'inactive': !node.is_active}" ng-click="select_node(node)">-->
-        <!--<span class="spacer" ng-repeat="i in get_depth_as_array() track by $index"/>-->
-        <!--<span class="help" data-toggle="tooltip" title="{{node.documentation}}">{{node.name}}</span>-->
-        <!--<input type="checkbox" class="pull-right" ng-model="node.is_active" ng-click="toggle_node_activation(node)">-->
-    <!--</div>-->
-    <!--<tree nodes="node.nodes" depth="depth + 1"/>-->
-<!--</div>-->
-
-
-<!-- no longer using this complicated nesting -->
-<!-- (note the lack of the parent "list-group") -->
-<!-- nor am I dealing w/ collapsible nodes -->
-<!--
-<div class="list-group">
-    <div class="list-group-item" ng-repeat="node in nodes">
-        <button class="btn btn-xs btn-default" type="button" ng-show="has_subnodes(node)" ng-click="expanded = !expanded">
-            <span ng-show="expanded" class="glyphicon glyphicon-triangle-bottom"></span>
-            <span ng-hide="expanded" class="glyphicon glyphicon-triangle-right"></span>
-        </button>
-        {{node.name}}
-        <input type="checkbox" class="pull-right" ng-model="node.is_active"/>
-        <tree ng-show="expanded" nodes="node.nodes"/>
-    </div>
-</div>
--->
+<section model_to_watch="current_model"
+         key="{{ current_model.key }}"
+         section_type="model_realization"/>
+<div ng-repeat="property in current_model.properties" ng-init="property_index=$index">
+    <!-- originally I wanted to add a filter to the above ng-repeat to only loop through hierarchical properties -->
+    <!-- but that made property_index not match the corresponding JSON array -->
+    <!-- next I thought about adding a "get_index_of_property" function, but that looped through the full JSON array for each property -->
+    <!-- so I just loop through everything here _once_ but only do stuff on those that match the "ng-if" below -->
+    <div ng-if="property.is_hierarchical">
+        <div ng-repeat="target in property.relationship_values" ng-init="target_index=$index">
+            <div ng-controller="ModelEditorController as model_editor_controller"
+                 current_model_path="{{ current_model_path }}.properties[{{ property_index }}].relationship_values[{{ target_index }}]">
+                <!-- here is a nested hierarchical model (notice it has its own nested controller -->
+                <hierarchy model="current_model"></hierarchy>
+            </div>  <!-- /ng-controller=model_editor_controller -->
+        </div> <!-- /ng-repeat=target in property.relationship_values -->
+    </div>  <!-- /ng-if=property.is_hierarchical -->
+</div>  <!-- /ng-repeat=property in current_model.properties -->

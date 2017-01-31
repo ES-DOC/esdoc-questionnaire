@@ -7,12 +7,16 @@
 <div class="panel panel-default">
 
     <div class="panel-heading">
-        {# TODO: IT WOULD BE NICE TO SPLIT THIS VARIABLE ACROSS MULTIPLE LINES #}
-        {% with help_text='These categories will appear as tabs within the Editor.  The tab order can be changed by dragging and dropping the above widgets.  Additionally, each category can be customized by clicking the <em>pencil/edit</em> icon.  Clicking elsewhere on a category widget will toggle the visibility of all properties belonging to that category.  The number at the right of each widget indicates the amount of those properties.  Use the <strong>View All</strong> button above to display properties from all categories.' %}
-            {% include 'questionnaire/_q_help.html' %}
-        {% endwith %} {# /help_text #}
+        <help help_text="
+            These categories will appear as tabs within the Editor.
+            The tab order can be changed by dragging and dropping the above widgets.
+            Additionally, each category can be customized by clicking the <em>pencil/edit</em> icon.
+            Clicking elsewhere on a category widget will toggle the visibility of all properties belonging to that category.
+            The number at the right of each widget indicates the amount of those properties.
+            Use the <strong>View All</strong> button below to display properties from all categories.">
+        </help>
         Available Categories:&nbsp;
-    </div>
+    </div>  <!-- /.panel-heading -->
 
     <div class="panel-body categories">
 
@@ -25,14 +29,13 @@
                     <button type="button"
                             class="btn btn-primary btn-xs"
                             data-toggle="modal"
-                            data-target="#{% verbatim ng %}{{category.key}}{% endverbatim ng %}"
+                            data-target="#category_{% verbatim ng %}{{category.key}}{% endverbatim ng %}"
                             ng-click="category.display_detail = true;"
                             title="click to further customize this category">
                         <span class="glyphicon glyphicon-pencil"></span>
-                    </button>
-                    &nbsp;
+                    </button>&nbsp;
                     {% verbatim ng %}
-                        {{ category.category_title }}
+                        {{ category.category_title }}&nbsp;
                         <span class="badge">{{ category.num_properties }}</span>
                     {% endverbatim ng %}
                 </span>
@@ -52,40 +55,43 @@
 
     </div>
 
-    {# here are the category forms that can be activated by the above widgets #}
-    <div class="modal fade category"
-         data-backdrop="static"
-         id="{% verbatim ng %}{{category.key}}{% endverbatim ng %}"
-         role="dialog"
-         tabindex="-1"
-         ng-repeat="category in current_model.categories">
-        <div class="modal-dialog" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <!--<button type="button" class="close" data-dismiss="modal"></button>-->
-                    <h4 class="modal-title">Customize Category</h4>
-                </div>  <!-- /.modal-header -->
-                <div class="modal-body" ng-init="category_key=category.key; category_index=$index">
+</div> <!-- /.panel -->
 
-                    <section model_to_watch="category"
-                        key="{% verbatim ng %}{{ category_key }}{% endverbatim ng %}"
-                        index="{% verbatim ng %}{{ category_index }}{% endverbatim ng %}"
-                        section_type="category_customization"/>
+{# here are the category forms that can be activated by the above widgets #}
+<div class="modal fade category"
+     data-backdrop="static"
+     id="category_{% verbatim ng %}{{category.key}}{% endverbatim ng %}"
+     role="dialog"
+     tabindex="-1"
+     ng-repeat="category in current_model.categories">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <!--<button type="button" class="close" data-dismiss="modal"></button>-->
+                <h4 class="modal-title">Customize Category</h4>
+            </div>  <!-- /.modal-header -->
+            <div class="modal-body" ng-init="category_key=category.key; category_index=$index">
 
-                </div>  <!-- /.modal-body -->
-                <div class="modal-footer">
-                    <button type="button"
-                            class="btn btn-primary"
-                            ng-click="category.display_detail = false;"
-                            ng-disabled="!categories_validity"
-                            onclick="$(this).closest('.modal').modal('hide')">
-                            <!-- I am specifically _not_ using the ng attribute "data-dismiss='modal'" b/c that will close _all_ modals (and this category customization form may be open in the context of a subform) -->
-                            <!-- instead, I use some inline JQuery on the onclick event; it finds the parent modal and explicitly closes it-and-only-it -->
-                        ok
-                    </button>
-                </div>  <!-- /.modal-footer -->
-            </div>  <!-- /.modal-content -->
-        </div>  <!-- /.modal-dialog -->
-    </div>  <!-- /.modal -->
+                <section model_to_watch="category"
+                    key="{% verbatim ng %}{{ category_key }}{% endverbatim ng %}"
+                    index="{% verbatim ng %}{{ category_index }}{% endverbatim ng %}"
+                    section_type="category_customization"/>
 
-</div> <!-- /CategoriesCustomizerController -->
+            </div>  <!-- /.modal-body -->
+            <div class="modal-footer">
+                <button type="button"
+                        class="btn btn-primary"
+                        ng-click="category.display_detail = false;"
+                        ng-disabled="!categories_validity"
+                        onclick="$(this).closest('.modal').modal('hide')">
+                        <!-- I am specifically _not_ using the ng attribute "data-dismiss='modal'" b/c that will close _all_ modals -->
+                        <!-- (and this category customization form may be open in the context of a subform) -->
+                        <!-- instead, I use some inline JQuery on the onclick event; it finds the parent modal and explicitly closes it-and-only-it -->
+                    ok
+                </button>
+            </div>  <!-- /.modal-footer -->
+        </div>  <!-- /.modal-content -->
+    </div>  <!-- /.modal-dialog -->
+</div>  <!-- /.modal -->
+
+

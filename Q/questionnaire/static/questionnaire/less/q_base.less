@@ -8,90 +8,74 @@
 
 /* original bootstrap styles */
 @import "bootstrap/bootstrap.less";
-
-/* my custom variables */
+/* custom bootswatch variables */
+/* (from "readable" theme) */
+@import "swatch/variables.less";
+/* default bootswatch styles */
+@import "swatch/bootswatch.less";
+/* original bootstrap utils */
+@import "bootstrap/utilities.less";
+/* custom Q variables */
 @import "q_variables.less";
-
+/* redefine ng-specific stuff */
+@import "q_ng.less";
 /* redefine bootstrap-specific stuff */
 @import "q_bootstrap.less";
 
-/* redefine ng-specific stuff */
-@import "q_ng.less";
 
-/*******************************/
-/* fixes for ui.bootstrap (ng) */
-/*******************************/
-
-.nav, .pagination, .carousel, .panel-title a { cursor: pointer; }
-
-/**************/
-/* custom CSS */
-/**************/
-
-/* begin some top-level stuff */
-
-
-body {
-    /* whitespace is nice */
-    background-color: #ffffff;
-    margin-left: auto;
-    margin-right: auto;
-}
-
-* {
-    /* rounded just looks better */
-    -moz-border-radius: 4px;
-    border-radius: 4px;
-}
-
-/* end some top-level stuff */
-
-/* site block is defined outside of #questionnaire */
+/* begin custom styling for the site banner */
 
 #site {
-  .alert;
-  .alert-danger;
-  .text-center;
-  padding: 8px !important;
+    .alert;
+    .alert-danger;
+    .text-center;
+    padding: 8px !important;
 }
 
-/* end site block */
+/* end custom styling for the site banner */
 
-/* begin alerts */
+/* some custom styles that should always be available */
 
-/* there are two alerts systems that the Q uses: */
-/* (both utilizing the JS library "bootbox") */
+.table-nonfluid {
+    width: auto !important;
+}
+
+.title {
+    .lead;
+    .text-primary;
+    .text-center;
+    a {
+        color: inherit !important;
+    }
+}
+
+.documentation {
+    padding: 8px;
+    font-style: italic;
+    font-weight: normal !important;  /* ensures documentation is not bolded w/in required fields */
+}
+
+.info {
+    background: @alert-warning-bg;
+    border: 2px solid @alert-warning-border;
+    padding: 4px;
+    margin-top: 8px;
+    margin-bottom: 8px;
+    font-style: oblique;
+}
+
+.voffset-2  { margin-top: 2px !important; }
+.voffset-4  { margin-top: 4px !important; }
+.voffset-8  { margin-top: 8px !important; }
+.voffset-12 { margin-top: 12px !important; }
+.voffset-16 { margin-top: 16px !important; }
+
+/* there are two alerts systems that the Q uses (both utilizing the JS library "bootbox"): */
 /* 1) a standard modal alert box that reads from the Django message queue */
 /* 2) a discrete popup that fades in and out for minor messages */
-/* 3) additionally, various ng controllers make use of "bootbox.alert()" directly */
+/* additionally, various ng controllers make use of "bootbox.alert()" directly */
 
- .modal-content.error {
-   background: @panel-danger-heading-bg;
-   color: @panel-danger-text;
-   border: @panel-danger-border;
- }
- .modal-content.warning {
-   background: @panel-warning-heading-bg;
-   color: @panel-warning-text;
-   border: @panel-warning-border;
- }
- .modal-content.info {
-   background: @panel-info-heading-bg;
-   color: @panel-info-text;
-   border: @panel-info-border;
- }
- .modal-content.success {
-   background: @panel-primary-heading-bg;
-   color: @panel-primary-text;
-   border: @panel-primary-border;
- }
- .modal-content.default {
-   background: @panel-default-heading-bg;
-   color: @panel-default-text;
-   border: @panel-default-border;
- }
-
-  #lil_msg {
+#lil_msg {
    .label;
    .label-info;
    color: @text-muted;
@@ -100,368 +84,406 @@ body {
    right: 0;
    padding: 1em;
    z-index: 9999;
- }
+}
 
-/* end alerts */
-
-/* begin project-specific stuff */
+/* end some custom styles that should always be available */
 
 #questionnaire {
 
-  /* wrap all custom CSS in container div */
-  /* (so it doesn't conflict w/ other stuff) */
-  /* (and b/c less allows an explicit hierarchy which is easier to read) */
+    /* begin custom styling for splitter */
 
-
-  div.header {
-    /* indent the header */
-    margin-left: 8px;
-    margin-right: 8px;
-
-    img#logo {
-      /* fixed-width for the logo */
-      width: 200px;
+    .splitter div:nth-of-type(2) {
+        background-color: @brand-primary;
     }
 
-    div#user {
-      /* stick the user section to the right */
-      .pull-right;
-      font-size: smaller !important;
+    /* end custom styling for splitter */
 
-      * {
-        /* make all the (pseudo)buttons in the user section line up */
-        display: inline;
-      }
+    /* begin custom styling for tree directive */
 
+    .hierarchy {
+        .panel;
+        .panel-primary;
     }
 
-  } /* /header */
-
-  div.footer {
-    /* make the footer smaller, centered, italic */
-    text-align: center;
-    font-style: italic;
-    font-size: 90%;
-    margin-top: 6px;
-    margin-bottom: 6px;
-    margin-left: auto;
-    margin-right: auto;
-    width: 90%;
-    /* make sure any floats are cleared before the footer */
-    clear: both;
-
-    img.project_logo {
-      height: 96px;
-      width: 96px;
-    }
-  }  /* /footer */
-
-  div.content {
-
-
-  } /* /content */
-
-  /* some help w/ forms */
-
-  label {
-    display: inline-block;
-  }
-
-  .form-group {
-    vertical-align: middle !important;
-  }
-
-  .form-control {
-    width: @field-width;
-  }
-
-  .form-control-small {
-    width: (@field-width / 2.0);
-  }
-
-  .form-control-auto {
-    width: auto !important;
-  }
-
-  .form-control[type='checkbox'] {
-    width: auto;
-  }
-
-  textarea.form-control {
-    min-height: 34px;
-    resize: vertical;
-  }
-
-  .odd {
-      background-color: lighten(@gray-base, 98%);
-  }
-
-  .even {
-      background-color: lighten(@gray-base, 92%);
-  }
-
-  /* end some help w/ forms */
-
-  /* collapsible fieldsets */
-
-  fieldset.collapsible {
-    /* lots of "!important" notation */
-    /* b/c I'm resetting some low-level CSS stuff */
-    border: 2px solid @brand-primary !important;
-    padding: 0 1.4em 1.4em 1.4em !important;
-
-    legend {
-      font-size: @font-size-base !important;
-      font-weight: bold !important;
-      text-align: left !important;
-      color: @brand-primary !important;
-      background-color: transparent !important;
-      margin-top: 1.4em !important;
-      width: auto !important;
-      border: 0 !important;
-      cursor: pointer !important;
-    }
-  }
-
-  /* end collapsible fieldsets */
-
-  table {
-
-    .clickable_row {
-      cursor: hand;
+    .hierarchy_title {
+        .panel-heading;
+        .text-center;
+        padding: 2px;
+        color: @panel-primary-text;
+        background-color: @panel-primary-heading-bg;
     }
 
-  }
-
-  .enumeration {
-    button {
-      width: @field-width;
-      text-align: left;
-      .placeholder {
-        color: silver;
-      }
+    .hierarchy_body {
+        .panel-body;
+        padding: 2px;
     }
-    ul {
-      width: @field-width;
-      border: 1px solid @brand-primary;
-      li {
-        padding: @padding-small-vertical @padding-small-horizontal;
-        label {
-          width: 100%;
+
+    tree {
+        .selected {
+            color: @brand-primary;
         }
-        label.disabled {
-          color: @text-muted;
+        .inactive {
+            /*color: @brand-disabled;*/
         }
-      }
-      li.selected {
-        background-color: @state-info-bg;
-      }
+        .spacer {
+            margin-left: @font-size-base;
+        }
+        .list-group-item {
+            cursor: pointer;
+        }
+        .list-group-item:hover {
+            font-weight: bold;
+        }
     }
 
-  }
-
-  .categories {
-
-    .list-group {
-      display: inline-block;
-      border: 1px solid @brand-primary;
-      padding: 2px;
+    .pane {
+        .panel;
+        .panel-primary;
     }
 
-    .list-group-item {
-      display: inline-block;
-      border: 0px;
-      /*margin-left: 2px;*/
-      /*margin-right: 2px;*/
-      font-size: @font-size-large;
+    .pane_title {
+        .panel-heading;
+        padding: 2px;
+    }
+
+    .pane_body {
+        .panel-body;
+        padding: 2px;
+    }
+
+    /* end custom styling for tree directive */
+
+    /* begin custom styling for fieldsets */
+
+    div[id$="_model_fields"] {
+        fieldset {
+            &[disabled] {
+                border: 2px solid @brand-disabled !important;
+                * {
+                    color: @brand-disabled !important;;
+                }
+            }
+        }
+    }
+
+    fieldset.non_collapsible {
+        /* lots of "!important" notation b/c I'm resetting some low-level CSS stuff */
+        border: 2px solid @brand-primary;
+        padding: 0 1.4em 1.4em 1.4em !important;
+
+        legend {
+            font-size: @font-size-base !important;
+            font-weight: bold !important;
+            text-align: left !important;
+            color: @brand-primary;
+            background-color: transparent !important;
+            margin-top: 1.4em !important;
+            width: auto !important;
+            border: 0 !important;
+        }
 
     }
 
-    .label {
-      /* TODO: DOESN'T SEEM LIKE THESE STYLES ARE HAVING AN EFFECT ? */
-      button {
-        padding-top: 1px !important;
-        padding-bottom: 1px !important;
+    fieldset.collapsible {
+        /* lots of "!important" notation b/c I'm resetting some low-level CSS stuff */
+        border: 2px solid @brand-primary;
+        padding: 0 1.4em 1.4em 1.4em !important;
+
+        legend {
+            font-size: @font-size-base !important;
+            font-weight: bold !important;
+            text-align: left !important;
+            color: @brand-primary;
+            background-color: transparent !important;
+            margin-top: 1.4em !important;
+            width: auto !important;
+            border: 0 !important;
+            cursor: pointer !important;
+        }
+
+        &.collapsed {
+            height: 4px;
+        }
+
+    }
+
+    /* end custom styling for fieldsets */
+
+    /* begin custom styling for accordions */
+
+    .accordion_toolbar {
+        .pull-right;
+        .btn-toolbar;
+        button {
+            .btn-xs;
+            .btn-primary;
+        }
+    }
+
+    .accordion {
+        .voffset-16;
+        .accordion_group {
+            .panel-info;
+            a:hover {
+                text-decoration: none !important;
+            }
+        }
+        .accordion_group {
+            border: 2px solid @panel-info-heading-bg;
+        }
+        .accordion_group:hover {
+            border: 2px solid @panel-primary-heading-bg;
+        }
+        /* TODO: uib-accordion USES PANELS INTERNALLY */
+        /* TODO: WHICH INSERT <h4> ELEMENTS IN THE HEADINGS */
+        /* TODO: SO I OVERRIDE IT MANUALLY HERE */
+        /* TODO: BUT I'M NOT SURE WHY MY .accordion_header STYLES (BELOW) AREN'T APPLIED */
+        h4 {
+            font-family: @font-family-base !important;
+            font-size: @font-size-base !important;
+            font-weight: normal !important;
+        }
+        .accordion_header * {
+            font-family: @font-family-base !important;
+            font-size: 4@font-size-base !important;
+            font-weight: normal !important;
+        }
+        .expanded {}
+        .collapsed {}
+    }
+
+    /* end custom styling for accordions */
+
+    /* begin custom styling for project logos */
+
+    .project_logo {
+        .pull-right;
+        img {
+            /* TODO: FURTHER CUSTOMIZE PROJECT LOGO SIZE HERE */
+        }
+    }
+
+    /* end custom styling for project logos */
+
+    /* begin custom sytling for enumerations */
+
+    .enumeration {
+        button {
+            .btn;
+            .btn-sm;
+            .btn-primary;
+            width: @field-width;
+            text-align: left;
+        }
+        ul {
+            width: @field-width;
+            li {
+                label {
+                    width: 100%;
+                    .help {
+                        .pull-right;
+                    }
+                }
+                label.disabled {
+                    color: @text-muted;
+                }
+            }
+            li.selected {
+                background-color: @state-info-bg;
+            }
+        }
+    }
+
+    /* end custom styling for enumerations */
+
+    /* begin dealing w/ completion labels & icons */
+
+    .completion_title {
+        .text-right;
+        color: @brand-primary;
+        font-style: italic;
+        font-size: @font-size-small;
+    }
+
+    /* end dealing w/ completion labels & icons */
+
+    /* categories (customizations) are pretty convoluted */
+
+    .categories {
+        .list-group {
+            display: inline-block;
+            border: 1px solid @brand-primary;
+            padding: 2px;
+        }
+
+        .list-group-item {
+            display: inline-block;
+            border: 0px;
+            font-size: @font-size-large;
+            cursor: pointer;
+        }
+
+        button * {
+            margin: 2px;
+        }
+
+        .label.enabled {
+
+            background: @brand-primary;
+            button {
+                border: 1px solid darken(@brand-primary, 10%);
+            }
+            .badge {
+                background: darken(@brand-primary, 10%);
+            }
+        }
+
+        .label.disabled {
+            border: 1px solid @gray-dark;
+            background: @list-group-disabled-bg;
+            color: @list-group-disabled-text-color;
+            button {
+                border: darken(@list-group-disabled-bg, 20%);
+                background: darken(@list-group-disabled-bg, 10%);
+                color: @list-group-disabled-text-color;
+            }
+            button:hover {
+                background: darken(@list-group-disabled-bg, 20%);
+                color: darken(@list-group-disabled-text-color, 10%);
+            }
+            .badge {
+                background: darken(@list-group-disabled-bg, 10%);
+                color: @list-group-disabled-text-color;
+            }
+        }
+
         .glyphicon {
-          margin-top: 1px !important;
-          margin-bottom: 1px !important;
+            pointer-events: all;
         }
-      }
-    }
-
-    .label.enabled {
 
     }
 
-    .label.disabled {
-      border: 1px solid @gray-dark;
-      background: @list-group-disabled-bg;
-      color: @list-group-disabled-text-color;
-      button {
-        /* the inline button w/in a category label */
-        border: 1px solid @gray-dark;
-        background: @list-group-disabled-bg;
-        color: @list-group-disabled-text-color;
-      }
+    /* end categories are pretty convoluted */
+
+    /* begin some help w/ forms */
+
+    label {
+        display: inline-block;
     }
 
-    .glyphicon {
-      pointer-events: all;
-    }
-  }
-
-  .title {
-    .lead;
-    .text-primary;
-    .text-center;
-    a {
-      color: inherit !important;
-    }
-  }
-
-  .documentation {
-    padding: 8px;
-    font-style: italic;
-    font-weight: normal !important;  /* ensures documentation is not bolded w/in required fields */
-  }
-
-  .info {
-    background: @alert-warning-bg;
-    border: 2px solid @alert-warning-border;
-    padding: 4px;
-    margin-top: 8px;
-    margin-bottom: 8px;
-    font-style: oblique;
-  }
-
-  .help {
-    cursor: pointer;
-  }
-
-  .help:hover {
-    color: @brand-primary;
-  }
-
-  .required {
-    font-weight: bold;
-  }
-
-  .optional {
-    font-weight: normal;
-  }
-
-  .synchronized {
-    color: inherit;
-  }
-
-  .unsynchronized  {
-    color: @brand-danger;
-  };
-
-  .table-nonfluid {
-    width: auto !important;
-  }
-
-  .disabled {
-    cursor: @cursor-disabled;
-  }
-
-  .sortable {
-    cursor: move;
-  }
-
-  .sortable_handle {
-    cursor: move;
-  }
-
-  .sortable_item {
-    /* this is the placeholder that appears while an item is being sorted */
-    border: 1px dashed @brand-primary;
-  }
-
-  /* accordions */
-
-  .accordion {
-    .voffset-16;
-    .accordion_group {
-
-      a:hover {
-        text-decoration: none !important;
-      }
-      .panel-info;
-      .panel-heading {
-        //height: 32px;
-        //padding-top: 4px;
-        //padding-bottom: 4px;
-      }
-
+    .form-group {
+        vertical-align: middle !important;
+        .documentation {
+            padding-bottom: 0px;
+            padding-top: 4px;
+        }
     }
 
-    .accordion_group:hover {
-      border: 1px solid @panel-primary-heading-bg;
+    .form-control {
+        width: @field-width;
     }
 
-    //.expanded {
-    //    border: 1px solid @panel-primary-heading-bg;
-    //  }
-
-
-    .expanded {}
-    .collapsed {}
-
-  }
-
-  .accordion_toolbar {
-    .pull-right;
-    .btn-toolbar;
-    button {
-      .btn-xs;
-      .btn-primary;
+    .form-control-small {
+        width: (@field-width / 2.0) !important;
     }
-  }
 
-  /* end accordions */
-
-  .voffset-2  { margin-top: 2px !important; }
-  .voffset-4  { margin-top: 4px !important; }
-  .voffset-8  { margin-top: 8px !important; }
-  .voffset-12 { margin-top: 12px !important; }
-  .voffset-16 { margin-top: 16px !important; }
-
-  .q-dirty {
-    /* sometimes I disable ng-validation and do my own */
-    border-color: @brand-danger;
-  }
-
-  /*
-  .submit {
-    .pull-right;
-
-    input {
-      &[type="submit"] {
-        .btn; .btn-primary;
-      }
+    .form-control-auto {
+        width: auto !important;
     }
-  }
-  */
 
+    .form-control[type='checkbox'] {
+        width: auto;
+    }
+
+    .form-control[type='number'] {
+        width: auto;
+    }
+
+    textarea.form-control {
+        min-height: (@input-height-base * 2.0); /* 34px; */
+        resize: vertical;
+    }
+
+    .odd {
+      background-color: lighten(@gray-base, 98%);
+    }
+
+    .even {
+      background-color: lighten(@gray-base, 92%);
+    }
+
+    .required {
+        font-weight: bold;
+    }
+
+    .optional {
+        font-weight: normal;
+    }
+
+    .error_wrapper {
+        display: inline;
+        padding: 0px;
+        .errorlist {
+            display: inline;
+            list-style-type: none;
+            padding: 0px;
+            margin: 0px;
+            li {
+                display: inline;
+            }
+        }
+    }
+
+    .q-dirty {
+        /* sometimes I disable ng-validation and do my own */
+        border-color: @brand-danger;
+    }
+
+    /* end some help w/ forms */
+
+
+    /* begin custom styling for specific sections */
+
+    .header {
+        img#logo {
+            width: 200px;
+         }
+         #user {
+            .pull-right;
+         }
+    }
+
+    .footer {
+        .text-center;
+        font-style: italic;
+        font-size: 90%;
+        border-top: 1px solid @brand-info;
+        clear: both;
+        img#project_logo {
+            height: 96px;
+            width: 96px;
+        }
+    }
+
+    .content {
+
+        .help {
+            cursor: pointer;
+        }
+
+        .help:hover {
+            color: @brand-primary;
+        }
+
+       .required {
+            font-weight: bold;
+        }
+
+        .optional {
+            font-weight: normal;
+        }
+
+    }
+
+    /* end custom styling for specific sections */
 }
-
-/* modals may exist outside of the regular content */
-
-.modal {
-  margin-left: auto;
-  margin-right: auto;
-  .modal-dialog {
-    height: 100%;
-    width: 100%;
-  }
-  .modal-body {
-    margin-left: auto;
-    margin-right: auto;
-    width: auto !important;
-    overflow: auto;
-  }
-}
-
-/* end project-specific stuff */

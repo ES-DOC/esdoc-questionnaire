@@ -1,6 +1,6 @@
 ####################
 #   ES-DOC CIM Questionnaire
-#   Copyright (c) 2016 ES-DOC. All rights reserved.
+#   Copyright (c) 2017 ES-DOC. All rights reserved.
 #
 #   University of Colorado, Boulder
 #   http://cires.colorado.edu/
@@ -8,49 +8,30 @@
 #   This project is distributed according to the terms of the MIT license [http://www.opensource.org/licenses/MIT].
 ####################
 
-__author__ = 'allyn.treshansky'
-
-"""
-.. module:: models_realizations
-
-The actual CIM Models & Properties to create
-
-"""
-
+from django.contrib.auth.models import User
+from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 from django.db.models.fields import FieldDoesNotExist
-from django.contrib.auth.models import User
 from django.template.loader import render_to_string
-from django.utils.translation import ugettext_lazy as _
-
-from uuid import uuid4, UUID as generate_uuid
 from collections import OrderedDict
-from mptt.models import MPTTModel, TreeForeignKey
+from uuid import uuid4
 
 from Q.questionnaire import APP_LABEL, q_logger
-from Q.questionnaire.models.models_customizations import QModelCustomization, QPropertyCustomization
+from Q.questionnaire.q_fields import QVersionField, QEnumerationField, QPropertyTypes, QNillableTypes, QUnsavedRelatedManager, allow_unsaved_fk, ENUMERATION_OTHER_CHOICE, ENUMERATION_OTHER_DOCUMENTATION, ENUMERATION_OTHER_PREFIX
+from Q.questionnaire.models.models_customizations import QModelCustomization
 from Q.questionnaire.models.models_publications import QPublication, QPublicationFormats
-from Q.questionnaire.serializers.serializers_base import enumeration_field_to_enumeration_serialization
-from Q.questionnaire.q_fields import QVersionField, QCardinalityField, QEnumerationField, QPropertyTypes, QNillableTypes, QUnsavedRelatedManager, allow_unsaved_fk, ENUMERATION_OTHER_CHOICE, ENUMERATION_OTHER_PREFIX
-from Q.questionnaire.q_utils import QError, Version, EnumeratedType, EnumeratedTypeList, pretty_string, find_in_sequence, serialize_model_to_dict
+from Q.questionnaire.q_utils import QError, EnumeratedType, EnumeratedTypeList, Version, find_in_sequence, pretty_string, serialize_model_to_dict
 from Q.questionnaire.q_constants import *
 
 #############
 # constants #
 #############
 
-# these fields are all handled behind-the-scenes
-# there is no point passing them around to serializers or forms
-QREALIZATION_NON_EDITABLE_FIELDS = ["guid", "created", "modified", ]
-
-###############
-# global vars #
-###############
 
 class RealizationType(EnumeratedType):
 
-    def __unicode__(self):
-        return u"%s" % (self.get_name())
+    def __str__(self):
+        return "{0}".format(self.get_name())
 
 RealizationTypes = EnumeratedTypeList([
     RealizationType("MODEL", "Model Realization"),
@@ -58,74 +39,147 @@ RealizationTypes = EnumeratedTypeList([
     RealizationType("PROPERTY", "Property Realization"),
 ])
 
-##############
-# global fns #
-##############
+####################
+# get realizations #
+####################
+
 
 def get_new_realizations(project=None, ontology=None, model_proxy=None, **kwargs):
-
-    key = kwargs.pop("key")
-    realizations = kwargs.pop("realizations", {})
-
-    # TODO: CHANGE THIS TO USE GUIDS INSTEAD OF NAMES FOR KEYS
-    # TODO: TRY TO REWRITE THIS TO USE "prefix" AGAIN (INSTEAD OF EXPLICIT "key")
-
     # unlike w/ customizations, I do not create the entire possible set all at once
     # instead I just deal w/ the minimum number of properties (based on cardinality)
     # infinite recursion is therefore avoided; not by re-using previously created models
     # as with customizations, but by only creating a finite amount of models
-    # hooray
+    # hooray!
 
-    model = QModel(
+    model_realization = QModelRealization(
         project=project,
-        ontology=ontology,
         proxy=model_proxy,
+        version="0.0.0",
     )
-    model.version = Version("0.0.0")
-    model.reset()
+    model_realization.reset()
 
-    properties = []
-    for property_proxy in model_proxy.property_proxies.all():
-        with allow_unsaved_fk(QProperty, ["model"]):
-            property = QProperty(
-                model=model,
-                proxy=property_proxy,
+    category_realizations = []
+    for category_proxy in model_proxy.category_proxies.all():
+        with allow_unsaved_fk(QCategoryRealization, ["model"]):
+            category_realization = QCategoryRealization(
+                proxy=category_proxy,
+                model=model_realization,
             )
+            category_realization.reset()
+        category_realizations.append(category_realization)
+    model_realization.categories(manager="allow_unsaved_categories_manager").add_potentially_unsaved(*category_realizations)
 
-            property.reset()
-        properties.append(property)
-    model.properties(manager="allow_unsaved_properties_manager").add_potentially_unsaved(*properties)
+    property_realizations = []
+    for property_proxy in model_proxy.property_proxies.all():
+        property_category_realization = find_in_sequence(
+            lambda c: c.proxy == property_proxy.category_proxy,
+            category_realizations
+        )
+        with allow_unsaved_fk(QPropertyRealization, ["model", "category"]):
+            property_realization = QPropertyRealization(
+                proxy=property_proxy,
+                field_type=property_proxy.field_type,    # TODO: I AM HAVING TO PASS "field_type" SO THAT IT'S SET IN "__init__" IN ORDER TO SETUP ANY ENUMERATIONS;
+                model=model_realization,                 # TODO: AN ALTERNATIVE WOULD BE TO CALL "reset" FROM "__init__" WHENEVER "is_new" IS True.
+                category=property_category_realization,
+            )
+            property_realization.reset()
+            property_category_realization.properties(manager="allow_unsaved_category_properties_manager").add_potentially_unsaved(property_realization)
+            # here begins the icky bit
+            if property_realization.field_type == QPropertyTypes.RELATIONSHIP and property_realization.is_required:
+                target_relationship_values = []
+                # TODO: IF I WERE TO PRE-CREATE ALL RELATIONSHIPS THEN HERE IS WHERE I WOULD DO IT
+                # TODO: BUT THAT WOULD BE MIND-BOGGINGLY COMPLEX...
+                # TODO: ...B/C I WOULD NEED TO KNOW IN ADVANCE WHAT TYPES OF RELATIONSHIPS TO CREATE IN THE CASE OF MULTIPLE TYPES OF TARGETS;
+                # TODO: AS IT IS, I GET AROUND THIS BY ONLY PRE-CREATING SPECIALIZATIONS WHICH ARE EXPLICIT IN THEIR TARGET PROXIES
+                # TODO: BUT I STILL CANNOT HANDLE THIS FOR NON-SPECIALIZED PROXIES
+                if property_realization.has_specialized_values:
+                    # TODO: TECHINCALLY, ISN'T THIS BIT OF CODE DOING SPECIALIZATION?
+                    # TODO: SHOULDN'T THAT BE DEFFERRED TO THE "specialize" FN?
+                    assert property_realization.cardinality_min == len(property_proxy.values)
+                    for target_model_proxy_id in property_proxy.values:
+                        target_model_proxy = property_proxy.relationship_target_models.get(cim_id=target_model_proxy_id)
+                        with allow_unsaved_fk(QModelRealization, ["relationship_property"]):  # this lets me access the parent property of a model
+                            new_model_realization = get_new_realizations(
+                                project=project,
+                                ontology=target_model_proxy.ontology,
+                                model_proxy=target_model_proxy,
+                                **kwargs
+                            )
+                            new_model_realization.relationship_property = property_realization
+                        target_relationship_values.append(new_model_realization)
+                    property_realization.relationship_values(manager="allow_unsaved_relationship_values_manager").add_potentially_unsaved(*target_relationship_values)
 
-    return model
+                # here ends the icky bit
+        property_realizations.append(property_realization)
+    model_realization.properties(manager="allow_unsaved_properties_manager").add_potentially_unsaved(*property_realizations)
 
-def get_existing_realizations(project=None, ontology=None, model_proxy=None, model_id=None, **kwargs):
+    return model_realization
 
-    model = QModel.objects.get(pk=model_id)
 
-    if project and model.project != project:
-        raise QModel.DoesNotExist
-    if ontology and model.ontology != ontology:
-        raise QModel.DoesNotExist
-    if model_proxy and model.proxy != model_proxy:
-        raise QModel.DoesNotExist
+def get_existing_realizations(project=None, ontology=None, model_proxy=None, model_id=None):
+    """
+    can get an existing realization
+    :param project:
+    :param ontology:
+    :param model_proxy:
+    :param model_id:
+    :return:
+    """
 
-    return model
+    # this fn will throw a "QModelRealization.DoesNotExist" error if the arguments are wrong;
+    # it is up to the calling method to catch that and do something sensible
 
-def serialize_new_realizations(current_model_realization, **kwargs):
+    model_realization = QModelRealization.objects.get(pk=model_id)
+
+    if project and model_realization.project != project:
+        raise QModelRealization.DoesNotExist
+    if model_proxy and model_realization.proxy != model_proxy:
+        raise QModelRealization.DoesNotExist
+
+    return model_realization
+
+
+def serialize_realizations(current_model_realization, **kwargs):
+    """
+    need a special fn to cope w/ this
+    b/c it is likely that these realizations will need to be serialized before they have been saved
+    therefore the m2m fields will not yet exist in the db
+    the workflow goes:
+    * get_new_realizations where calls to create are wrapped in "allow_unsaved_fk" & custom "QUnsavedRelatedManager"
+    * those realizations get cached in the current session
+    * AJAX calls the RESTful API to access those cached realizations
+    * which needs to be serialized via this fn and then passed as data to QModelRealizationSerializer
+    :param current_model_realization
+    :return: OrderedDict
+    """
 
     # get the model stuff...
     model_serialization = serialize_model_to_dict(
         current_model_realization,
         include={
-            "key": current_model_realization.get_key(),
-            "version": current_model_realization.version.fully_specified(),
-            # "is_complete": current_model_realization.is_complete(),
-            "display_detail": False,
-            "display_properties": False,
+            "key": current_model_realization.key,
             "is_meta": current_model_realization.is_meta,
+            # "version": current_model_realization.version.fully_specified(),
+            "is_selected": False,
+            "display_detail": False,
         },
-        exclude=QREALIZATION_NON_EDITABLE_FIELDS + ["synchronization", ]
+        exclude=["guid", "created", "modified", "synchronization"]
     )
+
+    # and the categories stuff...
+    category_serializations = []
+    for category_realization in current_model_realization.categories(manager="allow_unsaved_categories_manager").all():
+        category_serialization = serialize_model_to_dict(
+            category_realization,
+            include={
+                "key": category_realization.key,
+                "is_uncategorized": category_realization.is_uncategorized,
+                "properties_keys": category_realization.get_properties_keys(),
+                "display_detail": True,
+            },
+            exclude=["guid", "created", "modified"]
+        )
+        category_serializations.append(category_serialization)
 
     # and the properties stuff...
     property_serializations = []
@@ -133,173 +187,166 @@ def serialize_new_realizations(current_model_realization, **kwargs):
         property_serialization = serialize_model_to_dict(
             property_realization,
             include={
-                "enumeration_value": enumeration_field_to_enumeration_serialization(property_realization.enumeration_value),  # both the FormField & the SerializerField ensure that values are converted to lists
-                "key": property_realization.get_key(),                                                                        # since serialize_new_realizations is called outside of DRF, I have to do this explicitly here
-                # "is_complete": property_realization.is_complete(),
-                "possible_relationship_targets": property_realization.get_possible_relationship_targets(),
-                # TODO: 'is_multiple' IS COMPUTED IN THE NG CONTROLLER; NO NEED TO REPLICATE IT HERE
-                "is_multiple": property_realization.is_multiple(),
-                "display_detail": False,
+                "key": property_realization.key,
                 "is_meta": property_realization.is_meta,
+                "is_hierarchical": property_realization.is_hierarchical,
+                "cardinality_min": property_realization.cardinality_min,
+                "cardinality_max": property_realization.cardinality_max,
+                "is_multiple": property_realization.is_multiple,
+                "is_infinite": property_realization.is_infinite,
+                "possible_relationship_target_types": property_realization.get_potential_relationship_target_types(),
+                "category_key": property_realization.category_key,
+                "display_detail": True,
             },
-            exclude=QREALIZATION_NON_EDITABLE_FIELDS,
+            exclude=["guid", "created", "modified"]
         )
-
-        ############################
-        # here begins the icky bit #
-        ############################
-
-        relationship_values_serializations = []
-        if property_realization.proxy.use_subforms():
-            # TODO: IF I WERE TO PRE-CREATE RELATIONSHIPS, THIS IS WHERE I WOULD DO IT
-            pass
-        property_serialization["relationship_values"] = relationship_values_serializations
-
-        ##########################
-        # here ends the icky bit #
-        ##########################
+        # here begins the icky bit
+        target_model_serializations = []
+        if property_realization.field_type == QPropertyTypes.RELATIONSHIP:
+            target_model_realizations = property_realization.relationship_values(manager="allow_unsaved_relationship_values_manager").all()
+            for target_model_realization in target_model_realizations:
+                target_model_serialization = serialize_realizations(target_model_realization)
+                target_model_serializations.append(target_model_serialization)
+        property_serialization["relationship_values"] = target_model_serializations
+        # here ends the icky bit
 
         property_serializations.append(property_serialization)
 
     # and put it all together...
     serialization = OrderedDict(model_serialization)
+    serialization["categories"] = category_serializations
     serialization["properties"] = property_serializations
 
     return serialization
 
-def get_model_realization_by_fn(fn, current_model_realization):
-    if fn(current_model_realization):
-        return current_model_realization
-
-    return get_realization_by_fn_recusively(
-        fn,
-        current_model_realization.properties(manager="allow_unsaved_properties_manager").all(),
-        RealizationTypes.MODEL,
-    )
+###################
+# some helper fns #
+###################
 
 
-def get_property_realization_by_fn(fn, current_model_realization):
-
-    property = find_in_sequence(
-        fn,
-        current_model_realization.properties(manager="allow_unsaved_properties_manager").all()
-    )
-    if property:
-        return property
+def get_root_realization(current_realization):
+    """
+    kind of like recurse_through_realizations below,
+    but works from the bottom-up
+    :param self:
+    :return: QModelRealization
+    """
+    if isinstance(current_realization, QPropertyRealization):
+        return get_root_realization(current_realization.model)
+    elif isinstance(current_realization, QCategoryRealization):
+        return get_root_realization(current_realization.model)
     else:
-        return get_realization_by_fn_recusively(
-            fn,
-            current_model_realization.properties(manager="allow_unsaved_properties_manager").all(),
-            RealizationTypes.PROPERTY,
-        )
+        parent_property = current_realization.relationship_property
+        if parent_property:
+            return get_root_realization(parent_property)
+        else:
+            # this realization has no parent_property, it must therefore be the root
+            return current_realization
 
-def get_realization_by_fn_recusively(fn, current_property_realizations, realization_type, **kwargs):
-    """
-    used in conjunction w/ the "get_<x>_realization_by_fn" fns above
-    recursively goes through the realization hierarchy (of unsaved customizations)
-    returns the first realization that returns True for fn
-    :param fn: fn to call
-    :param current_property_realizations: the property realizations from which to begin checking
-    :param realization_type: the type of realization to check
-    :return: either QModel or QCategory or QProperty or None
-    """
-
-    previously_recursed_realizations = kwargs.pop("previously_recursed_realizations", set())
-
-    for property in current_property_realizations:
-        property_key = property.get_key()
-        if property_key not in previously_recursed_realizations:
-            if realization_type == RealizationTypes.PROPERTY and fn(property):
-                return property
-
-            if property.proxy.use_subforms():
-                target_models = property.relationship_values(manager="allow_unsaved_relationship_values_manager").all()
-                for target_model in target_models:
-
-                    if realization_type == RealizationTypes.MODEL:
-                        if fn(target_model):
-                            return target_model
-
-                    elif realization_type == RealizationTypes.CATEGORY:
-                        target_category = find_in_sequence(
-                            fn,
-                            target_model.categories(manager="allow_unsaved_category_customizations_manager").all()
-
-                        )
-                        if target_category:
-                            return target_category
-
-                    elif realization_type == RealizationTypes.PROPERTY:
-                        pass  # (this will already have been checked above)
-
-                    previously_recursed_realizations.add(property_key)  # only tracking properties b/c those are the only recursive things
-                    matching_realization = get_realization_by_fn_recusively(
-                        fn,
-                        target_model.properties(manager="allow_unsaved_properties_manager").all(),
-                        realization_type,
-                        previously_recursed_realizations=previously_recursed_realizations,
-                    )
-                    if matching_realization:
-                        return matching_realization
 
 def recurse_through_realizations(fn, current_model_realization, realization_types, **kwargs):
     """
-    recursively applies fn recursively to all realization types
+    recursively applies fn recursively to all realization_types
     :param fn: fn to call
     :param current_model_realization: the model realization from which to begin checking
-    :param realization_type: the type of realization to check
-    :return: either QModel or QCategory or QProperty or None
+    :param realization_types: the types of customizations to check
+    :return: either QModelRealization or QCategoryRealization or QPropertyRealization or None
     """
 
+    # TODO: UNLIKE CUSTOMIZATIONS, I DON'T THINK I NEED TO TRACK RECURSIONS; THERE SHOULDN'T BE ANY SELF-REFERENTIAL LOOPS
     previously_recursed_realizations = kwargs.pop("previously_recursed_realizations", set())
-    value = kwargs.pop("value", [])
 
-    # note I work backwards; recursing through the propertries _before_ continuing w/ the current_model_realization
+    if RealizationTypes.MODEL in realization_types:
+        fn(current_model_realization)
+
+    for category_realization in current_model_realization.categories(manager="allow_unsaved_categories_manager").all():
+        if RealizationTypes.CATEGORY in realization_types:
+            fn(category_realization)
 
     for property_realization in current_model_realization.properties(manager="allow_unsaved_properties_manager").all():
-        property_realization_key = property_realization.get_key()
+        property_realization_key = property_realization.key
+
         if property_realization_key not in previously_recursed_realizations:
 
+            if RealizationTypes.PROPERTY in realization_types:
+                fn(property)
+
             if property_realization.field_type == QPropertyTypes.RELATIONSHIP:
+                previously_recursed_realizations.add(property_realization_key)
                 target_model_realizations = property_realization.relationship_values(manager="allow_unsaved_relationship_values_manager").all()
                 for target_model_realization in target_model_realizations:
-                    previously_recursed_realizations.add(property_realization_key)  # only tracking property_customizations b/c those are the only recursive things
                     recurse_through_realizations(
                         fn,
                         target_model_realization,
                         realization_types,
                         previously_recursed_realizations=previously_recursed_realizations,
-                        value=value,
                     )
 
-            if RealizationTypes.PROPERTY in realization_types:
-                value.append(
-                    fn(property_realization)
-            )
 
-    # for category_customization in current_model_customization.category_customizations(manager="allow_unsaved_category_customizations_manager").all():
-    #     if RealizationTypes.CATEGORY in realization_types:
-    #         value.append(
-    #            fn(category_customization)
-    #         )
+def get_realization_by_fn(fn, current_model_realization, realization_types, **kwargs):
+    """
+    just like the above fn, except it returns the first realization for which fn returns true
+    :param fn: fn to call
+    :param current_model_realization: the model customization from which to begin checking
+    :param realization_types: the types of customizations to check
+    :return: either QModelRealization or QCategoryRealization or QPropertyRealization or None
+    """
+
+    # TODO: UNLIKE CUSTOMIZATIONS, I DON'T THINK I NEED TO TRACK RECURSIONS; THERE SHOULDN'T BE ANY SELF-REFERENTIAL LOOPS
+    previously_recursed_realizations = kwargs.pop("previously_recursed_realizations", set())
 
     if RealizationTypes.MODEL in realization_types:
-        value.append(
-            fn(current_model_realization)
+        if fn(current_model_realization):
+            return current_model_realization
+
+    if RealizationTypes.CATEGORY in realization_types:
+        category_realization = find_in_sequence(
+            fn,
+            current_model_realization.categories(manager="allow_unsaved_categories_manager").all()
         )
+        if category_realization:
+            return category_realization
 
-    return value
+    for property_realization in current_model_realization.properties(manager="allow_unsaved_properties_manager").all():
+        property_realization_key = property_realization.key
+        if property_realization_key not in previously_recursed_realizations:
 
-def inject_meta_properties(model_realization):
-    recurse_through_realizations(
-        lambda m: m.inject_meta_properties(),
-        model_realization,
-        [RealizationTypes.MODEL]
+            if RealizationTypes.PROPERTY in realization_types and fn(property_realization):
+                return property_realization
+
+            if property_realization.field_type == QPropertyTypes.RELATIONSHIP:
+                previously_recursed_realizations.add(property_realization_key)
+                target_model_realizations = property_realization.relationship_values(manager="allow_unsaved_relationship_values_manager").all()
+                for target_model_realization in target_model_realizations:
+                    matching_realization = get_realization_by_fn(
+                        fn,
+                        target_model_realization,
+                        realization_types,
+                        previously_recursed_realizations=previously_recursed_realizations,
+                    )
+                    if matching_realization:  # break out of the loop as soon as I find a match
+                        return matching_realization
+
+
+def get_model_realization_by_key(key, current_model_realization, **kwargs):
+    return get_realization_by_fn(
+        lambda r: r.key == key,
+        current_model_realization,
+        [RealizationTypes.MODEL],
     )
+
+
+def get_property_realization_by_key(key, current_model_realization, **kwargs):
+    return get_realization_by_fn(
+        lambda r: r.key == key,
+        current_model_realization,
+        [RealizationTypes.PROPERTY],
+    )
+
 
 def set_owner(model_realization, new_owner):
     recurse_through_realizations(
-        lambda c: c.set_owner(new_owner),
+        lambda r: r.set_owner(new_owner),
         model_realization,
         [RealizationTypes.MODEL],
     )
@@ -307,121 +354,49 @@ def set_owner(model_realization, new_owner):
 
 def set_shared_owner(model_realization, new_owner):
     recurse_through_realizations(
-        lambda c: c.set_shared_owner(new_owner),
+        lambda r: r.set_shared_owner(new_owner),
         model_realization,
         [RealizationTypes.MODEL],
     )
 
 
-def update_completion(model_realization):
-
-    def _update_completion(r):
-        property_completion = [
-            p.get_completion()
-            for p in r.properties(manager="allow_unsaved_properties_manager").all()
-        ]
-        model_completion = all(property_completion)
-        if model_completion != r.is_complete:
-            r.is_complete = model_completion
-            r.save()  # force these changes to be persistent the next time this realization is queried; TODO: IS THIS EXTRA SAVE INEFFICIENT?
-
-        return model_completion
-
+def set_version(model_realization, new_version):
     recurse_through_realizations(
-        # lambda r: _update_completion(r),  # d'oh! a lambda fn isn't needed here
-        _update_completion,
+        lambda r: r.set_version(new_version, force_save=True),
         model_realization,
-        [RealizationTypes.MODEL]
+        [RealizationTypes.MODEL],
     )
 
 
-##################
-# useful structs #
-##################
+# this fn is not needed;
+# QModelRealization.update_completion automatically computes "is_complete" of categories & properties and recurses through relationships
+# def update_completion(model_realization):
+#     recurse_through_realizations(
+#         lambda r: r.update_completion(force_save=True),
+#         model_realization,
+#         [RealizationTypes.MODEL, RealizationTypes.CATEGORY, RealizationTypes.PROPERTY]
+#     )
 
-from collections import deque  # I'm not sure I need the full complexity of a deque, but in my head I want a linked-list so this made sense
+#####################
+# the actual models #
+#####################
 
-class PathNode(object):
-    """
-    used to define a path along a hierarchy of realizations or customizations
-    """
-
-    def __init__(self, type=None, guid=None, proxy=None, project=None):
-        self._type = type  # the type of node
-        self._guid = guid  # the id of the node
-        self._proxy = proxy  # the proxy corresponding to the node
-        self._project = project  # the project that the realization is part of (only applies to QModelRealization)
-
-    def get_type(self):
-        return self._type
-
-    def get_guid(self):
-        return self._guid
-
-    def get_proxy(self):
-        return self._proxy
-
-    def get_project(self):
-        return self._project
-
-
-def get_realization_path(realization, **kwargs):
-    path = kwargs.get("path", deque())
-    if isinstance(realization, QProperty):
-        path.appendleft(PathNode(RealizationTypes.PROPERTY, realization.guid, realization.proxy))
-        return get_realization_path(realization.model, path=path)
-    elif isinstance(realization, QModel):
-        path.appendleft(PathNode(RealizationTypes.MODEL, realization.guid, realization.proxy, realization.proxy))
-        parent_property = realization.relationship_property
-        if parent_property:
-            return get_realization_path(parent_property, path=path)
-        return path
-    else:
-        msg = "I don't know how to find the path for {0}".format(realization)
-        raise QError(msg)
-
-
-def walk_realization_path(realization, path, fn=None):
-    # start w/ the top-level node (there must be at least one)
-    node = path.popleft()
-    # and double-check that we're looking through the correct realization...
-    assert node.get_guid() == realization.guid
-
-    # then walk forwards along the remaining path moving through the realizations...
-    while len(path):
-        node = path.popleft()
-        node_type = node.get_type()
-        if node_type == RealizationTypes.PROPERTY:
-            assert isinstance(realization, QModel)  # (if I'm looking for a property, I must be at a model)
-            realization = realization.properties(manager="allow_unsaved_properties_manager").get(proxy=node.get_proxy())
-        elif node_type == RealizationTypes.MODEL:
-            assert isinstance(realization, QProperty)  # (if I'm looking for a model, I must be at a [RELATIONSHIP] property)
-            realization = realization.relationship_values(manager="allow_unsaved_relationship_values_manager").get(proxy=node.get_proxy())
-
-    if fn is not None:
-        fn(realization)
-
-    return realization
-
-##############
-# base class #
-##############
-
-# TODO: THIS BASE CLASS IS USED W/ MULTIPLE INHERITANCE
-# TODO: SHOULD IT BE USED IN A MORE "MIX-IN" FASHION ?
-# TODO: AND DEFINED IN "models_base.py" AND USED FOR BOTH Customizations & Realizations?
 
 class QRealization(models.Model):
 
     class Meta:
         app_label = APP_LABEL
         abstract = True
-        verbose_name = "_Questionnaire Realization"
-        verbose_name_plural = "_Questionnaire Realization"
 
-    guid = models.UUIDField(default=uuid4, editable=False)  # unique=True)
+    guid = models.UUIDField(default=uuid4, editable=False)
     created = models.DateTimeField(auto_now_add=True, editable=False)
     modified = models.DateTimeField(auto_now=True, editable=False)
+
+    is_complete = models.BooleanField(blank=False, null=False, default=False)
+
+    order = models.PositiveIntegerField(blank=True, null=True)
+
+    name = models.CharField(max_length=SMALL_STRING, blank=False)
 
     def __eq__(self, other):
         if isinstance(other, QRealization):
@@ -434,53 +409,22 @@ class QRealization(models.Model):
             return equality_result
         return not equality_result
 
-    # TODO: REPLACE THESE NEXT 2 FNS W/ THE ABOVE GLOBAL get_path / walk_path FNS...
+    @property
+    def key(self):
+        # convert self.guid to str b/c UUID does not play nicely w/ JSON
+        return str(self.guid)
 
-    def get_default_customization(self):
-        """
-        given any realization, get the corresponding customization
-        this is not as easy as it sounds, b/c there could be potential recursion & re-use of proxies throughout the customization hierarchy
-        so I create a "path" locating the current realization and then walk along that path starting from the default customization
-        in a really recursive situation, this might wind up needlessly looping around the same customizations but I don't know a way around that
-        :return: QCustomization
-        """
+    @property
+    def is_new(self):
+        return self.pk is None
 
-        # walk backwards from the current realization to the top-level model realization & record the path...
-        path = self.get_path()
+    @property
+    def is_existing(self):
+        return self.pk is not None
 
-        # get the starting path_node (the one corresponding to the top-level realization)...
-        node = path.popleft()
-        # get the starting customization (the one corresponding to the top-level customization)...
-        customization = QModelCustomization.objects.get(proxy=node.get_proxy(), project=node.get_project(), is_default=True)
-
-        while len(path):
-            # walk forwards along the path moving through the customizations...
-            node = path.popleft()
-            node_type = node.get_type()
-            if node_type == RealizationTypes.PROPERTY:
-                assert isinstance(customization, QModelCustomization)
-                customization = customization.property_customizations.get(proxy=node.get_proxy())
-            elif node_type == RealizationTypes.MODEL:
-                assert isinstance(customization, QPropertyCustomization)
-                customization = customization.relationship_target_model_customizations.get(proxy=node.get_proxy())
-
-        # return whichever customization you wound up at...
-        return customization
-
-    def get_path(self, **kwargs):
-        path = kwargs.get("path", deque())
-        if isinstance(self, QProperty):
-            path.appendleft(PathNode(RealizationTypes.PROPERTY, self.guid, self.proxy))
-            return self.model.get_path(path=path)
-        elif isinstance(self, QModel):
-            path.appendleft(PathNode(RealizationTypes.MODEL, self.guid, self.proxy, self.project))  # notice that QModel includes a project
-            parent_property = self.relationship_property
-            if parent_property:
-                return parent_property.get_path(path=path)
-            return path
-        else:
-            msg = "I don't know how to find a customization for {0}".format(self)
-            raise QError(msg)
+    @property
+    def is_meta(self):
+        return self.proxy.is_meta is True
 
     @classmethod
     def get_field(cls, field_name):
@@ -494,30 +438,33 @@ class QRealization(models.Model):
         except FieldDoesNotExist:
             return None
 
-    def get_key(self):
-        # convert UUID to str b/c UUID does not play nicely w/ JSON
-        return str(self.guid)
-
-    def is_existing(self):
-        return self.pk is not None
-
-    def is_new(self):
-        return self.pk is None
+    def get_default_customization(self):
+        root_realization = get_root_realization(self)
+        try:
+            default_root_customization = QModelCustomization.objects.get(
+                project=self.project,
+                proxy=root_realization.proxy,
+                is_default=True
+            )
+            if self.proxy == default_root_customization.proxy:
+                return default_root_customization
+            else:
+                default_customization = QModelCustomization.objects.get(
+                    project=self.project,
+                    proxy=self.proxy,
+                    name=default_root_customization.name
+                )
+                return default_customization
+        except ObjectDoesNotExist:
+            msg = "There is no default customization associated with {0}".format(self)
+            raise QError(msg)
 
     def reset(self):
         msg = "{0} must define a custom 'reset' method.".format(self.__class__.__name__)
         raise NotImplementedError(msg)
 
-    @property
-    def is_meta(self):
-        return self.proxy.is_meta
 
-######################
-# model realizations #
-######################
-
-
-class QModelQuerySet(models.QuerySet):
+class QModelRealizationQuerySet(models.QuerySet):
     """
     As of Django 1.7 I can use custom querysets as managers
     to ensure that these custom methods are chainable
@@ -525,10 +472,10 @@ class QModelQuerySet(models.QuerySet):
     """
 
     def root_documents(self):
-        return self.filter(is_document=True, is_root=True)
+        return self.filter(proxy__is_document=True, is_root=True)
 
     def published_documents(self):
-        return self.filter(is_document=True, is_root=True, is_published=True)
+        return self.filter(proxy__is_document=True, is_root=True, is_published=True)
 
     # TODO: WRITE SOMETHING LIKE A "labelled_documents" QS
 
@@ -539,136 +486,59 @@ class QModelQuerySet(models.QuerySet):
         return self.root_documents().filter(shared_owners__in=[user.pk])
 
 
-class QModel(MPTTModel, QRealization):
+class QModelRealization(QRealization):
 
     class Meta:
         app_label = APP_LABEL
         abstract = False
-        verbose_name = "Questionnaire Realization: Model"
+        verbose_name = "_Questionnaire Realization: Model"
         verbose_name_plural = "_Questionnaire Realizations: Models"
-        ordering = ("created", )
+        ordering = ("order",)
 
     class _QRelationshipValuesUnsavedRelatedManager(QUnsavedRelatedManager):
         field_name = "relationship_property"
 
     # custom managers...
-    objects = QModelQuerySet.as_manager()
+    objects = QModelRealizationQuerySet.as_manager()
     allow_unsaved_relationship_values_manager = _QRelationshipValuesUnsavedRelatedManager()
 
     owner = models.ForeignKey(User, blank=False, null=True, related_name="owned_models", on_delete=models.SET_NULL)
     shared_owners = models.ManyToManyField(User, blank=True, related_name="shared_models")
 
-    parent = TreeForeignKey("self", null=True, blank=True, related_name="children")
-
     project = models.ForeignKey("QProject", blank=False, related_name="models")
-    ontology = models.ForeignKey("QOntology", blank=False, related_name="models")
     proxy = models.ForeignKey("QModelProxy", blank=False, related_name="models")
 
-    name = models.CharField(max_length=LIL_STRING, blank=True)
-    description = models.TextField(blank=True)
     version = QVersionField(blank=True, null=True)  # I am using the full complexity of a "major.minor.patch" version, even though I don't expose "patch"
 
-    is_document = models.BooleanField(blank=False, null=False, default=False)
     is_root = models.BooleanField(blank=False, null=False, default=False)
     is_published = models.BooleanField(blank=False, null=False, default=False)
     is_active = models.BooleanField(blank=False, null=False, default=True)
-
-    is_complete = models.BooleanField(blank=False, null=False, default=False)
 
     synchronization = models.ManyToManyField("QSynchronization", blank=True)
 
     # this fk is just here to provide the other side of the relationship to QProperty
     # I only ever access "property.relationship_values"
-    relationship_property = models.ForeignKey("QProperty", blank=True, null=True, related_name="relationship_values")
+    relationship_property = models.ForeignKey("QPropertyRealization", blank=True, null=True, related_name="relationship_values")
 
     def __str__(self):
-        return pretty_string(self.name)
+        return "{0}: {1}".format(
+            self.name,
+            self.label
+        )
 
-    # def is_complete(self):
-    #     completion = recurse_through_realizations(
-    #         lambda p: p.is_complete(),
-    #         self,
-    #         [RealizationTypes.PROPERTY]
-    #     )
-    #     return all(completion)
+    @property
+    def label(self):
+        return "TODO: LABEL"
 
-    def get_label(self):
-        raise NotImplementedError
+    @property
+    def is_document(self):
+        return self.proxy.is_document is True
 
-    def inject_meta_properties(self):
-        # used w/ "recurse_through_realization" in global fn "inject_meta_properties" above
-        if self.is_root:
-            # meta_properties = self.properties(manager="allow_unsaved_properties_manager").filter_potentially_unsaved(is_meta=True)
-            meta_properties = self.properties(manager="meta_properties").all()
-            for meta_property in meta_properties:
-                assert meta_property.field_type == QPropertyTypes.RELATIONSHIP
-                meta_property.reset()
-                meta_property_target_proxy = meta_property.proxy.relationship_target_models.first()
-                meta_property_target = get_new_realizations(
-                    project=self.project,
-                    ontology=self.ontology,
-                    model_proxy=meta_property_target_proxy,
-                    key=meta_property_target_proxy.name,
-                )
-                # now that I've created a meta property, inject it w/ appropriate content...
-                meta_property_target_properties = meta_property_target.properties(manager="allow_unsaved_properties_manager").all()
-                meta_property_target_create_date = find_in_sequence(lambda p: p.name == "create_date", meta_property_target_properties)
-                assert meta_property_target_create_date is not None and meta_property_target_create_date.field_type == QPropertyTypes.ATOMIC
-                meta_property_target_create_date.atomic_value = self.created.ctime()
-                meta_property_target_update_date = find_in_sequence(lambda p: p.name == "update_date", meta_property_target_properties)
-                assert meta_property_target_update_date is not None and meta_property_target_update_date.field_type == QPropertyTypes.ATOMIC
-                meta_property_target_update_date.atomic_value = self.modified.ctime()
-                meta_property_target_id = find_in_sequence(lambda p: p.name == "id", meta_property_target_properties)
-                assert meta_property_target_id is not None and meta_property_target_id.field_type == QPropertyTypes.ATOMIC
-                meta_property_target_id.atomic_value = self.get_key()
-                meta_property_target_version = find_in_sequence(lambda p: p.name == "version", meta_property_target_properties)
-                assert meta_property_target_version is not None and meta_property_target_version.field_type == QPropertyTypes.ATOMIC
-                meta_property_target_version.atomic_value = self.get_version_major()
-                meta_property_target_institute = find_in_sequence(lambda p: p.name == "institute", meta_property_target_properties)
-                assert meta_property_target_institute is not None and meta_property_target_institute.field_type == QPropertyTypes.ATOMIC
-                meta_property_target_institute.atomic_value = self.owner.profile.institute
-                meta_property_target_project = find_in_sequence(lambda p: p.name == "project", meta_property_target_properties)
-                assert meta_property_target_project is not None and meta_property_target_project.field_type == QPropertyTypes.ATOMIC
-                meta_property_target_project.atomic_value = self.project.name
-                meta_property_target_source = find_in_sequence(lambda p: p.name == "source", meta_property_target_properties)
-                assert meta_property_target_source is not None and meta_property_target_source.field_type == QPropertyTypes.ATOMIC
-                meta_property_target_source.atomic_value = PUBLICATION_SOURCE
-                meta_property_target_type = find_in_sequence(lambda p: p.name == "type", meta_property_target_properties)
-                assert meta_property_target_type is not None and meta_property_target_type.field_type == QPropertyTypes.ATOMIC
-                meta_property_target_type.atomic_value = "{0}.{1}.{2}.{3}".format(
-                    meta_property_target.proxy.ontology.name.lower(),
-                    meta_property_target.proxy.ontology.get_version_major(),
-                    meta_property_target.proxy.package.lower(),
-                    meta_property_target.proxy.name.title(),
-                )
-                meta_property_target_author = find_in_sequence(lambda p: p.name == "author", meta_property_target_properties)
-                assert meta_property_target_author is not None and meta_property_target_author.field_type == QPropertyTypes.RELATIONSHIP
-                meta_property_target_author_target_proxy = meta_property_target_author.proxy.relationship_target_models.first()
-                meta_property_target_author_target = get_new_realizations(
-                    project=self.project,
-                    ontology=self.ontology,
-                    model_proxy=meta_property_target_author_target_proxy,
-                    key=meta_property_target_author_target_proxy.name,
-                )
-                meta_property_target_author_target_properties = meta_property_target_author_target.properties(manager="allow_unsaved_properties_manager").all()
-                meta_property_target_author_target_name = find_in_sequence(lambda p: p.name == "name", meta_property_target_author_target_properties)
-                assert meta_property_target_author_target_name is not None and meta_property_target_author_target_name.field_type == QPropertyTypes.ATOMIC
-                meta_property_target_author_target_name.atomic_value = self.owner.get_full_name() or self.owner.username
-                # meta_property_target_author_target_address = find_in_sequence(lambda p: p.name == "address", meta_property_target_author_target_properties)
-                # assert meta_property_target_author_target_address is not None and meta_property_target_author_target_address.field_type == QPropertyTypes.ATOMIC
-                # meta_property_target_author_target_address = ?!?
-                meta_property_target_author_target_email = find_in_sequence(lambda p: p.name == "email", meta_property_target_author_target_properties)
-                assert meta_property_target_author_target_email is not None and meta_property_target_author_target_email.field_type == QPropertyTypes.ATOMIC
-                meta_property_target_author_target_email.atomic_value = self.owner.email
-                meta_property_target_author_target_organisation = find_in_sequence(lambda p: p.name == "organisation", meta_property_target_author_target_properties)
-                assert meta_property_target_author_target_organisation is not None and meta_property_target_author_target_organisation.field_type == QPropertyTypes.ATOMIC
-                # meta_property_target_author_target_organisation = ?!?
-                meta_property_target_author.relationship_values(manager="allow_unsaved_relationship_values_manager").add_potentially_unsaved(meta_property_target_author_target)
-                meta_property.relationship_values(manager="allow_unsaved_relationship_values_manager").add_potentially_unsaved(meta_property_target)
-
+    @property
     def is_synchronized(self):
         return self.synchronization.count() == 0  # checks if qs is empty
 
+    @property
     def is_unsynchronized(self):
         return not self.is_synchronized()
 
@@ -676,7 +546,7 @@ class QModel(MPTTModel, QRealization):
         """
         :param force_save: save the model (after incrementing its version);
         the only reason not to do this is when re-publishing something at the same version b/c of a content error
-        :return:
+        :return: QPublication
         """
         force_save = kwargs.pop("force_save", True)
         publication_format = kwargs.pop("format", QPublicationFormats.CIM2_XML)
@@ -690,27 +560,22 @@ class QModel(MPTTModel, QRealization):
             # and increment the major version...
             self.version += "1.0.0"
 
-        # TODO: I AM DOING THIS HARD-CODED IN THE TEMPLATE
-        # TODO: I SHOULD CHANGE TO DOING IT GENERICALLY HERE
-        # inject_meta_properties(self)
-
         (publication, create_publication) = QPublication.objects.get_or_create(
             name=self.guid,
             version=self.version,
             format=publication_format,
             model=self,
         )
-        publication_dict = {
+
+        template_context = {
             "project": self.project,
-            "ontology": self.ontology,
+            "ontology": self.proxy.ontology,
             "proxy": self.proxy,
             "model": self,
             "publication_format": publication_format,
         }
-        # as of v0.16.0.0, I no longer have a unique template for each potential model type
-        # instead I just have one generic "publication_model.xml" template hard-coded here
         publication_template_path = "{0}/publications/{1}/{2}".format(APP_LABEL, publication_format, "publication_model.xml")
-        publication_content = render_to_string(publication_template_path, publication_dict)
+        publication_content = render_to_string(publication_template_path, template_context)
         publication.content = publication_content
         publication.save()
 
@@ -721,72 +586,126 @@ class QModel(MPTTModel, QRealization):
         return publication
 
     def reset(self):
-
-        # this resets values according to the proxy
-        # to reset values according to the customizer, you must go through the client
-        # (ie: Djangular forms and NG controllers)
+        # this resets values according to the proxy...
+        # to reset values according to the customizer, you must explicitly call customize and/or go through the client
         proxy = self.proxy
 
-        self.name = proxy.name
-        self.description = proxy.documentation
-
-        self.is_document = proxy.is_document()
-        # TODO:
-        # self.is_root = ?!?
+        # TODO: self.is_root = ?!?
         self.is_active = True
-
         self.is_complete = False
+        self.order = proxy.order
+        self.name = proxy.name
 
-    def set_owner(self, new_owner):
-        # used w/ "recurse_through_realization" in global fn "set_owner" above
+    def set_owner(self, new_owner, **kwargs):
+        # used w/ "recurse_through_customization" in global fn "set_owner" above
         self.owner = new_owner
+        if kwargs.pop("force_save", False):
+            self.save()
 
-    def set_shared_owner(self, new_shared_owner):
-        # used w/ "recurse_through_realization" in global fn "set_shared_owner" above
+    def set_shared_owner(self, new_shared_owner, **kwargs):
+        # used w/ "recurse_through_customization" in global fn "set_shared_owner" above
         self.shared_owners.add(new_shared_owner)
+        if kwargs.pop("force_save", False):
+            self.save()
 
-#########################
-# property realizations #
-#########################
+    def set_version(self, new_version, **kwargs):
+        # used w/ "recurse_through_customization" in global fn "set_version" above
+        self.version = new_version
+        if kwargs.pop("force_save", False):
+            self.save()
+
+    def update_completion(self, **kwargs):
+        property_realizations_completion = [
+            property_realization.update_completion(**kwargs)
+            for property_realization in self.properties(manager="allow_unsaved_properties_manager").all()
+        ]
+
+        for category_realization in self.categories(manager="allow_unsaved_categories_manager").all():
+            category_realization.update_completion(**kwargs)
+
+        self.is_complete = all(property_realizations_completion)
+        if kwargs.get("force_save", False):
+            self.save()
+        return self.is_complete
 
 
-class QProperty(QRealization):
-
+class QCategoryRealization(QRealization):
     class Meta:
         app_label = APP_LABEL
         abstract = False
-        verbose_name = "Questionnaire Realization: Property"
+        verbose_name = "_Questionnaire Realization: Category"
+        verbose_name_plural = "_Questionnaire Realizations: Categories"
+        ordering = ("order",)
+
+    class _QCategoryUnsavedRelatedManager(QUnsavedRelatedManager):
+        field_name = "model"
+
+    objects = models.Manager()
+    allow_unsaved_categories_manager = _QCategoryUnsavedRelatedManager()
+
+    proxy = models.ForeignKey("QCategoryProxy", blank=False, related_name="categories")
+    model = models.ForeignKey("QModelRealization", blank=False, related_name="categories")
+
+    category_value = models.CharField(max_length=HUGE_STRING, blank=False, null=False)
+
+    def __str__(self):
+        return "{0}: {1}".format(
+            self.name,
+            self.value
+        )
+
+    @property
+    def value(self):
+        return self.category_value
+
+    @property
+    def is_uncategorized(self):
+        return self.proxy.is_uncategorized
+
+    def get_properties_keys(self):
+        properties = self.properties(manager="allow_unsaved_category_properties_manager").all()
+        return [p.key for p in properties]
+
+    def update_completion(self, **kwargs):
+        properties_completion = self.properties.values("is_complete")  # TODO: DOES THIS WORK W/ UNSAVED PROPERTIES?
+        self.is_complete = all(properties_completion)
+        if kwargs.get("force_save", False):
+            self.save()
+        return self.is_complete
+
+    def reset(self):
+        # this resets values according to the proxy...
+        # to reset values according to the customizer, you must explicitly call customize and/or go through the client
+        proxy = self.proxy
+
+        self.is_complete = False
+        self.order = proxy.order
+        self.name = proxy.name
+
+        self.category_value = proxy.name
+
+
+class QPropertyRealization(QRealization):
+    class Meta:
+        app_label = APP_LABEL
+        abstract = False
+        verbose_name = "_Questionnaire Realization: Property"
         verbose_name_plural = "_Questionnaire Realizations: Properties"
-        ordering = ("order", )
+        ordering = ("order",)
 
     class _QPropertyUnsavedRelatedManager(QUnsavedRelatedManager):
         field_name = "model"
 
-    # custom managers...
-    # according to Django [https://docs.djangoproject.com/en/1.9/topics/db/managers/#custom-managers-and-model-inheritance], the 1st manager specified is the default manager; so I must explicitly reset "objects" here
+    class _QCategoryPropertyUnsavedRelatedManager(QUnsavedRelatedManager):
+        field_name = "category"
+
     objects = models.Manager()
     allow_unsaved_properties_manager = _QPropertyUnsavedRelatedManager()
+    allow_unsaved_category_properties_manager = _QCategoryPropertyUnsavedRelatedManager()
 
-    model = models.ForeignKey("QModel", blank=False, related_name="properties")
-    proxy = models.ForeignKey("QPropertyProxy", blank=False)
-
-    name = models.CharField(max_length=SMALL_STRING, blank=False, null=False)
-    order = models.PositiveIntegerField(blank=True, null=True)
-
-    field_type = models.CharField(max_length=BIG_STRING, blank=False, choices=[(ft.get_type(), ft.get_name()) for ft in QPropertyTypes])
-
-    cardinality = QCardinalityField(blank=False)
-
-    is_complete = models.BooleanField(blank=False, null=False, default=False)
-
-    atomic_value = models.TextField(blank=True, null=True)
-    enumeration_value = QEnumerationField(blank=False, null=True)
-    enumeration_other_value = models.CharField(max_length=HUGE_STRING, blank=True, null=True)
-
-    # using the reverse of the fk defined on model instead of this field
-    # (so that I can use a custom manager to cope w/ unsaved instances)
-    # relationship_values = models.ManyToManyField("QModel", blank=True, related_name="+")
-    # TODO: relationship_references = ?!?
+    proxy = models.ForeignKey("QPropertyProxy", blank=False, related_name="properties")
+    model = models.ForeignKey("QModelRealization", blank=False, related_name="properties")
+    category = models.ForeignKey("QCategoryRealization", blank=True, null=True, related_name="properties")
 
     is_nil = models.BooleanField(default=False)
     nil_reason = models.CharField(
@@ -796,157 +715,162 @@ class QProperty(QRealization):
         choices=[(nt.get_type(), nt.get_description()) for nt in QNillableTypes],
     )
 
+    field_type = models.CharField(max_length=BIG_STRING, blank=False, choices=[(ft.get_type(), ft.get_name()) for ft in QPropertyTypes])
+
+    atomic_value = models.TextField(blank=True, null=True)
+    enumeration_value = QEnumerationField(blank=True, null=True)
+    enumeration_other_value = models.CharField(blank=True, null=True, max_length=HUGE_STRING)
+
+    def __init__(self, *args, **kwargs):
+        super(QPropertyRealization, self).__init__(*args, **kwargs)
+        if self.field_type == QPropertyTypes.ENUMERATION:
+            # originally all of this was done in the "reset" fn below, but that only gets called for new objects
+            # then I tried adding it to the "QPropertyForm.__init__" fn, but that only deals w/ form fields (not model fields)
+            # so it has wound up here...
+            proxy = self.proxy
+            enumeration_choices = proxy.enumeration_choices
+            if proxy.enumeration_is_open:
+                enumeration_choices.append({
+                    "value": ENUMERATION_OTHER_CHOICE,
+                    "documentation": ENUMERATION_OTHER_DOCUMENTATION,
+                    "order": len(enumeration_choices) + 1,
+                })
+            enumeration_value_field = self.get_field("enumeration_value")
+            enumeration_value_field.complete_choices = proxy.enumeration_choices
+            enumeration_value_field.is_multiple = proxy.is_multiple
+
     def __str__(self):
-        return pretty_string(self.name)
+        return "{0}: {1}".format(
+            self.name,
+            self.value
+        )
 
-    def get_customization(self):
-        # TODO
-        return None
-        raise NotImplementedError()
-
-    def get_possible_relationship_targets(self):
-        if self.field_type == QPropertyTypes.RELATIONSHIP:
-            return [
-                {"pk": target.pk, "name": target.name}
-                for target in self.proxy.relationship_target_models.all()
-            ]
-        return []
-
-    def get_value(self):
-        # returns the value field for this particular property type
-        if self.field_type == QPropertyTypes.ATOMIC:
+    @property
+    def value(self):
+        field_type = self.field_type
+        if field_type == QPropertyTypes.ATOMIC:
             return self.atomic_value
-        elif self.field_type == QPropertyTypes.ENUMERATION:
-            return [
-                value if value != ENUMERATION_OTHER_CHOICE[0] else "{0}:{1}".format(ENUMERATION_OTHER_PREFIX, self.enumeration_other_value)
-                for value in self.enumeration_value
-            ]
-        else:  # self.field_type == QPropertyTYpes.RELATIONSHIP
+        elif field_type == QPropertyTypes.ENUMERATION:
+            enumeration_value = self.enumeration_value
+            if enumeration_value:
+                # clever lil hack to return -1 if ENUMERATION_OTHER_CHOICE is not in enumeration_value w/out resorting to looping through the array twice...
+                enumeration_other_index = next((i for i, enum in enumerate(enumeration_value) if enum == ENUMERATION_OTHER_CHOICE), -1)
+                if enumeration_other_index >= 0:
+                    enumeration_value[enumeration_other_index] = "{0}:{1}".format(
+                        ENUMERATION_OTHER_PREFIX,
+                        self.enumeration_other_value,
+                    )
+                return enumeration_value
+            return []
+        else:  # field_type == QPropertyTypes.RELATIONSHIP
             return self.relationship_values.all()
 
-    def get_completion(self):
+    @property
+    def cardinality_min(self):
+        cardinality_min = self.proxy.cardinality_min
+        return int(cardinality_min)
 
-        cardinality_min = int(self.get_cardinality_min())
-        if cardinality_min:
-            # if ths property is required then check some things...
+    @property
+    def cardinality_max(self):
+        cardinality_max = self.proxy.cardinality_max
+        if cardinality_max != CARDINALITY_INFINITE:
+            return int(cardinality_max)
+        return cardinality_max
 
-            if self.is_nil:
-                # something that s required but explicitly set to "nil" is still considered complete
-                return True
+    @property
+    def cardinality(self):
+        return "{0}.{1}".format(
+            self.cardinality_min,
+            self.cardinality_max,
+        )
 
-            if self.field_type == QPropertyTypes.ATOMIC:
-                if self.atomic_value:
-                    return True
-                return False
+    @property
+    def category_key(self):
+        return self.category.key
 
-            elif self.field_type == QPropertyTypes.ENUMERATION:
-                if self.enumeration_value:
-                    return True
-                return False
+    @property
+    def has_specialized_values(self):
+        return self.proxy.values is not None
 
-            else:  # self.field_type == QPropertyTypes.RELATIONSHIP
-                relationship_completion = [m.is_complete for m in self.relationship_values.all()]  # TODO: DOES THIS WORK W/ UNSAVED FIELDS ?!?
-                return len(relationship_completion) == cardinality_min and all(relationship_completion)
+    @property
+    def is_infinite(self):
+        return self.proxy.is_infinite
 
-        else:
-            # a non-required property is complete by default
-            # TODO: WHAT ABOUT PROPERTIES THAT ARE _CUSTOMIZED_ TO BE REQUIRED ?!?
-            return True
-
-    def get_completion2(self):
-
-        # ordinarily, the 'is_complete' field is used for this
-        # but when calling update_completion (from outside the client), I explicitly compute it
-        # this is used by the Project View
-
-        if int(self.get_cardinality_min()) > 0:
-            # if ths property is required then check some things...
-
-            if self.is_nil:
-                # something that s required but explicitly set to "nil" is still considered complete
-                return True
-
-            if self.field_type == QPropertyTypes.ATOMIC:
-                if self.atomic_value:
-                    return True
-                return False
-
-            elif self.field_type == QPropertyTypes.ENUMERATION:
-                if self.enumeration_value:
-                    return True
-                return False
-
-            else:  # self.field_type == QPropertyTypes.RELATIONSHIP
-                relationship_completion = [m.is_complete for m in self.relationship_values.all()]  # TODO: DOES THIS WORK W/ UNSAVED FIELDS ?!?
-                return len(relationship_completion) and all(relationship_completion)
-
-        else:
-            # a non-required property is complete by default
-            # TODO: WHAT ABOUT PROPERTIES THAT ARE _CUSTOMIZED_ TO BE REQUIRED ?!?
-            return True
-
-        if self.is_nil:
-            return True
-    # def is_complete(self):
-    #     # TODO:
-    #     import ipdb; ipdb.set_trace()
-    #     if int(self.get_cardinality_min()) > 0:
-    #         # if this property is required check some things...
-    #
-    #         if self.is_nil:
-    #             # something that is required but explicitly set to "nil" is still considered complete
-    #             return True
-    #
-    #         value = self.get_value()
-    #         if value:
-    #             return True
-    #         else:
-    #             return False
-    #
-    #     else:
-    #         # a non-required property is complete by default
-    #         # TODO: WHAT ABOUT PROPERTIES THAT ARE _CUSTOMIZED_ TO BE REQUIRED ?!?
-    #         return True
-
+    @property
     def is_multiple(self):
-        cardinality_max = self.get_cardinality_max()
-        return cardinality_max == u'*' or int(cardinality_max) > 1
+        return self.proxy.is_multiple
 
+    @property
     def is_single(self):
-        return not self.is_multiple()
+        return self.proxy.is_single
+
+    @property
+    def is_required(self):
+        return self.proxy.is_required
+
+    @property
+    def is_optional(self):
+        return self.proxy.is_optional
+
+    @property
+    def is_hierarchical(self):
+        return self.proxy.is_hierarchical
+
+    def get_potential_relationship_target_types(self):
+        """
+        returns an array w/ some useful info for working out which type of Realization I can use as a relationship target
+        :return:
+        """
+        if self.field_type == QPropertyTypes.RELATIONSHIP:
+            return self.proxy.relationship_target_models.values("name", "pk")
+        return []
+
+    def update_completion(self, **kwargs):
+        if self.is_required:
+            if self.is_nil:
+                # something that's required but explicitly set to "nil" is still considered complete
+                property_completion = True
+            else:
+                field_type = self.field_type
+                if field_type != QPropertyTypes.RELATIONSHIP:
+                    # otherwise anything w/ a value is considered complete...
+                    property_completion = bool(self.value)
+                else:  # field_type == QPropertyTypes.RELATIONSHIP
+                    # ...and relationships are dealt w/ recursively
+                    relationship_values_completion = [
+                        relationship_value.update_completion(**kwargs)
+                        for relationship_value in self.relationship_values(manager="allow_unsaved_relationship_values_manager").all()
+                    ]
+                    property_completion = len(relationship_values_completion) >= self.cardinality_min and all(relationship_values_completion)
+        else:
+            # a non-required property is complete by default
+            # TODO: WHAT ABOUT PROPERTIES THAT ARE _CUSTOMIZED_ TO BE REQUIRED ?!?
+            property_completion = True
+
+        self.is_complete = property_completion
+        if kwargs.get("force_save", False):
+            self.save()
+        return self.is_complete
 
     def reset(self):
-
-        # this resets values according to the proxy
-        # to reset values according to the customizer, you must go through the client
-        # (ie: Djangular forms and NG controllers)
+        # this resets values according to the proxy...
+        # to reset values according to the customizer, you must explicitly call customize and/or go through the client
         proxy = self.proxy
 
-        field_type = proxy.field_type
-        self.field_type = field_type
-
-        self.cardinality = proxy.cardinality
-
-        self.name = proxy.name
-        self.description = proxy.documentation
         self.order = proxy.order
+        self.name = proxy.name
+
+        self.is_complete = not proxy.is_required  # anything not required is complete by default
+
         self.is_nil = False
         self.nil_reason = self.get_field("nil_reason").default
 
-        self.is_complete = False
-
-        if field_type == QPropertyTypes.ATOMIC:
-            self.atomic_value = None
-
-        elif field_type == QPropertyTypes.ENUMERATION:
-            # TODO: THIS IS NOT THE RIGHT PLACE FOR THIS CODE
-            # TODO: SINCE "reset" ONLY GETS CALLED FOR NEW MODELS
-            # TODO: INSTEAD I OUGHT TO RUN THIS WHEN THE FORM IS CREATED
-            enumeration_value_field = self.get_field("enumeration_value")
-            enumeration_value_field.set_choices(proxy.get_enumeration_members())
-            enumeration_value_field.set_cardinality(proxy.get_cardinality_min(), proxy.get_cardinality_max())
-            self.enumeration_other_value = None
-
-        else:  # field_type == QPropertyTypes.RELATIONSHIP
-            # self.relationship_values(manager="allow_unsaved_relationship_values_manager").clear()
+        self.field_type = proxy.field_type
+        if self.field_type == QPropertyTypes.ATOMIC:
             pass
+        elif self.field_type == QPropertyTypes.ENUMERATION:
+            self.enumeration_value = []
+            self.enumeration_other_value = None
+        else:  # self.field_type == QPropertyTypes.RELATIONSHIP:
+            if not self.is_hierarchical:
+                self.relationship_values(manager="allow_unsaved_relationship_values_manager").clear()

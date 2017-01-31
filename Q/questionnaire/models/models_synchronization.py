@@ -1,6 +1,6 @@
 ####################
 #   ES-DOC CIM Questionnaire
-#   Copyright (c) 2016 ES-DOC. All rights reserved.
+#   Copyright (c) 2017 ES-DOC. All rights reserved.
 #
 #   University of Colorado, Boulder
 #   http://cires.colorado.edu/
@@ -8,13 +8,12 @@
 #   This project is distributed according to the terms of the MIT license [http://www.opensource.org/licenses/MIT].
 ####################
 
-__author__ = 'allyn.treshansky'
-
 from django.db import models
-from Q.questionnaire import APP_LABEL
 
+from Q.questionnaire import APP_LABEL
 from Q.questionnaire.q_utils import EnumeratedType, EnumeratedTypeList
 from Q.questionnaire.q_constants import *
+
 
 class UnsynchronizedType(EnumeratedType):
     pass
@@ -32,6 +31,7 @@ UnsynchronizedTypes = EnumeratedTypeList([
 ])
 
 UNSYNCHRONIZED_CHOICES = [(ut.get_type(), ut.get_name()) for ut in UnsynchronizedTypes]
+
 
 class QSynchronization(models.Model):
 

@@ -1,6 +1,6 @@
 ####################
 #   ES-DOC CIM Questionnaire
-#   Copyright (c) 2016 ES-DOC. All rights reserved.
+#   Copyright (c) 2017 ES-DOC. All rights reserved.
 #
 #   University of Colorado, Boulder
 #   http://cires.colorado.edu/
@@ -8,29 +8,47 @@
 #   This project is distributed according to the terms of the MIT license [http://www.opensource.org/licenses/MIT].
 ####################
 
-__author__ = "allyn.treshansky"
-
 """
 .. module:: test_utils
 
 Tests for utilities
 """
 
-from django.db import models, transaction
-from django.conf import settings
+from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.db import transaction
 
 from Q.questionnaire import APP_LABEL
-from Q.questionnaire.tests.test_base import TestQBase, TestModel, incomplete_test
+from Q.questionnaire.tests.test_base import TestQBase, TestModel, TEST_FILE_PATH, incomplete_test
 from Q.questionnaire.q_constants import *
 from Q.questionnaire.q_fields import *
 
-###################################################
-# a silly set of models and forms to use w/ tests #
-###################################################
+
+###############################
+# some constants & helper fns #
+###############################
 
 UPLOAD_DIR = "tests"
 UPLOAD_PATH = os.path.join(APP_LABEL, UPLOAD_DIR)  # this will be concatenated w/ MEDIA_ROOT by FileField
+
+
+
+def get_file_path(file=None):
+    if file:
+        return os.path.join(settings.MEDIA_ROOT, UPLOAD_PATH, file.name)
+    else:
+        return os.path.join(settings.MEDIA_ROOT, UPLOAD_PATH)
+
+
+def get_test_json_schema():
+    with open(os.path.join(TEST_FILE_PATH, "test_json_schema.schema.json"), 'r') as file:
+        test_json_schema = json.load(file)
+    file.closed
+    return test_json_schema
+
+#########################################
+# a silly set of models to use w/ tests #
+#########################################
 
 
 class TestFileFieldsModel(TestModel):
@@ -38,49 +56,14 @@ class TestFileFieldsModel(TestModel):
     file = QFileField(blank=True, upload_to=UPLOAD_PATH)
 
 
-class TestCardinalityFieldsModel(TestModel):
+class TestJSONFieldsModel(TestModel):
     name = models.CharField(blank=True, max_length=BIG_STRING, unique=True)
-    cardinality = QCardinalityField(blank=True)
+    json = QJSONField(blank=True, null=True, schema=get_test_json_schema)
 
 
 class TestVersionFieldsModel(TestModel):
     name = models.CharField(blank=True, max_length=BIG_STRING, unique=True)
     version = QVersionField(blank=True, null=True)
-
-
-class TestEnumerationFieldsModel(TestModel):
-    name = models.CharField(blank=True, max_length=BIG_STRING, unique=True)
-    enumeration = QEnumerationField(blank=True, null=True)
-
-
-class TestUnsavedFieldsModelOne(TestModel):
-
-    class TestUnsavedFieldsModelOneRelatedManger(QUnsavedRelatedManager):
-        def get_unsaved_related_field_name(self):
-            field = TestUnsavedFieldsModelOne._meta.get_field_by_name("link_to_testunsavedfieldsmodeltwo")[0]
-            related_field_name = field.related.name
-            unsaved_related_field_name = "_unsaved_{0}".format(related_field_name)
-            return unsaved_related_field_name
-
-    objects = models.Manager()
-    test_manager = TestUnsavedFieldsModelOneRelatedManger()
-
-    name = models.CharField(blank=True, max_length=BIG_STRING, unique=True)
-    link_to_testunsavedfieldsmodeltwo = models.ForeignKey("TestUnsavedFieldsModelTwo", blank=True, null=True, related_name="link_to_testunsavedfieldsmodelone")
-
-    def __unicode__(self):
-        return u"%s" % self.name
-
-
-class TestUnsavedFieldsModelTwo(TestModel):
-
-    objects = models.Manager()
-
-    name = models.CharField(blank=True, max_length=BIG_STRING, unique=True)
-    # link_to_testunsavedfieldsmodelone = models.ManyToOneRel("TestUnsavedFieldsModelTwo", blank=True, null=True)
-
-    def __unicode__(self):
-        return u"%s" % self.name
 
 
 class TestUnsavedFieldsModelParent(TestModel):
@@ -101,13 +84,10 @@ class TestUnsavedFieldsModelChild(TestModel):
 
 TEST_MODELS = {
     "test_file_fields_model": TestFileFieldsModel,
-    "test_cardinality_fields_model": TestCardinalityFieldsModel,
+    "test_json_fields_model": TestJSONFieldsModel,
     "test_version_fields_model": TestVersionFieldsModel,
-    "test_enumeration_fields_model": TestEnumerationFieldsModel,
-    "test_unsaved_fields_model_one": TestUnsavedFieldsModelOne,
-    "test_unsaved_fields_model_two": TestUnsavedFieldsModelTwo,
     "test_unsaved_fields_model_parent": TestUnsavedFieldsModelParent,
-    "test_unsaved_fields_models_child": TestUnsavedFieldsModelChild,
+    "test_unsaved_fields_model_child": TestUnsavedFieldsModelChild,
 }
 
 
@@ -130,7 +110,7 @@ class Test(TestQBase):
                 model_create_fn()
 
         # make sure the UPLOAD_TO directory is clean...
-        self.test_file_dir = self.get_file_path()
+        self.test_file_dir = get_file_path()
         self.assertEqual(len(os.listdir(self.test_file_dir)), 0)
 
         # don't need questionnaire infrastructure...
@@ -150,7 +130,7 @@ class Test(TestQBase):
 
         # clean the UPLOAD_TO directory...
         for test_file_name in os.listdir(self.test_file_dir):
-            os.unlink(os.path.join(self.test_file_dir,test_file_name))
+            os.unlink(os.path.join(self.test_file_dir, test_file_name))
         self.assertEqual(len(os.listdir(self.test_file_dir)), 0)
 
         # don't need questionnaire infrastructure...
@@ -165,7 +145,7 @@ class Test(TestQBase):
     # so just checking that my custom code can handle unsaved models
     # (it doesn't actually have to write to the db, it just needs to store the correct relationships in memory)
 
-    def test_m2m_manager_unsaved(self):
+    def test_unsaved_manager_with_unsaved_models(self):
 
         parent_model = TestUnsavedFieldsModelParent(name="parent")
         child_model1 = TestUnsavedFieldsModelChild(name="child1")
@@ -205,7 +185,7 @@ class Test(TestQBase):
         # test caching...
         self.assertEqual(id(child_model), id(child_model2))
 
-    def test_m2m_manager_saved(self):
+    def test_unsaved_manager_with_saved_models(self):
         parent_model = TestUnsavedFieldsModelParent(name="parent")
         child_model1 = TestUnsavedFieldsModelChild(name="child1")
         child_model2 = TestUnsavedFieldsModelChild(name="child2")
@@ -249,7 +229,7 @@ class Test(TestQBase):
         # test caching...
         self.assertEqual(id(child_model), id(child_model2))
 
-    def test_m2m_manager_mixed(self):
+    def test_unsaved_manager_with_mixed_models(self):
         parent_model = TestUnsavedFieldsModelParent(name="parent")
         child_model1 = TestUnsavedFieldsModelChild(name="child1")
         child_model2 = TestUnsavedFieldsModelChild(name="child2")
@@ -296,26 +276,32 @@ class Test(TestQBase):
         # test caching...
         self.assertEqual(id(child_model), id(child_model2))
 
-    # def test_unsaved_fk_field(self):
-    #     test_model_one = TestUnsavedFieldsModelOne(name="one")
-    #     test_model_two = TestUnsavedFieldsModelTwo(name="two")
-    #
-    #     with self.assertRaises(ValueError):
-    #         test_model_one.link_to_testunsavedfieldsmodeltwo = test_model_two
-    #
-    #     with allow_unsaved_fk(TestUnsavedFieldsModelOne, ["link_to_testunsavedfieldsmodeltwo"]):
-    #         test_model_one.link_to_testunsavedfieldsmodeltwo = test_model_two
-    #         self.assertEqual(test_model_one.link_to_testunsavedfieldsmodeltwo, test_model_two)
+    ##############
+    # QJSONField #
+    ##############
 
-    ###################
-    # test file field #
-    ###################
+    def test_json_field(self):
+        test_json_fields_model = TestJSONFieldsModel(
+            name="test"
+        )
 
-    def get_file_path(self, file=None):
-        if file:
-            return os.path.join(settings.MEDIA_ROOT, UPLOAD_PATH, file.name)
-        else:
-            return os.path.join(settings.MEDIA_ROOT, UPLOAD_PATH)
+        valid_json = {
+            "name": "test",
+            "documentation": "some documentation"
+        }
+        invalid_json = {
+            "invalid_field": "test"
+        }
+        test_json_fields_model.json = valid_json
+        test_json_fields_model.save()
+        self.assertDictEqual(test_json_fields_model.json, valid_json)
+        with self.assertRaises(ValidationError):
+            test_json_fields_model.json = invalid_json
+            test_json_fields_model.save()
+
+    ##############
+    # QFileField #
+    ##############
 
     def test_qfilefield_creation(self):
 
@@ -326,7 +312,7 @@ class Test(TestQBase):
 
         test_file_field_model = TestFileFieldsModel(name="test", file=test_file)
         test_file_field_model.save()
-        self.assertTrue(os.path.isfile(self.get_file_path(test_file)))
+        self.assertTrue(os.path.isfile(get_file_path(test_file)))
 
         test_file_field = test_file_field_model.file
         self.assertTrue(isinstance(test_file_field.storage, OverwriteStorage))
@@ -343,17 +329,17 @@ class Test(TestQBase):
         test_file_field_model_2 = TestFileFieldsModel(name="two", file=test_file)
         test_file_field_model_1.save()
         test_file_field_model_2.save()
-        self.assertTrue(os.path.isfile(self.get_file_path(test_file)))
+        self.assertTrue(os.path.isfile(get_file_path(test_file)))
 
         # deleting the 1st model shouldn't delete the file
         # (b/c the 2nd model is still using it)
         test_file_field_model_1.delete()
-        self.assertTrue(os.path.isfile(self.get_file_path(test_file)))
+        self.assertTrue(os.path.isfile(get_file_path(test_file)))
 
         # deleting the 2nd model should delete the file
         # (b/c no other models are still using it)
         test_file_field_model_2.delete()
-        self.assertFalse(os.path.isfile(self.get_file_path(test_file)))
+        self.assertFalse(os.path.isfile(get_file_path(test_file)))
 
     def test_overwrite_storage(self):
 
@@ -367,7 +353,7 @@ class Test(TestQBase):
         test_file_3 = SimpleUploadedFile("same_name", test_file_3_content)
 
         # begin w/ an empty directory...
-        test_file_dir = self.get_file_path()
+        test_file_dir = get_file_path()
         self.assertEqual(len(os.listdir(test_file_dir)), 0)
         test_file_field_model = TestFileFieldsModel()
 
@@ -375,7 +361,7 @@ class Test(TestQBase):
         # the file should be copied to the correct path
         test_file_field_model.file = test_file_1
         test_file_field_model.save()
-        self.assertTrue(os.path.isfile(self.get_file_path(test_file_1)))
+        self.assertTrue(os.path.isfile(get_file_path(test_file_1)))
         self.assertEqual(len(os.listdir(test_file_dir)), 1)
         self.assertEqual(test_file_field_model.file.read(), test_file_1_content)
 
@@ -384,7 +370,7 @@ class Test(TestQBase):
         # but the previous file should still exist
         test_file_field_model.file = test_file_2
         test_file_field_model.save()
-        self.assertTrue(os.path.isfile(self.get_file_path(test_file_2)))
+        self.assertTrue(os.path.isfile(get_file_path(test_file_2)))
         self.assertEqual(len(os.listdir(test_file_dir)), 2)
         self.assertEqual(test_file_field_model.file.read(), test_file_2_content)
 
@@ -393,38 +379,13 @@ class Test(TestQBase):
         # and should replace the existing file w/ the same name
         test_file_field_model.file = test_file_3
         test_file_field_model.save()
-        self.assertTrue(os.path.isfile(self.get_file_path(test_file_3)))
+        self.assertTrue(os.path.isfile(get_file_path(test_file_3)))
         self.assertEqual(len(os.listdir(test_file_dir)), 2)
         self.assertEqual(test_file_field_model.file.read(), test_file_3_content)
 
-    ##########################
-    # test cardinality field #
-    ##########################
-
-    def test_qcardinalityfield(self):
-
-        default_min, default_max = QCardinalityField.default_value.split("|")
-
-        test_cardinality_field_model = TestCardinalityFieldsModel(name="test")
-        test_cardinality_field_model.save()
-
-        _min = test_cardinality_field_model.get_cardinality_min()
-        _max = test_cardinality_field_model.get_cardinality_max()
-        self.assertEqual(_min, default_min)
-        self.assertEqual(_max, default_max)
-
-        test_cardinality_field_model.set_cardinality_min(1)
-        test_cardinality_field_model.set_cardinality_max("*")
-        test_cardinality_field_model.save()
-
-        _min = test_cardinality_field_model.get_cardinality_min()
-        _max = test_cardinality_field_model.get_cardinality_max()
-        self.assertEqual(_min, u"1")
-        self.assertEqual(_max, u"*")
-
-    ######################
-    # test version field #
-    ######################
+    #################
+    # QVersionField #
+    #################
 
     def test_version_field(self):
 
@@ -477,31 +438,3 @@ class Test(TestQBase):
 
         patch = test_version_field_model.get_version_patch()
         self.assertEqual(patch, 0)
-
-    # # ##########################
-    # # # test enumeration field #
-    # # ##########################
-    # #
-    # # def test_enumeration_field(self):
-    # #
-    # #     test_enumeration = [
-    # #         {"order": 3, "value": u"three", "documentation": None},
-    # #         {"order": 2, "value": u"two", "documentation": u"The second thing."},
-    # #         {"order": 1, "value": u"one", "documentation": u"The first thing."},
-    # #     ]
-    # #
-    # #     test_enumeration_field_model = TestEnumeartionFieldsModel(name="test")
-    # #     test_enumeration_field_model.enumeration = test_enumeration
-    # #     test_enumeration_field_model.save()
-    # #     test_enumeration_field_model.refresh_from_db()
-    # #
-    # #     test_enumeration_members = test_enumeration_field_model.get_enumeration_members()
-    # #
-    # #     self.assertDictEqual(test_enumeration_members[0], test_enumeration[2])
-    # #     self.assertDictEqual(test_enumeration_members[1], test_enumeration[1])
-    # #     self.assertDictEqual(test_enumeration_members[2], test_enumeration[0])
-    # #
-    # #     with self.assertRaises(ValidationError):
-    # #         test_enumeration_field_model.enumeration = [{"invalid": "stuff"}, ]
-    # #         test_enumeration_field_model.save()
-    # #         test_enumeration_field_model.refresh_from_db()

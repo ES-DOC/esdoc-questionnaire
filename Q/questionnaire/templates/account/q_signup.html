@@ -13,7 +13,6 @@
 
 {% block scripts %}
     {{ block.super }}
-    <script type="text/javascript" src="{% static 'questionnaire/js/q_ng_index.js' %}"></script>
     <script language="JavaScript">
         $(document).ready(
             function() {
@@ -47,6 +46,12 @@
 
         {% csrf_token %}
         {% render_honeypot_field %}
+
+        {% if redirect_field_value %}
+            {# the Q tends to explicitly store this item on the request object #}
+            {# but allauth embeds it in forms like this #}
+            <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}" />
+        {% endif %}
 
         <table class="table">
             {% if form.non_field_errors %}

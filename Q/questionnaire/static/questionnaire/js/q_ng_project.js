@@ -1,10 +1,14 @@
 /* q_ng_project.js */
-/* angular app for dealing w/ QProjects */
+/* ng app for dealing w/ QProjects */
 
 (function() {
-    var app = angular.module("q_project", ["q_base", "ngCookies"]);
+    var app = angular.module("q_project", ["q_base"]);
 
-    app.config(['$httpProvider', function($httpProvider) {
+    /**********/
+    /* CONFIG */
+    /**********/
+
+    app.config(['$httpProvider', '$provide', function($httpProvider, $provide) {
 
         /* TODO: MOVE THIS AJAX LOGIC INTO q_base */
         $httpProvider.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
@@ -13,19 +17,31 @@
 
     }]);
 
+    /*************/
+    /* FACTORIES */
+    /*************/
+
+    /***************/
+    /* CONTROLLERS */
+    /***************/
+
+    /************************/
+    /* top level controller */
+    /************************/
+
     /* don't generally need $scope for ng > 1.3 */
     /* except for the built-in scope fns (like $watch, etc.) */
     /* so I include it and use it in rare occasions */
     /* see http://toddmotto.com/digging-into-angulars-controller-as-syntax/ */
 
-    app.controller("ProjectController", [ "$http", "$global_services", "$cookies", "$scope", function($http, $global_services, $cookies, $scope) {
+    app.controller("ProjectController", [ "$http", "$global_services", "$scope", function($http, $global_services, $scope) {
 
         $scope.blocking = function() {
             return $global_services.getBlocking();
         };
 
-        /* look here, I am passing "project_id" to this controller */
-        /* it is used throughout the code, as a query parameter to the RESTful API */
+        /* look here - I am passing "project_id" to this controller */
+        /* it is used throughout the code, as a query parameter to the DRF API */
         /* this is a global variable in the template (set via Django) */
         /* I don't think that this is the "AngularJS-Approved" way of doing things */
         /* see: http://stackoverflow.com/questions/14523679/can-you-pass-parameters-to-an-angularjs-controller-on-creation */
@@ -51,13 +67,6 @@
         project_controller.has_unsynchronized_customization = false;
         project_controller.has_unsynchronized_document = false;
         project_controller.has_incomplete_document = false;
-
-        /* after loads of work to get $watch working, it turns out not to fire for selects */
-        /* so I just bind ng-select to the fns below */
-        /*
-        $scope.$watch(project_controller.selected_document_ontology, function(new_val, old_val) {
-        });
-        */
 
         this.selected_document_ontology_changed = function() {
             project_controller.selected_document_proxy = {};
@@ -110,6 +119,7 @@
         };
 
         this.load = function() {
+        
             $http.get("/api/projects/" + project_id, {format: "json"})
                 .success(function (data) {
                     project_controller.project = data;
@@ -156,7 +166,7 @@
                     console.log(data);
                 });
 
-            $http.get("/api/ontologies/?ordering=key&is_registered=true&project=" + project_id, {format: "json"})
+            $http.get("/api/ontologies/?is_registered=true&project=" + project_id, {format: "json"})
                 .success(function (data) {
                     var ontologies = data.results;
                     project_controller.ontologies = ontologies;
@@ -182,9 +192,6 @@
                 "document_id": document.id
             });
 
-            /* TODO: THIS IS ALL A BIT UNINTUITIVE */
-            /* WHY IS IT SO HARD TO PASS POST DATA */
-            /* IN AngularJS OUTSIDE OF A FORM?!? */
             $http({
                 method: 'POST',
                 headers: {'Content-Type': 'application/x-www-form-urlencoded'},
@@ -213,9 +220,6 @@
                 user_id: user_id
             });
 
-            /* TODO: THIS IS ALL A BIT UNINTUITIVE */
-            /* WHY IS IT SO HARD TO PASS POST DATA */
-            /* IN AngularJS OUTSIDE OF A FORM?!? */
             $http({
                 method: 'POST',
                 headers: {'Content-Type': 'application/x-www-form-urlencoded'},
@@ -247,24 +251,13 @@
                         "customization_id": customization.id
                     });
 
-                    /* TODO: THIS IS ALL A BIT UNINTUITIVE */
-                    /* WHY IS IT SO HARD TO PASS POST DATA */
-                    /* IN AngularJS OUTSIDE OF A FORM?!? */
                     $http({
                         method: 'POST',
                         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
                         url: customization_delete_url,
                         data: customization_delete_data
                     }).success(function(data) {
-
-                        //$.each(project_controller.customizations, function(i, c) {
-                        //   if (c.id == customization.id)  {
-                        //       delete project_controller.customizations[i];
-                        //   }
-                        //});
-
                         project_controller.load();
-
                         check_msg();
                     })
                     .error(function(data) {
@@ -278,21 +271,10 @@
             });
         };
 
-        this.customization_synchronize = function(customization) {
-            var msg = "This will automatically update the customization so that it is compatible with the current set of ontologies and vocabularies associated with this project.  There may be unexpected results.  Are you sure you wish to continue?";
-            bootbox.confirm(msg, function(result) {
-                if (!result) {
-                    show_lil_msg("Maybe next time.");
-                }
-                else {
-                    $global_services.setBlocking(true);
-                    alert("TODO!")
-                    $global_services.setBlocking(false);
-                }
-            });
-        }
-
     }]);
 
-})();
+    /***********/
+    /* THE END */
+    /***********/
 
+})();

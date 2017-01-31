@@ -4,37 +4,27 @@
 
 <div class="has-feedback form-group">
 
-    <span class="col-sm-3 {% if field.field.required %} required {% else %} optional {% endif %}">
-
-            <span class="col-sm-1">
-                {% with help_text=field.help_text %}
-                    {% if help_text %}
-                        {% include 'questionnaire/_q_help.html' %}
-                    {% endif %}
-                {% endwith %} {# /help_text #}
-            </span>
-
-            <span class="col-sm-10">
-                {# notice how I'm not using field.label_tag #}
-                {# that is intentional; bootstrap has a specific style for labels #}
-                {# that I do not want to use in the Q #}
-                {{ field.label|safe }}
-            </span>
-
+    <span class="col-lg-1 col-md-1 text-right">
+        {% if field.help_text %}
+            <help help_text="{{field.help_text|safe}}"></help>
+        {% endif %}
     </span>
 
-    <span class="col-sm-6 voffset-2">
+    <span class="col-lg-3 col-md-3 {% if field.field.required %} required {% else %} optional {% endif %} ">
+        {# notice how I'm not using field.label_tag #}
+        {# that is intentional; bootstrap has a specific style for labels #}
+        {# that I do not want to use in the Q #}
+        {{ field.label|safe }}
+    </span>
 
+    <span class="col-lg-5 col-md-5 voffset-2">
        {{ field }}
-
     </span>
 
-    <span class="col-sm-3">
-
+    <span class="col-lg-2 col-md-2">
         {# this includes custom client-side validation errors as well as server-side validation errors #}
         {# (see "QForm.get_field_errors") #}
         {{ field.errors }}
-
     </span>
 
 </div> <!-- /.form-group -->

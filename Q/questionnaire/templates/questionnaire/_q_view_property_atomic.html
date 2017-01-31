@@ -2,51 +2,51 @@
 
 {% with field=form.atomic_value %}
 
-    <div class="has-feedback form-group">
+    <div class="row">
+        <div class="has-feedback form-group">
 
-        <span class="col-sm-3 {% if field.field.required %} required {% else %} optional {% endif %}">
+            <span class="col-sm-3 {% if field.field.required %} required {% else %} optional {% endif %}">
 
-                <span class="col-sm-1">
-                    {% with help_text=field.help_text %}
-                        {% if help_text and form.inline_help == False %}
-                            {% include 'questionnaire/_q_help.html' %}
+                    <span class="col-sm-1">
+                        {% if field.help_text and form.inline_help == False %}
+                            <help help_text="{{field.help_text|safe}}"></help>
                         {% endif %}
-                    {% endwith %}  {# /help_text #}
-                </span>
+                    </span>
 
-                <span class="col-sm-10">
-                    {# notice how I'm not using field.label_tag #}
-                    {# that is intentional; bootstrap has a specific style for labels #}
-                    {# that I do not want to use in the Q #}
-                    {{ field.label|safe }}:&nbsp;
-                    {% with help_text=field.help_text %}
-                        {% if help_text and form.inline_help == True %}
+                    <span class="col-sm-10">
+                        {# notice how I'm not using field.label_tag #}
+                        {# that is intentional; bootstrap has a specific style for labels #}
+                        {# that I do not want to use in the Q #}
+                        {{ field.label|safe }}:&nbsp;
+                        {% if field.help_text and form.inline_help == True %}
                             <div class="documentation">
-                                {{ help_text }}
+                                {{ field.help_text }}
                             </div>
                         {% endif %}
-                    {% endwith %}  {# /help_text #}
+                    </span>
+
+            </span>
+
+            <span class="col-sm-6 voffset-2">
+                {{ field }}
+                <span ng-show="show_completion">
+                    &nbsp;<span ng-show="!current_model.is_complete" class="glyphicon glyphicon-pushpin"/>
                 </span>
+            </span>
 
-        </span>
+            <span class="col-sm-3">
 
-        <span class="col-sm-6 voffset-2">
-{#{{form.is_complete}}<br/>{{form.is_required}}<br/>#}
-           {{ field }}
-        </span>
+                {% if form.is_nillable %}
+                    {% nillable %}
+                {% endif %}
 
-        <span class="col-sm-3">
+                {# this includes custom client-side validation errors as well as server-side validation errors #}
+                {# (see "QForm.get_field_errors") #}
+                {{ field.errors }}
 
-            {% if form.is_nillable %}
-                {% nillable %}
-            {% endif %}
+            </span>
 
-            {# this includes custom client-side validation errors as well as server-side validation errors #}
-            {# (see "QForm.get_field_errors") #}
-            {{ field.errors }}
-
-        </span>
-
-    </div> <!-- /.form-group -->
+        </div> <!-- /.form-group -->
+    </div>  <!-- /.row -->
 
 {% endwith %}

@@ -1,6 +1,6 @@
 ####################
 #   ES-DOC CIM Questionnaire
-#   Copyright (c) 2016 ES-DOC. All rights reserved.
+#   Copyright (c) 2017 ES-DOC. All rights reserved.
 #
 #   University of Colorado, Boulder
 #   http://cires.colorado.edu/
@@ -267,7 +267,7 @@ class TestQBase(TestCase):
             d2_type = type(d2_value)
 
             try:
-                self.assertEqual(d1_type, d2_type, msg=msg)
+                self.assertEqual(d1_value, d2_value, msg=msg)
             except AssertionError:
                 # If I was checking strings & unicode objects or querysets & lists then the above assertion would have failed
                 # so check those 2 special cases here...
@@ -344,36 +344,36 @@ def create_project(**kwargs):
     return project
 
 
-def create_categorization(**kwargs):
-
-    from Q.questionnaire.models.models_categorizations import QCategorization
-
-    _filename = kwargs.pop("filename")
-    _name = kwargs.pop("name", "test_categorization")
-    _version = kwargs.pop("version", 1)
-    _description = kwargs.pop("description", None)
-
-    categorization_file_path = kwargs.pop("file_path", os.path.join(TEST_FILE_PATH, _filename))
-
-    with open(categorization_file_path, "r") as categorization_file:
-
-        categorization = QCategorization(
-            name=_name,
-            version=_version,
-            description=_description,
-            file=SimpleUploadedFile(categorization_file.name, categorization_file.read())
-        )
-        categorization.save()
-
-    categorization_file.closed
-
-    return categorization
-
-
-def remove_categorization(**kwargs):
-
-    categorization = kwargs.pop("categorization")
-    categorization.delete()
+# def create_categorization(**kwargs):
+#
+#     from Q.questionnaire.models.models_categorizations import QCategorization
+#
+#     _filename = kwargs.pop("filename")
+#     _name = kwargs.pop("name", "test_categorization")
+#     _version = kwargs.pop("version", 1)
+#     _description = kwargs.pop("description", None)
+#
+#     categorization_file_path = kwargs.pop("file_path", os.path.join(TEST_FILE_PATH, _filename))
+#
+#     with open(categorization_file_path, "r") as categorization_file:
+#
+#         categorization = QCategorization(
+#             name=_name,
+#             version=_version,
+#             description=_description,
+#             file=SimpleUploadedFile(categorization_file.name, categorization_file.read())
+#         )
+#         categorization.save()
+#
+#     categorization_file.closed
+#
+#     return categorization
+#
+#
+# def remove_categorization(**kwargs):
+#
+#     categorization = kwargs.pop("categorization")
+#     categorization.delete()
 
 
 def create_ontology(**kwargs):
@@ -383,8 +383,8 @@ def create_ontology(**kwargs):
     _filename = kwargs.pop("filename")
     _type = kwargs.pop("type", QOntologyTypes.SCHEMA.get_type())
     _name = kwargs.pop("name", "test_ontology")
-    _version = kwargs.pop("version", 1)
-    _description = kwargs.pop("description", None)
+    _version = kwargs.pop("version", "1")
+    _documentation = kwargs.pop("documentation", None)
     _url = kwargs.pop("url", "http://www.test.com")
 
     ontology_file_path = kwargs.pop("file_path", os.path.join(TEST_FILE_PATH, _filename))
@@ -395,7 +395,7 @@ def create_ontology(**kwargs):
             ontology = QOntology(
                 name=_name,
                 version=_version,
-                description=_description,
+                documentation=_documentation,
                 url=_url,
                 ontology_type=_type,
                 file=SimpleUploadedFile(ontology_file.name, ontology_file.read())
@@ -413,109 +413,75 @@ def remove_ontology(**kwargs):
     ontology.delete()
 
 
-# def create_vocabulary(**kwargs):
+# def create_customization(**kwargs):
 #
-#     from Q.questionnaire.models.models_vocabularies import QVocabulary
+#     # this uses indirection via serializations in order to cope w/ potentially unsaved relationship fields
 #
-#     file_path = kwargs.pop("file_path", os.path.join(TEST_FILE_PATH, "test_vocabulary.xml"))
-#     _name = kwargs.pop("name", "test_vocabularyogy")
-#     _version = kwargs.pop("version", None)
-#     _description = kwargs.pop("description", None)
-#     _url = kwargs.pop("url", "http://www.test.com")
-#     _document_type = kwargs.pop("type", "modelcomponent")
+#     from Q.questionnaire.models.models_customizations import get_new_customizations, serialize_new_customizations, set_name, set_owner
+#     from Q.questionnaire.serializers.serializers_customizations_models import QModelCustomizationSerializer
 #
-#     assert(_document_type in CIM_DOCUMENT_TYPES)
+#     _ontology = kwargs.pop("ontology")
+#     _model_proxy = kwargs.pop("model_proxy")
+#     _project = kwargs.pop("project")
+#     _name = kwargs.pop("name", "test_customization")
+#     _description = kwargs.pop("description", "test description")
+#     _owner = kwargs.pop("owner")  #, User.objects.get(is_superuser=True))
+#     _is_default = kwargs.pop("default", True)
 #
-#     vocabulary_file = open(file_path)
-#     vocabulary = QVocabulary(
-#         name=_name,
-#         version=_version,
-#         description=_description,
-#         url=_url,
-#         document_type=_document_type,
-#         file=SimpleUploadedFile(vocabulary_file.name, vocabulary_file.read())
-#     )
-#     vocabulary.save()
-#     return vocabulary
+#     with transaction.atomic():
+#         customization_model = get_new_customizations(
+#             project=_project,
+#             ontology=_ontology,
+#             model_proxy=_model_proxy,
+#             key=_model_proxy.name
+#         )
+#         customization_model.description = _description
+#         customization_model.is_default = _is_default
+#
+#         # this copies the relevant info to all customizations in the hierarchy...
+#         # (outside of the testing framework, this would have been done automatically on the client)
+#         set_name(customization_model, _name)
+#         set_owner(customization_model, _owner)
+#
+#         customization_data = serialize_new_customizations(customization_model)
+#         customization_serializer = QModelCustomizationSerializer(
+#             data=customization_data
+#         )
+#
+#         assert customization_serializer.is_valid(), "Invalid QModelCustomizationSerializer (in create_customization)"
+#
+#         return customization_serializer.save()
 #
 #
-# def remove_vocabulary(**kwargs):
+# def create_realization(**kwargs):
 #
-#     vocabulary = kwargs.pop("vocabulary")
-#     vocabulary.delete()
-
-def create_customization(**kwargs):
-
-    # this uses indirection via serializations in order to cope w/ potentially unsaved relationship fields
-
-    from Q.questionnaire.models.models_customizations import get_new_customizations, serialize_new_customizations, set_name, set_owner
-    from Q.questionnaire.serializers.serializers_customizations_models import QModelCustomizationSerializer
-
-    _ontology = kwargs.pop("ontology")
-    _model_proxy = kwargs.pop("model_proxy")
-    _project = kwargs.pop("project")
-    _name = kwargs.pop("name", "test_customization")
-    _description = kwargs.pop("description", "test description")
-    _owner = kwargs.pop("owner")  #, User.objects.get(is_superuser=True))
-    _is_default = kwargs.pop("default", True)
-
-    with transaction.atomic():
-        customization_model = get_new_customizations(
-            project=_project,
-            ontology=_ontology,
-            model_proxy=_model_proxy,
-            key=_model_proxy.name
-        )
-        customization_model.description = _description
-        customization_model.is_default = _is_default
-
-        # this copies the relevant info to all customizations in the hierarchy...
-        # (outside of the testing framework, this would have been done automatically on the client)
-        set_name(customization_model, _name)
-        set_owner(customization_model, _owner)
-
-        customization_data = serialize_new_customizations(customization_model)
-        customization_serializer = QModelCustomizationSerializer(
-            data=customization_data
-        )
-
-        assert customization_serializer.is_valid(), "Invalid QModelCustomizationSerializer (in create_customization)"
-
-        return customization_serializer.save()
-
-
-def create_realization(**kwargs):
-
-    # this uses indirection via serializations in order to cope w/ potentially unsaved relationship fields
-
-    from Q.questionnaire.models.models_realizations import get_new_realizations, serialize_new_realizations, set_owner
-    from Q.questionnaire.serializers.serializers_realizations_models import QModelRealizationSerializer
-
-    _ontology = kwargs.pop("ontology")
-    _model_proxy = kwargs.pop("model_proxy")
-    _project = kwargs.pop("project")
-    _owner = kwargs.pop("owner")  #, User.objects.get(is_superuser=True))
-
-    with transaction.atomic():
-        realization_model = get_new_realizations(
-            project=_project,
-            ontology=_ontology,
-            model_proxy=_model_proxy,
-            key=_model_proxy.name
-        )
-
-        # this copies the relevant info to all realizations in the hierarchy...
-        # (outside of the testing framework, this would have been done automatically on the client)
-        set_owner(realization_model, _owner)
-
-        realization_data = serialize_new_realizations(realization_model)
-        realization_serializer = QModelRealizationSerializer(
-            data=realization_data
-        )
-
-        assert realization_serializer.is_valid(), "Invalid QModelRealizationSerializer (in create_realization)"
-
-        return realization_serializer.save()
-
-
-
+#     # this uses indirection via serializations in order to cope w/ potentially unsaved relationship fields
+#
+#     from Q.questionnaire.models.models_realizations import get_new_realizations, serialize_new_realizations, set_owner
+#     from Q.questionnaire.serializers.serializers_realizations_models import QModelRealizationSerializer
+#
+#     _ontology = kwargs.pop("ontology")
+#     _model_proxy = kwargs.pop("model_proxy")
+#     _project = kwargs.pop("project")
+#     _owner = kwargs.pop("owner")  #, User.objects.get(is_superuser=True))
+#
+#     with transaction.atomic():
+#         realization_model = get_new_realizations(
+#             project=_project,
+#             ontology=_ontology,
+#             model_proxy=_model_proxy,
+#             key=_model_proxy.name
+#         )
+#
+#         # this copies the relevant info to all realizations in the hierarchy...
+#         # (outside of the testing framework, this would have been done automatically on the client)
+#         set_owner(realization_model, _owner)
+#
+#         realization_data = serialize_new_realizations(realization_model)
+#         realization_serializer = QModelRealizationSerializer(
+#             data=realization_data
+#         )
+#
+#         assert realization_serializer.is_valid(), "Invalid QModelRealizationSerializer (in create_realization)"
+#
+#         return realization_serializer.save()

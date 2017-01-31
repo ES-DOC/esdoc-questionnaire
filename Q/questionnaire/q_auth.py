@@ -1,43 +1,104 @@
+####################
+#   ES-DOC CIM Questionnaire
+#   Copyright (c) 2017 ES-DOC. All rights reserved.
+#
+#   University of Colorado, Boulder
+#   http://cires.colorado.edu/
+#
+#   This project is distributed according to the terms of the MIT license [http://www.opensource.org/licenses/MIT].
+####################
 
-# pre-defined string lengths...
-TINY_STRING = 64
-LIL_STRING = 128
-SMALL_STRING = 256
-BIG_STRING = 512
-HUGE_STRING = 1024
+from allauth import app_settings
+from allauth.account.adapter import DefaultAccountAdapter
+from allauth.compat import is_authenticated
+from allauth.utils import email_address_exists, resolve_url
+from django.conf import settings
+from django.core.exceptions import ValidationError
+from django.core.urlresolvers import reverse
+from django.forms import ValidationError as FormValidationError
+import warnings
 
-CARDINALITY_MIN_CHOICES = [(str(i), str(i)) for i in range(0, 11)]
-CARDINALITY_MAX_CHOICES = [('N', 'N')] + [(str(i), str(i)) for i in range(0, 11)]
+from Q.questionnaire.q_utils import validate_password
 
 
-# minimum password length...
-MIN_PASSWORD_LENGTH = 6
+class QAccountAdapter(DefaultAccountAdapter):
+    """
+    Overriding some default django-allauth behavior to be Q-specific
+    (as per http://django-allauth.readthedocs.io/en/latest/advanced.htm)
 
-# just use the default cache; don't get fancy...
-CACHE_ALIAS = "default"
+    """
+    def get_from_email(self):
+        """
+        Use the email address specified in the Q configuration file
+        instead of the built-in one used by django-allauth
+        """
+        return settings.EMAIL_HOST_USER
 
-# valid reasons to leave a property value blank (taken from seeGrid)...
+    def clean_password(self, password, user=None):
+        """
+        uses the Q-specific password validator
+        """
+        try:
+            validate_password(password)
+            return password
+        except ValidationError as e:
+            raise FormValidationError(e.message)
 
-NIL_PREFIX = "nil"
-NIL_REASONS = [
-    ("Unknown", "The correct value is not known, and not computable by, the sender of this data.  However, a correct value probably exists."),
-    ("Missing", "The correct value is not readily available to the sender of this data. Furthermore, a correct value may not exist."),
-    ("Inapplicable", "There is no value."),
-    ("Template", "The value will be available later."),
-    ("Withheld", "The value is not divulged."),
-]
+    # TODO: SHOULD I OVERRIDE THIS TO ALLOW DUPLICATES FOR SUPERUSERS?
+    def validate_unique_email(self, email):
+        """
+        :param email:
+        :return:
+        """
+        if email_address_exists(email):
+            raise FormValidationError(self.error_messages['email_taken'])
+        return email
 
-# naughty words...
-# (these are stored in an external file and loaded at startup in "apps.py")
-PROFANITIES_LIST = []
+    # need to override some of these redirection fns
+    # b/c the Q uses a different URL for profiles than allauth
 
-# cannot have projects w/ these names...
-# (else the URLs won't make sense)
-RESERVED_WORDS = [
-    "admin", "static", "site_media",
-    "user", "login", "logout", "register",
-    "questionnaire", "legacy", "metadata", "mindmaps",
-    "customize", "edit", "view", "help",
-    "api", "services",
-    "test", "bak",
-]
+    def get_login_redirect_url(self, request):
+        """
+        Returns the default URL to redirect to after logging in.  Note
+        that URLs passed explicitly (e.g. by passing along a `next`
+        GET parameter) take precedence over the value returned here.
+        """
+        assert is_authenticated(request.user)
+        url = getattr(settings, "LOGIN_REDIRECT_URLNAME", None)
+        if url:
+            warnings.warn("LOGIN_REDIRECT_URLNAME is deprecated, simply"
+                          " use LOGIN_REDIRECT_URL with a URL name",
+                          DeprecationWarning)
+        else:
+            # here is the different part...
+            url = reverse("account_profile", kwargs={
+                "username": request.user.username
+            })
+        return resolve_url(url)
+
+    def get_logout_redirect_url(self, request):
+        """
+        Returns the URL to redirect to after the user logs out. Note that
+        this method is also invoked if you attempt to log out while no users
+        is logged in. Therefore, request.user is not guaranteed to be an
+        authenticated user.
+        """
+        # here is the different bit...
+        # return resolve_url(app_settings.LOGOUT_REDIRECT_URL)
+        url = reverse("index")
+        return resolve_url(url)
+
+    def get_email_confirmation_redirect_url(self, request):
+        """
+        The URL to return to after successful e-mail confirmation.
+        """
+        if is_authenticated(request.user):
+            # here is a different part...
+            if getattr(app_settings, "EMAIL_CONFIRMATION_AUTHENTICATED_REDIRECT_URL", None):
+                return app_settings.EMAIL_CONFIRMATION_AUTHENTICATED_REDIRECT_URL
+            else:
+                return self.get_login_redirect_url(request)
+        else:
+            # but here is the important different part...
+            url = reverse("index")
+            return resolve_url(url)

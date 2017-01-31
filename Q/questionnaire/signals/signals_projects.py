@@ -1,6 +1,6 @@
 ####################
 #   ES-DOC CIM Questionnaire
-#   Copyright (c) 2016 ES-DOC. All rights reserved.
+#   Copyright (c) 2017 ES-DOC. All rights reserved.
 #
 #   University of Colorado, Boulder
 #   http://cires.colorado.edu/
@@ -8,13 +8,13 @@
 #   This project is distributed according to the terms of the MIT license [http://www.opensource.org/licenses/MIT].
 ####################
 
-__author__ = 'allyn.treshansky'
-
-from django.db.models.signals import post_save, post_delete
-
-#from Q.questionnaire.models.models_realizations import QModel
+from django.contrib.auth.models import Group, Permission, User
+from django.contrib.contenttypes.models import ContentType
+from django.db.models.signals import post_save, pre_delete
 
 from Q.questionnaire.models.models_projects import QProject, QProjectOntology, GROUP_PERMISSIONS
+from Q.questionnaire import APP_LABEL
+
 
 def post_save_project_handler(sender, **kwargs):
     """
@@ -26,13 +26,26 @@ def post_save_project_handler(sender, **kwargs):
     """
     created = kwargs.pop("created", True)
     project = kwargs.pop("instance", None)
-    if project and created:
+    if created:
+        assert project.groups.count() == 0
         for group_suffix, permission_prefixes in GROUP_PERMISSIONS.iteritems():
-            group = project.get_group(group_suffix, create_group=True)
+            group_name = "{0}_{1}".format(project.name, group_suffix)
+            group = Group(
+                name=group_name
+            )
+            group.save()
             for permission_prefix in permission_prefixes:
-                permission = project.get_permission(permission_prefix, create_permission=True)
+                permission_codename = "{0}_{1}".format(permission_prefix, project.name)
+                permission_description = "{0} {1} instances".format(permission_prefix, project.name)
+                content_type = ContentType.objects.get(app_label=APP_LABEL, model='qproject')
+                (permission, created_permission) = Permission.objects.get_or_create(
+                    codename=permission_codename,
+                    name=permission_description,
+                    content_type=content_type,
+                )
                 group.permissions.add(permission)
             group.save()
+            project.groups.add(group)
 
 post_save.connect(
     post_save_project_handler,
@@ -40,27 +53,28 @@ post_save.connect(
     dispatch_uid="post_save_project_handler"
 )
 
-def post_delete_project_handler(sender, **kwargs):
+
+def pre_delete_project_handler(sender, **kwargs):
     """
-    fn that gets called after a QProject is deleted;
-    the corresponding permissions and groups need to be deleted
+    fn that gets called before a QProject is deleted;
+    the corresponding permissions and groups need to be explicitly deleted
     :param sender:
     :param kwargs:
     :return:
     """
     project = kwargs.pop("instance", None)
     if project:
-        groups = [project.get_group(group_suffix) for group_suffix in GROUP_PERMISSIONS.keys()]
+        groups = project.groups.all()
         permissions = set([permission for group in groups for permission in group.permissions.all()])
         for permission in permissions:
             permission.delete()
         for group in groups:
             group.delete()
 
-post_delete.connect(
-    post_delete_project_handler,
+pre_delete.connect(
+    pre_delete_project_handler,
     sender=QProject,
-    dispatch_uid="post_delete_project_handler"
+    dispatch_uid="pre_delete_project_handler"
 )
 
 
@@ -70,55 +84,55 @@ post_delete.connect(
 # which is extremely inefficient; so instead I use a "through" model
 # (QProjectOntology) and use these save/delete signals on that model
 
-def post_save_projectontology_handler(sender, **kwargs):
-    created = kwargs.pop("created", True)
-    projectontology = kwargs.pop("instance", None)
-    if projectontology and created:
-        project = projectontology.project
-        ontology = projectontology.ontology
-
-        # TODO: UPDATE CUSTOMIZATIONS
-        # customizations_to_update = QModelCustomization.objects.filter(
-        #     project=project,
-        #     proxy__name__iexact=vocabulary.document_type
-        # )
-        # for customization in customizations_to_update:
-        #     (model_customization_vocabulary, created_model_customization_vocabulary) = QModelCustomizationVocabulary.objects.get_or_create(
-        #         model_customization=customization,
-        #         vocabulary=vocabulary,
-        #     )
-        #     if created_model_customization_vocabulary:
-        #         customization.updated_vocabulary(model_customization_vocabulary)
-        #
-        # TODO: DO THE SAME THING FOR REALIZATIONS...
-
-post_save.connect(
-    post_save_projectontology_handler,
-    sender=QProject.ontologies.through,
-    dispatch_uid="post_save_projectontology_handler"
-)
-
-
-def post_delete_projectontology_handler(sender, **kwargs):
-    projectontology = kwargs.pop("instance", None)
-    if projectontology:
-        project = projectontology.project
-        ontology = projectontology.ontology
-
-        # customizations_to_update = QModelCustomization.objects.filter(
-        #     project=project,
-        #     # TODO: TEST THAT THIS SYNTAX WORKS EVEN W/OUT A "related_name" ARGUMENT IN THE THROUGH MODEL
-        #     I AM HERE
-        #     vocabularies__in=[vocabulary],
-        # )
-        # for customization in customizations_to_update:
-        #     customization.removed_vocabulary(vocabulary)
-        #
-        # # TODO: DO THE SAME THING FOR REALIZATIONS...
+# def post_save_projectontology_handler(sender, **kwargs):
+#     created = kwargs.pop("created", True)
+#     projectontology = kwargs.pop("instance", None)
+#     if projectontology and created:
+#         project = projectontology.project
+#         ontology = projectontology.ontology
+#
+#         # TODO: UPDATE CUSTOMIZATIONS
+#         # customizations_to_update = QModelCustomization.objects.filter(
+#         #     project=project,
+#         #     proxy__name__iexact=vocabulary.document_type
+#         # )
+#         # for customization in customizations_to_update:
+#         #     (model_customization_vocabulary, created_model_customization_vocabulary) = QModelCustomizationVocabulary.objects.get_or_create(
+#         #         model_customization=customization,
+#         #         vocabulary=vocabulary,
+#         #     )
+#         #     if created_model_customization_vocabulary:
+#         #         customization.updated_vocabulary(model_customization_vocabulary)
+#         #
+#         # TODO: DO THE SAME THING FOR REALIZATIONS...
+#
+# post_save.connect(
+#     post_save_projectontology_handler,
+#     sender=QProject.ontologies.through,
+#     dispatch_uid="post_save_projectontology_handler"
+# )
 
 
-post_delete.connect(
-    post_delete_projectontology_handler,
-    sender=QProject.ontologies.through,
-    dispatch_uid="post_delete_projectontology_handler"
-)
+# def post_delete_projectontology_handler(sender, **kwargs):
+#     projectontology = kwargs.pop("instance", None)
+#     if projectontology:
+#         project = projectontology.project
+#         ontology = projectontology.ontology
+#
+#         # customizations_to_update = QModelCustomization.objects.filter(
+#         #     project=project,
+#         #     # TODO: TEST THAT THIS SYNTAX WORKS EVEN W/OUT A "related_name" ARGUMENT IN THE THROUGH MODEL
+#         #     I AM HERE
+#         #     vocabularies__in=[vocabulary],
+#         # )
+#         # for customization in customizations_to_update:
+#         #     customization.removed_vocabulary(vocabulary)
+#         #
+#         # # TODO: DO THE SAME THING FOR REALIZATIONS...
+#
+#
+# post_delete.connect(
+#     post_delete_projectontology_handler,
+#     sender=QProject.ontologies.through,
+#     dispatch_uid="post_delete_projectontology_handler"
+# )

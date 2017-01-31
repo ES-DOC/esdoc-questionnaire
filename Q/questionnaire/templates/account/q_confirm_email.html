@@ -1,31 +1,71 @@
-{% extends "account/base.html" %}
+{# q_confirm_email.html #}
 
-{% load i18n %}
-{% load account %}
+{% extends "questionnaire/q_base.html" %}
 
-{% block head_title %}{% trans "Confirm E-mail Address" %}{% endblock %}
+{% load staticfiles %}
+{% load honeypot %}
+{% load q_tags %}
 
+{% load url from future %}
+
+{% block title %}
+    ES-DOC Questionnaire Account Confirmation
+{% endblock %} {# /title #}
+
+{% block scripts %}
+    {{ block.super }}
+    <script language="JavaScript">
+        $(document).ready(
+            function() {
+                var parent = document.body;
+                init_widgets(helps, $(parent).find(".help"));
+            }
+        );
+    </script>
+{% endblock %}  {# /scripts #}
+
+{% block user %}
+    <!-- no user block needed for the confirm template -->
+{% endblock %}  {# /user #}
 
 {% block content %}
-<h1>{% trans "Confirm E-mail Address" %}</h1>
 
-{% if confirmation %}
+<div class="row">
+<div class="col-lg-8 col-lg-offset-2 col-md-8 col-md-offset-2">
 
-{% user_display confirmation.email_address.user as user_display %}
+    <div class="title">
+        ES-DOC Email Confirmation
+    </div> <!-- /#title -->
 
-<p>{% blocktrans with confirmation.email_address.email as email %}Please confirm that <a href="mailto:{{ email }}">{{ email }}</a> is an e-mail address for user {{ user_display }}.{% endblocktrans %}</p>
+    {% if confirmation %}
 
-<form method="post" action="{% url 'account_confirm_email' confirmation.key %}">
-{% csrf_token %}
-    <button type="submit">{% trans 'Confirm' %}</button>
-</form>
+        <div class="documentation">
+            <p>Please confirm that <a href="mailto:{{confirmation.email_address.email}}">{{confirmation.email_address.email}}</a> is a valid email address for user: '{{confirmation.email_address.user}}'.</p>
+        </div>
 
-{% else %}
+        <form class="login" method="POST" action="{% url 'account_confirm_email' confirmation.key %}">
 
-{% url 'account_email' as email_url %}
+            {% csrf_token %}
+            {% render_honeypot_field %}
 
-<p>{% blocktrans %}This e-mail confirmation link expired or is invalid. Please <a href="{{ email_url }}">issue a new e-mail confirmation request</a>.{% endblocktrans %}</p>
+            <input class="hidden" readonly="true" id="id_user" name="user" type="text" value="{{confirmation.email_address.user}}">
 
-{% endif %}
+            <div class="submit voffset-8">
+                <input type="submit" value="confirm" class="btn btn-primary"/>
+            </div> <!-- /.submit -->
+
+        </form>
+
+    {% else %}
+
+        <div class="documentation">
+            <p class="info">This email confirmation link has expired or is invalid.  Please <a href="{% url 'account_email' %}">submit a new confirmation request</a>.</p>
+        </div>
+
+    {% endif %}
+
+</div>
+</div>
+
 
 {% endblock %}

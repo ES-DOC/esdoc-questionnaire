@@ -1,17 +1,15 @@
 {# _q_user.html #}
-{# template block for rendering user login/logout/register stuff #}
+{# template block for rendering user login/logout/signup stuff #}
 
 {% with user=request.user %}  {# make sure to get user from request; b/c some templates pass their own "user" variable #}
     <!-- default user login/logout block -->
-    <div id="user">
-        <h5>
-            {% if user.is_authenticated %}
-                <span>welcome: <a href="/users/{{ user }}"><strong>{{ user }}</strong></a>&nbsp;</span>
-                <a id="logout" class="label label-primary" href="{% url 'logout' %}?next={{ request.path }}" title="logout">logout</a>
-            {% else %}
-                <a id="register" class="label label-primary" title="register" href="{% url 'register' %}?next={{ request.path }}">register</a>
-                <a id="login" class="label label-primary" href="{% url 'login' %}?next={{ request.path }}" title="login">login</a>
-            {% endif %} {# /user.is_authenticated #}
-        </h5>
-    </div>
+    {% if user.is_authenticated %}
+        <span>welcome: <strong><a title="view profile" href="/accounts/profile/{{ user }}/">{{ user }}</a></strong>&nbsp;</span>
+        <a id="signout" class="label label-primary" title="sign out" href="{% url 'account_logout' %}?next={{ request.path }}">sign out</a>
+        &nbsp;
+    {% else %}
+        <a id="signin" class="label label-default" title="sign in" href="{% url 'account_login' %}?next={{ request.path }}">sign in</a>
+        <a id="signup" class="label label-primary" title="sign up" href="{% url 'account_signup' %}?next={{ request.path }}">sign up</a>
+        &nbsp;
+    {% endif %}
 {% endwith %} {# /user #}

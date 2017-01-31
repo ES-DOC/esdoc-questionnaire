@@ -6,12 +6,12 @@
 {% load compress %}
 
 {% block title %}
-    ES-DOC Questionnaire Index
+    ES-DOC Questionnaire Test
 {% endblock %} {# /title #}
 
 {% block scripts %}
     {{ block.super }}
-    <script type="text/javascript" src="{% static 'questionnaire/js/q_ng_index.js' %}"></script>
+    <script type="text/javascript" src="{% static 'questionnaire/js/q_ng_test.js' %}"></script>
     <script language="JavaScript">
 
         var session_key = "{{ session_key }}";
@@ -32,49 +32,52 @@
     </script>
 {% endblock %}  {# /scripts #}
 
+{% block style %}
+    {{ block.super }}
+    <link rel="stylesheet" href="{% static 'questionnaire/css/ext/jquery.splitter.css' %}" />
+{% endblock %}  {# /style #}
+
 {% block content %}
-    <div ng-app="q_index">
-        <div ng-controller="IndexController as index_controller">
+    <div ng-app="q_test">
+        <div ng-controller="EditorController as editor_controller">
 
-            <div class="row">
-                <div class="col-lg-8 col-lg-offset-2 col-md-8 col-md-offset-2">
+            {# wrapping everything in a fieldset that can be deactivated during AJAX calls #}
+            <fieldset id="q_blocker" ng-disabled="blocking()">
 
-                    <div class="title">
-                        Welcome to the ES-DOC Questionnaire
-                    </div> <!-- /.title -->
+                <div class="row">
+                    <div class="col-lg-12 col-md-12">
 
-                    <div class="documentation">
+                        <div class="title">
+                            Editing an instance for the ES-DOC Questionnaire
+                        </div> <!-- /.title -->
 
-                        <p>The ES-DOC Questionnaire provides an editor for creating complex CIM Documents for particular Earth Science projects. Once published, those documents can be viewed and manipulated by other ES-DOC tools.</p>
+                        <div class="documentation">
+                            <p>
+                                Use this page to create or modify a {{ customization.model_title }} document.
+                                When you have finished filling in all properties, click the "submit" button at the bottom of the page to store a local copy.
+                                Invalid entries are indicated using a <span style="color: #ff0000; font-weight: bold;">red</span> font.
+                            </p>
+                            <p>
+                                <a href="{% url 'help' %}">ES-DOC Questionnaire help</a> is available.
+                            </p>
+                        </div> <!-- /.documentation -->
 
-                        <p>If you are seeing this page, then you have not selected a project. Please select from the available projects below. Depending on the project, you may have to login to proceed.</p>
+                        <div class="panel panel-default">
+                            <div class="panel-body">
+hi
+                            </div>  <!-- /.panel-body -->
+                        </div>  <!-- /.panel -->
 
-                        <p>Alternatively, click on the following links for more information:</p>
-                            <ul class="voffset-4">
-                                <li><a target="_blank" href="{% url 'help' %}" title="detailed information about how to use the Questionnaire"><b>ES-DOC Questionnaire help</b></a>&nbsp;&nbsp;</li>
-                                <li><a target="_blank" href="/feed" title="a listing of CIM Documents that have already been published"><b>ES-DOC Questionnaire Published Document Feed</b></a>&nbsp;&nbsp;</li>
-                            </ul>
-
-                    </div> <!-- /.documentation -->
-
-                    <div class="list-group large" id="projects">
-                        <span class="list-group-item active">
-                            Active Questionnaire Projects:&nbsp;
-                            <span class="small">(click to view)</span>
-                        </span>
-                        {% verbatim ng %}
-                            <a class="list-group-item project" href="/{{ project.name }}" ng-repeat="project in index_controller.projects">
-                                <strong>{{ project.title }}</strong>
-                                <span class="documentation small">{{ project.description }}</span>
-                            </a>
-                            <span class="documentation" ng-hide="index_controller.projects.length">
-                                <!-- only show this part if the projects array is emtpy -->
-                                No projects found
-                            </span>
-                        {% endverbatim ng %}
-                    </div> <!-- /.list-group -->
-
+                    </div>
                 </div>
+
+            </fieldset>  <!-- /#q_blocker -->
+
+            {# TODO: DELETE THIS BIT ONCE CODE IS WORKING #}
+            <div class="row">
+                <button class="btn btn-danger btn-xs pull-right" title="print ng scope to console" ng-click="print_stuff()">
+                    <span class="glyphicon glyphicon-cog"></span>
+                </button>
             </div>
 
         </div>

@@ -1,24 +1,20 @@
 {
-    "title": "Enumerations",
-    "description": "Schema for CIM2 Enumeration Choices",
-    "type": "array",
-    "items": {
-        "type": "object",
-        "properties": {
-            "order": {
-                "type": "number"
-            },
-            "value": {
-                "type": "string"
-            },
-            "documentation": {
-                "type": "string"
-            }
+    "title": "Label",
+    "description": "Schema for CIM2 Model Label",
+    "type": "object",
+    "properties": {
+        "text": {
+            "type": "string"
         },
-        "additionalProperties": false,
-        "required": [
-            "order",
-            "value"
-        ]
-    }
+        "fields": {
+            "type": "array"
+        },
+        "items": {
+            "type": "string"
+        }
+    },
+    "additionalProperties": false,
+    "required": [
+        "text"
+    ]
 }

@@ -1,2 +1,3 @@
 RECORDS OF ALL BACKUPS GO HERE
 
+2016-10-24-1001: successfully created '/home/allynt/Dropbox/WORK/NESII/ES-DOC/esdoc-questionnaire/Q/questionnaire/../backups/backup_cim2_questionnaire_2016-10-24-1001.sql.tgz'

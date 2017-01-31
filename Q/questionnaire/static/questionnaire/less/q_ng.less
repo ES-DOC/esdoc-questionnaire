@@ -1,32 +1,43 @@
 /* redefining ng stuff */
 
-//.ng-invalid.ng-dirty {
-//  border-color: @brand-danger;
-//}
-//
-//.ng-valid.ng-dirty {
-//  border-color: @brand-danger;
-//}
-//
-
-//.ng-invalid {
-//  border-color: @brand-danger;
-//}
-
-//.ng-valid {
-//  border-color: @brand-success;
-//}
-
-
 /* for whatever stupid reason, invalid things aren't automatically styled in boostrap */
-/* so specify my own invalid style here */
+/* so specify my own invalid styles here */
+
 .ng-invalid-bound.ng-pristine, .ng-invalid.ng-dirty {
     border-color: @brand-danger;
 }
+
 .form-control:focus.ng-invalid-bound.ng-pristine, .form-control:focus.ng-invalid.ng-dirty {
     box-shadow: 0px 1px 1px  @brand-danger inset, 0px 0px 8px @brand-danger;
 }
 
+/* override the default angular-loading-bar styles */
+/* (to make it more noticeable) */
+
+#loading-bar .bar {
+  background: @loading-color;
+  height: @loading-height;
+  border-bottom-right-radius: @loading-radius;
+  border-top-right-radius: @loading-radius;
+}
+
+#loading-bar .peg {
+  height: @loading-height;
+  -moz-box-shadow: @brand-success 1px 0 6px 1px;
+  -ms-box-shadow: @brand-success 1px 0 6px 1px;
+  -webkit-box-shadow: @brand-success 1px 0 6px 1px;
+  box-shadow: @loading-color 1px 0 6px 1px;
+}
+
+#loading-bar-spinner .spinner-icon {
+  width: 16px;
+  height: 16px;
+  border-top-color: @loading-color;
+  border-left-color: @loading-color;
+}
+
+/* define pretty error rendering for djangular forms */
+/* (not sure why "static/djng/css/" isn't having an effect) */
 
 ul.djng-form-errors {
     margin: 0;
@@ -38,13 +49,20 @@ ul.djng-field-errors {
     display: inline-block;
     list-style-type: none;
 }
+
 ul.djng-field-errors li.invalid {
     color: @brand-danger;
 }
+
 ul.djng-field-errors li.invalid:before {
-    content: "\2716\20";  /* adds a red cross before the error message */
+    content: "\2716\20";
 }
+
 ul.djng-field-errors li.valid:before {
     color: @brand-success;
-    content: "\2714";  /* adds a green tick */
+    content: "\2714";
+}
+
+label.djng-field-required::after {
+    content: "\00a0*";
 }

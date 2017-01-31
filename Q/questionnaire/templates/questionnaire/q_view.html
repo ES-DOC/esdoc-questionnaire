@@ -4,7 +4,7 @@
 
 {% load staticfiles %}
 {% load compress %}
-{% load djangular_tags %}
+{% load djng_tags %}
 {% load q_tags %}
 
 {% block title %}
@@ -13,163 +13,127 @@
 
 {% block scripts %}
     {{ block.super }}
-        <script language="JavaScript" type="text/javascript" src="{% static 'djangular/js/django-angular.js' %}"></script>
-        <script language="javascript" type="text/javascript" src="{% static 'questionnaire/js/q_ng_editor.js' %}"></script>
-        <script language="JavaScript">
+    <script type="text/javascript" src="{% static 'questionnaire/js/ext/jquery.splitter-0.14.0.js' %}"></script>
+    <script type="text/javascript" src="{% static 'questionnaire/js/q_ng_edit.js' %}"></script>
+    <script language="JavaScript">
 
-            var session_key = "{{ session_key }}";  /* session_key can be used to locate items in the cache */
-            var project_id = {{ project.pk }};
+        var session_key = "{{ session_key }}";
+        var project_id = {{ project.pk }};
+        var realization_id = {{ realization.pk|default:0 }};
 
-            var view_url_dirname = "{{ view_url_dirname }}";
-            var api_url_dirname = "{{ api_url_dirname }}";
+        var api_url_dirname = "{{ api_url_dirname }}";
+        var view_url_dirname = "{{ view_url_dirname }}";
 
-            var realization_id = {{ realization.id|default:0 }};
+        var read_only = {{ read_only }};
 
-            var read_only = {{ read_only }};
+        $(document).ready(
+            function() {
+                var parent = document.body;
+                init_widgets(splitters, $(parent).find(".splitter"));
+            }
+        );
 
-            $(document).ready(
-                function() {
-
-                    /* the customizer forms can have stackable modals (when customizing subforms) */
-                    /* this is not _really_ supported by Bootstrap3 */
-                    /* so this bit of code addresses that */
-                    /* (got the idea from http://stackoverflow.com/a/24914782) */
-
-                   $(document)
-                       .on('show.bs.modal', '.modal', function (event) {
-                           var zIndex = 1040 + (10 * $('.modal:visible').length);
-                           $(this).css('z-index', zIndex);
-                           setTimeout(function() {
-                               $('.modal-backdrop').not('.modal-stack').css('z-index', zIndex - 1).addClass('modal-stack');
-                           }, 0);
-                       })
-                       .on('hidden.bs.modal', '.modal', function () {
-                          $('.modal:visible').length && $(document.body).addClass('modal-open');
-                       });
-
-                }
-            );
-
-        </script>
-{% endblock %} {# /scripts #}
+    </script>
+{% endblock %}  {# /scripts #}
 
 {% block content %}
 
-<div ng-app="q_editor">
+    <div ng-app="q_edit">
+        <div ng-controller="EditorController as editor_controller">
 
-    {# HERE IS THE PARENT CONTROLLER #}
-    <div ng-controller="EditorController as editor_controller">
+            {# wrapping everything in a fieldset that can be deactivated during AJAX calls #}
+            <fieldset id="q_blocker" ng-disabled="blocking()">
 
-        {# wrapping everything in a fieldset that can be deactivated during AJAX calls #}
-        <fieldset id="q_blocker" ng-disabled="blocking()">
+                <div class="row">
+                    <div class="col-lg-12 col-md-12">
 
-        {# wrapping everything in bootstrap grids to help w/ placement #}
-        <div class="container-fluid">
-            <div class="col-md-12">
+                        {% block content_title %}
+                            <div class="title">
+                                Viewing {{ customization.model_title|a_or_an }} <em>read-only</em> <strong>{{ customization.model_title }}</strong> instance for the <a href="/{{ project.name }}" title="ES-DOC Questionnaire Project Home Page"><strong>{{ project.title }}</strong></a> Project
+                            </div> <!-- /.title -->
+                        {% endblock %}  {# /content_title #}
 
-                {% block content-title %}
-                <div class="title row">
-                    Viewing {{ customization.model_title|a_or_an }} <em>read-only</em> <strong>{{ customization.model_title }}</strong> instance for the <a href="/{{ project.name }}" title="ES-DOC Questionnaire Project Home Page"><strong>{{ project.title }}</strong></a> Project
-                </div> <!-- /.title -->
-                {% endblock %} {# /content-title #}
+                        {% block content_documentation %}
+                            <div class="documentation">
+                                <p>
+                                    Use this page to view a {{ customization.model_title }} document.
+                                </p>
+                                </p>
+                                    <a href="/{{ project.name }}">{{ project.title }} Project Page</a>.
+                                </p>
+                                <p>
+                                    <a href="{% url 'help' %}">ES-DOC Questionnaire help</a> is available.
+                                </p>
+                            </div> <!-- /.documentation -->
+                        {% endblock %}  {# /content_documentation #}
 
-                {% block content-documentation %}
-                <div class="documentation row">
-                    <div class="col-md-12">
-                        Use this page to view a {{ customization.model_title }} document.
-                    </div>
-                    <div class="col-md-10">
-                        <a href="{% url 'help' %}">ES-DOC Questionnaire help</a> is available.
-                    </div>
-                </div> <!-- /.documentation -->
-                {% endblock %} {# /content-documentation #}
+                        <div class="panel panel-default">
+                            <div class="panel-body">
 
-                <div class="col-md-12 row">
+                                {# here is the top-level model controller #}
+                                {# others may be created for subforms via the load-on-demand paradigm #}
+                                <div ng-controller="ModelEditorController as model_editor_controller"
+                                     current_model_path="_DATA">
 
-                    {% csrf_token %}
 
-                    {# HERE IS THE TOP-LEVEL MODEL CONTROLLER #}
-                    <div ng-controller="ModelEditorController as model_editor_controller"
-                         current_model_path="_DATA">
+                                    {% include "questionnaire/_q_view_completion.html" %}
 
-                        <div class="panel panel-success">
+                                    {% if ontology.ontology_type == "SPECIALIZATION" %}
+                                        <div class="col-lg-2 col-md-2">
+                                            <div class="hierarchy">
+                                                <div class="hierarchy_title">
+                                                    {{ customization.model_hierarchy_title }}
+                                                </div>
+                                                <div class="hierarchy_body">
+                                                    <tree model="current_model" show_completion="show_completion"></tree>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-lg-10 col-md-10">
+                                            <hierarchy model="current_model"></hierarchy>
+                                        </div>
+                                    {% else %}
+                                        <section model_to_watch="current_model"
+                                                 key="{% verbatim ng %}{{ current_model.key }}{% endverbatim ng %}"
+                                                 section_type="model_realization"/>
+                                    {% endif %}  {# /ontolgoy_type == "SPECIALIZATION" #}
 
-                            <div class="panel-header clearfix">
-                                <span class="text-primary pull-right voffset-4">
-                                    <!-- this span is copied from "_q_help.html" & hard-coded b/c I can't pass a multiline-variable to the "_q_help.html" template -->
-                                    <span class="help glyphicon glyphicon-info-sign"
-                                          data-toggle="popover"
-                                          data-container="body"
-                                          data-content="
-                                           <p>
-                                               Use this checkbox to toggle the indication of incomplete sections.
-                                           </p>
-                                           <p>
-                                               When selected, any section with required properties that have <em>not</em> been filled in will be indicated by this icon:
-                                               <span class='glyphicon glyphicon-pushpin glyphicon-danger'/>.
-                                           </p>
-                                           <p>
-                                               Only documents with no incomplete properties can be published.
-                                           </p>
-                                          ">
+                                    {% block content_submit %}
+                                        <!-- no content submission buttons for view template -->
+                                    {% endblock %} {# /content_submit #}
+
+                                    <span class="pull-right documentation">
+                                        {% verbatim ng %}
+                                            document version:&nbsp;{{ current_model.version }}
+                                        {% endverbatim ng %}
                                     </span>
-                                    <label for="completion_status_0" style="font-weight: normal;">
-                                        view completion status
-                                        <input id="completion_status_0" type="checkbox" ng-click="show_completion_status = !show_completion_status"/>
-                                    </label>
-                                    &nbsp;
-                                </span>
-                            </div>  <!-- /.panel-header -->
 
-                            <div class="panel-body panel-success">
+                                </div>  <!-- /ng-controller=model_editor_controller -->
 
-                                <section model_to_watch="current_model"
-                                         key="{% verbatim ng %}{{ current_model.key }}{% endverbatim ng %}"
-                                         section_type="model_realization"/>
-
-                            </div> <!-- /.panel-body -->
+                            </div>  <!-- /.panel-body -->
                         </div>  <!-- /.panel -->
 
-                    </div>  <!-- /.ng-controller=ModelRealizationController -->
+                    </div>  <!-- /col -->
+                </div>  <!-- /row -->
 
-                </div>
+            </fieldset>  <!-- /#q_blocker -->
 
+            {# TODO: DELETE THIS BIT ONCE CODE IS WORKING #}
+            <div class="row">
+                <button class="btn btn-danger btn-xs pull-right" title="print ng scope to console" ng-click="print_stuff()">
+                    <span class="glyphicon glyphicon-cog"></span>
+                </button>
             </div>
-        </div>
 
-        {% block content-submit %}
-            <!-- no content submission buttons for view -->
-        {% endblock %} {# /content-submit #}
-
-{# ########################################## #}
-{# TODO: DELETE THIS BIT ONCE CODE IS WORKING #}
-{% if request.current_site|site_type != "PROD" %}
-    <div class="col-md-12 row debug">
-        <button class="btn btn-danger btn-xs pull-right"
-                title="print ng scope to console"
-                ng-click="print_stuff()">
-            <span class="glyphicon glyphicon-cog"></span>
-        </button>
-    </div> <!-- /.debug -->
-{% endif %} {# /site_type != "PROD" #}
-{# ########################################## #}
-
-    </fieldset>  <!-- /#q_blocker -->
-
-    </div>  <!-- /ng-controller=EditorController -->
-
-</div>  <!-- /#q_editor -->
-
-{% endblock %} {# /content #}
+        </div>  <!-- /ng-controller=editor_controller -->
+    </div>  <!-- /ng-app=q_edit -->
+{% endblock %}  {# /content #}
 
 {% block footer %}
     {{ block.super }}
-    <div class="footer">
-        It uses the ontology
-        {% if ontology.url %}
-            <a target="_blank" href="{{ ontology.url }}">{{ ontology }}</a>.
-        {% else %}
-            {{ ontology }}.
-        {% endif %}
-    </div>
-{% endblock %} {# /footer #}
+    {% if ontology.url %}
+        <br/>It uses the ontology <a href="{{ontology.url}}">{{ ontology }}</a>.
+    {% else %}
+        <br/>It uses the ontology {{ ontology }}.
+    {% endif %}  {# /ontology.url #}
+{% endblock %}  {# /footer #}

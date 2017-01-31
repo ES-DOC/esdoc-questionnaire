@@ -7,7 +7,10 @@
 
 <div id="properties_fields">
 
-    <fieldset class="fieldset collapsible" ng-controller="FieldsetController as property_details_fieldset_controller">
+    <fieldset class="fieldset collapsible"
+              ng-controller="FieldsetController as property_details_fieldset_controller"
+              ng-class="property_details_fieldset_controller.is_collapsed ? 'collapsed' : 'expanded'">
+
         <legend class="fieldset_header" ng-click="property_details_fieldset_controller.is_collapsed = ! property_details_fieldset_controller.is_collapsed" title="click to toggle content" >
             <span ng-hide="property_details_fieldset_controller.is_collapsed" class="glyphicon glyphicon-triangle-bottom"></span>
             <span ng-show="property_details_fieldset_controller.is_collapsed" class="glyphicon glyphicon-triangle-right"></span>
@@ -17,102 +20,91 @@
 
             <div class="documentation">
                 This section contains information relating to the properties of this document.
-                This icon <span class="glyphicon glyphicon-file"></span> indicates that the property is a "meta" property and will not be directly editable by the user.
+                This icon <span class="glyphicon glyphicon-tag"></span> indicates that the property is tagged as a "meta" property and will not be directly editable by the user.
             </div>
 
             {% include 'questionnaire/_q_customize_categories.html' %}
 
-            <div class="panel panel-default">
+            <div class="panel-default">
                 <div class="panel-body properties"
                      ng-init="ordering_type='order'">
 
-                    <div class="accordion_toolbar" ng-show="current_model.properties.length">
-                        <div class="btn-group">
-                            <button type="button" class="btn dropdown-toggle" data-toggle="dropdown">
-                                <span class="glyphicon glyphicon-sort"></span>
-                                &nbsp;sort
-                            </button>
-                            <ul class="dropdown-menu">
-                                <li><a href="#" ng-click="ordering_type='name'">by name</a></li>
-                                <li><a href="#" ng-click="ordering_type='category_name'">by category</a></li>
-                                <li><a href="#" ng-click="ordering_type='field_type'">by field type</a></li>
-                                <li><a href="#" ng-click="ordering_type='order'">by order</a></li>
-                            </ul>
-                        </div>
-                      <button type="button" class="btn" title="expand all properties"
-                              ng-click="expand_properties()">
-                          <span class="glyphicon glyphicon-triangle-bottom"></span>
-                          &nbsp;expand all
-                      </button>
-                      <button type="button" class="btn" title="collapse all properties"
-                              ng-click="collapse_properties()">
-                          <span class="glyphicon glyphicon-triangle-top"></span>
-                          &nbsp;collapse all
-                      </button>
-                    </div>
-                    <div style="clear: both;"></div>  <!-- TODO: WHY DOESN'T BOOTSTRAP "clearfix" APPLY HERE? -->
+                    <div class="clearfix">
+                        <div class="accordion_toolbar" ng-show="current_model.properties.length">
+                            <div class="btn-group">
+                                <button type="button" class="btn dropdown-toggle" data-toggle="dropdown">
+                                    <span class="glyphicon glyphicon-sort"></span>
+                                    &nbsp;sort
+                                </button>
+                                <ul class="dropdown-menu">
+                                    <li><a href="#" ng-click="ordering_type='proxy_title'">by name</a></li>
+                                    <li><a href="#" ng-click="ordering_type='category_name'">by category</a></li>
+                                    <li><a href="#" ng-click="ordering_type='field_type'">by field type</a></li>
+                                    <li><a href="#" ng-click="ordering_type='order'">by order</a></li>
+                                </ul>
+                            </div>
+                          <button type="button" class="btn" title="expand all properties"
+                                  ng-click="expand_properties()">
+                              <span class="glyphicon glyphicon-triangle-bottom"></span>
+                              &nbsp;expand all
+                          </button>
+                          <button type="button" class="btn" title="collapse all properties"
+                                  ng-click="collapse_properties()">
+                              <span class="glyphicon glyphicon-triangle-top"></span>
+                              &nbsp;collapse all
+                          </button>
+                        </div>  <!-- /.accordion_toolbar -->
+                    </div>  <!-- /clearfix -->
 
-                    <div uib-accordion close-others="false"
-                         ui-sortable="properties_sortable_options"
-                         class="accordion"
-                         ng-model="current_model.properties"
-                         ng-show="current_model.properties.length">
-                        <div uib-accordion-group
-                             class="accordion_group"
-                             is-open="property.display_detail"
+                    <div uib-accordion close-others="false" ui-sortable="properties_sortable_options" class="accordion"
+                         ng-model="current_model.properties" ng-show="current_model.properties.length">
+
+                        <div uib-accordion-group class="accordion_group"
+                             is-open="property.display_detail" ng-class="property.display_detail ? 'expanded': 'collapsed'"
                              ng-repeat="property in current_model.properties | orderBy:ordering_type"
-                             ng-class="property.display_detail ? 'expanded' : 'collapsed'"
-                             ng-init="category=get_model_by_attrs(current_model.categories, {'key': property.category_key})"
+                             ng-init="category=get_model_by_attrs(current_model.categories, {'key': property.category_key});
+                                      property_key=property.key;
+                                      property_index=$index"
                              ng-show="category.display_properties">
 
-                            <div uib-accordion-heading
-                                 class="accordion_header sortable_handle"
+                            <div uib-accordion-heading class="accordion_header sortable_handle clearfix"
                                  ng-click="property.display_detail = ! property.display_detail">
+                                {# TODO: NAUGHTY NAUGHTY DEVELOPER, USING TABLES INSTEAD OF NICE BOOTSTRAP GRIDS #}
                                 {% verbatim ng %}
-                                    <!-- naughty, naughty developer using tables and fixed widths -->
-                                    <!-- TODO: REDO THIS LAYOUT USING CONVENTIONAL BOOTSTRAP TECHNIQUES -->
-                                    <table width="1056px" border="0" title="click to toggle / drag-and-drop to reorder"> <!-- a parent element is needed so that the entire "accordion_header" is clickable -->
-                                        <tr>
-                                            <td width="32px;">
-                                                <h5>
-                                                    <span ng-hide="property.display_detail" class="glyphicon glyphicon-triangle-right"></span>
-                                                    <span ng-show="property.display_detail" class="glyphicon glyphicon-triangle-bottom"></span>
-                                                </h5>
-                                            </td>
-                                            <td width="300px">
-                                                <h5>
-                                                    <strong>Name:&nbsp;&nbsp;</strong>
-                                                    {{ property.proxy_name }}
-                                                </h5>
-                                            </td>
-                                            <td width="340px">
-                                                <h5>
-                                                    <strong>Category:&nbsp;&nbsp;</strong>
-                                                    {{ category.category_title }}
-                                                </h5>
-                                            </td>
-                                            <td width="256px">
-                                                <h5>
-                                                    <strong>Field Type:&nbsp;&nbsp;</strong>
-                                                    {{property.field_type}}
-                                                </h5>
-                                            </td>
-                                            <td width="128px">
-                                                <h5>
-                                                    <strong>Order:&nbsp;&nbsp;</strong>
-                                                    {{property.order}}
-                                                    <!-- show a special icon if this is a meta property to dissuade users from messing w/ it -->
-                                                    <span ng-show="current_model.is_meta || property.is_meta" class="glyphicon glyphicon-file pull-right"></span>
-                                                </h5>
-                                            </td>
-
-                                        </tr>
-                                    </table>
+                                <table width="100%">
+                                    <tr title="click to toggle / drag-and-drop to reorder">
+                                        <td width="4%">
+                                            <span class="glyphicon glyphicon-triangle-right" ng-hide="property.display_detail"></span>
+                                            <span class="glyphicon glyphicon-triangle-bottom" ng-show="property.display_detail"></span>
+                                        </td>
+                                        <td width="30%">
+                                            <strong>Name:</strong>&nbsp;
+                                            {{ property.proxy_title }}
+                                        </td>
+                                        <td width="36%">
+                                            <strong>Category:</strong>&nbsp;
+                                            {{ category.category_title }}
+                                        </td>
+                                        <td width="22%">
+                                            <strong>Field Type:</strong>&nbsp;
+                                            {{ property.field_type }}
+                                        </td>
+                                        <td width="8%">
+                                            <strong>Order:</strong>&nbsp;
+                                            {{ property.order }}
+                                            <!-- show a special icon if this is a meta property to dissuade users from messing w/ it -->
+                                            <span ng-show="current_model.is_meta || property.is_meta" class="glyphicon glyphicon-tag pull-right"></span>
+                                        </td>
+                                    </tr>
+                                </table>
                                 {% endverbatim ng %}
                             </div>  <!-- /.accordion_heading -->
 
-                            <div class="accordion_content" ng-init="property_key=property.key; property_index=$index">
+                            <div class="accordion_content">
 
+                                <!-- key & index are set in ng-init above (w/ the accordion_group) -->
+                                <!-- b/c the possibility of resorting properties means I can't guarantee their value -->
+                                <!-- would be correct inside this loop -->
                                 <section model_to_watch="property"
                                          key="{% verbatim ng %}{{ property_key }}{% endverbatim ng %}"
                                          index="{% verbatim ng %}{{ property_index }}{% endverbatim ng %}"
@@ -120,17 +112,19 @@
 
                             </div>  <!-- /.accordion_content -->
 
-                        </div> <!-- /.accordion_group -->
-                    </div> <!-- /accordion -->
+                        </div>  <!-- /.accordion_group -->
+
+                    </div>  <!-- /.accordion -->
+
 
                     <div class="documentation" ng-hide="current_model.properties.length">
                         No properties found.
                     </div>
 
-                </div> <!-- /.panel_body.properties -->
-            </div> <!-- /.panel -->
+                </div>  <!-- /.panel-body -->
+            </div>  <!-- /.panel -->
 
-        </div> <!-- /.fieldset_content -->
+        </div>  <!-- /.fieldset_content -->
     </fieldset>
 
-</div> <!-- /#properties_fields -->
+</div>  <!-- /#properties_fields -->

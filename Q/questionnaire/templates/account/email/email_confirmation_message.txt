@@ -1,9 +1,18 @@
-{% load account %}{% user_display user as user_display %}{% load i18n %}{% autoescape off %}{% blocktrans with site_name=current_site.name site_domain=current_site.domain %}Hello from {{ site_name }}!
+{% load account %}
+{% load q_tags %}
 
-You're receiving this e-mail because user {{ user_display }} at {{ site_domain }} has given yours as an e-mail address to connect their account.
+{% user_display user as user_display %}
+
+{% autoescape off %}
+
+Greetings from the ES-DOC Questionnaire.
+
+You're receiving this email because user '{{ user_display }}' at {{ current_site }} has provided this email address to connect their account.
 
 To confirm this is correct, go to {{ activate_url }}
-rama lama fa fa fa
-{% endblocktrans %}{% endautoescape %}
-{% blocktrans with site_name=current_site.name site_domain=current_site.domain %}Thank you from {{ site_name }}!
-{{ site_domain }}{% endblocktrans %}
+
+If you believe you have received this email in error, please notify {% q_email %}.
+
+Thank you from the ES-DOC team.
+
+{% endautoescape %}

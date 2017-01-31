@@ -7,19 +7,18 @@
 <div class="panel panel-default">
 
     <div class="panel-heading panel-xs">
+
         <label for="{{form.is_nil.auto_id}}">
             {{ form.is_nil }}
             <span style="font-weight: normal;">
                 Should this property be intentionally ignored?
             </span>
         </label>
-        {# don't show help; this is pretty self-explanatory #}
-        {# {% with help_text=is_nil_field.help_text %}      #}
-        {#     {% include 'questionnaire/_q_help.html' %}   #}
-        {# {% endwith %}                                    #}
+
     </div>  <!-- /.panel-heading -->
 
     <div class="panel-body" ng-show="current_model.is_nil">
+
         <span style="font-weight: normal;">
             <em>Why is there no value?</em>
         </span>
