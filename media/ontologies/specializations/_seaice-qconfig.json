@@ -1,0 +1,1013 @@
+{
+  "name": "seaice", 
+  "version": "0.1.6", 
+  "documentation": "Sea ice realm specialization", 
+  "ontology_type": "SPECIALIZATION", 
+  "ontology_base": "cim_2.0.0", 
+  "date": "2016-12-30 12:13:15.555096", 
+  "classes": {
+    "defined": [
+      {
+        "name": "realm", 
+        "package": "science", 
+        "documentation": "Sea ice realm specialization", 
+        "is_document": true, 
+        "id": "cmip6.seaice", 
+        "properties": {
+          "defined": [
+            {
+              "name": "processes", 
+              "package": "science", 
+              "id": "cmip6.seaice.processes", 
+              "is_meta": false, 
+              "is_nillable": true, 
+              "cardinality": "3.3", 
+              "property_type": "RELATIONSHIP", 
+              "relationship_targets": [
+                "cmip6.seaice.dynamics", 
+                "cmip6.seaice.thermodynamics", 
+                "cmip6.seaice.radiative_processes"
+              ]
+            }, 
+            {
+              "name": "grid", 
+              "package": "science", 
+              "id": "cmip6.seaice.grid", 
+              "is_meta": false, 
+              "is_nillable": true, 
+              "cardinality": "0.1", 
+              "property_type": "RELATIONSHIP", 
+              "relationship_targets": [
+                "cmip6.seaice.grid"
+              ]
+            }, 
+            {
+              "name": "key_properties", 
+              "package": "science", 
+              "id": "cmip6.seaice.key_properties", 
+              "is_meta": false, 
+              "is_nillable": true, 
+              "cardinality": "1.1", 
+              "property_type": "RELATIONSHIP", 
+              "relationship_targets": [
+                "cmip6.seaice.key_properties"
+              ]
+            }
+          ], 
+          "excluded": [], 
+          "inherited": [
+            "science.citations", 
+            "science.keywords", 
+            "science.overview"
+          ]
+        }
+      }, 
+      {
+        "name": "grid", 
+        "id": "cmip6.seaice.grid", 
+        "package": "science", 
+        "documentation": "Sea Ice grid", 
+        "is_document": true, 
+        "properties": {
+          "defined": [
+            {
+              "name": "detailset", 
+              "package": "science", 
+              "id": "cmip6.seaice.detailsets", 
+              "is_meta": false, 
+              "is_nillable": true, 
+              "cardinality": "3.3", 
+              "property_type": "RELATIONSHIP", 
+              "relationship_targets": [
+                "cmip6.seaice.grid.discretisation", 
+                "cmip6.seaice.grid.seaice_categories", 
+                "cmip6.seaice.grid.snow_on_seaice"
+              ]
+            }
+          ], 
+          "excluded": [], 
+          "inherited": []
+        }
+      }, 
+      {
+        "name": "detailset", 
+        "package": "science", 
+        "id": "cmip6.seaice.grid.discretisation", 
+        "documentation": "Sea ice discretisation", 
+        "is_document": false, 
+        "properties": {
+          "defined": [], 
+          "excluded": [], 
+          "inherited": []
+        }
+      }, 
+      {
+        "name": "detailset", 
+        "package": "science", 
+        "id": "cmip6.seaice.grid.discretisation.horizontal", 
+        "documentation": "Sea ice discretisation in the horizontal", 
+        "is_document": false, 
+        "properties": {
+          "defined": [
+            {
+              "name": "grid", 
+              "package": "science", 
+              "id": "cmip6.seaice.grid.discretisation.horizontal.grid", 
+              "is_meta": false, 
+              "is_nillable": true, 
+              "cardinality": "1.1", 
+              "property_type": "ENUMERATION", 
+              "enumeration_is_open": true, 
+              "enumeration_members": [
+                {
+                  "value": "Ocean grid", 
+                  "order": 1, 
+                  "documentation": "Sea ice is horizontally discretised on the ocean grid"
+                }, 
+                {
+                  "value": "Atmosphere Grid", 
+                  "order": 2, 
+                  "documentation": "Sea ice is horizontally discretised on the atmospheric grid"
+                }, 
+                {
+                  "value": "Own Grid", 
+                  "order": 3, 
+                  "documentation": "Sea ice is horizontally discretised on its own independent grid"
+                }, 
+                {
+                  "value": "Other", 
+                  "order": 4
+                }
+              ]
+            }, 
+            {
+              "name": "grid_type", 
+              "package": "science", 
+              "id": "cmip6.seaice.grid.discretisation.horizontal.grid_type", 
+              "is_meta": false, 
+              "is_nillable": true, 
+              "cardinality": "1.1", 
+              "property_type": "ENUMERATION", 
+              "enumeration_is_open": true, 
+              "enumeration_members": [
+                {
+                  "value": "Structured grid", 
+                  "order": 1
+                }, 
+                {
+                  "value": "Unstructured grid", 
+                  "order": 2
+                }, 
+                {
+                  "value": "Adaptive grid", 
+                  "order": 3, 
+                  "documentation": "Computational grid changes during the run"
+                }, 
+                {
+                  "value": "Other", 
+                  "order": 4
+                }
+              ]
+            }, 
+            {
+              "name": "scheme", 
+              "package": "science", 
+              "id": "cmip6.seaice.grid.discretisation.horizontal.scheme", 
+              "is_meta": false, 
+              "is_nillable": true, 
+              "cardinality": "1.1", 
+              "property_type": "ENUMERATION", 
+              "enumeration_is_open": true, 
+              "enumeration_members": [
+                {
+                  "value": "Finite differences", 
+                  "order": 1
+                }, 
+                {
+                  "value": "Finite elements", 
+                  "order": 2
+                }, 
+                {
+                  "value": "Finite volumes", 
+                  "order": 3
+                }, 
+                {
+                  "value": "Other", 
+                  "order": 4
+                }
+              ]
+            }, 
+            {
+              "name": "thermodynamics_time_step", 
+              "package": "science", 
+              "id": "cmip6.seaice.grid.discretisation.horizontal.thermodynamics_time_step", 
+              "is_meta": false, 
+              "is_nillable": true, 
+              "cardinality": "1.1", 
+              "property_type": "ATOMIC", 
+              "atomic_type": "INTEGER"
+            }, 
+            {
+              "name": "dynamics_time_step", 
+              "package": "science", 
+              "id": "cmip6.seaice.grid.discretisation.horizontal.dynamics_time_step", 
+              "is_meta": false, 
+              "is_nillable": true, 
+              "cardinality": "1.1", 
+              "property_type": "ATOMIC", 
+              "atomic_type": "INTEGER"
+            }, 
+            {
+              "name": "additional_details", 
+              "package": "science", 
+              "id": "cmip6.seaice.grid.discretisation.horizontal.additional_details", 
+              "is_meta": false, 
+              "is_nillable": true, 
+              "cardinality": "0.1", 
+              "property_type": "ATOMIC", 
+              "atomic_type": "STRING"
+            }
+          ], 
+          "excluded": [], 
+          "inherited": []
+        }
+      }, 
+      {
+        "name": "detailset", 
+        "package": "science", 
+        "id": "cmip6.seaice.grid.discretisation.vertical", 
+        "documentation": "Sea ice vertical properties", 
+        "is_document": false, 
+        "properties": {
+          "defined": [
+            {
+              "name": "layering", 
+              "package": "science", 
+              "id": "cmip6.seaice.grid.discretisation.vertical.layering", 
+              "is_meta": false, 
+              "is_nillable": true, 
+              "cardinality": "1.N", 
+              "property_type": "ENUMERATION", 
+              "enumeration_is_open": true, 
+              "enumeration_members": [
+                {
+                  "value": "Zero-layer", 
+                  "order": 1, 
+                  "documentation": "Simulation has no internal ice thermodynamics."
+                }, 
+                {
+                  "value": "Two-levels", 
+                  "order": 2, 
+                  "documentation": "Simulation uses two layers."
+                }, 
+                {
+                  "value": "Multi-level", 
+                  "order": 3, 
+                  "documentation": "Simulation uses more than two layers"
+                }, 
+                {
+                  "value": "Other", 
+                  "order": 4
+                }
+              ]
+            }, 
+            {
+              "name": "number_of_layers", 
+              "package": "science", 
+              "id": "cmip6.seaice.grid.discretisation.vertical.number_of_layers", 
+              "is_meta": false, 
+              "is_nillable": true, 
+              "cardinality": "1.1", 
+              "property_type": "ATOMIC", 
+              "atomic_type": "INTEGER"
+            }, 
+            {
+              "name": "additional_details", 
+              "package": "science", 
+              "id": "cmip6.seaice.grid.discretisation.vertical.additional_details", 
+              "is_meta": false, 
+              "is_nillable": true, 
+              "cardinality": "0.1", 
+              "property_type": "ATOMIC", 
+              "atomic_type": "STRING"
+            }
+          ], 
+          "excluded": [], 
+          "inherited": []
+        }
+      }, 
+      {
+        "name": "detailset", 
+        "package": "science", 
+        "id": "cmip6.seaice.grid.seaice_categories", 
+        "documentation": "What method is used to represent sea ice categories ?", 
+        "is_document": false, 
+        "properties": {
+          "defined": [
+            {
+              "name": "has_mulitple_categories", 
+              "package": "science", 
+              "id": "cmip6.seaice.grid.seaice_categories.has_mulitple_categories", 
+              "is_meta": false, 
+              "is_nillable": true, 
+              "cardinality": "1.1", 
+              "property_type": "ATOMIC", 
+              "atomic_type": "BOOLEAN"
+            }, 
+            {
+              "name": "number_of_categories", 
+              "package": "science", 
+              "id": "cmip6.seaice.grid.seaice_categories.number_of_categories", 
+              "is_meta": false, 
+              "is_nillable": true, 
+              "cardinality": "1.1", 
+              "property_type": "ATOMIC", 
+              "atomic_type": "INTEGER"
+            }, 
+            {
+              "name": "category_limits", 
+              "package": "science", 
+              "id": "cmip6.seaice.grid.seaice_categories.category_limits", 
+              "is_meta": false, 
+              "is_nillable": true, 
+              "cardinality": "1.1", 
+              "property_type": "ATOMIC", 
+              "atomic_type": "STRING"
+            }, 
+            {
+              "name": "ice_thickness_distribution_scheme", 
+              "package": "science", 
+              "id": "cmip6.seaice.grid.seaice_categories.ice_thickness_distribution_scheme", 
+              "is_meta": false, 
+              "is_nillable": true, 
+              "cardinality": "1.1", 
+              "property_type": "ATOMIC", 
+              "atomic_type": "STRING"
+            }, 
+            {
+              "name": "other", 
+              "package": "science", 
+              "id": "cmip6.seaice.grid.seaice_categories.other", 
+              "is_meta": false, 
+              "is_nillable": true, 
+              "cardinality": "0.1", 
+              "property_type": "ATOMIC", 
+              "atomic_type": "STRING"
+            }
+          ], 
+          "excluded": [], 
+          "inherited": []
+        }
+      }, 
+      {
+        "name": "detailset", 
+        "package": "science", 
+        "id": "cmip6.seaice.grid.snow_on_seaice", 
+        "documentation": "Snow on sea ice details", 
+        "is_document": false, 
+        "properties": {
+          "defined": [
+            {
+              "name": "has_snow_on_ice", 
+              "package": "science", 
+              "id": "cmip6.seaice.grid.snow_on_seaice.has_snow_on_ice", 
+              "is_meta": false, 
+              "is_nillable": true, 
+              "cardinality": "1.1", 
+              "property_type": "ATOMIC", 
+              "atomic_type": "BOOLEAN"
+            }, 
+            {
+              "name": "number_of_snow_levels", 
+              "package": "science", 
+              "id": "cmip6.seaice.grid.snow_on_seaice.number_of_snow_levels", 
+              "is_meta": false, 
+              "is_nillable": true, 
+              "cardinality": "1.1", 
+              "property_type": "ATOMIC", 
+              "atomic_type": "INTEGER"
+            }, 
+            {
+              "name": "snow_fraction", 
+              "package": "science", 
+              "id": "cmip6.seaice.grid.snow_on_seaice.snow_fraction", 
+              "is_meta": false, 
+              "is_nillable": true, 
+              "cardinality": "1.1", 
+              "property_type": "ATOMIC", 
+              "atomic_type": "STRING"
+            }, 
+            {
+              "name": "additional_details", 
+              "package": "science", 
+              "id": "cmip6.seaice.grid.snow_on_seaice.additional_details", 
+              "is_meta": false, 
+              "is_nillable": true, 
+              "cardinality": "0.1", 
+              "property_type": "ATOMIC", 
+              "atomic_type": "STRING"
+            }
+          ], 
+          "excluded": [], 
+          "inherited": []
+        }
+      }, 
+      {
+        "name": "key_properties", 
+        "package": "science", 
+        "documentation": "Sea Ice key properties", 
+        "is_document": false, 
+        "id": "cmip6.seaice.key_properties", 
+        "properties": {
+          "defined": [
+            {
+              "name": "detailsets", 
+              "package": "science", 
+              "is_meta": false, 
+              "is_nillable": true, 
+              "cardinality": "6.6", 
+              "property_type": "RELATIONSHIP", 
+              "relationship_targets": [
+                "cmip6.seaice.key_properties.variables", 
+                "cmip6.seaice.key_properties.seawater_properties", 
+                "cmip6.seaice.key_properties.resolution", 
+                "cmip6.seaice.key_properties.tuning_applied", 
+                "cmip6.seaice.key_properties.assumptions", 
+                "cmip6.seaice.key_properties.conservation"
+              ]
+            }
+          ], 
+          "excluded": [
+            "science.extent", 
+            "science.extra_conservation_properties", 
+            "science.implementation_overview", 
+            "science.keywords", 
+            "science.resolution", 
+            "science.tuning_applied"
+          ], 
+          "inherited": [
+            "science.citations", 
+            "science.keywords"
+          ]
+        }
+      }, 
+      {
+        "name": "detailset", 
+        "package": "science", 
+        "id": "cmip6.seaice.key_properties.variables", 
+        "documentation": "List of prognostic variable in the sea ice model.", 
+        "is_document": false, 
+        "properties": {
+          "defined": [
+            {
+              "name": "prognostic", 
+              "package": "science", 
+              "id": "cmip6.seaice.key_properties.variables.prognostic", 
+              "is_meta": false, 
+              "is_nillable": true, 
+              "cardinality": "1.N", 
+              "property_type": "ENUMERATION", 
+              "enumeration_is_open": true, 
+              "enumeration_members": [
+                {
+                  "value": "Sea ice Temperature", 
+                  "order": 1
+                }, 
+                {
+                  "value": "Sea ice concentration", 
+                  "order": 2
+                }, 
+                {
+                  "value": "Sea ice thickness", 
+                  "order": 3
+                }, 
+                {
+                  "value": "Sea ice U-velocity", 
+                  "order": 4
+                }, 
+                {
+                  "value": "Sea ice V-velocity", 
+                  "order": 5
+                }, 
+                {
+                  "value": "Internal ice stress", 
+                  "order": 6
+                }, 
+                {
+                  "value": "Salinity", 
+                  "order": 7
+                }, 
+                {
+                  "value": "Snow temperature", 
+                  "order": 8, 
+                  "documentation": "Snow on ice temperature"
+                }, 
+                {
+                  "value": "Snow depth", 
+                  "order": 9, 
+                  "documentation": "Snow on ice thickness"
+                }, 
+                {
+                  "value": "Other", 
+                  "order": 10
+                }
+              ]
+            }
+          ], 
+          "excluded": [], 
+          "inherited": []
+        }
+      }, 
+      {
+        "name": "detailset", 
+        "package": "science", 
+        "id": "cmip6.seaice.key_properties.seawater_properties", 
+        "documentation": "Properties of seawater relevant to sea ice", 
+        "is_document": false, 
+        "properties": {
+          "defined": [
+            {
+              "name": "ocean_freezing_point", 
+              "package": "science", 
+              "id": "cmip6.seaice.key_properties.seawater_properties.ocean_freezing_point", 
+              "is_meta": false, 
+              "is_nillable": true, 
+              "cardinality": "1.1", 
+              "property_type": "ENUMERATION", 
+              "enumeration_is_open": true, 
+              "enumeration_members": [
+                {
+                  "value": "TEOS-10", 
+                  "order": 1, 
+                  "documentation": "Thermodynamic equation of seawater 2010"
+                }, 
+                {
+                  "value": "Constant", 
+                  "order": 2, 
+                  "documentation": "Constant value of seawater freezing point is used."
+                }, 
+                {
+                  "value": "Other", 
+                  "order": 3
+                }
+              ]
+            }, 
+            {
+              "name": "ocean_freezing_point_value", 
+              "package": "science", 
+              "id": "cmip6.seaice.key_properties.seawater_properties.ocean_freezing_point_value", 
+              "is_meta": false, 
+              "is_nillable": true, 
+              "cardinality": "0.1", 
+              "property_type": "ATOMIC", 
+              "atomic_type": "DECIMAL"
+            }
+          ], 
+          "excluded": [], 
+          "inherited": []
+        }
+      }, 
+      {
+        "name": "detailset", 
+        "package": "science", 
+        "id": "cmip6.seaice.key_properties.resolution", 
+        "documentation": "Resolution in the sea ice grid", 
+        "is_document": false, 
+        "properties": {
+          "defined": [
+            {
+              "name": "name", 
+              "package": "science", 
+              "id": "cmip6.seaice.key_properties.resolution.name", 
+              "is_meta": false, 
+              "is_nillable": true, 
+              "cardinality": "1.1", 
+              "property_type": "ATOMIC", 
+              "atomic_type": "STRING"
+            }, 
+            {
+              "name": "canonical_horizontal_resolution", 
+              "package": "science", 
+              "id": "cmip6.seaice.key_properties.resolution.canonical_horizontal_resolution", 
+              "is_meta": false, 
+              "is_nillable": true, 
+              "cardinality": "1.1", 
+              "property_type": "ATOMIC", 
+              "atomic_type": "STRING"
+            }, 
+            {
+              "name": "number_of_horizontal_gridpoints", 
+              "package": "science", 
+              "id": "cmip6.seaice.key_properties.resolution.number_of_horizontal_gridpoints", 
+              "is_meta": false, 
+              "is_nillable": true, 
+              "cardinality": "1.1", 
+              "property_type": "ATOMIC", 
+              "atomic_type": "INTEGER"
+            }
+          ], 
+          "excluded": [], 
+          "inherited": []
+        }
+      }, 
+      {
+        "name": "detailset", 
+        "package": "science", 
+        "id": "cmip6.seaice.key_properties.tuning_applied", 
+        "documentation": "Tuning applied to sea ice model component", 
+        "is_document": false, 
+        "properties": {
+          "defined": [
+            {
+              "name": "description", 
+              "package": "science", 
+              "id": "cmip6.seaice.key_properties.tuning_applied.description", 
+              "is_meta": false, 
+              "is_nillable": true, 
+              "cardinality": "1.1", 
+              "property_type": "ATOMIC", 
+              "atomic_type": "STRING"
+            }, 
+            {
+              "name": "target", 
+              "package": "science", 
+              "id": "cmip6.seaice.key_properties.tuning_applied.target", 
+              "is_meta": false, 
+              "is_nillable": true, 
+              "cardinality": "1.1", 
+              "property_type": "ATOMIC", 
+              "atomic_type": "STRING"
+            }, 
+            {
+              "name": "simulations", 
+              "package": "science", 
+              "id": "cmip6.seaice.key_properties.tuning_applied.simulations", 
+              "is_meta": false, 
+              "is_nillable": true, 
+              "cardinality": "1.1", 
+              "property_type": "ATOMIC", 
+              "atomic_type": "STRING"
+            }, 
+            {
+              "name": "metrics_used", 
+              "package": "science", 
+              "id": "cmip6.seaice.key_properties.tuning_applied.metrics_used", 
+              "is_meta": false, 
+              "is_nillable": true, 
+              "cardinality": "1.1", 
+              "property_type": "ATOMIC", 
+              "atomic_type": "STRING"
+            }, 
+            {
+              "name": "variables", 
+              "package": "science", 
+              "id": "cmip6.seaice.key_properties.tuning_applied.variables", 
+              "is_meta": false, 
+              "is_nillable": true, 
+              "cardinality": "0.1", 
+              "property_type": "ATOMIC", 
+              "atomic_type": "STRING"
+            }
+          ], 
+          "excluded": [], 
+          "inherited": []
+        }
+      }, 
+      {
+        "name": "detailset", 
+        "package": "science", 
+        "id": "cmip6.seaice.key_properties.assumptions", 
+        "documentation": "Assumptions made in the sea ice model", 
+        "is_document": false, 
+        "properties": {
+          "defined": [
+            {
+              "name": "description", 
+              "package": "science", 
+              "id": "cmip6.seaice.key_properties.assumptions.description", 
+              "is_meta": false, 
+              "is_nillable": true, 
+              "cardinality": "1.N", 
+              "property_type": "ATOMIC", 
+              "atomic_type": "STRING"
+            }, 
+            {
+              "name": "on_diagnostic_variables", 
+              "package": "science", 
+              "id": "cmip6.seaice.key_properties.assumptions.on_diagnostic_variables", 
+              "is_meta": false, 
+              "is_nillable": true, 
+              "cardinality": "1.N", 
+              "property_type": "ATOMIC", 
+              "atomic_type": "STRING"
+            }, 
+            {
+              "name": "missing_processes", 
+              "package": "science", 
+              "id": "cmip6.seaice.key_properties.assumptions.missing_processes", 
+              "is_meta": false, 
+              "is_nillable": true, 
+              "cardinality": "1.N", 
+              "property_type": "ATOMIC", 
+              "atomic_type": "STRING"
+            }
+          ], 
+          "excluded": [], 
+          "inherited": []
+        }
+      }, 
+      {
+        "name": "detailset", 
+        "package": "science", 
+        "id": "cmip6.seaice.key_properties.conservation", 
+        "documentation": "Conservation in the sea ice component", 
+        "is_document": false, 
+        "properties": {
+          "defined": [
+            {
+              "name": "description", 
+              "package": "science", 
+              "id": "cmip6.seaice.key_properties.conservation.description", 
+              "is_meta": false, 
+              "is_nillable": true, 
+              "cardinality": "1.1", 
+              "property_type": "ATOMIC", 
+              "atomic_type": "STRING"
+            }, 
+            {
+              "name": "properties", 
+              "package": "science", 
+              "id": "cmip6.seaice.key_properties.conservation.properties", 
+              "is_meta": false, 
+              "is_nillable": true, 
+              "cardinality": "1.N", 
+              "property_type": "ENUMERATION", 
+              "enumeration_is_open": true, 
+              "enumeration_members": [
+                {
+                  "value": "Energy", 
+                  "order": 1
+                }, 
+                {
+                  "value": "Mass", 
+                  "order": 2
+                }, 
+                {
+                  "value": "Salt", 
+                  "order": 3
+                }, 
+                {
+                  "value": "Other", 
+                  "order": 4
+                }
+              ]
+            }, 
+            {
+              "name": "budget", 
+              "package": "science", 
+              "id": "cmip6.seaice.key_properties.conservation.budget", 
+              "is_meta": false, 
+              "is_nillable": true, 
+              "cardinality": "1.1", 
+              "property_type": "ATOMIC", 
+              "atomic_type": "STRING"
+            }, 
+            {
+              "name": "was_flux_correction_used", 
+              "package": "science", 
+              "id": "cmip6.seaice.key_properties.conservation.was_flux_correction_used", 
+              "is_meta": false, 
+              "is_nillable": true, 
+              "cardinality": "1.1", 
+              "property_type": "ATOMIC", 
+              "atomic_type": "BOOLEAN"
+            }, 
+            {
+              "name": "corrected_conserved_prognostic_variables", 
+              "package": "science", 
+              "id": "cmip6.seaice.key_properties.conservation.corrected_conserved_prognostic_variables", 
+              "is_meta": false, 
+              "is_nillable": true, 
+              "cardinality": "1.1", 
+              "property_type": "ATOMIC", 
+              "atomic_type": "STRING"
+            }
+          ], 
+          "excluded": [], 
+          "inherited": []
+        }
+      }, 
+      {
+        "name": "process", 
+        "package": "science", 
+        "documentation": "Sea Ice Dynamics", 
+        "is_document": false, 
+        "id": "cmip6.seaice.dynamics", 
+        "properties": {
+          "defined": [
+            {
+              "name": "details", 
+              "package": "science", 
+              "is_meta": false, 
+              "is_nillable": true, 
+              "cardinality": "5.5", 
+              "property_type": "RELATIONSHIP", 
+              "relationship_targets": [
+                "cmip6.seaice.dynamics.horizontal_transport", 
+                "cmip6.seaice.dynamics.transport_in_thickness_space", 
+                "cmip6.seaice.dynamics.ice_strength_formulation", 
+                "cmip6.seaice.dynamics.redistribution", 
+                "cmip6.seaice.dynamics.rheology"
+              ]
+            }
+          ], 
+          "excluded": [], 
+          "inherited": [
+            "science.citations", 
+            "science.keywords", 
+            "science.overview"
+          ]
+        }
+      }, 
+      {
+        "name": "process", 
+        "package": "science", 
+        "documentation": "Sea Ice Thermodynamics", 
+        "is_document": false, 
+        "id": "cmip6.seaice.thermodynamics", 
+        "properties": {
+          "defined": [
+            {
+              "name": "details", 
+              "package": "science", 
+              "is_meta": false, 
+              "is_nillable": true, 
+              "cardinality": "0.0", 
+              "property_type": "RELATIONSHIP", 
+              "relationship_targets": []
+            }
+          ], 
+          "excluded": [], 
+          "inherited": [
+            "science.citations", 
+            "science.keywords", 
+            "science.overview"
+          ]
+        }
+      }, 
+      {
+        "name": "detailset", 
+        "package": "science", 
+        "id": "cmip6.seaice.thermodynamics.salt.mass_transport", 
+        "documentation": "Mass transport of salt", 
+        "is_document": false, 
+        "properties": {
+          "defined": [
+            {
+              "name": "salinity_type", 
+              "package": "science", 
+              "id": "cmip6.seaice.thermodynamics.salt.mass_transport.salinity_type", 
+              "is_meta": false, 
+              "is_nillable": true, 
+              "cardinality": "1.1", 
+              "property_type": "ENUMERATION", 
+              "enumeration_is_open": true, 
+              "enumeration_members": [
+                {
+                  "value": "constant", 
+                  "order": 1
+                }, 
+                {
+                  "value": "prescribed salinity profile", 
+                  "order": 2
+                }, 
+                {
+                  "value": "prognostic salinity profile", 
+                  "order": 3
+                }, 
+                {
+                  "value": "Other", 
+                  "order": 4
+                }
+              ]
+            }, 
+            {
+              "name": "constant_salinity_value", 
+              "package": "science", 
+              "id": "cmip6.seaice.thermodynamics.salt.mass_transport.constant_salinity_value", 
+              "is_meta": false, 
+              "is_nillable": true, 
+              "cardinality": "0.1", 
+              "property_type": "ATOMIC", 
+              "atomic_type": "DECIMAL"
+            }, 
+            {
+              "name": "additional_details", 
+              "package": "science", 
+              "id": "cmip6.seaice.thermodynamics.salt.mass_transport.additional_details", 
+              "is_meta": false, 
+              "is_nillable": true, 
+              "cardinality": "0.1", 
+              "property_type": "ATOMIC", 
+              "atomic_type": "STRING"
+            }
+          ], 
+          "excluded": [], 
+          "inherited": []
+        }
+      }, 
+      {
+        "name": "detailset", 
+        "package": "science", 
+        "id": "cmip6.seaice.thermodynamics.salt.thermodynamics", 
+        "documentation": "Salt thermodynamics", 
+        "is_document": false, 
+        "properties": {
+          "defined": [
+            {
+              "name": "salinity", 
+              "package": "science", 
+              "id": "cmip6.seaice.thermodynamics.salt.thermodynamics.salinity", 
+              "is_meta": false, 
+              "is_nillable": true, 
+              "cardinality": "1.1", 
+              "property_type": "ENUMERATION", 
+              "enumeration_is_open": true, 
+              "enumeration_members": [
+                {
+                  "value": "constant", 
+                  "order": 1
+                }, 
+                {
+                  "value": "prescribed salinity profile", 
+                  "order": 2
+                }, 
+                {
+                  "value": "prognostic salinity profile", 
+                  "order": 3
+                }, 
+                {
+                  "value": "Other", 
+                  "order": 4
+                }
+              ]
+            }, 
+            {
+              "name": "constant_salinity_value", 
+              "package": "science", 
+              "id": "cmip6.seaice.thermodynamics.salt.thermodynamics.constant_salinity_value", 
+              "is_meta": false, 
+              "is_nillable": true, 
+              "cardinality": "0.1", 
+              "property_type": "ATOMIC", 
+              "atomic_type": "DECIMAL"
+            }, 
+            {
+              "name": "additional_details", 
+              "package": "science", 
+              "id": "cmip6.seaice.thermodynamics.salt.thermodynamics.additional_details", 
+              "is_meta": false, 
+              "is_nillable": true, 
+              "cardinality": "0.1", 
+              "property_type": "ATOMIC", 
+              "atomic_type": "STRING"
+            }
+          ], 
+          "excluded": [], 
+          "inherited": []
+        }
+      }, 
+      {
+        "name": "process", 
+        "package": "science", 
+        "documentation": "Sea Ice Radiative Processes", 
+        "is_document": false, 
+        "id": "cmip6.seaice.radiative_processes", 
+        "properties": {
+          "defined": [
+            {
+              "name": "details", 
+              "package": "science", 
+              "is_meta": false, 
+              "is_nillable": true, 
+              "cardinality": "2.2", 
+              "property_type": "RELATIONSHIP", 
+              "relationship_targets": [
+                "cmip6.seaice.radiative_processes.surface_albedo", 
+                "cmip6.seaice.radiative_processes.ice_radiation_transmission"
+              ]
+            }
+          ], 
+          "excluded": [], 
+          "inherited": [
+            "science.citations", 
+            "science.keywords", 
+            "science.overview"
+          ]
+        }
+      }
+    ], 
+    "excluded": [], 
+    "inherited": []
+  }
+}
