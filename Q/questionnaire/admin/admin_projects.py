@@ -1,14 +1,12 @@
 ####################
 #   ES-DOC CIM Questionnaire
-#   Copyright (c) 2016 ES-DOC. All rights reserved.
+#   Copyright (c) 2017 ES-DOC. All rights reserved.
 #
 #   University of Colorado, Boulder
 #   http://cires.colorado.edu/
 #
 #   This project is distributed according to the terms of the MIT license [http://www.opensource.org/licenses/MIT].
 ####################
-
-__author__ = 'allyn.treshansky'
 
 """
 .. module:: admin_projects
@@ -17,15 +15,16 @@ Summary of module goes here
 
 """
 
-from django.contrib import admin
-from django.forms import ModelForm
 from django.conf import settings
+from django.contrib import admin
 from django.core.exceptions import ValidationError
 from django.core.files import File
+from django.forms import ModelForm
 from PIL import Image
 import os
 
 from Q.questionnaire.models.models_projects import QProject, QProjectOntology
+
 
 class QProjectAdminForm(ModelForm):
     class Meta:
@@ -71,9 +70,11 @@ class QProjectAdminForm(ModelForm):
 
         return project
 
+
 class QProjectOntologyInline(admin.TabularInline):
     model = QProjectOntology
     extra = 1
+
 
 class QrojectAdmin(admin.ModelAdmin):
     """

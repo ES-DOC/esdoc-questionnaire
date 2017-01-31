@@ -1,6 +1,6 @@
 ####################
 #   ES-DOC CIM Questionnaire
-#   Copyright (c) 2016 ES-DOC. All rights reserved.
+#   Copyright (c) 2017 ES-DOC. All rights reserved.
 #
 #   University of Colorado, Boulder
 #   http://cires.colorado.edu/
@@ -8,15 +8,13 @@
 #   This project is distributed according to the terms of the MIT license [http://www.opensource.org/licenses/MIT].
 ####################
 
-__author__ = "allyn.treshansky"
-
-from django.contrib.syndication.views import Feed, FeedDoesNotExist
+from django.contrib.syndication.views import Feed
 from django.utils.feedgenerator import Atom1Feed
 from django.utils.translation import ugettext_lazy as _
 from django.core.urlresolvers import reverse
 from django.http import HttpResponse
 
-from Q.questionnaire.models import QProject, QOntology, QModelProxy, QModel, QPublication
+from Q.questionnaire.models import QProject, QOntology, QModelProxy, QModelRealization, QPublication
 from Q.questionnaire.views.views_errors import q_error
 from Q.questionnaire.q_utils import QError
 
@@ -43,7 +41,7 @@ def validate_view_arguments(project_name=None, ontology_key=None, document_type=
         # try to get the ontology...
         try:
             # this bit allows underspecification of the ontology version...
-            ontology = QOntology.objects.filter_by_key(ontology_key).get(is_registered=True)
+            ontology = QOntology.objects.has_key(ontology_key).get(is_registered=True)
         except QOntology.DoesNotExist:
             msg = "Cannot find the ontology '{0}'.  Has it been registered?".format(ontology_key)
             validity = False
@@ -61,7 +59,7 @@ def validate_view_arguments(project_name=None, ontology_key=None, document_type=
             msg = "Cannot find the document type '{0}' in the ontology '{1}'.".format(document_type, ontology)
             validity = False
             return validity, project, ontology, proxy, msg
-        if not proxy.is_document():
+        if not proxy.is_document:
             msg = "'{0}' is not a recognized document type in the ontology.".format(document_type)
             validity = False
             return validity, project, ontology, proxy, msg
@@ -119,11 +117,11 @@ class QFeed(Feed):
         returns all serializations for all published models in the db
         can be restricted by project/version/proxy
         """
-        realizations = QModel.objects.published_documents()
+        realizations = QModelRealization.objects.published_documents()
         if self.project:
             realizations = realizations.filter(project=self.project)
             if self.ontology:
-                realizations = realizations.filter(ontology=self.ontology)
+                realizations = realizations.filter(proxy__ontology=self.ontology)
                 if self.proxy:
                     realizations = realizations.filter(proxy=self.proxy)
 
@@ -146,8 +144,8 @@ class QFeed(Feed):
         ).format(**{
             "document_type": item.model.proxy,
             "project": item.model.project.title,
-            "ontology": item.model.ontology,
-            "publication_date": item.created.strftime("%d %B %Y @%H:%M"),
+            "ontology": item.model.proxy.ontology,
+            "publication_date": item.created.strftime("%d %B %Y @%H:%M %Z"),
             # TODO:
             "label": None,
             # TODO:
@@ -159,7 +157,7 @@ class QFeed(Feed):
         model = item.model
         url_args = [
             model.project.name,  # project
-            model.ontology.get_key(),  # ontology
+            model.proxy.ontology.key,  # ontology
             model.proxy.name,  # document_type
             item.name,  # publication name
             item.version.fully_specified(),  # publication_version
@@ -187,20 +185,19 @@ def q_publication(request, project_name=None, ontology_key=None, document_type=N
 
     # try to get the actual model...
     try:
-        model = QModel.objects.get(
+        model_realization = QModelRealization.objects.get(
             project=project,
-            ontology=ontology,
             proxy=proxy,
             guid=publication_name,
         )
-    except (ValueError, QModel.DoesNotExist):
+    except (ValueError, QModelRealization.DoesNotExist):
         msg = "Unable to find specified model."
         return q_error(request, msg)
-    if not model.is_published:
-        msg = "This model is not yet published"
+    if not model_realization.is_published:
+        msg = "This model has not yet been published"
         return q_error(request, msg)
 
-    publications = QPublication.objects.filter(model=model).order_by("version")
+    publications = QPublication.objects.filter(model=model_realization).order_by("version")
     if publication_version:
         # if a version was specified, look for that specific publication...
         try:

@@ -1,0 +1,33 @@
+<!-- this is a single node of the structure created by the "tree" directive defined in "q_ng_base.js" -->
+
+<div ng-repeat="node in nodes">
+    <div class="list-group-item">
+        node
+    </div>
+</div>
+<!--<div ng-repeat="node in nodes">-->
+    <!--<div class="list-group-item" ng-class="{'selected': node.is_selected, 'inactive': !node.is_active}" ng-click="select_node(node)">-->
+        <!--<span class="spacer" ng-repeat="i in get_depth_as_array() track by $index"/>-->
+        <!--<span class="help" data-toggle="tooltip" title="{{node.documentation}}">{{node.name}}</span>-->
+        <!--<input type="checkbox" class="pull-right" ng-model="node.is_active" ng-click="toggle_node_activation(node)">-->
+    <!--</div>-->
+    <!--<tree nodes="node.nodes" depth="depth + 1"/>-->
+<!--</div>-->
+
+
+<!-- no longer using this complicated nesting -->
+<!-- (note the lack of the parent "list-group") -->
+<!-- nor am I dealing w/ collapsible nodes -->
+<!--
+<div class="list-group">
+    <div class="list-group-item" ng-repeat="node in nodes">
+        <button class="btn btn-xs btn-default" type="button" ng-show="has_subnodes(node)" ng-click="expanded = !expanded">
+            <span ng-show="expanded" class="glyphicon glyphicon-triangle-bottom"></span>
+            <span ng-hide="expanded" class="glyphicon glyphicon-triangle-right"></span>
+        </button>
+        {{node.name}}
+        <input type="checkbox" class="pull-right" ng-model="node.is_active"/>
+        <tree ng-show="expanded" nodes="node.nodes"/>
+    </div>
+</div>
+-->

@@ -1,0 +1,98 @@
+{# q_login.html #}
+
+{% extends "questionnaire/q_base.html" %}
+
+{% load staticfiles %}
+{% load honeypot %}
+{% load q_tags %}
+
+{% load url from future %}
+
+{% block title %}
+    ES-DOC Questionnaire Registration
+{% endblock %} {# /title #}
+
+{% block scripts %}
+    {{ block.super }}
+    <script type="text/javascript" src="{% static 'questionnaire/js/q_ng_index.js' %}"></script>
+    <script language="JavaScript">
+        $(document).ready(
+            function() {
+                var parent = document.body;
+                init_widgets(helps, $(parent).find(".help"));
+            }
+        );
+    </script>
+{% endblock %}  {# /scripts #}
+
+{% block user %}
+    <!-- no user block needed for the login template -->
+{% endblock %}  {# /user #}
+
+{% block content %}
+
+<div class="row">
+<div class="col-lg-8 col-lg-offset-2 col-md-8 col-md-offset-2">
+
+    <div class="title">
+        Please login to the ES-DOC Questionnaire
+    </div> <!-- /#title -->
+
+    <div class="documentation">
+        <p class="info">For the best experience, please use Firefox or Chrome.  These are the browsers we support.</p>
+    </div>
+
+    <form class="login" method="POST" action="{% url 'account_login' %}">
+
+        {% csrf_token %}
+        {% render_honeypot_field %}
+
+        <table class="table">
+            {% if form.non_field_errors %}
+                <tr>
+                    <td colspan="3">
+                        <div class="error_wrapper alert alert-danger" role="alert">
+                            {{ form.non_field_errors }}
+                        </div>
+                    </td>
+                </tr>
+            {% endif %}
+            {% for field in form|get_fields_by_names:"login,password" %}
+                <tr class="{% cycle 'odd' 'even' %}">
+                    <td>
+                        {% with help_text=field.help_text %}
+                            {% if help_text %}
+                                {% include 'questionnaire/_q_help.html' %}
+                            {% endif %} {# /help_text #}
+                        {% endwith %} {# /help_text #}
+                    </td>
+                    <td>
+                        <span class="required">{{ field.label }}:&nbsp;</span>
+                    </td>
+                    <td>
+                        {{ field }}
+                        {% if field.errors %}
+                            &nbsp;&nbsp;
+                            {% include 'questionnaire/_q_error.html' %}
+                        {% endif %} {# / field.errors #}
+                    </td>
+                </tr>
+            {% endfor %} {# /field #}
+        </table>
+
+        <div>
+            <a class="button" href="{% url 'account_reset_password' %}">Forgot Password?</a>
+        </div>
+
+        <div class="submit voffset-8">
+            <input type="submit" value="submit" class="btn btn-primary"/>
+        </div> <!-- /.submit -->
+
+    </form>
+
+</div>
+</div>
+
+
+{% endblock %}
+

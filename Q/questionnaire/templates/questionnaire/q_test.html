@@ -1,0 +1,82 @@
+{# index.html #}
+
+{% extends "questionnaire/q_base.html" %}
+
+{% load staticfiles %}
+{% load compress %}
+
+{% block title %}
+    ES-DOC Questionnaire Index
+{% endblock %} {# /title #}
+
+{% block scripts %}
+    {{ block.super }}
+    <script type="text/javascript" src="{% static 'questionnaire/js/q_ng_index.js' %}"></script>
+    <script language="JavaScript">
+
+        var session_key = "{{ session_key }}";
+
+        $(document).ready(
+            function() {
+
+                /* in old versions of the Q there were dozens of sections of long & complex JQuery code */
+                /* to setup all the interactivity of the Q */
+                /* now there are only a couple of fns, and they are written very efficiently */
+                /* hooray */
+
+                var parent = document.body;
+                init_widgets(helps, $(parent).find(".help"));
+            }
+        );
+
+    </script>
+{% endblock %}  {# /scripts #}
+
+{% block content %}
+    <div ng-app="q_index">
+        <div ng-controller="IndexController as index_controller">
+
+            <div class="row">
+                <div class="col-lg-8 col-lg-offset-2 col-md-8 col-md-offset-2">
+
+                    <div class="title">
+                        Welcome to the ES-DOC Questionnaire
+                    </div> <!-- /.title -->
+
+                    <div class="documentation">
+
+                        <p>The ES-DOC Questionnaire provides an editor for creating complex CIM Documents for particular Earth Science projects. Once published, those documents can be viewed and manipulated by other ES-DOC tools.</p>
+
+                        <p>If you are seeing this page, then you have not selected a project. Please select from the available projects below. Depending on the project, you may have to login to proceed.</p>
+
+                        <p>Alternatively, click on the following links for more information:</p>
+                            <ul class="voffset-4">
+                                <li><a target="_blank" href="{% url 'help' %}" title="detailed information about how to use the Questionnaire"><b>ES-DOC Questionnaire help</b></a>&nbsp;&nbsp;</li>
+                                <li><a target="_blank" href="/feed" title="a listing of CIM Documents that have already been published"><b>ES-DOC Questionnaire Published Document Feed</b></a>&nbsp;&nbsp;</li>
+                            </ul>
+
+                    </div> <!-- /.documentation -->
+
+                    <div class="list-group large" id="projects">
+                        <span class="list-group-item active">
+                            Active Questionnaire Projects:&nbsp;
+                            <span class="small">(click to view)</span>
+                        </span>
+                        {% verbatim ng %}
+                            <a class="list-group-item project" href="/{{ project.name }}" ng-repeat="project in index_controller.projects">
+                                <strong>{{ project.title }}</strong>
+                                <span class="documentation small">{{ project.description }}</span>
+                            </a>
+                            <span class="documentation" ng-hide="index_controller.projects.length">
+                                <!-- only show this part if the projects array is emtpy -->
+                                No projects found
+                            </span>
+                        {% endverbatim ng %}
+                    </div> <!-- /.list-group -->
+
+                </div>
+            </div>
+
+        </div>
+    </div>  <!-- /ng-app=q_index -->
+{% endblock %}  {# /content #}

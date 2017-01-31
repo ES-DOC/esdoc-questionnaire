@@ -1,14 +1,12 @@
 ####################
 #   ES-DOC CIM Questionnaire
-#   Copyright (c) 2016 ES-DOC. All rights reserved.
+#   Copyright (c) 2017 ES-DOC. All rights reserved.
 #
 #   University of Colorado, Boulder
 #   http://cires.colorado.edu/
 #
 #   This project is distributed according to the terms of the MIT license [http://www.opensource.org/licenses/MIT].
 ####################
-
-__author__ = 'allyn.treshansky'
 
 """
 .. module:: admin_ontologies
@@ -22,7 +20,28 @@ from django.forms import *
 
 from Q.questionnaire.models.models_ontologies import QOntology
 from Q.questionnaire.models.models_proxies import QModelProxy
-from Q.questionnaire.q_utils import update_field_widget_attributes
+
+
+# these next 2 classes allow me to view all of the QProxyModels belonging to a given QOntology in the admin
+
+class QModelProxyInlineForm(ModelForm):
+    """
+    A silly ModelForm for the admin that shows no fields
+    It is used in conjunction w/ the StackedInline below
+    """
+    class Meta:
+        model = QModelProxy
+        fields = []
+
+
+class QModelProxyInline(admin.StackedInline):
+    """
+    A silly StackedInline which includes a link to the admin of a given QProxyProperty
+    """
+    model = QModelProxy
+    form = QModelProxyInlineForm
+    show_change_link = True
+    extra = 0
 
 
 def register_ontologies(modeladmin, request, queryset):
@@ -37,25 +56,24 @@ class QOntologyAdminForm(ModelForm):
     class Meta:
         model = QOntology
 
-        fields = ("name", "version", "description", "ontology_type", "url", "file", "categorization", "is_registered", "proxies", )
-        readonly_fields = ("is_registered", "proxies")
-
-    proxies = ModelMultipleChoiceField(
-        label="Registered Proxies",
-        required=False,
-        queryset=QModelProxy.objects.none()
-    )
-
-    def __init__(self, *args, **kwargs):
-        super(QOntologyAdminForm, self).__init__(*args, **kwargs)
-        current_model_proxies = self.instance.model_proxies.all()
-        self.fields["proxies"].queryset = current_model_proxies
-        self.fields["proxies"].initial = current_model_proxies
-        update_field_widget_attributes(self.fields["proxies"], {"disabled": "disabled"})
+        fields = (
+            # "created",
+            # "modified",
+            "name",
+            "version",
+            "documentation",
+            "ontology_type",
+            "parent",
+            "url",
+            "file",
+            "is_registered",
+            "is_active",
+        )
 
 
 class QOntologyAdmin(admin.ModelAdmin):
-    readonly_fields = ("is_registered", )  # proxies is set as readonly in the __init__ fn above
+    readonly_fields = ("is_registered", "key", "created", "modified",)
+    inlines = (QModelProxyInline,)
     actions = [register_ontologies]
     form = QOntologyAdminForm
 

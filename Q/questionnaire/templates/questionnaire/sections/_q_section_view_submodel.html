@@ -1,0 +1,97 @@
+{# _q_section_view_submodel.html #}
+
+{% load q_tags %}
+
+{# this is a "section" template #}
+{# it is inserted as needed by ng via AJAX using the load-on-demand paradigm #}
+
+{# see the "q_load_section" django view #}
+{# and see the "section" ng directive" #}
+
+<!-- (model_controller is defined in the parent template) -->
+
+<div id="{{model_form.form_name}}_model_fields">
+
+    <div>
+
+        <ul class="nav nav-tabs" role="tablist">
+            {% for form in categories_formset %}
+                {% if not form.is_hidden %}
+                    {% with field=form.category_value %}
+                        <li role="presentation" class="{% conditional_singleton 'active' 'inactive' nif form.is_hidden %}"><a href="#tab_{{ form.form_name }}" aria-controls="home" role="tab" data-toggle="tab">{{ field.label|safe }}</a></li>
+                    {% endwith %}  {# /field #}
+                {% endif %}  {# /form.is_hidden #}
+            {% endfor %}  {# /form in categories_formset #}
+        </ul> <!-- /.nav-tabs -->
+
+        <div class="tab-content">
+            {% for form in categories_formset %}
+                <div ng-controller="CategoryEditorController as category_editor_controller"
+                     current_model_path="{% verbatim ng %}{{ current_model_path }}{% endverbatim ng %}.categories[{{ form.get_serialized_order }}]"> <!-- forloop.counter0 }}]"> --> <!-- TODO: I DO NOT LIKE HAVING TO CALL .get_serialized_order -->
+                     <div id="{{ form.form_name }}_category_fields">
+                        {% if form.is_hidden %}
+                            <div class="hidden">
+                                {{ form }}
+                            </div>
+                        {% else %}
+                            <div role="tabpanel" class="tab-pane panel {% conditional_singleton 'active' 'inactive' nif form.is_hidden %}" id="tab_{{ form.form_name }}">
+                                <div class="hidden">
+                                    {% for field in form.get_hidden_fields %}
+                                        {{ field }}
+                                    {% endfor %}
+                                </div>
+                                {% with field=form.category_value %}
+                                    <div class="documentation">
+                                        {{ field.help_text|safe }}
+                                    </div>
+                                {% endwith %}
+                        {% endif %}
+
+                        <ul class="list-group">
+                            {% for form in properties_formset %}
+                                <div ng-controller="PropertyEditorController as property_editor_controller"
+                                     current_model_path="{% verbatim ng %}{{ current_model_path }}{% endverbatim ng %}.properties[{{ form.get_serialized_order }}]"> <!-- forloop.counter0 }}]"> --> <!-- TODO: I DO NOT LIKE HAVING TO CALL .get_serialized_order -->
+                                    <div id="{{form.form_name}}_property_fields">
+                                        {% if form.is_hidden %}
+                                            <!-- still include the form even if the property has been customized to be hidden -->
+                                            <!-- so that the ng-model gets updated by customized values -->
+                                            <div class="hidden">
+                                                {{ form }}
+                                            </div>
+                                        {% elif not form.is_hierarchical %}
+                                            <li class="list-group-item {% conditional_cycle 'odd' 'even' if form.render %}">  {# alternate rows for each form that is _actually_ rendered #}
+                                                <div class="hidden">
+                                                    {% for field in form.get_hidden_fields %}
+                                                        {{ field }}
+                                                    {% endfor %}
+                                                </div>
+                                                {% with field_type=form.get_field_type %}
+                                                    {% if field_type == "ATOMIC" %}
+                                                        {% include "questionnaire/_q_view_property_atomic.html" %}
+                                                    {% elif field_type == "ENUMERATION" %}
+                                                        {% include "questionnaire/_q_view_property_enumeration.html" %}
+                                                    {% else %} {# field_type == "RELATIONSHIP" #}
+                                                        {% include "questionnaire/_q_view_property_relationship.html" %}
+                                                    {% endif %}
+                                                {% endwith %}  {# /field_type #}
+                                            </li>  <!-- /.list-group-item -->
+                                        {% else %}
+                                            a non hierarchical non hidden relationship property
+                                        {% endif %}
+                                    </div>  <!-- property_fields -->
+                                </div>  <!-- /ng-controller=property_editor_controller -->
+                            {% endfor %}  {# /form in formset #}
+                        </ul>
+
+                        {% if not form.is_hidden %}
+                            </div>  <!-- tabpanel -->
+                        {% endif %}  {# /form.is_hidden #}
+
+                     </div>  <!-- /category_fields -->
+                </div>  <!-- ng-controller=category_editor_controller -->
+            {% endfor %}  {# /form in categories_formset #}
+        </div>  <!-- /tab-content -->
+
+    </div>
+
+</div>  <!-- /model_fields -->

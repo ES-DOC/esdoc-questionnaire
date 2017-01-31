@@ -1,8 +1,7 @@
-{# q_base.html #}
+{# base.html #}
 
 {% load staticfiles %}
 {% load compress %}
-{% load q_tags %}
 
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -23,122 +22,49 @@
             {% endblock %} {# /title #}
         </title>
 
-        {# OKAY, IN THEORY, COMPRESSING & PRE-COMPILING ONLY WHEN NOT IN DEBUG MODE IS A GOOD IDEA #}
-        {# BUT IT WINDS UP BEING VERY COMPLICATED TO GET IT TO WORK W/ TEMPLATE INHERITANCE #}
-        {# AND, IN FACT, IT FORCES ME AT TIMES TO VIOLATE "D.R.Y." BY HAVING ME DUPLICATE LOCAL JS & CSS #}
-        {# (ONCE FOR THE DEBUG UNCOMPRESSED BLOCK, AND ONCE FOR THE PRODUCTION COMPRESSED BLOCK) #}
-        {# I LIKED IT SO MUCH, I EVEN WROTE MY OWN CONTEXT_PROCESSOR TO FIGURE OUT WHEN A TEMPLATE WAS IN DEBUG MODE #}
-        {# ALAS, I AM JUST GOING TO USE COMPRESSION ALL THE TIME, EVEN DURING DEVELOPMENT #}
-        {# ...AND TO HELL W/ CLEVERNESS #}
-
-{#        {% if debug %}  #}
-{#            <!-- use uncompressed content in DEBUG mode -->  #}
-{#            <!-- and always pre-compile less files on the client -->  #}
-{#            <!-- less style -->  #}
-{#            <link rel="stylesheet" type="text/less" href="{%static 'my_file.less' %}" />  #}
-{#            <!-- client-side less via CDN -->  #}
-{#            <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/less.js/2.5.1/less.min.js"></script>  #}
-{#        {% else %}  #}
-{#            <!-- but compress content in PROD mode -->  #}
-{#            <!-- and use compiled files on the server -->  #}
-{#            {% compress css %}  #}
-{#                <!-- less style -->  #}
-{#                <link rel="stylesheet" type="text/less" href="{%static 'my_file.less' %}" />  #}
-{#            {% endcompress %}  #}
-{#        {% endif %}  #}
-
         {% block style %}
-            <!-- jquery style via CDN -->
-            <link rel="stylesheet" type="text/css" href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.11.3/themes/smoothness/jquery-ui.min.css" />
-            <!-- angular/bootstrap style via CDN -->
-            <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.7.4/css/bootstrap-select.min.css" />
-            <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/angular-loading-bar/0.8.0/loading-bar.min.css" />
-            <!-- angular/bootstrap code not yet available via CDN -->
-            <link rel="stylesheet" type="text/css" href="{% static 'questionnaire/css/ext/datetimepicker.css' %}" />
+            <!-- jquery styles via CDN -->
+            <!--<link rel="stylesheet" type="text/css" href="https://code.jquery.com/ui/1.12.1/themes/smoothness/jquery-ui.css"/>-->
+            <!-- bootstrap styles via CDN -->
+            <!--<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">-->
+            <!--<link href="https://maxcdn.bootstrapcdn.com/bootswatch/3.3.7/readable/bootstrap.min.css" rel="stylesheet" integrity="sha384-Li5uVfY2bSkD3WQyiHX8tJd0aMF91rMrQP5aAewFkHkVSTT2TmD2PehZeMmm7aiL" crossorigin="anonymous">-->
+            <!-- angular styles via CDN -->
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/angular-loading-bar/0.9.0/loading-bar.min.css"/>
             {% compress css %}
-                <!-- custom project styles -->
+                <!-- local ext styles -->
+                <link rel="stylesheet" href="{% static 'questionnaire/css/ext/jquery.splitter.css' %}"/>
+                <!-- custom styles -->
                 <link rel="stylesheet" type="text/less" media="all" href="{% static 'questionnaire/less/q_base.less' %}" />
-                <link rel="stylesheet" type="text/css" href="{% static 'questionnaire/css/q_base.css' %}">
             {% endcompress %}
             {# in child templates, be sure use the {{ block.super }} tag when adding local style #}
         {% endblock %} {# /style #}
 
         {% block scripts %}
             <!-- jquery via CDN -->
-            <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
-            <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.3/jquery-ui.min.js"></script>
+            <script type="text/javascript" src="https://code.jquery.com/jquery-3.1.1.min.js" integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8=" crossorigin="anonymous"></script>
+            <script type="text/javascript" src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js" integrity="sha256-VazP97ZCwtekAsvgPBSUwPFKdrwD3unUfSGVYrahUqU=" crossorigin="anonymous"></script>
             <!-- bootstrap via CDN -->
-            <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
-            <script src="https://cdnjs.cloudflare.com/ajax/libs/bootbox.js/4.4.0/bootbox.min.js"></script>
-            <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.7.4/js/bootstrap-select.min.js"></script>
+            <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+            <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/bootbox.js/4.4.0/bootbox.min.js"></script>
             <!-- angular via CDN -->
-            <!-- TODO: 1.2.28 is the last version to support IE8 -->
-            <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.4/angular.js"></script>
-            <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.4/angular-cookies.js"></script>
-            <!-- using "tpls" version of ui.bootstrap b/c it includes default templates for things like accordions & modals -->
-            <!--<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/angular-ui-bootstrap/0.14.3/ui-bootstrap.js"></script>-->
-            <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/angular-ui-bootstrap/0.14.3/ui-bootstrap-tpls.min.js"></script>
-            <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/angular-ui-sortable/0.13.4/sortable.js"></script>
-            <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/angular-loading-bar/0.8.0/loading-bar.js"></script>
-            <!-- angular/bootstrap code not yet available via CDN -->
-            <script type="text/javascript" src="{% static 'questionnaire/js/ext/datetimepicker.js' %}"></script>
+            <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.8/angular.min.js"></script>
+            <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/angular-ui-bootstrap/2.2.0/ui-bootstrap-tpls.min.js"></script>
+            <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/angular-loading-bar/0.9.0/loading-bar.min.js"></script>
+            <!-- local js -->
+            <script language="JavaScript" type="text/javascript" src="{% static 'questionnaire/js/q_base.js' %}"></script>
+            <script language="JavaScript" type="text/javascript" src="{% static 'questionnaire/js/ext/jquery.splitter-0.14.0.js' %}"></script>
+            <script language="JavaScript" type="text/javascript" src="{% static 'djangular/js/django-angular.js' %}"></script>
             {% compress js %}
                 <!-- custom js -->
                 <script language="javascript" type="text/javascript">
 
-                    /* redefine PROFANITIES based on external content loaded by Django */
-                    var PROFANITIES_LIST = {% profanities %}
-
-                    /* redefining javascript indexOf() fn, which doesn't exist in some versions of IE */
-                    if (!Array.prototype.indexOf) {
-                        Array.prototype.indexOf = function(obj, start) {
-                             for (var i = (start || 0), j = this.length; i < j; i++) {
-                                 if (this[i] === obj) { return i; }
-                             }
-                             return -1;
-                         }
-                    };
-
                     $(document).ready(
                         function() {
 
-                            /* just setup a minimum of jquery-ui functionality */
-
-                            var parent = document.body;
-
-                            /* in the old version of the Q there were dozens of bits of long & complex JQuery code to deal w/ here */
-                            /* now there are only 2 fns, and they are written very efficiently */
-
-                            init_widgets(helps, $(parent).find(".help"));
-                            init_widgets(selects, $(parent).find(".select"));
-
-                            /* okay... I do have to make certain allowances for elements that might be hidden w/in tabs */
-                            $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
-                                var tab_id = $(e.target).attr("data-target");
-                                var tab_content = $(tab_id);
-                                init_widgets(helps, $(tab_content).find(".help"));
-                                init_widgets(selects, $(tab_content).find(".select"));
-                            });
-
-                            /* and here is my ONE AND ONLY bit of extra jquery code */
-                            /* makes sure that when I click outside of a popover it gets closed */
-                            $("body").on("click", function(e) {
-                               $("[data-toggle='popover']").each(function() {
-                                  if ( !$(this).is(e.target) && $(this).has(e.target).length === 0 && $(".popover").has(e.target).length === 0 ) {
-                                      $(this).popover("hide");
-                                  }
-                               });
-                            });
-
-                            /* and that's it - no more ridiculous jquery */
-                            /* WHOOHOO! */
                         }
                     );
 
                 </script>
-                <script type="text/javascript" src="{% static 'questionnaire/js/q_base.js' %}"></script>
-                <script type="text/javascript" src="{% static 'questionnaire/js/q_validators.js' %}"></script>
-                <script type="text/javascript" src="{% static 'questionnaire/js/q_ng_base.js' %}"></script>
             {% endcompress %}
             {# in child templates, be sure use the {{ block.super }} tag when adding local scripts #}
         {% endblock %} {# /scripts #}
@@ -151,43 +77,46 @@
 
 {% block site %}
     {# adds notification for non-PRODUCTION sites #}
-    {% include 'questionnaire/_q_site.html' %}
+site
 {% endblock %} {# /site #}
 
 {% block messages %}
     <div id="lil_msg" class="bb-alert" style="display: none;"></div>
     <script language="JavaScript">
-        check_msg();
+        /*check_msg();*/
     </script>
 {% endblock %} {# /messages #}
 
 {% block main %}
 
-    <div id="questionnaire">
+    <!-- BEGIN: HERE IS WHERE THE MAIN PAGE LAYOUT GOES -->
+    <div id="questionnaire" class="container">
 
-        {% block header %}
-            <!-- default header -->
-            <div class="header">
-                <a href="/" title="ES-DOC Questionnaire Home"><img id="logo" src="{% static 'questionnaire/img/esdoc_logo.png' %}"/></a>
-                {% block user %}
-                    {% include 'questionnaire/_q_user.html' %}
-                {% endblock %} {# /#user #}
-            </div> <!-- /.header -->
-        {% endblock %} {# /header #}
+        <div class="header row">
+            {% block header %}
+                header
+            {% endblock %} {# /header #}
+        </div>  <!-- /.header -->
 
-        {% block content %}
-            you forgot to provide content!
-        {% endblock %} {# /content #}
+        <div class="content row">
+            <div class="panel panel-info">
+                <div class="panel-body">
+                    {% block content %}
+                        content
+                    {% endblock %} {# /content #}
+                </div>
+            </div>
+        </div>  <!-- /.content -->
 
-        {% block footer %}
-            <!-- default footer -->
-            <div class="footer">
-                This form is generated by the <a target="_blank" href="{% q_url %}">ES-DOC Questionnaire</a> (v{% q_version %}).
-                <br/>For more information please contact: <a href="mailto:{% q_email %}">{% q_email %}</a>.
-            </div> <!-- /.footer -->
-        {% endblock %} {# /footer #}
+        <div class="footer row">
+            {% block footer %}
+                footer
+            {% endblock %} {# /footer #}
+        </div>  <!-- /.footer -->
 
     </div>  <!-- /#questionnaire -->
+
+    <!-- END: HERE IS WHERE THE MAIN PAGE LAYOUT GOES -->
 
 {% endblock %} {# / main #}
 

@@ -1,0 +1,33 @@
+<!-- this is a single node of the structure created by the "tree" directive defined in "q_ng_edit.js" -->
+<!-- it is used in conjunction w/ the "pane" directive defined in "q_ng_edit.js" -->
+
+<div class="list-group-item" ng-class="{'inactive': !model.is_active, 'selected': model.is_selected}" ng-click="select_model(model)">
+    <span ng-repeat="i in get_depth_as_array() track by $index">&nbsp;&nbsp;</span>
+    node
+    <span ng-show="showCompletion">
+        &nbsp;<span ng-show="!model.is_complete" class="glyphicon glyphicon-pushpin"/>
+    </span>
+    <input type="checkbox" title="toggle component activation" class="pull-right" ng-model="model.is_active" ng-change="activate_model(model)"/>
+</div>
+<div ng-repeat="property in model.properties | filter: { is_hierarchical: true }">
+    <div ng-repeat="target in property.relationship_values">
+        <tree model="target" show_completion="showCompletion" depth="depth + 1"/>
+    </div>
+</div>
+
+<!-- no longer using this complicated nesting -->
+<!-- (note the lack of the parent "list-group") -->
+<!-- nor am I dealing w/ collapsible nodes -->
+<!--
+<div class="list-group">
+    <div class="list-group-item" ng-repeat="node in nodes">
+        <button class="btn btn-xs btn-default" type="button" ng-show="has_subnodes(node)" ng-click="expanded = !expanded">
+            <span ng-show="expanded" class="glyphicon glyphicon-triangle-bottom"></span>
+            <span ng-hide="expanded" class="glyphicon glyphicon-triangle-right"></span>
+        </button>
+        {{node.name}}
+        <input type="checkbox" class="pull-right" ng-model="node.is_active"/>
+        <tree ng-show="expanded" nodes="node.nodes"/>
+    </div>
+</div>
+-->

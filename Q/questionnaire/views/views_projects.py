@@ -1,6 +1,6 @@
 ####################
 #   ES-DOC CIM Questionnaire
-#   Copyright (c) 2016 ES-DOC. All rights reserved.
+#   Copyright (c) 2017 ES-DOC. All rights reserved.
 #
 #   University of Colorado, Boulder
 #   http://cires.colorado.edu/
@@ -8,15 +8,13 @@
 #   This project is distributed according to the terms of the MIT license [http://www.opensource.org/licenses/MIT].
 ####################
 
-__author__ = "allyn.treshansky"
-
 from django.shortcuts import render_to_response
 
-from Q.questionnaire.views.views_base import add_parameters_to_context
-from Q.questionnaire.views.views_legacy import redirect_legacy_projects
-from Q.questionnaire.views.views_errors import q_error
-from Q.questionnaire.models.models_users import is_pending_of, is_member_of, is_user_of, is_admin_of
 from Q.questionnaire.models.models_projects import QProject
+from Q.questionnaire.models.models_users import is_pending_of, is_member_of, is_user_of, is_admin_of
+from Q.questionnaire.views.views_base import add_parameters_to_context
+from Q.questionnaire.views.views_errors import q_error
+from Q.questionnaire.views.views_legacy import redirect_legacy_projects
 
 
 @redirect_legacy_projects
@@ -30,7 +28,7 @@ def q_project(request, project_name=None):
         if not project_name:
             msg = u"Please specify a project name."
         else:
-            msg = u"Unable to locate project '%s'" % (project_name)
+            msg = u"Unable to locate project '{0}'".format(project_name)
         return q_error(request, error_msg=msg)
     if not project.is_active:
         msg = u"This project has been disabled."
@@ -39,14 +37,14 @@ def q_project(request, project_name=None):
     # work out user roles...
     project_authenticated = project.authenticated
     current_user = request.user
-    can_view = True  # is_member_of(current_user, project) or not project_authenticated
+    can_view = True
     can_edit = not project_authenticated or (is_user_of(current_user, project) or is_admin_of(current_user, project))
     can_customize = not project_authenticated or is_admin_of(current_user, project)
     can_join = current_user.is_authenticated() and not (is_member_of(current_user, project) or is_user_of(current_user, project) or is_admin_of(current_user, project))
     can_delete = is_admin_of(current_user, project)
 
     # gather all the extra information required by the template
-    _dict = {
+    template_context = {
         "project": project,
         "can_customize": can_customize,
         "can_edit": can_edit,
@@ -55,5 +53,5 @@ def q_project(request, project_name=None):
         "can_delete": can_delete,
     }
 
-    return render_to_response('questionnaire/q_project.html', _dict, context_instance=context)
+    return render_to_response('questionnaire/q_project.html', template_context, context_instance=context)
 

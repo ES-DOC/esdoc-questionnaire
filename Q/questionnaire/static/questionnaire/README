@@ -1,0 +1,8 @@
+Static resources are stored here.
+
+"css" is for CSS; "css/ext" is for 3rd-party CSS
+"fonts" is for fontmaps (used by bootstrap)
+"js" is for JavaScript code; "js/ext" is for 3rd-party JavaScript code
+"less" is for less to-be-compiled; it also includes bootstrap & bootswatch files as needed
+"schemas" is for JSON Schema files defining valid formats for Q configuration files
+"templates" is for NG Templates as used by directives

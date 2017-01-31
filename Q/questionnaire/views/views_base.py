@@ -1,6 +1,6 @@
 ####################
 #   ES-DOC CIM Questionnaire
-#   Copyright (c) 2016 ES-DOC. All rights reserved.
+#   Copyright (c) 2017 ES-DOC. All rights reserved.
 #
 #   University of Colorado, Boulder
 #   http://cires.colorado.edu/
@@ -11,13 +11,14 @@
 __author__ = 'allyn.treshansky'
 
 from django.template import RequestContext
-from django.core.cache import caches
+# from django.core.cache import caches
 from uuid import uuid4
 
 from Q.questionnaire.models.models_projects import QProject
 from Q.questionnaire.models.models_ontologies import QOntology
 from Q.questionnaire.models.models_proxies import QModelProxy
 from Q.questionnaire.q_utils import QError
+
 
 def add_parameters_to_context(request, context=None):
     """
@@ -34,6 +35,7 @@ def add_parameters_to_context(request, context=None):
     context.update(request.GET.copy())
 
     return context
+
 
 def validate_view_arguments(project_name=None, ontology_key=None, document_type=None):
     """
@@ -59,7 +61,7 @@ def validate_view_arguments(project_name=None, ontology_key=None, document_type=
     # try to get the ontology...
     try:
         # this bit allows underspecification of the ontology version...
-        ontology = QOntology.objects.filter_by_key(ontology_key).get(is_registered=True)
+        ontology = QOntology.objects.has_key(ontology_key).get(is_registered=True)
     except QOntology.DoesNotExist:
         msg = "Cannot find the ontology '{0}'.  Has it been registered?".format(ontology_key)
         validity = False
@@ -76,7 +78,7 @@ def validate_view_arguments(project_name=None, ontology_key=None, document_type=
         msg = "Cannot find the document type '{0}' in the ontology '{1}'.".format(document_type, ontology)
         validity = False
         return validity, project, ontology, proxy, msg
-    if not proxy.is_document():
+    if not proxy.is_document:
         msg = "'{0}' is not a recognized document type in the ontology.".format(document_type)
         validity = False
         return validity, project, ontology, proxy, msg
@@ -87,7 +89,7 @@ def validate_view_arguments(project_name=None, ontology_key=None, document_type=
 
 def get_key_from_request(request):
     """
-    generates a unique key to use throughout a GET/PUT/AJAX workflow
+    generates a unique key to use throughout a GET/POST/AJAX workflow
     :param request:
     :return:
     """
@@ -121,6 +123,8 @@ def get_key_from_request(request):
 # NEVERMIND - I can use built-in Django session store
 # as long as the keys represent separate views
 
+# TODO: FIGURE OUT THE MOST EFFICIENT WAY OF CACHING
+
 def get_or_create_cached_object(session, obj_key, fn, *args, **kwargs):
     """
     looks for a specific key in the cache;
@@ -142,6 +146,7 @@ def get_or_create_cached_object(session, obj_key, fn, *args, **kwargs):
         session[obj_key] = obj
     return obj
 
+
 def get_cached_object(session, obj_key):
     """
     looks for a specific key in the cache;
@@ -150,6 +155,8 @@ def get_cached_object(session, obj_key):
     :param key: key for object in cache
     :return:
     """
+    # cache = caches["default"]
+    # obj = cache.getg(obj_key)
     obj = session.get(obj_key)
     if not obj:
         msg = "Unable to locate object in cache."

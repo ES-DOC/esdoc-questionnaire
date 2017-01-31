@@ -1,6 +1,6 @@
 ####################
 #   ES-DOC CIM Questionnaire
-#   Copyright (c) 2016 ES-DOC. All rights reserved.
+#   Copyright (c) 2017 ES-DOC. All rights reserved.
 #
 #   University of Colorado, Boulder
 #   http://cires.colorado.edu/
@@ -8,49 +8,33 @@
 #   This project is distributed according to the terms of the MIT license [http://www.opensource.org/licenses/MIT].
 ####################
 
-__author__ = "allyn.treshansky"
-
+from django.contrib import messages
+from django.core.exceptions import ObjectDoesNotExist
+from django.core.urlresolvers import reverse
 from django.http import HttpResponseRedirect
 from django.shortcuts import render_to_response
-from django.utils.translation import ugettext_lazy as _
-from django.core.urlresolvers import reverse
-from django.core.exceptions import ObjectDoesNotExist
-from django.contrib import messages
 
-from Q.questionnaire.models.models_users import is_admin_of, is_user_of, is_member_of
-from Q.questionnaire.models.models_customizations import QModelCustomization, get_existing_customizations
+
+from Q.questionnaire.models.models_customizations import QModelCustomization
 from Q.questionnaire.models.models_realizations import get_new_realizations, get_existing_realizations, set_owner
-from Q.questionnaire.views.views_base import add_parameters_to_context, get_key_from_request, get_or_create_cached_object, validate_view_arguments as validate_view_arguments_base
-from Q.questionnaire.views.views_legacy import redirect_legacy_projects
-from Q.questionnaire.q_utils import evaluate_lazy_object
+from Q.questionnaire.models.models_users import is_member_of, is_user_of
+from Q.questionnaire.views.views_base import validate_view_arguments as validate_view_arguments_base, add_parameters_to_context, get_key_from_request, get_or_create_cached_object
 from Q.questionnaire.views.views_errors import q_error
-
-# MODEL_REALIZATION_FORM_MAP = {
-#     # map of various useful bits of info needed to (re)create forms & formsets
-#     # strictly speaking, this isn't needed for the top-level view...
-#     # but a similar method is used for the section views (see "views_services_load_section.py")...
-#     # so I'm using this contrived map to keep the codebase similar in the two files
-#     "model": {
-#         "form_class": QModelRealizationForm,
-#         "form_name": _("model_form_{safe_key}"),
-#         "form_scope_prefix": "current_model",
-#     },
-#     "properties": {
-#     },
-# }
+from Q.questionnaire.views.views_legacy import redirect_legacy_projects
+from Q.questionnaire.q_utils import evaluate_lazy_object, add_parameters_to_url
 
 
 def validate_view_arguments(project_name=None, ontology_key=None, document_type=None):
     """
     extends the "validate_view_arguments" fn in "views_base"
-    by adding a check that there is a default cutomization associated w/ this project/ontology/proxy
+    by adding a check that there is a default customization associated w/ this project/ontology/proxy
     :param project_name:
     :param ontology_key:
     :param document_type:
     :return:
     """
 
-    customization = None
+    model_customization = None
 
     validity, project, ontology, model_proxy, msg = validate_view_arguments_base(
         project_name=project_name,
@@ -59,21 +43,20 @@ def validate_view_arguments(project_name=None, ontology_key=None, document_type=
     )
 
     if not validity:
-        return validity, project, ontology, model_proxy, customization, msg
+        return validity, project, ontology, model_proxy, model_customization, msg
 
     try:
-        customization = QModelCustomization.objects.get(
+        model_customization = QModelCustomization.objects.get(
             project=project,
-            ontology=ontology,
             proxy=model_proxy,
             is_default=True,
         )
     except ObjectDoesNotExist:
         msg = "There is no default customization associated with this project/ontology/model."
         validity = False
-        return validity, project, ontology, model_proxy, customization, msg
+        return validity, project, ontology, model_proxy, model_customization, msg
 
-    return validity, project, ontology, model_proxy, customization, msg
+    return validity, project, ontology, model_proxy, model_customization, msg
 
 
 @redirect_legacy_projects
@@ -97,27 +80,16 @@ def q_edit_new(request, project_name=None, ontology_key=None, document_type=None
     current_user = request.user
     if project.authenticated:
         if not current_user.is_authenticated():
-            next_page = "/login/?next=%s" % request.path
+            next_page = add_parameters_to_url(reverse("account_login"), next=request.path)
             return HttpResponseRedirect(next_page)
         if not is_user_of(current_user, project):
-            next_page = "/%s/" % project_name
+            next_page = reverse("project", project_name=project_name)
             msg = "You have tried to view a restricted resource for this project.  Please consider joining."
             messages.add_message(request, messages.WARNING, msg)
             return HttpResponseRedirect(next_page)
 
     # get (or set) realization objects from the cache...
     session_key = get_key_from_request(request)
-#    # no need to cache customizations; I access them as needed during form creation
-#    # cached_customizations_key = "{0}_customizations".format(session_key)
-#    # model_customization = get_or_create_cached_object(request.session, cached_customizations_key,
-#    #     get_existing_customizations,
-#    #     **{
-#    #         "project": project,
-#    #         "ontology": ontology,
-#    #         "model_proxy": model_proxy,
-#    #         "customization_id": customization.id,
-#    #     }
-#    # )
     cached_realizations_key = "{0}_realizations".format(session_key)
     model_realization = get_or_create_cached_object(request.session, cached_realizations_key,
         get_new_realizations,
@@ -126,46 +98,38 @@ def q_edit_new(request, project_name=None, ontology_key=None, document_type=None
             "ontology": ontology,
             "model_proxy": model_proxy,
             "key": model_proxy.name,
-            "customization": model_customization,
         }
     )
+
     if current_user.is_authenticated():
         set_owner(model_realization, evaluate_lazy_object(current_user))
+    model_realization.is_root = True  # TODO: COME UP W/ A BETTER WAY OF DEALING W/ "is_root"
 
-    # TODO: THIS IS A ONE-OFF TO GET ME THROUGH THE MEDIUM-TERM
-    # TODO: IN THE LONG-TERM I OUGHT TO FIGURE OUT HOW TO AUTOMATICALLY WORK OUT HOW/WHEN TO SET "is_root"
-    # TODO: (MOST LIKELY IT SHOULD BE IN "Q.questionnaire.models.models_realizations.QModel#reset")
-    model_realization.is_root = True
+    # no forms are created here,
+    # instead the load-on-demand paradigm is used,
 
-    # no need to generate any forms or formsets; I do that all via the load-on-demand paradigm
+    # work out various paths, so that ng can reload things as needed...
+    view_url_dirname = request.path.rsplit('/', 1)[0]
+    api_url_dirname = reverse("realization-list").rsplit('/', 1)[0]
 
-    # work out the various paths,
-    # so that ng can reload things as needed
-    view_url = request.path
-    view_url_sections = [section for section in view_url.split('/') if section]
-    view_url_dirname = '/'.join(view_url_sections[:])
-    api_url = reverse("realization-list", kwargs={})
-    api_url_sections = [section for section in api_url.split('/') if section]
-    api_url_dirname = '/'.join(api_url_sections[:])
-
-    # gather all the extra information required by the template
-    _dict = {
-        "session_key": session_key,
-        "view_url_dirname": "/{0}/".format(view_url_dirname),
-        "api_url_dirname": "/{0}/".format(api_url_dirname),
+    # gather all the extra information required by the template...
+    template_context = {
         "project": project,
         "ontology": ontology,
         "proxy": model_proxy,
-        "realization": model_realization,
+        "view_url_dirname": view_url_dirname,
+        "api_url_dirname": api_url_dirname,
+        "session_key": session_key,
         "customization": model_customization,
-        "read_only": "false",
+        "realization": model_realization,
+        "read_only": "false",  # passing "false" instead of False b/c this is a JS variable
     }
-
-    return render_to_response('questionnaire/q_edit.html', _dict, context_instance=context)
+    return render_to_response('questionnaire/q_edit.html', template_context, context_instance=context)
 
 
 @redirect_legacy_projects
 def q_edit_existing(request, project_name=None, ontology_key=None, document_type=None, realization_pk=None):
+
     # save any request parameters...
     # (in case of redirection)
     context = add_parameters_to_context(request)
@@ -184,17 +148,16 @@ def q_edit_existing(request, project_name=None, ontology_key=None, document_type
     current_user = request.user
     if project.authenticated:
         if not current_user.is_authenticated():
-            next_page = "/login/?next=%s" % request.path
+            next_page = add_parameters_to_url(reverse("account_login"), next=request.path)
             return HttpResponseRedirect(next_page)
         if not is_user_of(current_user, project):
-            next_page = "/%s/" % project_name
+            next_page = reverse("project", project_name=project_name)
             msg = "You have tried to view a restricted resource for this project.  Please consider joining."
             messages.add_message(request, messages.WARNING, msg)
             return HttpResponseRedirect(next_page)
 
     # get (or set) realization objects from the cache...
     # note that unlike in "q_edit_new" above, this bit is enclosed in a try/catch block
-    # this is to deal w/ the possibility of an invalid realization_pk
     try:
         session_key = get_key_from_request(request)
         cached_realizations_key = "{0}_realizations".format(session_key)
@@ -204,42 +167,37 @@ def q_edit_existing(request, project_name=None, ontology_key=None, document_type
                 "project": project,
                 "ontology": ontology,
                 "model_proxy": model_proxy,
-                "model_id": realization_pk,
+                "model_id": realization_pk
             }
         )
     except ObjectDoesNotExist:
-        msg = "Cannot find a document with an id of '{0}' for that project/ontology/model combination.".format(
-            realization_pk)
+        msg = "Cannot find a document with an id of '{0}' for that project/ontology/document type combination.".format(realization_pk)
         return q_error(request, msg)
 
-    # no need to generate any forms or formsets; I do that all via the load-on-demand paradigm
+    # no forms are created here,
+    # instead the load-on-demand paradigm is used,
 
-    # work out the various paths,
-    # so that ng can reload things as needed
+    # work out various paths, so that ng can reload things as needed...
     # (notice these are slightly different than in "q_edit_new" above
-    view_url = request.path
-    view_url_sections = [section for section in view_url.split('/') if section]
-    view_url_dirname = '/'.join(view_url_sections[:-1])
-    api_url = reverse("realization-detail", kwargs={"pk": model_realization.pk})
-    api_url_sections = [section for section in api_url.split('/') if section]
-    api_url_dirname = '/'.join(api_url_sections[:-1])
+    view_url_dirname = request.path.rsplit('/', 1)[0]
+    api_url_dirname = reverse("realization-detail", kwargs={"pk": model_realization.pk}).rsplit('/', 2)[0]
 
-    # gather all the extra information required by the template
-    _dict = {
-        "session_key": session_key,
-        "view_url_dirname": "/{0}/".format(view_url_dirname),
-        "api_url_dirname": "/{0}/".format(api_url_dirname),
+    # gather all the extra information required by the template...
+    template_context = {
         "project": project,
         "ontology": ontology,
         "proxy": model_proxy,
-        "realization": model_realization,
+        "view_url_dirname": view_url_dirname,
+        "api_url_dirname": api_url_dirname,
+        "session_key": session_key,
         "customization": model_customization,
-        "read_only": "false",
+        "realization": model_realization,
+        "read_only": "false",  # passing "false" instead of False b/c this is a JS variable
     }
+    return render_to_response('questionnaire/q_edit.html', template_context, context_instance=context)
 
-    return render_to_response('questionnaire/q_edit.html', _dict, context_instance=context)
 
-
+@redirect_legacy_projects
 def q_view_new(request, project_name=None, ontology_key=None, document_type=None):
     """
     this is never exposed by templates
@@ -270,7 +228,19 @@ def q_view_new(request, project_name=None, ontology_key=None, document_type=None
     return q_error(request, msg)
 
 
+@redirect_legacy_projects
 def q_view_existing(request, project_name=None, ontology_key=None, document_type=None, realization_pk=None):
+    """
+    this is exactly the same as "q_edit_existing" except:
+    there are no authentication checks,
+    the template_context & template are different.
+    :param request:
+    :param project_name:
+    :param ontology_key:
+    :param document_type:
+    :param realization_pk:
+    :return:
+    """
     # save any request parameters...
     # (in case of redirection)
     context = add_parameters_to_context(request)
@@ -288,7 +258,6 @@ def q_view_existing(request, project_name=None, ontology_key=None, document_type
 
     # get (or set) realization objects from the cache...
     # note that unlike in "q_edit_new" above, this bit is enclosed in a try/catch block
-    # this is to deal w/ the possibility of an invalid realization_pk
     try:
         session_key = get_key_from_request(request)
         cached_realizations_key = "{0}_realizations".format(session_key)
@@ -298,37 +267,31 @@ def q_view_existing(request, project_name=None, ontology_key=None, document_type
                 "project": project,
                 "ontology": ontology,
                 "model_proxy": model_proxy,
-                "model_id": realization_pk,
+                "model_id": realization_pk
             }
         )
     except ObjectDoesNotExist:
-        msg = "Cannot find a document with an id of '{0}' for that project/ontology/model combination.".format(
-            realization_pk)
+        msg = "Cannot find a document with an id of '{0}' for that project/ontology/document type combination.".format(realization_pk)
         return q_error(request, msg)
 
-    # no need to generate any forms or formsets; I do that all via the load-on-demand paradigm
+    # no forms are created here,
+    # instead the load-on-demand paradigm is used,
 
-    # work out the various paths,
-    # so that ng can reload things as needed
+    # work out various paths, so that ng can reload things as needed...
     # (notice these are slightly different than in "q_edit_new" above
-    view_url = request.path
-    view_url_sections = [section for section in view_url.split('/') if section]
-    view_url_dirname = '/'.join(view_url_sections[:-1])
-    api_url = reverse("realization-detail", kwargs={"pk": model_realization.pk})
-    api_url_sections = [section for section in api_url.split('/') if section]
-    api_url_dirname = '/'.join(api_url_sections[:-1])
+    view_url_dirname = request.path.rsplit('/', 1)[0]
+    api_url_dirname = reverse("realization-detail", kwargs={"pk": model_realization.pk}).rsplit('/', 2)[0]
 
-    # gather all the extra information required by the template
-    _dict = {
-        "session_key": session_key,
-        "view_url_dirname": "/{0}/".format(view_url_dirname),
-        "api_url_dirname": "/{0}/".format(api_url_dirname),
+    # gather all the extra information required by the template...
+    template_context = {
         "project": project,
         "ontology": ontology,
         "proxy": model_proxy,
-        "realization": model_realization,
+        "view_url_dirname": view_url_dirname,
+        "api_url_dirname": api_url_dirname,
+        "session_key": session_key,
         "customization": model_customization,
-        "read_only": "true",
+        "realization": model_realization,
+        "read_only": "true",  # passing "true" instead of True b/c this is a JS variable
     }
-
-    return render_to_response('questionnaire/q_view.html', _dict, context_instance=context)
+    return render_to_response('questionnaire/q_view.html', template_context, context_instance=context)

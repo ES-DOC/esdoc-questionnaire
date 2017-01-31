@@ -1,12 +1,13 @@
 ####################
 #   ES-DOC CIM Questionnaire
-#   Copyright (c) 2016 ES-DOC. All rights reserved.
+#   Copyright (c) 2017 ES-DOC. All rights reserved.
 #
 #   University of Colorado, Boulder
 #   http://cires.colorado.edu/
 #
 #   This project is distributed according to the terms of the MIT license [http://www.opensource.org/licenses/MIT].
 ####################
+
 
 """
 Django settings for Q project.
@@ -96,20 +97,27 @@ INSTALLED_APPS = (
     'compressor',
     # API...
     'rest_framework',
-    # easy form integration w/ ng...
-    'djangular',
+    # easy form integration w/ ng ("djangular")...
+    'djng',
     # efficient model hierarchies...
     'mptt',
     # the questionnaire app...
     'questionnaire',
     # viewing remote mindmaps...
     'mindmaps',
+    # 3rd-party authentication
+    # (make sure this is last so that app_directories.Loader finds my custom "questionnaire/account" templates first)...
+    'allauth',
+    'allauth.account',
+    # 'allauth.socialaccount',
 )
 if 'test' in sys.argv:
     # additional test models (not stored in db)...
     # (see comment in "test_base.TestModel")
     INSTALLED_APPS += (
         'questionnaire.tests',
+        'questionnaire.tests.tests_api',
+        'questionnaire.tests.tests_functional',
         'questionnaire.tests.tests_unit',
         'questionnaire.tests.tests_unit.tests_forms',
         'questionnaire.tests.tests_unit.tests_models',
@@ -143,6 +151,7 @@ TEMPLATES = [
             'context_processors': [
 
                 'django.template.context_processors.debug',
+                # required for 'allauth'
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
@@ -154,15 +163,18 @@ TEMPLATES = [
             ],
             "loaders": [
                 # cache templates for faster loading in PROD mode...
-                ('django.template.loaders.cached.Loader', ['django.template.loaders.filesystem.Loader','django.template.loaders.app_directories.Loader'])
+                ('django.template.loaders.cached.Loader', ['django.template.loaders.app_directories.Loader', 'django.template.loaders.filesystem.Loader'])
                 if not DEBUG else
                 # don't cache templates in DEBUG mode...
-                'django.template.loaders.filesystem.Loader',
                 'django.template.loaders.app_directories.Loader',
+                'django.template.loaders.filesystem.Loader',
+
             ],
         },
     },
 ]
+
+
 
 WSGI_APPLICATION = 'wsgi.application'
 
@@ -207,8 +219,19 @@ MEDIA_ROOT = rel('site_media/')
 # Make sure to use a trailing slash.
 MEDIA_URL = '/site_media/'
 
-# use the standard Django Authentication Module (may want to change for oauth consumption)
-AUTH_USER_MODEL = 'auth.User'
+AUTHENTICATION_BACKENDS = (
+    # Needed to login by username in Django admin, regardless of 'allauth'
+    'django.contrib.auth.backends.ModelBackend',
+    # 'allauth' specific authentication methods, such as login by e-mail
+    'allauth.account.auth_backends.AuthenticationBackend',
+)
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_UNIQUE_EMAIL = True
+ACCOUNT_SESSION_REMEMBER = None
+ACCOUNT_AUTHENTICATION_METHOD = 'username'  # 'email'
+ACCOUNT_LOGOUT_ON_GET = True  # TODO: IS THIS A SECURITY HOLE? (see http://django-allauth.readthedocs.io/en/stable/views.html#logout)
+ACCOUNT_ADAPTER = 'Q.questionnaire.q_auth.QAccountAdapter'
+ACCOUNT_USERNAME_MIN_LENGTH = 3
 
 # email stuff...
 # (note the use of EMAIL_BACKEND in the "test" section above)

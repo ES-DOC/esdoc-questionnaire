@@ -1,0 +1,54 @@
+{# _q_section_customize_category.html #}
+
+{# this is a "section" template #}
+{# it is inserted as needed by ng via AJAX using the load-on-demand paradigm #}
+
+{# see the "q_load_section" django view #}
+{# and see the "section" ng directive" #}
+
+<form name="{{form.form_name}}"
+      class="form-horizontal"
+      watch_form_validity="categories_validity"
+      novalidate>
+
+    <!-- don't include the "name" field -->
+    <!-- b/c if it hasn't been set yet, it will make the form invalid -->
+    <!-- and the "watch_form_validity" directive will never return "true" -->
+    <!--<div class="hidden">-->
+        <!--{% for field in form.hidden_fields %}-->
+            <!--{{ field }}-->
+        <!--{% endfor %}-->
+    <!--</div>-->
+
+    {% for field in form.category_fields %}
+        <div class="row {% cycle 'odd' 'even' %}">
+            {% if field.name != "order" %}
+                {% include 'questionnaire/_q_customize_field.html' %}
+            {% else %}
+
+                {# I have to override the default "order" form field #}
+                {# to ensure it doesn't change the value of the JSON model in the client #}
+                {# based on the initial value of the Django form in the server #}
+                {# (this is mostly copied verbatim from "_q_customize_field.html") #}
+                <span class="col-lg-1 col-md-1 text-right">
+                    {% if field.help_text %}
+                        <help help_text="{{field.help_text|safe}}"></help>
+                    {% endif %}
+                </span>
+                <span class="col-lg-3 col-md-3 {% if field.field.required %} required {% else %} optional {% endif %} ">
+                    {{ field.label|safe }}
+                </span>
+                <span class="col-lg-5 col-md-5 voffset-2">
+                    {# here is the different bit #}
+                    <input disabled="disabled" class="form-control form-control-small" ng-disabled="true" ng-model="category['order']"/>
+                </span>
+                <span class="col-lg-2 col-md-2">
+                    {{ field.errors}}
+                </span>
+
+            {% endif %}  {# /field.name != "order" #}
+
+        </div>
+    {% endfor %} {# /field #}
+
+</form>

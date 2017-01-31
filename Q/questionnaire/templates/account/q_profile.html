@@ -1,0 +1,39 @@
+{# index.html #}
+
+{% extends "questionnaire/q_base.html" %}
+
+{% load staticfiles %}
+{% load compress %}
+{% load honeypot %}
+
+{% load url from future %}
+
+{% block title %}
+    ES-DOC Questionnaire Account
+{% endblock %} {# /title #}
+
+{% block scripts %}
+    {{ block.super }}
+    <script type="text/javascript" src="{% static 'questionnaire/js/q_ng_index.js' %}"></script>
+    <script language="JavaScript">
+        $(document).ready(
+            function() {
+                var parent = document.body;
+                init_widgets(helps, $(parent).find(".help"));
+            }
+        );
+    </script>
+{% endblock %}  {# /scripts #}
+
+{% block content %}
+
+<div class="row">
+<div class="col-lg-8 col-lg-offset-2 col-md-8 col-md-offset-2">
+
+I am a profile
+
+</div>
+</div>
+
+
+{% endblock %}  {# /content #}

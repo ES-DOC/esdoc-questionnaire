@@ -1,15 +1,12 @@
 ####################
 #   ES-DOC CIM Questionnaire
-#   Copyright (c) 2016 ES-DOC. All rights reserved.
+#   Copyright (c) 2017 ES-DOC. All rights reserved.
 #
 #   University of Colorado, Boulder
 #   http://cires.colorado.edu/
 #
 #   This project is distributed according to the terms of the MIT license [http://www.opensource.org/licenses/MIT].
 ####################
-
-__author__ = 'allyn.treshansky'
-
 
 from django.http import Http404
 
@@ -28,17 +25,18 @@ class QProjectFilter(django_filters.FilterSet):
 
     class Meta:
         model = QProject
-        fields = ['name', 'is_active', 'is_displayed']
+        fields = ['name', 'is_active', 'is_displayed', 'is_legacy']
 
     is_active = BetterBooleanFilter(name="is_active")
     is_displayed = BetterBooleanFilter(name="is_displayed")
+    is_legacy = BetterBooleanFilter(name="is_legacy")
 
 
 class QProjectList(generics.ListAPIView):
     queryset = QProject.objects.all()
     serializer_class = QProjectSerializer
     filter_backends = (filters.DjangoFilterBackend, filters.OrderingFilter)
-    filter_fields = ('name', 'is_active', 'is_displayed')
+    filter_fields = ('name', 'is_active', 'is_displayed', "is_legacy")
     filter_class = QProjectFilter
     ordering_fields = ('name', 'title')
     ordering = "name"

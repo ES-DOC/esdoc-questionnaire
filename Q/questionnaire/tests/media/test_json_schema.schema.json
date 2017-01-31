@@ -1,0 +1,17 @@
+{
+    "title": "Test",
+    "description": "Schema for Test Framework",
+    "type": "object",
+    "properties": {
+        "name": {
+            "type": "string"
+        },
+        "documentation": {
+            "type": "string"
+        }
+    },
+    "additionalProperties": false,
+    "required": [
+        "name"
+    ]
+}

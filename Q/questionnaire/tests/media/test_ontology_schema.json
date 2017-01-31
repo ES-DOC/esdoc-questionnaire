@@ -1,0 +1,146 @@
+{
+  "name": "test_schema",
+  "version": "1",
+  "documentation": "A simple test schema",
+  "ontology_type": "SCHEMA",
+  "classes": [
+    {
+      "name": "model",
+      "package": "test_package",
+      "is_document": true,
+      "is_meta": false,
+      "documentation": "this is a test model",
+      "properties": [
+        {
+          "name": "name",
+          "package": "test_package",
+          "is_meta": false,
+          "cardinality": "1.1",
+          "is_nillable": true,
+          "property_type": "ATOMIC",
+          "atomic_type": "STRING"
+        },
+        {
+          "name": "enumeration",
+          "package": "test_package",
+          "documentation": "this is a test enumeration",
+          "is_meta": false,
+          "cardinality": "0.1",
+          "is_nillable": true,
+          "property_type": "ENUMERATION",
+          "enumeration_target": "test_package.test_enumeration",
+          "enumeration_is_open": true
+        },
+        {
+          "name": "thing",
+          "package": "test_package",
+          "documentation": "a relationship property;            there are lots of spaces in this documentation",
+          "is_meta": false,
+          "cardinality": "0.1",
+          "is_nillable": true,
+          "property_type": "RELATIONSHIP",
+          "relationship_targets": [
+            "test_package.recursive_thing"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "recursive_thing",
+      "package": "test_package",
+      "is_document": false,
+      "is_meta": false,
+      "properties": [
+        {
+          "name": "name",
+          "package": "test_package",
+          "is_meta": false,
+          "cardinality": "1.1",
+          "is_nillable": true,
+          "property_type": "ATOMIC",
+          "atomic_type": "STRING"
+        },
+        {
+          "name": "child",
+          "package": "test_package",
+          "is_meta": false,
+          "cardinality": "0.N",
+          "is_nillable": true,
+          "property_type": "RELATIONSHIP",
+          "relationship_targets": [
+            "test_package.recursive_thing"
+          ]
+        },
+        {
+          "name": "multiple_targets",
+          "package": "test_package",
+          "is_meta": false,
+          "cardinality": "0.1",
+          "is_nillable": true,
+          "property_type": "RELATIONSHIP",
+          "relationship_targets": [
+            "test_package.other_thing_one",
+            "test_package.other_thing_two"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "other_thing_one",
+      "package": "test_package",
+      "is_document": false,
+      "is_meta": false,
+      "properties": [
+        {
+          "name": "name",
+          "package": "test_package",
+          "is_meta": false,
+          "cardinality": "1.1",
+          "is_nillable": true,
+          "property_type": "ATOMIC",
+          "atomic_type": "STRING"
+        }
+      ]
+    },
+    {
+      "name": "other_thing_two",
+      "package": "test_package",
+      "is_document": false,
+      "is_meta": false,
+      "properties": [
+        {
+          "name": "name",
+          "package": "test_package",
+          "is_meta": false,
+          "cardinality": "1.1",
+          "is_nillable": true,
+          "property_type": "ATOMIC",
+          "atomic_type": "STRING"
+        }
+      ]
+    }
+  ],
+  "enums": [
+    {
+      "name": "test_enumeration",
+      "package": "test_package",
+      "members": [
+        {
+          "value": "one",
+          "order": 1,
+          "documentation": "documentation for one"
+        },
+        {
+          "value": "two",
+          "order": 2,
+          "documentation": "documentation for two"
+        },
+        {
+          "value": "three",
+          "order": 3,
+          "documentation": "documentation for three"
+        }
+      ]
+    }
+  ]
+}

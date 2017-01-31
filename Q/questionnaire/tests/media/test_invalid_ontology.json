@@ -1,0 +1,42 @@
+{
+  "name": "test_schema",
+  "version": "1",
+  "documentation": "An invalid test schema",
+  "classes": [
+    {
+      "name": "invalid",
+      "is_document": true,
+      "is_meta": false,
+      "documentation": "this is a test model",
+      "properties": [
+        {
+          "foo": "bar",
+          "bar": "foo"
+        }
+      ]
+    }
+  ],
+  "enums": [
+    {
+      "name": "test_enumeration",
+      "package": "test_package",
+      "members": [
+        {
+          "value": "one",
+          "order": 1,
+          "documentation": "documentation for one"
+        },
+        {
+          "value": "two",
+          "order": 2,
+          "documentation": "documentation for two"
+        },
+        {
+          "value": "three",
+          "order": 3,
+          "documentation": "documentation for three"
+        }
+      ]
+    }
+  ]
+}

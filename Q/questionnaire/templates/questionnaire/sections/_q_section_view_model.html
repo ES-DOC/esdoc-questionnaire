@@ -1,79 +1,40 @@
-{# _q_section_view_model.html #}
+{# _q_section_view_foo.html #}
+
+{% load q_tags %}
 
 {# this is a "section" template #}
 {# it is inserted as needed by ng via AJAX using the load-on-demand paradigm #}
 
 {# see the "q_load_section" django view #}
-{# and see the "service" ng directive" #}
+{# and see the "section" ng directive" #}
 
-{% load q_tags %}
+<!-- (model_controller is defined in the parent template) -->
 
-<!-- note it is super-important to set 'current_model' to the current scope -->
-<!-- this is how I get recursion to work; all ng variables are based off of 'current_model' -->
+<div id="{{form.form_name}}_model_fields">
+    <fieldset class="fieldset non_collapsible" ng-show="current_model.is_selected" ng-disabled="!current_model.is_active">
+        <legend class="fieldset_header">
+            &nbsp;{{ form.customization.model_title }}&nbsp;
+        </legend>
+        <div class="fieldset_content">
 
-<div class="panel panel-info model_form">
-
-    <form name="{{form.form_name}}"
-          class="form-horizontal"
-          watch-form-validity="models_validity"
-          novalidate>
-
-        <fieldset ng-disabled="is_read_only()">  {# "read_only" is passed in via the view #}
-
-           {# I AM ADDING "ng-init" EXPLICITLY TO FIELDS AS NEEDED #}
-           {# RATHER THAN TO THE ENTIRE FORM W/ "form.get_initial_data|jsonify|safe" #}
-           {# SEE "forms_edit.py#set_default_field_value" FOR MORE INFO #}
-
-            <div class="hidden">
-                {% for field in form.get_hidden_fields %}
-                    {{ field }}
-                {% endfor %}
+            <div class="documentation">
+                {{ form.customization.model_description }}
             </div>
 
-            {# in general (as mentioned in the comment above), I set default values directly on form fields #}
-            {# in this case, however, I use the customization directly b/c the "description" field #}
-            {# is not displayed as part of the model_form #}
-            {% with description=form.customization.model_description %}
-                {% if description %}
-                    <div class="well well-sm well-info" style="margin: 4px;">
-                        <span class="documentation">
-                            {{ description }}
-                        </span>
-                    </div>  <!-- /.panel-heading -->
-                {% endif %}
-            {% endwith %}
-
-            <div class="panel-body">
-
-                {# this is a strange mix of Django & ng, but that is by design... #}
-                {# ng makes things efficient & RESTful while Django handles customization #}
-                {# TODO: although, is there any way to make it less icky? #}
-
+            <div>
                 <ul class="list-group">
                     {% for form in formset %}
-
                         <div ng-controller="PropertyEditorController as property_editor_controller"
                              current_model_path="{% verbatim ng %}{{ current_model_path }}{% endverbatim ng %}.properties[{{ form.get_serialized_order }}]"> <!-- forloop.counter0 }}]"> --> <!-- TODO: I DO NOT LIKE HAVING TO CALL .get_serialized_order -->
-                            {% if form.is_meta == True %}
-                                <!-- still include the form even if this is a meta property -->
-                                <!-- so that the ng-model gets updated by customized values -->
-                                <div class="hidden">
-                                    <div class="property_form">
+                            <div id="{{form.form_name}}_property_fields">
+                                {% if form.is_hidden %}
+                                    <!-- still include the form even if the property has been customized to be hidden -->
+                                    <!-- so that the ng-model gets updated by customized values -->
+                                    <div class="hidden">
                                         {{ form }}
-                                    </div>  <!-- /.property_form -->
-                                </div>
-                            {% elif form.is_hidden == True %}
-                                <!-- still include the form even if the property has been customized to be hidden -->
-                                <!-- so that the ng-model gets updated by customized values -->
-                                <div class="hidden">
-                                    <div class="property_form">
-                                        {{ form }}
-                                    </div>  <!-- /.property_form -->
-                                </div>
-
-                            {% else %}
-                                <li class="list-group-item {% cycle 'odd' 'even' %}">
-                                    <div class="property_form">
+                                    </div>
+                                {% elif not form.is_hierarchical %}
+                                    <li class="list-group-item {% conditional_cycle 'odd' 'even' if form.render %}">  {# alternate rows for each form that is _actually_ rendered #}
                                         <div class="hidden">
                                             {% for field in form.get_hidden_fields %}
                                                 {{ field }}
@@ -83,24 +44,19 @@
                                             {% if field_type == "ATOMIC" %}
                                                 {% include "questionnaire/_q_view_property_atomic.html" %}
                                             {% elif field_type == "ENUMERATION" %}
-                                                {% include "questionnaire/_q_view_property_enumeration.html" %}
+                                                enumeration
                                             {% else %} {# field_type == "RELATIONSHIP" #}
-                                                {% include "questionnaire/_q_view_property_relationship.html" %}
+                                                relationship
                                             {% endif %}
                                         {% endwith %}  {# /field_type #}
-                                    </div>  <!-- /.property_form -->
-                                </li>
-
-                            {% endif %}  {# /form.is_hidden #}
-
-                        </div>  <!-- /.ng-controller=PropertyController -->
-                    {% endfor %}
+                                    </li>  <!-- /.list-group-item -->
+                                {% endif %}
+                            </div>  <!-- property_fields -->
+                        </div>  <!-- /ng-controller=property_editor_controller -->
+                    {% endfor %}  {# /form in formset #}
                 </ul>
-
             </div>
 
-        </fieldset> <!-- / ng-disabled="read_only" -->
-
-    </form>
-
-</div>  <!-- /.model_form -->
+        </div> <!-- /.fieldset_content -->
+    </fieldset>
+</div>  <!-- /model_fields -->
