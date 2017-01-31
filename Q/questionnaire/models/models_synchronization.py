@@ -19,9 +19,6 @@ class UnsynchronizedType(EnumeratedType):
     pass
 
 UnsynchronizedTypes = EnumeratedTypeList([
-    UnsynchronizedType("CV_ADDED", "Added CV"),
-    UnsynchronizedType("CV_REMOVED", "Removed CV"),
-    UnsynchronizedType("CV_CHANGED", "Changed CV"),
     UnsynchronizedType("ONTOLOGY_ADDED", "Added Ontology"),
     UnsynchronizedType("ONTOLOGY_REMOVED", "Removed Ontology"),
     UnsynchronizedType("ONTOLOGY_CHANGED", "Changed Ontology"),

@@ -12,7 +12,6 @@ from django.forms import ValidationError, ModelForm, CharField, EmailField
 from django.contrib.auth.forms import AdminPasswordChangeForm, AuthenticationForm, UserCreationForm
 from django.utils.translation import ugettext_lazy as _
 
-from Q.questionnaire.forms.forms_base import bootstrap_form
 from Q.questionnaire.models.models_users import QUserProfile
 from Q.questionnaire.q_utils import validate_no_bad_chars, update_field_widget_attributes, set_field_widget_attributes
 
@@ -30,7 +29,6 @@ class QUserProfileForm(ModelForm):
     def __init__(self, *args, **kwargs):
 
         super(QUserProfileForm, self).__init__(*args, **kwargs)
-        bootstrap_form(self)
 
         profile = self.instance
         user = profile.user

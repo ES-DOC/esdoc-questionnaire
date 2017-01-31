@@ -253,7 +253,6 @@ def recurse_through_realizations(fn, current_model_realization, realization_type
     :return: either QModelRealization or QCategoryRealization or QPropertyRealization or None
     """
 
-    # TODO: UNLIKE CUSTOMIZATIONS, I DON'T THINK I NEED TO TRACK RECURSIONS; THERE SHOULDN'T BE ANY SELF-REFERENTIAL LOOPS
     previously_recursed_realizations = kwargs.pop("previously_recursed_realizations", set())
 
     if RealizationTypes.MODEL in realization_types:
@@ -292,7 +291,6 @@ def get_realization_by_fn(fn, current_model_realization, realization_types, **kw
     :return: either QModelRealization or QCategoryRealization or QPropertyRealization or None
     """
 
-    # TODO: UNLIKE CUSTOMIZATIONS, I DON'T THINK I NEED TO TRACK RECURSIONS; THERE SHOULDN'T BE ANY SELF-REFERENTIAL LOOPS
     previously_recursed_realizations = kwargs.pop("previously_recursed_realizations", set())
 
     if RealizationTypes.MODEL in realization_types:
@@ -476,8 +474,6 @@ class QModelRealizationQuerySet(models.QuerySet):
 
     def published_documents(self):
         return self.filter(proxy__is_document=True, is_root=True, is_published=True)
-
-    # TODO: WRITE SOMETHING LIKE A "labelled_documents" QS
 
     def owned_documents(self, user):
         return self.root_documents().filter(owner=user)

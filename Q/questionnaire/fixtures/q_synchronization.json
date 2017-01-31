@@ -2,8 +2,8 @@
 {
     "fields": {
         "priority": 1,
-        "type": "CV_ADDED",
-        "description": "Added a CV"
+        "type": "ONTOLOGY_ADDED",
+        "description": "Added Ontology"
     },
     "model": "questionnaire.qsynchronization",
     "pk": 1
@@ -11,8 +11,8 @@
 {
     "fields": {
         "priority": 2,
-        "type": "CV_REMOVED",
-        "description": "Removed CV"
+        "type": "ONTOLOGY_REMOVED",
+        "description": "Removed Ontology"
     },
     "model": "questionnaire.qsynchronization",
     "pk": 2
@@ -20,8 +20,8 @@
 {
     "fields": {
         "priority": 3,
-        "type": "CV_CHANGED",
-        "description": "Changed CV"
+        "type": "ONTOLOGY_CHANGED",
+        "description": "Changed Ontology"
     },
     "model": "questionnaire.qsynchronization",
     "pk": 3
@@ -29,8 +29,8 @@
 {
     "fields": {
         "priority": 4,
-        "type": "ONTOLOGY_ADDED",
-        "description": "Added Ontology"
+        "type": "CUSTOMIZATION_ADDED",
+        "description": "Added Customization"
     },
     "model": "questionnaire.qsynchronization",
     "pk": 4
@@ -38,8 +38,8 @@
 {
     "fields": {
         "priority": 5,
-        "type": "ONTOLOGY_REMOVED",
-        "description": "Removed Ontology"
+        "type": "CUSTOMIZATION_REMOVED",
+        "description": "Removed Customization"
     },
     "model": "questionnaire.qsynchronization",
     "pk": 5
@@ -47,37 +47,10 @@
 {
     "fields": {
         "priority": 6,
-        "type": "ONTOLOGY_CHANGED",
-        "description": "Changed Ontology"
-    },
-    "model": "questionnaire.qsynchronization",
-    "pk": 6
-},
-{
-    "fields": {
-        "priority": 7,
-        "type": "CUSTOMIZATION_ADDED",
-        "description": "Added Customization"
-    },
-    "model": "questionnaire.qsynchronization",
-    "pk": 7
-},
-{
-    "fields": {
-        "priority": 8,
-        "type": "CUSTOMIZATION_REMOVED",
-        "description": "Removed Customization"
-    },
-    "model": "questionnaire.qsynchronization",
-    "pk": 8
-},
-{
-    "fields": {
-        "priority": 9,
         "type": "CUSTOMIZATION_CHANGED",
         "description": "Changed Customization"
     },
     "model": "questionnaire.qsynchronization",
-    "pk": 9
+    "pk": 6
 }
 ]
