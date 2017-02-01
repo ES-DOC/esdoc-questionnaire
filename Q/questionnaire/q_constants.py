@@ -62,6 +62,7 @@ SUPPORTED_DOCUMENTS = {
         "platform",
     ],
     "CIM2": [
+        "Citation",
         # "Conformance",
         # "Temporal_Constraint",
         "Simulation",

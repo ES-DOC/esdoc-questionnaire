@@ -255,9 +255,9 @@ ATOMIC_PROPERTY_MAP = {
     QAtomicTypes.URL.get_type(): [URLInput, {}],
     QAtomicTypes.EMAIL.get_type(): [EmailInput, {}],
     # TODO: GET THESE WORKING IN BOOTSTRAP / DJANGULAR
-    # QAtomicTypes.DATE.get_type(): QDateInput,
-    # QAtomicTypes.DATETIME.get_type(): QDateTimeInput,
-    # QAtomicTypes.TIME.get_type(): QTimeInput,
+    QAtomicTypes.DATE.get_type(): [TextInput, {}],
+    QAtomicTypes.DATETIME.get_type(): [TextInput, {}],
+    QAtomicTypes.TIME.get_type(): [TextInput, {}],
 }
 
 

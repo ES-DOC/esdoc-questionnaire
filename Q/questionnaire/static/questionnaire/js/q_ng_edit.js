@@ -228,9 +228,6 @@
         $scope.print_stuff = function() {
             /* print the current state of stuff */
             console.log("session_key=" + session_key);
-            console.log("show_completion=" + $scope.show_completion);
-            console.log("api_url=" + $scope.api_url);
-            console.log("view_url=" + $scope.view_url);
             console.log($global_services.getModelFromPath("_DATA"));
         };
 
@@ -261,6 +258,7 @@
                 if (is_loaded && !$scope.is_loaded) {
                     $scope.current_model_path = $attrs.currentModelPath;
                     $scope.current_model = $global_services.getModelFromPath($attrs.currentModelPath);
+                    $scope.update_model_completion();
                     $scope.is_loaded = true;
                 }
             }
@@ -340,6 +338,7 @@
                 if (is_loaded && !$scope.is_loaded) {
                     $scope.current_model_path = $attrs.currentModelPath;
                     $scope.current_model = $global_services.getModelFromPath($attrs.currentModelPath);
+                    $scope.update_category_completion();
                     $scope.is_loaded = true;
                 }
             }

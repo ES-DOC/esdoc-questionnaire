@@ -962,7 +962,7 @@ class QPropertyCustomization(QCustomization):
         self.property_description = proxy.documentation
         self.order = proxy.order
         self.is_required = proxy.is_required
-        self.is_hidden = not proxy.is_required
+        self.is_hidden = False  # not proxy.is_required
         self.is_nillable = not proxy.is_required
         self.inline_help = False
         self.default_values = proxy.values

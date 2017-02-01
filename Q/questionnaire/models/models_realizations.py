@@ -88,7 +88,7 @@ def get_new_realizations(project=None, ontology=None, model_proxy=None, **kwargs
             if property_realization.field_type == QPropertyTypes.RELATIONSHIP and property_realization.is_required:
                 target_relationship_values = []
                 # TODO: IF I WERE TO PRE-CREATE ALL RELATIONSHIPS THEN HERE IS WHERE I WOULD DO IT
-                # TODO: BUT THAT WOULD BE MIND-BOGGINGLY COMPLEX...
+                # TODO: BUT THAT WOULD BE MIND-BOGGLINGLY COMPLEX...
                 # TODO: ...B/C I WOULD NEED TO KNOW IN ADVANCE WHAT TYPES OF RELATIONSHIPS TO CREATE IN THE CASE OF MULTIPLE TYPES OF TARGETS;
                 # TODO: AS IT IS, I GET AROUND THIS BY ONLY PRE-CREATING SPECIALIZATIONS WHICH ARE EXPLICIT IN THEIR TARGET PROXIES
                 # TODO: BUT I STILL CANNOT HANDLE THIS FOR NON-SPECIALIZED PROXIES
@@ -818,7 +818,9 @@ class QPropertyRealization(QRealization):
         :return:
         """
         if self.field_type == QPropertyTypes.RELATIONSHIP:
-            return self.proxy.relationship_target_models.values("name", "pk")
+            potential_relationship_target_types_qs = self.proxy.relationship_target_models.values("name", "pk")
+            # ("values" returns a ValuesQuerySet, which doesn't serialize natively into JSON; so I convert it to a list)
+            return [potential_relationship_target_type for potential_relationship_target_type in potential_relationship_target_types_qs]
         return []
 
     def update_completion(self, **kwargs):

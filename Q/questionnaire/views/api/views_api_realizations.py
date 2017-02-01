@@ -92,7 +92,6 @@ class QModelRealizationList(APIView):
         return Response(serializer.data)
 
     def post(self, request, format=None):
-        import ipdb; ipdb.set_trace()
         assert request.method == "POST"
         serializer = QModelRealizationSerializer(data=request.data, context={"request": request})
         if serializer.is_valid():

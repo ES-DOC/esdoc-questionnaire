@@ -450,7 +450,6 @@ class QPropertyRealizationForm(QRealizationForm):
             custom_widget_class, custom_widget_args = ATOMIC_PROPERTY_MAP[customization.atomic_type]
             atomic_value_field.widget = custom_widget_class(custom_widget_args)
             update_field_widget_attributes(atomic_value_field, existing_widget_attrs)
-
             if self.instance.is_new:
                 default_values = customization.default_values
                 if default_values:

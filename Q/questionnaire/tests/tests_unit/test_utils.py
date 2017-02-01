@@ -197,6 +197,11 @@ class Test(TestQBase):
 
         self.assertEqual(test_pretty_string, pretty_string(test_ugly_string))
 
+    def test_convert_to_camelCase(self):
+        valid_string = "thisIsAValidString"
+        invalid_string = "This is_a valid STRING"
+        self.assertEqual(valid_string, convert_to_camelCase(invalid_string))
+
     ##############################
     # test sequence manipulation #
     ##############################
