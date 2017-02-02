@@ -90,7 +90,8 @@ def get_new_customizations(project=None, ontology=None, model_proxy=None, **kwar
     property_customizations = []
     for property_proxy in model_proxy.property_proxies.all():
     # for property_proxy in model_proxy.property_proxies.filter(is_meta=False):
-        property_proxy_key = "{0}.{1}".format(model_proxy_key, property_proxy.name)
+    #     property_proxy_key = "{0}.{1}".format(model_proxy_key, property_proxy.name)
+        property_proxy_key = "{0}.{1}".format(model_proxy_key, property_proxy.key)
         with allow_unsaved_fk(QPropertyCustomization, ["model_customization", "category_customization"]):
             # close this context manager before using the custom related manager
             # (too much hackery at once!)
@@ -118,12 +119,14 @@ def get_new_customizations(project=None, ontology=None, model_proxy=None, **kwar
 
         if property_customization.use_subforms:
 
-            subform_key = "{0}.{1}".format(model_proxy.name, property_proxy.name)
+            # subform_key = "{0}.{1}".format(model_proxy.name, property_proxy.name)
+            subform_key = "{0}.{1}".format(model_proxy.key, property_proxy.key)
             target_model_customizations = []
             for target_model_proxy in property_proxy.relationship_target_models.all():
             # for target_model_proxy in property_proxy.relationship_target_models.filter(is_meta=False):
                 # notice how I add the "cim_id" attribute (just in-case this is a specialization w/ different objects of the same class)
-                target_model_proxy_key = "{0}.{1}.{2}".format(subform_key, target_model_proxy.name, target_model_proxy.cim_id)
+                # target_model_proxy_key = "{0}.{1}.{2}".format(subform_key, target_model_proxy.name, target_model_proxy.cim_id)
+                target_model_proxy_key = "{0}.{1}.{2}".format(subform_key, target_model_proxy.key, target_model_proxy.cim_id)
                 if target_model_proxy_key not in customizations:
                     target_model_customization = get_new_customizations(
                         project=project,

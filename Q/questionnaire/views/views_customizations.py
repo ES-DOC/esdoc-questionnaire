@@ -59,7 +59,7 @@ def q_customize_new(request, project_name=None, ontology_key=None, document_type
             next_page = add_parameters_to_url(reverse("account_login"), next=request.path)
             return HttpResponseRedirect(next_page)
         if not is_admin_of(current_user, project):
-            next_page = reverse("project", project_name=project_name)
+            next_page = reverse("project", kwargs={"project_name": project_name})
             msg = "You have tried to view a restricted resource for this project.  Please consider joining."
             messages.add_message(request, messages.WARNING, msg)
             return HttpResponseRedirect(next_page)
@@ -73,7 +73,8 @@ def q_customize_new(request, project_name=None, ontology_key=None, document_type
             "project": project,
             "ontology": ontology,
             "model_proxy": model_proxy,
-            "key": model_proxy.name,
+            # "key": model_proxy.name,
+            "key": model_proxy.key,
         }
     )
 
@@ -132,7 +133,7 @@ def q_customize_existing(request, project_name=None, ontology_key=None, document
             next_page = add_parameters_to_url(reverse("account_login"), next=request.path)
             return HttpResponseRedirect(next_page)
         if not is_admin_of(current_user, project):
-            next_page = reverse("project", project_name=project_name)
+            next_page = reverse("project", kwargs={"project_name": project_name})
             msg = "You have tried to view a restricted resource for this project.  Please consider joining."
             messages.add_message(request, messages.WARNING, msg)
             return HttpResponseRedirect(next_page)

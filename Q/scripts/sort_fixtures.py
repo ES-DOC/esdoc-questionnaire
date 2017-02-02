@@ -98,7 +98,6 @@ models_to_order = [
     QSite,
     QUserProfile,
     QOntology,
-    QCategorization,
     QProject,
     QProjectOntology,
     QSynchronization,

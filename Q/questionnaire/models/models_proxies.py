@@ -215,7 +215,7 @@ class QPropertyProxy(QProxy):
         abstract = False
         verbose_name = "_Questionnaire Proxy: Property"
         verbose_name_plural = "_Questionnaire Proxy: Properties"
-        unique_together = ("model_proxy", "name")
+        # unique_together = ("model_proxy", "name")
         # TODO: SEE THE COMMENTS REGARDING "ordering" FOR QModelProxy ABOVE
         ordering = ["order"]
 

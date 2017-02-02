@@ -179,7 +179,6 @@ class QOntology(models.Model):
         return self.ontology_type == QOntologyTypes.SPECIALIZATION
 
     def parse_specialization(self, ontology_content, **kwargs):
-        import ipdb; ipdb.set_trace()
         request = kwargs.get("request")
 
         # 1st do some logical checks on the content...
@@ -326,9 +325,9 @@ class QOntology(models.Model):
                     cim_id=ontology_property_id,
                     field_type=ontology_property_field_type
                 )
-
                 ontology_property_documentation = ontology_property.get("documentation")
-                ontology_property_cardinality_min, ontology_property_cardinality_max = ontology_property.get("cardinality").split('.')
+                ontology_property_cardinality_min, ontology_property_cardinality_max = re.split("\.|,", ontology_property.get("cardinality"))  # TODO: WE NEED TO DECIDE IF CARDINALITY IS SPLIT ON '.' OR ','
+                ontology_property_is_meta = ontology_property.get("is_meta", False)
                 ontology_property_is_meta = ontology_property.get("is_meta", False)
                 ontology_property_is_nillable = ontology_property.get("is_nillable", False)
                 ontology_property_is_hierarchical = ontology_property.get("is_hierarchical", False)
@@ -543,7 +542,7 @@ class QOntology(models.Model):
                 )
 
                 ontology_property_documentation = ontology_property.get("documentation")
-                ontology_property_cardinality_min, ontology_property_cardinality_max = ontology_property.get("cardinality").split('.')
+                ontology_property_cardinality_min, ontology_property_cardinality_max = re.split("\.|,", ontology_property.get("cardinality"))  # TODO: WE NEED TO DECIDE IF CARDINALITY IS SPLIT ON '.' OR ','
                 ontology_property_is_meta = ontology_property.get("is_meta", False)
                 ontology_property_is_nillable = ontology_property.get("is_nillable", False)
                 ontology_property_is_hierarchical = ontology_property.get("is_hierarchical", False)
