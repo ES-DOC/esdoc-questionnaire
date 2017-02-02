@@ -9,6 +9,19 @@
     /* this intercepts every $http call and displays a tiny loading bar */
     /* (I have overwritten the CSS to make it bigger: see "q_bootstrap.less") */
 
+//    app.config(['$httpProvider', '$provide', function($httpProvider, $provide) {
+
+//        $httpProvider.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
+//        $httpProvider.defaults.xsrfCookieName = 'csrftoken';
+//        $httpProvider.defaults.xsrfHeaderName = 'X-CSRFToken';
+
+//  $httpProvider.defaults.headers.common = {};
+//  $httpProvider.defaults.headers.post = {};
+//  $httpProvider.defaults.headers.put = {};
+//  $httpProvider.defaults.headers.patch = {};
+//
+//    }]);
+
     /***************/
     /* CONTROLLERS */
     /***************/
@@ -79,7 +92,6 @@
                 var new_index = ui.item.sortable.dropindex;
                 var sorted_model_indices = sort_objects_by_attr(
                     $.map(models, function(obj, i) {
-                        /* TODO: I CAN PROBABLY SIMPLIFY THIS; I ONLY NEED "index" */
                         return {"index": i, "order": obj.order }
                     }),
                     "order"
@@ -90,7 +102,7 @@
                 }
                 /* cancel the default behaviour; */
                 /* this means do NOT re-sort the array bound via ng (see comment above); */
-                /* the widgets will still be sorted, though, b/c of the "orderBy" filter used by ng */
+                /* the widgets will still display sorted, though, b/c of the "orderBy" filter used by ng */
                 ui.item.sortable.cancel();
             }
         };
@@ -100,7 +112,7 @@
         /**************/
 
         function get_model_from_path(path) {
-            /* given a JSON "path" return model (part of _DATA) */
+            /* given a JSON "path" return the corresponding model (part of _DATA) */
             var current_obj = _DATA;
             path = path.split('.');
 
@@ -131,8 +143,9 @@
         /* services to provide */
         /***********************/
 
+        /* note: ng likes camelCase but I like under_scores */
+
 	    return {
-            /* note: ng likes camelCase but I like under_scores */
             getModelFromPath: get_model_from_path,
             getSortableOptions: function() {
                 return _NON_MODIFYING_SORTABLE_OPTIONS;
@@ -165,7 +178,7 @@
             setBlocking: function(blocking) {
                 _blocking = blocking;
             },
-            /* get the entire model at once */
+            /* get the entire model all at once */
             getData: function() {
                 return _DATA;
             }
@@ -192,7 +205,6 @@
                       "data-content='{{help_text}}'>" +
                 "</span>",
             link: function(scope, element, attrs) {
-                /* TODO: REMOVE ANY EMBEDDED QUOTES FROM helpText ATTRIBUTE */
                 scope.help_text = $sce.trustAsHtml(attrs["helpText"]);
             }
         }
@@ -219,6 +231,68 @@
             }
         }
     });
+
+    /***************************************/
+    /* make a nifty widget to get a DocRef */
+    /***************************************/
+
+    app.directive("reference", ['$http', '$global_services', function($http, $global_services) {
+
+        return {
+            restrict: 'E',
+            replace: true,
+            scope: {
+                referenceFunction: "&"
+            },
+            templateUrl: "/static/questionnaire/templates/q_ng_reference.html",
+            link: function ($scope, $element, $attrs) {
+                /* b/c the Q is so asynchronous, I need to wait to set "current_model" until the parent controller has loaded */
+                $scope.loaded_property = false;
+                $scope.$watch(function () {
+                        return $scope.$parent.is_loaded;
+                    },
+                    function(is_loaded) {
+                        if (is_loaded && !$scope.loaded_property) {
+                            $scope.current_model = $scope.$parent.current_model;
+                            $scope.loaded_property = true;
+                        }
+                    }
+                );
+                $scope.get_reference = function() {
+                   $global_services.setBlocking(true);
+
+                   var url = "http://api.es-doc.org/2/summary/search?document_version=latest";
+                   /* TODO: CHANGE THESE URL PARAMETERS */
+                   url += "&document_type=" + "cim.2.designing.Project" ;
+                   url += "&project=" + "cmip6-draft";
+
+                   var proxy_url = "/services/proxy/"
+                   var proxy_data = "response_format=" + "json" + "&url=" + encodeURIComponent(url);
+
+                   $http({
+                        method: "POST",
+                        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                        url: proxy_url,
+                        data: proxy_data
+                   })
+                   .success(function(result) {
+                        console.log("yep")
+                        console.log(result)
+                   })
+                   .error(function(error) {
+                        console.log("nope");
+                        console.log(error);
+                   }).finally(function() {
+                        $global_services.setBlocking(false);
+                   });
+                };
+
+                $scope.update_reference = function() {
+                    alert("update_reference");
+                };
+            }
+        }
+    }]);
 
     /*********************************/
     /* make a pretty drop-down input */
@@ -279,7 +353,7 @@
                         return $sce.trustAsHtml(formatted_choices.join(", "));
                     }
                     else {
-                        /* loads of choices are made, show some of them... */
+                        /* loads of choices are made, show TITLE_LIMIT of them... */
                         var formatted_choices = $.map(active_choices.slice(0, $scope.TITLE_LIMIT), function(choice) {
                             return "\"" + choice.value + "\"";
                         })
@@ -389,155 +463,6 @@
         }
     }]);
 
-
-    app.directive('tree_bak', function() {
-        /* this directive calls itself (in the template); supposedly, that's a really hard thing to do */
-        /* but as of version 1.5 it seems to be built-in, (w/out having to recompile nested templates) */
-        return {
-            restrict: "EA",
-            replace: false,
-            scope: {
-                nodes: '=',
-                depth: '=?'
-                /* TODO: 2 more scope variables bound to functions ('&') notation: for showing / hiding and enabling / disabling */
-            },
-            templateUrl: '/static/questionnaire/templates/q_ng_tree.html',
-            link: function($scope, $element, $attrs) {
-                $scope.expanded = true;
-                $scope.depth = angular.isDefined($scope.depth) ? parseInt($scope.depth) : 0;
-                $scope.has_subnodes = function(node) {
-                    return node["nodes"].length > 0;
-                }
-                $scope.get_depth_as_array = function() {
-                    /* in theory, I ought to be able to just write 'return new Array($scope.depth)' */
-                    /* but that doesn't work consistently */
-                    var depth_array = new Array();
-                    for (var i=0; i<$scope.depth; i++) {
-                        depth_array.push(1);
-                    }
-                    return depth_array;
-                }
-                $scope.select_node = function(node) {
-                    node.is_selected = true;
-                    /* show / hide stuff in the pane */
-                    /* map the value to 'display_detail' of the correct bit in the parent model */
-                }
-                $scope.toggle_node_activation = function(node) {
-                    /* enable / disable stuff in the pane */
-                    /* map the value to 'is_active' of the correct bit in the parent model */
-                    $.each(node["nodes"], function(i, n) {
-                        n.is_active = node.is_active;
-                        $scope.toggle_node_activation(n);
-                    });
-                }
-            }
-        };
-    });
-
-    var tree_node_template = '' +
-        '<div class="list-group-item" ng-class="{\'selected\': node.is_selected, \'inactive\': !node.is_active}" ng-click="select_node(node)">' +
-            '<span class="spacer" ng-repeat="i in get_depth_as_array() track by $index"/>' +
-            '<span class="help" data-toggle="tooltip" title="{{node.documentation}}">{{node.name}}</span>' +
-            '<input type="checkbox" class="pull-right" ng-model="node.is_active" ng-click="toggle_node_activation(node)">' +
-        '</div>' +
-        '<div ng-repeat="subnode in node.nodes">' +
-            '<tree node="subnode" depth="depth + 1"/>' +
-        '</div>';
-
-    app.directive("tree2", ['$http', '$compile', function($http, $compile) {
-        return {
-            restrict: "EA", /* E: element, A: attribute, C: class */
-            replace: false,
-            scope: {
-                foo: "=",
-                node: "=",
-                depth: '=?'
-            },
-//            templateUrl: '/static/questionnaire/templates/q_ng_tree.html',
-            link: function(scope, element, attrs) {
-
-                scope.$watch("foo", function(newVal, oldVal) {
-                    if (newVal) {
-                        scope.depth = angular.isDefined(scope.depth) ? parseInt(scope.depth) : 0;
-                        scope.has_subnodes = function(node) {
-                            return node["nodes"].length > 0;
-                        }
-                        scope.get_depth_as_array = function() {
-                            /* in theory, I ought to be able to just write 'return new Array($scope.depth)' */
-                            /* but that doesn't work consistently */
-                            var depth_array = new Array();
-                            for (var i=0; i<scope.depth; i++) {
-                                depth_array.push(1);
-                            }
-                            return depth_array;
-                        }
-                        scope.select_node = function(node) {
-                            node.is_selected = true;
-                            /* show / hide stuff in the pane */
-                            /* map the value to 'display_detail' of the correct bit in the parent model */
-                        }
-                        scope.toggle_node_activation = function(node) {
-                            /* enable / disable stuff in the pane */
-                            /* map the value to 'is_active' of the correct bit in the parent model */
-                            $.each(node["nodes"], function(i, n) {
-                                n.is_active = node.is_active;
-                                scope.toggle_node_activation(n);
-                            });
-                        }
-                        var compileFn = $compile(tree_node_template);
-                        var content = compileFn(scope);
-                        $(element).html(content);
-
-                    }
-                }, true);
-            }
-        }
-    }]);
-
-    app.directive('tree3', function() {
-        /* this directive calls itself (in the template); supposedly, that's a really hard thing to do */
-        /* but as of version 1.5 it seems to be built-in, (w/out having to recompile nested templates) */
-        return {
-            restrict: "EA",
-            replace: false,
-            scope: {
-                nodes: '=',
-                depth: '=?'
-                /* TODO: 2 more scope variables bound to functions ('&') notation: for showing / hiding and enabling / disabling */
-            },
-            templateUrl: '/static/questionnaire/templates/q_ng_tree.html',
-            link: function($scope, $element, $attrs) {
-                $scope.expanded = true;
-                $scope.depth = angular.isDefined($scope.depth) ? parseInt($scope.depth) : 0;
-                $scope.has_subnodes = function(node) {
-                    return node["nodes"].length > 0;
-                }
-                $scope.get_depth_as_array = function() {
-                    /* in theory, I ought to be able to just write 'return new Array($scope.depth)' */
-                    /* but that doesn't work consistently */
-                    var depth_array = new Array();
-                    for (var i=0; i<$scope.depth; i++) {
-                        depth_array.push(1);
-                    }
-                    return depth_array;
-                }
-                $scope.select_node = function(node) {
-                    node.is_selected = true;
-                    /* show / hide stuff in the pane */
-                    /* map the value to 'display_detail' of the correct bit in the parent model */
-                }
-                $scope.toggle_node_activation = function(node) {
-                    /* enable / disable stuff in the pane */
-                    /* map the value to 'is_active' of the correct bit in the parent model */
-                    $.each(node["nodes"], function(i, n) {
-                        n.is_active = node.is_active;
-                        $scope.toggle_node_activation(n);
-                    });
-                }
-            }
-        };
-    });
-
     /******************************/
     /* client-side error handling */
     /******************************/
@@ -553,7 +478,6 @@
                         // consider empty models to be valid
                         return true;
                     }
-
                     return validate_no_bad_chars(viewValue);
                 };
             }
@@ -569,7 +493,6 @@
                         // consider empty models to be valid
                         return true;
                     }
-
                     return validate_not_blank(viewValue);
                 };
             }
@@ -585,7 +508,6 @@
                         // consider empty models to be valid
                         return true;
                     }
-
                     return validate_no_spaces(viewValue);
                 };
             }
@@ -601,7 +523,6 @@
                         // consider empty models to be valid
                         return true;
                     }
-
                     return validate_no_reserved_words(viewValue);
                 };
             }
@@ -617,7 +538,6 @@
                         // consider empty models to be valid
                         return true;
                     }
-
                     return validate_no_profanities(viewValue);
                 };
             }
