@@ -1,0 +1,24 @@
+{
+    "title": "Enumerations",
+    "description": "Schema for CIM2 Enumeration Choices",
+    "type": "array",
+    "items": {
+        "type": "object",
+        "properties": {
+            "order": {
+                "type": "number"
+            },
+            "value": {
+                "type": "string"
+            },
+            "documentation": {
+                "type": "string"
+            }
+        },
+        "additionalProperties": false,
+        "required": [
+            "order",
+            "value"
+        ]
+    }
+}

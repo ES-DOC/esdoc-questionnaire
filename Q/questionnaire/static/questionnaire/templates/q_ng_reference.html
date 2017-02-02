@@ -1,0 +1,12 @@
+
+<div class="reference input-group">
+    <span class="input-group-btn">
+        <button class="btn btn-default" type="button" title="click to add or change this reference" ng-click="get_reference()">
+            <span class="glyphicon glyphicon-new-window"></span>
+        </button>
+    </span>
+    <input class="form-control" type="text" placeholder="please provide the URL for a referenced document"
+           ng-model="current_model['relationship_references']"
+           ng-model-options="{debounce: 750}"
+           ng-change="update_reference()"/>
+</div>
