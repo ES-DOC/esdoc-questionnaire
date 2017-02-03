@@ -30,14 +30,21 @@ import sys
 
 rel = lambda *x: os.path.join(os.path.abspath(os.path.dirname(__file__)), *x)
 
-# Path to the configuration file containing secret values.
+# path to the configuration file containing secret values.
 CONF_PATH = os.path.join(os.path.expanduser('~'), '.config', 'esdoc-questionnaire.conf')
-parser = SafeConfigParser()
+# default secret values in case they're not in the configuration file
+DEFAULT_CONF_VALUES = {
+    "debug": "false",
+    "profile": "false",
+    "cdn": "true",
+}
+parser = SafeConfigParser(DEFAULT_CONF_VALUES)
 parser.read(CONF_PATH)
 
 SECRET_KEY = parser.get('settings', 'secret_key', raw=True)
 
 DEBUG = parser.getboolean('debug', 'debug')
+CDN = parser.getboolean('debug', 'cdn')
 
 if 'test' not in sys.argv:
 
@@ -158,8 +165,9 @@ TEMPLATES = [
                 # gives me access to MEDIA files from templates...
                 'django.template.context_processors.media',
                 # lets me check whether I'm in DEBUG mode...
-                # (w/out requiring a whitelist of IP addresses)...
                 'questionnaire.context_processors.debug',
+                # lets me check whether I sould use a CDN...
+                'questionnaire.context_processors.cdn',
             ],
             "loaders": [
                 # cache templates for faster loading in PROD mode...

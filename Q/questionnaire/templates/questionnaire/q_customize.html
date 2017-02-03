@@ -12,12 +12,17 @@
 
 {% block scripts %}
     {{ block.super }}
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/angular-ui-sortable/0.15.0/sortable.min.js" integrity="sha256-IpGBPsTmIf0hT/d23EnI1a9zAe8+lSJH2KMtfmyyEh0=" crossorigin="anonymous"></script>
+    {% if cdn %}
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/angular-ui-sortable/0.15.0/sortable.min.js" integrity="sha256-IpGBPsTmIf0hT/d23EnI1a9zAe8+lSJH2KMtfmyyEh0=" crossorigin="anonymous"></script>
+    {% else %}
+        <script type="text/javascript" src="{% static 'questionnaire/js/ext/sortable.min.js' %}"></script>
+    {% endif %}
     <script type="text/javascript" src="{% static 'questionnaire/js/q_ng_customize.js' %}"></script>
     <script language="JavaScript">
 
         var session_key = "{{ session_key }}";
         var project_id = {{ project.pk }};
+        var project_name = "{{ project.name }}";
         var customization_id = {{ customization.pk|default:0 }};
         var customization_name = "{{ customization.name }}";
 
@@ -100,9 +105,7 @@
                                         </div> <!-- /.hidden -->
 
                                         <div id="{{form.form_name}}_customization_fields">
-                                            <fieldset class="fieldset collapsible"
-
-                                                      ng-class="customization_details_fieldset_controller.is_collapsed ? 'collapsed' : 'expanded'">
+                                            <fieldset class="fieldset collapsible" ng-class="customization_details_fieldset_controller.is_collapsed ? 'collapsed' : 'expanded'">
                                                 <legend class="fieldset_header" ng-click="customization_details_fieldset_controller.is_collapsed = ! customization_details_fieldset_controller.is_collapsed" title="click to toggle content">
                                                     <span ng-hide="customization_details_fieldset_controller.is_collapsed" class="glyphicon glyphicon-triangle-bottom"></span>
                                                     <span ng-show="customization_details_fieldset_controller.is_collapsed" class="glyphicon glyphicon-triangle-right"></span>

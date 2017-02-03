@@ -1,0 +1,161 @@
+{# q_project.html #}
+
+{% extends "questionnaire/q_base.html" %}
+
+{% load staticfiles %}
+{% load compress %}
+
+{% block title %}
+    ES-DOC Questionnaire Project: {{ project.title }}
+{% endblock %} {# /title #}
+
+{% block scripts %}
+    {{ block.super }}
+    <script type="text/javascript" src="{% static 'questionnaire/js/q_ng_project.js' %}"></script>
+    <script language="JavaScript">
+
+        var session_key = "{{ session_key }}";
+        var project_id = {{ project.pk }};
+        var project_name = "{{ project.name }}";
+
+        $(document).ready(
+            function() {
+
+                /* in old versions of the Q there were dozens of sections of long & complex JQuery code */
+                /* to setup all the interactivity of the Q */
+                /* now there are only a couple of fns, and they are written very efficiently */
+                /* hooray */
+
+                var parent = document.body;
+                init_widgets(helps, $(parent).find(".help"));
+            }
+        );
+
+    </script>
+{% endblock %}  {# /scripts #}
+
+{% block style %}
+    {{ block.super }}
+    <style type="text/css">
+        .ng-dirty { border-color: #CCCCCC !important; } /* don't bother validating form fields on this page */
+    </style>
+{% endblock %} {# / style #}
+
+{% block content %}
+    <div ng-app="q_project">
+        <div ng-controller="ProjectController as project_controller">
+
+            {# wrapping everything in a fieldset that can be deactivated during AJAX calls #}
+            <fieldset id="q_blocker" ng-disabled="blocking()">
+
+                <div class="row">
+                    <div class="col-lg-10 col-lg-offset-1 col-md-10 col-md-offset-1">
+
+                        <div class="title">
+                            {{ project.title }} ES-DOC Questionnaire Project
+                        </div> <!-- /.title -->
+
+                        <div class="documentation clearfix">
+
+                            {% if project.display_logo and project.logo %}
+                                <div class="project_logo">
+                                    <img src="{{ MEDIA_URL }}/{{ project.logo }}"/>
+                                </div>
+                            {% endif %}  {# /display_logo #}
+
+                            <p>
+                                This is the Project Page for the
+                                {% if project.url %}
+                                    <a href="{{ project.url }}">{{ project.title }}</a>
+                                {% else %}
+                                    {{ project.title }}
+                                {% endif %} {# /project.url #}
+                                project.
+                            </p>
+                            <p>
+                                <a href="{% url 'help' %}">ES-DOC Questionnaire help</a> is available.
+                            </p>
+                            {% if project.description %}
+                                <div class="row">
+                                    <span class="col-lg-2 col-md-2"><strong>Project Description:</strong></span>
+                                    <span class="col-lg-10 col-md-10">{{ project.description }}</span>
+                                </div>
+                            {% endif %}  {# /project.description #}
+                            {% if project.email %}
+                                <div class="row">
+                                    <span class="col-lg-2 col-md-2"><strong>Project Contact:</strong></span>
+                                    <span class="col-lg-10 col-lg-10"><a href="mailto:{{ project.email }}">{{ project.email }}</a></span>
+                                </div>
+                            {% endif %}  {# /project.email #}
+                            <div class="row">
+                                <span class="col-lg-2 col-md-2"><strong>Document Feed:</strong></span>
+                                <span class="col-lg-10 col-md-10"><a href="/feed/{{ project.name }}">{{ request.get_host }}/feed/{{ project.name }}</a></span>
+                            </div>
+                            {% if can_manager %}
+                            <div class="row">
+                                <a href="{% url 'manage_project' project_name=project.name %}">Manage project.</a>
+                            </div>
+                            {% if not project.authenticated %}
+                                <div class="row">
+                                    <span class="col-lg-12 col-md-12"><strong>Project does not require authentication.  Any user can create or modify a document or a customization.</strong></span>
+                                </div>
+                            {% endif %} {# /project.authenticated #}
+                            {% if can_join %}
+                                <div class="row voffset-4">
+                                    <span class="col-lg-4 col-md-4">
+                                        <button class="btn btn-xs btn-info"
+                                                title="Your request will be sent to the project administrator for review."
+                                                ng-click="project_controller.project_join_request('{{ user.pk }}')">
+                                                Join {{ project.title }} Project
+                                        </button>
+                                    </span>
+                                </div>
+                            {% endif %} {# /can_join #}
+
+                        </div> <!-- /.documentation -->
+
+                        <div class="panel panel-default">
+                            <div class="panel-body">
+
+                                <ul class="nav nav-tabs" role="tablist">
+                                      {% if can_view and not can_edit %}
+                                          <li role="presentation" class="active"><a href="#tab_view" aria-controls="home" role="tab" data-toggle="tab">View an existing CIM Document</a></li>
+                                      {% endif %} {# /can_view and not can_edit #}
+                                      {% if can_edit %}
+                                          <li role="presentation" class="active"><a href="#tab_edit" aria-controls="home" role="tab" data-toggle="tab">Edit or Create a CIM Document</a></li>
+                                      {% endif %} {# /can_edit #}
+                                      {% if can_customize %}
+                                          <li role="presentation"><a href="#tab_customize" aria-controls="home" role="tab" data-toggle="tab">Customize the ES-DOC Questionnaire</a></li>
+                                      {% endif %} {# /can_customize #}
+                                </ul> <!-- /.nav-tabs -->
+
+
+                                <div class="tab-content">
+                                    {% if can_view and not can_edit %}
+                                        <div role="tabpanel" class="tab-pane panel active" id="tab_view">
+                                            {% include "questionnaire/_q_project_view.html" %}
+                                        </div> <!-- /.tab-pane -->
+                                    {% endif %} {# /can_view and not can_edit #}
+                                    {% if can_edit %}
+                                        <div role="tabpanel" class="tab-pane panel active" id="tab_edit">
+                                            {% include "questionnaire/_q_project_edit.html" %}
+                                        </div> <!-- /.tab-pane -->
+                                    {% endif %} {# /can_edit #}
+                                    {% if can_customize %}
+                                        <div role="tabpanel" class="tab-pane panel" id="tab_customize">
+                                            {% include "questionnaire/_q_project_customize.html" %}
+                                        </div> <!-- /.tab-pane -->
+                                    {% endif %} {# /can_customize #}
+                                </div> <!-- /.tab-content -->
+
+                            </div>  <!-- /.panel-body -->
+                        </div>  <!-- /.panel -->
+
+                    </div>  <!-- /col -->
+                </div>  <!-- /row -->
+
+            </fieldset>  <!-- /#q_blocker -->
+
+        </div>  <!-- /ng-controller=ProjectController -->
+    </div>  <!-- /ng-app=q_project -->
+{% endblock %}  {# /content #}

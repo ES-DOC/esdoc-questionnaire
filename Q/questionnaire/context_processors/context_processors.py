@@ -10,6 +10,7 @@
 
 from django.conf import settings
 
+# be sure to add these processors to TEMPLATE_CONTEXT_PROCESSORS in "settings.py"
 
 def debug(context):
     """
@@ -21,4 +22,16 @@ def debug(context):
     """
     return {
         "debug": settings.DEBUG
+    }
+
+
+def cdn(context):
+    """
+    simple context processor that allows me to use a "USE_CDN" template tag to switch on/off CDN
+    in-case I'm working w/ poor network coverage
+    :param context:
+    :return:
+    """
+    return {
+        "cdn": settings.CDN
     }

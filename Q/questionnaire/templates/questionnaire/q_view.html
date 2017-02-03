@@ -13,12 +13,17 @@
 
 {% block scripts %}
     {{ block.super }}
-    <script type="text/javascript" src="{% static 'questionnaire/js/ext/jquery.splitter-0.14.0.js' %}"></script>
+    {% if cdn %}
+        <script type="text/javascript" src="{% static 'questionnaire/js/ext/jquery.splitter-0.14.0.js' %}"></script>
+    {% else %}
+        <script type="text/javascript" src="{% static 'questionnaire/js/ext/jquery.splitter-0.14.0.js' %}"></script>
+    {% endif %}
     <script type="text/javascript" src="{% static 'questionnaire/js/q_ng_edit.js' %}"></script>
     <script language="JavaScript">
 
         var session_key = "{{ session_key }}";
         var project_id = {{ project.pk }};
+        var project_name = "{{ project.name }}";
         var realization_id = {{ realization.pk|default:0 }};
 
         var api_url_dirname = "{{ api_url_dirname }}";

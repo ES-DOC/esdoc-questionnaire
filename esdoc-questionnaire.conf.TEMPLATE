@@ -32,3 +32,4 @@ help_url=http://location/of/help
 [debug]
 debug=false
 profile=false
+cdn=true

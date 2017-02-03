@@ -24,37 +24,50 @@
         </title>
 
         {% block style %}
-            <!-- jquery styles via CDN -->
-            <!-- TODO: VERIFY THIS IS NOT NEEDED -->
-            <!--<link rel="stylesheet" type="text/css" href="https://code.jquery.com/ui/1.12.1/themes/smoothness/jquery-ui.css"/>-->
-            <!-- angular styles via CDN -->
-            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/angular-loading-bar/0.9.0/loading-bar.min.css" integrity="sha256-3c9LKIgnbVhWZ3sjhR5aRBWFb+4sVZu6IaRnyj8geTo=" crossorigin="anonymous" />
-            <!-- bootstrap styles via CDN -->
-            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.12.1/css/bootstrap-select.min.css" integrity="sha256-IW5fdxFdf6I5MsRbl2dOje41oOvdZhIpgcE8sBnYVus=" crossorigin="anonymous" />
-            <!-- local styles -->
+            <!-- note how I turn on/off CDN depending on the "cdn" context processor -->
+            {% if cdn %}
+                <!-- TODO: VERIFY THIS IS NOT NEEDED -->
+                <!--<link rel="stylesheet" type="text/css" href="https://code.jquery.com/ui/1.12.1/themes/smoothness/jquery-ui.min.css"/>-->
+                <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/angular-loading-bar/0.9.0/loading-bar.min.css" integrity="sha256-3c9LKIgnbVhWZ3sjhR5aRBWFb+4sVZu6IaRnyj8geTo=" crossorigin="anonymous" />
+                <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.12.1/css/bootstrap-select.min.css" integrity="sha256-IW5fdxFdf6I5MsRbl2dOje41oOvdZhIpgcE8sBnYVus=" crossorigin="anonymous" />
+            {% else %}
+                <!-- TODO: VERIFY THIS IS NOT NEEDED -->
+                <!--<link rel="stylesheet" href="{% static 'questionnaire/css/ext/jquery-ui.min.css' %}" />-->
+                <link rel="stylesheet" href="{% static 'questionnaire/css/ext/loading-bar.min.css' %}" />
+                <link rel="stylesheet" href="{% static 'questionnaire/css/ext/bootstrap-select.min.css' %}" />
+            {% endif %}
+
             <!-- TODO: WHY AREN'T THESE LOADED?  (I GET AROUND THIS BY INCLUDING MUCH OF THEIR CONTENT IN "q_ng.less") -->
             <!--<link rel="stylesheet" type="text/less" media="all" href="{% static 'djng/css/bootstrap3.css' %}" />-->
             <!--<link rel="stylesheet" type="text/less" media="all" href="{% static 'djng/css/styles.css' %}" />-->
             {% compress css %}
-                <!-- more local styles -->
                 <link rel="stylesheet" type="text/less" media="all" href="{% static 'questionnaire/less/q_base.less' %}" />
             {% endcompress %}
             {# in child templates, be sure use the {{ block.super }} tag when adding local style #}
         {% endblock %} {# /style #}
 
         {% block scripts %}
-            <!-- jquery via CDN -->
-            <script type="text/javascript" src="https://code.jquery.com/jquery-3.1.1.min.js" integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8=" crossorigin="anonymous"></script>
-            <script type="text/javascript" src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js" integrity="sha256-VazP97ZCwtekAsvgPBSUwPFKdrwD3unUfSGVYrahUqU=" crossorigin="anonymous"></script>
-            <!-- bootstrap via CDN -->
-            <script type="text/javascript" src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
-            <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/bootbox.js/4.4.0/bootbox.min.js" integrity="sha256-4F7e4JsAJyLUdpP7Q8Sah866jCOhv72zU5E8lIRER4w=" crossorigin="anonymous"></script>
-            <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.12.1/js/bootstrap-select.min.js" integrity="sha256-rAcT5/oEKKwqtxd8M0Ym0iKyhLOYKjkK/8A9s8cidPI=" crossorigin="anonymous"></script>
-            <!-- angular via CDN -->
-            <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.8/angular.min.js"></script>
-            <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.8/angular-cookies.min.js"></script>
-            <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/angular-loading-bar/0.9.0/loading-bar.min.js" integrity="sha256-equUbqqmQ/UsoL6zkgolTGUnZ9VJs/o7plSCor12hyI=" crossorigin="anonymous"></script>
-            <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/angular-ui-bootstrap/2.3.0/ui-bootstrap-tpls.min.js" integrity="sha256-SgBeuzO1v6Sld1eeS505uso5CxcWhHt3Nk7h6oqDkFw=" crossorigin="anonymous"></script>
+            {% if cdn %}
+                <script type="text/javascript" src="https://code.jquery.com/jquery-3.1.1.min.js" integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8=" crossorigin="anonymous"></script>
+                <script type="text/javascript" src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js" integrity="sha256-VazP97ZCwtekAsvgPBSUwPFKdrwD3unUfSGVYrahUqU=" crossorigin="anonymous"></script>
+                <script type="text/javascript" src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+                <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/bootbox.js/4.4.0/bootbox.min.js" integrity="sha256-4F7e4JsAJyLUdpP7Q8Sah866jCOhv72zU5E8lIRER4w=" crossorigin="anonymous"></script>
+                <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.12.1/js/bootstrap-select.min.js" integrity="sha256-rAcT5/oEKKwqtxd8M0Ym0iKyhLOYKjkK/8A9s8cidPI=" crossorigin="anonymous"></script>
+                <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.8/angular.min.js"></script>
+                <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.8/angular-cookies.min.js"></script>
+                <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/angular-loading-bar/0.9.0/loading-bar.min.js" integrity="sha256-equUbqqmQ/UsoL6zkgolTGUnZ9VJs/o7plSCor12hyI=" crossorigin="anonymous"></script>
+                <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/angular-ui-bootstrap/2.3.0/ui-bootstrap-tpls.min.js" integrity="sha256-SgBeuzO1v6Sld1eeS505uso5CxcWhHt3Nk7h6oqDkFw=" crossorigin="anonymous"></script>
+            {% else %}
+                <script type="text/javascript" src="{% static 'questionnaire/js/ext/jquery-3.1.1.min.js' %}"></script>
+                <script type="text/javascript" src="{% static 'questionnaire/js/ext/jquery-ui.min.js' %}"></script>
+                <script type="text/javascript" src="{% static 'questionnaire/js/ext/bootstrap.min.js' %}"></script>
+                <script type="text/javascript" src="{% static 'questionnaire/js/ext/bootbox.min.js' %}"></script>
+                <script type="text/javascript" src="{% static 'questionnaire/js/ext/bootstrap-select.min.js' %}"></script>
+                <script type="text/javascript" src="{% static 'questionnaire/js/ext/angular.min.js' %}"></script>
+                <script type="text/javascript" src="{% static 'questionnaire/js/ext/angular-cookies.min.js' %}"></script>
+                <script type="text/javascript" src="{% static 'questionnaire/js/ext/loading-bar.min.js' %}"></script>
+                <script type="text/javascript" src="{% static 'questionnaire/js/ext/ui-bootstrap-tpls.min.js' %}"></script>
+            {% endif %}
             <!-- local js -->
             <script type="text/javascript" src="{% static 'questionnaire/js/q_base.js' %}"></script>
             <script type="text/javascript" src="{% static 'questionnaire/js/q_validators.js' %}"></script>
