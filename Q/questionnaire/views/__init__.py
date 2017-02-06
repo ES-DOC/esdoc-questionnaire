@@ -11,6 +11,6 @@
 from Q.questionnaire.views.views_customizations import q_customize_new, q_customize_existing
 from Q.questionnaire.views.views_errors import q_error, q_500, q_404
 from Q.questionnaire.views.views_index import q_index, q_test
-from Q.questionnaire.views.views_projects import q_project
+from Q.questionnaire.views.views_projects import q_project, q_project_manage
 from Q.questionnaire.views.views_realizations import q_edit_new, q_edit_existing, q_view_new, q_view_existing
 from Q.questionnaire.views.views_users import q_profile

@@ -10,9 +10,33 @@
 
 from rest_framework import serializers
 
+from Q.questionnaire.models.models_projects import QProject
 from Q.questionnaire.models.models_customizations import QModelCustomization
 from Q.questionnaire.models.models_realizations import QModelRealization
 from Q.questionnaire.serializers.serializers_base import QVersionSerializerField
+
+
+class QProjectSerializerLite(serializers.ModelSerializer):
+    """
+    This serializer is used in the Project Page
+    It is really simple; hence the name "lite"
+    """
+
+    class Meta:
+        model = QProject
+        fields = (
+            'id',
+            'name',
+            'title',
+            'description',
+            'email',
+            'url',
+            'is_active',
+            'is_displayed',
+            'is_legacy',
+            'authenticated',
+            'ontologies',
+        )
 
 
 class QModelCustomizationSerializerLite(serializers.ModelSerializer):

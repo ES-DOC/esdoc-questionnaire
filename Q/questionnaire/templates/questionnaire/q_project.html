@@ -15,7 +15,8 @@
     <script language="JavaScript">
 
         var session_key = "{{ session_key }}";
-        var project_id = {{ project.pk }}
+        var project_id = {{ project.pk }};
+        var project_name = "{{ project.name }}";
 
         $(document).ready(
             function() {
@@ -54,7 +55,7 @@
                             {{ project.title }} ES-DOC Questionnaire Project
                         </div> <!-- /.title -->
 
-                        <div class="documentation clearfix">
+                        <p class="documentation clearfix">
 
                             {% if project.display_logo and project.logo %}
                                 <div class="project_logo">
@@ -95,6 +96,15 @@
                                     <span class="col-lg-12 col-md-12"><strong>Project does not require authentication.  Any user can create or modify a document or a customization.</strong></span>
                                 </div>
                             {% endif %} {# /project.authenticated #}
+                            {% if can_manage %}
+                                <div class="row voffset-4">
+                                    <span class="col-lg-4 col-md-4">
+                                        <a href="{% url 'project_manage' project_name=project.name %}" class="btn btn-xs btn-info" role="button">
+                                            Manage {{ project.title }} Project
+                                        </a>
+                                    </span>
+                                </div>
+                            {% endif %}
                             {% if can_join %}
                                 <div class="row voffset-4">
                                     <span class="col-lg-4 col-md-4">
@@ -106,7 +116,7 @@
                                     </span>
                                 </div>
                             {% endif %} {# /can_join #}
-
+                            <br/>
                         </div> <!-- /.documentation -->
 
                         <div class="panel panel-default">
