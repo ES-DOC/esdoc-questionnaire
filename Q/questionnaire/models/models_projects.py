@@ -9,7 +9,7 @@
 ####################
 
 from django.contrib.auth.models import Group, Permission, User
-from django.contrib.contenttypes.models import ContentType
+from django.utils.translation import ugettext_lazy as _
 from django.db import models
 import os
 
@@ -61,10 +61,20 @@ class QProject(models.Model):
     objects = QProjectQuerySet.as_manager()
 
     name = models.CharField(max_length=LIL_STRING, blank=False, unique=True, validators=[validate_no_spaces, validate_no_bad_chars, validate_no_reserved_words, validate_no_profanities])
-    title = models.CharField(max_length=LIL_STRING, blank=False)
+    # name.help_text = _(
+    #     "This is a unique name that identifies the project.  Choose wisely as, unlike the 'title', it will be used in various URLs."
+    #     "  Note that this must match up w/ the project name used by other ES-DOC tools."
+    # )
+    title = models.CharField(max_length=LIL_STRING, blank=False, validators=[validate_no_profanities])
     description = models.TextField(blank=True)
     email = models.EmailField(blank=False, verbose_name="Contact Email")
+    email.help_text = _(
+        "Point of contact for this project."
+    )
     url = models.URLField(blank=True)
+    url.help_text = _(
+       "External URL for this project."
+    )
     # a logo submitted via the admin will be automatically resized to LOGO_SIZE
     # also, the "max_length" arg allows arbitrarily long filenames
     # also, the "storage" arg ensures the filename doesn't change after resizing
@@ -86,7 +96,8 @@ class QProject(models.Model):
         "QOntology",
         blank=True,
         through="QProjectOntology",  # note my use of the "through" model
-        help_text="Only registered ontologies (schemas or specializations) can be added to projects."
+        help_text="Only registered ontologies (schemas or specializations) can be added to projects.",
+        verbose_name="Supported Ontologies",
     )
 
     def __str__(self):
