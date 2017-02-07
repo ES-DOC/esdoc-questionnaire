@@ -12,8 +12,10 @@
 from django.contrib import admin
 
 from Q.questionnaire.models.models_institutes import QInstitute
+from Q.questionnaire.models.models_references import QReference
 
 admin.site.register(QInstitute)
+admin.site.register(QReference)
 
 # note the relative imports; this is to prevent loading __init__.py twice
 from .admin_customizations import *

@@ -29,7 +29,12 @@
                 </span>
 
                 <span class="col-sm-6 voffset-2">
-                    hi stanley; i'm using references
+                    {{ form.relationship_references }}
+
+                    <div ng-repeat="reference in current_model['relationship_references'] track by $index">
+                        <reference reference-function="foobar" reference-index="$index" reference-type="'cim.2.designing.NumericalExperiment'"/>
+                    </div>
+
                 </span>
 
                 <span class="col-sm-3">

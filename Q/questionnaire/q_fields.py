@@ -54,7 +54,7 @@ def allow_unsaved_fk(model_class, field_names):
 
 class QUnsavedManager(models.Manager):
     """
-    a manager to cope w/ UNSAVED models being used in m2m fields (actually, it is used w/ the reverse of fk fields)
+    a manager to cope w/ UNSAVED models being used in m2m fields (actually, it is usually used w/ the reverse of fk fields)
     (this is not meant to be possible in Django)
     The manager accomplishes this by storing the would-be field content in an instance variable;
     in the case of unsaved models, this is purely done to get around Django ickiness

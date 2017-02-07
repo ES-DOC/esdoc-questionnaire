@@ -13,8 +13,11 @@ from rest_framework.exceptions import ValidationError as RestValidationError
 from rest_framework import serializers
 from uuid import UUID as generate_uuid
 
-from Q.questionnaire.serializers.serializers_base import QListSerializer, QSerializer, QRelatedSerializerField, QVersionSerializerField
 from Q.questionnaire.models.models_realizations import QModelRealization, QCategoryRealization, QPropertyRealization
+from Q.questionnaire.models.models_references import QReference
+from Q.questionnaire.serializers.serializers_base import QListSerializer, QSerializer, QRelatedSerializerField, QVersionSerializerField
+from Q.questionnaire.serializers.serializers_references import QReferenceSerializer
+
 
 
 ################
@@ -81,7 +84,7 @@ class QRelationshipValueRealizationField(QRealizationRelatedField):
         model_serializer = QModelRealizationSerializer()
         return model_serializer.update(model_instance, validated_data)
 
-
+#####################
 ####################
 # property classes #
 ####################
@@ -103,6 +106,7 @@ class QPropertyRealizationSerializer(QRealizationSerializer):
             'enumeration_value',
             'enumeration_other_value',
             'relationship_values',
+            'relationship_references',
             'is_nil',
             'nil_reason',
             'is_complete',
@@ -127,6 +131,12 @@ class QPropertyRealizationSerializer(QRealizationSerializer):
         allow_null=True,
         queryset=QModelRealization.objects.all(),
         manager=QModelRealization.allow_unsaved_relationship_values_manager,
+    )
+
+    relationship_references = QReferenceSerializer(
+        many=True,
+        required=False,
+        allow_null=True,
     )
 
     possible_relationship_target_types = serializers.SerializerMethodField()
@@ -167,6 +177,9 @@ class QPropertyRealizationSerializer(QRealizationSerializer):
         subform_serializer = self.fields["relationship_values"]
         subform_data = validated_data.pop(subform_serializer.source, [])
 
+        reference_serializer = self.fields["relationship_references"]
+        reference_data = validated_data.pop(reference_serializer.source, [])
+
         category_key = validated_data.pop("category_key", None)
         category_realization = QCategoryRealization.objects.filter(guid=category_key).first()
         assert category_realization is not None
@@ -184,12 +197,22 @@ class QPropertyRealizationSerializer(QRealizationSerializer):
                 # TODO: DO I REALLY HAVE TO RE-SAVE THE VALUE?
                 relationship_value.save()
 
+        if reference_data:
+            references = reference_serializer.create(reference_data)
+            for reference in references:
+                property_realization.relationship_references.add(reference)
+                reference.save()
+            property_realization.save()
+
         return property_realization
 
     def update(self, instance, validated_data):
 
         subform_serializer = self.fields["relationship_values"]
         subform_data = validated_data.pop(subform_serializer.source, [])
+
+        reference_serializer = self.fields["relationship_references"]
+        reference_data = validated_data.pop(reference_serializer.source, [])
 
         # there is no need to update category, b/c it will have been set in "create" above and it cannot change
         # category_key = validated_data.pop("category_key", None)
@@ -208,6 +231,24 @@ class QPropertyRealizationSerializer(QRealizationSerializer):
                     relationship_value.relationship_property = property_realization
                     # TODO: DO I REALLY HAVE TO RE-SAVE THE MODEL?
                     relationship_value.save()
+
+            if reference_data:
+                # see the comment in QReferenceListSerializer about having to do removal of deleted references here
+                updated_references = False
+                old_references = instance.relationship_references.all()
+                new_references = reference_serializer.update(old_references, reference_data)
+                for new_reference in new_references:
+                    if new_reference not in old_references:
+                        updated_references = True
+                        property_realization.relationship_references.add(new_reference)
+                        new_reference.save()
+                for old_reference in old_references:
+                    updated_references = True
+                    if old_reference not in new_references:
+                        property_realization.relationship_references.remove(old_reference)
+                        old_reference.save()
+                if updated_references:
+                    property_realization.save()
 
         return property_realization
 

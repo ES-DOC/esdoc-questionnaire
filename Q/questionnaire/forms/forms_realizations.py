@@ -253,6 +253,7 @@ class QCategoryRealizationFormSet(QRealizationFormSet):
 
 
 def QCategoryRealizationFormSetFactory(*args, **kwargs):
+
     # even though this is a formset and not an inline_formset, I still pass "instance" instead of "queryset"
     instance = kwargs.pop("instance")
     queryset = instance.categories(manager="allow_unsaved_categories_manager").all()
@@ -305,6 +306,7 @@ class QPropertyRealizationForm(QRealizationForm):
             'enumeration_value',
             'enumeration_other_value',
             'relationship_values',
+            'relationship_references',
         ]
 
     # this is a reverse field, so I need to define it explicitly here
@@ -313,7 +315,7 @@ class QPropertyRealizationForm(QRealizationForm):
     _hidden_fields = ["is_complete", "field_type", "order"]
     _atomic_fields = ["is_nil", "nil_reason", "atomic_value"]
     _enumeration_fields = ["is_nil", "nil_reason", "enumeration_value", "enumeration_other_value"]
-    _relationship_fields = ["is_nil", "nil_reason", "relationship_value"]
+    _relationship_fields = ["is_nil", "nil_reason", "relationship_values", "relationship_references"]
     _other_fields = []
 
     @property

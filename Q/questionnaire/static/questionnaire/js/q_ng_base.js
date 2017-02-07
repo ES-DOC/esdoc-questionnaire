@@ -9,19 +9,6 @@
     /* this intercepts every $http call and displays a tiny loading bar */
     /* (I have overwritten the CSS to make it bigger: see "q_bootstrap.less") */
 
-//    app.config(['$httpProvider', '$provide', function($httpProvider, $provide) {
-
-//        $httpProvider.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
-//        $httpProvider.defaults.xsrfCookieName = 'csrftoken';
-//        $httpProvider.defaults.xsrfHeaderName = 'X-CSRFToken';
-
-//  $httpProvider.defaults.headers.common = {};
-//  $httpProvider.defaults.headers.post = {};
-//  $httpProvider.defaults.headers.put = {};
-//  $httpProvider.defaults.headers.patch = {};
-//
-//    }]);
-
     /***************/
     /* CONTROLLERS */
     /***************/
@@ -236,16 +223,19 @@
     /* make a nifty widget to get a DocRef */
     /***************************************/
 
-    app.directive("reference", ['$http', '$global_services', function($http, $global_services) {
+    app.directive("reference", ['$http', '$compile', '$global_services', function($http, $compile, $global_services) {
 
         return {
             restrict: 'E',
+//            require: 'ngModel',
             replace: true,
             scope: {
-                referenceFunction: "&"
+                referenceType: '=',
+                referenceIndex: '=',
+                referenceFunction: '&'
             },
             templateUrl: "/static/questionnaire/templates/q_ng_reference.html",
-            link: function ($scope, $element, $attrs) {
+            link: function ($scope, $element, $attrs, ngModel) {
                 /* b/c the Q is so asynchronous, I need to wait to set "current_model" until the parent controller has loaded */
                 $scope.loaded_property = false;
                 $scope.$watch(function () {
@@ -258,13 +248,15 @@
                         }
                     }
                 );
-                $scope.get_reference = function() {
+
+                $scope.possible_references = [];
+                $scope.get_possible_references = function() {
                    $global_services.setBlocking(true);
 
                    var url = "http://api.es-doc.org/2/summary/search?document_version=latest";
                    /* TODO: CHANGE THESE URL PARAMETERS */
-                   url += "&document_type=" + "cim.2.designing.Project" ;
-                   url += "&project=" + "cmip6-draft";
+                   url += "&document_type=" + $scope.referenceType;
+                   url += "&project=" + project_name;
 
                    var proxy_url = "/services/proxy/"
                    var proxy_data = "response_format=" + "json" + "&url=" + encodeURIComponent(url);
@@ -276,19 +268,91 @@
                         data: proxy_data
                    })
                    .success(function(result) {
-                        console.log("yep")
-                        console.log(result)
+                        $scope.possible_references = result.results;
+                        $scope.total_references = $scope.possible_references.length;
+                        $scope.selected_reference = [];
+
+                        /* TODO: THIS BIT ONWARDS OUGHT TO BE MOVED INTO THE CONTROLLER */
+                        $scope.paging_size = 12;
+                        $scope.page_size = 6;
+                        $scope.current_page = 1;
+
+                        $scope.$watch("current_page", function() {
+                            $scope.page_start = ($scope.current_page - 1) * $scope.paging_size;
+                            $scope.page_end = $scope.current_page * $scope.paging_size;
+                            $scope.paged_references = $scope.possible_references.slice($scope.page_start, $scope.page_end);
+                            if ($scope.total_references == 0) {
+                                $scope.page_start = -1;
+                            }
+                            if ($scope.page_end > $scope.total_references) {
+                                $scope.page_end = $scope.total_references;
+                            }
+                        });
+
+                        $scope.toggle_selected_reference = function(reference) {
+                            if ($scope.selected_reference == reference) {
+                                $scope.selected_reference = null;
+                            }
+                            else {
+                                $scope.selected_reference = reference;
+                            }
+                        };
+
+                        var dialog_title = "Please select a published document to reference";
+                        var dialog_content = "" +
+                            "<div>" +
+                            "   <span><strong>selected document:&nbsp;</strong></span>" +
+                            "   <input class='form-control' ng-model='selected_reference[4]' placeholder='please select a reference from the list below' type='text' readonly='true'/>" +
+                            "</div>" +
+                            "<div class='small text-right'>" +
+                            "   <ul uib-pagination class='pagination-sm' ng-model='current_page' total-items='total_references' max-size='page_size' items-per-page='paging_size' boundary-links='true' force-ellipses='true' previous-text='&lsaquo;' next-text='&rsaquo;' first-text='&laquo;' last-text='&raquo;'></ul>" +
+                            "   <span><em>showing items {{ page_start + 1 }} to {{ page_end }} of {{ total_references }}</em></span>" +
+                            "</div>" +
+                            "<div class='list-group'>" +
+                            "   <a class='list-group-item' ng-repeat='reference in paged_references' ng-click='toggle_selected_reference(reference)' ng-class='{active: reference==selected_reference}'>" +
+                            "       <span>{{ reference[4] }}</span>" +
+                            "       <span class='documentation'>{{ reference[2] }}</span>" +
+                            "   </a>"+
+                            "   <div class='list-group-item' ng-show='total_references==0'>" +
+                            "       <span class='documentation'>no referenceable documents found.</span>" +
+                            "   </div>" +
+                            "</div>";
+                        var compiled_dialog_content = $compile(dialog_content)($scope)
+                        bootbox.dialog({
+                            message: compiled_dialog_content,
+                            title: dialog_title,
+                            buttons: {
+                                cancel: {
+                                    label: "Cancel",
+                                    className: "btn-default",
+                                    callback: function () {
+                                        show_lil_msg("Maybe next time.");
+                                    }
+                                },
+                                ok: {
+                                    label: "OK",
+                                    className: "btn-primary",
+                                    callback: function () {
+
+                                        $scope.current_model["relationship_references"][$scope.referenceIndex] = $scope.selected_reference;
+                                        /* document_type is implicitly part of the ES-DOC API (as a URL parameter), */
+                                        /* but it's not returned in the JSON output, so I add it explicitly here */
+                                        $scope.current_model["relationship_references"][$scope.referenceIndex].push($scope.referenceType);
+                                    }
+                                }
+                            }
+                        });
                    })
                    .error(function(error) {
-                        console.log("nope");
+                        show_msg("Error connecting to ES-DOC reference server", "error");
                         console.log(error);
                    }).finally(function() {
                         $global_services.setBlocking(false);
                    });
                 };
 
-                $scope.update_reference = function() {
-                    alert("update_reference");
+                $scope.change_reference = function() {
+                    alert("change_reference");
                 };
             }
         }

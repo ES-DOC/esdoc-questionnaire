@@ -17,9 +17,10 @@ from collections import OrderedDict
 from uuid import uuid4
 
 from Q.questionnaire import APP_LABEL, q_logger
-from Q.questionnaire.q_fields import QVersionField, QEnumerationField, QPropertyTypes, QNillableTypes, QUnsavedRelatedManager, allow_unsaved_fk, ENUMERATION_OTHER_CHOICE, ENUMERATION_OTHER_DOCUMENTATION, ENUMERATION_OTHER_PREFIX
+from Q.questionnaire.q_fields import QVersionField, QEnumerationField, QJSONField, QPropertyTypes, QNillableTypes, QUnsavedRelatedManager, allow_unsaved_fk, ENUMERATION_OTHER_CHOICE, ENUMERATION_OTHER_DOCUMENTATION, ENUMERATION_OTHER_PREFIX
 from Q.questionnaire.models.models_customizations import QModelCustomization
 from Q.questionnaire.models.models_publications import QPublication, QPublicationFormats
+from Q.questionnaire.models.models_references import QReference
 from Q.questionnaire.q_utils import QError, EnumeratedType, EnumeratedTypeList, Version, find_in_sequence, pretty_string, serialize_model_to_dict
 from Q.questionnaire.q_constants import *
 
@@ -187,6 +188,7 @@ def serialize_realizations(current_model_realization, **kwargs):
         property_serialization = serialize_model_to_dict(
             property_realization,
             include={
+                "relationship_references": [None],  # just a placeholder here to be overwritten
                 "key": property_realization.key,
                 "is_meta": property_realization.is_meta,
                 "is_hierarchical": property_realization.is_hierarchical,
@@ -447,11 +449,11 @@ class QRealization(models.Model):
             if self.proxy == default_root_customization.proxy:
                 return default_root_customization
             else:
-                default_customization = QModelCustomization.objects.get(
+                default_customization = QModelCustomization.objects.filter(
                     project=self.project,
                     proxy=self.proxy,
                     name=default_root_customization.name
-                )
+                ).first()  # filter might return more than one b/c of all the recursion involved in setting up customizations
                 return default_customization
         except ObjectDoesNotExist:
             msg = "There is no default customization associated with {0}".format(self)
@@ -716,6 +718,9 @@ class QPropertyRealization(QRealization):
     atomic_value = models.TextField(blank=True, null=True)
     enumeration_value = QEnumerationField(blank=True, null=True)
     enumeration_other_value = models.CharField(blank=True, null=True, max_length=HUGE_STRING)
+
+    # relationship_references = models.ManyToManyField(blank=True, null=True)
+    relationship_references = models.ManyToManyField(QReference, blank=True, related_name="properties")
 
     def __init__(self, *args, **kwargs):
         super(QPropertyRealization, self).__init__(*args, **kwargs)
