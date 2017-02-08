@@ -21,6 +21,7 @@ from Q.questionnaire.q_fields import QVersionField, QEnumerationField, QJSONFiel
 from Q.questionnaire.models.models_customizations import QModelCustomization
 from Q.questionnaire.models.models_publications import QPublication, QPublicationFormats
 from Q.questionnaire.models.models_references import QReference
+from Q.questionnaire.serializers.serializers_references import create_empty_reference_list_serialization
 from Q.questionnaire.q_utils import QError, EnumeratedType, EnumeratedTypeList, Version, find_in_sequence, pretty_string, serialize_model_to_dict
 from Q.questionnaire.q_constants import *
 
@@ -188,7 +189,7 @@ def serialize_realizations(current_model_realization, **kwargs):
         property_serialization = serialize_model_to_dict(
             property_realization,
             include={
-                "relationship_references": [None],  # just a placeholder here to be overwritten
+                "relationship_references": create_empty_reference_list_serialization(),  # just a placeholder
                 "key": property_realization.key,
                 "is_meta": property_realization.is_meta,
                 "is_hierarchical": property_realization.is_hierarchical,

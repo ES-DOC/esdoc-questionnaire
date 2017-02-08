@@ -1,24 +1,31 @@
 
 <div class="reference panel panel-default">
     <div class="panel-body">
-        <!--<span class="input-group-btn">-->
-            <!--<button class="btn btn-default" type="button" title="click to add or change this reference" ng-click="get_possible_references()">-->
-                <!--<span class="glyphicon glyphicon-new-window"></span>-->
-            <!--</button>-->
-        <!--</span>-->
-        <!--<input class="form-control" type="text" placeholder="please provide the canonical name of a referenced document"-->
-               <!--ng-model="current_model['relationship_references'][5]"-->
-               <!--ng-model-options="{debounce: 750}"-->
-               <!--ng-change="change_reference()"/>-->
-        <div class="col-lg-1 col-md-1">
-            <button class="btn btn-default" type="button" title="click to add or change this reference" ng-click="get_possible_references()">
-                <span class="glyphicon glyphicon-new-window"></span>
-            </button>
-        </div>
-        <div class="col-lg-10 col-md-10">
-            <input class="form-control" type="text" placeholder="project / institute-code" ng-model="current_model['relationship_references'][referenceIndex][1]"/><br/>
-            <!--<input class="form-control" type="text" placeholder="document type" ng-model="referenceType" readonly="true"/><br/> -->
-            <input class="form-control" type="text" placeholder="canonical name" ng-model="current_model['relationship_references'][referenceIndex][5]"/>
-        </div>
+        <div class="row">
+            <div class="col-lg-1 col-md-1">
+                <button class="btn btn-default" type="button" title="click to set this reference to a published document" ng-disabled="!is_active" ng-click="get_possible_references()">
+                    <span class="glyphicon glyphicon-new-window"></span>
+                </button>
+            </div>  <!-- /.col -->
+            <div class="col-lg-7 col-md-7">
+                <input class="form-control-md" type="text" placeholder="project / institute-code" ng-disabled="is_active" ng-model="current_model['relationship_references'][referenceIndex][1]"/><br/>
+                <!--<input class="form-control" type="text" placeholder="document type" ng-model="referenceType" readonly="true"/><br/> -->
+                <input class="form-control-md" type="text" placeholder="canonical name" ng-disabled="is_active" ng-model="current_model['relationship_references'][referenceIndex][5]"/>
+            </div>  <!-- /.col -->
+            <div class="col-lg-2 col-md-2">
+                <button type="button" class="btn btn-info btn-sm"
+                        ng-disabled="current_model.relationship_references.length == current_model.cardinality_min"
+                        ng-click="remove_reference()">
+                        remove&nbsp;
+                        <span class="glyphicon glyphicon-minus-sign"/>
+                </button>
+            </div>  <!-- /.col -->
+        </div>  <!-- /row -->
+        <div class="row">
+            <div class="col-lg-10 col-md-10">
+                <input type="checkbox" ng-model="is_active" ng-change="toggle_active()"/>
+                <span class="documentation">uncheck this to define a reference manually.</span>
+            </div>  <!-- /.col -->
+        </div>  <!-- /.row -->
     </div>
 </div>

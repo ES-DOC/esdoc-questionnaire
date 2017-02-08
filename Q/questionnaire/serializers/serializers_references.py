@@ -25,7 +25,7 @@ class QReferenceListSerializer(ListSerializer):
     # TODO: BUT I HAVE TO OVERWRITE "to_representation" ON THE DETAIL CLASS
 
     def to_internal_value(self, data):
-        actual_data = [d for d in data if d is not None]
+        actual_data = [d for d in data if any(d)]  # exclude empty references
         converted_data = [
             {
                 field_name: ad[list_index]
@@ -63,7 +63,7 @@ class QReferenceSerializer(ModelSerializer):
         model = QReference
         list_serializer_class = QReferenceListSerializer
         fields = (
-            # 'id',
+            # 'id',  # id is not part of the content returned by the ES-DOC API
             'guid',
             'model',
             'experiment',
@@ -82,3 +82,17 @@ class QReferenceSerializer(ModelSerializer):
         for field_name, field_value in QReferenceMap.items():
             ret.append(data_dict[field_name])
         return ret
+
+
+def create_empty_reference_serialization():
+    reference = QReference()
+    reference_serializer = QReferenceSerializer()
+    reference_serialization = reference_serializer.to_representation(reference)
+    return reference_serialization
+
+
+def create_empty_reference_list_serialization():
+    reference_list = QReference.objects.none()
+    reference_list_serializer = QReferenceListSerializer(child=QReferenceSerializer())
+    reference_list_serialization = reference_list_serializer.to_representation(reference_list)
+    return reference_list_serialization

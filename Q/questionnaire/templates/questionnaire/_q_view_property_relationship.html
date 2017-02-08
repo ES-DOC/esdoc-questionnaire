@@ -29,12 +29,33 @@
                 </span>
 
                 <span class="col-sm-6 voffset-2">
-                    {{ form.relationship_references }}
+                    <fieldset ng-disabled="current_model.is_nil" style="border: 0px !important;">
+                        <div class="hidden">
+                            {{ form.relationship_references }}
+                        </div>
 
-                    <div ng-repeat="reference in current_model['relationship_references'] track by $index">
-                        <reference reference-function="foobar" reference-index="$index" reference-type="'cim.2.designing.NumericalExperiment'"/>
-                    </div>
+                        <div ng-repeat="reference in current_model['relationship_references'] track by $index">
+                            <reference reference-remove-function="remove_relationship_reference(index)" reference-index="$index" reference-type="'cim.2.designing.NumericalExperiment'" />
+                        </div>
 
+                       <button type="button" class="btn btn-info btn-sm"
+                                ng-disabled="current_model.relationship_references.length == current_model.cardinality_max"
+                                ng-click="add_relationship_reference()">
+                                add&nbsp;
+                                <span class="glyphicon glyphicon-plus-sign"/>
+                        </button>
+
+                        <span class="documentation text-muted pull-right">
+                            {% verbatim ng %}
+                                ({{ current_model.relationship_references.length }}
+                                of a possible
+                                {{ current_model.cardinality_max }}
+                                {{ current_model.is_multiple ? "properties" : "property" }})
+                            {% endverbatim ng %}
+                        </span>
+
+                        &nbsp;&nbsp;<help help_text="The <strong>{{ form.customization.property_title|lower }}</strong> property references other CIM Documents.  In most cases you will be able to use the <span class='glyphicon glyphicon-new-window'></span> button to find the appropriate published document.  However, if the document has not yet been published, you can manually enter its details by unchecking the checkbox.  Document references can be added and removed as needed." />
+                    </fieldset>
                 </span>
 
                 <span class="col-sm-3">

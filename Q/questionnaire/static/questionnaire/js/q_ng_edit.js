@@ -15,24 +15,16 @@
         $httpProvider.defaults.xsrfCookieName = 'csrftoken';
         $httpProvider.defaults.xsrfHeaderName = 'X-CSRFToken';
 
-        /* I have to admit to not fully understanding how this code works */
-        /* but it allows uibAccordion to work w/ ui-sortable */
-        /* (https://stackoverflow.com/questions/26520131/how-can-i-create-a-sortable-accordion-with-angularjs/27637542#27637542) */
-        $provide.decorator('uibAccordionDirective', function($delegate) {
-           var directive = $delegate[0];
-            directive.replace = true;
-            return $delegate;
-        });
-
     }]);
 
     /*************/
     /* FACTORIES */
     /*************/
 
-    /***************/
-    /* CONTROLLERS */
-    /***************/
+    /**************/
+    /* DIRECTIVES */
+    /**************/
+
 
     app.directive("tree", ["$global_services", function($global_services) {
         return {
@@ -98,12 +90,202 @@
         }
     }]);
 
+    app.directive("reference", ['$http', '$compile', '$global_services', function($http, $compile, $global_services) {
+
+        return {
+            restrict: 'E',
+            replace: true,
+            scope: {
+                referenceType: '=',
+                referenceIndex: '=',
+                referenceRemoveFunction: '&'
+            },
+            templateUrl: "/static/questionnaire/templates/q_ng_reference.html",
+            link: function ($scope, $element, $attrs) {
+                /* b/c the Q is so asynchronous, I need to wait to set "current_model" until the parent controller has loaded */
+                $scope.loaded_property = false;
+                $scope.$watch(function () {
+                        return $scope.$parent.is_loaded;
+                    },
+                    function(is_loaded) {
+                        if (is_loaded && !$scope.loaded_property) {
+                            $scope.current_model = $scope.$parent.current_model;
+                            $scope.loaded_property = true;
+                            console.log($scope.referenceTitle);
+                        }
+                    }
+                );
+
+                $scope.is_active = true;
+                $scope.toggle_active = function() {
+                    var dialog_title = "Are you sure you want to do this?  You will lose the currently defined reference.";
+                    bootbox.confirm(dialog_title, function(result) {
+                        if (result) {
+                            $scope.$apply($scope.reset_reference());
+//                            $scope.reset_reference();
+                        }
+                        else {
+                            $scope.$apply($scope.is_active = ! $scope.is_active);
+//                            $scope.is_active = ! $scope.is_active;
+                        }
+                    });
+
+                };
+
+                $scope.foobar = function() {
+                    console.log($scope.is_active);
+                };
+
+
+                $scope.possible_references = [];
+                $scope.get_possible_references = function() {
+                   $global_services.setBlocking(true);
+
+                   var url = "http://api.es-doc.org/2/summary/search?document_version=latest";
+                   /* TODO: CHANGE THESE URL PARAMETERS */
+                   url += "&document_type=" + $scope.referenceType;
+                   url += "&project=" + project_name;
+
+                   var proxy_url = "/services/proxy/"
+                   var proxy_data = "response_format=" + "json" + "&url=" + encodeURIComponent(url);
+
+                   $http({
+                        method: "POST",
+                        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                        url: proxy_url,
+                        data: proxy_data
+                   })
+                   .success(function(result) {
+                        $scope.possible_references = result.results;
+                        $scope.total_references = $scope.possible_references.length;
+                        $scope.selected_reference = [];
+
+                        /* TODO: THIS BIT ONWARDS OUGHT TO BE MOVED INTO THE CONTROLLER */
+                        $scope.paging_size = 12;
+                        $scope.page_size = 6;
+                        $scope.current_page = 1;
+
+                        $scope.$watch("current_page", function() {
+                            $scope.page_start = ($scope.current_page - 1) * $scope.paging_size;
+                            $scope.page_end = $scope.current_page * $scope.paging_size;
+                            $scope.paged_references = $scope.possible_references.slice($scope.page_start, $scope.page_end);
+                            if ($scope.total_references == 0) {
+                                $scope.page_start = -1;
+                            }
+                            if ($scope.page_end > $scope.total_references) {
+                                $scope.page_end = $scope.total_references;
+                            }
+                        });
+
+                        $scope.toggle_selected_reference = function(reference) {
+                            if ($scope.selected_reference == reference) {
+                                $scope.selected_reference = null;
+                            }
+                            else {
+                                $scope.selected_reference = reference;
+                            }
+                        };
+
+                        var dialog_title = "Please select a published document to reference";
+                        var dialog_content = "" +
+                            "<div>" +
+                            "   <span><strong>selected document:&nbsp;</strong></span>" +
+                            "   <input class='form-control' ng-model='selected_reference[4]' placeholder='please select a reference from the list below' type='text' readonly='true'/>" +
+                            "</div>" +
+                            "<div class='small text-right'>" +
+                            "   <ul uib-pagination class='pagination-sm' ng-model='current_page' total-items='total_references' max-size='page_size' items-per-page='paging_size' boundary-links='true' force-ellipses='true' previous-text='&lsaquo;' next-text='&rsaquo;' first-text='&laquo;' last-text='&raquo;'></ul>" +
+                            "   <span><em>showing items {{ page_start + 1 }} to {{ page_end }} of {{ total_references }}</em></span>" +
+                            "</div>" +
+                            "<div class='list-group'>" +
+                            "   <a class='list-group-item' ng-repeat='reference in paged_references' ng-click='toggle_selected_reference(reference)' ng-class='{active: reference==selected_reference}'>" +
+                            "       <span>{{ reference[4] }}</span>" +
+                            "       <span class='documentation'>{{ reference[2] }}</span>" +
+                            "   </a>"+
+                            "   <div class='list-group-item' ng-show='total_references==0'>" +
+                            "       <span class='documentation'>no referenceable documents found.</span>" +
+                            "   </div>" +
+                            "</div>";
+                        var compiled_dialog_content = $compile(dialog_content)($scope)
+                        bootbox.dialog({
+                            message: compiled_dialog_content,
+                            title: dialog_title,
+                            buttons: {
+                                cancel: {
+                                    label: "Cancel",
+                                    className: "btn-default",
+                                    callback: function () {
+                                        show_lil_msg("Maybe next time.");
+                                    }
+                                },
+                                ok: {
+                                    label: "OK",
+                                    className: "btn-primary",
+                                    callback: function () {
+                                        $scope.$apply(function() {
+                                            $scope.current_model["relationship_references"][$scope.referenceIndex] = $scope.selected_reference;
+                                            /* I have to manually add "document_type" b/c it not returned by the ES-DOC-API */
+                                            $scope.current_model["relationship_references"][$scope.referenceIndex].push($scope.referenceType);
+                                        });
+//                                        $scope.current_model["relationship_references"][$scope.referenceIndex] = $scope.selected_reference;
+//                                        $scope.current_model["relationship_references"][$scope.referenceIndex].push($scope.referenceType);
+                                    }
+                                }
+                            }
+                        });
+                   })
+                   .error(function(error) {
+                        show_msg("Error connecting to ES-DOC reference server", "error");
+                        console.log(error);
+                   }).finally(function() {
+                        $scope.foobar();
+                        $global_services.setBlocking(false);
+                   });
+                };
+
+                $scope.reset_reference = function() {
+                    $scope.selected_reference = null;
+                    $scope.current_model["relationship_references"][$scope.referenceIndex] = [
+                        null, null, null, null, null, null, null, null, null, null
+                    ];
+                }
+
+
+                $scope.remove_reference = function() {
+                    $scope.referenceRemoveFunction({index: $scope.referenceIndex});
+
+//                    var dialog_title = 'Are you sure you want to remove this reference?  <em>You cannot undo this operation.</em>';
+//                    bootbox.confirm(dialog_title, function(result) {
+//                        if (result) {
+//                            $scope.current_model["relationship_references"].slice($scope.referenceIndex,1)
+//                        }
+//                        else {
+//                           show_lil_msg("That's a good idea.");
+//                        }
+//                    });
+                };
+
+                $scope.change_reference = function() {
+                    alert("change_reference");
+                };
+            }
+        }
+    }]);
+
+    /***************/
+    /* CONTROLLERS */
+    /***************/
 
     /************************/
     /* top level controller */
     /************************/
 
     app.controller("EditorController", ['$scope', '$global_services', '$attrs', '$http', '$cookies', '$location', '$filter', function($scope, $global_services, $attrs, $http, $cookies, $location, $filter) {
+
+        $scope.paging_size = 5;
+        $scope.current_page = 1;
+        $scope.page_changed = function() {
+            alert("page changed!");
+        }
 
         /* $scope.server_errors['form_name']['field_name'] is used to store server errors */
         /* the placeholder for this info is created in QForm.add_custom_errors() line #224 */
@@ -278,8 +460,6 @@
             var is_complete = properties_completion.every(function(is_complete) {
                 return is_complete;
             });
-            console.log(properties_completion);
-            console.log($scope.current_model["name"] + ": " + is_complete);
             $scope.current_model['is_complete'] = is_complete;
         };
 
@@ -355,7 +535,6 @@
                 }
                 return value;
             }, []);
-            console.log(category_properties);
             return category_properties;
         };
 
@@ -505,8 +684,47 @@
             });
         };
 
+        $scope.add_reference = function(possible_references) {
+            alert(" am in add reference!");
+        };
+
         var relationship_subform_field_name = "relationship_values";
         var relationship_reference_field_name = "relationship_references";
+
+        $scope.is_reference_active = true;
+        $scope.toggle_reference_active = function() {
+            var dialog_title = "Are you sure you want to do this?  You will lose the currently defined reference.";
+            bootbox.confirm(dialog_title, function(result) {
+                if (result) {
+                    $scope.reset_reference();
+                }
+                else {
+                    $scope.is_reference_active = ! $scope.is_reference_active;
+                }
+            });
+        };
+
+        $scope.add_relationship_reference = function() {
+            /* just add a blank reference; you can fill it in later */
+            $scope.current_model[relationship_reference_field_name].push(
+                [null, null, null, null, null, null, null, null, null, null]
+            );
+        };
+
+        $scope.remove_relationship_reference = function(index) {
+            var dialog_title = 'Are you sure you want to remove this reference?  <em>You cannot undo this operation.</em>';
+            bootbox.confirm(dialog_title, function(result) {
+                if (result) {
+                    $scope.current_model[relationship_reference_field_name].slice(index,1)
+                    $scope.current_model[relationship_reference_field_name] = [];
+                    console.log("I have just tried to get rid of reference #" + index);
+                }
+                else {
+                   show_lil_msg("That's a good idea.");
+                }
+            });
+
+        };
 
         $scope.add_relationship_value = function(property_title) {
             /* this fn just gets the id of the target_proxy to use when adding */
