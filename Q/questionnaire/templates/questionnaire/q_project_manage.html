@@ -6,7 +6,7 @@
 {% load compress %}
 
 {% block title %}
-    ES-DOC Questionnaire Project: {{ project.title }}
+    ES-DOC Questionnaire Project Manager: {{ project.title }}
 {% endblock %} {# /title #}
 
 {% block scripts %}
@@ -45,7 +45,7 @@
                     <div class="col-lg-10 col-lg-offset-1 col-md-10 col-md-offset-1">
 
                         <div class="title">
-                            Manage {{ project.title }} ES-DOC Questionnaire Project
+                            Manage the <a href="/{{ project.name }}" title="ES-DOC Questionnaire Project Home Page"><strong>{% verbatim ng %}{{ project_controller.saved_project_title }}{% endverbatim ng %}</strong></a> ES-DOC Questionnaire Project
                         </div> <!-- /.title -->
 
                         <div class="documentation clearfix">
@@ -115,9 +115,9 @@
                                         <div class="list-group small">
                                             <span class="list-group-item active">Project Members:</span>
                                             <li class="list-group-item" ng-repeat="user in project_controller.project.users">
-                                                {% verbatim ng %}{{ user.username }}{% endverbatim ng %}
-                                                <span class="badge" ng-show="true || project_controller.is_project_user(user)">user</span>
-                                                <span class="badge" ng-show="true || project_controller.is_project_member(user)">member</span>
+                                                <a ng-href="/accounts/profile/{% verbatim ng %}{{user.username}}{% endverbatim ng %}/">{% verbatim ng %}{{ user.username }}{% endverbatim ng %}</a>
+                                                <span class="badge" ng-show="project_controller.is_project_user(user)">user</span>
+                                                <span class="badge" ng-show="project_controller.is_project_member(user)">member</span>
                                                 <span class="badge" ng-show="project_controller.is_project_admin(user)">admin</span>
                                             </li>
                                             <li class="list-group-item" ng-show="project_controller.project.users.length == 0">
@@ -128,8 +128,8 @@
                                        <div class="list-group small">
                                             <span class="list-group-item active">Pending Project Members:</span>
                                             <li class="list-group-item" ng-repeat="user in project_controller.project.pending_users">
-                                                {% verbatim ng %}{{ user.username }}{% endverbatim ng %}
-                                                <button class="btn btn-xs btn-info" ng-click="project_controller.approve_pending_member(user)">
+                                                <a ng-href="/accounts/profile/{% verbatim ng %}{{user.username}}{% endverbatim ng %}/">{% verbatim ng %}{{ user.username }}{% endverbatim ng %}</a>
+                                                <button class="btn btn-xs btn-info pull-right" ng-click="project_controller.approve_pending_member(user)">
                                                     approve
                                                 </button>
                                             </li>

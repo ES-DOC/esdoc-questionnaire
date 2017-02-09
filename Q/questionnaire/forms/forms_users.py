@@ -39,6 +39,7 @@ class QUserProfileForm(ModelForm):
 
         update_field_widget_attributes(self.fields["email"], {"readonly": True})
         set_field_widget_attributes(self.fields["description"], {"rows": 2})
+        update_field_widget_attributes(self.fields["institute"], {"class": "select single show-tick"})
 
     def save(self, *args, **kwargs):
 

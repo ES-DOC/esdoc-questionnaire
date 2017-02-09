@@ -32,7 +32,7 @@
 
 <fieldset {% if read_only %} disabled="true" {% endif %}>
 
-    <form method="POST" action="{% url 'account_email' %}" class="email_list">
+    <form method="POST" action="{% url 'account_profile' username=user %}" class="email_list">
 
     {% csrf_token %}
 
@@ -127,14 +127,15 @@
                         {% if projects.count %}
                             {% for project in projects %}
                                 <li class="list-group-item">
-                                    <span class="badge">
-                                        {% if user|is_admin_of:project %}
-                                            admin
-                                        {% elif user|is_user_of:project %}
-                                            user
-                                        {% else %}
-                                            member
-                                        {% endif %}
+                                    {% if user|is_admin_of:project %}
+                                        <span class="badge">admin</span>
+                                    {% endif %}
+                                    {% if user|is_member_of:project %}
+                                        <span class="badge">member</span>
+                                    {% endif %}
+                                    {% if user|is_user_of:project %}
+                                        <span class="badge">user</span>
+                                    {% endif %}
                                     </span>
                                     <a href="/{{ project.name }}">
                                         {{ project.title }}
