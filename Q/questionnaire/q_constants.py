@@ -86,11 +86,65 @@ SUPPORTED_DOCUMENTS = {
         # "Simulation_Plan",
         # "Dataset",
         # "Forcing_Constraint",
-        "Parent_Name",
-        "some class",
     ],
 }
 
+from collections import OrderedDict
+
+SUPPORTED_DOCUMENTS_TEST_MAP = OrderedDict([
+    # this is a slightly convoluted way to define a dictionary,
+    # but I have to initialize it w/ a list in order to preserve order
+    # (as per http://stackoverflow.com/a/15733571/1060339)
+    ("citation", {
+        "name": "citation",
+        "title": "Citation",
+        "category": None,
+        "is_active": False,
+    }),
+    ("conformance", {
+        "name": "conformance",
+        "title": "Conformance",
+        "category": None,
+        "is_active": False,
+    }),
+    ("ensemble", {
+        "name": "ensemble",
+        "title": "Ensemble",
+        "order": 3,
+        "category": None,
+        "is_active": False,
+    }),
+    ("party", {
+        "name": "party",
+        "title": "Responsible Party",
+        "category": None,
+        "is_active": False,
+    }),
+    ("machine", {
+        "name": "machine",
+        "title": "Machine",
+        "category": None,
+        "is_active": False,
+    }),
+    ("ocean", {
+        "name": "ocean",
+        "title": "Ocean",
+        "category": "Model",
+        "is_active": False,
+    }),
+    ("seaice", {
+        "name": "seaice",
+        "title": "Sea Ice",
+        "category": "Model",
+        "is_active": False,
+    }),
+    ("performance", {
+        "name": "performance",
+        "title": "Performance",
+        "category": None,
+        "is_active": False,
+    }),
+])
 
 ##################################
 # Publication-specific constants #

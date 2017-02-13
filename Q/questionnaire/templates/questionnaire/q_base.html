@@ -111,7 +111,7 @@
                                 init_widgets(selects, $(tab_content).find(".select"));
                             });
 
-                            /* and some special code to close any popover (ie: ".help") if the user clicks outside */
+                            /* and some special code to close any popovers (ie: ".help") if the user clicks outside */
                             $(parent).on("click", function(e) {
                                 if ($(e.target).data('toggle') !== 'popover' && $(e.target).parents('.popover.in').length === 0) {
                                     $('[data-toggle="popover"]').popover('hide');
@@ -122,7 +122,6 @@
 
                 </script>
             {% endcompress %}
-            {# in child templates, be sure use the {{ block.super }} tag when adding local scripts #}
         {% endblock %} {# /scripts #}
 
     </head>
@@ -134,7 +133,6 @@
 {% block site %}
     {# adds notification for non-PRODUCTION sites #}
     {% include 'questionnaire/_q_site.html' %}
-
 {% endblock %} {# /site #}
 
 {% block messages %}
@@ -146,7 +144,6 @@
 
 {% block main %}
 
-    <!-- BEGIN: HERE IS WHERE THE MAIN PAGE LAYOUT GOES -->
     <div id="questionnaire" class="container-fluid">
 
         <div class="header row">
@@ -178,8 +175,6 @@
         </div>  <!-- /.footer -->
 
     </div>  <!-- /#questionnaire -->
-
-    <!-- END: HERE IS WHERE THE MAIN PAGE LAYOUT GOES -->
 
 {% endblock %} {# / main #}
 

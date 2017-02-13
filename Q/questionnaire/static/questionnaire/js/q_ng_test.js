@@ -1,8 +1,8 @@
-/* q_ng_editor.js */
-/* ng app for dealing w/ QRealizations */
+/* q_ng_project.js */
+/* ng app for dealing w/ QProjects */
 
 (function() {
-    var app = angular.module("q_test", ["q_base", "ui.bootstrap", "ng.django.forms"]);
+    var app = angular.module("q_project", ["q_base"]);
 
     /**********/
     /* CONFIG */
@@ -29,121 +29,111 @@
     /* top level controller */
     /************************/
 
-    app.controller("EditorController", ['$scope', '$global_services', '$attrs', '$http', '$location', '$filter', function($scope, $global_services, $attrs, $http, $location, $filter) {
+    /* don't generally need $scope for ng > 1.3 */
+    /* except for the built-in scope fns (like $watch, etc.) */
+    /* so I include it and use it in rare occasions */
+    /* see http://toddmotto.com/digging-into-angulars-controller-as-syntax/ */
+
+    app.controller("ProjectController", [ "$http", "$global_services", "$filter", "$window", "$scope", function($http, $global_services, $filter, $window, $scope) {
 
         $scope.blocking = function() {
             return $global_services.getBlocking();
         };
 
-        /* TODO: DELETE THIS ONCE EVERYTHING WORKS */
-        $scope.print_stuff = function() {
-            /* print the current state of stuff */
-            console.log("session_key=" + session_key);
-            console.log($global_services.getModelFromPath("_DATA"));
-            console.log($scope.hierarchy);
+        /* look here - I am passing "project_id" to this controller */
+        /* it is used throughout the code, as a query parameter to the DRF API */
+        /* this is a global variable in the template (set via Django) */
+        /* I don't think that this is the "AngularJS-Approved" way of doing things */
+        /* see: http://stackoverflow.com/questions/14523679/can-you-pass-parameters-to-an-angularjs-controller-on-creation */
+
+        var project_controller = this;
+
+        project_controller.project = {};
+
+        project_controller.possible_document_types = [];
+        project_controller.selected_document_type = null;
+
+        project_controller.documents = [];
+        project_controller.paged_documents = [];
+        project_controller.total_documents = 0;
+        project_controller.current_document_page = 0;
+        project_controller.document_page_size = 6;
+        project_controller.document_paging_size = 10;
+
+        $scope.$watch("project_controller.current_document_page", function() {
+            var start = (project_controller.current_document_page - 1) * project_controller.document_paging_size;
+            var end = project_controller.current_document_page * project_controller.document_paging_size;
+
+            project_controller.paged_documents = project_controller.documents.slice(start, end);
+            project_controller.document_page_start = start;
+            project_controller.document_page_end = end > project_controller.total_documents ? project_controller.total_documents : end;
+        });
+
+        this.load = function() {
+
+            /* get the project info (including which document_types are supported) */
+            $http.get("/api/projects_test/" + project_id, {format: "json"})
+                .success(function (data) {
+                    project_controller.project = data;
+                    project_controller.possible_document_types = data["document_types"];
+                })
+                .error(function (data) {
+                    console.log(data);
+                });
+
+            /* get the existing documents info */
+            $http.get("/api/realizations_lite/?project=" + project_id, {format: "json"})
+                .success(function (data) {
+                    console.log(data);
+                    project_controller.documents = data.results;
+                    project_controller.total_documents = data.count;
+                    project_controller.current_document_page = project_controller.total_documents > 0 ? 1 : 0;
+                    $.each(project_controller.documents, function(i, d) {
+                        if (d.synchronization.length) {
+                            project_controller.has_unsynchronized_document = true;
+                        }
+                        if (!d.is_complete) {
+                            project_controller.has_incomplete_document = true;
+                        }
+                        if (project_controller.has_unsynchronized_document && project_controller.has_incomplete_document) {
+                            return false;  // break out of the loop if we've already found matches
+                        }
+                    });
+                })
+                .error(function (data) {
+                    console.log(data);
+                });
+
         };
 
-        $scope.hierarchy = {};
+        project_controller.load();
 
-        $global_services.load("/services/test");
-
-        $scope.is_loaded = false;
-        $scope.$watch(
-            function () {
-                return $global_services.isLoaded();
-            },
-            /* only load local stuff after $global_services has loaded stuff */
-            function (is_loaded) {
-                if (is_loaded && !$scope.is_loaded) {
-                    $scope.load();
-                    $scope.is_loaded = true;
-                }
+        $scope.$watch("project_controller.selected_document_type", function(old_selected_document_type, new_selected_document_type) {
+            if (old_selected_document_type != new_selected_document_type) {
+                console.log("I AM HERE");
             }
-        );
+        });
 
-        $scope.load = function() {
-            $global_services.setBlocking(true);
-            var url = "/services/get_hierarchy/";
-            $http({
-                method: "GET",
-                url: url,
-                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-            })
-            .then(
-                function(result) {
-                    /* success */
-                    $scope.hierarchy = result.data;
-                    $global_services.setBlocking(false);
-                },
-                function(error) {
-                    /* error */
-                    console.log(error.data);
-                    $global_services.setBlocking(false);
-                }
-           )
+        this.create_document_type = function() {
+            var create_document_type_url = "/edit/" + project_controller.selected_document_type.ontology + "/" + project_controller.selected_document_type.name;
+            console.log("about to goto: " + create_document_type_url)
+            $window.open(create_document_type_url, '_blank');
         };
 
-        $scope.add_node = function() {
-            var new_node = {
-                "name": "new node",
-                "documentation": "documentation for one.one.one",
-                "key": "one.one.one",
-                "path": "_DATA",
-                "is_selected": False,
-                "is_active": True,
-                "is_complete": False,
-                "nodes": []
-            };
-            $scope.hierarchy["nodes"].push(new_node);
-            console.log("foo");
+        project_controller.document_sort_type = "label";
+        project_controller.document_sort_reverse = false;
+
+        this.change_document_sort_type = function(sort_type) {
+            project_controller.document_sort_type = sort_type;
+            project_controller.document_sort_reverse = !(project_controller.document_sort_reverse);
         };
 
-    }]);
+        this.print_stuff = function() {
+            console.log(project_controller.document_sort_type);
+            console.log(project_controller.selected_document_type);
 
-    app.controller("ModelEditorController", ['$scope', '$global_services', '$attrs', '$http', '$location', '$filter', function($scope, $global_services, $attrs, $http, $location, $filter) {
-
-        /* clear any parent scope */
-        /* (as per http://stackoverflow.com/a/23225510/1060339) */
-        /* Angular always checks parent scope to see if there is a variable w/ the same name ("prototypical inheritance") */
-        /* b/c of the highly recursive nature of the Q, there will almost always be parent scope variables w/ the same name */
-        /* but I want to keep these all separate (among other things, it lets me simplify forms' "scope_prefix" in "forms_edit_properties.QPropertyRealizationFormSet#add_default_form_arguments")
-        /* hooray!!! */
-        $scope.current_model = {};
-
-        /* TODO: DO I NEED TO ADD THE ABOVE LINE TO SIMILAR PLACES IN "q_ng_customizer.js" ? */
-        /* TODO: Angular docs recommend something a bit more complex: https://docs.angularjs.org/guide/directive#isolating-the-scope-of-a-directive */
-
-        /* load initial data */
-        $scope.is_loaded = false;
-        $scope.$watch(
-            function () {
-                return $global_services.isLoaded();
-            },
-            /* only load local stuff after $global_services has loaded stuff */
-            function (is_loaded) {
-                if (is_loaded && !$scope.is_loaded) {
-                    $scope.current_model_path = $attrs.currentModelPath;
-                    $scope.current_model = $global_services.getModelFromPath($attrs.currentModelPath);
-                    /* HARD-CODING THIS; UNLIKE CUSTOMIZATIONS I WANT TO DISPLAY EVERYTHING (LOAD THE FORM) UPON CONTROLLER LOAD */
-                    $scope.current_model.display_detail = true;
-                    $scope.is_loaded = true;
-                }
-            }
-        );
-
-        $scope.update_model_completion = function() {
-            /* computes a model's completion based on its properties' completion */
-            var properties_completion = $scope.current_model['properties'].reduce(function(value, property) {
-                /* using 'reduce' above instead of 'map' in order to exclude meta properties */
-                if (! property.is_meta) {
-                    value.push(property.is_complete)
-                }
-                return value;
-            }, [])
-            $scope.current_model['is_complete'] = properties_completion.every(function(is_complete) {
-                return is_complete;
-            });
         };
+
 
     }]);
 

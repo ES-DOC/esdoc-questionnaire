@@ -180,3 +180,29 @@ def project_join_request(project, user, site=None):
     except Exception as e:
         q_logger.error(e)
         return False
+
+
+def project_join(project, user, site=None):
+
+    mail_content = "User '{0}' has joined project '{1}.".format(
+        user.username, project.name,
+    )
+    mail_from = settings.EMAIL_HOST_USER
+    mail_to = [user.email, project.email]
+    try:
+
+        send_mail(
+            "ES-DOC Questionnaire project join request",
+            mail_content,
+            mail_from,
+            mail_to,
+            fail_silently=False
+        )
+
+        user.profile.join_project(project)
+
+        return True
+
+    except Exception as e:
+        q_logger.error(e)
+        return False

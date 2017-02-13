@@ -105,6 +105,7 @@ class QPropertyRealizationAdminForm(ModelForm):
             "enumeration_value",
             "enumeration_other_value",
             # "relationship_values",
+            "relationship_references",
             "is_complete",
         ]
 

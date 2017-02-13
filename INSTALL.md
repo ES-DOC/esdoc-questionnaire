@@ -12,7 +12,7 @@ The system must have the following Python packages installed:
 * Django-Filters 0.15.3 (pip install django-filter==0.15.3)
 * A PostGres database is recommended.  However, Django also supports MySQL and SQLite3.
     * To use PostGres you must install psycopg2 (pip install psycopg2)
-* Django-Angular (pip install django-angular==0.7.15)
+* Django-Angular (pip install django-angular==0.8.4)
 * Honeypot (pip install django-honeypot==0.5.0)
 * Django-AllAuth (pip install django-allauth)
 * Django Compressor (pip install django-compressor==1.5)

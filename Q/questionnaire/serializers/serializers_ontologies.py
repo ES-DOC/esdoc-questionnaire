@@ -19,11 +19,6 @@ from Q.questionnaire.q_utils import serialize_model_to_dict
 from Q.questionnaire.q_constants import *
 
 
-################
-# base classes #
-################
-
-
 class QOntologySerializer(QSerializer):
 
     class Meta:

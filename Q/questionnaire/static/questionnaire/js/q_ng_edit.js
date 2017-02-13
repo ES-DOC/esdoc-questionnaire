@@ -132,11 +132,6 @@
 
                 };
 
-                $scope.foobar = function() {
-                    console.log($scope.is_active);
-                };
-
-
                 $scope.possible_references = [];
                 $scope.get_possible_references = function() {
                    $global_services.setBlocking(true);
@@ -251,17 +246,22 @@
 
 
                 $scope.remove_reference = function() {
-                    $scope.referenceRemoveFunction({index: $scope.referenceIndex});
+//                    $scope.$apply( function() {
+//                        $scope.referenceRemoveFunction({index: $scope.referenceIndex});
+//                    })
+//
 
-//                    var dialog_title = 'Are you sure you want to remove this reference?  <em>You cannot undo this operation.</em>';
-//                    bootbox.confirm(dialog_title, function(result) {
-//                        if (result) {
-//                            $scope.current_model["relationship_references"].slice($scope.referenceIndex,1)
-//                        }
-//                        else {
-//                           show_lil_msg("That's a good idea.");
-//                        }
-//                    });
+                    var dialog_title = 'Are you sure you want to remove this reference?  <em>You cannot undo this operation.</em>';
+                    bootbox.confirm(dialog_title, function(result) {
+                        if (result) {
+                            $scope.$apply(function() {
+                                $scope.referenceRemoveFunction({index: $scope.referenceIndex});
+                            });
+                        }
+                        else {
+                           show_lil_msg("That's a good idea.");
+                        }
+                    });
                 };
 
                 $scope.change_reference = function() {
@@ -280,12 +280,6 @@
     /************************/
 
     app.controller("EditorController", ['$scope', '$global_services', '$attrs', '$http', '$cookies', '$location', '$filter', function($scope, $global_services, $attrs, $http, $cookies, $location, $filter) {
-
-        $scope.paging_size = 5;
-        $scope.current_page = 1;
-        $scope.page_changed = function() {
-            alert("page changed!");
-        }
 
         /* $scope.server_errors['form_name']['field_name'] is used to store server errors */
         /* the placeholder for this info is created in QForm.add_custom_errors() line #224 */
@@ -500,6 +494,10 @@
 
     }]);
 
+    /*****************************/
+    /* controller for a category */
+    /*****************************/
+
     app.controller("CategoryEditorController", ['$scope', '$global_services', '$attrs', '$http', '$cookies', '$location', '$filter', function($scope, $global_services, $attrs, $http, $cookies, $location, $filter) {
 
         /* clear any parent scope */
@@ -568,6 +566,10 @@
         };
 
     }]);
+
+    /*****************************/
+    /* controller for a property */
+    /*****************************/
 
     app.controller("PropertyEditorController", ['$scope', '$global_services', '$attrs', '$http', '$cookies', '$location', '$filter', function($scope, $global_services, $attrs, $http, $cookies, $location, $filter) {
 
@@ -684,25 +686,8 @@
             });
         };
 
-        $scope.add_reference = function(possible_references) {
-            alert(" am in add reference!");
-        };
-
-        var relationship_subform_field_name = "relationship_values";
         var relationship_reference_field_name = "relationship_references";
-
-        $scope.is_reference_active = true;
-        $scope.toggle_reference_active = function() {
-            var dialog_title = "Are you sure you want to do this?  You will lose the currently defined reference.";
-            bootbox.confirm(dialog_title, function(result) {
-                if (result) {
-                    $scope.reset_reference();
-                }
-                else {
-                    $scope.is_reference_active = ! $scope.is_reference_active;
-                }
-            });
-        };
+        var relationship_subform_field_name = "relationship_values";
 
         $scope.add_relationship_reference = function() {
             /* just add a blank reference; you can fill it in later */
@@ -712,17 +697,17 @@
         };
 
         $scope.remove_relationship_reference = function(index) {
-            var dialog_title = 'Are you sure you want to remove this reference?  <em>You cannot undo this operation.</em>';
-            bootbox.confirm(dialog_title, function(result) {
-                if (result) {
-                    $scope.current_model[relationship_reference_field_name].slice(index,1)
-                    $scope.current_model[relationship_reference_field_name] = [];
-                    console.log("I have just tried to get rid of reference #" + index);
-                }
-                else {
-                   show_lil_msg("That's a good idea.");
-                }
-            });
+            $scope.current_model[relationship_reference_field_name].slice(index, 1);
+//            var dialog_title = 'Are you sure you want to remove this reference?  <em>You cannot undo this operation.</em>';
+//            bootbox.confirm(dialog_title, function(result) {
+//                if (result) {
+//                    $scope.current_model[relationship_reference_field_name].slice(index,1)
+//                    $scope.current_model[relationship_reference_field_name] = [];
+//                }
+//                else {
+//                   show_lil_msg("That's a good idea.");
+//                }
+//            });
 
         };
 

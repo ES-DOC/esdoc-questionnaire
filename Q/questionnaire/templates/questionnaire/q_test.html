@@ -1,4 +1,4 @@
-{# index.html #}
+{# q_test.html #}
 
 {% extends "questionnaire/q_base.html" %}
 
@@ -6,7 +6,7 @@
 {% load compress %}
 
 {% block title %}
-    ES-DOC Questionnaire Test
+    ES-DOC Questionnaire Project: {{ project.title }}
 {% endblock %} {# /title #}
 
 {% block scripts %}
@@ -15,6 +15,8 @@
     <script language="JavaScript">
 
         var session_key = "{{ session_key }}";
+        var project_id = {{ project.pk }};
+        var project_name = "{{ project.name }}";
 
         $(document).ready(
             function() {
@@ -34,52 +36,213 @@
 
 {% block style %}
     {{ block.super }}
-    <link rel="stylesheet" href="{% static 'questionnaire/css/ext/jquery.splitter.css' %}" />
-{% endblock %}  {# /style #}
+    <style type="text/css">
+        .ng-dirty { border-color: #CCCCCC !important; } /* don't bother validating form fields on this page */
+        optgroup { font-weight: normal !important; }  /* TODO: opgroup labels can't be styled ?!? */
+    </style>
+{% endblock %} {# / style #}
 
 {% block content %}
-    <div ng-app="q_test">
-        <div ng-controller="EditorController as editor_controller">
+    <div ng-app="q_project">
+        <div ng-controller="ProjectController as project_controller">
 
             {# wrapping everything in a fieldset that can be deactivated during AJAX calls #}
             <fieldset id="q_blocker" ng-disabled="blocking()">
 
                 <div class="row">
-                    <div class="col-lg-12 col-md-12">
+                    <p class="col-lg-10 col-lg-offset-1 col-md-10 col-md-offset-1">
 
                         <div class="title">
-                            Editing an instance for the ES-DOC Questionnaire
+                            {{ project.title }} ES-DOC Questionnaire Project
                         </div> <!-- /.title -->
 
-                        <div class="documentation">
+                        <p class="clearfix">
+
+                            {% if project.display_logo and project.logo %}
+                                <div class="project_logo">
+                                    <img src="{{ MEDIA_URL }}/{{ project.logo }}"/>
+                                </div>
+                            {% endif %}  {# /display_logo #}
+
+                        </p>
+
+                    <fieldset class="fieldset collapsible"
+                              ng-controller="FieldsetController as project_documentation_fieldset_controller"
+                              ng-init="project_documentation_fieldset_controller.is_collapsed = true"
+                              ng-class="project_documentation_fieldset_controller.is_collapsed ? 'collapsed' : 'expanded'">
+                        <legend class="fieldset_header" ng-click="project_documentation_fieldset_controller.is_collapsed = ! project_documentation_fieldset_controller.is_collapsed" title="click to toggle content">
+                            <span ng-hide="project_documentation_fieldset_controller.is_collapsed" class="glyphicon glyphicon-triangle-bottom"></span>
+                            <span ng-show="project_documentation_fieldset_controller.is_collapsed" class="glyphicon glyphicon-triangle-right"></span>
+                            Further Project Details:&nbsp;
+                        </legend>
+                        <div class="fieldset_content" ng-hide="project_documentation_fieldset_controller.is_collapsed">
+
                             <p>
-                                Use this page to create or modify a {{ customization.model_title }} document.
-                                When you have finished filling in all properties, click the "submit" button at the bottom of the page to store a local copy.
-                                Invalid entries are indicated using a <span style="color: #ff0000; font-weight: bold;">red</span> font.
+                                This is the Project Page for the
+                                {% if project.url %}
+                                    <a href="{{ project.url }}">{{ project.title }}</a>
+                                {% else %}
+                                    {{ project.title }}
+                                {% endif %} {# /project.url #}
+                                project.  Use this page for creating new documents or updating existing documents.
                             </p>
                             <p>
                                 <a href="{% url 'help' %}">ES-DOC Questionnaire help</a> is available.
                             </p>
-                        </div> <!-- /.documentation -->
+                            {% if project.description %}
+                                <div class="row">
+                                    <span class="col-lg-2 col-md-2"><strong>Project Description:</strong></span>
+                                    <span class="col-lg-10 col-md-10">{{ project.description }}</span>
+                                </div>
+                            {% endif %}  {# /project.description #}
+                            {% if project.email %}
+                                <div class="row">
+                                    <span class="col-lg-2 col-md-2"><strong>Project Contact:</strong></span>
+                                    <span class="col-lg-10 col-lg-10"><a href="mailto:{{ project.email }}">{{ project.email }}</a></span>
+                                </div>
+                            {% endif %}  {# /project.email #}
+                            <div class="row">
+                                <span class="col-lg-2 col-md-2"><strong>Document Feed:</strong></span>
+                                <span class="col-lg-10 col-md-10"><a href="/feed/{{ project.name }}">{{ request.get_host }}/feed/{{ project.name }}</a></span>
+                            </div>
+                            {% if not project.authenticated %}
+                                <div class="row">
+                                    <span class="col-lg-12 col-md-12"><strong>Project does not require authentication.  Any user can create or modify a document or a customization.</strong></span>
+                                </div>
+                            {% endif %} {# /project.authenticated #}
+                            {% if can_customize %}
+                                <div class="row voffset-4">
+                                    <span class="col-lg-4 col-md-4">
+                                        <a href="#" class="btn btn-xs btn-info" role="button">
+                                            Customize ES-DOC Questionnaire
+                                        </a>
+                                    </span>
+                                </div>
+                            {% endif %}
+                            {% if can_manage %}
+                                <div class="row voffset-4">
+                                    <span class="col-lg-4 col-md-4">
+                                        <a href="{% url 'project_manage' project_name=project.name %}" class="btn btn-xs btn-info" role="button">
+                                            Manage {{ project.title }} Project
+                                        </a>
+                                    </span>
+                                </div>
+                            {% endif %}
+                            {% if can_join %}
+                                <div class="row voffset-4">
+                                    <span class="col-lg-4 col-md-4">
+                                        <button class="btn btn-xs btn-info"
+                                                title="Your request will be sent to the project administrator for review."
+                                                ng-click="project_controller.project_join_request('{{ user.pk }}')">
+                                                Join {{ project.title }} Project
+                                        </button>
+                                    </span>
+                                </div>
+                            {% endif %} {# /can_join #}
+                            <br/>
 
-                        <div class="panel panel-default">
-                            <div class="panel-body">
-hi
-                            </div>  <!-- /.panel-body -->
-                        </div>  <!-- /.panel -->
+                        </div> <!-- /.fieldset_content -->
+                    </fieldset>
 
+                    <br/>
+
+                    <div class="row well">
+                        <div class="form-group">
+                            <div class="col-lg-2">
+                                <help help_text="Please select a supported document type."></help>
+                                &nbsp;Document Type:&nbsp;
+                            </div>
+                            <div class="col-lg-4">
+                                <select id="document_type" class="form-control"
+                                        ng-model="project_controller.selected_document_type"
+                                        ng-options="dt.title group by dt.category disable when dt.is_active==false for dt in project_controller.possible_document_types">
+                                    <option value="">*</option>
+                                </select>
+                            </div>
+                            <div class="col-lg-1">
+                                <!-- using a button instead of an anchor tag so that it can be _properly_ disabled -->
+                                <button class="btn btn-sm btn-info" ng-disabled="(!project_controller.selected_document_type) || (!project_controller.selected_document_type.is_active)" ng-click="project_controller.create_document_type()">
+                                    create
+                                </button>
+                            </div>
+                        </div>
+                    </div>  <!-- /.form-group -->
+
+                    <div class="row">
+                        <div class='small text-right'>
+                                <ul uib-pagination class='pagination-sm' ng-model='project_controller.current_document_page' total-items='project_controller.total_documents' max-size='project_controller.document_page_size' items-per-page='project_controller.document_paging_size' boundary-links='true' force-ellipses='true' previous-text='&lsaquo;' next-text='&rsaquo;' first-text='&laquo;' last-text='&raquo;'></ul>
+                                {% verbatim ng %}
+                                    <span><em>showing items {{ project_controller.document_page_start + 1 }} to {{ project_controller.document_page_end }} of {{ project_controller.total_documents }}</em></span>
+                                {% endverbatim ng %}
+                        </div>
                     </div>
-                </div>
 
-            </fieldset>  <!-- /#q_blocker -->
+                    <div class="row panel panel-default">
+                        <div class="panel-body">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th ng-click="project_controller.change_document_sort_type('proxy')">
+                                            <span>Document Type</span>
+                                            <span ng-show="project_controller.document_sort_type=='proxy'">
+                                                <span ng-show="project_controller.document_sort_reverse" class="glyphicon glyphicon-sort-by-alphabet-alt"></span>
+                                                <span ng-hide="project_controller.document_sort_reverse" class="glyphicon glyphicon-sort-by-alphabet"></span>
+                                            </span>
+                                            <span ng-hide="project_controller.document_sort_type=='proxy'">
+                                                <span class="glyphicon glyphicon-sort text-muted"></span>
+                                            </span>
+                                        </th>
+                                        <th ng-click="project_controller.change_document_sort_type('label')">
+                                            <span>Document Label</span>
+                                            <span ng-show="project_controller.document_sort_type=='label'">
+                                                <span ng-show="project_controller.document_sort_reverse" class="glyphicon glyphicon-sort-by-alphabet-alt"></span>
+                                                <span ng-hide="project_controller.document_sort_reverse" class="glyphicon glyphicon-sort-by-alphabet"></span>
+                                            </span>
+                                            <span ng-hide="project_controller.document_sort_type=='label'">
+                                                <span class="glyphicon glyphicon-sort text-muted"></span>
+                                            </span>
+                                        </th>
+                                        <th>
+                                            <span>Version</span>
+                                        </th>
+                                        <th ng-click="project_controller.change_document_sort_type('published')">
+                                            <span>Last Published</span>
+                                            <span ng-show="project_controller.document_sort_type=='published'">
+                                                <span ng-show="project_controller.document_sort_reverse" class="glyphicon glyphicon-sort-by-order-alt"></span>
+                                                <span ng-hide="project_controller.document_sort_reverse" class="glyphicon glyphicon-sort-by-order"></span>
+                                            </span>
+                                            <span ng-hide="project_controller.document_sort_type=='published'">
+                                                <span class="glyphicon glyphicon-sort text-muted"></span>
+                                            </span>
+                                        </th>
+                                    </tr>
+                                </thead>
+                            </table>
+                            <div ng-repeat="document in project_controller.paged_documents">
+                                {% verbatim ng %} {{ document.id }} a document {% endverbatim ng %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <br/>
+                    <br/>
+
 
             {# TODO: DELETE THIS BIT ONCE CODE IS WORKING #}
             <div class="row">
-                <button class="btn btn-danger btn-xs pull-right" title="print ng scope to console" ng-click="print_stuff()">
+                <button class="btn btn-danger btn-xs pull-right" ng-click="project_controller.print_stuff()">
                     <span class="glyphicon glyphicon-cog"></span>
                 </button>
             </div>
 
-        </div>
-    </div>  <!-- /ng-app=q_index -->
+
+
+
+                    </div>  <!-- /col -->
+                </div>  <!-- /row -->
+
+            </fieldset>  <!-- /#q_blocker -->
+
+        </div>  <!-- /ng-controller=ProjectController -->
+    </div>  <!-- /ng-app=q_project -->
 {% endblock %}  {# /content #}

@@ -94,3 +94,89 @@ class QProjectSerializer(serializers.ModelSerializer):
             for user in obj.get_pending_users()
         ]
         return serialized_pending_users
+
+
+from Q.questionnaire.models.models_proxies import QModelProxy
+from Q.questionnaire.q_constants import SUPPORTED_DOCUMENTS_TEST_MAP
+from Q.questionnaire.q_utils import sort_sequence_by_key
+
+
+class QProjectTestDocumentTypeSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = QModelProxy
+        fields = [
+            'name',
+            'ontology',
+            'key',
+            'title',
+            'category',
+            'is_active',
+        ]
+
+    ontology = serializers.SlugRelatedField(read_only=True, slug_field="key")
+    title = serializers.SerializerMethodField()
+    category = serializers.SerializerMethodField()
+    is_active = serializers.SerializerMethodField()
+
+    def get_title(self, obj):
+        return SUPPORTED_DOCUMENTS_TEST_MAP[obj.name].get("title")
+
+    def get_category(self, obj):
+        return SUPPORTED_DOCUMENTS_TEST_MAP[obj.name].get("category")
+
+    def get_is_active(self, obj):
+        # if have found a model_proxy to serialize, then it is, by definition, active
+        return True
+
+    def to_representation(self, instance):
+        # when serializing a DocumentType, remove category info completely for anything w/out a category
+        # (this will ensure it does not get rendered in an <optgroup> element by the "ng-options" directive
+        data_dict = super(QProjectTestDocumentTypeSerializer, self).to_representation(instance)
+        if data_dict.get("category") is None:
+            data_dict.pop("category")
+        return data_dict
+
+import copy
+
+
+class QProjectTestSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = QProject
+        fields = [
+            'id',
+            'name',
+            'title',
+            'description',
+            'email',
+            'url',
+            'is_displayed',
+            'authenticated',
+            'document_types',
+        ]
+
+    document_types = serializers.SerializerMethodField()
+
+    # THIS (SIMPLE) FN ONLY RETURNS ACTIVE DOCUMENT_TYPES
+    # def get_document_types(self, obj):
+    #     document_types = []
+    #     for ontology in obj.ontologies.all():
+    #         for model_proxy in ontology.model_proxies.filter(name__in=SUPPORTED_DOCUMENTS_TEST_MAP.keys()):
+    #             document_types.append(QProjectTestDocumentTypeSerializer(model_proxy).data)
+    #     return document_types
+
+    # THIS (COMPLEX) FN RETURNS ALL DOCUMENT_TYPES
+    def get_document_types(self, obj):
+        document_types = []
+        ontologies = obj.ontologies.all()
+        model_proxies = QModelProxy.objects.filter(ontology__in=ontologies, is_document=True)
+        for document_type_name, document_type_value in copy.deepcopy(SUPPORTED_DOCUMENTS_TEST_MAP).items():
+            try:
+                model_proxy = model_proxies.get(name=document_type_name)
+                document_types.append(QProjectTestDocumentTypeSerializer(model_proxy).data)
+            except QModelProxy.DoesNotExist:
+                if document_type_value.get("category") is None:
+                    document_type_value.pop("category")
+                document_types.append(document_type_value)
+        return document_types

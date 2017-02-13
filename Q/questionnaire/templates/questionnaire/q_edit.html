@@ -13,9 +13,11 @@
 
 {% block scripts %}
     {{ block.super }}
-    <script type="text/javascript" src="{% static 'questionnaire/js/q_ng_edit.js' %}"></script>
     <script language="JavaScript">
 
+    /* I am pretty sure that this code will already have been run by virtue of the "block.super" tag above */
+    /* (it is duplicated in "q_view.html") */
+    /*****
         var session_key = "{{ session_key }}";
         var project_id = {{ project.pk }};
         var project_name = "{{ project.name }}";
@@ -32,6 +34,7 @@
                 init_widgets(splitters, $(parent).find(".splitter"));
             }
         );
+    *****/
 
     </script>
 {% endblock %}  {# /scripts #}
