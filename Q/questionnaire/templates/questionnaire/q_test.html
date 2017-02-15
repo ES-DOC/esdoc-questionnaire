@@ -267,6 +267,11 @@
                                             {% endif %}
                                         </td>
                                     </tr>
+                                    <tr ng-hide="project_controller.total_documents">
+                                        <td colspan="100%">
+                                            <span class="documentation">No documents found</span>
+                                        </td>
+                                    </tr>
                                 </tbody>
                             </table>
                         </div>

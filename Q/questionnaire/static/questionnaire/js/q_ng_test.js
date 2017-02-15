@@ -30,7 +30,7 @@
     /************************/
 
     /* don't generally need $scope for ng > 1.3 */
-    /* except for the built-in scope fns (like $watch, etc.) */
+    /* except for the built-in scope fns (like $watch, $apply, etc.) */
     /* so I include it and use it in rare occasions */
     /* see http://toddmotto.com/digging-into-angulars-controller-as-syntax/ */
 
@@ -43,7 +43,7 @@
         /* look here - I am passing "project_id" to this controller */
         /* it is used throughout the code, as a query parameter to the DRF API */
         /* this is a global variable in the template (set via Django) */
-        /* I don't think that this is the "AngularJS-Approved" way of doing things */
+        /* I don't think that this is the "ng-approved" way of doing things */
         /* see: http://stackoverflow.com/questions/14523679/can-you-pass-parameters-to-an-angularjs-controller-on-creation */
 
         var project_controller = this;
@@ -91,6 +91,9 @@
                             return false;  // break out of the loop if we've already found matches
                         }
                     });
+                    /* filter and page them as needed */
+//                    project_controller.update_filters();
+                    project_controller.update_paging();
                 })
                 .error(function (data) {
                     console.log(data);
@@ -115,6 +118,7 @@
             var end = project_controller.current_document_page * project_controller.document_paging_size;
 
             project_controller.paged_documents = project_controller.documents.slice(start, end);
+            console.log(project_controller.paged_documents)
 //            project_controller.paged_documents = project_controller.filtered_documents.slice(start, end);
             project_controller.document_page_start = start;
             project_controller.document_page_end = end > project_controller.total_documents ? project_controller.total_documents : end;
@@ -150,6 +154,7 @@
             }
             /* not only do we change the sorting, we also have to re-page things - see the comment above on "update_paging()" */
             project_controller.documents = $filter('orderBy')(project_controller.documents, sort_type, project_controller.document_sort_reverse);
+//            project_controller.update_filters();
             project_controller.update_paging();
         };
 
@@ -165,8 +170,10 @@
                 url: publish_document_request_url,
                 data: publish_document_request_data
             }).success(function(data) {
+                /* don't forget that "load" also re-filters and re-pages stuff */
+                /* this is important b/c $http is asynchronous, */
+                /* so I want to wait until the newly serialized documents have been returned before doing that */
                 project_controller.load();
-                project_controller.update_paging();
                 check_msg();
             })
             .error(function(data) {
@@ -182,7 +189,6 @@
         this.print_stuff = function() {
             console.log(project_controller.selected_document_type);
         };
-
 
     }]);
 
