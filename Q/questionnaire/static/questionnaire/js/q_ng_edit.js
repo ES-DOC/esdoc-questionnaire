@@ -111,7 +111,6 @@
                         if (is_loaded && !$scope.loaded_property) {
                             $scope.current_model = $scope.$parent.current_model;
                             $scope.loaded_property = true;
-                            console.log($scope.referenceTitle);
                         }
                     }
                 );
@@ -122,11 +121,9 @@
                     bootbox.confirm(dialog_title, function(result) {
                         if (result) {
                             $scope.$apply($scope.reset_reference());
-//                            $scope.reset_reference();
                         }
                         else {
                             $scope.$apply($scope.is_active = ! $scope.is_active);
-//                            $scope.is_active = ! $scope.is_active;
                         }
                     });
 
@@ -188,8 +185,8 @@
                             "   <input class='form-control' ng-model='selected_reference[4]' placeholder='please select a reference from the list below' type='text' readonly='true'/>" +
                             "</div>" +
                             "<div class='small text-right'>" +
-                            "   <ul uib-pagination class='pagination-sm' ng-model='current_page' total-items='total_references' max-size='page_size' items-per-page='paging_size' boundary-links='true' force-ellipses='true' previous-text='&lsaquo;' next-text='&rsaquo;' first-text='&laquo;' last-text='&raquo;'></ul>" +
-                            "   <span><em>showing items {{ page_start + 1 }} to {{ page_end }} of {{ total_references }}</em></span>" +
+                            "   <ul style='margin-bottom: 2px;' uib-pagination class='pagination pagination-sm' ng-model='current_page' total-items='total_references' max-size='page_size' items-per-page='paging_size' boundary-links='true' force-ellipses='true' previous-text='&lsaquo;' next-text='&rsaquo;' first-text='&laquo;' last-text='&raquo;'></ul>" +
+                            "   <div><em>showing items {{ page_start + 1 }} to {{ page_end }} of {{ total_references }}</em></div>" +
                             "</div>" +
                             "<div class='list-group'>" +
                             "   <a class='list-group-item' ng-repeat='reference in paged_references' ng-click='toggle_selected_reference(reference)' ng-class='{active: reference==selected_reference}'>" +
@@ -221,8 +218,6 @@
                                             /* I have to manually add "document_type" b/c it not returned by the ES-DOC-API */
                                             $scope.current_model["relationship_references"][$scope.referenceIndex].push($scope.referenceType);
                                         });
-//                                        $scope.current_model["relationship_references"][$scope.referenceIndex] = $scope.selected_reference;
-//                                        $scope.current_model["relationship_references"][$scope.referenceIndex].push($scope.referenceType);
                                     }
                                 }
                             }
@@ -232,7 +227,6 @@
                         show_msg("Error connecting to ES-DOC reference server", "error");
                         console.log(error);
                    }).finally(function() {
-                        $scope.foobar();
                         $global_services.setBlocking(false);
                    });
                 };
@@ -246,22 +240,19 @@
 
 
                 $scope.remove_reference = function() {
-//                    $scope.$apply( function() {
-//                        $scope.referenceRemoveFunction({index: $scope.referenceIndex});
-//                    })
-//
+                    $scope.referenceRemoveFunction({index: $scope.referenceIndex});
 
-                    var dialog_title = 'Are you sure you want to remove this reference?  <em>You cannot undo this operation.</em>';
-                    bootbox.confirm(dialog_title, function(result) {
-                        if (result) {
-                            $scope.$apply(function() {
-                                $scope.referenceRemoveFunction({index: $scope.referenceIndex});
-                            });
-                        }
-                        else {
-                           show_lil_msg("That's a good idea.");
-                        }
-                    });
+//                    var dialog_title = 'Are you sure you want to remove this reference?  <em>You cannot undo this operation.</em>';
+//                    bootbox.confirm(dialog_title, function(result) {
+//                        if (result) {
+//                            $scope.$apply(function() {
+//                                $scope.referenceRemoveFunction({index: $scope.referenceIndex});
+//                            });
+//                        }
+//                        else {
+//                           show_lil_msg("That's a good idea.");
+//                        }
+//                    });
                 };
 
                 $scope.change_reference = function() {
@@ -697,17 +688,18 @@
         };
 
         $scope.remove_relationship_reference = function(index) {
-            $scope.current_model[relationship_reference_field_name].slice(index, 1);
-//            var dialog_title = 'Are you sure you want to remove this reference?  <em>You cannot undo this operation.</em>';
-//            bootbox.confirm(dialog_title, function(result) {
-//                if (result) {
-//                    $scope.current_model[relationship_reference_field_name].slice(index,1)
-//                    $scope.current_model[relationship_reference_field_name] = [];
-//                }
-//                else {
-//                   show_lil_msg("That's a good idea.");
-//                }
-//            });
+//            $scope.current_model[relationship_reference_field_name].splice(index, 1);
+            var dialog_title = 'Are you sure you want to remove this reference?  <em>You cannot undo this operation.</em>';
+            bootbox.confirm(dialog_title, function(result) {
+                if (result) {
+                    $scope.$apply(function() {
+                        $scope.current_model[relationship_reference_field_name].splice(index, 1)
+                    });
+                }
+                else {
+                   show_lil_msg("That's a good idea.");
+                }
+            });
 
         };
 

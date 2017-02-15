@@ -30,6 +30,7 @@
 
                 <span class="col-sm-6 voffset-2">
                     <fieldset ng-disabled="current_model.is_nil" style="border: 0px !important;">
+
                         <div class="hidden">
                             {{ form.relationship_references }}
                         </div>
@@ -38,7 +39,7 @@
                             <reference reference-remove-function="remove_relationship_reference(index)" reference-index="$index" reference-type="'cim.2.designing.NumericalExperiment'" />
                         </div>
 
-                       <button type="button" class="btn btn-info btn-sm"
+                        <button type="button" class="btn btn-info btn-sm"
                                 ng-disabled="current_model.relationship_references.length == current_model.cardinality_max"
                                 ng-click="add_relationship_reference()">
                                 add&nbsp;
@@ -54,7 +55,8 @@
                             {% endverbatim ng %}
                         </span>
 
-                        &nbsp;&nbsp;<help help_text="The <strong>{{ form.customization.property_title|lower }}</strong> property references other CIM Documents.  In most cases you will be able to use the <span class='glyphicon glyphicon-new-window'></span> button to find the appropriate published document.  However, if the document has not yet been published, you can manually enter its details by unchecking the checkbox.  Document references can be added and removed as needed." />
+                        &nbsp;&nbsp;<help help_text="The <strong>{{ form.customization.property_title|lower }}</strong> property references other CIM Documents.  Use the <span class='glyphicon glyphicon-new-window'></span> button to search ES-DOC for the appropriate published document.  References to documents can be added and removed as needed." />
+
                     </fieldset>
                 </span>
 
