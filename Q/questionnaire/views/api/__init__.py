@@ -16,7 +16,7 @@ from rest_framework.reverse import reverse
 from Q.questionnaire.views.api.views_api_customizations import QModelCustomizationList, QModelCustomizationDetail, get_cached_customizations
 from Q.questionnaire.views.api.views_api_lite import QProjectLiteDetail, QProjectLiteList, QCustomizationLiteList, QRealizationLiteList
 from Q.questionnaire.views.api.views_api_ontologies import QOntologyList
-from Q.questionnaire.views.api.views_api_projects import QProjectList, QProjectDetail
+from Q.questionnaire.views.api.views_api_projects import QProjectList, QProjectDetail, QProjectTestDetail
 from Q.questionnaire.views.api.views_api_realizations import QModelRealizationList, QModelRealizationDetail, get_cached_realizations
 
 

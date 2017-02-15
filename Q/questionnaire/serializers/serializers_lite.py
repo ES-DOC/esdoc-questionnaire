@@ -97,11 +97,12 @@ class QModelRealizationSerializerLite(serializers.ModelSerializer):
         model = QModelRealization
         fields = (
             "id", "key", "created", "modified",
-            "project", "proxy", "label", "is_complete", "is_published", "is_root", "version", "is_active",
+            "project", "proxy_title", "proxy_name", "label", "is_complete", "is_published", "is_root", "version", "is_active",
             "last_published", "path", "ontology", "synchronization",
         )
 
-    proxy = serializers.StringRelatedField(read_only=True)
+    proxy_title = serializers.SerializerMethodField()
+    proxy_name = serializers.SerializerMethodField()
     version = QVersionSerializerField()
     last_published = serializers.SerializerMethodField()
     path = serializers.SerializerMethodField()
@@ -112,6 +113,12 @@ class QModelRealizationSerializerLite(serializers.ModelSerializer):
         read_only=True,
         slug_field="type",
     )
+
+    def get_proxy_name(self, obj):
+        return obj.proxy.name
+
+    def get_proxy_title(self, obj):
+        return str(obj.proxy)
 
     def get_last_published(self, obj):
         if obj.is_published:

@@ -14,6 +14,7 @@
 {% block scripts %}
     {{ block.super }}
     {% if cdn %}
+        {# TODO: FIND CDN VERSIONS OF THIS #}
         <script type="text/javascript" src="{% static 'questionnaire/js/ext/jquery.splitter-0.14.0.js' %}"></script>
     {% else %}
         <script type="text/javascript" src="{% static 'questionnaire/js/ext/jquery.splitter-0.14.0.js' %}"></script>

@@ -54,20 +54,12 @@
         project_controller.selected_document_type = null;
 
         project_controller.documents = [];
+        project_controller.filtered_documents = [];
         project_controller.paged_documents = [];
         project_controller.total_documents = 0;
         project_controller.current_document_page = 0;
         project_controller.document_page_size = 6;
         project_controller.document_paging_size = 10;
-
-        $scope.$watch("project_controller.current_document_page", function() {
-            var start = (project_controller.current_document_page - 1) * project_controller.document_paging_size;
-            var end = project_controller.current_document_page * project_controller.document_paging_size;
-
-            project_controller.paged_documents = project_controller.documents.slice(start, end);
-            project_controller.document_page_start = start;
-            project_controller.document_page_end = end > project_controller.total_documents ? project_controller.total_documents : end;
-        });
 
         this.load = function() {
 
@@ -108,15 +100,40 @@
 
         project_controller.load();
 
+//TODO
+//        this.update_filters = function() {
+//            project_controller.filtered_documents = project_controller.documents;
+//            project_controller.total_documents = project_controller.filtered_documents.length;
+//        };
+
+        this.update_paging = function() {
+            /* so paging mostly happens via the "uib-pagination" class and a $watch on "current_document_page" */
+            /* however, when I change the sorting order I go ahead and manually re-sort the entire "documents" array */
+            /* and then re-page that; this prevents me from only sorting the currently paged set of documents */
+            /* (there are probably better ways to do this, but I don't care) */
+            var start = (project_controller.current_document_page - 1) * project_controller.document_paging_size;
+            var end = project_controller.current_document_page * project_controller.document_paging_size;
+
+            project_controller.paged_documents = project_controller.documents.slice(start, end);
+//            project_controller.paged_documents = project_controller.filtered_documents.slice(start, end);
+            project_controller.document_page_start = start;
+            project_controller.document_page_end = end > project_controller.total_documents ? project_controller.total_documents : end;
+        };
+
+        $scope.$watch("project_controller.current_document_page", function() {
+            project_controller.update_paging();
+        });
+
         $scope.$watch("project_controller.selected_document_type", function(old_selected_document_type, new_selected_document_type) {
             if (old_selected_document_type != new_selected_document_type) {
-                console.log("I AM HERE");
+//                project_controller.update_filters();
+                console.log("I AM HERE")
+
             }
         });
 
         this.create_document_type = function() {
-            var create_document_type_url = "/edit/" + project_controller.selected_document_type.ontology + "/" + project_controller.selected_document_type.name;
-            console.log("about to goto: " + create_document_type_url)
+            var create_document_type_url = "/" + project_name + "/edit/" + project_controller.selected_document_type.ontology + "/" + project_controller.selected_document_type.name;
             $window.open(create_document_type_url, '_blank');
         };
 
@@ -124,14 +141,46 @@
         project_controller.document_sort_reverse = false;
 
         this.change_document_sort_type = function(sort_type) {
-            project_controller.document_sort_type = sort_type;
-            project_controller.document_sort_reverse = !(project_controller.document_sort_reverse);
+            if (project_controller.document_sort_type != sort_type) {
+                project_controller.document_sort_type = sort_type;
+                project_controller.document_sort_reverse = false;
+            }
+            else {
+                project_controller.document_sort_reverse = !(project_controller.document_sort_reverse);
+            }
+            /* not only do we change the sorting, we also have to re-page things - see the comment above on "update_paging()" */
+            project_controller.documents = $filter('orderBy')(project_controller.documents, sort_type, project_controller.document_sort_reverse);
+            project_controller.update_paging();
+        };
+
+        this.document_publish = function(document) {
+            $global_services.setBlocking(true);
+            var publish_document_request_url = "/services/realization_publish/";
+            var publish_document_request_data = $.param({
+                "document_id": document.id
+            });
+            $http({
+                method: 'POST',
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                url: publish_document_request_url,
+                data: publish_document_request_data
+            }).success(function(data) {
+                project_controller.load();
+                project_controller.update_paging();
+                check_msg();
+            })
+            .error(function(data) {
+                console.log(data);
+                check_msg();
+            })
+            .finally(function() {
+                $global_services.setBlocking(false);
+            });
+
         };
 
         this.print_stuff = function() {
-            console.log(project_controller.document_sort_type);
             console.log(project_controller.selected_document_type);
-
         };
 
 

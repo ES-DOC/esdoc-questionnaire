@@ -38,6 +38,7 @@
     {{ block.super }}
     <style type="text/css">
         .ng-dirty { border-color: #CCCCCC !important; } /* don't bother validating form fields on this page */
+        .pagination { margin-bottom: 2px; }
         optgroup { font-weight: normal !important; }  /* TODO: opgroup labels can't be styled ?!? */
     </style>
 {% endblock %} {# / style #}
@@ -50,7 +51,7 @@
             <fieldset id="q_blocker" ng-disabled="blocking()">
 
                 <div class="row">
-                    <p class="col-lg-10 col-lg-offset-1 col-md-10 col-md-offset-1">
+                    <div class="col-lg-10 col-lg-offset-1 col-md-10 col-md-offset-1">
 
                         <div class="title">
                             {{ project.title }} ES-DOC Questionnaire Project
@@ -170,9 +171,9 @@
 
                     <div class="row">
                         <div class='small text-right'>
-                                <ul uib-pagination class='pagination-sm' ng-model='project_controller.current_document_page' total-items='project_controller.total_documents' max-size='project_controller.document_page_size' items-per-page='project_controller.document_paging_size' boundary-links='true' force-ellipses='true' previous-text='&lsaquo;' next-text='&rsaquo;' first-text='&laquo;' last-text='&raquo;'></ul>
+                                <ul uib-pagination class='pagination pagination-sm' ng-model='project_controller.current_document_page' total-items='project_controller.total_documents' max-size='project_controller.document_page_size' items-per-page='project_controller.document_paging_size' boundary-links='true' force-ellipses='true' previous-text='&lsaquo;' next-text='&rsaquo;' first-text='&laquo;' last-text='&raquo;'></ul>
                                 {% verbatim ng %}
-                                    <span><em>showing items {{ project_controller.document_page_start + 1 }} to {{ project_controller.document_page_end }} of {{ project_controller.total_documents }}</em></span>
+                                    <div><em>showing items {{ project_controller.document_page_start + 1 }} to {{ project_controller.document_page_end }} of {{ project_controller.total_documents }}</em></div>
                                 {% endverbatim ng %}
                         </div>
                     </div>
@@ -182,13 +183,13 @@
                             <table class="table table-striped">
                                 <thead>
                                     <tr>
-                                        <th ng-click="project_controller.change_document_sort_type('proxy')">
+                                        <th ng-click="project_controller.change_document_sort_type('proxy_title')">
                                             <span>Document Type</span>
-                                            <span ng-show="project_controller.document_sort_type=='proxy'">
+                                            <span ng-show="project_controller.document_sort_type=='proxy_title'">
                                                 <span ng-show="project_controller.document_sort_reverse" class="glyphicon glyphicon-sort-by-alphabet-alt"></span>
                                                 <span ng-hide="project_controller.document_sort_reverse" class="glyphicon glyphicon-sort-by-alphabet"></span>
                                             </span>
-                                            <span ng-hide="project_controller.document_sort_type=='proxy'">
+                                            <span ng-hide="project_controller.document_sort_type=='proxy_title'">
                                                 <span class="glyphicon glyphicon-sort text-muted"></span>
                                             </span>
                                         </th>
@@ -217,26 +218,66 @@
                                         </th>
                                     </tr>
                                 </thead>
+                                <tbody>
+                                    <tr ng-repeat="document in project_controller.paged_documents | orderBy:project_controller.document_sort_type:project_controller.document_sort_reverse"
+                                        ng-class="document.synchronization.length ? 'unsynchronized' : 'synchronized'"
+                                        ng-show="document.is_active">
+                                        <td>
+                                            {% verbatim ng %}
+                                                {{ document.proxy_title }}
+                                            {% endverbatim ng %}
+                                        </td>
+                                        <td>
+                                            {% verbatim ng %}
+                                                <span ng-show="document.label">
+                                                    {{ document.label }}
+                                                </span>
+                                                <span ng-hide="document.label">
+                                                    <em>(label incomplete)</em>
+                                                </span>
+                                                &nbsp;<span ng-show="!document.is_complete" class="glyphicon glyphicon-pushpin" title="This document is incomplete."/>
+                                            {% endverbatim ng %}
+                                        </td>
+                                        <td>
+                                            {% verbatim ng %}
+                                                {{ document.version }}
+                                            {% endverbatim ng %}
+                                        </td>
+                                        <td>
+                                            {% verbatim ng %}
+                                                <span ng-show="document.is_published">
+                                                    {{ document.last_published | date:'yyyy-MM-dd HH:mm:ss Z' }}
+                                                </span>
+                                                <span ng-hide="document.is_published">
+                                                    <em>(document unpublished)</em>
+                                                </span>
+                                            {% endverbatim ng %}
+                                        </td>
+                                        <td>
+                                            {% if can_edit %}
+                                                <a target="_blank" class="btn btn-sm btn-info" href="/{{ project_controller.project.name }}/edit/{{ document.path }}">edit</a>
+                                            {% endif %}
+                                            {% if can_view %}
+                                                <a target="_blank" class="btn btn-sm btn-info" href="/{{ project_controller.project.name }}/view/{{ document.path }}">view in editor</a>
+                                            {% endif %}
+                                            {% if can_publish %}
+                                                <button class="btn btn-sm btn-info" ng-show="document.is_complete" ng-click="project_controller.document_publish(document)">
+                                                    publish
+                                                </button>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                </tbody>
                             </table>
-                            <div ng-repeat="document in project_controller.paged_documents">
-                                {% verbatim ng %} {{ document.id }} a document {% endverbatim ng %}
-                            </div>
                         </div>
                     </div>
 
-                    <br/>
-                    <br/>
-
-
-            {# TODO: DELETE THIS BIT ONCE CODE IS WORKING #}
-            <div class="row">
-                <button class="btn btn-danger btn-xs pull-right" ng-click="project_controller.print_stuff()">
-                    <span class="glyphicon glyphicon-cog"></span>
-                </button>
-            </div>
-
-
-
+{# TODO: DELETE THIS BIT ONCE CODE IS WORKING #}
+<div class="row">
+    <button class="btn btn-danger btn-xs pull-right" ng-click="project_controller.print_stuff()">
+        <span class="glyphicon glyphicon-cog"></span>
+    </button>
+</div>
 
                     </div>  <!-- /col -->
                 </div>  <!-- /row -->

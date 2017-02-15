@@ -95,10 +95,9 @@ class QProjectSerializer(serializers.ModelSerializer):
         ]
         return serialized_pending_users
 
-
 from Q.questionnaire.models.models_proxies import QModelProxy
 from Q.questionnaire.q_constants import SUPPORTED_DOCUMENTS_TEST_MAP
-from Q.questionnaire.q_utils import sort_sequence_by_key
+import copy
 
 
 class QProjectTestDocumentTypeSerializer(serializers.ModelSerializer):
@@ -126,7 +125,7 @@ class QProjectTestDocumentTypeSerializer(serializers.ModelSerializer):
         return SUPPORTED_DOCUMENTS_TEST_MAP[obj.name].get("category")
 
     def get_is_active(self, obj):
-        # if have found a model_proxy to serialize, then it is, by definition, active
+        # if I have found a model_proxy to serialize, then it is, by definition, active
         return True
 
     def to_representation(self, instance):
@@ -136,8 +135,6 @@ class QProjectTestDocumentTypeSerializer(serializers.ModelSerializer):
         if data_dict.get("category") is None:
             data_dict.pop("category")
         return data_dict
-
-import copy
 
 
 class QProjectTestSerializer(serializers.ModelSerializer):
@@ -169,8 +166,7 @@ class QProjectTestSerializer(serializers.ModelSerializer):
     # THIS (COMPLEX) FN RETURNS ALL DOCUMENT_TYPES
     def get_document_types(self, obj):
         document_types = []
-        ontologies = obj.ontologies.all()
-        model_proxies = QModelProxy.objects.filter(ontology__in=ontologies, is_document=True)
+        model_proxies = QModelProxy.objects.filter(ontology__in=obj.ontologies.all(), is_document=True)
         for document_type_name, document_type_value in copy.deepcopy(SUPPORTED_DOCUMENTS_TEST_MAP).items():
             try:
                 model_proxy = model_proxies.get(name=document_type_name)

@@ -19,6 +19,8 @@ from Q.questionnaire.views.services import *
 from Q.questionnaire.views.views_feed import QFeed, q_publication
 
 api_urls = patterns('',
+    # just some testing (obviously)...
+    url(r'^projects_test/(?P<pk>[0-9]+)/$', QProjectTestDetail.as_view(), name="project-test-detail"),
 
     # getting project info...
     url(r'^projects/$', QProjectList.as_view(), name="project-list"),

@@ -17,7 +17,7 @@ from rest_framework.views import APIView
 import django_filters
 
 from Q.questionnaire.models.models_projects import QProject
-from Q.questionnaire.serializers.serializers_projects import QProjectSerializer
+from Q.questionnaire.serializers.serializers_projects import QProjectSerializer, QProjectTestSerializer
 from Q.questionnaire.views.api.views_api_base import BetterBooleanFilter
 
 
@@ -70,3 +70,19 @@ class QProjectDetail(APIView):
         project = self.get_object(pk)
         project.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class QProjectTestDetail(QProjectDetail):
+
+    def get(self, request, pk, format=None):
+        model = self.get_object(pk)
+        serializer = QProjectTestSerializer(model, context={"request": request})
+        return Response(serializer.data)
+
+    def put(self, request, pk, format=None):
+        project = self.get_object(pk)
+        serializer = QProjectTestSerializer(project, data=request.data, context={"request": request})
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
