@@ -61,9 +61,8 @@
         project_controller.document_page_size = 6;
         project_controller.document_paging_size = 10;
 
-        this.load = function() {
-
-            /* get the project info (including which document_types are supported) */
+        this.load_project = function() {
+            $global_services.setBlocking(true);
             $http.get("/api/projects_test/" + project_id, {format: "json"})
                 .success(function (data) {
                     project_controller.project = data;
@@ -71,9 +70,14 @@
                 })
                 .error(function (data) {
                     console.log(data);
+                })
+                .finally(function() {
+                    $global_services.setBlocking(false);
                 });
+        };
 
-            /* get the existing documents info */
+        this.load_documents = function() {
+            $global_services.setBlocking(true);
             $http.get("/api/realizations_lite/?project=" + project_id, {format: "json"})
                 .success(function (data) {
                     console.log(data);
@@ -92,22 +96,35 @@
                         }
                     });
                     /* filter and page them as needed */
-//                    project_controller.update_filters();
+                    project_controller.update_filters();
                     project_controller.update_paging();
                 })
                 .error(function (data) {
                     console.log(data);
+                })
+                .finally(function() {
+                    $global_services.setBlocking(false);
                 });
 
         };
 
-        project_controller.load();
+        project_controller.load_project();
+        project_controller.load_documents();
 
-//TODO
-//        this.update_filters = function() {
-//            project_controller.filtered_documents = project_controller.documents;
-//            project_controller.total_documents = project_controller.filtered_documents.length;
-//        };
+        this.update_filters = function() {
+            /* I could use the built-in ng $filter framework, but that just seems like overkill */
+            if (project_controller.selected_document_type == null) {
+                project_controller.filtered_documents = project_controller.documents;
+            }
+            else {
+                project_controller.filtered_documents = $.map(project_controller.documents, function(document, index) {
+                    if (document.proxy_name == project_controller.selected_document_type.name) {
+                        return document;
+                    }
+                });
+            }
+            project_controller.total_documents = project_controller.filtered_documents.length;
+        };
 
         this.update_paging = function() {
             /* so paging mostly happens via the "uib-pagination" class and a $watch on "current_document_page" */
@@ -116,10 +133,7 @@
             /* (there are probably better ways to do this, but I don't care) */
             var start = (project_controller.current_document_page - 1) * project_controller.document_paging_size;
             var end = project_controller.current_document_page * project_controller.document_paging_size;
-
-            project_controller.paged_documents = project_controller.documents.slice(start, end);
-            console.log(project_controller.paged_documents)
-//            project_controller.paged_documents = project_controller.filtered_documents.slice(start, end);
+            project_controller.paged_documents = project_controller.filtered_documents.slice(start, end);
             project_controller.document_page_start = start;
             project_controller.document_page_end = end > project_controller.total_documents ? project_controller.total_documents : end;
         };
@@ -130,9 +144,8 @@
 
         $scope.$watch("project_controller.selected_document_type", function(old_selected_document_type, new_selected_document_type) {
             if (old_selected_document_type != new_selected_document_type) {
-//                project_controller.update_filters();
-                console.log("I AM HERE")
-
+                project_controller.update_filters();
+                project_controller.update_paging();
             }
         });
 
@@ -173,7 +186,7 @@
                 /* don't forget that "load" also re-filters and re-pages stuff */
                 /* this is important b/c $http is asynchronous, */
                 /* so I want to wait until the newly serialized documents have been returned before doing that */
-                project_controller.load();
+                project_controller.load_documents();
                 check_msg();
             })
             .error(function(data) {
@@ -187,6 +200,7 @@
         };
 
         this.print_stuff = function() {
+            console.log(project_controller.filtered_documents);
             console.log(project_controller.selected_document_type);
         };
 
