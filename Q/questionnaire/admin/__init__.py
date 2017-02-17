@@ -15,7 +15,6 @@ from Q.questionnaire.models.models_institutes import QInstitute
 from Q.questionnaire.models.models_references import QReference
 
 admin.site.register(QInstitute)
-admin.site.register(QReference)
 
 # note the relative imports; this is to prevent loading __init__.py twice
 from .admin_customizations import *
@@ -24,6 +23,7 @@ from .admin_proxies import *
 from .admin_projects import *
 from .admin_publications import *
 from .admin_realizations import *
+from .admin_references import *
 from .admin_site import *
 from .admin_user import *
 

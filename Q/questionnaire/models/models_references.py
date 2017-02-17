@@ -74,5 +74,11 @@ class QReference(models.Model):
 
     @property
     def is_pending(self):
-        # a reference w/out a uuid must not yet have been resolved...
+        # a reference w/out a uuid must not yet have been resolved
         return self.guid is None
+
+    @property
+    def is_unused(self):
+        # a reference used by no properties is unused
+        return self.properties.count() == 0
+
