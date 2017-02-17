@@ -84,7 +84,6 @@ class QRelationshipValueRealizationField(QRealizationRelatedField):
         model_serializer = QModelRealizationSerializer()
         return model_serializer.update(model_instance, validated_data)
 
-#####################
 ####################
 # property classes #
 ####################
@@ -232,23 +231,24 @@ class QPropertyRealizationSerializer(QRealizationSerializer):
                     # TODO: DO I REALLY HAVE TO RE-SAVE THE MODEL?
                     relationship_value.save()
 
-            if reference_data:
-                # see the comment in QReferenceListSerializer about having to do removal of deleted references here
-                updated_references = False
-                old_references = instance.relationship_references.all()
-                new_references = reference_serializer.update(old_references, reference_data)
-                for new_reference in new_references:
-                    if new_reference not in old_references:
-                        updated_references = True
-                        property_realization.relationship_references.add(new_reference)
-                        new_reference.save()
-                for old_reference in old_references:
+        if reference_data:
+            import ipdb; ipdb.set_trace()
+            # see the comment in QReferenceListSerializer about having to do removal of deleted references here
+            updated_references = False
+            old_references = instance.relationship_references.all()
+            new_references = reference_serializer.update(old_references, reference_data)
+            for new_reference in new_references:
+                if new_reference not in old_references:
                     updated_references = True
-                    if old_reference not in new_references:
-                        property_realization.relationship_references.remove(old_reference)
-                        old_reference.save()
-                if updated_references:
-                    property_realization.save()
+                    property_realization.relationship_references.add(new_reference)
+                    new_reference.save()
+            for old_reference in old_references:
+                if old_reference not in new_references:
+                    updated_references = True
+                    property_realization.relationship_references.remove(old_reference)
+                    old_reference.save()
+            if updated_references:
+                property_realization.save()
 
         return property_realization
 
