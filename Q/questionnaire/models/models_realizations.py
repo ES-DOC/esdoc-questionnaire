@@ -168,6 +168,7 @@ def serialize_realizations(current_model_realization, **kwargs):
             "key": current_model_realization.key,
             "is_meta": current_model_realization.is_meta,
             # "version": current_model_realization.version.fully_specified(),
+            "title": current_model_realization.title,
             "is_selected": False,
             "display_detail": False,
         },
@@ -432,6 +433,12 @@ class QRealization(models.Model):
     @property
     def is_meta(self):
         return self.proxy.is_meta is True
+
+    @property
+    def title(self):
+        proxy_id = self.proxy.cim_id
+        proxy_title = proxy_id.rsplit('.')[-1]
+        return pretty_string(proxy_title)
 
     @classmethod
     def get_field(cls, field_name):

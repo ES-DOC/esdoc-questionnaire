@@ -3,7 +3,7 @@
 
 <div class="list-group-item" ng-class="{'inactive': !model.is_active, 'selected': model.is_selected}" ng-click="select_model(model)">
     <span ng-repeat="i in get_depth_as_array() track by $index">&nbsp;&nbsp;</span>
-    node
+    {{ model.title }}
     <span ng-show="showCompletion">
         &nbsp;<span ng-show="!model.is_complete" class="glyphicon glyphicon-pushpin"/>
     </span>

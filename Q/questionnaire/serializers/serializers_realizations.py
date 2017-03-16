@@ -339,6 +339,7 @@ class QModelRealizationSerializer(QRealizationSerializer):
             # these next fields are not part of the model
             # but they are used to facilitate ng interactivity on the client
             'key',
+            'title',
             'is_selected',
             'display_detail',
         )
@@ -352,10 +353,13 @@ class QModelRealizationSerializer(QRealizationSerializer):
     is_selected = serializers.SerializerMethodField()
     display_detail = serializers.SerializerMethodField()
 
-    def get_display_detail(self, obj):
-        return False
+    def get_title(self, obj):
+        return "foobar"
 
     def get_is_selected(self, obj):
+        return False
+
+    def get_display_detail(self, obj):
         return False
 
     def create(self, validated_data):
