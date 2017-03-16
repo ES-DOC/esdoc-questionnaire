@@ -161,7 +161,7 @@ def is_member_of(user, project):
 
 def is_pending_of(user, project):
     if user.is_authenticated():
-        return user.profile.is_pending_of(project)
+        return not user.is_superuser and user.profile.is_pending_of(project)
     else:
         return False
 
