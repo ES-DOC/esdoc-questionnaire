@@ -193,10 +193,10 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('name', models.CharField(unique=True, max_length=128, validators=[Q.questionnaire.q_utils.ValidateNoSpaces(), Q.questionnaire.q_utils.ValidateNoBadChars(), Q.questionnaire.q_utils.ValidateNoReservedWords(), Q.questionnaire.q_utils.ValidateNoProfanities()])),
-                ('title', models.CharField(max_length=128)),
+                ('title', models.CharField(max_length=128, validators=[Q.questionnaire.q_utils.ValidateNoProfanities()])),
                 ('description', models.TextField(blank=True)),
-                ('email', models.EmailField(max_length=254, verbose_name=b'Contact Email')),
-                ('url', models.URLField(blank=True)),
+                ('email', models.EmailField(help_text='Point of contact for this project.', max_length=254, verbose_name=b'Contact Email')),
+                ('url', models.URLField(help_text='External URL for this project.', blank=True)),
                 ('logo', models.ImageField(help_text=b'All images will be resized to 96 x 96.', storage=Q.questionnaire.q_fields.OverwriteStorage(), null=True, upload_to=Q.questionnaire.models.models_projects.generate_upload_to, blank=True)),
                 ('display_logo', models.BooleanField(default=False)),
                 ('authenticated', models.BooleanField(default=True)),
@@ -284,6 +284,7 @@ class Migration(migrations.Migration):
                 ('relationship_target_names', Q.questionnaire.q_fields.QJSONField(null=True, blank=True)),
                 ('category_proxy', models.ForeignKey(related_name='property_proxies', blank=True, to='questionnaire.QCategoryProxy', null=True)),
                 ('model_proxy', models.ForeignKey(related_name='property_proxies', to='questionnaire.QModelProxy')),
+                ('ontology', models.ForeignKey(related_name='property_proxies', blank=True, to='questionnaire.QOntology', null=True)),
                 ('relationship_target_models', models.ManyToManyField(to='questionnaire.QModelProxy', blank=True)),
             ],
             options={
@@ -339,6 +340,27 @@ class Migration(migrations.Migration):
             },
         ),
         migrations.CreateModel(
+            name='QReference',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('guid', models.UUIDField(null=True, verbose_name=b'UUID', blank=True)),
+                ('model', models.CharField(max_length=128, null=True, blank=True)),
+                ('experiment', models.CharField(max_length=128, null=True, blank=True)),
+                ('institute', models.CharField(max_length=128, null=True, blank=True)),
+                ('name', models.CharField(max_length=128, null=True, blank=True)),
+                ('canonical_name', models.CharField(max_length=128, null=True, blank=True)),
+                ('alternative_name', models.CharField(max_length=128, null=True, blank=True)),
+                ('long_name', models.TextField(null=True, blank=True)),
+                ('version', models.IntegerField(null=True, blank=True)),
+                ('document_type', models.CharField(max_length=512, null=True, blank=True)),
+            ],
+            options={
+                'abstract': False,
+                'verbose_name': 'Questionnaire Reference',
+                'verbose_name_plural': 'Questionnaire References',
+            },
+        ),
+        migrations.CreateModel(
             name='QSite',
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
@@ -355,7 +377,7 @@ class Migration(migrations.Migration):
             name='QSynchronization',
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
-                ('type', models.CharField(unique=True, max_length=128, choices=[(b'CV_ADDED', b'Added CV'), (b'CV_REMOVED', b'Removed CV'), (b'CV_CHANGED', b'Changed CV'), (b'ONTOLOGY_ADDED', b'Added Ontology'), (b'ONTOLOGY_REMOVED', b'Removed Ontology'), (b'ONTOLOGY_CHANGED', b'Changed Ontology'), (b'CUSTOMIZATION_ADDED', b'Added Customization'), (b'CUSTOMIZATION_REMOVED', b'Removed Customization'), (b'CUSTOMIZATION_CHANGED', b'Changed Customization')])),
+                ('type', models.CharField(unique=True, max_length=128, choices=[(b'ONTOLOGY_ADDED', b'Added Ontology'), (b'ONTOLOGY_REMOVED', b'Removed Ontology'), (b'ONTOLOGY_CHANGED', b'Changed Ontology'), (b'CUSTOMIZATION_ADDED', b'Added Customization'), (b'CUSTOMIZATION_REMOVED', b'Removed Customization'), (b'CUSTOMIZATION_CHANGED', b'Changed Customization')])),
                 ('description', models.TextField(null=True, blank=True)),
                 ('priority', models.PositiveIntegerField(unique=True)),
             ],
@@ -382,6 +404,11 @@ class Migration(migrations.Migration):
             },
         ),
         migrations.AddField(
+            model_name='qpropertyrealization',
+            name='relationship_references',
+            field=models.ManyToManyField(related_name='properties', to='questionnaire.QReference', blank=True),
+        ),
+        migrations.AddField(
             model_name='qpropertycustomization',
             name='proxy',
             field=models.ForeignKey(to='questionnaire.QPropertyProxy'),
@@ -389,7 +416,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='qproject',
             name='ontologies',
-            field=models.ManyToManyField(help_text=b'Only registered ontologies (schemas or specializations) can be added to projects.', to='questionnaire.QOntology', through='questionnaire.QProjectOntology', blank=True),
+            field=models.ManyToManyField(help_text=b'Only registered ontologies (schemas or specializations) can be added to projects.', to='questionnaire.QOntology', verbose_name=b'Supported Ontologies', through='questionnaire.QProjectOntology', blank=True),
         ),
         migrations.AddField(
             model_name='qmodelrealization',
@@ -462,6 +489,11 @@ class Migration(migrations.Migration):
             field=models.ForeignKey(related_name='category_proxies', to='questionnaire.QModelProxy'),
         ),
         migrations.AddField(
+            model_name='qcategoryproxy',
+            name='ontology',
+            field=models.ForeignKey(related_name='category_proxies', blank=True, to='questionnaire.QOntology', null=True),
+        ),
+        migrations.AddField(
             model_name='qcategorycustomization',
             name='model_customization',
             field=models.ForeignKey(related_name='category_customizations', to='questionnaire.QModelCustomization'),
@@ -479,10 +511,6 @@ class Migration(migrations.Migration):
         migrations.AlterUniqueTogether(
             name='qpublication',
             unique_together=set([('name', 'version')]),
-        ),
-        migrations.AlterUniqueTogether(
-            name='qpropertyproxy',
-            unique_together=set([('model_proxy', 'name')]),
         ),
         migrations.AlterUniqueTogether(
             name='qprojectontology',
