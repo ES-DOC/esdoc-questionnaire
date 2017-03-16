@@ -110,7 +110,6 @@ SUPPORTED_DOCUMENTS_TEST_MAP = OrderedDict([
     ("ensemble", {
         "name": "ensemble",
         "title": "Ensemble",
-        "order": 3,
         "category": None,
         "is_active": False,
     }),
@@ -145,6 +144,24 @@ SUPPORTED_DOCUMENTS_TEST_MAP = OrderedDict([
         "is_active": False,
     }),
 ])
+
+from django.conf import settings
+if settings.DEBUG:
+    # add a few more document types just for testing...
+    SUPPORTED_DOCUMENTS_TEST_MAP.update([
+        ("model", {
+            "name": "model",
+            "title": "TEST: model",
+            "category": None,
+            "is_active": False,
+        }),
+        ("specialized_model", {
+            "name": "specialized_model",
+            "title": "TEST: specialized_model",
+            "category": None,
+            "is_active": False,
+        }),
+    ])
 
 ##################################
 # Publication-specific constants #

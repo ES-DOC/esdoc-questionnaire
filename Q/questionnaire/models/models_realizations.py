@@ -540,7 +540,11 @@ class QModelRealization(QRealization):
 
     @property
     def label(self):
-        return "TODO: LABEL"
+        proxy_label = self.proxy.label
+        if proxy_label is not None:
+            return proxy_label["text"].format(
+                *[self.properties.get(name=field).value for field in proxy_label["fields"]]
+            )
 
     @property
     def is_document(self):
