@@ -76,9 +76,6 @@
                                                                     {{ field }}
                                                                 {% endfor %}
                                                             </div>
-                                                            {% verbatim ng %}
-                                                                is_complete:&nbsp;{{ current_model.is_complete }}
-                                                            {% endverbatim ng %}
                                                             {% with field_type=form.get_field_type %}
                                                                 {% if field_type == "ATOMIC" %}
                                                                     {% include "questionnaire/_q_view_property_atomic.html" %}
