@@ -10,7 +10,10 @@
 
 from allauth.account.models import EmailAddress
 from django.contrib.auth.models import User
+from django.core.mail import send_mail
+from django.conf import settings
 from django.db import models
+
 from Q.questionnaire import APP_LABEL, q_logger
 
 # This is a custom UserProfile for the Q
@@ -119,6 +122,28 @@ class QUserProfile(models.Model):
         self.remove_user_permissions(project)
         self.remove_admin_permissions(project)
 
+    def created(self):
+        # this fns is referenced in "signals_users.py"
+
+        mail_content = "User '{0}' created".format(
+            self,
+        )
+        mail_from = settings.EMAIL_HOST_USER
+        mail_to = [settings.EMAIL_HOST_USER, ]
+
+        try:
+
+            send_mail(
+                "ES-DOC Questionnaire user joined",
+                mail_content,
+                mail_from,
+                mail_to,
+                fail_silently=False
+            )
+
+        except Exception as e:
+            q_logger.error(e)
+
 
 def is_admin_of(user, project):
     if user.is_authenticated():
@@ -147,13 +172,10 @@ def is_user_of(user, project):
     else:
         return False
 
+
 #######################
 # user / project code #
 #######################
-
-from django.core.mail import send_mail
-from django.conf import settings
-
 
 def project_join_request(project, user, site=None):
 

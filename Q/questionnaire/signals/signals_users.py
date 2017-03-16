@@ -51,7 +51,9 @@ def post_save_user_handler(sender, **kwargs):
     created = kwargs.pop("created", True)
     user = kwargs.pop("instance", None)
     if user and created:
-        QUserProfile.objects.create(user=user)
+        user_profile = QUserProfile.objects.create(user=user)
+        user_profile.created()
+
 
 post_save.connect(post_save_user_handler, sender=User, dispatch_uid="post_save_user_handler")
 
@@ -60,7 +62,7 @@ def post_delete_profile_handler(sender, **kwargs):
     """
     fn that gets called after a QUserProfile is deleted;
     When a standard Django User is deleted, the corresponding QUserProfile will also be deleted (b/c of the 1-to-1 relationship)
-    but if a QUserProfile is explicitly deleted, this fn ensures that the corresponding User is deleted
+    but if a QUserProfile is explicitly deleted, this fn ensures that the corresponding User is also deleted
     :param sender:
     :param kwargs:
     :return:
@@ -72,6 +74,3 @@ def post_delete_profile_handler(sender, **kwargs):
             user.delete()
 
 post_delete.connect(post_delete_profile_handler, sender=QUserProfile, dispatch_uid="post_delete_profile_handler")
-
-
-
