@@ -270,7 +270,10 @@ class QOntology(models.Model):
             ontology_class_is_document = ontology_model.get("is_document")
             ontology_class_is_meta = ontology_model.get("is_meta", False)
             ontology_class_label = ontology_model.get("label", None)
-
+            if ontology_class_label is None and self.parent is not None:
+                parent_model_proxy = self.parent.model_proxies.get(package=ontology_model_package, name=ontology_model_name)
+                ontology_class_label = parent_model_proxy.label
+                
             if ontology_class_documentation:
                 new_model_proxy.documentation = remove_spaces_and_linebreaks(ontology_class_documentation)
             new_model_proxy.is_document = ontology_class_is_document
