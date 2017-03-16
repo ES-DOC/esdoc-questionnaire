@@ -38,6 +38,7 @@ class QPropertyProxyInline(admin.StackedInline):
     """
     model = QPropertyProxy
     form = QPropertyProxyInlineForm
+    verbose_name_plural = "properties:"
     show_change_link = True
     extra = 0
 
@@ -85,7 +86,7 @@ class QModelProxyAdmin(admin.ModelAdmin):
     Custom ModelAdmin for QModelProxy
     Provides an inline form for viewing QPropertyProxies & QCategoryProxies
     """
-    inlines = (QCategoryProxyInline, QPropertyProxyInline)
+    inlines = [QCategoryProxyInline, QPropertyProxyInline]
     form = QModelProxyAdminForm
 
 
@@ -108,7 +109,7 @@ class QCategoryProxyAdmin(admin.ModelAdmin):
     Custom ModelAdmin for QCategoryProxy
     Provides an inline form for viewing QPropertyProxies
     """
-    inlines = (QPropertyProxyInline,)
+    inlines = [QPropertyProxyInline]
     form = QCategoryProxyAdminForm
     readonly_fields = ("is_uncategorized",)
 

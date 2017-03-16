@@ -70,7 +70,13 @@ def get_new_customizations(project=None, ontology=None, model_proxy=None, **kwar
         model_customization = customizations[model_proxy_key]
 
     category_customizations = []
-    for category_proxy in model_proxy.category_proxies.all():
+    # TODO: IS THERE A MORE EFFICIENT WAY TO DO THIS?
+    # gets _all_ of the categories that are relevant to this model...
+    used_category_proxies = [p.category_proxy for p in model_proxy.property_proxies.all()]
+    category_proxies = set(model_proxy.category_proxies.all())
+    category_proxies.update(used_category_proxies)
+    for category_proxy in category_proxies:
+    # for category_proxy in model_proxy.category_proxies.all():
     # for catgegory_proxy in ontology.category_proxies.filter(is_meta=False):
         category_proxy_key = "{0}.{1}".format(model_proxy_key, category_proxy.key)
         with allow_unsaved_fk(QCategoryCustomization, ["model_customization"]):

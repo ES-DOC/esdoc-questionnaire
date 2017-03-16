@@ -18,7 +18,7 @@ import os
 import json
 
 from Q.questionnaire import APP_LABEL, q_logger
-from Q.questionnaire.models.models_proxies import QModelProxy, QCategoryProxy, QPropertyProxy, UNCATEGORIZED_CATEGORY_PROXY_NAME, UNCATEGORIZED_CATEGORY_PROXY_PACKAGE
+from Q.questionnaire.models.models_proxies import QModelProxy, QCategoryProxy, QPropertyProxy, ProxyTypes, UNCATEGORIZED_CATEGORY_PROXY_NAME, UNCATEGORIZED_CATEGORY_PROXY_PACKAGE, recurse_through_proxies
 from Q.questionnaire.q_fields import QVersionField, QFileField, QPropertyTypes, QAtomicTypes
 from Q.questionnaire.q_utils import QError, Version, EnumeratedType, EnumeratedTypeList, find_in_sequence, remove_spaces_and_linebreaks, validate_no_spaces, validate_no_bad_chars, validate_file_extension, validate_file_schema
 from Q.questionnaire.q_constants import *
@@ -178,6 +178,12 @@ class QOntology(models.Model):
     def is_specialization(self):
         return self.ontology_type == QOntologyTypes.SPECIALIZATION
 
+    def get_all_proxies(self, proxy_types=[ProxyTypes.MODEL, ProxyTypes.CATEGORY, ProxyTypes.PROPERTY]):
+        all_proxies = set()
+        for model_proxy in self.model_proxies.all():
+            all_proxies.update(recurse_through_proxies(model_proxy, proxy_types))
+        return all_proxies
+
     def parse_specialization(self, ontology_content, **kwargs):
         request = kwargs.get("request")
 
@@ -196,6 +202,7 @@ class QOntology(models.Model):
             msg = "The major version of this ontology instance does not match the major version of the QConfig file"
             if request:
                 messages.add_message(request, messages.WARNING, msg)
+            raise QError(msg)
 
         # documentation can overwrite the instance field (ie: the field set in the admin interface)...
         ontology_documentation = ontology_content.get("documentation")
@@ -207,6 +214,8 @@ class QOntology(models.Model):
         assert ontology_type is not None, "invalid ontology_type specified"
         if self.ontology_type != ontology_type:
             msg = "This ontology is a {0}, but the content is for a {1}".format(self.ontology_type, ontology_type)
+            if request:
+                messages.add_message(request, messages.WARNING, msg)
             raise QError(msg)
 
         # if specified, parent must exist and match the instance field (and it must be specified for SPECIALIZATIONS)...
@@ -215,9 +224,13 @@ class QOntology(models.Model):
             ontology_base = QOntology.objects.has_key(ontology_base_key).first()
             if ontology_base != self.parent:
                 msg = "Invalid key '{0}' specified for 'ontology_base' (expected '{1}')".format(ontology_base_key, self.parent.key)
+                if request:
+                    messages.add_message(request, messages.WARNING, msg)
                 raise QError(msg)
         elif ontology_type == QOntologyTypes.SPECIALIZATION:
             msg = "A specialization must include an ontology_base"
+            if request:
+                messages.add_message(request, messages.WARNING, msg)
             raise QError(msg)
 
         # now create / setup all of the proxies contained in this ontology...
@@ -231,15 +244,19 @@ class QOntology(models.Model):
 
         if self.parent:
             inherited_model_proxies = self.parent.model_proxies.in_fully_qualified_names(inherited_classes)
-            for inherited_model_order, inherited_model_proxy in enumerate(inherited_model_proxies, start=1):
-                new_model_proxy = self.inherit_model_proxy(inherited_model_proxy, inherited_model_order)
-                new_model_proxies.append(new_model_proxy)
+            # AS OF 0.17.0, PROXIES ARE NOT CONSTRAINED BY ONTOLOGY; THEREFORE INHERITANCE DOESN'T HAVE TO COPY ANYTHING ACROSSS
+            # for inherited_model_order, inherited_model_proxy in enumerate(inherited_model_proxies, start=1):
+            #     new_model_proxy = self.inherit_model_proxy(inherited_model_proxy, inherited_model_order)
+            #     new_model_proxies.append(new_model_proxy)
 
         for ontology_model_order, ontology_model in enumerate(defined_classes, start=len(new_model_proxies)+1):
 
             ontology_model_name = ontology_model["name"]
             ontology_model_package = ontology_model["package"]
-            ontology_model_id = ontology_model.get("id", None)
+            # HERE IS ONE DIFFERENCE BETWEEN SPECIALIZATIONS & SCHEMAS...
+            # SCHEMA MODELS MUST HAVE EXPLICIT "cim_ids"...
+            ontology_model_id = ontology_model.get("id")
+            assert ontology_model_id is not None
 
             (new_model_proxy, created_model_proxy) = QModelProxy.objects.get_or_create(
                 # these fields are the "defining" ones (other fields can change w/out creating new proxies)
@@ -251,8 +268,8 @@ class QOntology(models.Model):
 
             ontology_class_documentation = ontology_model.get("documentation")
             ontology_class_is_document = ontology_model.get("is_document")
-            ontology_class_is_meta = ontology_model.get("is_meta")
-            ontology_class_label = ontology_model.get("label")
+            ontology_class_is_meta = ontology_model.get("is_meta", False)
+            ontology_class_label = ontology_model.get("label", None)
 
             if ontology_class_documentation:
                 new_model_proxy.documentation = remove_spaces_and_linebreaks(ontology_class_documentation)
@@ -283,22 +300,34 @@ class QOntology(models.Model):
             if self.parent:
                 parent_model_proxy = self.parent.model_proxies.get(package=ontology_model_package, name=ontology_model_name)
                 inherited_property_proxies = parent_model_proxy.property_proxies.filter(name__in=inherited_properties)
+                # AS OF 0.17.0, PROXIES ARE NOT CONSTRAINED BY ONTOLOGY; THEREFORE INHERITANCE DOESN'T HAVE TO COPY ANYTHING ACROSS
                 for inherited_property_order, inherited_property_proxy in enumerate(inherited_property_proxies, start=1):
-                    new_property_proxy = self.inherit_property_proxy(new_model_proxy, inherited_property_proxy, inherited_property_order)
-                    new_property_proxies.append(new_property_proxy)
+                    new_model_proxy.property_proxies.add(inherited_property_proxy)
+                    new_property_proxies.append(inherited_property_proxy)
+                # for inherited_property_order, inherited_property_proxy in enumerate(inherited_property_proxies, start=1):
+                #     new_property_proxy = self.inherit_property_proxy(new_model_proxy, inherited_property_proxy, inherited_property_order)
+                #     new_property_proxies.append(new_property_proxy)
                 inherited_category_proxies = parent_model_proxy.category_proxies.filter(name__in=inherited_categories)
+                # AS OF 0.17.0, PROXIES ARE NOT CONSTRAINED BY ONTOLOGY; THEREFORE INHERITANCE DOESN'T HAVE TO COPY ANYTHING ACROSSS
                 for inherited_category_order, inherited_category_proxy in enumerate(inherited_category_proxies, start=1):
-                    new_category_proxy = self.inherit_category_proxy(new_model_proxy, inherited_category_proxy, inherited_category_order)
-                    new_category_proxies.append(new_category_proxy)
+                    new_model_proxy.category_proxies.add(inherited_category_proxy)
+                    new_category_proxies.append(inherited_category_proxy)
+                # for inherited_category_order, inherited_category_proxy in enumerate(inherited_category_proxies, start=1):
+                #     new_category_proxy = self.inherit_category_proxy(new_model_proxy, inherited_category_proxy, inherited_category_order)
+                #     new_category_proxies.append(new_category_proxy)
 
             for ontology_category_order, ontology_category in enumerate(defined_categories, start=len(new_category_proxies) + 1):
                 ontology_category_name = ontology_category["name"]
-                ontology_category_id = ontology_category.get("id", None)
+                # HERE IS ONE DIFFERENCE BETWEEN SPECIALIZATIONS & SCHEMAS...
+                # SCHEMA MODELS MUST HAVE EXPLICIT "cim_ids"...
+                ontology_category_id = ontology_category.get("id")
+                assert ontology_category_id is not None
 
                 (new_category_proxy, created_category_proxy) = QCategoryProxy.objects.get_or_create(
+                    ontology=self,
                     model_proxy=new_model_proxy,
                     name=ontology_category_name,
-                    cim_id=ontology_category_id
+                    cim_id=ontology_category_id,
                 )
 
                 ontology_category_documentation = ontology_category.get("documentation")
@@ -315,11 +344,12 @@ class QOntology(models.Model):
 
             for ontology_property_order, ontology_property in enumerate(defined_properties, start=len(new_property_proxies)+1):
                 ontology_property_name = ontology_property["name"]
-                ontology_property_id = ontology_property.get("id", None)
+                ontology_property_id = ontology_property.get("id")
                 ontology_property_field_type = QPropertyTypes.get(ontology_property["property_type"])
                 assert ontology_property_field_type is not None, "invalid property_type specified"
 
                 (new_property_proxy, created_property_proxy) = QPropertyProxy.objects.get_or_create(
+                    ontology=self,
                     model_proxy=new_model_proxy,
                     name=ontology_property_name,
                     cim_id=ontology_property_id,
@@ -327,7 +357,6 @@ class QOntology(models.Model):
                 )
                 ontology_property_documentation = ontology_property.get("documentation")
                 ontology_property_cardinality_min, ontology_property_cardinality_max = re.split("\.|,", ontology_property.get("cardinality"))  # TODO: WE NEED TO DECIDE IF CARDINALITY IS SPLIT ON '.' OR ','
-                ontology_property_is_meta = ontology_property.get("is_meta", False)
                 ontology_property_is_meta = ontology_property.get("is_meta", False)
                 ontology_property_is_nillable = ontology_property.get("is_nillable", False)
                 ontology_property_is_hierarchical = ontology_property.get("is_hierarchical", False)
@@ -403,6 +432,7 @@ class QOntology(models.Model):
             msg = "The name of this ontology instance does not match the name found in the QConfig file"
             if request:
                 messages.add_message(request, messages.WARNING, msg)
+            raise QError(msg)
 
         # version should match(ish) the instance field...
         ontology_version = ontology_content.get("version")
@@ -410,6 +440,7 @@ class QOntology(models.Model):
             msg = "The major version of this ontology instance does not match the major version of the QConfig file"
             if request:
                 messages.add_message(request, messages.WARNING, msg)
+            raise QError(msg)
 
         # documentation can overwrite the instance field (ie: the field set in the admin interface)...
         ontology_documentation = ontology_content.get("documentation")
@@ -421,6 +452,8 @@ class QOntology(models.Model):
         assert ontology_type is not None, "invalid ontology_type specified"
         if self.ontology_type != ontology_type:
             msg = "This ontology is a {0}, but the content is for a {1}".format(self.ontology_type, ontology_type)
+            if request:
+                messages.add_message(request, messages.WARNING, msg)
             raise QError(msg)
 
         # if specified, parent must exist and match the instance field (and it must be specified for SPECIALIZATIONS)...
@@ -453,7 +486,9 @@ class QOntology(models.Model):
 
             ontology_model_name = ontology_model["name"]
             ontology_model_package = ontology_model["package"]
-            ontology_model_id = ontology_model.get("id", None)
+            # HERE IS ONE DIFFERENCE BETWEEN SPECIALIZATIONS & SCHEMAS...
+            # SCHEMA MODELS PROBABLY DON'T HAVE EXPLICIT "cim_ids"...
+            ontology_model_id = ontology_model.get("id", "{}.{}".format(self.key, ontology_model_name))
 
             (new_model_proxy, created_model_proxy) = QModelProxy.objects.get_or_create(
                 # these fields are the "defining" ones (other fields can change w/out creating new proxies)
@@ -510,10 +545,12 @@ class QOntology(models.Model):
                 ontology_category_id = ontology_category.get("id", None)
 
                 (new_category_proxy, created_category_proxy) = QCategoryProxy.objects.get_or_create(
+                    ontology=self,
                     model_proxy=new_model_proxy,
                     name=ontology_category_name,
                     cim_id=ontology_category_id
                 )
+                # new_model_proxy.category_proxies.add(new_category_proxy)
 
                 ontology_category_documentation = ontology_category.get("documentation")
                 if ontology_category_documentation:
@@ -535,11 +572,13 @@ class QOntology(models.Model):
                 assert ontology_property_field_type is not None, "invalid property_type specified"
 
                 (new_property_proxy, created_property_proxy) = QPropertyProxy.objects.get_or_create(
+                    ontology=self,
                     model_proxy=new_model_proxy,
                     name=ontology_property_name,
                     cim_id=ontology_property_id,
                     field_type=ontology_property_field_type
                 )
+                # new_model_proxy.property_proxies.add(new_property_proxy)
 
                 ontology_property_documentation = ontology_property.get("documentation")
                 ontology_property_cardinality_min, ontology_property_cardinality_max = re.split("\.|,", ontology_property.get("cardinality"))  # TODO: WE NEED TO DECIDE IF CARDINALITY IS SPLIT ON '.' OR ','
@@ -594,11 +633,11 @@ class QOntology(models.Model):
             if old_model_proxy not in new_model_proxies:
                 old_model_proxy.delete()
 
-        # TODO: DO THE SAME CHECK FOR NEW / EXISTING category_proxies
-
         # reset whatever's left...
         for model_proxy in QModelProxy.objects.filter(ontology=self):
             model_proxy.reset(force_save=True)
+            for category_proxy in model_proxy.category_proxies.all():
+                category_proxy.reset(force_save=True)
             for property_proxy in model_proxy.property_proxies.all():
                 property_proxy.reset(force_save=True)
 
@@ -655,6 +694,9 @@ class QOntology(models.Model):
         new_category_proxy.save()
         return new_category_proxy
 
+    def add_property_proxy(self, model_proxy, inherited_property_proxy):
+        model_proxy
+
     def inherit_property_proxy(self, model_proxy, inherited_property_proxy, inherited_order):
 
         (new_property_proxy, created_property_proxy) = QPropertyProxy.objects.get_or_create(
@@ -692,7 +734,6 @@ class QOntology(models.Model):
         return new_property_proxy
 
     def register(self, **kwargs):
-
         request = kwargs.get("request")
 
         # check I'm allowed to register the ontology...
@@ -722,12 +763,13 @@ class QOntology(models.Model):
             # do the actual parsing...
             # TODO: CAN "parse_schema" & "parse_specialization" BE COLLAPSED INTO A SINGLE FN?
             if self.ontology_type == QOntologyTypes.SCHEMA:
-                self.parse_schema(ontology_content)
+                self.parse_schema(ontology_content, request=request)
             else:
-                self.parse_specialization(ontology_content)
+                self.parse_specialization(ontology_content, request=request)
             # deal w/ any uncategorized properties...
             for model_proxy in self.model_proxies.all():
                 uncategorized_category_proxy, created_uncategorized_category_proxy = QCategoryProxy.objects.get_or_create(
+                    ontology=self,
                     name=UNCATEGORIZED_CATEGORY_PROXY_NAME,
                     model_proxy=model_proxy,
                     is_uncategorized=True,
@@ -735,6 +777,8 @@ class QOntology(models.Model):
                 if created_uncategorized_category_proxy:
                     uncategorized_category_proxy.order = model_proxy.category_proxies.count()
                     uncategorized_category_proxy.save()
+                    model_proxy.category_proxies.add(uncategorized_category_proxy)
+                model_proxy.save()
                 for uncategorized_property_proxy in model_proxy.property_proxies.filter(category_proxy=None):
                     uncategorized_property_proxy.category_proxy = uncategorized_category_proxy
                     uncategorized_property_proxy.save()

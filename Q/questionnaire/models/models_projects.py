@@ -184,10 +184,21 @@ class QProject(models.Model):
         else:
             return User.objects.none()
 
-
 #################
 # through model #
 #################
+
+    def add_ontology(self, ontology):
+        project_ontology = QProjectOntology(
+            project = self,
+            ontology = ontology
+        )
+        project_ontology.save()
+
+    def remove_ontology(self, ontology):
+        project_ontology = QProjectOntology.objects.get(project=self, ontology=ontology)
+        project_ontology.delete()
+
 
 # this is explained elsewhere, but I am using a "through" model so that I have access to the save/delete fns/signals
 # using the built-in m2m_changed signal is still buggy; it sends the "pre_clear" and "post_clear" signals prior to re-adding models

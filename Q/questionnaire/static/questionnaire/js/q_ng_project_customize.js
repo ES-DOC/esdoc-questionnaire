@@ -1,5 +1,7 @@
-/* q_ng_project.js */
+/* q_ng_project_customize.js */
 /* ng app for dealing w/ QProjects */
+
+/* TODO: CONSOLIDATE "q_project.js" & "q_project_customize.js" & "q_project_manage.js" */
 
 (function() {
     var app = angular.module("q_project", ["q_base"]);
@@ -78,7 +80,7 @@
 
         this.load_documents = function() {
             $global_services.setBlocking(true);
-            $http.get("/api/realizations_lite/?project=" + project_id, {format: "json"})
+            $http.get("/api/customizations_lite/?project=" + project_id, {format: "json"})
                 .success(function (data) {
                     console.log(data);
                     project_controller.documents = data.results;
@@ -150,7 +152,7 @@
         });
 
         this.create_document_type = function() {
-            var create_document_type_url = "/" + project_name + "/edit/" + project_controller.selected_document_type.ontology + "/" + project_controller.selected_document_type.name;
+            var create_document_type_url = "/" + project_name + "/customize/" + project_controller.selected_document_type.ontology + "/" + project_controller.selected_document_type.name;
             $window.open(create_document_type_url, '_blank');
         };
 
@@ -171,32 +173,36 @@
             project_controller.update_paging();
         };
 
-        this.document_publish = function(document) {
-            $global_services.setBlocking(true);
-            var publish_document_request_url = "/services/realization_publish/";
-            var publish_document_request_data = $.param({
-                "document_id": document.id
+        this.customization_delete = function(customization) {
+            var msg = "This will permanently delete this customization.  Are you sure you wish to continue?"
+            bootbox.confirm(msg, function(result) {
+                if (! result) {
+                    show_lil_msg("Good thinking.");
+                }
+                else {
+                    $global_services.setBlocking(true);
+                    var customization_delete_request_url = "/services/customization_delete/";
+                    var customization_delete_request_data = $.param({
+                        "customization_id": customization.id
+                    });
+                    $http({
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                        url: customization_delete_request_url,
+                        data: customization_delete_request_data
+                    }).success(function(data) {
+                        project_controller.load_documents();
+                        check_msg();
+                    })
+                    .error(function(data) {
+                        console.log(data);
+                        check_msg();
+                    })
+                    .finally(function() {
+                        $global_services.setBlocking(false);
+                    });
+                }
             });
-            $http({
-                method: 'POST',
-                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-                url: publish_document_request_url,
-                data: publish_document_request_data
-            }).success(function(data) {
-                /* don't forget that "load" also re-filters and re-pages stuff */
-                /* this is important b/c $http is asynchronous, */
-                /* so I want to wait until the newly serialized documents have been returned before doing that */
-                project_controller.load_documents();
-                check_msg();
-            })
-            .error(function(data) {
-                console.log(data);
-                check_msg();
-            })
-            .finally(function() {
-                $global_services.setBlocking(false);
-            });
-
         };
 
         this.print_stuff = function() {

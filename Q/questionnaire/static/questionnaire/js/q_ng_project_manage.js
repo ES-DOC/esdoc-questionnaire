@@ -52,6 +52,7 @@
             $http.get("/api/projects/" + project_id, {format: "json"})
                 .success(function (data) {
                     project_controller.project = data;
+                    project_controller.saved_project_title = data.title;
                 })
                 .error(function (data) {
                     console.log(data);
@@ -112,6 +113,7 @@
                 data: project_controller.project
             })
             .success(function(data) {
+                project_controller.saved_project_title = data.title;
                 show_msg("Successfully updated project.", "success");
             })
             .error(function(data) {

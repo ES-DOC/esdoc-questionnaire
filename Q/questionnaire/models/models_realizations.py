@@ -61,7 +61,13 @@ def get_new_realizations(project=None, ontology=None, model_proxy=None, **kwargs
     model_realization.reset()
 
     category_realizations = []
-    for category_proxy in model_proxy.category_proxies.all():
+    # TODO: IS THERE A MORE EFFICIENT WAY TO DO THIS?
+    # gets _all_ of the categories that are relevant to this model...
+    used_category_proxies = [p.category_proxy for p in model_proxy.property_proxies.all()]
+    category_proxies = set(model_proxy.category_proxies.all())
+    category_proxies.update(used_category_proxies)
+    for category_proxy in category_proxies:
+    # for category_proxy in model_proxy.category_proxies.all():
         with allow_unsaved_fk(QCategoryRealization, ["model"]):
             category_realization = QCategoryRealization(
                 proxy=category_proxy,

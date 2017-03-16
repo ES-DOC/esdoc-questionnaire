@@ -11,7 +11,7 @@
 
 {% block scripts %}
     {{ block.super }}
-    <script type="text/javascript" src="{% static 'questionnaire/js/q_ng_project.js' %}"></script>
+    <script type="text/javascript" src="{% static 'questionnaire/js/q_ng_project_customize.js' %}"></script>
     <script language="JavaScript">
 
         var session_key = "{{ session_key }}";
@@ -54,7 +54,7 @@
                     <div class="col-lg-10 col-lg-offset-1 col-md-10 col-md-offset-1">
 
                         <div class="title">
-                            {{ project.title }} ES-DOC Questionnaire Project
+                            <a href="/{{ project.name }}" title="ES-DOC Questionnaire Project Home Page"><strong>{{ project.title }}</strong></a> ES-DOC Questionnaire Project Customizer
                         </div> <!-- /.title -->
 
                         <p class="clearfix">
@@ -79,13 +79,13 @@
                         <div class="fieldset_content" ng-hide="project_documentation_fieldset_controller.is_collapsed">
 
                             <p>
-                                This is the Project Page for the
+                                This is the Project Customizer Page for the
                                 {% if project.url %}
                                     <a href="{{ project.url }}">{{ project.title }}</a>
                                 {% else %}
                                     {{ project.title }}
                                 {% endif %} {# /project.url #}
-                                project.  Use this page for creating new documents or updating existing documents.
+                                project.  Use this page for creating new customizations or updating existing customizations.
                             </p>
                             <p>
                                 <a href="{% url 'help' %}">ES-DOC Questionnaire help</a> is available.
@@ -111,15 +111,6 @@
                                     <span class="col-lg-12 col-md-12"><strong>Project does not require authentication.  Any user can create or modify a document or a customization.</strong></span>
                                 </div>
                             {% endif %} {# /project.authenticated #}
-                            {% if can_customize %}
-                                <div class="row voffset-4">
-                                    <span class="col-lg-4 col-md-4">
-                                        <a href="{% url 'project_customize' project_name=project.name %}" class="btn btn-xs btn-info" role="button">
-                                            Customize ES-DOC Questionnaire
-                                        </a>
-                                    </span>
-                                </div>
-                            {% endif %}
                             {% if can_manage %}
                                 <div class="row voffset-4">
                                     <span class="col-lg-4 col-md-4">
@@ -129,17 +120,6 @@
                                     </span>
                                 </div>
                             {% endif %}
-                            {% if can_join %}
-                                <div class="row voffset-4">
-                                    <span class="col-lg-4 col-md-4">
-                                        <button class="btn btn-xs btn-info"
-                                                title="Your request will be sent to the project administrator for review."
-                                                ng-click="project_controller.project_join_request('{{ user.pk }}')">
-                                                Join {{ project.title }} Project
-                                        </button>
-                                    </span>
-                                </div>
-                            {% endif %} {# /can_join #}
                             <br/>
 
                         </div> <!-- /.fieldset_content -->
@@ -150,7 +130,7 @@
                     <div class="row well">
                         <div class="form-group">
                             <div class="col-lg-2">
-                                <help help_text="Please select a supported document type to create.  This will also filter the list of existing documents below."></help>
+                                <help help_text="Please select a supported document type to create a customization for.  This will also filter the list of existing customizations below."></help>
                                 &nbsp;Document Type:&nbsp;
                             </div>
                             <div class="col-lg-4">
@@ -193,26 +173,23 @@
                                                 <span class="glyphicon glyphicon-sort text-muted"></span>
                                             </span>
                                         </th>
-                                        <th ng-click="project_controller.change_document_sort_type('label')">
-                                            <span>Document Label</span>
-                                            <span ng-show="project_controller.document_sort_type=='label'">
+                                        <th ng-click="project_controller.change_document_sort_type('name')">
+                                            <span>Name</span>
+                                            <span ng-show="project_controller.document_sort_type=='name'">
                                                 <span ng-show="project_controller.document_sort_reverse" class="glyphicon glyphicon-sort-by-alphabet-alt"></span>
                                                 <span ng-hide="project_controller.document_sort_reverse" class="glyphicon glyphicon-sort-by-alphabet"></span>
                                             </span>
-                                            <span ng-hide="project_controller.document_sort_type=='label'">
+                                            <span ng-hide="project_controller.document_sort_type=='name'">
                                                 <span class="glyphicon glyphicon-sort text-muted"></span>
                                             </span>
                                         </th>
-                                        <th>
-                                            <span>Version</span>
-                                        </th>
-                                        <th ng-click="project_controller.change_document_sort_type('published')">
-                                            <span>Last Published</span>
-                                            <span ng-show="project_controller.document_sort_type=='published'">
+                                        <th ng-click="project_controller.change_document_sort_type('modified')">
+                                            <span>Last Modified</span>
+                                            <span ng-show="project_controller.document_sort_type=='modified'">
                                                 <span ng-show="project_controller.document_sort_reverse" class="glyphicon glyphicon-sort-by-order-alt"></span>
                                                 <span ng-hide="project_controller.document_sort_reverse" class="glyphicon glyphicon-sort-by-order"></span>
                                             </span>
-                                            <span ng-hide="project_controller.document_sort_type=='published'">
+                                            <span ng-hide="project_controller.document_sort_type=='modified'">
                                                 <span class="glyphicon glyphicon-sort text-muted"></span>
                                             </span>
                                         </th>
@@ -220,8 +197,7 @@
                                 </thead>
                                 <tbody>
                                     <tr ng-repeat="document in project_controller.paged_documents | orderBy:project_controller.document_sort_type:project_controller.document_sort_reverse"
-                                        ng-class="document.synchronization.length ? 'unsynchronized' : 'synchronized'"
-                                        ng-show="document.is_active">
+                                        ng-class="document.synchronization.length ? 'unsynchronized' : 'synchronized'">
                                         <td>
                                             {% verbatim ng %}
                                                 {{ document.proxy_title }}
@@ -229,47 +205,27 @@
                                         </td>
                                         <td>
                                             {% verbatim ng %}
-                                                <span ng-show="document.label">
-                                                    {{ document.label }}
-                                                </span>
-                                                <span ng-hide="document.label">
-                                                    <em>(label incomplete)</em>
-                                                </span>
-                                                &nbsp;<span ng-show="!document.is_complete" class="glyphicon glyphicon-pushpin" title="This document is incomplete."/>
+                                                {{ document.name }}
+                                                &nbsp;<span ng-show="document.is_default" class="glyphicon glyphicon-star" title="This is the default customization for this document type."/>
                                             {% endverbatim ng %}
                                         </td>
                                         <td>
                                             {% verbatim ng %}
-                                                {{ document.version }}
+                                                {{ document.modified | date:'yyyy-MM-dd HH:mm:ss Z' }}
                                             {% endverbatim ng %}
                                         </td>
                                         <td>
-                                            {% verbatim ng %}
-                                                <span ng-show="document.is_published">
-                                                    {{ document.last_published | date:'yyyy-MM-dd HH:mm:ss Z' }}
-                                                </span>
-                                                <span ng-hide="document.is_published">
-                                                    <em>(document unpublished)</em>
-                                                </span>
-                                            {% endverbatim ng %}
-                                        </td>
-                                        <td>
-                                            {% if can_edit %}
-                                                <a target="_blank" class="btn btn-sm btn-info" href="/{{ project_controller.project.name }}/edit/{{ document.path }}">edit</a>
-                                            {% endif %}
-                                            {% if can_view %}
-                                                <a target="_blank" class="btn btn-sm btn-info" href="/{{ project_controller.project.name }}/view/{{ document.path }}">view in editor</a>
-                                            {% endif %}
-                                            {% if can_publish %}
-                                                <button class="btn btn-sm btn-info" ng-show="document.is_complete" ng-click="project_controller.document_publish(document)">
-                                                    publish
+                                            <a target="_blank" class="btn btn-sm btn-info" href="/{{ project_controller.project.name }}/customize/{{ customization.path }}">customize</a>
+                                             {% if can_delete %}
+                                                <button class="btn btn-sm btn-info" ng-hide="document.is_default" ng-click="project_controller.customization_delete(document)">
+                                                    delete
                                                 </button>
                                             {% endif %}
                                         </td>
                                     </tr>
                                     <tr ng-hide="project_controller.total_documents">
                                         <td colspan="100%">
-                                            <span class="documentation">No documents found</span>
+                                            <span class="documentation">No customizations found</span>
                                         </td>
                                     </tr>
                                 </tbody>

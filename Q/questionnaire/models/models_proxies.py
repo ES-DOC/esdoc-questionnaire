@@ -15,7 +15,7 @@ from uuid import uuid4
 
 from Q.questionnaire import APP_LABEL, q_logger
 from Q.questionnaire.q_fields import QPropertyTypes, QAtomicTypes, QJSONField
-from Q.questionnaire.q_utils import QError, pretty_string, validate_no_spaces, legacy_code
+from Q.questionnaire.q_utils import QError, EnumeratedType, EnumeratedTypeList, pretty_string, validate_no_spaces, legacy_code
 from Q.questionnaire.q_constants import *
 
 ###################
@@ -24,6 +24,18 @@ from Q.questionnaire.q_constants import *
 
 UNCATEGORIZED_CATEGORY_PROXY_NAME = "uncategorized"
 UNCATEGORIZED_CATEGORY_PROXY_PACKAGE = "uncategorized"
+
+
+class ProxyType(EnumeratedType):
+
+    def __str__(self):
+        return "{0}".format(self.get_name())
+
+ProxyTypes = EnumeratedTypeList([
+    ProxyType("MODEL", "Model Realization"),
+    ProxyType("CATEGORY", "Category Realization"),
+    ProxyType("PROPERTY", "Property Realization"),
+])
 
 ###################
 # some helper fns #
@@ -48,6 +60,42 @@ def get_values_schema():
     properties_schema = classes_schema["properties"]["properties"]["properties"]["defined"]["items"]
     properties_values_schema = properties_schema["properties"]["values"]
     return properties_values_schema
+
+
+def recurse_through_proxies(current_model_proxy, proxy_types, **kwargs):
+    """
+    recursively gathers all proxies of a certain type
+    :param current_model_proxy: the model proxy from which to begin checking
+    :param realization_types: the types of proxies to check
+    :return: a set of proxies
+    """
+
+    all_proxies = kwargs.pop("all_proxies", set())
+
+    for property_proxy in current_model_proxy.property_proxies.all():
+
+        if property_proxy not in all_proxies:
+
+            if ProxyTypes.PROPERTY in proxy_types:
+                all_proxies.add(property_proxy)
+
+            if property_proxy.field_type == QPropertyTypes.RELATIONSHIP:
+                for target_model_proxy in property_proxy.relationship_target_models.all():
+                    recurse_through_proxies(
+                        target_model_proxy,
+                        proxy_types,
+                        all_proxies=all_proxies,
+                    )
+
+    for category_proxy in current_model_proxy.category_proxies.all():
+        if ProxyTypes.CATEGORY in proxy_types:
+            all_proxies.add(category_proxy)
+
+    if ProxyTypes.MODEL in proxy_types:
+        all_proxies.add(current_model_proxy)
+
+    return all_proxies
+
 
 #####################
 # the actual models #
@@ -92,6 +140,7 @@ class QProxy(models.Model):
         return not equality_result
 
     def __str__(self):
+        # return self.cim_id
         return pretty_string(self.name)
 
     @property
@@ -135,6 +184,9 @@ class QModelProxy(QProxy):
 
     ontology = models.ForeignKey("QOntology", blank=True, null=True, related_name="model_proxies")
 
+    # property_proxies = models.ManyToManyField("QPropertyProxy", blank=True, related_name="model_proxies")
+    # category_proxies = models.ManyToManyField("QCategoryProxy", blank=True, related_name="model_proxies")
+
     package = models.CharField(max_length=SMALL_STRING, blank=False)
 
     is_document = models.NullBooleanField()
@@ -167,6 +219,8 @@ class QCategoryProxy(QProxy):
         # TODO: SEE THE COMMENTS REGARDING "ordering" FOR QModelProxy ABOVE
         ordering = ["order"]
 
+    ontology = models.ForeignKey("QOntology", blank=True, null=True, related_name="category_proxies")
+
     model_proxy = models.ForeignKey("QModelProxy", blank=False, related_name="category_proxies")
 
     is_uncategorized = models.BooleanField(default=False)
@@ -175,6 +229,7 @@ class QCategoryProxy(QProxy):
     )
 
     def fully_qualified_key(self):
+        import ipdb; ipdb.set_trace()
         return "{0}.{1}".format(
             self.model_proxy.get_fully_qualified_key(),
             self.key,
@@ -221,8 +276,12 @@ class QPropertyProxy(QProxy):
 
     objects = QPropertyProxyManager()
 
+    ontology = models.ForeignKey("QOntology", blank=True, null=True, related_name="property_proxies")
+
     model_proxy = models.ForeignKey("QModelProxy", blank=False, related_name="property_proxies")
+
     category_proxy = models.ForeignKey("QCategoryProxy", blank=True, null=True, related_name="property_proxies")
+
     # as w/ relationships below, it takes 2 fields to setup categories...
     # the id is specified in the specialization & used in the "QPropertyProxy.reset" fn to actually link to the correct category_proxy
     category_id = models.CharField(blank=True, null=True, max_length=SMALL_STRING)
@@ -255,6 +314,7 @@ class QPropertyProxy(QProxy):
     relationship_target_models = models.ManyToManyField("QModelProxy", blank=True)
 
     def fully_qualified_key(self):
+        import ipdb; ipdb.set_trace()
         return "{0}.{1}".format(
             self.model_proxy.get_fully_qualified_key(),
             self.key,
@@ -283,8 +343,6 @@ class QPropertyProxy(QProxy):
     def reset(self, **kwargs):
         force_save = kwargs.pop("force_save", False)
 
-        ontology = self.model_proxy.ontology
-
         category_id = self.category_id
         if category_id:
             self.category_proxy = self.model_proxy.category_proxies.get(cim_id=category_id)
@@ -299,17 +357,18 @@ class QPropertyProxy(QProxy):
             pass
 
         else:  # self.field_type == QPropertyTypes.RELATIONSHIP
+
             self.relationship_target_models.clear()
             for relationship_target in self.relationship_target_names:
-                relationship_target_package, relationship_target_name = relationship_target.split('.')
+                # relationship_target_package, relationship_target_name = relationship_target.split('.')
                 if self.values:
                     # if this is specialized, there will be further constraints on which target objects to point to...
                     for relationship_target_value in self.values:
                         try:
                             relationship_target_model = QModelProxy.objects.get(
-                                ontology=ontology,
-                                package=relationship_target_package,
-                                name=relationship_target_name,
+                                # ontology=ontology,
+                                # package=relationship_target_package,
+                                # name=relationship_target_name,
                                 cim_id=relationship_target_value
                             )
                             self.relationship_target_models.add(relationship_target_model)
@@ -320,9 +379,10 @@ class QPropertyProxy(QProxy):
                     # if this is not specialized, just use the unconstrained target...
                     try:
                         relationship_target_model = QModelProxy.objects.get(
-                            ontology=ontology,
-                            package=relationship_target_package,
-                            name=relationship_target_name
+                            # ontology=ontology,
+                            # package=relationship_target_package,
+                            # name=relationship_target_name
+                            cim_id=relationship_target
                         )
                         self.relationship_target_models.add(relationship_target_model)
                     except QModelProxy.DoesNotExist:

@@ -110,6 +110,7 @@ urlpatterns = patterns('',
 
     # projects...
     url(r'^(?P<project_name>[^/]+)/$', q_project, name="project"),
+    url(r'^(?P<project_name>[^/]+)/customize/$', q_project_customize, name="project_customize"),
     url(r'^(?P<project_name>[^/]+)/manage/$', q_project_manage, name="project_manage"),
 
     # index...

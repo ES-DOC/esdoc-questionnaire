@@ -160,7 +160,7 @@ def get_cached_customizations(request):
     except QError:
         # ** THIS SECTION JUST EXISTS FOR DEBUGGING ** #
         import ipdb; ipdb.set_trace()
-        session_key = "dee65324-7b03-4850-b246-28f3a72dd0df"
+        session_key = "d33e5c1c-8c86-4d7f-bf44-b479745411d1"
         cached_customizations_key = "{0}_customizations".format(session_key)
         customizations = get_cached_object(request.session, cached_customizations_key)
 

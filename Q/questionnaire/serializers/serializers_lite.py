@@ -51,11 +51,12 @@ class QModelCustomizationSerializerLite(serializers.ModelSerializer):
         model = QModelCustomization
         fields = (
             "id", "key", "created", "modified",
-            "name", "documentation", "proxy", "project", "is_default",
+            "name", "documentation", "project", "proxy_title", "proxy_name", "is_default",
             "path", "ontology", "synchronization",
         )
 
-    proxy = serializers.StringRelatedField(read_only=True)
+    proxy_title = serializers.SerializerMethodField()
+    proxy_name = serializers.SerializerMethodField()
     path = serializers.SerializerMethodField()  # method_name="get_path"
     ontology = serializers.SerializerMethodField()  # method_name="get_ontology"
     synchronization = serializers.SlugRelatedField(
@@ -63,6 +64,12 @@ class QModelCustomizationSerializerLite(serializers.ModelSerializer):
         read_only=True,
         slug_field="type",
     )
+
+    def get_proxy_name(self, obj):
+        return obj.proxy.name
+
+    def get_proxy_title(self, obj):
+        return str(obj.proxy)
 
     def get_path(self, obj):
         """

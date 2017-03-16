@@ -181,6 +181,7 @@ def convert_to_camelCase(strng):
 # sequence manipulation #
 #########################
 
+
 def find_in_sequence(fn, sequence):
     for item in sequence:
         if fn(item) == True:

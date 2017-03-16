@@ -13,7 +13,6 @@ from itertools import chain
 from rest_framework import serializers
 
 from Q.questionnaire.models.models_projects import QProject
-from Q.questionnaire.q_utils import serialize_model_to_dict
 
 # just using the standard ModleSerializer for these classes
 # no need to inherit from QSerializer; no need for recursion
@@ -119,13 +118,16 @@ class QProjectTestDocumentTypeSerializer(serializers.ModelSerializer):
     is_active = serializers.SerializerMethodField()
 
     def get_title(self, obj):
-        return SUPPORTED_DOCUMENTS_TEST_MAP[obj.name].get("title")
+        document_type_key = obj.cim_id.rsplit('.')[-1]
+        return SUPPORTED_DOCUMENTS_TEST_MAP[document_type_key].get("title")
 
     def get_category(self, obj):
-        return SUPPORTED_DOCUMENTS_TEST_MAP[obj.name].get("category")
+        document_type_key = obj.cim_id.rsplit('.')[-1]
+        return SUPPORTED_DOCUMENTS_TEST_MAP[document_type_key].get("category")
 
     def get_is_active(self, obj):
         # if I have found a model_proxy to serialize, then it is, by definition, active
+        # (even though it may not have been customized yet... there is error-handling in "q_dit" to cope w/ that situation)
         return True
 
     def to_representation(self, instance):
@@ -169,7 +171,8 @@ class QProjectTestSerializer(serializers.ModelSerializer):
         model_proxies = QModelProxy.objects.filter(ontology__in=obj.ontologies.all(), is_document=True)
         for document_type_name, document_type_value in copy.deepcopy(SUPPORTED_DOCUMENTS_TEST_MAP).items():
             try:
-                model_proxy = model_proxies.get(name=document_type_name)
+                # here is a regex which matches anything followed by a dot followed by the document_type_name
+                model_proxy = model_proxies.get(cim_id__regex=r"^.*\.{0}$".format(document_type_name))
                 document_types.append(QProjectTestDocumentTypeSerializer(model_proxy).data)
             except QModelProxy.DoesNotExist:
                 if document_type_value.get("category") is None:
