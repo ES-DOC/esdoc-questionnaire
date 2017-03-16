@@ -18,6 +18,7 @@ Q-specific sites
 
 from django.contrib.sites.models import Site
 from django.db import models
+from django.conf import settings
 
 from Q.questionnaire import APP_LABEL
 from Q.questionnaire.q_utils import EnumeratedType, EnumeratedTypeList
@@ -71,3 +72,10 @@ def get_site_type(site):
         return q_site.type
     except QSite.DoesNotExist:
         return None
+
+
+def get_site():
+    # Assuming that requests have been made prior to calling this fn,
+    # the "dynamic_sites" middleware will have run which will have set "settings.SITE_ID" correctly
+    # This fn will return the currently active site
+    return Site.objects.get(pk=settings.SITE_ID)

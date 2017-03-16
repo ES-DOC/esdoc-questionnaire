@@ -11,10 +11,11 @@
 from allauth.account.models import EmailAddress
 from django.contrib.auth.models import User
 from django.core.mail import send_mail
-from django.conf import settings
 from django.db import models
+from django.conf import settings
 
 from Q.questionnaire import APP_LABEL, q_logger
+from Q.questionnaire.models.models_sites import get_site
 
 # This is a custom UserProfile for the Q
 # it includes Q-specific things
@@ -124,9 +125,8 @@ class QUserProfile(models.Model):
 
     def created(self):
         # this fns is referenced in "signals_users.py"
-
-        mail_content = "User '{0}' created".format(
-            self,
+        mail_content = "User '{0}' created (on site '{1}').".format(
+            self, get_site(),
         )
         mail_from = settings.EMAIL_HOST_USER
         mail_to = [settings.EMAIL_HOST_USER, ]
