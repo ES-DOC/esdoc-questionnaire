@@ -1,0 +1,200 @@
+{
+  "name": "test_hierarchical_specialization",
+  "version": "1.0.0",
+  "documentation": "A ontology for testing working w/ hierarchies",
+  "date": "2016-12-05 14:21:27.178370",
+  "ontology_type": "SPECIALIZATION",
+  "ontology_base": "test_schema_2.0.0",
+  "classes": {
+    "inherited": [],
+    "excluded": [],
+    "defined": [
+      {
+        "name": "root_model",
+        "package": "test_package",
+        "id": "test_hierarchical_specialization_1.0.0.test_package.root_model",
+        "is_document": true,
+        "is_meta": false,
+        "documentation": "this is a test model",
+        "label": {
+          "text": "model name: {}",
+          "fields": [
+            "name"
+          ]
+        },
+        "properties": {
+          "inherited": [],
+          "excluded": [],
+          "defined": [
+            {
+              "name": "name",
+              "is_meta": false,
+              "cardinality": "1.1",
+              "is_nillable": true,
+              "property_type": "ATOMIC",
+              "atomic_type": "STRING"
+            },
+            {
+              "name": "subcomponent_one",
+              "is_meta": false,
+              "cardinality": "0.1",
+              "is_nillable": true,
+              "is_hierarchical": true,
+              "property_type": "RELATIONSHIP",
+              "relationship_targets": [
+                "test_hierarchical_specialization_1.0.0.test_package.subcomponent_one"
+              ]
+            },
+            {
+              "name": "subcomponent_two",
+              "is_meta": false,
+              "cardinality": "1.1",
+              "is_nillable": true,
+              "is_hierarchical": true,
+              "property_type": "RELATIONSHIP",
+              "relationship_targets": [
+                "test_hierarchical_specialization_1.0.0.test_package.subcomponent_two"
+              ]
+            },
+            {
+              "name": "subcomponent_three",
+              "is_meta": false,
+              "cardinality": "1.N",
+              "is_nillable": true,
+              "is_hierarchical": true,
+              "property_type": "RELATIONSHIP",
+              "relationship_targets": [
+                "test_hierarchical_specialization_1.0.0.test_package.subcomponent_three"
+              ]
+            }
+          ]
+        },
+        "categories": {
+          "inherited": [],
+          "excluded": [],
+          "defined": []
+        }
+      },
+      {
+        "name": "subcomponent_one",
+        "package": "test_package",
+        "id": "test_hierarchical_specialization_1.0.0.test_package.subcomponent_one",
+        "is_document": false,
+        "is_meta": false,
+        "properties": {
+          "inherited": [],
+          "excluded": [],
+          "defined": [
+            {
+              "name": "name",
+              "is_meta": false,
+              "cardinality": "1.1",
+              "is_nillable": true,
+              "property_type": "ATOMIC",
+              "atomic_type": "STRING"
+            },
+            {
+              "name": "subcomponent_one_property",
+              "is_meta": false,
+              "cardinality": "1.1",
+              "is_nillable": true,
+              "property_type": "ATOMIC",
+              "atomic_type": "STRING",
+              "category_id": "test_hierarchical_specialization_1.0.0.test_package.subcomponent_one.category_one"
+            }
+          ]
+        },
+        "categories": {
+          "inherited": [],
+          "excluded": [],
+          "defined": [
+            {
+              "name": "category_one",
+              "id": "test_hierarchical_specialization_1.0.0.test_package.subcomponent_one.category_one"
+            }
+          ]
+        }
+      },
+      {
+        "name": "subcomponent_two",
+        "package": "test_package",
+        "id": "test_hierarchical_specialization_1.0.0.test_package.subcomponent_two",
+        "is_document": false,
+        "is_meta": false,
+        "properties": {
+          "inherited": [],
+          "excluded": [],
+          "defined": [
+            {
+              "name": "name",
+              "is_meta": false,
+              "cardinality": "1.1",
+              "is_nillable": true,
+              "property_type": "ATOMIC",
+              "atomic_type": "STRING"
+            },
+            {
+              "name": "subcomponent_two_property",
+              "is_meta": false,
+              "cardinality": "1.1",
+              "is_nillable": true,
+              "property_type": "ATOMIC",
+              "atomic_type": "STRING",
+              "category_id": "test_hierarchical_specialization_1.0.0.test_package.subcomponent_two.category_two"
+            }
+          ]
+        },
+        "categories": {
+          "inherited": [],
+          "excluded": [],
+          "defined": [
+            {
+              "name": "category_two",
+              "id": "test_hierarchical_specialization_1.0.0.test_package.subcomponent_two.category_two"
+            }
+          ]
+        }
+      },
+      {
+        "name": "subcomponent_three",
+        "package": "test_package",
+        "id": "test_hierarchical_specialization_1.0.0.test_package.subcomponent_three",
+        "is_document": false,
+        "is_meta": false,
+        "properties": {
+          "inherited": [],
+          "excluded": [],
+          "defined": [
+            {
+              "name": "name",
+              "is_meta": false,
+              "cardinality": "1.1",
+              "is_nillable": true,
+              "property_type": "ATOMIC",
+              "atomic_type": "STRING"
+            },
+            {
+              "name": "subcomponent_three_property",
+              "is_meta": false,
+              "cardinality": "1.1",
+              "is_nillable": true,
+              "property_type": "ATOMIC",
+              "atomic_type": "STRING",
+              "category_id": "test_hierarchical_specialization_1.0.0.test_package.subcomponent_three.category_three"
+            }
+          ]
+        },
+        "categories": {
+          "inherited": [],
+          "excluded": [],
+          "defined": [
+            {
+              "name": "category_three",
+              "id": "test_hierarchical_specialization_1.0.0.test_package.subcomponent_three.category_three"
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

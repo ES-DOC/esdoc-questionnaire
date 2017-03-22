@@ -343,15 +343,15 @@ class QPropertyProxy(QProxy):
     def reset(self, **kwargs):
         force_save = kwargs.pop("force_save", False)
 
-        category_id = self.category_id
-        if category_id:
-            self.category_proxy = self.model_proxy.category_proxies.get(cim_id=category_id)
+        # category_id = self.category_id
+        # if category_id:
+        #     self.category_proxy = self.model_proxy.category_proxies.get(cim_id=category_id)
 
         if self.is_hierarchical:
             assert self.field_type == QPropertyTypes.RELATIONSHIP
 
         if self.field_type == QPropertyTypes.ATOMIC:
-            pass
+            assert self.atomic_type is not None
 
         elif self.field_type == QPropertyTypes.ENUMERATION:
             pass
