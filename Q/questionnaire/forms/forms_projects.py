@@ -28,7 +28,7 @@ class QProjectForm(QForm):
             "description",
             "email",
             "url",
-            "ontologies",
+            # "ontologies",
             # "is_displayed",
             # "authenticated",
         ]

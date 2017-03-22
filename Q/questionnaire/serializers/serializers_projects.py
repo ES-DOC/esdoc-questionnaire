@@ -52,6 +52,7 @@ class QProjectSerializer(serializers.ModelSerializer):
             'description',
             'email',
             'url',
+            'ontologies',
             'is_displayed',
             'authenticated',
             # these next few fields are not part of the model
@@ -62,11 +63,22 @@ class QProjectSerializer(serializers.ModelSerializer):
             'pending_users',
         ]
 
+    ontologies = serializers.SerializerMethodField()
+
     user_group_name = serializers.SerializerMethodField()
     member_group_name = serializers.SerializerMethodField()
     admin_group_name = serializers.SerializerMethodField()
     users = serializers.SerializerMethodField()
     pending_users = serializers.SerializerMethodField()
+
+    def get_ontologies(self, obj):
+        return [
+            {
+                "name": o.key,
+                "documentation": o.documentation
+            }
+            for o in obj.ontologies.all()
+        ]
 
     def get_user_group_name(self, obj):
         return "{0}_{1}".format(obj.name, "user")

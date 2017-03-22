@@ -101,6 +101,7 @@
                                                 </div> <!-- /.form-group -->
 
                                             {% endfor %} {# /field #}
+
                                         </form>
 
                                          <div class="form-group voffset-16">
@@ -121,7 +122,7 @@
                                                 <span class="badge" ng-show="project_controller.is_project_admin(user)">admin</span>
                                             </li>
                                             <li class="list-group-item" ng-show="project_controller.project.users.length == 0">
-                                                <span class="documentation text-muted">No members found.</span>
+                                                <span class="documentation text-muted">No members here.</span>
                                             </li>
                                         </div> <!-- /.list-group -->
 
@@ -137,6 +138,22 @@
                                                 <span class="documentation text-muted">No pending members here.</span>
                                             </li>
                                         </div> <!-- /.list-group -->
+
+
+                                       <div class="list-group small">
+                                            <span class="list-group-item active">
+                                                <help help_text="This project can support the creation of documents defined in the following ontologies."></help>&nbsp;
+                                                Supported Ontologies
+                                            </span>
+                                            <li class="list-group-item" ng-repeat="ontology in project_controller.project.ontologies">
+                                                <strong>{% verbatim ng %}{{ ontology.name }}{% endverbatim ng %}</strong>
+                                                <span class="documentation">{% verbatim ng %}{{ ontology.documentation }}{% endverbatim ng %}</span>
+                                            </li>
+                                            <li class="list-group-item" ng-show="project_controller.project.ontologies == 0">
+                                                <span class="documentation text-muted">This project has no ontologies.</span>
+                                            </li>
+                                        </div> <!-- /.list-group -->
+
                                     </div>  <!-- /col -->
                                 </div>  <!-- /row -->
 
