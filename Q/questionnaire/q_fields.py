@@ -365,6 +365,11 @@ from django.forms.fields import MultipleChoiceField
 
 class QEnumerationFormField(MultipleChoiceField):
 
+    # TODO: I WOULD RATHER JUST RELY ON QEnumerationFormField BEING SETUP CORRECTLY BY QEnumerationField BELOW
+    # TODO: BUT THE CODE IN "QPropertyRealization.__init__" DOESN'T SEEM TO WORK,
+    # TODO: SO I UPDATE THE FORM FIELD DIRECTLY IN "QPropertyRealizationForm.customize"
+    # TODO: SEE THE COMMENTS THERE FOR MORE INFO
+
     def __init__(self, *args, **kwargs):
         is_multiple = kwargs.pop("is_multiple", False)
         complete_choices = kwargs.pop("complete_choices", [])
@@ -378,10 +383,12 @@ class QEnumerationFormField(MultipleChoiceField):
 
     @property
     def is_multiple(self):
+        # (need to pass a string b/c this will be used as the argument to an NG directive)
         return json.dumps(self._is_multiple)
 
     @property
     def complete_choices(self):
+        # (need to pass a string b/c this will be used as the argument to an NG directive)
         return json.dumps(self._complete_choices)
 
 
@@ -412,7 +419,6 @@ class QEnumerationField(QJSONField):
         self._complete_choices = complete_choices
 
     def formfield(self, **kwargs):
-
         new_kwargs = {
             "label": self.verbose_name,
             "is_multiple": self.is_multiple,

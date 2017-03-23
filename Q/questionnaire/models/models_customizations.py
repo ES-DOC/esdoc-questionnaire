@@ -933,6 +933,18 @@ class QPropertyCustomization(QCustomization):
         )
 
     @property
+    def is_infinite(self):
+        return self.cardinality_max == CARDINALITY_INFINITE
+
+    @property
+    def is_multiple(self):
+        return self.is_infinite or int(self.cardinality_max) > 1
+
+    @property
+    def is_single(self):
+        return int(self.cardinality_max) == 1
+
+    @property
     def use_references(self):
         """
         As of v0.14 all RELATIONSHIPS to a CIM Document _must_ use a reference

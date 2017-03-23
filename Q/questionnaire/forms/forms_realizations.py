@@ -13,10 +13,11 @@ from django.forms.models import modelformset_factory
 from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext_lazy as _
 import json
+import copy
 
 from Q.questionnaire.forms.forms_base import QForm, QFormSet
 from Q.questionnaire.models.models_realizations import QModelRealization, QCategoryRealization, QPropertyRealization
-from Q.questionnaire.q_fields import QPropertyTypes, ATOMIC_PROPERTY_MAP, ENUMERATION_OTHER_CHOICE, ENUMERATION_OTHER_PLACEHOLDER
+from Q.questionnaire.q_fields import QPropertyTypes, ATOMIC_PROPERTY_MAP, ENUMERATION_OTHER_CHOICE, ENUMERATION_OTHER_PLACEHOLDER, ENUMERATION_OTHER_DOCUMENTATION
 from Q.questionnaire.q_utils import QError, set_field_widget_attributes, update_field_widget_attributes, pretty_string
 
 
@@ -390,6 +391,18 @@ class QPropertyRealizationForm(QRealizationForm):
         elif field_type == QPropertyTypes.ENUMERATION:
             enumeration_value_field = self.fields["enumeration_value"]
             enumeration_other_field = self.fields["enumeration_other_value"]
+            # TODO: "complete_choices", "is_multiple", etc. OUGHT TO HAVE BEEN SETUP IN "QPropertyRealization.__init__"
+            # TODO: BUT NOT ALL OF THOSE ATTRIBUTES RETAIN THE VALUES SETUP THERE; I'M NOT SURE WHY ?!?
+            # TODO: THIS SECTION JUST REPEATS THAT CODE ALMOST VERBATIM FOR THE QEnumerationFormField...
+            enumeration_choices = copy.copy(proxy.enumeration_choices)  # make a copy of the value so that "update" below doesn't modify the original
+            if proxy.enumeration_is_open:
+                enumeration_choices.append({
+                    "value": ENUMERATION_OTHER_CHOICE,
+                    "documentation": ENUMERATION_OTHER_DOCUMENTATION,
+                    "order": len(enumeration_choices) + 1,
+                })
+            enumeration_value_field._complete_choices = enumeration_choices
+            enumeration_value_field._is_multiple = proxy.is_multiple
             set_field_widget_attributes(enumeration_other_field, {
                 "placeholder": ENUMERATION_OTHER_PLACEHOLDER,
                 "ng-show": "value_in_array('{0}', current_model.enumeration_value)".format(ENUMERATION_OTHER_CHOICE)
@@ -470,9 +483,6 @@ class QPropertyRealizationForm(QRealizationForm):
         elif field_type == QPropertyTypes.ENUMERATION:
             enumeration_value_field = self.fields["enumeration_value"]
             enumeration_other_value_field = self.fields["enumeration_other_value"]
-            # TODO: ENUMERATION CHOICES ARE SETUP IN "QPropertyRealization.__init__"
-            # TODO: I'M NOT SURE IF THAT'S A LOGICAL PLACE; AN ALTERNATIVE WOULD BE TO DO IT HERE
-            # TODO: WHICH WOULD REQUIRE EXTENDING THE @properties IN QEnumerationFormField TO INCLUDE SETTERS
             if customization.is_required:
                 update_field_widget_attributes(enumeration_value_field, {
                     "ng-blur": "update_property_completion()",

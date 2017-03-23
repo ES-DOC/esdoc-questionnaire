@@ -13,8 +13,8 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 from django.db.models.fields import FieldDoesNotExist
 from django.template.loader import render_to_string
-from collections import OrderedDict
 from uuid import uuid4
+import copy
 
 from Q.questionnaire import APP_LABEL, q_logger
 from Q.questionnaire.q_fields import QVersionField, QEnumerationField, QJSONField, QPropertyTypes, QNillableTypes, QUnsavedRelatedManager, allow_unsaved_fk, ENUMERATION_OTHER_CHOICE, ENUMERATION_OTHER_DOCUMENTATION, ENUMERATION_OTHER_PREFIX
@@ -747,7 +747,7 @@ class QPropertyRealization(QRealization):
             # then I tried adding it to the "QPropertyForm.__init__" fn, but that only deals w/ form fields (not model fields)
             # so it has wound up here...
             proxy = self.proxy
-            enumeration_choices = proxy.enumeration_choices
+            enumeration_choices = copy.copy(proxy.enumeration_choices)  # make a copy of the value so that "update" below doesn't modify the original
             if proxy.enumeration_is_open:
                 enumeration_choices.append({
                     "value": ENUMERATION_OTHER_CHOICE,
@@ -755,8 +755,10 @@ class QPropertyRealization(QRealization):
                     "order": len(enumeration_choices) + 1,
                 })
             enumeration_value_field = self.get_field("enumeration_value")
-            enumeration_value_field.complete_choices = proxy.enumeration_choices
+            enumeration_value_field.complete_choices = enumeration_choices
             enumeration_value_field.is_multiple = proxy.is_multiple
+            # TODO: THE ABOVE CHANGES SEEM TO BE LOST BY THE TIME WE SETUP THE CORRESPONDING FORM ?!?
+            # TODO: SEE THE COMMENTS IN "QPropertyRealizationForm.__init__" AND "QEnumerationFormField" FOR MORE INFO
 
     def __str__(self):
         return "{0}: {1}".format(
