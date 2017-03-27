@@ -16,7 +16,7 @@ from django.shortcuts import render_to_response
 
 from Q.questionnaire.forms.forms_projects import QProjectForm
 from Q.questionnaire.models.models_projects import QProject
-from Q.questionnaire.models.models_users import is_pending_of, is_member_of, is_user_of, is_admin_of
+from Q.questionnaire.models.models_users import is_pending_of, is_member_of, is_user_of, is_admin_of, get_institute
 from Q.questionnaire.views.views_base import add_parameters_to_context
 from Q.questionnaire.views.views_errors import q_error
 from Q.questionnaire.views.views_legacy import redirect_legacy_projects
@@ -92,13 +92,14 @@ def q_project(request, project_name=None):
     is_user = is_user_of(current_user, project)
     is_member = is_member_of(current_user, project)
     is_pending = is_pending_of(current_user, project)
+    has_institute = get_institute(current_user) is not None
     can_view = True
     can_edit = not project_authenticated or (is_user or is_admin)
     can_customize = not project_authenticated or is_admin
     can_join = current_user.is_authenticated() and not (is_member or is_user or is_admin)
     can_delete = is_admin
     can_manage = is_admin
-    can_publish = is_user or is_admin
+    can_publish = is_user and has_institute or is_admin
 
     # gather all the extra information required by the template
     template_context = {
@@ -152,13 +153,14 @@ def q_project_customize(request, project_name=None):
     is_user = is_user_of(current_user, project)
     is_member = is_member_of(current_user, project)
     is_pending = is_pending_of(current_user, project)
+    has_institute = get_institute(current_user) is not None
     can_view = True
     can_edit = not project_authenticated or (is_user or is_admin)
     can_customize = not project_authenticated or is_admin
     can_join = current_user.is_authenticated() and not (is_member or is_user or is_admin)
     can_delete = is_admin
     can_manage = is_admin
-    can_publish = is_user or is_admin
+    can_publish = is_user and has_institute or is_admin
 
     # gather all the extra information required by the template
     template_context = {

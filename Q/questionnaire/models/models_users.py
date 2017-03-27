@@ -9,10 +9,11 @@
 ####################
 
 from allauth.account.models import EmailAddress
+from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.mail import send_mail
 from django.db import models
-from django.conf import settings
+from django.utils.translation import ugettext_lazy as _
 
 from Q.questionnaire import APP_LABEL, q_logger
 from Q.questionnaire.models.models_sites import get_site
@@ -39,9 +40,12 @@ class QUserProfile(models.Model):
     projects = models.ManyToManyField("QProject", blank=True, verbose_name="Project Membership")
     change_password = models.BooleanField(default=False, verbose_name="Change password at next logon")
     description = models.TextField(blank=True, null=True, verbose_name="Description")
-    institute = models.ForeignKey("QInstitute", blank=True, null=True, verbose_name="Institution", limit_choices_to={
-        "is_active": True,
-    })
+    institute = models.ForeignKey("QInstitute", blank=True, null=True, limit_choices_to={"is_active": True})
+    institute.verbose_name = "Publication Institute"
+    institute.help_text = _(
+        "Please select the institute for which you intend to publish documents.  "
+        "If no selection is made, you will be unable to publish."
+    )
 
     @property
     def is_verified(self):
@@ -172,6 +176,15 @@ def is_user_of(user, project):
     else:
         return False
 
+
+def get_institute(user):
+    if user.is_authenticated():
+        if user.is_superuser:
+            return None
+        else:
+            return user.profile.institute
+    else:
+        return None
 
 #######################
 # user / project code #

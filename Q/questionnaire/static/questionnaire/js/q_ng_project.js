@@ -199,6 +199,34 @@
 
         };
 
+        this.project_join_request = function(user_id) {
+
+            $global_services.setBlocking(true);
+            var project_join_request_url =
+                "/services/" + project_controller.project.name +
+                "/project_join_request/";
+            var project_join_request_data = $.param({
+                user_id: user_id
+            });
+
+            $http({
+                method: 'POST',
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                url: project_join_request_url,
+                data: project_join_request_data
+            }).success(function(data) {
+                check_msg();
+            })
+            .error(function(data) {
+                console.log(data);
+                check_msg();
+            })
+            .finally(function() {
+                $global_services.setBlocking(false);
+            });
+
+        };
+
         this.print_stuff = function() {
             console.log(project_controller.filtered_documents);
             console.log(project_controller.selected_document_type);
