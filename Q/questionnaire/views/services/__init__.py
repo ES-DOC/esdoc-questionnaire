@@ -10,6 +10,7 @@
 
 from Q.questionnaire.views.services.views_services_customization_delete import q_customization_delete
 from Q.questionnaire.views.services.views_services_load_section import q_load_section
+from Q.questionnaire.views.services.views_services_log import q_log
 from Q.questionnaire.views.services.views_services_messages import get_django_messages
 from Q.questionnaire.views.services.views_services_project_join_request import q_project_join_request
 from Q.questionnaire.views.services.views_services_project_add_member import q_project_add_member
