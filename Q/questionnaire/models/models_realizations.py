@@ -53,10 +53,16 @@ def get_new_realizations(project=None, ontology=None, model_proxy=None, **kwargs
     # as with customizations, but by only creating a finite amount of models
     # hooray!
 
+    parent_property = kwargs.pop("parent_property", None)
+    if parent_property is not None:
+        is_active = parent_property.is_required
+    else:
+        is_active = True
     model_realization = QModelRealization(
         project=project,
         proxy=model_proxy,
         version="0.0.0",
+        is_active=is_active
     )
     model_realization.reset()
 
@@ -106,6 +112,7 @@ def get_new_realizations(project=None, ontology=None, model_proxy=None, **kwargs
 
                     for target_model_proxy_id in property_proxy.values:
                         target_model_proxy = property_proxy.relationship_target_models.get(cim_id=target_model_proxy_id)
+                        kwargs.update({"parent_property": property_realization})
                         with allow_unsaved_fk(QModelRealization, ["relationship_property"]):  # this lets me access the parent property of a model
                             new_model_realization = get_new_realizations(
                                 project=project,
@@ -607,7 +614,7 @@ class QModelRealization(QRealization):
         proxy = self.proxy
 
         # TODO: self.is_root = ?!?
-        self.is_active = True
+        # self.is_active = True
         self.is_complete = False
         self.order = proxy.order
         self.name = proxy.name
