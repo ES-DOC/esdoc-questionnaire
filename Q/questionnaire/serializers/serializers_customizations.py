@@ -177,7 +177,7 @@ class QPropertyCustomizationSerializer(QCustomizationSerializer):
 
         category_key = validated_data.pop("category_key", None)
         category_customization = QCategoryCustomization.objects.filter(guid=category_key).first()
-        assert category_customization is not None
+        assert category_customization is not None, "Unable to locate category customization"
         validated_data["category_customization"] = category_customization
 
         property_customization = super(QPropertyCustomizationSerializer, self).create(validated_data)

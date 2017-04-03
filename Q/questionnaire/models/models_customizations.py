@@ -123,9 +123,11 @@ def get_new_customizations(project=None, ontology=None, model_proxy=None, **kwar
         # here begins the icky bit #
         ############################
 
-        if property_customization.use_subforms:
+        # if property_customization.use_subforms:
+        # the trouble w/ using "use_subforms", above, is that it excludes hierarchical properties (which could potentially point to CIM documents)
+        # so instead I always fill in relationship_target_models, and rely on the template to exclude appropriate content
 
-            # subform_key = "{0}.{1}".format(model_proxy.name, property_proxy.name)
+        if property_customization.use_subforms or property_customization.relationship_is_hierarchical:
             subform_key = "{0}.{1}".format(model_proxy.key, property_proxy.key)
             target_model_customizations = []
             for target_model_proxy in property_proxy.relationship_target_models.all():
@@ -275,7 +277,9 @@ def serialize_customizations(current_model_customization, **kwargs):
             ############################
 
             subform_customizations_serializations = []
-            if property_customization.use_subforms:
+            # as w/ "get_new_customizations" above this if statement would have excluded hierarchical properties that happen to map to CIM documents
+            # if property_customization.use_subforms:
+            if property_customization.use_subforms or property_customization.relationship_is_hierarchical:
                 subform_prefix = property_customization.get_fully_qualified_key()  # note I do _not_ pass the prefix kwarg
                 for subform_model_customization in property_customization.relationship_target_model_customizations(manager="allow_unsaved_relationship_target_model_customizations_manager").all():
                     subform_model_customization_key = subform_model_customization.get_fully_qualified_key(prefix=subform_prefix)
@@ -339,7 +343,9 @@ def recurse_through_customizations(fn, current_model_customization, customizatio
             if CustomizationTypes.PROPERTY in customization_types:
                 fn(property_customization)
 
-            if property_customization.use_subforms:
+            # as w/ "get_new_customizations" above this if statement would have excluded hierarchical properties that happen to map to CIM documents
+            # if property_customization.use_subforms:
+            if property_customization.use_subforms or property_customization.relationship_is_hierarchical:
                 target_model_customizations = property_customization.relationship_target_model_customizations(manager="allow_unsaved_relationship_target_model_customizations_manager").all()
                 for target_model_customization in target_model_customizations:
                     previously_recursed_customizations.add(property_customization_key)  # only tracking property_customizations b/c those are the only recursive things
@@ -378,7 +384,9 @@ def get_customization_by_fn(fn, current_model_customization, customization_types
         if property_customization_key not in previously_recursed_customizations:
             if CustomizationTypes.PROPERTY in customization_types and fn(property_customization):
                 return property_customization
-            if property_customization.use_subforms:
+            # as w/ "get_new_customizations" above, this if statement would have excluded hierarchical properties that happen to map to CIM documents
+            # if property_customization.use_subforms:
+            if property_customization.use_subforms or property_customization.relationship_is_hierarchical:
                 target_model_customizations = property_customization.relationship_target_model_customizations(manager="allow_unsaved_relationship_target_model_customizations_manager").all()
                 previously_recursed_customizations.add(property_customization_key)  # only tracking property_customizations b/c those are the only recursive things
                 for target_model_customization in target_model_customizations:
@@ -882,7 +890,9 @@ class QPropertyCustomization(QCustomization):
         help_text=_(
             "Checking this will cause the property to be rendered as a nested subform within the parent form;  "
             "All properties of the target model will be available to view and edit in that subform.  "
-            "Unchecking it will cause the attribute to be rendered as a <em>reference</em> widget."
+            "Unchecking it will cause the attribute to be rendered as a <em>reference</em> widget.  "
+            "<br/>(Note that a &quot;hierarchical&quot; model can still be customized using this technique even though "
+            "the corresponding target models will display as top-level forms rather than subforms.)"
         )
     )
     relationship_is_hierarchical = models.BooleanField(

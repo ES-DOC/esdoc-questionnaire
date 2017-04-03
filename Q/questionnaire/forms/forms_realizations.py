@@ -107,9 +107,21 @@ class QRealizationFormSet(QFormSet):
         :return: kwarg dict
         """
         additional_default_form_arguments = super(QRealizationFormSet, self).add_default_form_arguments(i)
-        additional_default_form_arguments.update({
-            'customization': self.customizations[i]
-        })
+
+        # TODO: I HAVE ABSOLUTELY NO IDEA WHY I CAN'T JUST CALL "self.customizations[i]"
+        # TODO: AND, IN FACT, I COULD DO JUST THAT PRIOR TO WORKING W/ OPTIONAL HIERARCHICAL RELATIONSHIP PROPERTIES
+        # TODO: I PASS "customizations" IN THE FORMSETFACTORY IN THE CORRECT ORDER AND I ENSURE THAT THE FORMSET QUERYSET IS IN THAT SAME ORDER
+        # TODO: HOWEVER, IN THIS FN, IF i TRY TO CALL "[0]" I DON'T CONSISTENTLY GET THE 0th OBJECT IN THE QUERYSET ?!?
+        # additional_default_form_arguments.update({
+        #     'customization': self.customizations[i]
+        # })
+        for customization_order, customization in enumerate(self.customizations):
+            if i == customization_order:
+                additional_default_form_arguments.update({
+                    "customization": customization
+                })
+                break
+
         return additional_default_form_arguments
 
 ###############
@@ -163,7 +175,7 @@ class QModelRealizationForm(QRealizationForm):
 
     def customize(self, customization):
         proxy = self.instance.proxy
-        assert customization.proxy == proxy
+        assert customization.proxy == proxy, "in QModelRealizationForm, customization.proxy doesn't equal instance.proxy"
 
         self.customization = customization
 
@@ -222,7 +234,7 @@ class QCategoryRealizationForm(QRealizationForm):
     def customize(self, customization):
 
         proxy = self.instance.proxy
-        assert customization.proxy == proxy
+        assert customization.proxy == proxy, "in QCategoryRealizationForm, customization.proxy doesn't equal instance.proxy"
 
         # customize form...
         self.is_hidden = customization.is_hidden
@@ -427,7 +439,7 @@ class QPropertyRealizationForm(QRealizationForm):
 
         field_type = self.get_current_field_value("field_type")
         proxy = self.instance.proxy
-        assert customization.proxy == proxy
+        assert customization.proxy == proxy, "in QPropertyRealizationForm, customization.proxy doesn't equal instance.proxy"
 
         # customize form...
         self.inline_help = customization.inline_help

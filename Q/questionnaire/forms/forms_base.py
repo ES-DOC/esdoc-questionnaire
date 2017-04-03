@@ -340,6 +340,7 @@ class QFormSet(BaseModelFormSet):
             # If the queryset isn't already ordered we need to add an
             # artificial ordering here to make sure that all formsets
             # constructed from this queryset have the same form order.
+            # (note that most querysets will have been ordered in the FormSetFactory function)
             # HERE BEGINS THE DIFFERENT BIT
             if isinstance(qs, QuerySet) and not qs.ordered:
                 qs = qs.order_by(self.model._meta.pk.name)

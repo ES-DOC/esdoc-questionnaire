@@ -93,7 +93,7 @@ def get_new_realizations(project=None, ontology=None, model_proxy=None, **kwargs
             property_realization.reset()
             property_category_realization.properties(manager="allow_unsaved_category_properties_manager").add_potentially_unsaved(property_realization)
             # here begins the icky bit
-            if property_realization.field_type == QPropertyTypes.RELATIONSHIP and property_realization.is_required:
+            if property_realization.field_type == QPropertyTypes.RELATIONSHIP and property_realization.is_hierarchical:  # property_realization.is_required:
                 target_relationship_values = []
                 # TODO: IF I WERE TO PRE-CREATE ALL RELATIONSHIPS THEN HERE IS WHERE I WOULD DO IT
                 # TODO: BUT THAT WOULD BE MIND-BOGGLINGLY COMPLEX...
@@ -101,9 +101,9 @@ def get_new_realizations(project=None, ontology=None, model_proxy=None, **kwargs
                 # TODO: AS IT IS, I GET AROUND THIS BY ONLY PRE-CREATING SPECIALIZATIONS WHICH ARE EXPLICIT IN THEIR TARGET PROXIES
                 # TODO: BUT I STILL CANNOT HANDLE THIS FOR NON-SPECIALIZED PROXIES
                 if property_realization.has_specialized_values:
-                    # TODO: TECHINCALLY, ISN'T THIS BIT OF CODE DOING SPECIALIZATION?
-                    # TODO: SHOULDN'T THAT BE DEFFERRED TO THE "specialize" FN?
-                    assert property_realization.cardinality_min == len(property_proxy.values)
+
+                    # assert property_realization.cardinality_min == len(property_proxy.values)
+
                     for target_model_proxy_id in property_proxy.values:
                         target_model_proxy = property_proxy.relationship_target_models.get(cim_id=target_model_proxy_id)
                         with allow_unsaved_fk(QModelRealization, ["relationship_property"]):  # this lets me access the parent property of a model
