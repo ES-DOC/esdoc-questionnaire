@@ -72,19 +72,20 @@ def get_new_realizations(project=None, ontology=None, model_proxy=None, **kwargs
     used_category_proxies = [p.category_proxy for p in model_proxy.property_proxies.all()]
     category_proxies = set(model_proxy.category_proxies.all())
     category_proxies.update(used_category_proxies)
-    for category_proxy in category_proxies:
     # for category_proxy in model_proxy.category_proxies.all():
+    for category_proxy_order, category_proxy in enumerate(category_proxies):
         with allow_unsaved_fk(QCategoryRealization, ["model"]):
             category_realization = QCategoryRealization(
                 proxy=category_proxy,
                 model=model_realization,
+                order=category_proxy_order,
             )
             category_realization.reset()
         category_realizations.append(category_realization)
     model_realization.categories(manager="allow_unsaved_categories_manager").add_potentially_unsaved(*category_realizations)
 
     property_realizations = []
-    for property_proxy in model_proxy.property_proxies.all():
+    for property_proxy_order, property_proxy in enumerate(model_proxy.property_proxies.all()):
         property_category_realization = find_in_sequence(
             lambda c: c.proxy == property_proxy.category_proxy,
             category_realizations
@@ -95,6 +96,7 @@ def get_new_realizations(project=None, ontology=None, model_proxy=None, **kwargs
                 field_type=property_proxy.field_type,    # TODO: I AM HAVING TO PASS "field_type" SO THAT IT'S SET IN "__init__" IN ORDER TO SETUP ANY ENUMERATIONS;
                 model=model_realization,                 # TODO: AN ALTERNATIVE WOULD BE TO CALL "reset" FROM "__init__" WHENEVER "is_new" IS True.
                 category=property_category_realization,
+                order=property_proxy_order,
             )
             property_realization.reset()
             property_category_realization.properties(manager="allow_unsaved_category_properties_manager").add_potentially_unsaved(property_realization)
@@ -409,7 +411,12 @@ class QRealization(models.Model):
 
     is_complete = models.BooleanField(blank=False, null=False, default=False)
 
-    order = models.PositiveIntegerField(blank=True, null=True)
+    order = models.PositiveIntegerField(blank=True, null=True)  # this reflects the natural order of objects; unlike the "order" field of a customization
+                                                                # it seems a bit redundant, but I often need to work out the order that realizations are serialized
+                                                                # b/c they might be rendered in a different order (based on their customization.
+                                                                # originally, this field was set based on the corresponding proxy
+                                                                # but w/ the advent of specializations, ordering can get all messed up
+                                                                # - hence I just set "order" during "get_new_realizations" and never touch it again
 
     name = models.CharField(max_length=SMALL_STRING, blank=False)
 
@@ -616,7 +623,7 @@ class QModelRealization(QRealization):
         # TODO: self.is_root = ?!?
         # self.is_active = True
         self.is_complete = False
-        self.order = proxy.order
+        # self.order = proxy.order  # see the comment about "order"  above
         self.name = proxy.name
 
     def set_owner(self, new_owner, **kwargs):
@@ -702,7 +709,7 @@ class QCategoryRealization(QRealization):
         proxy = self.proxy
 
         self.is_complete = False
-        self.order = proxy.order
+        # self.order = proxy.order  # see the comment about "order"  above
         self.name = proxy.name
 
         self.category_value = proxy.name
@@ -887,7 +894,7 @@ class QPropertyRealization(QRealization):
         # to reset values according to the customizer, you must explicitly call customize and/or go through the client
         proxy = self.proxy
 
-        self.order = proxy.order
+        # self.order = proxy.order  # see the comment about "order"  above
         self.name = proxy.name
 
         self.is_complete = not proxy.is_required  # anything not required is complete by default

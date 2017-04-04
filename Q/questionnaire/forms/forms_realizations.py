@@ -18,7 +18,7 @@ import copy
 from Q.questionnaire.forms.forms_base import QForm, QFormSet
 from Q.questionnaire.models.models_realizations import QModelRealization, QCategoryRealization, QPropertyRealization
 from Q.questionnaire.q_fields import QPropertyTypes, ATOMIC_PROPERTY_MAP, ENUMERATION_OTHER_CHOICE, ENUMERATION_OTHER_PLACEHOLDER, ENUMERATION_OTHER_DOCUMENTATION
-from Q.questionnaire.q_utils import QError, set_field_widget_attributes, update_field_widget_attributes, pretty_string
+from Q.questionnaire.q_utils import QError, set_field_widget_attributes, update_field_widget_attributes, pretty_string, legacy_code
 
 
 class QRealizationForm(QForm):
@@ -80,6 +80,8 @@ class QRealizationForm(QForm):
 
     # TODO: HAVING TO USE THIS FN SUCKS AND I DO NOT LIKE IT
     # TODO: I NEED TO COME UP W/ A BETTER WAY TO HANDLE A POTENTIALLY CUSTOMIZED ORDER
+    # TODO: HOORAY - I CAME UP W/ A BETTER WAY... JUST SET "order" EXPLICITLY IN "get_new_realizations"
+    @legacy_code
     def get_serialized_order(self):
         # the forms in a formset might be rendered in a different order than the natural order of the underlying qs
         # this fn returns the natural order (corresponding to the order of the serialized objects)

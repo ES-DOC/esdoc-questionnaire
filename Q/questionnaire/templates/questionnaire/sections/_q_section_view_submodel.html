@@ -32,7 +32,7 @@
             {% for category_form in categories_formset %}
                 {% with properties_keys=category_form.properties_keys %}
                     <div ng-controller="CategoryEditorController as category_editor_controller"
-                         current_model_path="{% verbatim ng %}{{ current_model_path }}{% endverbatim ng %}.categories[{{ category_form.get_serialized_order }}]"> <!-- forloop.counter0 }}]"> --> <!-- TODO: I DO NOT LIKE HAVING TO CALL .get_serialized_order -->
+                         current_model_path="{% verbatim ng %}{{ current_model_path }}{% endverbatim ng %}.categories[{{ category_form.order.value }}]"> <!-- forloop.counter0 }}]"> -->
                          <div id="{{ category_form.form_name }}_category_fields">
                             {% if category_form.is_hidden %}
                                 <div class="hidden">
@@ -61,7 +61,7 @@
                                     {% with property_key=form.property_key %}
                                         {% if property_key in properties_keys %}
                                             <div ng-controller="PropertyEditorController as property_editor_controller"
-                                                 current_model_path="{% verbatim ng %}{{ current_model_path }}{% endverbatim ng %}.properties[{{ form.get_serialized_order }}]"> <!-- forloop.counter0 }}]"> --> <!-- TODO: I DO NOT LIKE HAVING TO CALL .get_serialized_order -->
+                                                 current_model_path="{% verbatim ng %}{{ current_model_path }}{% endverbatim ng %}.properties[{{ form.order.value }}]"> <!-- forloop.counter0 }}]"> -->
                                                 <div id="{{form.form_name}}_property_fields">
                                                     {% if form.is_hidden %}
                                                         <!-- still include the form even if the property has been customized to be hidden -->
