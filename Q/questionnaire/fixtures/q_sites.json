@@ -9,16 +9,16 @@
 },
 {
     "fields": {
-        "domain": "test.questionnaire.es-doc.org",
-        "name": "test.questionnaire.es-doc.org"
+        "domain": "test-questionnaire.es-doc.org",
+        "name": "test-questionnaire.es-doc.org"
     },
     "model": "sites.site",
     "pk": 3
 },
 {
     "fields": {
-        "domain": "test.questionnaire.esdoc.webfactional.com",
-        "name": "test.questionnaire.esdoc.webfactional.com"
+        "domain": "test-questionnaire.esdoc.webfactional.com",
+        "name": "test-questionnaire.esdoc.webfactional.com"
     },
     "model": "sites.site",
     "pk": 4
@@ -41,16 +41,16 @@
 },
 {
     "fields": {
-        "domain": "prod.questionnaire.esdoc.webfactional.com",
-        "name": "prod.questionnaire.esdoc.webfactional.com"
+        "domain": "prod-questionnaire.esdoc.webfactional.com",
+        "name": "prod-questionnaire.esdoc.webfactional.com"
     },
     "model": "sites.site",
     "pk": 7
 },
 {
     "fields": {
-        "domain": "cim2.questionnaire.es-doc.org",
-        "name": "cim2.questionnaire.es-doc.org"
+        "domain": "cim2-questionnaire.es-doc.org",
+        "name": "cim2-questionnaire.es-doc.org"
     },
     "model": "sites.site",
     "pk": 8
