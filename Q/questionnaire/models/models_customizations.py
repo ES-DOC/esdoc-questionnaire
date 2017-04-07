@@ -980,7 +980,7 @@ class QPropertyCustomization(QCustomization):
 
     @property
     def has_specialized_values(self):
-        return self.proxy.values is not None
+        return bool(self.proxy.values)  # returns False if is None or an empty list
 
     def reset(self, **kwargs):
         force_save = kwargs.pop("force_save", False)
