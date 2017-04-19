@@ -199,7 +199,6 @@ def q_project_manage(request, project_name=None):
         next_page = reverse("project", kwargs={"project_name": project_name})
         msg = "You do not have permission to modify this project's settings."
         messages.add_message(request, messages.WARNING, msg)
-        # TODO: CAN HttpResponseRedirect TAKE "context" ?
         return HttpResponseRedirect(next_page)
 
     project_management_form = QProjectForm(

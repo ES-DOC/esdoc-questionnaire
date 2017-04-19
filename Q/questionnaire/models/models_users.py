@@ -12,8 +12,10 @@ from allauth.account.models import EmailAddress
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.mail import send_mail
+from django.core.urlresolvers import reverse
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
+
 
 from Q.questionnaire import APP_LABEL, q_logger
 from Q.questionnaire.models.models_sites import get_site
@@ -190,10 +192,11 @@ def get_institute(user):
 # user / project code #
 #######################
 
+
 def project_join_request(project, user, site=None):
 
-    mail_content = "User '{0}' wants to join project '{1}'.  (Request sent from site '{2}.)".format(
-        user.username, project.name, site,
+    mail_content = "User '{0}' wants to join project '{1}'.  To approve this request, please goto: http://{2}/{3}/manage/.".format(
+        user.username, project.title, site.domain, project.name,
     )
     mail_from = settings.EMAIL_HOST_USER
     mail_to = [settings.EMAIL_HOST_USER, ]
@@ -219,8 +222,8 @@ def project_join_request(project, user, site=None):
 
 def project_join(project, user, site=None):
 
-    mail_content = "User '{0}' has joined project '{1}.".format(
-        user.username, project.name,
+    mail_content = "User '{0}' has joined project '{1}' [http://{2}/{3}].".format(
+        user.username, project.title, site.domain, project.name,
     )
     mail_from = settings.EMAIL_HOST_USER
     mail_to = [user.email, project.email]

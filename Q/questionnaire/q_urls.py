@@ -19,18 +19,19 @@ from Q.questionnaire.views.services import *
 from Q.questionnaire.views.views_feed import QFeed, q_publication
 
 api_urls = patterns('',
+
     # just some testing (obviously)...
     url(r'^projects_test/(?P<pk>[0-9]+)/$', QProjectTestDetail.as_view(), name="project-test-detail"),
-
-    # getting project info...
-    url(r'^projects/$', QProjectList.as_view(), name="project-list"),
-    url(r'^projects/(?P<pk>[0-9]+)/$', QProjectDetail.as_view(), name="project-detail"),
 
     # just some lite serializations for populating the project page...
     url(r'^customizations_lite/$', QCustomizationLiteList.as_view(), name="customization_lite-list"),
     url(r'^realizations_lite/$', QRealizationLiteList.as_view(), name="realization_lite-list"),
     url(r'^projects_lite/$', QProjectLiteList.as_view(), name="project_lite-list"),
     url(r'^projects_lite/(?P<pk>[0-9]+)/$', QProjectLiteDetail.as_view(), name="project_lite-detail"),
+
+    # getting project info...
+    url(r'^projects/$', QProjectList.as_view(), name="project-list"),
+    url(r'^projects/(?P<pk>[0-9]+)/$', QProjectDetail.as_view(), name="project-detail"),
 
     # getting ontology info...
     url(r'^ontologies/$', QOntologyList.as_view(), name="ontology-list"),
@@ -44,6 +45,7 @@ api_urls = patterns('',
     url(r'^realizations/$', QModelRealizationList.as_view(), name="realization-list"),
     url(r'^realizations/(?P<pk>[0-9]+)/$', QModelRealizationDetail.as_view(), name="realization-detail"),
     url(r'^realizations/cache/$', get_cached_realizations, name="realization-cache"),
+
 )
 
 if settings.DEBUG:
@@ -54,28 +56,40 @@ if settings.DEBUG:
 api_urls = format_suffix_patterns(api_urls)
 
 services_urls = patterns('',
+
     # testing (obviously)...
     url(r'^test/$', q_services_test),
+
     # getting pending messages...
     url(r'^messages/$', get_django_messages),
+
     # routing http calls through a proxy...
     url(r'^proxy/$', q_proxy, name="proxy"),
+
     # logging data from the client...
     url(r'^log/$', q_log, name="log"),
+
     # the WORLD-FAMOUS load-on-demand paradigm...
     url(r'^load_section/(?P<section_type>[^/]+)/$', q_load_section, name="load_section"),
+
     # joining a project...
     url(r'^(?P<project_name>[^/]+)/project_join_request/$', q_project_join_request, name="project_join_request"),
+
     # managing a project...
     url(r'^(?P<project_name>[^/]+)/project_add_member/$', q_project_add_member, name="project_add_member"),
+
     # deleting a customization...
     url(r'^customization_delete/$', q_customization_delete, name="customization_delete"),
+
     # adding a relationship...
     url(r'^realization_add_relationship_value/$', q_realization_add_relationship_value, name="realization_add_relationsip_value"),
+
     # removing a relationship...
     url(r'^realization_remove_relationship_value/$', q_realization_remove_relationship_value, name="realization_remove_relationsip_value"),
+
     # publishing a realization...
     url(r'^realization_publish/$', q_realization_publish, name="realization_publish"),
+
 )
 
 urlpatterns = patterns('',
