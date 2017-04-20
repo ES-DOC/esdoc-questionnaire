@@ -13,7 +13,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.core.urlresolvers import reverse
 from django.http import HttpResponseRedirect
 from django.shortcuts import render_to_response
-
+from django.utils.translation import ugettext_lazy as _
 
 from Q.questionnaire.models.models_customizations import QModelCustomization
 from Q.questionnaire.models.models_realizations import get_new_realizations, get_existing_realizations, set_owner
@@ -52,7 +52,10 @@ def validate_view_arguments(project_name=None, ontology_key=None, document_type=
             is_default=True,
         )
     except ObjectDoesNotExist:
-        msg = "There is no default customization associated with this project/ontology/model."
+        msg = _(
+            "There is no default customization associated with this project/ontology/model"
+            "<br/>Please <a href='mailto:{0}'>contact</a> the project administrator for assistance."
+        ).format(project.email)
         validity = False
         return validity, project, ontology, model_proxy, model_customization, msg
 
