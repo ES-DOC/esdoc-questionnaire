@@ -145,8 +145,10 @@ SUPPORTED_DOCUMENTS_TEST_MAP = OrderedDict([
     }),
 ])
 
-from django.conf import settings
-if settings.DEBUG:
+# from django.conf import settings
+# if settings.DEBUG:
+import sys
+if "test" in sys.argv:
     # add a few more document types just for testing...
     SUPPORTED_DOCUMENTS_TEST_MAP.update([
         ("model", {
