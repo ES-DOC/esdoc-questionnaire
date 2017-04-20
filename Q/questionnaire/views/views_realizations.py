@@ -53,7 +53,7 @@ def validate_view_arguments(project_name=None, ontology_key=None, document_type=
         )
     except ObjectDoesNotExist:
         msg = _(
-            "There is no default customization associated with this project/ontology/model"
+            "There is no default customization associated in this project with this document type."
             "<br/>Please <a href='mailto:{0}'>contact</a> the project administrator for assistance."
         ).format(project.email)
         validity = False
