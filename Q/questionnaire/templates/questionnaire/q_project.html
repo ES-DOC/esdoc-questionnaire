@@ -183,18 +183,8 @@
                             <table class="table table-striped">
                                 <thead>
                                     <tr>
-                                        <th ng-click="project_controller.change_document_sort_type('proxy_title')">
-                                            <span>Document Type</span>
-                                            <span ng-show="project_controller.document_sort_type=='proxy_title'">
-                                                <span ng-show="project_controller.document_sort_reverse" class="glyphicon glyphicon-sort-by-alphabet-alt"></span>
-                                                <span ng-hide="project_controller.document_sort_reverse" class="glyphicon glyphicon-sort-by-alphabet"></span>
-                                            </span>
-                                            <span ng-hide="project_controller.document_sort_type=='proxy_title'">
-                                                <span class="glyphicon glyphicon-sort text-muted"></span>
-                                            </span>
-                                        </th>
                                         <th ng-click="project_controller.change_document_sort_type('label')">
-                                            <span>Document Label</span>
+                                            <span>Name</span>
                                             <span ng-show="project_controller.document_sort_type=='label'">
                                                 <span ng-show="project_controller.document_sort_reverse" class="glyphicon glyphicon-sort-by-alphabet-alt"></span>
                                                 <span ng-hide="project_controller.document_sort_reverse" class="glyphicon glyphicon-sort-by-alphabet"></span>
@@ -205,6 +195,16 @@
                                         </th>
                                         <th>
                                             <span>Version</span>
+                                        </th>
+                                        <th ng-click="project_controller.change_document_sort_type('proxy_title')">
+                                            <span>Document Type</span>
+                                            <span ng-show="project_controller.document_sort_type=='proxy_title'">
+                                                <span ng-show="project_controller.document_sort_reverse" class="glyphicon glyphicon-sort-by-alphabet-alt"></span>
+                                                <span ng-hide="project_controller.document_sort_reverse" class="glyphicon glyphicon-sort-by-alphabet"></span>
+                                            </span>
+                                            <span ng-hide="project_controller.document_sort_type=='proxy_title'">
+                                                <span class="glyphicon glyphicon-sort text-muted"></span>
+                                            </span>
                                         </th>
                                         <th ng-click="project_controller.change_document_sort_type('published')">
                                             <span>Last Published</span>
@@ -224,11 +224,6 @@
                                         ng-show="document.is_active">
                                         <td>
                                             {% verbatim ng %}
-                                                {{ document.proxy_title }}
-                                            {% endverbatim ng %}
-                                        </td>
-                                        <td>
-                                            {% verbatim ng %}
                                                 <span ng-show="document.label">
                                                     {{ document.label }}
                                                 </span>
@@ -241,6 +236,11 @@
                                         <td>
                                             {% verbatim ng %}
                                                 {{ document.version }}
+                                            {% endverbatim ng %}
+                                        </td>
+                                        <td>
+                                            {% verbatim ng %}
+                                                {{ document.proxy_title }}
                                             {% endverbatim ng %}
                                         </td>
                                         <td>
