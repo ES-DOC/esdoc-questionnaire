@@ -199,6 +199,16 @@ class QModelProxy(QProxy):
         )
 
     @property
+    def fully_qualified_name(self):
+        if self.cim_id is not None:
+            return self.cim_id
+        else:
+            return "{0}.{1}".format(
+                self.ontology,
+                self.name,
+            )
+
+    @property
     def has_hierarchical_properties(self):
         return self.property_proxies.hierarchical().count() > 0
 

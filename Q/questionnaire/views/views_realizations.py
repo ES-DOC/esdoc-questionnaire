@@ -56,7 +56,7 @@ def validate_view_arguments(project_name=None, ontology_key=None, document_type=
             "There is no default customization associated with this document type for this project."
             "<br/>Please <a href='mailto:{0}?subject=Missing%20Customization&body=Please%20create%20a%20customization%20for%20the%20%22{1}%22%20document%20type.'>contact</a>"
             " the project administrator for assistance."
-        ).format(project.email, model_proxy.name)
+        ).format(project.email, model_proxy.fully_qualified_name)
         validity = False
         return validity, project, ontology, model_proxy, model_customization, msg
 
