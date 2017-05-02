@@ -1,6 +1,7 @@
 python==2.7
 django==1.8.2
 django-honeypot==0.5.0
+django-allauth==0.29.0
 django-compressor==1.5
 djangorestframework==3.5.0
 django-angular==0.8.4
