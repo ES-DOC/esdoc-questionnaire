@@ -84,6 +84,11 @@ except NoOptionError:
     assert DEBUG, "ALLOWED_HOSTS is required if DEBUG is set to 'false'"
     ALLOWED_HOSTS = []
 
+try:
+    LEGACY_HOST = parser.get('settings', 'legacy_host')
+except NoOptionError:
+    LEGACY_HOST = None
+
 # SITE_ID is overwritten by DynamicSitesMiddleware on a per-request basis
 # (so this value doesn't matter)
 DEFAULT_SITE_ID = 1

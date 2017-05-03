@@ -84,7 +84,7 @@ class QProject(models.Model):
 
     authenticated = models.BooleanField(blank=False, default=True)
     is_legacy = models.BooleanField(blank=False, default=False)
-    is_legacy.help_text = "A legacy project is one that still uses CIM1 and requests must therefore be routed through the legacy site.  Do not check this unless you really know what you're doing."
+    is_legacy.help_text = "A legacy project is one that still uses CIM1;  If a legacy host is specified, then requests get routed there.  Do not check this unless you really know what you're doing."
     is_active = models.BooleanField(blank=False, default=True)
     is_active.help_text = "A project that is not active cannot be used"
     is_displayed = models.BooleanField(blank=False, default=True)

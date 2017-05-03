@@ -2,6 +2,7 @@
 secret_key=mYsEcReTkEy!
 static_root=/path/to/static/files/
 allowed_hosts=localhost,127.0.0.1,my.prod.domain,my.dev.domain
+legacy_host=my.old.domain
 
 [database]
 engine=django.db.backends.postgresql_psycopg2
