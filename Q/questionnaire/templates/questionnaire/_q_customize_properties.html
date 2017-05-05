@@ -21,6 +21,7 @@
             <div class="documentation">
                 This section contains information relating to the properties of this document.
                 This icon <span class="glyphicon glyphicon-tag"></span> indicates that the property is tagged as a "meta" property and will not be directly editable by the user.
+                A greyed-out title indicates that the property will not be displayed.
             </div>
 
             {% include 'questionnaire/_q_customize_categories.html' %}
@@ -60,14 +61,17 @@
                          ng-model="current_model.properties" ng-show="current_model.properties.length">
 
                         <div uib-accordion-group class="accordion_group"
-                             is-open="property.display_detail" ng-class="property.display_detail ? 'expanded': 'collapsed'"
+
+                             is-open="property.display_detail"
+                             ng-class="{expanded: property.display_detail, collapsed: ! property.display_detail, not_displayed: property.is_hidden}"
                              ng-repeat="property in current_model.properties | orderBy:ordering_type"
                              ng-init="category=get_model_by_attrs(current_model.categories, {'key': property.category_key});
                                       property_key=property.key;
                                       property_index=$index"
                              ng-show="category.display_properties">
 
-                            <div uib-accordion-heading class="accordion_header sortable_handle clearfix"
+                            <div uib-accordion-heading
+                                 class="accordion_header sortable_handle clearfix"
                                  ng-click="property.display_detail = ! property.display_detail">
                                 {# TODO: NAUGHTY NAUGHTY DEVELOPER, USING TABLES INSTEAD OF NICE BOOTSTRAP GRIDS #}
                                 {% verbatim ng %}

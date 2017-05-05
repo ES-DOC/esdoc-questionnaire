@@ -245,6 +245,11 @@
         .accordion_group:hover {
             border: 2px solid @panel-primary-heading-bg;
         }
+        .accordion_group.not_displayed {
+            >.panel-heading {
+                background-color: darken(@input-bg-disabled, 10%);
+            }
+        }
         /* TODO: uib-accordion USES PANELS INTERNALLY */
         /* TODO: WHICH INSERT <h4> ELEMENTS IN THE HEADINGS */
         /* TODO: SO I OVERRIDE IT MANUALLY HERE */
