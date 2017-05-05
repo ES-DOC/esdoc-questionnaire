@@ -653,16 +653,16 @@ class QModelCustomization(QCustomization):
         if self.is_default:
             if other_customizers.filter(is_default=True).count() != 0:
                 raise ValidationError({
-                    "is_default": _("A default customization already exists.  There can be only one default customization per project.")
+                    "is_default": _("A default customization for this document_type already exists.  There can be only one default customization per project.")
                 })
 
         if self.proxy.is_document:
 
             if other_customizers.filter(proxy__is_document=True, name=self.name).count() != 0:
                 raise ValidationError({
-                    "name": _("A customization for this proxy and project with this name already exists."),
-                    "proxy": _("A customization for this proxy and project with this name already exists."),
-                    "project": _("A customization for this proxy and project with this name already exists."),
+                    "name": _("A customization for this document_type and project with this name already exists."),
+                    "proxy": _("A customization for this document_type and project with this name already exists."),
+                    "project": _("A customization for this document_type and project with this name already exists."),
                 })
 
         super(QModelCustomization, self).clean(*args, **kwargs)
@@ -975,6 +975,10 @@ class QPropertyCustomization(QCustomization):
         if self.field_type == QPropertyTypes.RELATIONSHIP:
             target_models_are_documents = [tm.is_document for tm in self.proxy.relationship_target_models.all()]
             assert len(set(target_models_are_documents)) == 1
+            # try:
+            #     assert len(set(target_models_are_documents)) == 1
+            # except:
+            #     import ipdb; ipdb.set_trace()
             return not any(target_models_are_documents)
         return False
 
