@@ -230,7 +230,7 @@ def project_join(project, user, site=None):
     try:
 
         send_mail(
-            "ES-DOC Questionnaire project join request",
+            "ES-DOC Questionnaire project join response",
             mail_content,
             mail_from,
             mail_to,

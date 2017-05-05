@@ -8,7 +8,8 @@
 #   This project is distributed according to the terms of the MIT license [http://www.opensource.org/licenses/MIT].
 ####################
 
-from django.contrib import admin
+from django.contrib import admin, messages
+from django.contrib.admin.actions import delete_selected as model_admin_delete_selected
 from django.contrib.admin.sites import AlreadyRegistered
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.models import User
@@ -25,6 +26,8 @@ class QUserInline(admin.StackedInline):
 
 class QUserAdmin(UserAdmin):
     inlines = (QUserInline, )
+    actions = ['delete_selected']
+
 
     # this took a while to figure out...
     # I want to update the group membership of a user based on which projects they belong to, but...
@@ -49,6 +52,39 @@ class QUserAdmin(UserAdmin):
             user_profile.leave_project(project)
         for project in new_projects.difference(old_projects):
             user_profile.join_project(project)
+
+    def delete_model(self, request, obj):
+        """
+        if the user to be deleted owns artefacts, then let the deleter know
+        :param request:
+        :param obj:
+        :return:
+        """
+        if obj.owned_customizations.count() > 0:
+            msg = "User '{0}' owns some customizations; You ought to transfer the ownership ASAP.".format(obj)
+            messages.add_message(request, messages.WARNING, msg)
+        if obj.owned_models.count() > 0:
+            msg = "User '{0}' owns some realizations; You ought to transfer the ownership ASAP.".format(obj)
+            messages.add_message(request, messages.WARNING, msg)
+        obj.delete()
+
+    def delete_selected(self, request, queryset):
+        """
+        as above, check if any artefacts are owned by each user
+        :param request:
+        :param queryset:
+        :return:
+        """
+        for user in queryset:
+            if user.owned_customizations.count() > 0:
+                msg = "User '{0}' owns some customizations; You ought to transfer the ownership ASAP.".format(user)
+                messages.add_message(request, messages.WARNING, msg)
+            if user.owned_models.count() > 0:
+                msg = "User '{0}' owns some realizations; You ought to transfer the ownership ASAP.".format(user)
+                messages.add_message(request, messages.WARNING, msg)
+        return model_admin_delete_selected(self, request, queryset)
+    delete_selected.short_description = model_admin_delete_selected.short_description
+
 
 # when db is 1st setup, built-in User may be registered before Q classes
 try:
