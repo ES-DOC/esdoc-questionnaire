@@ -31,7 +31,7 @@
                 {% with form_field=field.field %}
                     <enumeration enumeration-choices="{{ form_field.complete_choices }}"
                                  enumeration-multiple="{{ form_field.is_multiple }}"
-                                 enumeration-disabled="{{ form_field.editable }}"
+                                 enumeration-disabled="!{{ form.is_editable }}"
                                  enumeration-name="'enumeration_value'"
                                  enumeration-function="update_property_completion"/>
                 {% endwith %}

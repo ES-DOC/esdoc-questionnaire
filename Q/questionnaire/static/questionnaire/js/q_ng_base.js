@@ -231,6 +231,7 @@
             scope: {
                 enumerationChoices: "=",
                 enumerationMultiple: "=",
+                enumerationDisabled: "=",
                 enumerationName: "=",
                 enumerationFunction: "&"
             },
@@ -255,8 +256,9 @@
                         }
                     }
                 );
-                $scope.is_open = false;
                 $scope.TITLE_LIMIT = 2;
+                $scope.is_open = false;
+                $scope.is_disabled = $scope.enumerationDisabled;
                 if ($scope.enumerationMultiple) {
                     $scope.title_placeholder = "<span class='placeholder'>Please select option(s)</span>";
                 }

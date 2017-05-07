@@ -448,6 +448,7 @@ class QPropertyRealizationForm(QRealizationForm):
         self.is_nillable = customization.is_nillable
         self.is_required = customization.is_required
         self.is_hidden = customization.is_hidden
+        self.is_editable = customization.is_editable
         self.is_hierarchical = customization.relationship_is_hierarchical
         self.render = not (self.is_hidden or self.is_hierarchical)  # tells the template whether or not I plan on rendering the form
 
