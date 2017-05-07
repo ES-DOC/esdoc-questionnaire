@@ -98,6 +98,7 @@
             scope: {
                 referenceType: '=',
                 referenceIndex: '=',
+                referenceDisabled: '=',
                 referenceRemoveFunction: '&'
             },
             templateUrl: "/static/questionnaire/templates/q_ng_reference.html",
@@ -116,6 +117,7 @@
                 );
 
                 $scope.is_active = true;
+                $scope.is_disabled = $scope.referenceDisabled;
                 $scope.toggle_active = function() {
                     var dialog_title = "Are you sure you want to do this?  You will lose the currently defined reference.";
                     bootbox.confirm(dialog_title, function(result) {
@@ -134,7 +136,6 @@
                    $global_services.setBlocking(true);
 
                    var url = "http://api.es-doc.org/2/summary/search?document_version=latest";
-                   /* TODO: CHANGE THESE URL PARAMETERS */
                    url += "&document_type=" + $scope.referenceType;
                    url += "&project=" + project_name;
 
@@ -148,13 +149,14 @@
                         data: proxy_data
                    })
                    .success(function(result) {
+
                         $scope.possible_references = result.results;
                         $scope.total_references = $scope.possible_references.length;
                         $scope.selected_reference = [];
 
                         /* TODO: THIS BIT ONWARDS OUGHT TO BE MOVED INTO THE CONTROLLER */
                         $scope.paging_size = 12;
-                        $scope.page_size = 6;
+                        $scope.page_size = 4;
                         $scope.current_page = 1;
 
                         $scope.$watch("current_page", function() {
@@ -224,7 +226,7 @@
                         });
                    })
                    .error(function(error) {
-                        show_msg("Error connecting to ES-DOC reference server", "error");
+                        show_msg("Error connecting to ES-DOC Archive", "error");
                         console.log(error);
                    }).finally(function() {
                         $global_services.setBlocking(false);
@@ -394,8 +396,23 @@
 
         $scope.print_stuff = function() {
             /* print the current state of stuff */
+            var model = $global_services.getModelFromPath("_DATA");
             console.log("session_key=" + session_key);
-            console.log($global_services.getModelFromPath("_DATA"));
+            console.log(model);
+
+            $global_services.setBlocking(true);
+            var url = "/services/log/";
+            var data = "msg=" + JSON.stringify(model);
+            $http({
+                method: "POST",
+                url: url,
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                data: data
+            })
+            .finally(function() {
+                $global_services.setBlocking(false);
+            });
+
         };
 
     }]);

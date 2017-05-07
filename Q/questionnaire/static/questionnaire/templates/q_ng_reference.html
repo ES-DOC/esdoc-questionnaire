@@ -3,7 +3,10 @@
     <div class="panel-body">
         <div class="row">
             <div class="col-lg-1 col-md-1">
-                <button class="btn btn-default" type="button" title="click to set this reference to a published document" ng-disabled="!is_active" ng-click="get_possible_references()">
+                <button class="btn btn-default" type="button"
+                        title="click to set this reference to a published document"
+                        ng-disabled="!is_active || is_disabled"
+                        ng-click="get_possible_references()">
                     <span class="glyphicon glyphicon-new-window"></span>
                 </button>
             </div>  <!-- /.col -->
@@ -14,7 +17,7 @@
             </div>  <!-- /.col -->
             <div class="col-lg-2 col-md-2">
                 <button type="button" class="btn btn-info btn-sm"
-                        ng-disabled="current_model.relationship_references.length == current_model.cardinality_min"
+                        ng-disabled="current_model.relationship_references.length == current_model.cardinality_min || is_disabled"
                         ng-click="remove_reference()">
                         remove&nbsp;
                         <span class="glyphicon glyphicon-minus-sign"/>
