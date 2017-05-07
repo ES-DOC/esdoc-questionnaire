@@ -19,6 +19,7 @@ from Q.questionnaire.forms.forms_base import QForm, QFormSet
 from Q.questionnaire.models.models_realizations import QModelRealization, QCategoryRealization, QPropertyRealization
 from Q.questionnaire.q_fields import QPropertyTypes, ATOMIC_PROPERTY_MAP, ENUMERATION_OTHER_CHOICE, ENUMERATION_OTHER_PLACEHOLDER, ENUMERATION_OTHER_DOCUMENTATION
 from Q.questionnaire.q_utils import QError, set_field_widget_attributes, update_field_widget_attributes, pretty_string, legacy_code
+from Q.questionnaire.q_constants import TYPEAHEAD_LIMIT
 
 
 class QRealizationForm(QForm):
@@ -494,6 +495,15 @@ class QPropertyRealizationForm(QRealizationForm):
                     })
                 else:
                     self.set_default_field_value("is_complete", True)
+
+            if customization.atomic_suggestions:
+                atomic_suggestions_list = customization.atomic_suggestions.split('|')
+                set_field_widget_attributes(atomic_value_field, {
+                    "uib-typeahead": "option for option in [{0}] | filter:$viewValue | limitTo:{1}".format(
+                        ",".join(["'{0}'".format(mark_safe(suggestion)) for suggestion in atomic_suggestions_list]),
+                        TYPEAHEAD_LIMIT
+                    )
+                })
 
         elif field_type == QPropertyTypes.ENUMERATION:
             enumeration_value_field = self.fields["enumeration_value"]

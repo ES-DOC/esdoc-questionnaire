@@ -25,6 +25,9 @@ MIN_PASSWORD_LENGTH = 6
 # just use the default cache; don't get fancy...
 CACHE_ALIAS = "default"
 
+# at what point should suggested text be triggered...
+TYPEAHEAD_LIMIT = 8
+
 # valid reasons to leave a property value blank (taken from seeGrid)...
 
 NIL_PREFIX = "nil"
