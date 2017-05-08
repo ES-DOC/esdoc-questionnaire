@@ -29,9 +29,10 @@
 
             <span class="col-sm-6 voffset-2">
                 {% with form_field=field.field %}
+                    {# note the use of "jsonify" in setting "enumeration-disabled" below; this is b/c ".is_editable" returns "True" but ng requires "true" #}
                     <enumeration enumeration-choices="{{ form_field.complete_choices }}"
                                  enumeration-multiple="{{ form_field.is_multiple }}"
-                                 enumeration-disabled="!{{ form.is_editable }}"
+                                 enumeration-disabled="! {{ form.is_editable|jsonify }}"
                                  enumeration-name="'enumeration_value'"
                                  enumeration-function="update_property_completion"/>
                 {% endwith %}
