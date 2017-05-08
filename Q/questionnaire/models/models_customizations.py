@@ -806,7 +806,7 @@ class QPropertyCustomization(QCustomization):
     is_required = models.BooleanField(default=True, blank=True, verbose_name="Is this property required?")
     is_required.help_text = _(
         "All required properties must be completed prior to publication.  "
-        "A property that is defined as required <em>in the CIM or a CV</em> cannot be made optional."
+        "A property that is defined as required <em>in the CIM</em> cannot be made optional."
     )
     is_hidden = models.BooleanField(default=True, blank=True, verbose_name="Should this property <u>not</u> be displayed?")
     is_hidden.help_text = _(
@@ -814,7 +814,7 @@ class QPropertyCustomization(QCustomization):
     )
     is_editable = models.BooleanField(default=True, verbose_name="Can this property be edited?")
     is_editable.help_text = _(
-        "If this field is disabled, this is because a default value was set by the ontology itself"
+        "If this field is disabled, this is because a default value was set by the CIM itself "
         "and should not therefore be overridden by the ES-DOC Questionnaire."
     )
     is_nillable = models.BooleanField(default=True, verbose_name="Should <i>nillable</i> options be allowed?")
