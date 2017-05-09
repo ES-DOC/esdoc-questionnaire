@@ -411,7 +411,7 @@ class QRealization(models.Model):
 
     is_complete = models.BooleanField(blank=False, null=False, default=False)
 
-    order = models.PositiveIntegerField(blank=True, null=True)  # this reflects the natural order of objects; unlike the "order" field of a customization
+    order = models.PositiveIntegerField(blank=True, null=True)  # this reflects the natural order of objects; unlike the "order" field of a customization.
                                                                 # it seems a bit redundant, but I often need to work out the order that realizations are serialized
                                                                 # b/c they might be rendered in a different order (based on their customization.
                                                                 # originally, this field was set based on the corresponding proxy
@@ -773,6 +773,7 @@ class QPropertyRealization(QRealization):
             enumeration_value_field.is_multiple = proxy.is_multiple
             # TODO: THE ABOVE CHANGES SEEM TO BE LOST BY THE TIME WE SETUP THE CORRESPONDING FORM ?!?
             # TODO: SEE THE COMMENTS IN "QPropertyRealizationForm.__init__" AND "QEnumerationFormField" FOR MORE INFO
+            # TODO: ACTUALLY, THAT'S NOT SO BAD B/C I MAY WANT TO OVERRIDE THESE CHANGES IN "QPropertyRealizationForm.customize"
 
     def __str__(self):
         return "{0}: {1}".format(

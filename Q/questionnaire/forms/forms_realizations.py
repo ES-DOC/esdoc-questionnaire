@@ -407,16 +407,7 @@ class QPropertyRealizationForm(QRealizationForm):
             enumeration_value_field = self.fields["enumeration_value"]
             enumeration_other_field = self.fields["enumeration_other_value"]
             # TODO: "complete_choices", "is_multiple", etc. OUGHT TO HAVE BEEN SETUP IN "QPropertyRealization.__init__"
-            # TODO: BUT NOT ALL OF THOSE ATTRIBUTES RETAIN THE VALUES SETUP THERE; I'M NOT SURE WHY ?!?
-            # TODO: THIS SECTION JUST REPEATS THAT CODE ALMOST VERBATIM FOR THE QEnumerationFormField...
-            enumeration_choices = copy.copy(proxy.enumeration_choices)  # make a copy of the value so that "update" below doesn't modify the original
-            if proxy.enumeration_is_open:
-                enumeration_choices.append({
-                    "value": ENUMERATION_OTHER_CHOICE,
-                    "documentation": ENUMERATION_OTHER_DOCUMENTATION,
-                    "order": len(enumeration_choices) + 1,
-                })
-            enumeration_value_field._complete_choices = enumeration_choices
+            # enumeration_value_field._complete_choices = proxy.enumeration_choices
             enumeration_value_field._is_multiple = proxy.is_multiple
             set_field_widget_attributes(enumeration_other_field, {
                 "placeholder": ENUMERATION_OTHER_PLACEHOLDER,
@@ -508,6 +499,15 @@ class QPropertyRealizationForm(QRealizationForm):
         elif field_type == QPropertyTypes.ENUMERATION:
             enumeration_value_field = self.fields["enumeration_value"]
             enumeration_other_value_field = self.fields["enumeration_other_value"]
+            enumeration_choices = copy.copy(proxy.enumeration_choices)  # (make a copy of the value so that possibly updating it below doesn't modify the original
+            if customization.enumeration_is_open:
+                enumeration_choices.append({
+                    "value": ENUMERATION_OTHER_CHOICE,
+                    "documentation": ENUMERATION_OTHER_DOCUMENTATION,
+                    "order": len(enumeration_choices) + 1,
+                })
+            enumeration_value_field._complete_choices = enumeration_choices
+
             if customization.is_required:
                 update_field_widget_attributes(enumeration_value_field, {
                     "ng-blur": "update_property_completion()",
