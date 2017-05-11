@@ -1071,8 +1071,8 @@ class QPropertyCustomization(QCustomization):
         self.property_description = proxy.documentation
         self.order = proxy.order
         self.is_required = proxy.is_required
-        self.is_hidden = False  # not proxy.is_required
-        self.is_nillable = not proxy.is_required and not self.use_subforms
+        self.is_hidden = self.cardinality_min == 0 and self.cardinality_max == 0  # False  # not proxy.is_required
+        self.is_nillable = not proxy.is_required and not self.field_type == QPropertyTypes.RELATIONSHIP
         self.inline_help = False
         self.default_values = proxy.values
         self.is_editable = not self.has_specialized_values  # if the proxy provided default values, then do not allow the customizer to override them
