@@ -141,6 +141,44 @@ class EnumeratedTypeList(list):
         # otherwise return a value greater than the last position of the orderList
         return len(et_list)+1
 
+######################################################################
+# some useful structures for getting the path of complex             #
+# hierarchical structures (such as QCustomizations or QRealizations) #
+######################################################################
+
+
+class QPathNode(object):
+
+    def __init__(self, node_type=None, node_guid=None, node_proxy=None):
+        self._type = node_type
+        self._guid = node_guid
+        self._proxy = node_proxy
+
+    @property
+    def type(self):
+        return self._type
+
+    @type.setter
+    def type(self, node_type):
+        self._type = node_type
+
+    @property
+    def guid(self):
+        return self._guid
+
+    @guid.setter
+    def guid(self, guid_type):
+        self._guid = guid_type
+
+    @property
+    def proxy(self):
+        return self._proxy
+
+    @proxy.setter
+    def proxy(self, proxy_type):
+        self._proxy = proxy_type
+
+
 #######################
 # string manipulation #
 #######################

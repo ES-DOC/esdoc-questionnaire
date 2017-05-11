@@ -18,11 +18,11 @@ import copy
 
 from Q.questionnaire import APP_LABEL, q_logger
 from Q.questionnaire.q_fields import QVersionField, QEnumerationField, QJSONField, QPropertyTypes, QNillableTypes, QUnsavedRelatedManager, allow_unsaved_fk, ENUMERATION_OTHER_CHOICE, ENUMERATION_OTHER_DOCUMENTATION, ENUMERATION_OTHER_PREFIX
-from Q.questionnaire.models.models_customizations import QModelCustomization
+from Q.questionnaire.models.models_customizations import QModelCustomization, walk_customization_path
 from Q.questionnaire.models.models_publications import QPublication, QPublicationFormats
 from Q.questionnaire.models.models_references import QReference
 from Q.questionnaire.serializers.serializers_references import create_empty_reference_list_serialization
-from Q.questionnaire.q_utils import QError, EnumeratedType, EnumeratedTypeList, Version, find_in_sequence, pretty_string, serialize_model_to_dict
+from Q.questionnaire.q_utils import QError, EnumeratedType, EnumeratedTypeList, Version, find_in_sequence, pretty_string, serialize_model_to_dict, QPathNode
 from Q.questionnaire.q_constants import *
 
 #############
@@ -394,6 +394,57 @@ def set_version(model_realization, new_version):
 #         [RealizationTypes.MODEL, RealizationTypes.CATEGORY, RealizationTypes.PROPERTY]
 #     )
 
+from collections import deque  # not sure I need the full complexity of a deque, but in my head I want a linked-list so this makes sense
+
+
+def get_realization_path(realization, **kwargs):
+    """
+    given a realization anywhere in a hierarchy of realizations,
+    returns a linked-list describing the path to take from the root realization to get to it
+    :param realization:
+    :param kwargs:
+    :return:
+    """
+    path = kwargs.pop("path", deque())
+    if isinstance(realization, QPropertyRealization):
+        path.appendleft(QPathNode("PROPERTY", realization.guid, realization.proxy))
+        return get_realization_path(realization.model, path=path)
+    elif isinstance(realization, QModelRealization):
+        path.appendleft(QPathNode("MODEL", realization.guid, realization.proxy))
+        parent_property = realization.relationship_property
+        if parent_property:
+            return get_realization_path(parent_property, path=path)
+        return path
+    else:
+        # TODO: ADD SUPPORT FOR QCategoryRealizations
+        msg = "I don't know how to find the path for {0}".format(realization)
+        raise QError(msg)
+
+
+def walk_realization_path(realization, path):
+    """
+    given a root realization, follows a linked-list describing the path to take to get to a specific realization
+    :param realization:
+    :param path:
+    :return:
+    """
+    node = path.popleft()  # get the root node
+    assert realization.proxy.guid == node.proxy.guid  # make sure we're starting at the right place
+
+    # walk along the remaining path moving through the realizations...
+    while len(path):
+        node = path.popleft()
+        if node.type == RealizationTypes.PROPERTY:
+            assert isinstance(realization, QModelRealization)  # (if I'm looking for a property, I must be at a model)
+            realization = realization.properties(manager="allow_unsaved_properties_manager").get(proxy=node.proxy)
+        elif node.type == RealizationTypes.MODEL:
+            assert isinstance(realization, QPropertyRealization)  # (if I'm looking for a model, I must be at a [RELATIONSHIP] property)
+            realization = realization.relationship_values(manager="allow_unsaved_relationship_values_manager").get(proxy=node.proxy)
+        # TODO: ADD SUPPORT FOR QCategoryRealizations
+
+    return realization
+
+
 #####################
 # the actual models #
 #####################
@@ -477,11 +528,8 @@ class QRealization(models.Model):
             if self.proxy == default_root_customization.proxy:
                 return default_root_customization
             else:
-                default_customization = QModelCustomization.objects.filter(
-                    project=self.project,
-                    proxy=self.proxy,
-                    name=default_root_customization.name
-                ).first()  # filter might return more than one b/c of all the recursion involved in setting up customizations
+                path = get_realization_path(self)
+                default_customization = walk_customization_path(default_root_customization, path)
                 return default_customization
         except ObjectDoesNotExist:
             msg = "There is no default customization associated with {0}".format(self)

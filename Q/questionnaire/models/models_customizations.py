@@ -19,7 +19,7 @@ from uuid import uuid4
 from Q.questionnaire import APP_LABEL, q_logger
 from Q.questionnaire.q_fields import QPropertyTypes, QAtomicTypes, QUnsavedRelatedManager, allow_unsaved_fk, QJSONField
 from Q.questionnaire.q_utils import EnumeratedType, EnumeratedTypeList, pretty_string, find_in_sequence, serialize_model_to_dict
-from Q.questionnaire.q_utils import validate_no_spaces, validate_no_bad_chars, validate_no_reserved_words, validate_no_profanities, BAD_CHARS_LIST
+from Q.questionnaire.q_utils import QPathNode, QError, validate_no_spaces, validate_no_bad_chars, validate_no_reserved_words, validate_no_profanities, BAD_CHARS_LIST
 from Q.questionnaire.q_constants import *
 
 #############
@@ -446,6 +446,58 @@ def set_shared_owner(model_customization, new_owner):
         model_customization,
         [CustomizationTypes.MODEL],
     )
+
+
+from collections import deque  # not sure I need the full complexity of a deque, but in my head I want a linked-list so this makes sense
+
+
+def get_customization_path(customization, **kwargs):
+    """
+    given a customization anywhere in a hierarchy of customizations,
+    returns a linked-list describing the path to take from the root customization to get to it
+    :param get_customization_path:
+    :param kwargs:
+    :return:
+    """
+    path = kwargs.pop("path", deque())
+    if isinstance(customization, QPropertyCustomization):
+        path.appendleft(QPathNode("PROPERTY", customization.guid, customization.proxy))
+        return get_customization_path(customization.model, path=path)
+    elif isinstance(customization, QModelCustomization):
+        path.appendleft(QPathNode("MODEL", customization.guid, customization.proxy))
+        parent_property = customization.relationship_source_property_customization
+        if parent_property:
+            return get_customization_path(parent_property, path=path)
+        return path
+    else:
+        # TODO: ADD SUPPORT FOR QCategoryCustomizations
+        msg = "I don't know how to find the path for {0}".format(customization)
+        raise QError(msg)
+
+
+def walk_customization_path(customization, path):
+    """
+    given a root customization, follows a linked-list describing the path to take to get to a specific customization
+    :param realization:
+    :param path:
+    :return:
+    """
+    node = path.popleft()  # get the root node
+    assert customization.proxy.guid == node.proxy.guid  # make sure we're starting at the right place
+
+    # walk along the remaining path moving through the realizations...
+    while len(path):
+        node = path.popleft()
+        if node.type == CustomizationTypes.PROPERTY:
+            assert isinstance(customization, QModelCustomization)  # (if I'm looking for a property, I must be at a model)
+            customization = customization.property_customizations(manager="allow_unsaved_property_customizations_manager").get(proxy=node.proxy)
+        elif node.type == CustomizationTypes.MODEL:
+            assert isinstance(customization, QPropertyCustomization)  # (if I'm looking for a model, I must be at a [RELATIONSHIP] property)
+            customization = customization.relationship_target_model_customizations(manager="allow_unsaved_relationship_target_model_customizations_manager").get(proxy=node.proxy)
+            # TODO: ADD SUPPORT FOR QCategoryCustomization
+
+    return customization
+
 
 #####################
 # the actual models #
