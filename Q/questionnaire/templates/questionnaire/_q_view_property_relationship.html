@@ -93,6 +93,13 @@
                         </legend>
                         <div class="fieldset_content" ng-hide="fieldset_controller.is_collapsed">
 
+                            {% if form.is_nillable %}
+                                <span class="pull-right col-sm-3">
+                                    {% nillable %}
+                                </span>
+                                <div style="clear: both"/>
+                            {% endif %}
+
                              <div uib-accordion close-others="false"
                                   class="accordion"
                                   ng-model="current_model.relationship_values"
@@ -121,28 +128,33 @@
 
                                     <div class="accordion_content" ng-init="target_key=target.key; target_index=$index">
 
-                                        <div class="pull-right">
-                                            {# notice in ng-click, I don't have to wrap "target_key" or "target_index" w/ verbatim tags b/c I'm already in "ng mode" #}
-                                            <button type="button" class="btn btn-info btn-sm"
-                                                    ng-disabled="current_model.relationship_values.length == current_model.cardinality_min || ! {{ form.is_editable|jsonify }}"
-                                                    ng-click="remove_relationship_value('{{ form.customization.property_title }}', target_key, target_index)">
-                                                    remove&nbsp;
-                                                    <span class="glyphicon glyphicon-minus-sign"/>
-                                            </button>
-                                        </div><div class="clearfix voffset-16"/>
+                                        <fieldset ng-disabled="current_model.is_nil" style="border: 0px !important;">
 
-                                        <div ng-controller="ModelEditorController as model_editor_controller"
-                                             current_model_path="{% verbatim ng %}{{ current_model_path }}{% endverbatim ng %}.relationship_values[{% verbatim ng %}{{ target_index }}{% endverbatim ng %}]">
 
-                                            {# note the use of "jsonify" in setting "ng-disabled" below; this is b/c ".is_editable" returns "True" but ng requires "true" #}
-                                            <fieldset style="border: 0px !important;" ng-disabled="! {{ form.is_editable|jsonify }}">
-                                                <section model_to_watch="target"
-                                                         key="{% verbatim ng %}{{ target_key }}{% endverbatim ng %}"
-                                                         index="{% verbatim ng %}{{ target_index }}{% endverbatim ng %}"
-                                                         section_type="submodel_realization"></section>
-                                            </fieldset>
+                                            <div class="pull-right">
+                                                {# notice in ng-click, I don't have to wrap "target_key" or "target_index" w/ verbatim tags b/c I'm already in "ng mode" #}
+                                                <button type="button" class="btn btn-info btn-sm"
+                                                        ng-disabled="current_model.relationship_values.length == current_model.cardinality_min || ! {{ form.is_editable|jsonify }}"
+                                                        ng-click="remove_relationship_value('{{ form.customization.property_title }}', target_key, target_index)">
+                                                        remove&nbsp;
+                                                        <span class="glyphicon glyphicon-minus-sign"/>
+                                                </button>
+                                            </div><div class="clearfix voffset-16"/>
 
-                                        </div>  <!-- /ng-controller=model_editor_controller -->
+                                            <div ng-controller="ModelEditorController as model_editor_controller"
+                                                 current_model_path="{% verbatim ng %}{{ current_model_path }}{% endverbatim ng %}.relationship_values[{% verbatim ng %}{{ target_index }}{% endverbatim ng %}]">
+
+                                                {# note the use of "jsonify" in setting "ng-disabled" below; this is b/c ".is_editable" returns "True" but ng requires "true" #}
+                                                <fieldset style="border: 0px !important;" ng-disabled="! {{ form.is_editable|jsonify }}">
+                                                    <section model_to_watch="target"
+                                                             key="{% verbatim ng %}{{ target_key }}{% endverbatim ng %}"
+                                                             index="{% verbatim ng %}{{ target_index }}{% endverbatim ng %}"
+                                                             section_type="submodel_realization"></section>
+                                                </fieldset>
+
+                                            </div>  <!-- /ng-controller=model_editor_controller -->
+
+                                        </fieldset>
 
                                     </div>  <!-- /.accordion_content -->
 
@@ -152,7 +164,7 @@
 
                             {# note the use of "jsonify" in setting "ng-disabled" below; this is b/c ".is_editable" returns "True" but ng requires "true" #}
                             <button type="button" class="btn btn-info btn-sm"
-                                    ng-disabled="current_model.relationship_values.length == current_model.cardinality_max || ! {{ form.is_editable|jsonify }}"
+                                    ng-disabled="current_model.relationship_values.length == current_model.cardinality_max || ! {{ form.is_editable|jsonify }} || current_model.is_nil"
                                     ng-click="add_relationship_value('{{ form.customization.property_title }}')">
                                     add&nbsp;
                                     <span class="glyphicon glyphicon-plus-sign"/>

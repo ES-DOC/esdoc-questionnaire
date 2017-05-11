@@ -871,7 +871,7 @@ class QPropertyCustomization(QCustomization):
     )
     is_nillable = models.BooleanField(default=True, verbose_name="Should <i>nillable</i> options be allowed?")
     is_nillable.help_text = \
-        "A nillable property can be intentionally left blank for several reasons: {0}.".format(
+        "A nillable property can be intentionally left blank for several reasons: {0}.  In general, relationship properties needn't be made nillable, since the relationships can simply be removed.".format(
             ", ".join([nr[0] for nr in NIL_REASONS])
         )
     property_description = models.TextField(
@@ -1041,22 +1041,9 @@ class QPropertyCustomization(QCustomization):
     def reset(self, **kwargs):
         force_save = kwargs.pop("force_save", False)
 
-        proxy = self.proxy
-
-        # all fields...
-
-        self.property_title = pretty_string(proxy.name)
-        self.property_description = proxy.documentation
-        self.order = proxy.order
-        self.is_required = proxy.is_required
-        self.is_hidden = False  # not proxy.is_required
-        self.is_nillable = not proxy.is_required
-        self.inline_help = False
-        self.default_values = proxy.values
-        self.is_editable = not self.has_specialized_values  # if the proxy provided default values, then do not allow the customizer to override them
-        self.can_inherit = False
-
         assert self.category_customization is not None  # even "uncategorized" properties should use the "UncategorizedCategory"
+
+        proxy = self.proxy
 
         self.field_type = proxy.field_type
 
@@ -1077,6 +1064,19 @@ class QPropertyCustomization(QCustomization):
         else:  # self.field_type == QPropertyTypes.RELATIONSHIP
             self.relationship_show_subforms = self.use_subforms
             self.relationship_is_hierarchical = proxy.is_hierarchical
+
+        # all fields...
+
+        self.property_title = pretty_string(proxy.name)
+        self.property_description = proxy.documentation
+        self.order = proxy.order
+        self.is_required = proxy.is_required
+        self.is_hidden = False  # not proxy.is_required
+        self.is_nillable = not proxy.is_required and not self.use_subforms
+        self.inline_help = False
+        self.default_values = proxy.values
+        self.is_editable = not self.has_specialized_values  # if the proxy provided default values, then do not allow the customizer to override them
+        self.can_inherit = False
 
         if force_save:
             self.save()
