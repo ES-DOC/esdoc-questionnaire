@@ -22,7 +22,7 @@ from Q.questionnaire.models.models_customizations import QModelCustomization, wa
 from Q.questionnaire.models.models_publications import QPublication, QPublicationFormats
 from Q.questionnaire.models.models_references import QReference
 from Q.questionnaire.serializers.serializers_references import create_empty_reference_list_serialization
-from Q.questionnaire.q_utils import QError, EnumeratedType, EnumeratedTypeList, Version, find_in_sequence, pretty_string, serialize_model_to_dict, QPathNode
+from Q.questionnaire.q_utils import QError, EnumeratedType, EnumeratedTypeList, Version, find_in_sequence, pretty_string, serialize_model_to_dict, validate_no_spaces, validate_not_blank, QPathNode
 from Q.questionnaire.q_constants import *
 
 #############
@@ -797,7 +797,7 @@ class QPropertyRealization(QRealization):
 
     atomic_value = models.TextField(blank=True, null=True)
     enumeration_value = QEnumerationField(blank=True, null=True)
-    enumeration_other_value = models.CharField(blank=True, null=True, max_length=HUGE_STRING)
+    enumeration_other_value = models.CharField(blank=True, null=True, max_length=HUGE_STRING, validators=[validate_not_blank])
 
     # relationship_references = models.ManyToManyField(blank=True, null=True)
     relationship_references = models.ManyToManyField(QReference, blank=True, related_name="properties")

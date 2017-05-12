@@ -159,6 +159,10 @@ class QForm(Bootstrap3ModelForm, NgModelFormMixin, NgFormValidationMixin):
         :param field_name:
         :return:
         """
+        # TODO: THIS IS CLEARLY A BIT SILLY,
+        # TODO: B/C IT WINDS UP W/ NAMES LIKE "form_type_12345['form_type_12345.field_name']"
+        # TODO: WHEN THEY OUGHT TO BE LIKE "form_type_12345['field_name']"
+        # TODO: BUT THE REST OF THE CODE IS WORKING W/ THIS SILLINESS SO LET'S LEAVE WELL-ENOUGH ALONE FOR NOW
         identifier = self.add_prefix(field_name)
         return format_html("{0}['{1}']", self.form_name, identifier)
 

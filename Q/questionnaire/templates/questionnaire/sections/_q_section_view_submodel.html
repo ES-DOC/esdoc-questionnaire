@@ -62,34 +62,41 @@
                                         {% if property_key in properties_keys %}
                                             <div ng-controller="PropertyEditorController as property_editor_controller"
                                                  current_model_path="{% verbatim ng %}{{ current_model_path }}{% endverbatim ng %}.properties[{{ form.order.value }}]"> <!-- forloop.counter0 }}]"> -->
-                                                <div id="{{form.form_name}}_property_fields">
-                                                    {% if form.is_hidden %}
-                                                        <!-- still include the form even if the property has been customized to be hidden -->
-                                                        <!-- so that the ng-model gets updated by customized values -->
-                                                        <div class="hidden">
-                                                            {{ form }}
-                                                        </div>
-                                                    {% elif not form.is_hierarchical %}
-                                                        <li class="list-group-item {% conditional_cycle 'odd' 'even' if form.render %}">  {# alternate rows for each form that is _actually_ rendered #}
+
+                                                <!-- ng-form can be nested -->
+                                                <ng-form name="{{ form.form_name }}" novalidate>
+
+                                                    <div id="{{form.form_name}}_property_fields">
+                                                        {% if form.is_hidden %}
+                                                            <!-- still include the form even if the property has been customized to be hidden -->
+                                                            <!-- so that the ng-model gets updated by customized values -->
                                                             <div class="hidden">
-                                                                {% for field in form.get_hidden_fields %}
-                                                                    {{ field }}
-                                                                {% endfor %}
+                                                                {{ form }}
                                                             </div>
-                                                            {% with field_type=form.get_field_type %}
-                                                                {% if field_type == "ATOMIC" %}
-                                                                    {% include "questionnaire/_q_view_property_atomic.html" %}
-                                                                {% elif field_type == "ENUMERATION" %}
-                                                                    {% include "questionnaire/_q_view_property_enumeration.html" %}
-                                                                {% else %} {# field_type == "RELATIONSHIP" #}
-                                                                    {% include "questionnaire/_q_view_property_relationship.html" %}
-                                                                {% endif %}
-                                                            {% endwith %}  {# /field_type #}
-                                                        </li>  <!-- /.list-group-item -->
-                                                    {% else %}
-                                                        a non hierarchical non hidden relationship property
-                                                    {% endif %}
-                                                </div>  <!-- property_fields -->
+                                                        {% elif not form.is_hierarchical %}
+                                                            <li class="list-group-item {% conditional_cycle 'odd' 'even' if form.render %}">  {# alternate rows for each form that is _actually_ rendered #}
+                                                                <div class="hidden">
+                                                                    {% for field in form.get_hidden_fields %}
+                                                                        {{ field }}
+                                                                    {% endfor %}
+                                                                </div>
+                                                                {% with field_type=form.get_field_type %}
+                                                                    {% if field_type == "ATOMIC" %}
+                                                                        {% include "questionnaire/_q_view_property_atomic.html" %}
+                                                                    {% elif field_type == "ENUMERATION" %}
+                                                                        {% include "questionnaire/_q_view_property_enumeration.html" %}
+                                                                    {% else %} {# field_type == "RELATIONSHIP" #}
+                                                                        {% include "questionnaire/_q_view_property_relationship.html" %}
+                                                                    {% endif %}
+                                                                {% endwith %}  {# /field_type #}
+                                                            </li>  <!-- /.list-group-item -->
+                                                        {% else %}
+                                                            a non hierarchical non hidden relationship property
+                                                        {% endif %}
+                                                    </div>  <!-- property_fields -->
+
+                                                </ng-form>
+
                                             </div>  <!-- /ng-controller=property_editor_controller -->
                                         {% endif %}  {# /property_key in properties_keys #}
                                     {% endwith %}  {# /property_key #}

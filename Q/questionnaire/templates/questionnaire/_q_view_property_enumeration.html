@@ -37,7 +37,12 @@
                                  enumeration-function="update_property_completion"/>
                 {% endwith %}
                 <div class="voffset-8">
-                    {{ form.enumeration_other_value }}
+                    <table border="0">  <!-- naughty, naughty developer using tables -->
+                        <tr>
+                            <td>{{ form.enumeration_other_value }}</td>
+                            <td ng-show="value_in_array('---OTHER---', current_model.enumeration_value)">{{ form.enumeration_other_value.errors }}</td>
+                        </tr>
+                    </table>
                 </div>
                 <span ng-show="show_completion">
                     &nbsp;<span ng-show="!current_model.is_complete" class="glyphicon glyphicon-pushpin"/>
