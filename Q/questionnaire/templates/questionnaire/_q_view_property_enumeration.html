@@ -38,7 +38,7 @@
                 {% endwith %}
                 <div class="voffset-8">
                     <table border="0">  <!-- naughty, naughty developer using tables -->
-                        <tr>
+                        <tr valign="top">
                             <td>{{ form.enumeration_other_value }}</td>
                             <td ng-show="value_in_array('---OTHER---', current_model.enumeration_value)">{{ form.enumeration_other_value.errors }}</td>
                         </tr>

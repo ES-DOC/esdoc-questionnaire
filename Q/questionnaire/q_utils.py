@@ -609,6 +609,8 @@ class ValidateNotBlank(QValidator):
         if not value.strip():
             raise ValidationError(self.msg)
 
+# note that ng-validataion doesn't run w/ empty fields
+# so to use this fn, I really ought to set "ng-trim" to "false"
 validate_not_blank = ValidateNotBlank()
 
 

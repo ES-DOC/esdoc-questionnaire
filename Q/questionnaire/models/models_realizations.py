@@ -797,7 +797,7 @@ class QPropertyRealization(QRealization):
 
     atomic_value = models.TextField(blank=True, null=True)
     enumeration_value = QEnumerationField(blank=True, null=True)
-    enumeration_other_value = models.CharField(blank=True, null=True, max_length=HUGE_STRING, validators=[validate_not_blank])
+    enumeration_other_value = models.CharField(blank=True, null=True, max_length=HUGE_STRING)
 
     # relationship_references = models.ManyToManyField(blank=True, null=True)
     relationship_references = models.ManyToManyField(QReference, blank=True, related_name="properties")

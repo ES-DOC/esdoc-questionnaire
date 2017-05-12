@@ -16,6 +16,9 @@ function validate_no_bad_chars(value) {
 }
 
 function validate_not_blank(value) {
+    /* note that completely empty inputs don't get passed onto ng-validation */
+    /* I can get around this by adding "ng-trim: false" */
+    /* see, for example, how "enumeration_other_value" is initialized in QPropertyRealizationForm */
 
     var SPACES_REGEX = /\s/g;
 

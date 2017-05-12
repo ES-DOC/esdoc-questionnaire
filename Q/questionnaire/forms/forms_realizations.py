@@ -18,7 +18,8 @@ import copy
 from Q.questionnaire.forms.forms_base import QForm, QFormSet
 from Q.questionnaire.models.models_realizations import QModelRealization, QCategoryRealization, QPropertyRealization
 from Q.questionnaire.q_fields import QPropertyTypes, ATOMIC_PROPERTY_MAP, ENUMERATION_OTHER_CHOICE, ENUMERATION_OTHER_PLACEHOLDER, ENUMERATION_OTHER_DOCUMENTATION
-from Q.questionnaire.q_utils import QError, set_field_widget_attributes, update_field_widget_attributes, pretty_string, legacy_code
+from Q.questionnaire.q_utils import set_field_widget_attributes, update_field_widget_attributes, QValidator, pretty_string, q_logger, legacy_code
+from Q.questionnaire.q_utils import ValidateNotBlank  # one-off for handling "OTHER" enumerations
 from Q.questionnaire.q_constants import TYPEAHEAD_LIMIT
 
 
@@ -54,6 +55,30 @@ class QRealizationForm(QForm):
                     ]
                     for unique_together_field in unique_together_fields:
                         self.errors[unique_together_field] = msg
+
+    def add_custom_form_validator_to_field(self, form_field, custom_validator):
+        """
+        this is really similar to QForm.add_custom_potential_errors_to_field
+        however, it doesn't assume that the validators come from the underlying model field
+        instead it is used to explicitly customize which validators are fun on the form only
+        (this is useful, for example, when customizing how to render ATOMIC fields)
+        :param form_field:
+        :param custom_validator:
+        :return:
+        """
+
+        assert isinstance(custom_validator, QValidator), "{0} is an invalid validator".format(custom_validator)
+
+        # add this validator to the set of existing errors (if it doesn't already exist)...
+        custom_errors = getattr(form_field, "custom_potential_errors")
+        if custom_validator.name in [e.name for e in custom_errors]:
+            q_logger.error("{0} has already been added as a validator".format(custom_validator))
+        else:
+            set_field_widget_attributes(form_field, {
+                custom_validator.name: "true"
+            })
+            custom_errors.append(custom_validator)
+            setattr(form_field, "custom_potential_errors", custom_errors)
 
     def set_default_field_value(self, field_name, value):
         """
@@ -354,9 +379,6 @@ class QPropertyRealizationForm(QRealizationForm):
     def other_fields(self):
         return self.get_fields_from_list(self._other_fields)
 
-    def __init__(self, *args, **kwargs):
-        super(QModelRealizationForm, self).__init__(*args, **kwargs)
-
     def clean(self):
         # calling the parent class's clean fun automatically sets a
         # flag that forces unique (and unique_together) validation
@@ -409,10 +431,19 @@ class QPropertyRealizationForm(QRealizationForm):
             # TODO: "complete_choices", "is_multiple", etc. OUGHT TO HAVE BEEN SETUP IN "QPropertyRealization.__init__"
             # enumeration_value_field._complete_choices = proxy.enumeration_choices
             enumeration_value_field._is_multiple = proxy.is_multiple
+            # just a one-off here: "enumeration_other_field" is not required on the model
+            # but it is required if displayed in the form...
+            custom_not_blank_validator = ValidateNotBlank()
+            self.add_custom_form_validator_to_field(enumeration_other_field, custom_not_blank_validator)
             set_field_widget_attributes(enumeration_other_field, {
                 "placeholder": ENUMERATION_OTHER_PLACEHOLDER,
-                "ng-show": "value_in_array('{0}', current_model.enumeration_value)".format(ENUMERATION_OTHER_CHOICE)
+                "ng-show": "value_in_array('{0}', current_model.enumeration_value)".format(ENUMERATION_OTHER_CHOICE),
+                # angular validation wasn't running on blank fields
+                # this prevented my "valildate_not_blank" fn from being called
+                # turning off whitespace trimming solves this problem
+                "ng-trim": "false"
             })
+
             set_field_widget_attributes(enumeration_value_field, {
                 "ng-disabled": "current_model.is_nil"
             })
