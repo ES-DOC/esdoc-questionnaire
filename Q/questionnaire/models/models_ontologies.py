@@ -184,6 +184,76 @@ class QOntology(models.Model):
             all_proxies.update(recurse_through_proxies(model_proxy, proxy_types))
         return all_proxies
 
+    def register(self, **kwargs):
+        request = kwargs.get("request")
+
+        # check the file is valid...
+        try:
+            self.file.open()
+            ontology_content = json.load(self.file)
+            self.file.close()
+        except IOError as e:
+            msg = "Error opening file: {0}".format(self.file)
+            if request:
+                messages.add_message(request, messages.ERROR, msg)
+            raise e
+
+        # check I'm allowed to re-register the ontology...
+        if self.last_registered_version:
+            last_registered_version_major = self.get_last_registered_version_major()
+            last_registered_version_minor = self.get_last_registered_version_minor()
+            current_version_major = self.get_version_major()
+            current_version_minor = self.get_version_minor()
+            if last_registered_version_major != current_version_major or last_registered_version_minor != current_version_minor:
+                if request:
+                    msg = "You are not allowed to re-register anything other than a new patch version."
+                    messages.add_message(request, messages.ERROR, msg)
+                return
+
+        # check if a registered parent exists...
+        if self.parent and not self.parent.is_registered:
+            if request:
+                msg = "You are not allowed to register an ontology whose parent has not yet been registered."
+                messages.add_message(request, messages.ERROR, msg)
+            return
+
+        try:
+            self.parse_ontology_content(ontology_content)
+            # record that registration occurred...
+            self.last_registered_version = self.version
+            self.is_registered = True
+        except Exception as e:
+            # if something goes wrong, record it in the logs and return immediately (but don't crash)...
+            q_logger.error(e)
+            if request:
+                messages.add_message(request, messages.ERROR, str(e))
+            return
+
+        # update any existing customizations & realizations...
+        # customizations_to_update = [
+        #     customization for customization in QModelCustomization.objects.filter(proxy__ontology=self)
+        #     if customization.proxy.is_meta
+        # ]
+        # for customization in customizations_to_update:
+        #     registered_ontology_signal.send_robust(
+        #         sender=self,
+        #         customization=customization
+        #     )
+        # realizations_to_update = [
+        #     realization for realization in QModel.objects.filter(proxy__ontology=self)
+        #     if realization.proxy.is_meta
+        # ]
+        # for realization in realizations_to_update:
+        #     registered_ontology_signal.send_robust(
+        #         sender=self,
+        #         realization=realization
+        #     )
+
+        # hooray, you're done...
+        if request:
+            msg = "Successfully registered ontology: {0}".format(self)
+            messages.add_message(request, messages.SUCCESS, msg)
+
     def parse_ontology_content(self, ontology_content):
 
         # 1st do some logical checks on the content...
@@ -514,74 +584,3 @@ class QOntology(models.Model):
     #         new_property_proxy.save()
     #
     #     return new_property_proxy
-
-    def register(self, **kwargs):
-        request = kwargs.get("request")
-
-        # check the file is valid...
-        try:
-            self.file.open()
-            ontology_content = json.load(self.file)
-            self.file.close()
-        except IOError as e:
-            msg = "Error opening file: {0}".format(self.file)
-            if request:
-                messages.add_message(request, messages.ERROR, msg)
-            raise e
-
-        # check I'm allowed to re-register the ontology...
-        if self.last_registered_version:
-            last_registered_version_major = self.get_last_registered_version_major()
-            last_registered_version_minor = self.get_last_registered_version_minor()
-            current_version_major = self.get_version_major()
-            current_version_minor = self.get_version_minor()
-            if last_registered_version_major != current_version_major or last_registered_version_minor != current_version_minor:
-                if request:
-                    msg = "You are not allowed to re-register anything other than a new patch version."
-                    messages.add_message(request, messages.ERROR, msg)
-                return
-
-        # check if a registered parent exists...
-        if self.parent and not self.parent.is_registered:
-            if request:
-                msg = "You are not allowed to register an ontology whose parent has not yet been registered."
-                messages.add_message(request, messages.ERROR, msg)
-            return
-
-        try:
-            self.parse_ontology_content(ontology_content)
-            # record that registration occurred...
-            self.last_registered_version = self.version
-            self.is_registered = True
-        except Exception as e:
-            # if something goes wrong, record it in the logs and return immediately (but don't crash)...
-            q_logger.error(e)
-            if request:
-                messages.add_message(request, messages.ERROR, str(e))
-            return
-
-        # update any existing customizations & realizations...
-        # customizations_to_update = [
-        #     customization for customization in QModelCustomization.objects.filter(proxy__ontology=self)
-        #     if customization.proxy.is_meta
-        # ]
-        # for customization in customizations_to_update:
-        #     registered_ontology_signal.send_robust(
-        #         sender=self,
-        #         customization=customization
-        #     )
-        # realizations_to_update = [
-        #     realization for realization in QModel.objects.filter(proxy__ontology=self)
-        #     if realization.proxy.is_meta
-        # ]
-        # for realization in realizations_to_update:
-        #     registered_ontology_signal.send_robust(
-        #         sender=self,
-        #         realization=realization
-        #     )
-
-        # hooray, you're done...
-        if request:
-            msg = "Successfully registered ontology: {0}".format(self)
-            messages.add_message(request, messages.SUCCESS, msg)
-
