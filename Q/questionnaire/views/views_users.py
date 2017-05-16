@@ -16,21 +16,40 @@
 
 from allauth.account.models import EmailAddress
 from allauth.account.views import SignupView, LoginView, EmailView, ConfirmEmailView, PasswordResetView, PasswordResetFromKeyView, PasswordChangeView
-from allauth.account.views import sensitive_post_parameters_m as allauth_sensitive_post_parameters
 from allauth.compat import is_anonymous, is_authenticated
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse
 from django.http import HttpResponseRedirect
-from django.shortcuts import render_to_response
+from django.shortcuts import render_to_response, redirect
 from django.template import RequestContext
 from django.views.decorators.debug import sensitive_post_parameters
 from honeypot.decorators import check_honeypot  # TODO
-
+from functools import wraps
 from Q.questionnaire.forms.forms_users import QUserProfileForm
 from Q.questionnaire.views.views_base import add_parameters_to_context
 from Q.questionnaire.views.views_errors import q_error
+
+
+def unauthenticated_required(view_fn):
+    """
+    decorator that prevents already logged in users from accessing a page
+    (this stops them from trying to login twice, for example)
+    :param view_fn:
+    :return:
+    """
+    @wraps(view_fn)
+    def wrapper(*args, **kwargs):
+        request = args[1]
+        user = request.user
+        if is_authenticated(request.user):
+            msg = "You are already logged in as '{0}'.  Don't try to login again.".format(user)
+            messages.add_message(request, messages.ERROR, msg)
+            return redirect("/")
+        return view_fn(*args, **kwargs)
+
+    return wrapper
 
 
 class QSignupView(SignupView):
@@ -69,17 +88,19 @@ class QLoginView(LoginView):
             "username": self.request.POST["login"]
         })
 
-    @allauth_sensitive_post_parameters
+    @unauthenticated_required
     def dispatch(self, request, *args, **kwargs):
-        """
-        overrides the parent dispatch fn to cope w/ visits to the login view while a user is already logged in
-        """
-        # TODO: ANOTHER WAY TO DO THIS IS TO JUST WRITE AN "unauthenticated" DECORATOR
-        if is_authenticated(request.user):
-            msg = "You are already logged in.  Go to some other page."
-            return q_error(request, error_msg=msg)
-        else:
-            return super(QLoginView, self).dispatch(request, *args, **kwargs)
+        return super(QLoginView, self).dispatch(request, *args, **kwargs)
+    # @allauth_sensitive_post_parameters
+    # def dispatch(self, request, *args, **kwargs):
+    #     """
+    #     overrides the parent dispatch fn to cope w/ visits to the login view while a user is already logged in
+    #     """
+    #     if is_authenticated(request.user):
+    #         msg = "You are already logged in.  Go to some other page."
+    #         return q_error(request, error_msg=msg)
+    #     else:
+    #         return super(QLoginView, self).dispatch(request, *args, **kwargs)
 
 q_login = QLoginView.as_view()
 
