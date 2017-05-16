@@ -57,7 +57,7 @@
         project_controller.filtered_documents = [];
         project_controller.paged_documents = [];
         project_controller.total_documents = 0;
-        project_controller.current_document_page = 0;
+        project_controller.current_document_page = 1;
         project_controller.document_page_size = 6;
         project_controller.document_paging_size = 10;
 
@@ -83,7 +83,6 @@
                     console.log(data);
                     project_controller.documents = data.results;
                     project_controller.total_documents = data.count;
-                    project_controller.current_document_page = project_controller.total_documents > 0 ? 1 : 0;
                     $.each(project_controller.documents, function(i, d) {
                         if (d.synchronization.length) {
                             project_controller.has_unsynchronized_document = true;
@@ -134,7 +133,7 @@
             var start = (project_controller.current_document_page - 1) * project_controller.document_paging_size;
             var end = project_controller.current_document_page * project_controller.document_paging_size;
             project_controller.paged_documents = project_controller.filtered_documents.slice(start, end);
-            project_controller.document_page_start = start;
+            project_controller.document_page_start = project_controller.total_documents > 0 ? start + 1 : project_controller.total_documents;
             project_controller.document_page_end = end > project_controller.total_documents ? project_controller.total_documents : end;
         };
 

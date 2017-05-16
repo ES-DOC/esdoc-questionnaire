@@ -115,7 +115,7 @@
                                 <div class="row voffset-4">
                                     <span class="col-lg-4 col-md-4">
                                         <a href="{% url 'project_customize' project_name=project.name %}" class="btn btn-xs btn-info" role="button">
-                                            Customize ES-DOC Questionnaire
+                                            Customize {{ project.title }} Project
                                         </a>
                                     </span>
                                 </div>
@@ -147,20 +147,20 @@
 
                     <br/>
 
-                    <div class="row well">
+                    <div class="row-fluid well">
                         <div class="form-group">
-                            <div class="col-lg-2">
+                            <div class="col-lg-2 col-md-2">
                                 <help help_text="Please select a supported document type to create.  This will also filter the list of existing documents below."></help>
                                 &nbsp;Document Type:&nbsp;
                             </div>
-                            <div class="col-lg-4">
+                            <div class="col-lg-4 col-md-4">
                                 <select id="document_type" class="form-control"
                                         ng-model="project_controller.selected_document_type"
                                         ng-options="dt.title group by dt.category disable when dt.is_active==false for dt in project_controller.possible_document_types">
                                     <option value="">*</option>
                                 </select>
                             </div>
-                            <div class="col-lg-1">
+                            <div class="col-lg-1 col-md-1">
                                 <!-- using a button instead of an anchor tag so that it can be _properly_ disabled -->
                                 <button class="btn btn-sm btn-info" ng-disabled="(!project_controller.selected_document_type) || (!project_controller.selected_document_type.is_active)" ng-click="project_controller.create_document_type()">
                                     create
@@ -173,7 +173,7 @@
                         <div class='small text-right'>
                                 <ul uib-pagination class='pagination pagination-sm' ng-model='project_controller.current_document_page' total-items='project_controller.total_documents' max-size='project_controller.document_page_size' items-per-page='project_controller.document_paging_size' boundary-links='true' force-ellipses='true' previous-text='&lsaquo;' next-text='&rsaquo;' first-text='&laquo;' last-text='&raquo;'></ul>
                                 {% verbatim ng %}
-                                    <div><em>showing items {{ project_controller.document_page_start + 1 }} to {{ project_controller.document_page_end }} of {{ project_controller.total_documents }}</em></div>
+                                    <div><em>showing items {{ project_controller.document_page_start }} to {{ project_controller.document_page_end }} of {{ project_controller.total_documents }}</em></div>
                                 {% endverbatim ng %}
                         </div>
                     </div>
@@ -255,10 +255,14 @@
                                         </td>
                                         <td>
                                             {% if can_edit %}
-                                                <a target="_blank" class="btn btn-sm btn-info" href="/{{ project_controller.project.name }}/edit/{{ document.path }}">edit</a>
+                                                {% verbatim ng %}
+                                                    <a target="_blank" class="btn btn-sm btn-info" href="/{{ project_controller.project.name }}/edit/{{ document.path }}">edit</a>
+                                                {% endverbatim ng %}
                                             {% endif %}
                                             {% if can_view %}
-                                                <a target="_blank" class="btn btn-sm btn-info" href="/{{ project_controller.project.name }}/view/{{ document.path }}">view in editor</a>
+                                                {% verbatim ng %}
+                                                    <a target="_blank" class="btn btn-sm btn-info" href="/{{ project_controller.project.name }}/view/{{ document.path }}">view in editor</a>
+                                                {% endverbatim ng %}
                                             {% endif %}
                                             {% if can_publish %}
                                                 <button class="btn btn-sm btn-info" ng-show="document.is_complete" ng-click="project_controller.document_publish(document)">

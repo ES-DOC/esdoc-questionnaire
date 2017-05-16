@@ -153,7 +153,7 @@
                         <div class='small text-right'>
                                 <ul uib-pagination class='pagination pagination-sm' ng-model='project_controller.current_document_page' total-items='project_controller.total_documents' max-size='project_controller.document_page_size' items-per-page='project_controller.document_paging_size' boundary-links='true' force-ellipses='true' previous-text='&lsaquo;' next-text='&rsaquo;' first-text='&laquo;' last-text='&raquo;'></ul>
                                 {% verbatim ng %}
-                                    <div><em>showing items {{ project_controller.document_page_start + 1 }} to {{ project_controller.document_page_end }} of {{ project_controller.total_documents }}</em></div>
+                                    <div><em>showing items {{ project_controller.document_page_start }} to {{ project_controller.document_page_end }} of {{ project_controller.total_documents }}</em></div>
                                 {% endverbatim ng %}
                         </div>
                     </div>
@@ -163,16 +163,6 @@
                             <table class="table table-striped">
                                 <thead>
                                     <tr>
-                                        <th ng-click="project_controller.change_document_sort_type('proxy_title')">
-                                            <span>Document Type</span>
-                                            <span ng-show="project_controller.document_sort_type=='proxy_title'">
-                                                <span ng-show="project_controller.document_sort_reverse" class="glyphicon glyphicon-sort-by-alphabet-alt"></span>
-                                                <span ng-hide="project_controller.document_sort_reverse" class="glyphicon glyphicon-sort-by-alphabet"></span>
-                                            </span>
-                                            <span ng-hide="project_controller.document_sort_type=='proxy_title'">
-                                                <span class="glyphicon glyphicon-sort text-muted"></span>
-                                            </span>
-                                        </th>
                                         <th ng-click="project_controller.change_document_sort_type('name')">
                                             <span>Name</span>
                                             <span ng-show="project_controller.document_sort_type=='name'">
@@ -180,6 +170,16 @@
                                                 <span ng-hide="project_controller.document_sort_reverse" class="glyphicon glyphicon-sort-by-alphabet"></span>
                                             </span>
                                             <span ng-hide="project_controller.document_sort_type=='name'">
+                                                <span class="glyphicon glyphicon-sort text-muted"></span>
+                                            </span>
+                                        </th>
+                                        <th ng-click="project_controller.change_document_sort_type('proxy_title')">
+                                            <span>Document Type</span>
+                                            <span ng-show="project_controller.document_sort_type=='proxy_title'">
+                                                <span ng-show="project_controller.document_sort_reverse" class="glyphicon glyphicon-sort-by-alphabet-alt"></span>
+                                                <span ng-hide="project_controller.document_sort_reverse" class="glyphicon glyphicon-sort-by-alphabet"></span>
+                                            </span>
+                                            <span ng-hide="project_controller.document_sort_type=='proxy_title'">
                                                 <span class="glyphicon glyphicon-sort text-muted"></span>
                                             </span>
                                         </th>
@@ -200,13 +200,13 @@
                                         ng-class="document.synchronization.length ? 'unsynchronized' : 'synchronized'">
                                         <td>
                                             {% verbatim ng %}
-                                                {{ document.proxy_title }}
+                                                {{ document.name }}
+                                                &nbsp;<span ng-show="document.is_default" class="glyphicon glyphicon-star" title="This is the default customization for this document type."/>
                                             {% endverbatim ng %}
                                         </td>
                                         <td>
                                             {% verbatim ng %}
-                                                {{ document.name }}
-                                                &nbsp;<span ng-show="document.is_default" class="glyphicon glyphicon-star" title="This is the default customization for this document type."/>
+                                                {{ document.proxy_title }}
                                             {% endverbatim ng %}
                                         </td>
                                         <td>
@@ -215,8 +215,10 @@
                                             {% endverbatim ng %}
                                         </td>
                                         <td>
-                                            <a target="_blank" class="btn btn-sm btn-info" href="/{{ project_controller.project.name }}/customize/{{ customization.path }}">customize</a>
-                                             {% if can_delete %}
+                                            {% verbatim ng %}
+                                                <a target="_blank" class="btn btn-sm btn-info" href="/{{ project_controller.project.name }}/customize/{{ document.path }}">customize</a>
+                                            {% endverbatim ng %}
+                                            {% if can_delete %}
                                                 <button class="btn btn-sm btn-info" ng-hide="document.is_default" ng-click="project_controller.customization_delete(document)">
                                                     delete
                                                 </button>
