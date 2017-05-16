@@ -118,7 +118,7 @@ class QProxy(models.Model):
     documentation = models.TextField(blank=True, null=True)
 
     cim_id = models.CharField(
-        blank=True, null=True,
+        blank=True, null=True, unique=True,
         max_length=SMALL_STRING, validators=[validate_no_spaces],
         help_text=_(
             "A unique, CIM-specific, identifier.  "
@@ -141,6 +141,18 @@ class QProxy(models.Model):
     def __str__(self):
         # return self.cim_id
         return pretty_string(self.name)
+
+    def save(self, *args, **kwargs):
+        """
+        overloads the save method to ensure that blank cim_id fields are not used in the unique validation
+        (null field values are ignored, while blank strings are not)
+        :param args:
+        :param kwargs:
+        :return:
+        """
+        if not self.cim_id:
+            self.cim_id = None
+        super(QProxy, self).save(*args, **kwargs)
 
     @property
     def key(self):
