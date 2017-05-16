@@ -16,6 +16,8 @@
 
 from allauth.account.models import EmailAddress
 from allauth.account.views import SignupView, LoginView, EmailView, ConfirmEmailView, PasswordResetView, PasswordResetFromKeyView, PasswordChangeView
+from allauth.account.views import sensitive_post_parameters_m as allauth_sensitive_post_parameters
+from allauth.compat import is_anonymous, is_authenticated
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
@@ -66,6 +68,18 @@ class QLoginView(LoginView):
         return reverse("account_profile", kwargs={
             "username": self.request.POST["login"]
         })
+
+    @allauth_sensitive_post_parameters
+    def dispatch(self, request, *args, **kwargs):
+        """
+        overrides the parent dispatch fn to cope w/ visits to the login view while a user is already logged in
+        """
+        # TODO: ANOTHER WAY TO DO THIS IS TO JUST WRITE AN "unauthenticated" DECORATOR
+        if is_authenticated(request.user):
+            msg = "You are already logged in.  Go to some other page."
+            return q_error(request, error_msg=msg)
+        else:
+            return super(QLoginView, self).dispatch(request, *args, **kwargs)
 
 q_login = QLoginView.as_view()
 
