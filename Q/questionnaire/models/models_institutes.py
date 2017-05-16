@@ -12,6 +12,7 @@ from django.db import models
 from Q.questionnaire import APP_LABEL, q_logger
 from Q.questionnaire.q_constants import *
 
+# institutes come from: https://raw.githubusercontent.com/WCRP-CMIP/CMIP6_CVs/master/CMIP6_institution_id.json
 
 class QInstitute(models.Model):
 
