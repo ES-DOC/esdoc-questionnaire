@@ -96,7 +96,6 @@ def recurse_through_proxies(current_model_proxy, proxy_types, **kwargs):
 
     return all_proxies
 
-
 #####################
 # the actual models #
 #####################
