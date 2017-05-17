@@ -115,6 +115,7 @@ urlpatterns = patterns('',
     url(r'^(?P<project_name>[^/]+)/edit/(?P<ontology_key>[^/]+)/(?P<document_type>[^/]+)/(?P<realization_pk>[^/]+)/$', q_edit_existing, name="edit_existing"),
     url(r'^(?P<project_name>[^/]+)/view/(?P<ontology_key>[^/]+)/(?P<document_type>[^/]+)/$', q_view_new, name="view_new"),
     url(r'^(?P<project_name>[^/]+)/view/(?P<ontology_key>[^/]+)/(?P<document_type>[^/]+)/(?P<realization_pk>[^/]+)/$', q_view_existing, name="view_existing"),
+    url(r'^(?P<project_name>[^/]+)/get/(?P<ontology_key>[^/]+)/(?P<document_type>[^/]+)/$', q_get_existing, name="get_existing"),
 
     # publications (ATOM feed)...
     url(r'^feed/$', QFeed(), name="feed"),

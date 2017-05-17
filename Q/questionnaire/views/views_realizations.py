@@ -16,7 +16,7 @@ from django.shortcuts import render_to_response
 from django.utils.translation import ugettext_lazy as _
 
 from Q.questionnaire.models.models_customizations import QModelCustomization
-from Q.questionnaire.models.models_realizations import get_new_realizations, get_existing_realizations, set_owner
+from Q.questionnaire.models.models_realizations import QModelRealization, get_new_realizations, get_existing_realizations, set_owner
 from Q.questionnaire.models.models_users import is_member_of, is_user_of
 from Q.questionnaire.views.views_base import validate_view_arguments as validate_view_arguments_base, add_parameters_to_context, get_key_from_request, get_or_create_cached_object
 from Q.questionnaire.views.views_errors import q_error
@@ -299,3 +299,74 @@ def q_view_existing(request, project_name=None, ontology_key=None, document_type
         "read_only": "true",  # passing "true" instead of True b/c this is a JS variable
     }
     return render_to_response('questionnaire/q_view.html', template_context, context_instance=context)
+
+
+@redirect_legacy_projects
+def q_get_existing(request, project_name=None, ontology_key=None, document_type=None):
+    """
+    this is meant to be used from external requests (ie: further_info_url)
+    where uniquely identifying model fields (including pk) are passed
+    if a unique realization cannot be found then an error is returned
+    otherwise the response is routed to "q_edit_existing"
+    :param request:
+    :param project_name:
+    :param ontology_key:
+    :param document_type:
+    :param realization_pk:
+    :return:
+    """
+
+    # check the arguments...
+    validity, project, ontology, model_proxy, model_customization, msg = validate_view_arguments(
+        project_name=project_name,
+        ontology_key=ontology_key,
+        document_type=document_type
+    )
+    if not validity:
+        return q_error(request, msg)
+
+    model_realizations = QModelRealization.objects.filter(project=project, proxy=model_proxy)
+
+    additional_parameters = request.GET.copy()
+
+    for key, value in additional_parameters.iteritems():
+
+        if key == "pk" or key == "guid":
+            try:
+                return HttpResponseRedirect(reverse("edit_existing", kwargs={
+                    "project_name": project_name,
+                    "ontology_key": ontology_key,
+                    "document_type": document_type,
+                    "realization_pk": model_realizations.get(**{key: value}).pk
+                }))
+            except (ObjectDoesNotExist, ValueError):
+                msg = "There is no '{0}' document with a {1} of '{2}'".format(model_proxy, key, value)
+                return q_error(request, msg)
+        else:
+            try:
+                property_proxy = model_proxy.property_proxies.get(name=key)
+                if property_proxy.field_type == "ATOMIC":
+                    model_realizations = model_realizations.filter(properties__atomic_value=value)
+                elif property_proxy.field_type == "ENUMERATION":
+                    pass
+                else:  # property_proxy_field_type == "RELATIONSHIP"
+                    # TODO:
+                    msg = "Unable to support getting a document by relationship_field"
+                    return q_error(request, msg)
+            except ObjectDoesNotExist:
+                msg = "There is no '{0}' property for the '{0}' document_type".format(key, model_proxy)
+                return q_error(request, msg)
+
+    if model_realizations.count() != 1:
+        msg = "Unable to uniquely identify '{0}' document_type with the following properties: '{1}'".format(
+            model_proxy,
+            ", ".join(["{0}: {1}".format(p[0], p[1]) for p in additional_parameters.items()])
+        )
+        return q_error(request, msg)
+
+    return HttpResponseRedirect(reverse("edit_existing", kwargs={
+        "project_name": project_name,
+        "ontology_key": ontology_key,
+        "document_type": document_type,
+        "realization_pk": model_realizations.first().pk
+    }))
