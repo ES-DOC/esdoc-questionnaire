@@ -559,6 +559,24 @@ class QModelRealizationQuerySet(models.QuerySet):
     def shared_documents(self, user):
         return self.root_documents().filter(shared_owners__in=[user.pk])
 
+    def has_atomic_value(self, value):
+        return self.filter(properties__atomic_value=value)
+
+    def has_enumeration_values(self, values):
+        # TODO: THERE IS PROBABLY A MORE EFFICIENT WAY OF DOING THIS...
+        values_set = set(values)
+        matching_model_realizations = []
+        for model_realization in self:
+            for property_realization in model_realization.properties.filter(field_type=QPropertyTypes.ENUMERATION):
+                if values_set & set(property_realization.value):
+                    matching_model_realizations.append(model_realization.pk)
+                    break
+
+        return self.filter(pk__in=matching_model_realizations)
+
+    def has_relationship_values(self, values):
+        raise NotImplementedError
+
 
 class QModelRealization(QRealization):
 
@@ -777,6 +795,7 @@ class QPropertyRealization(QRealization):
     class _QCategoryPropertyUnsavedRelatedManager(QUnsavedRelatedManager):
         field_name = "category"
 
+    # custom managers...
     objects = models.Manager()
     allow_unsaved_properties_manager = _QPropertyUnsavedRelatedManager()
     allow_unsaved_category_properties_manager = _QCategoryPropertyUnsavedRelatedManager()

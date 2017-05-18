@@ -346,9 +346,10 @@ def q_get_existing(request, project_name=None, ontology_key=None, document_type=
             try:
                 property_proxy = model_proxy.property_proxies.get(name=key)
                 if property_proxy.field_type == "ATOMIC":
-                    model_realizations = model_realizations.filter(properties__atomic_value=value)
+                    model_realizations = model_realizations.filter(properties__proxy=property_proxy).has_atomic_value(value)
                 elif property_proxy.field_type == "ENUMERATION":
-                    pass
+                    formatted_values = [fv for fv in map(lambda v: v.strip(), value.split(',')) if fv]
+                    model_realizations = model_realizations.filter(properties__proxy=property_proxy).has_enumeration_values(formatted_values)
                 else:  # property_proxy_field_type == "RELATIONSHIP"
                     # TODO:
                     msg = "Unable to support getting a document by relationship_field"
