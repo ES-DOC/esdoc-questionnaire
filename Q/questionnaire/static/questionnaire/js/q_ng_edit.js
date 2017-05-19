@@ -1,5 +1,5 @@
-/* q_ng_customize.js */
-/* ng app for dealing w/ QCustomizations */
+/* q_ng_edit.js */
+/* ng app for dealing w/ QRealizations */
 
 (function() {
     var app = angular.module("q_edit", ["q_base", "ngCookies", "ui.bootstrap", "djng.forms"]);
@@ -136,9 +136,10 @@
                    $global_services.setBlocking(true);
 
                    var url = "http://api.es-doc.org/2/summary/search?document_version=latest";
-                   url += "&document_type=" + $scope.referenceType;
+//                   url += "&document_type=" + $scope.referenceType;
+                   url += "&document_type=" + $scope.current_model['relationship_references'][$scope.referenceIndex][9];
                    url += "&project=" + project_name;
-
+                   console.log("trying to goto: " + url);
                    var proxy_url = "/services/proxy/"
                    var proxy_data = "response_format=" + "json" + "&url=" + encodeURIComponent(url);
 
@@ -153,6 +154,12 @@
                         $scope.possible_references = result.results;
                         $scope.total_references = $scope.possible_references.length;
                         $scope.selected_reference = [];
+
+                        $scope.possible_institutes = $.unique($.map($scope.possible_references, function(reference, index) {
+                            return reference[1];
+                        }));
+                        $scope.total_institutes = $scope.possible_institutes.length;
+                        $scope.selected_institute = null;
 
                         /* TODO: THIS BIT ONWARDS OUGHT TO BE MOVED INTO THE CONTROLLER */
                         $scope.paging_size = 12;
@@ -186,10 +193,24 @@
                             "   <span><strong>selected document:&nbsp;</strong></span>" +
                             "   <input class='form-control' ng-model='selected_reference[4]' placeholder='please select a reference from the list below' type='text' readonly='true'/>" +
                             "</div>" +
-                            "<div class='small text-right'>" +
-                            "   <ul style='margin-bottom: 2px;' uib-pagination class='pagination pagination-sm' ng-model='current_page' total-items='total_references' max-size='page_size' items-per-page='paging_size' boundary-links='true' force-ellipses='true' previous-text='&lsaquo;' next-text='&rsaquo;' first-text='&laquo;' last-text='&raquo;'></ul>" +
-                            "   <div><em>showing items {{ page_start + 1 }} to {{ page_end }} of {{ total_references }}</em></div>" +
-                            "</div>" +
+                            "<hr/>" +
+                            "<table style='width: 100%;'>" +
+                            "   <!-- tables w/ explicit css are icky, but sometimes they are needed -->" +
+                            "   <tr>" +
+                            "       <td style='width: 50%;'>" +
+//                            "           <div class='input-group'>" +
+//                            "               <span class='input-group-addon'>filter by institute:&nbsp;</span>" +
+//                            "               <select class='form-control' style='display: table-cell; width: 50%;' placeholder='foobar' ng-model='selected_institute' ng-options='institute for institute in possible_institutes'>" +
+//                            "                   <option value='' selected>*</option>" +
+//                            "               </select>" +
+//                            "           </div>" +
+                            "       </td>" +
+                            "       <td class='small text-right' style='width: 50%;'>" +
+                            "           <ul style='margin-bottom: 2px;' uib-pagination class='pagination pagination-sm' ng-model='current_page' total-items='total_references' max-size='page_size' items-per-page='paging_size' boundary-links='true' force-ellipses='true' previous-text='&lsaquo;' next-text='&rsaquo;' first-text='&laquo;' last-text='&raquo;'></ul>" +
+                            "           <div><em>showing items {{ page_start + 1 }} to {{ page_end }} of {{ total_references }}</em></div>" +
+                            "       </td>" +
+                            "   </tr>" +
+                            "</table>" +
                             "<div class='list-group'>" +
                             "   <a class='list-group-item' ng-repeat='reference in paged_references' ng-click='toggle_selected_reference(reference)' ng-class='{active: reference==selected_reference}'>" +
                             "       <span>{{ reference[4] }}</span>" +
@@ -218,6 +239,7 @@
                                         $scope.$apply(function() {
                                             $scope.current_model["relationship_references"][$scope.referenceIndex] = $scope.selected_reference;
                                             /* I have to manually add "document_type" b/c it not returned by the ES-DOC-API */
+                                            /* I AM HERE */
                                             $scope.current_model["relationship_references"][$scope.referenceIndex].push($scope.referenceType);
                                         });
                                     }
@@ -698,14 +720,43 @@
         var relationship_subform_field_name = "relationship_values";
 
         $scope.add_relationship_reference = function() {
-            /* just add a blank reference; you can fill it in later */
-            $scope.current_model[relationship_reference_field_name].push(
-                [null, null, null, null, null, null, null, null, null, null]
-            );
+            if ($scope.current_model.possible_relationship_target_types.length == 1) {
+                var reference_type = $scope.current_model.possible_relationship_target_types[0].type;
+                $scope.current_model[relationship_reference_field_name].push(
+                    [null, null, null, null, null, null, null, null, null, reference_type]
+                );
+            }
+            else {
+                var dialog_title = "Please select the type of document you wish to reference:";
+                var dialog_options = $.map($scope.current_model.possible_relationship_target_types, function (target, index) {
+                    return {
+                        text: target.name,
+                        value: target.type
+                    }
+                });
+                dialog_options.unshift({
+                    text: "<span style='color: red;'>Please select an option...</span>",
+                    value: ""
+                });
+                bootbox.prompt({
+                    title: dialog_title,
+                    inputType: "select",
+                    placeholder: 'my placeholder',
+                    inputOptions: dialog_options,
+                    callback: function(reference_type) {
+                        if (reference_type) {
+                            $scope.$apply(function() {
+                                $scope.current_model[relationship_reference_field_name].push(
+                                    [null, null, null, null, null, null, null, null, null, reference_type]
+                                );
+                            });
+                        }
+                    }
+                });
+            }
         };
 
         $scope.remove_relationship_reference = function(index) {
-//            $scope.current_model[relationship_reference_field_name].splice(index, 1);
             var dialog_title = 'Are you sure you want to remove this reference?  <em>You cannot undo this operation.</em>';
             bootbox.confirm(dialog_title, function(result) {
                 if (result) {

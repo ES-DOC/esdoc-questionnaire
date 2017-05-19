@@ -215,6 +215,15 @@ def convert_to_camelCase(strng):
     c = camelcase()
     return "".join(c.next()(str(x)) for x in re.split(" |_", strng))
 
+
+def convert_to_PascalCase(strng):
+    tmp_string = convert_to_camelCase(strng)
+    if len(tmp_string) > 1:
+        return tmp_string[0].upper() + tmp_string[1:]
+    else:
+        return tmp_string[0].upper()
+
+
 #########################
 # sequence manipulation #
 #########################
