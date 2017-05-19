@@ -49,7 +49,7 @@
 
                         <!-- HERE IS THE DIFFERENT BIT -->
 
-                        <ul class="list-group voffset-16"  ng-show="property.relationship_show_subforms">
+                        <ul class="list-group voffset-16"  ng-show="property.relationship_show_subforms || property.relationship_is_hierarchical">
                             <li class="list-group-item list-group-item-info">
                                 Potential targets for this relationship:
                             </li>
@@ -58,6 +58,7 @@
                                 {% verbatim ng %}
                                     <span title="{{ target_model.proxy_id }}">
                                         {{ target_model.proxy_title }}
+                                        <span class="documentation" ng-show="target_model.proxy_id">&nbsp;({{ target_model.proxy_id }})</span>
                                     </span>
                                 {% endverbatim ng %}
                                 &nbsp;&nbsp;
@@ -65,8 +66,8 @@
                                         data-toggle="modal"
                                         data-target="#{% verbatim ng %}{{ target_model.key }}{% endverbatim ng %}_subform"
                                         ng-click="display_subform_for_target_model($event, target_model)"
-                                        ng-disabled="!property.relationship_show_subforms"
                                         title="customize how this subform is rendered">
+                                        {# this button used to be disabled based on "!property.relationship_show_subforms" but that excluded hierarchical models that happened to map to CIM documents #}
                                     Customize Subform&nbsp;
                                     <span class="glyphicon glyphicon-new-window"></span>
                                 </button>
