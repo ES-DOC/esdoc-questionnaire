@@ -2,10 +2,24 @@ CIM Questionnaire Change History
 
 For full release notes, please see https://earthsystemcog.org/projects/es-doc-models/releases_questionnaire
 
+v0.17.0.0
+* supported the CIM2 concept of document "labels"
+* added the ability to uniquely identify documents based on arbitrary field values passed in as URL parameters
+* when a property is customized not to display it is immediately indicated by greying out that properties title in the customizer form
+* added paging capability to the project pages
+* added support for CIM2 documents with hiearchical sub-components; that is relationship properites that should be rendered using a treeview widget rather than as subforms or references
+* added support for references by providing a widget to make a call to the ES-DOC Archive and find published documents of the correct type to reference
+* hard-coded the rules that determine which relationships ought to be rendered as subforms and which ought to be rendered as references
+* consoloidated the code for registering schemas and specializations, since both of those documents use the exact same underlying format
+* added "forgot password" and "forgot login" functionality
+* require users to provide an email address upon resistration
+* allow project administrators to approve or deny project join requests
+* hid the concept of distinct ontologies from the project page since this is confusing; instead all supported document types are shown in a single list
+* fixed a bug preventing the multiselect widget from being expanded while in read-only mode
+
 v0.16.0.1
 * fixed bug preventing "other" enumeration choice from appearing
 * fixed bug requiring property customizations to be clicked twice in order to open them
-
 
 v0.16.0.0
 * major rewrite of the editor forms to use the same codebase as the customizer forms
