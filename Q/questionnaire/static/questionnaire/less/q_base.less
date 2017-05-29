@@ -171,7 +171,23 @@
             &[disabled] {
                 border: 2px solid @brand-disabled !important;
                 * {
-                    color: @brand-disabled !important;;
+                    /* most disabled stuff should use the default styling */
+                    /* except for buttons whose backgrounds interfere */
+                    color: @brand-disabled !important;
+                    .btn  {
+                        color: #F9F9F9 !important;
+                        * {
+                            color: #F9F9F9 !important;
+                        }
+                    }
+                    .enumeration_header {
+                        /* TODO: MOVE THIS TO THE "enumeration" SECTION BELOW */
+                        .opacity(.65);
+                        color: #F9F9F9 !important;
+                        * {
+                            color: #F9F9F9 !important;
+                        }
+                    }
                 }
             }
         }
@@ -284,7 +300,7 @@
     /* begin custom sytling for enumerations */
 
     .enumeration {
-        button {
+        .enumeration_header {
             .btn;
             .btn-sm;
             .btn-primary;
