@@ -44,6 +44,8 @@
 
 {% block content %}
 
+    {% csrf_token %}
+
     <div ng-app="q_edit">
         <div ng-controller="EditorController as editor_controller">
 
