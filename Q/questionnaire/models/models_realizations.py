@@ -20,7 +20,7 @@ import re
 from Q.questionnaire import APP_LABEL, q_logger
 from Q.questionnaire.q_fields import QVersionField, QEnumerationField, QJSONField, QPropertyTypes, QNillableTypes, QUnsavedRelatedManager, allow_unsaved_fk, ENUMERATION_OTHER_CHOICE, ENUMERATION_OTHER_DOCUMENTATION, ENUMERATION_OTHER_PREFIX
 from Q.questionnaire.models.models_customizations import QModelCustomization, walk_customization_path
-from Q.questionnaire.models.models_ontologies import get_name_and_version_from_key
+from Q.questionnaire.models.models_ontologies import get_name_and_version_from_key, QOntologyTypes
 from Q.questionnaire.models.models_publications import QPublication, QPublicationFormats
 from Q.questionnaire.models.models_references import QReference
 from Q.questionnaire.serializers.serializers_references import create_empty_reference_list_serialization
@@ -927,14 +927,18 @@ class QPropertyRealization(QRealization):
         :return:
         """
         def format_type(potential_relationship_target_type):
-            match = re.match("^(.*)\.(.*)\.(.*)$", potential_relationship_target_type.get("cim_id"))
-            ontology_key, ontology_package, ontology_class = match.groups()
-            ontology_name, ontology_version = get_name_and_version_from_key(ontology_key)
+            target_cim_type = None  # only need to deal w/ cim_types of schema, not specialization, classes
+            if potential_relationship_target_type.get("ontolgy__ontology_type") == QOntologyTypes.SCHEMA:
+                match = re.match("^(.*)\.(.*)\.(.*)$", potential_relationship_target_type.get("cim_id"))
+                ontology_key, ontology_package, ontology_class = match.groups()
+                ontology_name, ontology_version = get_name_and_version_from_key(ontology_key)
+                target_cim_type = "{0}.{1}.{2}.{3}".format(ontology_name, Version(ontology_version).major(), ontology_package, convert_to_PascalCase(ontology_class))
+
             return {
                 "pk": potential_relationship_target_type.get("pk"),
                 "name": potential_relationship_target_type.get("name").title(),
                 "cim_id": potential_relationship_target_type.get("cim_id"),
-                "type": "{0}.{1}.{2}.{3}".format(ontology_name, Version(ontology_version).major(), ontology_package, convert_to_PascalCase(ontology_class))
+                "type": target_cim_type,
             }
             # return dict(
             #     {"type": "{0}.{1}.{2}.{3}".format(ontology_name, Version(ontology_version).major(), ontology_package, ontology_class)},
@@ -942,7 +946,7 @@ class QPropertyRealization(QRealization):
             # )
 
         if self.field_type == QPropertyTypes.RELATIONSHIP:
-            potential_relationship_target_types_qs = self.proxy.relationship_target_models.values("name", "pk", "cim_id")
+            potential_relationship_target_types_qs = self.proxy.relationship_target_models.values("name", "pk", "cim_id", "ontology__ontology_type")
             return [format_type(potential_relationship_target_type) for potential_relationship_target_type in potential_relationship_target_types_qs]
 
         return []
