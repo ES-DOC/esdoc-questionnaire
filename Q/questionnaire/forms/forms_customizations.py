@@ -228,6 +228,7 @@ class QPropertyCustomizationForm(QCustomizationForm):
             "field_type",
             "atomic_type",
             "atomic_suggestions",
+            "enumeration_display_all",
             "enumeration_is_open",
             # "enumeration_choices",
             # "relationship_target_model_customizations",
@@ -238,7 +239,7 @@ class QPropertyCustomizationForm(QCustomizationForm):
     _hidden_fields = ["name", "order", "field_type"]
     _common_fields = ["property_title", "property_description", "cardinality", "is_required", "is_hidden", "is_editable", "is_nillable", "inline_help"]
     _atomic_fields = ["atomic_type", "atomic_suggestions", "default_values"]
-    _enumeration_fields = ["enumeration_is_open", "default_values"]  # "enumeration_choices"
+    _enumeration_fields = ["enumeration_display_all", "enumeration_is_open", "default_values"]  # "enumeration_choices"
     _relationship_fields = ["relationship_show_subforms", "relationship_is_hierarchical"]
     _other_fields = []
 
@@ -290,7 +291,7 @@ class QPropertyCustomizationForm(QCustomizationForm):
             set_field_widget_attributes(self.fields["default_values"], {"rows": 2})
         elif field_type == QPropertyTypes.ENUMERATION:
             set_field_widget_attributes(self.fields["default_values"], {"rows": 2})
-            self.unbootstrap_fields(["enumeration_is_open"])
+            self.unbootstrap_fields(["enumeration_display_all", "enumeration_is_open"])
         elif field_type == QPropertyTypes.RELATIONSHIP:
             update_field_widget_attributes(self.fields["relationship_show_subforms"], {"readonly": True, "ng-disabled": "true"})
             update_field_widget_attributes(self.fields["relationship_is_hierarchical"], {"readonly": True, "ng-disabled": "true"})

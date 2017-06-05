@@ -112,6 +112,7 @@ class QPropertyCustomizationSerializer(QCustomizationSerializer):
             'default_values',
             'atomic_suggestions',
             'atomic_type',
+            'enumeration_display_all',
             'enumeration_is_open',
             'relationship_show_subforms',
             'relationship_target_model_customizations',

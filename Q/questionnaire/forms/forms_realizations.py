@@ -538,7 +538,7 @@ class QPropertyRealizationForm(QRealizationForm):
                     "order": len(enumeration_choices) + 1,
                 })
             enumeration_value_field._complete_choices = enumeration_choices
-
+            enumeration_value_field._display_all = customization.enumeration_display_all
             if customization.is_required:
                 update_field_widget_attributes(enumeration_value_field, {
                     "ng-blur": "update_property_completion()",

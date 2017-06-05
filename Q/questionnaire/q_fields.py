@@ -372,6 +372,7 @@ class QEnumerationFormField(MultipleChoiceField):
 
     def __init__(self, *args, **kwargs):
         is_multiple = kwargs.pop("is_multiple", False)
+        display_all = kwargs.pop("display_all", False)
         complete_choices = kwargs.pop("complete_choices", [])
 
         choices = [(c.get("value"), c.get("value")) for c in complete_choices]
@@ -380,11 +381,17 @@ class QEnumerationFormField(MultipleChoiceField):
 
         self._complete_choices = complete_choices
         self._is_multiple = is_multiple
+        self._display_all = display_all
 
     @property
     def is_multiple(self):
         # (need to pass a string b/c this will be used as the argument to an NG directive)
         return json.dumps(self._is_multiple)
+
+    @property
+    def display_all(self):
+        # (need to pass a string b/c this will be used as the argument to an NG directive)
+        return json.dumps(self._display_all)
 
     @property
     def complete_choices(self):
@@ -398,6 +405,7 @@ class QEnumerationField(QJSONField):
         super(QEnumerationField, self).__init__(*args, **kwargs)
         self._complete_choices = []
         self._is_multiple = False
+        self._display_all = False
 
     @property
     def is_multiple(self):
@@ -418,10 +426,19 @@ class QEnumerationField(QJSONField):
     def complete_choices(self, complete_choices):
         self._complete_choices = complete_choices
 
+    @property
+    def display_all(self):
+        return self._display_all
+
+    @display_all.setter
+    def display_all(self, display_all):
+        self._display_all = display_all
+
     def formfield(self, **kwargs):
         new_kwargs = {
             "label": self.verbose_name,
             "is_multiple": self.is_multiple,
+            "display_all": self.display_all,
             "complete_choices": self.complete_choices,
         }
         new_kwargs.update(kwargs)

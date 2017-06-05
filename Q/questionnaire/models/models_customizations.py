@@ -926,6 +926,7 @@ class QPropertyCustomization(QCustomization):
 
     # ENUMERATION fields...
 
+    enumeration_display_all = models.BooleanField(default=False, verbose_name='Should this enumeration be open by default?')
     enumeration_is_open = models.BooleanField(default=False, verbose_name='Can a user can specify a custom "OTHER" value?')
 
     # RELATIONSHIP fields...
@@ -1056,6 +1057,7 @@ class QPropertyCustomization(QCustomization):
         # ENUMERATION fields...
 
         elif self.field_type == QPropertyTypes.ENUMERATION:
+            self.enumeration_display_all = False
             self.enumeration_is_open = proxy.enumeration_is_open
             # TODO: DO I NEED TO DEAL W/ "enumeration_choices" OR "enumeration_default" ?
 
