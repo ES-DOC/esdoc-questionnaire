@@ -147,7 +147,7 @@ class QFeed(Feed):
             "ontology": item.model.proxy.ontology,
             "publication_date": item.created.strftime("%d %B %Y @%H:%M %Z"),
             # TODO:
-            "label": None,
+            "label": item.model.label,
             # TODO:
             "description": None,
         })
