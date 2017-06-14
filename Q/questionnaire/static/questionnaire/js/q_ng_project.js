@@ -21,6 +21,35 @@
     /* FACTORIES */
     /*************/
 
+    /**************/
+    /* DIRECTIVES */
+    /**************/
+
+    app.directive("ngFile", ["$global_services", function($global_services) {
+        return {
+            restrict: "A",
+            scope: {
+                ngFile: "=",
+            },
+            link: function($scope, $element, $attrs) {
+                $element.bind("change", function(changeEvent) {
+                    var reader = new FileReader();
+                    reader.onload = function (loadEvent) {
+                        /* need this obfuscation, b/c "readAsText" is asynchronous */
+                        $scope.$apply(function() {
+                            $scope.ngFile = loadEvent.target.result;
+                        });
+                        /* this ia hacky non-ng way to set the filename */
+                        /* but FileReader doesn't return the correct path anyway, for security reasons */
+                        var filename = $("#fileinput").val().split('\\').pop();
+                        $("#filename").val(filename);
+                    }
+                    reader.readAsText(changeEvent.target.files[0]);
+                });
+            }
+        }
+    }]);
+
     /***************/
     /* CONTROLLERS */
     /***************/
@@ -34,7 +63,7 @@
     /* so I include it and use it in rare occasions */
     /* see http://toddmotto.com/digging-into-angulars-controller-as-syntax/ */
 
-    app.controller("ProjectController", [ "$http", "$global_services", "$filter", "$window", "$scope", function($http, $global_services, $filter, $window, $scope) {
+    app.controller("ProjectController", [ "$http", "$global_services", "$filter", "$window", "$compile", "$scope", function($http, $global_services, $filter, $window, $compile, $scope) {
 
         $scope.blocking = function() {
             return $global_services.getBlocking();
@@ -80,7 +109,6 @@
             $global_services.setBlocking(true);
             $http.get("/api/realizations_lite/?project=" + project_id, {format: "json"})
                 .success(function (data) {
-                    console.log(data);
                     project_controller.documents = data.results;
                     project_controller.total_documents = data.count;
                     $.each(project_controller.documents, function(i, d) {
@@ -151,6 +179,79 @@
         this.create_document_type = function() {
             var create_document_type_url = "/" + project_name + "/edit/" + project_controller.selected_document_type.ontology + "/" + project_controller.selected_document_type.name;
             $window.open(create_document_type_url, '_blank');
+        };
+
+
+        this.import_document_type = function() {
+            $scope.current_file = null;
+            $scope.copy_file = true;
+            var document_type = this.selected_document_type["type"];
+            var document_title = this.selected_document_type["title"];
+            var dialog_title = "Please select the " + document_title + " Document to import";
+            var dialog_content = "" +
+                "<div>" +
+                "   <div class='input-group'>" +
+                "       <label class='input-group-btn'>" +
+                "           <span class='btn btn-info'>" +
+                "               Browse..." +
+                "               <input id='fileinput' type='file' ng-file='current_file' style='display: none;'/>" +
+                "           </span>" +
+                "       </label>" +
+                "       <input id='filename' class='form-control' type='text' readonly>" +
+                "   </div>" +
+                "   <br/>" +
+                "   <label>" +
+                "       <input type='checkbox' ng-model='copy_file'/>" +
+                "       &nbsp;Check this to <em>copy</em> the document as is, instead of using it as the basis of a new document." +
+                "   </label>" +
+                "</div>";
+            var compiled_dialog_content = $compile(dialog_content)($scope);
+            bootbox.dialog({
+                message: compiled_dialog_content,
+                title: dialog_title,
+                buttons: {
+                    cancel: {
+                        label: "Cancel",
+                        className: "btn-default",
+                        callback: function () {
+                            show_lil_msg("Maybe next time.");
+                        }
+                    },
+                    ok: {
+                        label: "OK",
+                        className: "btn-primary",
+                        callback: function () {
+                            $global_services.setBlocking(true);
+                            var import_document_request_url = "/services/realization_import/";
+                            var import_document_request_data = $.param({
+                                "project_id": project_id,
+                                "document_content": $scope.current_file,
+                                "document_copy": $scope.copy_file,
+                                "document_type": document_type
+                            });
+                            $http({
+                                method: 'POST',
+                                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                                url: import_document_request_url,
+                                data: import_document_request_data
+                            }).success(function(data) {
+                                /* don't forget that "load" also re-filters and re-pages stuff */
+                                /* this is important b/c $http is asynchronous, */
+                                /* so I want to wait until the newly serialized documents have been returned before doing that */
+                                project_controller.load_documents();
+                                check_msg();
+                            })
+                            .error(function(data) {
+                                console.log(data);
+                                check_msg();
+                            })
+                            .finally(function() {
+                                $global_services.setBlocking(false);
+                            });
+                        }
+                    }
+                }
+            });
         };
 
         project_controller.document_sort_type = "label";

@@ -11,7 +11,7 @@ jsonschema==2.5.1
 Pillow==2.9.0
 django-filter==0.15.3
 python-memcached==1.54
+pyesdoc
 
 #pytz==2015.4
 #selenium==2.47.0
-#pyesdoc

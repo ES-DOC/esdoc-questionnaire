@@ -240,6 +240,11 @@ def serialize_realizations(current_model_realization, **kwargs):
 
     return serialization
 
+
+def import_realization(current_model_proxy, current_model_json):
+    pass
+
+
 ###################
 # some helper fns #
 ###################

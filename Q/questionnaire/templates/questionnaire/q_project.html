@@ -160,11 +160,16 @@
                                     <option value="">*</option>
                                 </select>
                             </div>
-                            <div class="col-lg-1 col-md-1">
-                                <!-- using a button instead of an anchor tag so that it can be _properly_ disabled -->
+                            <div class="col-lg-2 col-md-2">
+                                <!-- using buttons instead of an anchor tag so that it can be _properly_ disabled -->
                                 <button class="btn btn-sm btn-info" ng-disabled="(!project_controller.selected_document_type) || (!project_controller.selected_document_type.is_active)" ng-click="project_controller.create_document_type()">
                                     create
                                 </button>
+                                {% if can_import %}
+                                    <button class="btn btn-sm btn-info" ng-disabled="(!project_controller.selected_document_type) || (!project_controller.selected_document_type.is_active)" ng-click="project_controller.import_document_type()">
+                                        import
+                                    </button>
+                                {% endif %}
                             </div>
                         </div>
                     </div>  <!-- /.form-group -->

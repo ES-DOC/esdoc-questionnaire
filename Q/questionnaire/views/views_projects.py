@@ -100,6 +100,7 @@ def q_project(request, project_name=None):
     can_delete = is_admin
     can_manage = is_admin
     can_publish = is_user and has_institute or is_admin
+    can_import = is_admin
 
     # gather all the extra information required by the template
     template_context = {
@@ -111,6 +112,7 @@ def q_project(request, project_name=None):
         "can_delete": can_delete,
         "can_manage": can_manage,
         "can_publish": can_publish,
+        "can_import": can_import,
     }
 
     return render_to_response('questionnaire/q_project.html', template_context, context_instance=context)

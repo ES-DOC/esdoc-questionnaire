@@ -120,18 +120,24 @@ class QProjectTestDocumentTypeSerializer(serializers.ModelSerializer):
             'ontology',
             'key',
             'title',
+            'type',
             'category',
             'is_active',
         ]
 
     ontology = serializers.SlugRelatedField(read_only=True, slug_field="key")
     title = serializers.SerializerMethodField()
+    type = serializers.SerializerMethodField()
     category = serializers.SerializerMethodField()
     is_active = serializers.SerializerMethodField()
 
     def get_title(self, obj):
         document_type_key = obj.cim_id.rsplit('.')[-1]
         return SUPPORTED_DOCUMENTS_TEST_MAP[document_type_key].get("title")
+
+    def get_type(self, obj):
+        document_type_key = obj.cim_id.rsplit('.')[-1]
+        return SUPPORTED_DOCUMENTS_TEST_MAP[document_type_key].get("type")
 
     def get_category(self, obj):
         document_type_key = obj.cim_id.rsplit('.')[-1]

@@ -90,6 +90,8 @@ services_urls = patterns('',
     # publishing a realization...
     url(r'^realization_publish/$', q_realization_publish, name="realization_publish"),
 
+    # importing a realization...
+    url(r'^realization_import/$', q_realization_import, name="realization_import"),
 )
 
 urlpatterns = patterns('',

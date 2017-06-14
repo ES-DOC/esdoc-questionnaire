@@ -101,30 +101,35 @@ SUPPORTED_DOCUMENTS_TEST_MAP = OrderedDict([
     ("citation", {
         "name": "citation",
         "title": "Citation",
+        "type": "cim.2.shared.Citation",
         "category": None,
         "is_active": False,
     }),
     ("conformance", {
         "name": "conformance",
         "title": "Conformance",
+        "type": "cim.2.activity.Conformance",
         "category": None,
         "is_active": False,
     }),
     ("ensemble", {
         "name": "ensemble",
         "title": "Ensemble",
+        "type": "cim.2.activity.Ensemble",
         "category": None,
         "is_active": False,
     }),
     ("party", {
         "name": "party",
         "title": "Responsible Party",
+        "type": "cim.2.shared.Party",
         "category": None,
         "is_active": False,
     }),
     ("machine", {
         "name": "machine",
         "title": "Machine",
+        "type": "cim.2.platform.Machine",
         "category": None,
         "is_active": False,
     }),
@@ -143,8 +148,16 @@ SUPPORTED_DOCUMENTS_TEST_MAP = OrderedDict([
     ("performance", {
         "name": "performance",
         "title": "Performance",
+        "type": "cim.2.platform.Performance",
         "category": None,
         "is_active": False,
+    }),
+    ("project", {
+        "name": "project",
+        "title": "Project",
+        "type": "cim.2.designing.Project",
+        "category": None,
+        "is_active": True,
     }),
 ])
 

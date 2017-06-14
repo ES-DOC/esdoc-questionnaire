@@ -20,6 +20,7 @@ The system must have the following Python packages installed:
 * Pillow (pip install Pillow==2.9.0; may require libjpeg-dev or other codecs)
 * libXML (pip install lxml; may require libxml2-dev and/or libxslt1-dev)
 * python-memcached (pip install python-memcached)
+* pyesdoc
 
 ## DOWNLOAD
 
