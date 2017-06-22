@@ -183,7 +183,7 @@ def q_edit_existing(request, project_name=None, ontology_key=None, document_type
 
     # work out various paths, so that ng can reload things as needed...
     # (notice these are slightly different than in "q_edit_new" above
-    view_url_dirname = request.path.rsplit('/', 1)[0]
+    view_url_dirname = request.path.rsplit('/', 2)[0]
     api_url_dirname = reverse("realization-detail", kwargs={"pk": model_realization.pk}).rsplit('/', 2)[0]
 
     # gather all the extra information required by the template...

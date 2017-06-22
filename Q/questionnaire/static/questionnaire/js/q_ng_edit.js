@@ -298,7 +298,7 @@
 
         /* $scope.server_errors['form_name']['field_name'] is used to store server errors */
         /* the placeholder for this info is created in QForm.add_custom_errors() line #224 */
-        /* and that gets populated as needed in $scope.submit_customization below */
+        /* and that gets populated as needed in $scope.submit_realization below */
         $scope.server_errors = {};
 
         $scope.form_validity = true;
@@ -378,16 +378,18 @@
                 /* creating a new customization */
                 var request_method = "POST";
             }
-
             $http({
                 method: request_method,
                 url: $scope.api_url,
                 data: model
             })
             .success(function(data) {
-                /* I have to explicitly re-set 'id' & 'name' based on data */
+                /* I have to explicitly re-set a few things based on data */
                 realization_id = data.id;
-
+                realization_version = data.version;
+                var model = $global_services.getModelFromPath("_DATA");
+                model.id = realization_id;
+                model.version = realization_version;
                 if (old_realization_id != realization_id) {
                     $scope.reset_urls();
                     window.location = $scope.view_url;
