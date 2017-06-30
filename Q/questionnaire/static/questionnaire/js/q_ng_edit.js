@@ -352,12 +352,6 @@
         $scope.type = "EDITOR";
 
         $scope.show_completion = false;
-        $scope.$watch("show_completion",
-            function(value) {
-                console.log("NOW THAT SHOW_COMPLETION IS '" + value + "' DO YOU WANT TO DO ANYTHING?");
-            }
-        );
-
         $scope.toggle_completion = function() {
             $scope.show_completion = !$scope.show_completion;
         }
@@ -473,6 +467,19 @@
         );
 
         $scope.type = "MODEL";
+
+        $scope.$watch('current_model.is_complete', function(new_is_complete, old_is_complete) {
+            if (new_is_complete != old_is_complete) {
+                /* whenever completion changes, propagate that change to the parent property */
+                var parent_property_controller = $scope.$parent;
+                if (parent_property_controller.type == "PROPERTY") {
+                    parent_property_controller.update_property_completion();
+                }
+                else {
+                    console.log("could not find property_controller");
+                }
+            }
+        });
 
         $scope.update_model_completion = function() {
             /* computes a model's completion based on its properties' completion */
@@ -652,8 +659,8 @@
         });
 
         $scope.update_property_completion = function() {
-            if ($scope.cardinality_min != "0") {
-                if ($scope.current_model['is_nil']) {
+            if ($scope.current_model["cardinality_min"] != "0") {
+                if ($scope.current_model["is_nil"]) {
                     /* something that is required but explicitly set to "nil" is still considered complete */
                     $scope.current_model['is_complete'] = true;
                 }
@@ -688,7 +695,24 @@
                         }
                     }
                     else { /* field_type == "RELATIONSHIP" */
-                        console.log("you changed a relationship")
+                        if ($scope.current_model["use_references"]) {
+                            var relationship_references = $scope.current_model["relationship_references"];
+                            if (relationship_references.length >= $scope.current_model["cardinality_min"]) {
+                                $scope.current_model["is_complete"] = true;
+                            }
+                            else {
+                                $scope.current_model["is_complete"] = false;
+                            }
+                        }
+                        else if ($scope.current_model["use_subforms"]) {
+                            var relationship_values = $scope.current_model["relationship_values"]
+                            if (relationship_values.length >= $scope.current_model["cardinality_min"]) {
+                                $scope.current_model["is_complete"] = true;
+                            }
+                            else {
+                                $scope.current_model["is_complete"] = false;
+                            }
+                        }
                     }
                 }
             }
@@ -698,7 +722,8 @@
         };
 
         $scope.$watch('current_model.is_nil', function(new_is_nil, old_is_nil) {
-            if ((new_is_nil != old_is_nil) && $scope.cardinality_min != "0") {
+            if ((new_is_nil != old_is_nil) && $scope.current_model["cardinality_min"] != "0") {
+                console.log("about to call update_property_completion()");
                 $scope.update_property_completion();
             }
         });
@@ -885,6 +910,26 @@
                 }
            )
         };
+
+// don't need an explicit watch on subforms, b/c altering the completion of the target models forces updating the completion of the parent property
+// (unlike the situation w/ references, below)...
+//        $scope.$watchCollection("current_model.relationship_values", function(new_relationships, old_relationships) {
+//            if (new_relationships.length != old_relationships.length) {
+//                var parent_property_controller = $scope.$parent;
+//                if (parent_property_controller.type == "PROPERTY") {
+//                    parent_property_controller.update_property_completion();
+//                }
+//                else {
+//                    console.log("could not find property_controller");
+//                }
+//            }
+//        });
+
+        $scope.$watchCollection("current_model.relationship_references", function(new_references, old_references) {
+            if (new_references.length != old_references.length) {
+                $scope.update_property_completion();
+            }
+        });
 
         /* TODO: I DON'T LIKE DEFINING THIS FN HERE; IT OUGHT TO HAVE GLOBAL SCOPE */
         /* TODO: OR, BETTER YET, BE PART OF THE <enumeration> DIRECTIVE ITSELF */

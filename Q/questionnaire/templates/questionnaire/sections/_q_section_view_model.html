@@ -15,6 +15,9 @@
     <fieldset class="fieldset non_collapsible" ng-show="current_model.is_selected" ng-disabled="!current_model.is_active">
         <legend class="fieldset_header">
             &nbsp;{{ model_form.customization.model_title }}&nbsp;
+            <span ng-show="show_completion">
+                &nbsp;<span ng-show="!current_model.is_complete" class="glyphicon glyphicon-danger glyphicon-pushpin"/>&nbsp;
+            </span>
         </legend>
         <div class="fieldset_content">
 

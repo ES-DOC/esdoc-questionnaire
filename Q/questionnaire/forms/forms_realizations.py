@@ -553,13 +553,21 @@ class QPropertyRealizationForm(QRealizationForm):
                 })
 
         else:  # field_type == QPropertyTypes.RELATIONSHIP
+            # if customization.use_subforms:
+            #     relationship_value_field = self.fields["relationship_values"]
+            # elif customization.use_references:
+            #     relationship_value_field = self.fields["relationship_references"]
             if not customization.relationship_is_hierarchical:
                 # only have to render non-hierarchical relationships in a property form...
                 self.use_subforms = customization.use_subforms
                 self.use_references = customization.use_references
                 self.cardinality_min = customization.cardinality_min
                 self.cardinality_max = customization.cardinality_max
-            if not customization.is_required:
+            # if customization.is_required:
+            #     update_field_widget_attributes(relationship_value_field, {
+            #         "ng-change": "alert('changed relationship');",
+            #     })
+            else:
                 self.set_default_field_value("is_complete", True)
 
         self.customization = customization

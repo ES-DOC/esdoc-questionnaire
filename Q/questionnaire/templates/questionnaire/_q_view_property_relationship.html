@@ -19,6 +19,9 @@
                             {# that is intentional; bootstrap has a specific style for labels #}
                             {# that I do not want to use in the Q #}
                             {{ field.label|safe }}:&nbsp;
+                            <span ng-show="show_completion">
+                                &nbsp;<span ng-show="!current_model.is_complete" class="glyphicon glyphicon-danger glyphicon-pushpin"/>&nbsp;
+                            </span>
                             {% if field.help_text and form.inline_help == True %}
                                 <div class="documentation">
                                     {{ field.help_text }}
@@ -90,7 +93,9 @@
                             <span class="{% if field.field.required %} required {% else %} optional {% endif %}">
                                 {{ field.label|safe }}:&nbsp;
                             </span>
-
+                            <span ng-show="show_completion">
+                                &nbsp;<span ng-show="!current_model.is_complete" class="glyphicon glyphicon-danger glyphicon-pushpin"/>&nbsp;
+                            </span>
                         </legend>
                         <div class="fieldset_content" ng-hide="fieldset_controller.is_collapsed">
 
@@ -123,7 +128,9 @@
                                             <span ng-show="target.display_detail" class="glyphicon glyphicon-triangle-bottom"></span>
                                             {# TODO: REPLACE THIS W/ SOMETHING LIKE get_label #}
                                             &nbsp;{{ form.customization.property_title }}
-
+                                            <span ng-show="show_completion">
+                                                &nbsp;<span ng-show="!target.is_complete" class="glyphicon glyphicon-danger glyphicon-pushpin"/>
+                                            </span>
                                         </div>
                                     </div>  <!-- /.accordion_header -->
 

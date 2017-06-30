@@ -18,6 +18,9 @@
                         {# that is intentional; bootstrap has a specific style for labels #}
                         {# that I do not want to use in the Q #}
                         {{ field.label|safe }}:&nbsp;
+                        <span ng-show="show_completion">
+                            &nbsp;<span ng-show="!current_model.is_complete" class="glyphicon glyphicon-danger glyphicon-pushpin"/>
+                        </span>
                         {% if field.help_text and form.inline_help == True %}
                             <div class="documentation">
                                 {{ field.help_text }}
@@ -29,9 +32,6 @@
 
             <span class="col-sm-6 voffset-2">
                 {{ field }}
-                <span ng-show="show_completion">
-                    &nbsp;<span ng-show="!current_model.is_complete" class="glyphicon glyphicon-pushpin"/>
-                </span>
             </span>
 
             <span class="col-sm-3">

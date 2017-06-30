@@ -118,6 +118,8 @@ class QPropertyRealizationSerializer(QRealizationSerializer):
             'is_multiple',
             'is_infinite',
             'is_hierarchical',
+            'use_references',
+            'use_subforms',
             'possible_relationship_target_types',
             'display_detail',
         )
@@ -270,6 +272,7 @@ class QCategoryRealizationSerializer(QRealizationSerializer):
             'is_complete',
             'name',
             'category_value',
+            'is_complete',
             # these next fields are not part of the model
             # but they are used to facilitate ng interactivity on the client
             'key',

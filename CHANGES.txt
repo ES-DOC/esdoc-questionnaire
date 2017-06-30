@@ -2,6 +2,10 @@ CIM Questionnaire Change History
 
 For full release notes, please see https://earthsystemcog.org/projects/es-doc-models/releases_questionnaire
 
+v0.17.0.1
+* added csrf support where needed
+* fix bug preventing completion status from being rendered
+
 v0.17.0.0
 * supported the CIM2 concept of document "labels"
 * added the ability to uniquely identify documents based on arbitrary field values passed in as URL parameters

@@ -361,6 +361,30 @@ class QPropertyProxy(QProxy):
     def is_single(self):
         return int(self.cardinality_max) == 1
 
+    @property
+    def use_references(self):
+        """
+        As of v0.14 all RELATIONSHIPS to a CIM Document _must_ use a reference
+        :return: Boolean
+        """
+        if self.field_type == QPropertyTypes.RELATIONSHIP:
+            target_models_are_documents = [tm.is_document for tm in self.relationship_target_models.all()]
+            assert len(set(target_models_are_documents)) == 1
+            return all(target_models_are_documents)
+        return False
+
+    @property
+    def use_subforms(self):
+        """
+        As of v0.14 all RELATIONSHIPS to a CIM Entity (non-Document) _must_ use a subform
+        :return: Boolean
+        """
+        if self.field_type == QPropertyTypes.RELATIONSHIP:
+            target_models_are_documents = [tm.is_document for tm in self.relationship_target_models.all()]
+            assert len(set(target_models_are_documents)) == 1
+            return not any(target_models_are_documents)
+        return False
+
     def reset(self, **kwargs):
         force_save = kwargs.pop("force_save", False)
 
