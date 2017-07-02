@@ -14,10 +14,10 @@ from rest_framework import serializers
 from uuid import UUID as generate_uuid
 
 from Q.questionnaire.models.models_realizations import QModelRealization, QCategoryRealization, QPropertyRealization
-from Q.questionnaire.models.models_references import QReference
+# from Q.questionnaire.models.models_references import QReference
 from Q.questionnaire.serializers.serializers_base import QListSerializer, QSerializer, QRelatedSerializerField, QVersionSerializerField
+from Q.questionnaire.serializers.serializers_customizations import QModelCustomizationSerializer, QCategoryCustomizationSerializer, QPropertyCustomizationSerializer
 from Q.questionnaire.serializers.serializers_references import QReferenceSerializer
-
 
 
 ################
@@ -122,6 +122,7 @@ class QPropertyRealizationSerializer(QRealizationSerializer):
             'use_subforms',
             'possible_relationship_target_types',
             'display_detail',
+            'customization',
         )
 
     enumeration_value = serializers.JSONField(required=False, allow_null=True)
@@ -141,9 +142,11 @@ class QPropertyRealizationSerializer(QRealizationSerializer):
     )
 
     possible_relationship_target_types = serializers.SerializerMethodField()
-    display_detail = serializers.SerializerMethodField(read_only=True)  # name="get_display_detail"
+    display_detail = serializers.SerializerMethodField()
 
-    # even though 'model_customization' is a required field of the QPropertyCustomization model,
+    customization = serializers.SerializerMethodField()
+
+    # even though 'model' is a required field of the QPropertyRealization model,
     # it cannot possibly be set before the parent model_customization itself has been saved;
     # so I set 'allow_null' to True here...
     model = serializers.PrimaryKeyRelatedField(read_only=True, allow_null=True)
@@ -153,6 +156,15 @@ class QPropertyRealizationSerializer(QRealizationSerializer):
 
     def get_display_detail(self, obj):
         return False
+
+    def get_customization(self, obj):
+        # TODO: JUST BY ADDING THIS SIMPLE FN, I CAN BYPASS MOST OF THE FORM-CENTRIC CUSTOMIZATION GARBAGE... HOORAY!
+        # TODO: GET RID OF MOST THE FORM-CENTRIC CUSTOMIZATION GARBAGE
+        # TODO: (ADD THIS SIMPLE FN TO QCategorySerializer & QModelSerializer)
+        customization = obj.get_default_customization()
+        assert obj.proxy == customization.proxy, "unable to find customization"
+        customization_serializer = QPropertyCustomizationSerializer(customization)
+        return customization_serializer.data
 
     def to_internal_value(self, data):
         internal_value = super(QPropertyRealizationSerializer, self).to_internal_value(data)

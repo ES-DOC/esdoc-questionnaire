@@ -13,18 +13,21 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 from django.db.models.fields import FieldDoesNotExist
 from django.template.loader import render_to_string
-from uuid import uuid4
+from uuid import uuid4, UUID as generate_uuid
 import copy
+import types
 import re
 
 from Q.questionnaire import APP_LABEL, q_logger
 from Q.questionnaire.q_fields import QVersionField, QEnumerationField, QJSONField, QPropertyTypes, QNillableTypes, QUnsavedRelatedManager, allow_unsaved_fk, ENUMERATION_OTHER_CHOICE, ENUMERATION_OTHER_DOCUMENTATION, ENUMERATION_OTHER_PREFIX
 from Q.questionnaire.models.models_customizations import QModelCustomization, walk_customization_path
 from Q.questionnaire.models.models_ontologies import get_name_and_version_from_key, QOntologyTypes
+from Q.questionnaire.models.models_proxies import QPropertyProxy
 from Q.questionnaire.models.models_publications import QPublication, QPublicationFormats
 from Q.questionnaire.models.models_references import QReference
-from Q.questionnaire.serializers.serializers_references import create_empty_reference_list_serialization
-from Q.questionnaire.q_utils import QError, EnumeratedType, EnumeratedTypeList, Version, find_in_sequence, pretty_string, convert_to_PascalCase, serialize_model_to_dict, validate_no_spaces, validate_not_blank, QPathNode
+from Q.questionnaire.serializers.serializers_customizations import QPropertyCustomizationSerializer
+from Q.questionnaire.serializers.serializers_references import create_empty_reference_list_serialization, QReferenceSerializer
+from Q.questionnaire.q_utils import QError, EnumeratedType, EnumeratedTypeList, Version, find_in_sequence, pretty_string, convert_to_camelCase, convert_to_PascalCase, serialize_model_to_dict, validate_no_spaces, validate_not_blank, QPathNode
 from Q.questionnaire.q_constants import *
 
 #############
@@ -102,6 +105,7 @@ def get_new_realizations(project=None, ontology=None, model_proxy=None, **kwargs
             )
             property_realization.reset()
             property_category_realization.properties(manager="allow_unsaved_category_properties_manager").add_potentially_unsaved(property_realization)
+
             # here begins the icky bit
             if property_realization.field_type == QPropertyTypes.RELATIONSHIP and property_realization.is_hierarchical:  # property_realization.is_required:
                 target_relationship_values = []
@@ -127,8 +131,8 @@ def get_new_realizations(project=None, ontology=None, model_proxy=None, **kwargs
                             new_model_realization.relationship_property = property_realization
                         target_relationship_values.append(new_model_realization)
                     property_realization.relationship_values(manager="allow_unsaved_relationship_values_manager").add_potentially_unsaved(*target_relationship_values)
-
                 # here ends the icky bit
+
         property_realizations.append(property_realization)
     model_realization.properties(manager="allow_unsaved_properties_manager").add_potentially_unsaved(*property_realizations)
 
@@ -215,12 +219,17 @@ def serialize_realizations(current_model_realization, **kwargs):
                 "cardinality_max": property_realization.cardinality_max,
                 "is_multiple": property_realization.is_multiple,
                 "is_infinite": property_realization.is_infinite,
+                "use_references": property_realization.use_references,
+                "use_subforms": property_realization.use_subforms,
                 "possible_relationship_target_types": property_realization.get_potential_relationship_target_types(),
                 "category_key": property_realization.category_key,
                 "display_detail": True,
+                # TODO: REPLACE THIS w/ A FN
+                "customization": QPropertyCustomizationSerializer(property_realization.get_default_customization()).data,
             },
             exclude=["guid", "created", "modified"]
         )
+
         # here begins the icky bit
         target_model_serializations = []
         if property_realization.field_type == QPropertyTypes.RELATIONSHIP:
@@ -239,11 +248,6 @@ def serialize_realizations(current_model_realization, **kwargs):
     serialization["properties"] = property_serializations
 
     return serialization
-
-
-def import_realization(current_model_proxy, current_model_json):
-    pass
-
 
 ###################
 # some helper fns #
@@ -391,7 +395,6 @@ def set_version(model_realization, new_version):
         [RealizationTypes.MODEL],
     )
 
-
 # this fn is not needed;
 # QModelRealization.update_completion automatically computes "is_complete" of categories & properties and recurses through relationships
 # def update_completion(model_realization):
@@ -528,7 +531,7 @@ class QRealization(models.Model):
         root_realization = get_root_realization(self)
         try:
             default_root_customization = QModelCustomization.objects.get(
-                project=self.project,
+                project=root_realization.project,
                 proxy=root_realization.proxy,
                 is_default=True
             )
@@ -854,6 +857,34 @@ class QPropertyRealization(QRealization):
             self.name,
             self.value
         )
+
+    @property
+    def use_references(self):
+        """
+        As of v0.14 all RELATIONSHIPS to a CIM Document _must_ use a reference
+        :return: Boolean
+        """
+        if self.field_type == QPropertyTypes.RELATIONSHIP:
+            target_models_are_documents = [tm.is_document for tm in self.proxy.relationship_target_models.all()]
+            assert len(set(target_models_are_documents)) == 1
+            return all(target_models_are_documents)
+        return False
+
+    @property
+    def use_subforms(self):
+        """
+        As of v0.14 all RELATIONSHIPS to a CIM Entity (non-Document) _must_ use a subform
+        :return: Boolean
+        """
+        if self.field_type == QPropertyTypes.RELATIONSHIP:
+            target_models_are_documents = [tm.is_document for tm in self.proxy.relationship_target_models.all()]
+            assert len(set(target_models_are_documents)) == 1
+            # try:
+            #     assert len(set(target_models_are_documents)) == 1
+            # except:
+            #     import ipdb; ipdb.set_trace()
+            return not any(target_models_are_documents)
+        return False
 
     @property
     def value(self):

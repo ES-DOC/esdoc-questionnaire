@@ -659,7 +659,9 @@
         });
 
         $scope.update_property_completion = function() {
-            if ($scope.current_model["cardinality_min"] != "0") {
+
+//            if ($scope.current_model["cardinality_min"] != "0") {
+            if ($scope.current_model["customization"]["is_required"])  {
                 if ($scope.current_model["is_nil"]) {
                     /* something that is required but explicitly set to "nil" is still considered complete */
                     $scope.current_model['is_complete'] = true;
@@ -676,6 +678,8 @@
                     }
                     else if (field_type == "ENUMERATION") {
                         var enumeration_value = $scope.current_model["enumeration_value"];
+
+
                         if (enumeration_value.length) {
                             if (enumeration_value.indexOf(ENUMERATION_OTHER_CHOICE) >= 0) {
                                 var enumeration_other_value = $scope.current_model["enumeration_other_value"];
@@ -911,8 +915,16 @@
            )
         };
 
-// don't need an explicit watch on subforms, b/c altering the completion of the target models forces updating the completion of the parent property
-// (unlike the situation w/ references, below)...
+
+
+        $scope.$watchCollection("current_model.relationship_references", function(new_references, old_references) {
+            if (new_references.length != old_references.length) {
+                $scope.update_property_completion();
+            }
+        });
+
+// don't need an explicit watch on subform relationships, b/c altering the completion of the target models forces updating the completion of the parent property
+// (unlike the situation w/ references, above)...
 //        $scope.$watchCollection("current_model.relationship_values", function(new_relationships, old_relationships) {
 //            if (new_relationships.length != old_relationships.length) {
 //                var parent_property_controller = $scope.$parent;
@@ -925,11 +937,13 @@
 //            }
 //        });
 
-        $scope.$watchCollection("current_model.relationship_references", function(new_references, old_references) {
-            if (new_references.length != old_references.length) {
-                $scope.update_property_completion();
-            }
-        });
+//        also don't need this, b/c "update_property_completion()" is called from the enumeration directive
+//        (although, using this "watch" is probably more intuitive... TODO: LOOK INTO USING THIS CODE)
+//        $scope.$watchCollection("current_model.enumeration_value", function(old_enumeration_value, new_enumeration_value) {
+//            if (old_enumeration_value != new_enumeration_value) {
+//                console.log("you changed an enumeration");
+//            }
+//        });
 
         /* TODO: I DON'T LIKE DEFINING THIS FN HERE; IT OUGHT TO HAVE GLOBAL SCOPE */
         /* TODO: OR, BETTER YET, BE PART OF THE <enumeration> DIRECTIVE ITSELF */
