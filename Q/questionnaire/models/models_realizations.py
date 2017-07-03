@@ -22,12 +22,13 @@ from Q.questionnaire import APP_LABEL, q_logger
 from Q.questionnaire.q_fields import QVersionField, QEnumerationField, QJSONField, QPropertyTypes, QNillableTypes, QUnsavedRelatedManager, allow_unsaved_fk, ENUMERATION_OTHER_CHOICE, ENUMERATION_OTHER_DOCUMENTATION, ENUMERATION_OTHER_PREFIX
 from Q.questionnaire.models.models_customizations import QModelCustomization, walk_customization_path
 from Q.questionnaire.models.models_ontologies import get_name_and_version_from_key, QOntologyTypes
-from Q.questionnaire.models.models_proxies import QPropertyProxy
+from Q.questionnaire.models.models_projects import QProject
+from Q.questionnaire.models.models_proxies import QModelProxy, QCategoryProxy, QPropertyProxy
 from Q.questionnaire.models.models_publications import QPublication, QPublicationFormats
 from Q.questionnaire.models.models_references import QReference
 from Q.questionnaire.serializers.serializers_customizations import QPropertyCustomizationSerializer
 from Q.questionnaire.serializers.serializers_references import create_empty_reference_list_serialization, QReferenceSerializer
-from Q.questionnaire.q_utils import QError, EnumeratedType, EnumeratedTypeList, Version, find_in_sequence, pretty_string, convert_to_camelCase, convert_to_PascalCase, serialize_model_to_dict, validate_no_spaces, validate_not_blank, QPathNode
+from Q.questionnaire.q_utils import QError, EnumeratedType, EnumeratedTypeList, Version, find_in_sequence, pretty_string, convert_to_camelCase, convert_to_PascalCase, serialize_model_to_dict, validate_no_spaces, validate_not_blank, QPathNode, cim_id_equals_pyesdoc_type
 from Q.questionnaire.q_constants import *
 
 #############
@@ -224,8 +225,7 @@ def serialize_realizations(current_model_realization, **kwargs):
                 "possible_relationship_target_types": property_realization.get_potential_relationship_target_types(),
                 "category_key": property_realization.category_key,
                 "display_detail": True,
-                # TODO: REPLACE THIS w/ A FN
-                "customization": QPropertyCustomizationSerializer(property_realization.get_default_customization()).data,
+                "customization": property_realization.get_default_cusotmization_serialization(),
             },
             exclude=["guid", "created", "modified"]
         )
@@ -248,6 +248,102 @@ def serialize_realizations(current_model_realization, **kwargs):
     serialization["properties"] = property_serializations
 
     return serialization
+
+
+def import_realizations(source_realization=None, target_realization=None, copy_realizations=False, **kwargs):
+
+    """
+    take the source_realization (pyesdoc) JSON and apply it to the target_realization (QSerialization) JSON
+    :param source_realization:
+    :param target_realization:
+    :param copy_realizations:
+    :param kwargs:
+    :return:
+    """
+    source_meta_info = source_realization.pop("meta")
+    assert source_meta_info is not None
+
+    project = QProject.objects.get(pk=target_realization["project"])
+    owner = User.objects.get(pk=target_realization["owner"])
+
+    if copy_realizations and target_realization["is_root"]:
+        target_realization.key = source_meta_info["id"]  # generate_uuid(source_meta_info["id"])
+        target_realization.version = str(source_meta_info["version"])  # Version(str(source_meta_info["version"]))
+
+    target_categories = target_realization["categories"]
+    target_properties = target_realization["properties"]
+    for source_property_name, source_property in source_realization.iteritems():
+        target_property = find_in_sequence(
+            lambda p: source_property_name == convert_to_camelCase(p["name"]),
+            target_properties
+        )
+        if target_property:
+            target_property_proxy = QPropertyProxy.objects.get(pk=target_property["proxy"])
+            target_property_field_type = target_property_proxy.field_type
+            target_property_multiple = target_property_proxy.is_multiple
+
+            if target_property_field_type == QPropertyTypes.ATOMIC:
+                if target_property_multiple:
+                    pass
+                else:
+                    pass
+                target_property["atomic_value"] = source_property
+            elif target_property_field_type == QPropertyTypes.ENUMERATION:
+                if target_property_multiple:
+                    pass
+                else:
+                    pass
+                if isinstance(source_property, list):
+                    target_property["enumeration_value"] += source_property
+                else:
+                    target_property["enumeration_value"].append(source_property)
+            else:  # target_property_field_type == QPropertyTypes.RELATIONSHIP
+                if target_property_multiple:
+                    for sp in source_property:
+                        sp_info = sp.get("meta")
+                        sp_type = sp_info["type"]
+                        if target_property_proxy.use_references:
+                            source_reference = QReference(
+                                experiment=sp.get("experiment"),
+                                institute=sp.get("institute"),
+                                long_name=sp.get("long_name"),
+                                model=sp.get("model"),
+                                name=sp.get("name"),
+                                canonical_name=sp.get("canonicalName"),
+                                guid=sp.get("id"),
+                                version=sp.get("version"),
+                                alternative_name=sp.get("alternativeName"),
+                                # further_info=sp.get("furtherInfo"),
+                                document_type=sp.get("type"),
+                            )
+                            source_reference_serializer = QReferenceSerializer(source_reference)
+                            target_property["relationship_references"].append(source_reference_serializer.data)
+
+                            pass
+                        else:  # target_property_proxy.use_subform
+                            target_model_proxy = find_in_sequence(
+                                lambda m: cim_id_equals_pyesdoc_type(m.cim_id, sp_type),
+                                target_property_proxy.relationship_target_models.all()
+                            )
+                            target_model = get_new_realizations(
+                                project=project,
+                                model_proxy=target_model_proxy,
+                                ontology=target_model_proxy.ontology,
+                            )
+                            set_owner(target_model, owner)
+                            serialized_target_model = serialize_realizations(target_model)
+                            target_property["relationship_values"].append(
+                                import_realizations(
+                                    source_realization=sp,
+                                    target_realization=serialized_target_model,
+                                    copy_realizations=copy_realizations,
+                                )
+                            )
+                else:
+                    pass
+
+    return target_realization
+
 
 ###################
 # some helper fns #
@@ -544,6 +640,16 @@ class QRealization(models.Model):
         except ObjectDoesNotExist:
             msg = "There is no default customization associated with {0}".format(self)
             raise QError(msg)
+
+    def get_default_cusotmization_serialization(self):
+        try:
+            default_customization = self.get_default_customization()
+            default_customization_serializer = QPropertyCustomizationSerializer(default_customization)
+            return default_customization_serializer.data
+        except QError:
+            # it's okay if this fails due to no customization being found
+            # (it may be being called from the import view)
+            return {}
 
     def reset(self):
         msg = "{0} must define a custom 'reset' method.".format(self.__class__.__name__)

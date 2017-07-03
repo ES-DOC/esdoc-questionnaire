@@ -223,6 +223,24 @@ def convert_to_PascalCase(strng):
     else:
         return tmp_string[0].upper()
 
+def cim_id_equals_pyesdoc_type(cim_id, pyesdoc_type):
+
+    cim_key, cim_package, cim_class = cim_id.rsplit('.', 2)
+    # TODO: THIS CODE IS TAKEN FROM "get_name_and_version_from_key" REFACTOR SO THAT I CAN CALL THAT FN DIRECTLY
+    match = re.match("^(.*)_(\d+\.\d+\.\d+|\d+\.\d+|\d+)$", cim_key)
+    cim_ontology_name, cim_ontology_underspecified_version = match.groups()
+    cim_ontology_version = Version(cim_ontology_underspecified_version)
+    if not match:
+        msg = "'{0}' is an invalid key; it should be of the format 'name_version'".format(cim_key)
+        raise QError(msg)
+
+    pyesdoc_ontology_name, pyesdoc_ontology_version, pyesdoc_package, pyesdoc_class = pyesdoc_type.split('.')
+
+    return \
+        cim_ontology_name.lower() == pyesdoc_ontology_name.lower() and \
+        str(cim_ontology_version.major()) == pyesdoc_ontology_version and \
+        cim_package.lower() == pyesdoc_package.lower() and \
+        cim_class.lower() == pyesdoc_class.lower()
 
 #########################
 # sequence manipulation #
