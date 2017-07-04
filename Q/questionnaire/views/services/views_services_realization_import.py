@@ -11,16 +11,21 @@
 
 from django.contrib import messages
 from django.http import HttpResponseForbidden, HttpResponseBadRequest, JsonResponse
+from uuid import uuid4
 
 from Q.questionnaire.models.models_ontologies import QOntology
 from Q.questionnaire.models.models_projects import QProject
 from Q.questionnaire.models.models_proxies import QModelProxy
-from Q.questionnaire.models.models_realizations import QModelRealization, import_realization
+from Q.questionnaire.models.models_realizations import QModelRealization, get_new_realizations, serialize_realizations, import_realizations, set_owner
+from Q.questionnaire.models.models_users import is_admin_of
+from Q.questionnaire.serializers.serializers_realizations import QModelRealizationSerializer
 from Q.questionnaire.views.services.views_services_base import validate_request
 from Q.questionnaire.q_utils import QError
 
 from pyesdoc.ontologies.cim.v2 import *
 from pyesdoc import decode, encode
+
+
 import json
 
 
@@ -36,6 +41,15 @@ def q_realization_import(request):
     realization_copy = request.POST.get("document_copy") == "true"
 
     try:
+        project = QProject.objects.get(pk=project_id)
+    except QProject.DoesNotExist:
+        msg = "Error importing document.  Cannot find an appropriate project."
+        messages.add_message(request, messages.ERROR, msg)
+        raise QError(msg)
+    current_user = request.user
+    assert is_admin_of(current_user, project), "User '{0}' does not have the authority to import a document to the '{1}' project".format(current_user, project)
+
+    try:
         # originally I thought I would have to convert to pyesdoc and then QModelRealization
         # but I work directly via JSON instead
         document_json = json.loads(document_content)
@@ -44,14 +58,7 @@ def q_realization_import(request):
         messages.add_message(request, messages.ERROR, msg)
         raise QError(e.message)
 
-    try:
-        project = QProject.objects.get(pk=project_id)
-    except QProject.DoesNotExist:
-        msg = "Error importing document.  Cannot find an appropriate project."
-        messages.add_message(request, messages.ERROR, msg)
-        raise QError(msg)
-
-    document_info = document_json.pop("meta")
+    document_info = document_json.get("meta")
     document_guid = document_info["id"]
     document_type = document_info["type"]
     # TODO: UN-COMMENT OUT THIS SECTION
@@ -82,15 +89,28 @@ def q_realization_import(request):
         messages.add_message(request, messages.ERROR, msg)
         raise QError(msg)
 
+    new_realizations = get_new_realizations(
+        project=project,
+        ontology=document_ontology,
+        model_proxy=document_proxy,
+    )
+    new_realizations.is_root = True  # TODO: COME UP W/ A BETTER WAY OF DEALING W/ "is_root"
+    set_owner(new_realizations, current_user)
+    serialized_new_realization = serialize_realizations(new_realizations)
     import ipdb; ipdb.set_trace()
-    imported_realization = import_realization(document_proxy, document_json)
-    # TODO: I AM HERE
-    # TODO: TURN "pyesdoc JSON" INTO "QModelRealization"
-    # TODO: CHANGE guids, owners, dates AS NEEDED
-    # TODO: serialize to "djangorestframeework JSON"
-    # TODO: save using djangorestframework methods
+    realizations_to_import = import_realizations(
+        source_realization=document_json,
+        target_realization=serialized_new_realization,
+        copy_realizations=realization_copy,
+    )
 
-    msg = "hello world"
-    messages.add_message(request, messages.INFO, msg)
+    realizations_to_import_serializer = QModelRealizationSerializer(data=realizations_to_import)
+    if realizations_to_import_serializer.is_valid():
+        saved_realizations = realizations_to_import_serializer.save()
+        msg = "Successfully imported document."
+        messages.add_message(request, messages.SUCCESS, msg)
+    else:
+        msg = "Error importing document."
+        messages.add_message(request, messages.ERROR, msg)
 
     return JsonResponse({"msg": msg})
