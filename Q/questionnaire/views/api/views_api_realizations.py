@@ -100,7 +100,7 @@ class QModelRealizationList(APIView):
             # TODO: ALL OF THIS LOOPING AROUND AND DB HITTING IS INEFFICIENT; CAN I DO THIS ON THE SERIALIZED DATA INSTEAD?
             model_realization.version += "0.1"  # a successful save means we ought to increment the document version
             set_version(model_realization, model_realization.version)
-            msg = "Successfully saved model (version {0}.{1}).".format(
+            msg = "Successfully saved document (version {0}.{1}).".format(
                 model_realization.get_version_major(),
                 model_realization.get_version_minor(),
             )
@@ -137,7 +137,7 @@ class QModelRealizationDetail(APIView):
             # TODO: ALL OF THIS LOOPING AROUND AND DB HITTING IS INEFFICIENT; CAN I DO THIS ON THE SERIALIZED DATA INSTEAD?
             model_realization.version += "0.1"  # a successful save means we ought to increment the document version
             set_version(model_realization, model_realization.version)
-            msg = "Successfully saved model (version {0}.{1}).".format(
+            msg = "Successfully saved document (version {0}.{1}).".format(
                 model_realization.get_version_major(),
                 model_realization.get_version_minor(),
             )
@@ -169,7 +169,7 @@ def get_cached_realizations(request):
     except QError:
         # ** THIS SECTION JUST EXISTS FOR DEBUGGING **
         import ipdb; ipdb.set_trace()
-        session_key = "25b9d538-8b22-4cd1-b668-f934b716f323"
+        session_key = "461dafef-5f63-46de-a41f-5b3d2493fe3f"
         cached_realizations_key = "{0}_realizations".format(session_key)
         realizations = get_cached_object(request.session, cached_realizations_key)
 
