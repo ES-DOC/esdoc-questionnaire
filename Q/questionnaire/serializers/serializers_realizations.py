@@ -246,7 +246,6 @@ class QPropertyRealizationSerializer(QRealizationSerializer):
                     relationship_value.save()
 
         if reference_data:
-            import ipdb; ipdb.set_trace()
             # see the comment in QReferenceListSerializer about having to do removal of deleted references here
             updated_references = False
             old_references = instance.relationship_references.all()
