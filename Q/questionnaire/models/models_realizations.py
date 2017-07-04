@@ -284,10 +284,9 @@ def import_realizations(source_realization=None, target_realization=None, copy_r
 
             if target_property_field_type == QPropertyTypes.ATOMIC:
                 if target_property_multiple:
-                    pass
+                    target_property["atomic_value"] = ','.join(source_property)
                 else:
-                    pass
-                target_property["atomic_value"] = source_property
+                    target_property["atomic_value"] = source_property
             elif target_property_field_type == QPropertyTypes.ENUMERATION:
                 if target_property_multiple:
                     pass
