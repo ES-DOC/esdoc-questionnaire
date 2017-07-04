@@ -250,7 +250,6 @@ class QCategoryProxy(QProxy):
     )
 
     def fully_qualified_key(self):
-        import ipdb; ipdb.set_trace()
         return "{0}.{1}".format(
             self.model_proxy.get_fully_qualified_key(),
             self.key,
@@ -335,7 +334,6 @@ class QPropertyProxy(QProxy):
     relationship_target_models = models.ManyToManyField("QModelProxy", blank=True)
 
     def fully_qualified_key(self):
-        import ipdb; ipdb.set_trace()
         return "{0}.{1}".format(
             self.model_proxy.get_fully_qualified_key(),
             self.key,
