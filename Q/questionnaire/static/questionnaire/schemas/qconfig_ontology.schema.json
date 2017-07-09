@@ -233,6 +233,7 @@
             "required": [
               "name",
               "package",
+              "id",
               "categories",
               "properties"
             ]

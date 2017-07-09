@@ -390,16 +390,23 @@ class QOntology(models.Model):
                 old_category_proxy.delete()
 
         # (don't forget to create a placeholder category for properties that are uncategorized)
+        uncategorized_category_proxy_id = "{0}.{1}.{2}".format(
+            new_model_proxy.cim_id,
+            UNCATEGORIZED_CATEGORY_PROXY_PACKAGE,
+            UNCATEGORIZED_CATEGORY_PROXY_NAME,
+        )
         uncategorized_category_proxy, created_uncategorized_category_proxy = QCategoryProxy.objects.get_or_create(
             ontology=self,
-            model_proxy=new_model_proxy,
+            # model_proxy=new_model_proxy,
             name=UNCATEGORIZED_CATEGORY_PROXY_NAME,
             is_uncategorized=True,
+            cim_id=uncategorized_category_proxy_id,
         )
         if created_uncategorized_category_proxy:
             uncategorized_category_proxy.order = len(new_category_proxies) + 1
             uncategorized_category_proxy.save()
             new_category_proxies.append(uncategorized_category_proxy)
+        new_model_proxy.category_proxies.add(uncategorized_category_proxy)
 
         # ...now add any properties...
 
@@ -436,10 +443,11 @@ class QOntology(models.Model):
         (new_category_proxy, created_category_proxy) = QCategoryProxy.objects.get_or_create(
             # these fields are the "defining" ones (other fields can change below w/out creating new proxies)
             ontology=self,
-            model_proxy=model_proxy,
+            # model_proxy=model_proxy,
             name=new_category_proxy_name,
             cim_id=new_category_proxy_id,
         )
+        model_proxy.category_proxies.add(new_category_proxy)
 
         new_category_proxy.order = new_category_proxy_order
         new_category_proxy_documentation = ontology_content.get("documentation")
@@ -460,15 +468,17 @@ class QOntology(models.Model):
         (new_property_proxy, created_property_proxy) = QPropertyProxy.objects.get_or_create(
             # these fields are the "defining" ones (other fields can change below w/out creating new proxies)
             ontology=self,
-            model_proxy=model_proxy,
+            # model_proxy=model_proxy,
             name=new_property_proxy_name,
             cim_id=new_property_proxy_id,
             field_type=new_property_proxy_field_type,
         )
-
+        model_proxy.property_proxies.add(new_property_proxy)
         category_id = ontology_content.get("category_id")
         new_property_proxy.category_id = category_id
         new_property_proxy.category_proxy = find_in_sequence(lambda c: c.cim_id == category_id, model_proxy.category_proxies.all())
+        if new_property_proxy.category_proxy is None:
+            new_property_proxy.category_proxy = model_proxy.category_proxies.get(is_uncategorized=True)
 
         new_property_proxy.order = new_property_proxy_order
         new_property_proxy.is_meta = ontology_content.get("is_meta", False)

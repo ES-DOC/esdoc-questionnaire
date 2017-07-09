@@ -1,42 +1,49 @@
 {
   "name": "test_specialization",
-  "version": "1",
+  "version": "1.0.0",
   "documentation": "A simple test ontology specialization",
   "date": "2016-12-05 14:17:24.888409",
   "ontology_type": "SPECIALIZATION",
-  "ontology_base": "test_schema_1",
+  "ontology_base": "test_schema_2.0.0",
   "classes": {
     "inherited": [
-      "test_package.recursive_thing",
-      "test_package.other_thing_one",
-      "test_package.other_thing_two"
     ],
     "excluded": [],
     "defined": [
       {
         "name": "model",
         "package": "test_package",
-        "id": "some_unique_id",
+        "id": "test_specialization_1.0.0.test_package.specialized_model",
         "documentation": "this is a specialized test model",
         "is_document": true,
+        "categories": {
+          "inherited": [],
+          "excluded": [],
+          "defined": [
+            {
+              "name": "category_one",
+              "id": "test_specialization_1.0.0.test_package.specialized_model.category_one"
+            }
+          ]
+        },
         "properties": {
           "inherited": [
-            "test_package.thing"
+            "name",
+            "thing"
           ],
           "excluded": [
-            "test_package.enumeration"
           ],
           "defined": [
             {
-              "name": "name",
-              "package": "test_package",
-              "id": "1.1",
+              "name": "new_property",
               "cardinality": "1.1",
+              "category_id": "test_specialization_1.0.0.test_package.specialized_model.category_one",
               "is_nillable": true,
+              "id": "test_specialization_1.0.0.test_package.specialized_model.new_property",
               "property_type": "ATOMIC",
               "atomic_type": "STRING",
               "values": [
-                "a predefined name"
+                "a predefined value"
               ]
             }
           ]

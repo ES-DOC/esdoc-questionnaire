@@ -195,8 +195,8 @@ class QModelProxy(QProxy):
 
     ontology = models.ForeignKey("QOntology", blank=True, null=True, related_name="model_proxies")
 
-    # property_proxies = models.ManyToManyField("QPropertyProxy", blank=True, related_name="model_proxies")
-    # category_proxies = models.ManyToManyField("QCategoryProxy", blank=True, related_name="model_proxies")
+    property_proxies = models.ManyToManyField("QPropertyProxy", blank=True, related_name="model_proxies")
+    category_proxies = models.ManyToManyField("QCategoryProxy", blank=True, related_name="model_proxies")
 
     package = models.CharField(max_length=SMALL_STRING, blank=False)
 
@@ -236,13 +236,13 @@ class QCategoryProxy(QProxy):
         abstract = False
         verbose_name = "_Questionnaire Proxy: Category"
         verbose_name_plural = "_Questionnaire Proxy: Categories"
-        unique_together = ("model_proxy", "name", "cim_id")
+        # unique_together = ("model_proxy", "name", "cim_id")
         # TODO: SEE THE COMMENTS REGARDING "ordering" FOR QModelProxy ABOVE
         ordering = ["order"]
 
     ontology = models.ForeignKey("QOntology", blank=True, null=True, related_name="category_proxies")
 
-    model_proxy = models.ForeignKey("QModelProxy", blank=False, related_name="category_proxies")
+    # model_proxy = models.ForeignKey("QModelProxy", blank=False, related_name="category_proxies")
 
     is_uncategorized = models.BooleanField(default=False)
     is_uncategorized.help_text = _(
@@ -298,8 +298,8 @@ class QPropertyProxy(QProxy):
 
     ontology = models.ForeignKey("QOntology", blank=True, null=True, related_name="property_proxies")
 
-    model_proxy = models.ForeignKey("QModelProxy", blank=False, related_name="property_proxies")
-
+    # BIG CHANGE: PROPERTIES & CATEGORIES CAN BELONG TO MULTIPLE MODELS.  THIS ALLOWS SPECIALIZATIONS TO INHERIT PROPERTIES & CATEGORIES
+    # model_proxy = models.ForeignKey("QModelProxy", blank=False, related_name="property_proxies")
     category_proxy = models.ForeignKey("QCategoryProxy", blank=True, null=True, related_name="property_proxies")
 
     # as w/ relationships below, it takes 2 fields to setup categories...

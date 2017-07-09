@@ -55,6 +55,7 @@ TEST_AJAX_REQUEST = {
 # models used for test-specific functionality #
 ###############################################
 
+
 # TODO: THE LOW-LEVEL DETAILS INVOLVED IN THIS CODE MAY BREAK IN FUTURE VERSIONS OF DJANGO
 
 class TestModel(models.Model):
@@ -115,6 +116,7 @@ class TestModel(models.Model):
             return field[0]
         except FieldDoesNotExist:
             return None
+
 
 ##########################################
 # a way of testing the number of queries #
@@ -269,15 +271,16 @@ class TestQBase(TestCase):
             try:
                 self.assertEqual(d1_value, d2_value, msg=msg)
             except AssertionError:
-                # If I was checking strings & unicode objects or querysets & lists then the above assertion would have failed
-                # so check those 2 special cases here...
+                # If I was comparing strings & unicode objects or querysets & lists,
+                # then the above assertion would have failed...
+                # ...so check those 2 special cases here
                 string_types = [str, unicode, ]
                 if d1_type in string_types and d2_type in string_types:
                     self.assertEqual(str(d1_value), str(d2_value))
                 elif QuerySet in inspect.getmro(d1_type) or QuerySet in inspect.getmro(d2_type): # lil bit of indirection here b/c custom managers acting as querysets might have been created dynamically
                     self.assertQuerysetEqual(d1_value, d2_value)
                 else:
-                    # ...and if it still fails, then go ahead and raise the original error
+                    # ...and if it still fails, then go ahead and re-raise the original error
                     raise AssertionError(msg)
 
     def assertFileExists(self, file_path, **kwargs):
@@ -310,6 +313,7 @@ def get_test_file_path(file_path):
     :return:
     """
     return os.path.join(TEST_FILE_PATH, file_path)
+
 
 def create_project(**kwargs):
 
@@ -344,38 +348,6 @@ def create_project(**kwargs):
     return project
 
 
-# def create_categorization(**kwargs):
-#
-#     from Q.questionnaire.models.models_categorizations import QCategorization
-#
-#     _filename = kwargs.pop("filename")
-#     _name = kwargs.pop("name", "test_categorization")
-#     _version = kwargs.pop("version", 1)
-#     _description = kwargs.pop("description", None)
-#
-#     categorization_file_path = kwargs.pop("file_path", os.path.join(TEST_FILE_PATH, _filename))
-#
-#     with open(categorization_file_path, "r") as categorization_file:
-#
-#         categorization = QCategorization(
-#             name=_name,
-#             version=_version,
-#             description=_description,
-#             file=SimpleUploadedFile(categorization_file.name, categorization_file.read())
-#         )
-#         categorization.save()
-#
-#     categorization_file.closed
-#
-#     return categorization
-#
-#
-# def remove_categorization(**kwargs):
-#
-#     categorization = kwargs.pop("categorization")
-#     categorization.delete()
-
-
 def create_ontology(**kwargs):
 
     from Q.questionnaire.models.models_ontologies import QOntology, QOntologyTypes
@@ -386,8 +358,12 @@ def create_ontology(**kwargs):
     _version = kwargs.pop("version", "1")
     _documentation = kwargs.pop("documentation", None)
     _url = kwargs.pop("url", "http://www.test.com")
+    _parent = kwargs.pop("parent",  None)
 
     ontology_file_path = kwargs.pop("file_path", os.path.join(TEST_FILE_PATH, _filename))
+
+    if _type == QOntologyTypes.SPECIALIZATION.get_type():
+        assert _parent is not None
 
     with open(ontology_file_path, "r") as ontology_file:
 
@@ -398,7 +374,8 @@ def create_ontology(**kwargs):
                 documentation=_documentation,
                 url=_url,
                 ontology_type=_type,
-                file=SimpleUploadedFile(ontology_file.name, ontology_file.read())
+                file=SimpleUploadedFile(ontology_file.name, ontology_file.read()),
+                parent=_parent,
             )
             ontology.save()
 
