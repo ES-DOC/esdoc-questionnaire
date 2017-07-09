@@ -50,7 +50,7 @@
         <div ng-controller="EditorController as editor_controller">
 
             {# wrapping everything in a fieldset that can be deactivated during AJAX calls #}
-            <fieldset id="q_blocker" ng-disabled="blocking()">
+            <fieldset id="q_blocker" ng-disabled="{{ read_only }} || blocking()">
 
                 <div class="row">
                     <div class="col-lg-12 col-md-12">
