@@ -261,7 +261,7 @@ class QOntology(models.Model):
         # name should match
         ontology_name = ontology_content.get("name")
         if self.name != ontology_name:
-            msg = "The name of this ontology instance does not match that found in the QConfig file"
+            msg = "The name of this ontology instance ('{0}') does not match that found in the QConfig file ('{1}')".format(self.name, ontology_name)
             raise QError(msg)
 
         # version should match(ish)
@@ -376,6 +376,7 @@ class QOntology(models.Model):
             for inherited_category_order, inherited_category_proxy in enumerate(parent_model_proxy.category_proxies.filter(name__in=inherited_categories), start=1):
                 new_model_proxy.category_proxies.add(inherited_category_proxy)
                 new_category_proxies.append(inherited_category_proxy)
+            new_model_proxy.save()
         else:
             assert len(inherited_categories) == 0, "it makes no sense to specify 'inherited_categories' w/out providing a base model"
 
@@ -413,6 +414,7 @@ class QOntology(models.Model):
             for inherited_property_order, inherited_property_proxy in enumerate(parent_model_proxy.property_proxies.filter(name__in=inherited_properties), start=1):
                 new_model_proxy.property_proxies.add(inherited_property_proxy)
                 new_property_proxies.append(inherited_property_proxy)
+            new_model_proxy.save()
         else:
             assert len(inherited_properties) == 0, "it makes no sense to specify 'inherited_properties' w/out providing a base model"
 
