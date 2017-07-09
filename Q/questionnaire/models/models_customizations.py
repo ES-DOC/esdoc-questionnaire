@@ -864,6 +864,7 @@ class QPropertyCustomization(QCustomization):
     is_hidden.help_text = _(
         "A property that is defined as required in an ontology should not be hidden."
     )
+    # note that "meta" properties are hidden by default despite the above statement
     is_editable = models.BooleanField(default=True, verbose_name="Can this property be edited?")
     is_editable.help_text = _(
         "If this field is disabled, this is because a default value was set by the CIM itself "
@@ -1027,6 +1028,9 @@ class QPropertyCustomization(QCustomization):
         """
         if self.field_type == QPropertyTypes.RELATIONSHIP:
             target_models_are_documents = [tm.is_document for tm in self.proxy.relationship_target_models.all()]
+            # if len(set(target_models_are_documents)) != 1:
+            #     import ipdb; ipdb.set_trace()
+            #     pass
             assert len(set(target_models_are_documents)) == 1
             # try:
             #     assert len(set(target_models_are_documents)) == 1
@@ -1079,6 +1083,9 @@ class QPropertyCustomization(QCustomization):
         self.default_values = proxy.values
         self.is_editable = not self.has_specialized_values  # if the proxy provided default values, then do not allow the customizer to override them
         self.can_inherit = False
+
+        if self.is_meta:
+            self.is_hidden = True
 
         if force_save:
             self.save()
