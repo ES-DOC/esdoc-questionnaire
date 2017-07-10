@@ -51,7 +51,7 @@ class Migration(migrations.Migration):
                 ('is_meta', models.NullBooleanField()),
                 ('name', models.CharField(max_length=256)),
                 ('documentation', models.TextField(null=True, blank=True)),
-                ('cim_id', models.CharField(blank=True, max_length=256, null=True, help_text='A unique, CIM-specific, identifier.  This is distinct from the automatically-generated key.  It is required for distinguishing specialized objects of the same class.', validators=[Q.questionnaire.q_utils.ValidateNoSpaces()])),
+                ('cim_id', models.CharField(null=True, validators=[Q.questionnaire.q_utils.ValidateNoSpaces()], max_length=256, blank=True, help_text='A unique, CIM-specific, identifier.  This is distinct from the automatically-generated key.  It is required for distinguishing specialized objects of the same class.', unique=True)),
                 ('is_uncategorized', models.BooleanField(default=False, help_text="An 'uncategorized' category is one which was not specified by the CIM; it acts as a placeholder within which to nest properties in the Questionnaire.")),
             ],
             options={
@@ -130,10 +130,11 @@ class Migration(migrations.Migration):
                 ('is_meta', models.NullBooleanField()),
                 ('name', models.CharField(max_length=256)),
                 ('documentation', models.TextField(null=True, blank=True)),
-                ('cim_id', models.CharField(blank=True, max_length=256, null=True, help_text='A unique, CIM-specific, identifier.  This is distinct from the automatically-generated key.  It is required for distinguishing specialized objects of the same class.', validators=[Q.questionnaire.q_utils.ValidateNoSpaces()])),
+                ('cim_id', models.CharField(null=True, validators=[Q.questionnaire.q_utils.ValidateNoSpaces()], max_length=256, blank=True, help_text='A unique, CIM-specific, identifier.  This is distinct from the automatically-generated key.  It is required for distinguishing specialized objects of the same class.', unique=True)),
                 ('package', models.CharField(max_length=256)),
                 ('is_document', models.NullBooleanField()),
                 ('label', Q.questionnaire.q_fields.QJSONField(null=True, blank=True)),
+                ('category_proxies', models.ManyToManyField(related_name='model_proxies', to='questionnaire.QCategoryProxy', blank=True)),
             ],
             options={
                 'ordering': ['order'],
@@ -245,6 +246,7 @@ class Migration(migrations.Migration):
                 ('default_values', Q.questionnaire.q_fields.QJSONField(help_text='If this field is disabled, this is because a default value was set by the ontology itselfand should not therefore be overridden by the ES-DOC Questionnaire.  <em>In this case, the property should also not be editable.</em>', null=True, verbose_name="What are the default values for this property?<p class='documentation'>Please enter a comma-separated list of strings.</p>", blank=True)),
                 ('atomic_type', models.CharField(default=b'DEFAULT', help_text='By default, all fields are rendered as strings.  However, a field can be customized to accept longer snippets of text, dates, email addresses, etc.', max_length=512, verbose_name=b'How should this field be rendered?', choices=[(b'DEFAULT', b'Character Field (default)'), (b'TEXT', b'Text Field (large block of text as opposed to a small string)'), (b'BOOLEAN', b'Boolean Field'), (b'INTEGER', b'Integer Field'), (b'DECIMAL', b'Decimal Field'), (b'URL', b'URL Field'), (b'EMAIL', b'Email Field'), (b'DATE', b'Date Field'), (b'DATETIME', b'Date Time Field'), (b'TIME', b'Time Field')])),
                 ('atomic_suggestions', models.TextField(help_text=b"Please enter a '|' separated list of words or phrases.", null=True, verbose_name=b'Are there any suggestions you would like to offer as auto-completion options?', blank=True)),
+                ('enumeration_display_all', models.BooleanField(default=False, verbose_name=b'Should this enumeration be open by default?')),
                 ('enumeration_is_open', models.BooleanField(default=False, verbose_name=b'Can a user can specify a custom "OTHER" value?')),
                 ('relationship_show_subforms', models.BooleanField(default=False, help_text='Checking this will cause the property to be rendered as a nested subform within the parent form;  All properties of the target model will be available to view and edit in that subform.  Unchecking it will cause the attribute to be rendered as a <em>reference</em> widget.  <br/>(Note that a &quot;hierarchical&quot; model can still be customized using this technique even though the corresponding target models will display as top-level forms rather than subforms.)', verbose_name="Should this property be rendered in its own subform?<p class='documentation'>Note that a relationship to another CIM Document <u>cannot</u> use subforms, while a relationship to anything else <u>must</u> use subforms.</p>")),
                 ('relationship_is_hierarchical', models.BooleanField(default=False, help_text="Checking this will cause the property to be rendered in a treeview; All properties of the target model will be avaialble as a pane next to that treeview.  This value is set by the ontology itself.  Unless you know what you're doing, <em>don't mess with it</em>.", verbose_name='Should this property be rendered as part of a hierarchy?')),
@@ -270,7 +272,7 @@ class Migration(migrations.Migration):
                 ('is_meta', models.NullBooleanField()),
                 ('name', models.CharField(max_length=256)),
                 ('documentation', models.TextField(null=True, blank=True)),
-                ('cim_id', models.CharField(blank=True, max_length=256, null=True, help_text='A unique, CIM-specific, identifier.  This is distinct from the automatically-generated key.  It is required for distinguishing specialized objects of the same class.', validators=[Q.questionnaire.q_utils.ValidateNoSpaces()])),
+                ('cim_id', models.CharField(null=True, validators=[Q.questionnaire.q_utils.ValidateNoSpaces()], max_length=256, blank=True, help_text='A unique, CIM-specific, identifier.  This is distinct from the automatically-generated key.  It is required for distinguishing specialized objects of the same class.', unique=True)),
                 ('category_id', models.CharField(max_length=256, null=True, blank=True)),
                 ('field_type', models.CharField(max_length=256, choices=[(b'ATOMIC', b'Atomic'), (b'RELATIONSHIP', b'Relationship'), (b'ENUMERATION', b'Enumeration')])),
                 ('cardinality_min', models.CharField(max_length=2, choices=[(b'0', b'0'), (b'1', b'1'), (b'2', b'2'), (b'3', b'3'), (b'4', b'4'), (b'5', b'5'), (b'6', b'6'), (b'7', b'7'), (b'8', b'8'), (b'9', b'9'), (b'10', b'10')])),
@@ -283,7 +285,6 @@ class Migration(migrations.Migration):
                 ('enumeration_choices', Q.questionnaire.q_fields.QJSONField(null=True, blank=True)),
                 ('relationship_target_names', Q.questionnaire.q_fields.QJSONField(null=True, blank=True)),
                 ('category_proxy', models.ForeignKey(related_name='property_proxies', blank=True, to='questionnaire.QCategoryProxy', null=True)),
-                ('model_proxy', models.ForeignKey(related_name='property_proxies', to='questionnaire.QModelProxy')),
                 ('ontology', models.ForeignKey(related_name='property_proxies', blank=True, to='questionnaire.QOntology', null=True)),
                 ('relationship_target_models', models.ManyToManyField(to='questionnaire.QModelProxy', blank=True)),
             ],
@@ -449,6 +450,11 @@ class Migration(migrations.Migration):
             field=models.ForeignKey(related_name='model_proxies', blank=True, to='questionnaire.QOntology', null=True),
         ),
         migrations.AddField(
+            model_name='qmodelproxy',
+            name='property_proxies',
+            field=models.ManyToManyField(related_name='model_proxies', to='questionnaire.QPropertyProxy', blank=True),
+        ),
+        migrations.AddField(
             model_name='qmodelcustomization',
             name='project',
             field=models.ForeignKey(related_name='model_customizations', to='questionnaire.QProject'),
@@ -485,11 +491,6 @@ class Migration(migrations.Migration):
         ),
         migrations.AddField(
             model_name='qcategoryproxy',
-            name='model_proxy',
-            field=models.ForeignKey(related_name='category_proxies', to='questionnaire.QModelProxy'),
-        ),
-        migrations.AddField(
-            model_name='qcategoryproxy',
             name='ontology',
             field=models.ForeignKey(related_name='category_proxies', blank=True, to='questionnaire.QOntology', null=True),
         ),
@@ -523,9 +524,5 @@ class Migration(migrations.Migration):
         migrations.AlterUniqueTogether(
             name='qmodelproxy',
             unique_together=set([('ontology', 'name', 'package', 'cim_id')]),
-        ),
-        migrations.AlterUniqueTogether(
-            name='qcategoryproxy',
-            unique_together=set([('model_proxy', 'name', 'cim_id')]),
         ),
     ]
