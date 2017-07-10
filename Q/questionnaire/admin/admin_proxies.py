@@ -16,53 +16,78 @@ Summary of module goes here
 """
 
 from django.contrib import admin
+from django.db import models
 from django.forms import ModelForm
 from Q.questionnaire.models.models_proxies import QModelProxy, QCategoryProxy, QPropertyProxy
+from Q.questionnaire.q_constants import *
 
-
-# these next 2 classes let me view all the QPropertyProxies belonging to a given QModelProxy or QCategoryProxy
 
 class QPropertyProxyInlineForm(ModelForm):
     """
     A silly ModelForm for the admin that shows no fields
-    It is used in conjunction w/ the StackedInline below
+    It is used in conjunction w/ the StackedInlines below
     """
     class Meta:
-        model = QPropertyProxy
+        model = QModelProxy.property_proxies.through
         fields = []
 
 
-class QPropertyProxyInline(admin.StackedInline):
+class QModelPropertyProxyInline(admin.StackedInline):
     """
-    A silly StackedInline which includes a link to the admin of a given QPropertyProxy
+    A silly StackedInline which includes a link to the admin of a given QPropertyProxy (from a m2m field)
+    """
+    model = QModelProxy.property_proxies.through
+    form = QPropertyProxyInlineForm
+    verbose_name_plural = "properties:"
+    template = 'questionnaire/admin/q_stacked.html'
+    show_change_link = True
+    extra = 0
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+class QCategoryPropertyProxyInline(admin.StackedInline):
+    """
+    A silly StackedInline which includes a link to the admin of a given QPropertyProxy (from a fk field)
     """
     model = QPropertyProxy
     form = QPropertyProxyInlineForm
     verbose_name_plural = "properties:"
+    template = 'questionnaire/admin/q_stacked.html'
     show_change_link = True
     extra = 0
 
+    def has_delete_permission(self, request, obj=None):
+        return False
 
-# these next 2 classes let me view all the QCategoryProxies belonging to a given QModelProxy
 
 class QCategoryProxyInlineForm(ModelForm):
     """
     A silly ModelForm for the admin that shows no fields
-    It is used in conjunction w/ the StackedInline below
+    It is used in conjunction w/ the StackedInlines below
     """
     class Meta:
-        model = QCategoryProxy
+        model = QModelProxy.category_proxies.through
         fields = []
 
 
-class QCategoryProxyInline(admin.StackedInline):
+class QModelCategoryProxyInline(admin.StackedInline):
     """
-    A silly StackedInline which includes a link to the admin of a given QCategoryProxy
+    A silly StackedInline which includes a link to the admin of a given QCategoryProxy (from a m2m field)
     """
-    model = QCategoryProxy
+    model = QModelProxy.category_proxies.through
     form = QCategoryProxyInlineForm
+    verbose_name = "categories:"
+    template = "questionnaire/admin/q_stacked.html"
     show_change_link = True
     extra = 0
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+# the actual (ie: non-inline) forms are defined below...
 
 
 class QModelProxyAdminForm(ModelForm):
@@ -86,7 +111,7 @@ class QModelProxyAdmin(admin.ModelAdmin):
     Custom ModelAdmin for QModelProxy
     Provides an inline form for viewing QPropertyProxies & QCategoryProxies
     """
-    inlines = [QCategoryProxyInline, QPropertyProxyInline]
+    inlines = [QModelCategoryProxyInline, QModelPropertyProxyInline]
     form = QModelProxyAdminForm
 
 
@@ -97,7 +122,7 @@ class QCategoryProxyAdminForm(ModelForm):
             "cim_id",
             "name",
             "documentation",
-            "model_proxy",
+            # "model_proxy",
             "order",
             "is_meta",
             "is_uncategorized",
@@ -109,7 +134,7 @@ class QCategoryProxyAdmin(admin.ModelAdmin):
     Custom ModelAdmin for QCategoryProxy
     Provides an inline form for viewing QPropertyProxies
     """
-    inlines = [QPropertyProxyInline]
+    inlines = [QCategoryPropertyProxyInline]
     form = QCategoryProxyAdminForm
     readonly_fields = ("is_uncategorized",)
 
@@ -122,7 +147,7 @@ class QPropertyProxyAdminForm(ModelForm):
             "name",
             "documentation",
             "order",
-            "model_proxy",
+            # "model_proxy",
             "is_hierarchical",
             "is_meta",
             "category_proxy",
