@@ -45,17 +45,28 @@ SECRET_KEY = parser.get('settings', 'secret_key', raw=True)
 
 DEBUG = parser.getboolean('debug', 'debug')
 CDN = parser.getboolean('debug', 'cdn')
+OBFUSCATE = parser.getboolean('debug', 'obfuscate')
+if OBFUSCATE:
+    from Q.questionnaire.q_utils import decode_parameter
 
 if 'test' not in sys.argv:
+
+    db_pwd = parser.get('database', 'password', raw=True)
+    if OBFUSCATE:
+        try:
+            db_pwd = decode_parameter(db_pwd)
+        except:
+            print "Error decoding database password; Did you forget to encode it?"
+            sys.exit(2)
 
     DATABASES = {
         'default': {
             'ENGINE': parser.get('database', 'engine'),
             'NAME': parser.get('database', 'name'),
             'USER': parser.get('database', 'user'),
-            'PASSWORD': parser.get('database', 'password', raw=True),
             'HOST': parser.get('database', 'host'),
             'PORT': parser.get('database', 'port'),
+            'PASSWORD': db_pwd,
         }
     }
 
@@ -247,12 +258,20 @@ ACCOUNT_ADAPTER = 'Q.questionnaire.q_auth.QAccountAdapter'
 ACCOUNT_USERNAME_MIN_LENGTH = 3
 
 # email stuff...
-# (note the use of EMAIL_BACKEND in the "test" section above)
+email_pwd = parser.get('email', 'password', raw=True)
+if OBFUSCATE:
+    try:
+        email_pwd = decode_parameter(email_pwd)
+    except:
+        print "Error decoding email password; Did you forget to encode it?"
+        sys.exit(2)
+
 EMAIL_HOST = parser.get('email', 'host')
 EMAIL_PORT = parser.get('email', 'port')
 EMAIL_HOST_USER = parser.get('email', 'username')
-EMAIL_HOST_PASSWORD = parser.get('email', 'password')
 EMAIL_USE_TLS = True
+EMAIL_HOST_PASSWORD = email_pwd
+
 
 # Caching...
 DEFAULT_CACHE_PORT = "11211"  # (standard memcached port)

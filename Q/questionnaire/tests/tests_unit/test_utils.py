@@ -176,6 +176,18 @@ class Test(TestQBase):
         # although there is support for enumerated type ordering, I don't actually care
         # so there are no tests for that functionality here
 
+    ####################
+    # test obfuscation #
+    ####################
+
+    def test_obfuscation(self):
+        test_string = "Hello World!"
+        test_encoding = encode_parameter(test_string)
+        test_decoding = decode_parameter(test_encoding)
+
+        self.assertNotEqual(test_string, test_encoding)
+        self.assertEqual(test_string, test_decoding)
+
     ############################
     # test string manipulation #
     ############################

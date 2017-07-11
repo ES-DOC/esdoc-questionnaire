@@ -28,6 +28,11 @@ CACHE_ALIAS = "default"
 # at what point should suggested text be triggered...
 TYPEAHEAD_LIMIT = 8
 
+# a cipher key for encoding / decoding sensitive parameters
+# (this is not real security, it just prevents users from having to store plain-text passwords in config files)
+
+CIPHER_KEY = "q_JVE8kOU2Ei3C6Z"
+
 # valid reasons to leave a property value blank (taken from seeGrid)...
 
 NIL_PREFIX = "nil"
@@ -133,16 +138,22 @@ SUPPORTED_DOCUMENTS_TEST_MAP = OrderedDict([
         "category": None,
         "is_active": False,
     }),
+    ("model", {
+       "name": "model",
+        "title": "Top-Level Model",
+        "category": "Models",
+        "is_active": False,
+    }),
     ("ocean", {
         "name": "ocean",
         "title": "Ocean",
-        "category": "Model",
+        "category": "Models",
         "is_active": False,
     }),
     ("seaice", {
         "name": "seaice",
         "title": "Sea Ice",
-        "category": "Model",
+        "category": "Models",
         "is_active": False,
     }),
     ("performance", {

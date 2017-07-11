@@ -14,6 +14,7 @@ from django.utils.deconstruct import deconstructible
 from functools import wraps
 from jsonschema.exceptions import ValidationError as JSONValidationError
 from jsonschema import validate as json_validate
+import base64
 import json
 import os
 import re
@@ -140,6 +141,30 @@ class EnumeratedTypeList(list):
             return et_list.index(etype)
         # otherwise return a value greater than the last position of the orderList
         return len(et_list)+1
+
+###################################
+# obfuscating parameters          #
+# this uses the "Vigenere Cipher" #
+###################################
+
+def encode_parameter(string, key=CIPHER_KEY):
+    encoded_chars = []
+    for i in xrange(len(string)):
+        key_c = key[i % len(key)]
+        encoded_c = chr(ord(string[i]) + ord(key_c) % 256)
+        encoded_chars.append(encoded_c)
+    encoded_string = "".join(encoded_chars)
+    return base64.urlsafe_b64encode(encoded_string)
+
+def decode_parameter(string, key=CIPHER_KEY):
+    decoded_chars = []
+    string = base64.urlsafe_b64decode(string)
+    for i in xrange(len(string)):
+        key_c = key[i % len(key)]
+        encoded_c = chr(abs(ord(string[i]) - ord(key_c) % 256))
+        decoded_chars.append(encoded_c)
+    decoded_string = "".join(decoded_chars)
+    return decoded_string
 
 ######################################################################
 # some useful structures for getting the path of complex             #
