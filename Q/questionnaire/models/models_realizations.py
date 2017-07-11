@@ -640,16 +640,6 @@ class QRealization(models.Model):
             msg = "There is no default customization associated with {0}".format(self)
             raise QError(msg)
 
-    def get_default_customization_serialization(self):
-        try:
-            default_customization = self.get_default_customization()
-            default_customization_serializer = QPropertyCustomizationSerializer(default_customization)
-            return default_customization_serializer.data
-        except QError:
-            # it's okay if this fails due to no customization being found
-            # (it may be being called from the import view)
-            return {}
-
     def reset(self):
         msg = "{0} must define a custom 'reset' method.".format(self.__class__.__name__)
         raise NotImplementedError(msg)
