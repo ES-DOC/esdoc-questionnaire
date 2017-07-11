@@ -658,9 +658,15 @@
             }
         });
 
+        $scope.update_model_properties = function(new_model_properties) {
+            /* note that this fn is usually called in conjunction w/ the "element-ready" directive defined in "q_ng_base.js" */
+            /* and that, perhaps unintuitively, it is usually applied to the "order" field (see QPropertyRealizationForm.customize") */
+            /* b/c that is guaranteed to be rendered for every property type - albeit in a hidden div */
+            $.extend($scope.current_model, new_model_properties)
+        };
+
         $scope.update_property_completion = function() {
 
-//            if ($scope.current_model["cardinality_min"] != "0") {
             if ($scope.current_model["customization"]["is_required"])  {
                 if ($scope.current_model["is_nil"]) {
                     /* something that is required but explicitly set to "nil" is still considered complete */

@@ -335,6 +335,29 @@
         }
     }]);
 
+    /********************************************/
+    /* run some fn after a DOM element is ready */
+    /********************************************/
+
+
+    /* thanks to: https://stackoverflow.com/a/29571230/1060339 */
+
+    app.directive("elementReady", ['$parse', '$global_services', function($parse, $global_services) {
+        return {
+            restrict: "A",
+            link: function(scope, element, attrs) {
+                element.ready(function() {
+//                    $global_services.setBlocking(true);
+                    scope.$apply(function() {
+                        var fn = $parse(attrs.elementReady);
+                        fn(scope);
+                    });
+//                    $global_services.setBlocking(false);
+                });
+            }
+        }
+    }]);
+
     /******************/
     /* load-on-demand */
     /******************/

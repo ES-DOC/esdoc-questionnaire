@@ -481,6 +481,19 @@ class QPropertyRealizationForm(QRealizationForm):
         self.value_field.required = customization.is_required
         self.value_field.editable = customization.is_editable
 
+        # pass other relevant customization info to the client...
+        # TODO: ADD MORE CUSTOMIZATION INFO AS NEEDED (THE GOAL SHOULD BE TO MOVE ALL CUSTOMIZATION TO THE CLIENT)...
+        extra_customization_arguments = {
+            "customization": {
+                "is_required": customization.is_required,
+            }
+        }
+        ready_fn = "update_model_properties({})".format(json.dumps(extra_customization_arguments))
+        set_field_widget_attributes(self.fields["order"], {
+            "element-ready": ready_fn,
+        })
+        # I add the "element-ready" attribute to the "order" field above b/c every property, regardless of type, renders it (albiet in a hidden div)
+
         if not customization.is_editable:
             set_field_widget_attributes(self.value_field, {
                 "ng-disabled": "true",
@@ -511,12 +524,12 @@ class QPropertyRealizationForm(QRealizationForm):
                     assert len(default_values) == 1, "need to rewrite this to cope w/ 'cardinality_max' > 1 for atomic fields"
                     self.set_default_field_value("atomic_value", default_values[0])
                     self.set_default_field_value("is_complete", True)
-                if customization.is_required:
-                    update_field_widget_attributes(atomic_value_field, {
-                        "ng-blur": "update_property_completion()",
-                    })
-                else:
-                    self.set_default_field_value("is_complete", True)
+            if customization.is_required:
+                update_field_widget_attributes(atomic_value_field, {
+                    "ng-blur": "update_property_completion($event)",
+                })
+            else:
+                self.set_default_field_value("is_complete", True)
 
             if customization.atomic_suggestions:
                 atomic_suggestions_list = customization.atomic_suggestions.split('|')

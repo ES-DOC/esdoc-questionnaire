@@ -158,13 +158,13 @@ class QPropertyRealizationSerializer(QRealizationSerializer):
         return False
 
     def get_customization(self, obj):
-        # TODO: JUST BY ADDING THIS SIMPLE FN, I CAN BYPASS MOST OF THE FORM-CENTRIC CUSTOMIZATION GARBAGE... HOORAY!
-        # TODO: GET RID OF MOST THE FORM-CENTRIC CUSTOMIZATION GARBAGE
-        # TODO: (ADD THIS SIMPLE FN TO QCategorySerializer & QModelSerializer)
-        customization = obj.get_default_customization()
-        assert obj.proxy == customization.proxy, "unable to find customization"
-        customization_serializer = QPropertyCustomizationSerializer(customization)
-        return customization_serializer.data
+        # THE FOLLOWING CODE WAS TOO SLOW (IT POTENTIALLY TRAVELED THE FULL CUSTOMIZATION HIERARCHY FOR EACH PROPERTY)
+        # customization = obj.get_default_customization()
+        # assert obj.proxy == customization.proxy, "unable to find customization"
+        # customization_serializer = QPropertyCustomizationSerializer(customization)
+        # return customization_serializer.data
+        # INSTEAD, I JUST PASS THIS PLACEHOLDER AND ADD TO THE JSON MODEL IN "QPropertyRealizationForm.customize"
+        return {}
 
     def to_internal_value(self, data):
         internal_value = super(QPropertyRealizationSerializer, self).to_internal_value(data)

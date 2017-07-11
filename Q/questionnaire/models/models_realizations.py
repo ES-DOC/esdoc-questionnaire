@@ -225,7 +225,7 @@ def serialize_realizations(current_model_realization, **kwargs):
                 "possible_relationship_target_types": property_realization.get_potential_relationship_target_types(),
                 "category_key": property_realization.category_key,
                 "display_detail": True,
-                "customization": property_realization.get_default_cusotmization_serialization(),
+                "customization": {},  # just a placeholder, this will be updated as needed in QPropertyRealizationForm.customize
             },
             exclude=["guid", "created", "modified"]
         )
@@ -640,7 +640,7 @@ class QRealization(models.Model):
             msg = "There is no default customization associated with {0}".format(self)
             raise QError(msg)
 
-    def get_default_cusotmization_serialization(self):
+    def get_default_customization_serialization(self):
         try:
             default_customization = self.get_default_customization()
             default_customization_serializer = QPropertyCustomizationSerializer(default_customization)

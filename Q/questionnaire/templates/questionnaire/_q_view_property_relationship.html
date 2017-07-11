@@ -5,6 +5,12 @@
     <div class="row">
         <div class="has-feedback form-group">
 
+            <div class="hidden">
+                <!-- adding a hidden 'order' field b/c that is the one that forces the update_model_properties fn -->
+                <!-- see "QPropertyRealizationForm.customize" -->
+                {{form.order}}
+            </div>
+
             {% if form.use_references %}
                 <span class="col-sm-3 {% if field.field.required %} required {% else %} optional {% endif %}">
 
