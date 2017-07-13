@@ -56,6 +56,8 @@ urlpatterns = patterns('',
     # media (when NOT served through Apache)...
     # TODO: IS EXPOSING THESE A SECURITY RISK?
     url(r'^site_media/(?P<path>.*)$', 'django.views.static.serve', {'document_root': settings.MEDIA_ROOT}),
+    # some low-level django templates have hard-coded the location of "favicon", this line makes sure it gets routed correctly
+    url(r'^favicon.ico$', 'django.views.static.serve', {'document_root': "{0}/img/".format(settings.MEDIA_ROOT)}),
 
     # admin...
     url(r'^admin/', include(admin.site.urls)),
