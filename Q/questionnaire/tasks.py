@@ -12,7 +12,7 @@ from Q.questionnaire.q_utils import rel
 
 BACKUP_DIR = rel('../backups/')
 BACKUP_PREFIX = "celery_backup"
-BACKUP_EXTENT = 2  # assuming I am doing a daily backup, this will keep about a month's worth of backups on disk
+BACKUP_EXTENT = 30  # assuming I am doing a daily backup, this will keep about a month's worth of backups on disk
 
 
 # there is a particular order that objects ought to be serialized in...
