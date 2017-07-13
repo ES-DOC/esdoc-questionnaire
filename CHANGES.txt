@@ -5,6 +5,9 @@ For full release notes, please see https://earthsystemcog.org/projects/es-doc-mo
 v0.17.0.1
 * added csrf support where needed
 * fix bug preventing completion status from being rendered
+* ensured document labels can be inherited (ie: unless otherwise specified, a specialization should use the label of its parent class)
+* added obfuscation for sensitive parameters in configuration files
+* enabled periodic backups using celery
 
 v0.17.0.0
 * supported the CIM2 concept of document "labels"

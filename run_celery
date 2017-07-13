@@ -1,0 +1,3 @@
+cd ./Q
+celery beat -A Q -l info -S django &
+celery worker -A Q -l info -S django &

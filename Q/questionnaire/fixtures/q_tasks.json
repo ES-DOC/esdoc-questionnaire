@@ -1,0 +1,99 @@
+[
+{
+    "fields": {
+        "every": 1,
+        "period": "days"
+    },
+    "model": "django_celery_beat.intervalschedule",
+    "pk": 3
+},
+{
+    "fields": {
+        "every": 30,
+        "period": "days"
+    },
+    "model": "django_celery_beat.intervalschedule",
+    "pk": 4
+},
+{
+    "fields": {
+        "month_of_year": "*",
+        "day_of_week": "*",
+        "hour": "4",
+        "minute": "0",
+        "day_of_month": "*"
+    },
+    "model": "django_celery_beat.crontabschedule",
+    "pk": 1
+},
+{
+    "fields": {
+        "last_update": "2017-07-13T20:01:34.605Z"
+    },
+    "model": "django_celery_beat.periodictasks",
+    "pk": 1
+},
+{
+    "fields": {
+        "task": "celery.backend_cleanup",
+        "name": "celery.backend_cleanup",
+        "exchange": null,
+        "last_run_at": "2017-07-13T04:00:00.000Z",
+        "args": "[]",
+        "enabled": true,
+        "routing_key": null,
+        "crontab": 1,
+        "interval": null,
+        "queue": null,
+        "total_run_count": 1,
+        "expires": null,
+        "kwargs": "{}",
+        "date_changed": "2017-07-13T19:54:32.097Z",
+        "description": ""
+    },
+    "model": "django_celery_beat.periodictask",
+    "pk": 1
+},
+{
+    "fields": {
+        "task": "questionnaire.tasks.create_fixtures",
+        "name": "create fixtures",
+        "exchange": null,
+        "last_run_at": "2017-07-13T19:53:21.463Z",
+        "args": "[]",
+        "enabled": true,
+        "routing_key": null,
+        "crontab": null,
+        "interval": 3,
+        "queue": null,
+        "total_run_count": 27,
+        "expires": null,
+        "kwargs": "{}",
+        "date_changed": "2017-07-13T20:01:12.032Z",
+        "description": ""
+    },
+    "model": "django_celery_beat.periodictask",
+    "pk": 5
+},
+{
+    "fields": {
+        "task": "questionnaire.tasks.cull_fixtures",
+        "name": "cull fixtures",
+        "exchange": null,
+        "last_run_at": "2017-07-13T19:53:21.453Z",
+        "args": "[]",
+        "enabled": true,
+        "routing_key": null,
+        "crontab": null,
+        "interval": 4,
+        "queue": null,
+        "total_run_count": 10,
+        "expires": null,
+        "kwargs": "{}",
+        "date_changed": "2017-07-13T20:01:34.607Z",
+        "description": ""
+    },
+    "model": "django_celery_beat.periodictask",
+    "pk": 6
+}
+]

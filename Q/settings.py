@@ -30,6 +30,8 @@ import sys
 
 rel = lambda *x: os.path.join(os.path.abspath(os.path.dirname(__file__)), *x)
 
+PROJECT_LABEL = "Q"
+
 # path to the configuration file containing secret values.
 CONF_PATH = os.path.join(os.path.expanduser('~'), '.config', 'esdoc-questionnaire.conf')
 # default secret values in case they're not in the configuration file
@@ -104,6 +106,10 @@ except NoOptionError:
 # (so this value doesn't matter)
 DEFAULT_SITE_ID = 1
 
+# Task info...
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SOFT_TIME_LIMIT = 3 * 60
+
 # Application definition
 
 INSTALLED_APPS = (
@@ -114,11 +120,13 @@ INSTALLED_APPS = (
     'django.contrib.sites',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    # help w/ task queue...
+    'django_celery_beat',
     # secret honeypot fields to deter bots...
     'honeypot',
-    # support for compressing static files (and for using less w/ css)...
+    # support for compressing static files (and for using Less to compile CSS)...
     'compressor',
-    # API...
+    # RESTful API...
     'rest_framework',
     # easy form integration w/ ng ("djangular")...
     'djng',
