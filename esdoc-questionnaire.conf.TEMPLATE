@@ -16,6 +16,10 @@ port=5432
 host=127.0.0.1
 port=11211
 
+[tasks]
+broker=redis
+port=6379
+
 [email]
 host=smtp.gmail.com
 port=587
@@ -31,7 +35,7 @@ code_url=http://location/of/code
 help_url=http://location/of/help
 
 [debug]
-debug=false
+debug=true
 profile=false
-obfuscate=true
+obfuscate=false
 cdn=true

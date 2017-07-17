@@ -107,11 +107,13 @@ except NoOptionError:
 DEFAULT_SITE_ID = 1
 
 # Task info...
+TASK_BROKER = parser.get('tasks', 'broker')
+TASK_PORT = parser.get('tasks', 'port')
+CELERY_BROKER_URL = "{0}://localhost:{0}".format(TASK_BROKER, TASK_PORT)
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SOFT_TIME_LIMIT = 3 * 60
 
 # Application definition
-
 INSTALLED_APPS = (
     'django.contrib.admin',
     'django.contrib.auth',
