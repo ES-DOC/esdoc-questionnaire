@@ -6,7 +6,7 @@ import datetime
 import json
 import os
 
-from Q.questionnaire import APP_LABEL
+from Q.questionnaire import APP_LABEL, q_logger
 from Q.questionnaire.models import *
 from Q.questionnaire.q_utils import rel
 
@@ -49,7 +49,7 @@ def get_sorted_fixtures():
 
 
 @shared_task
-def create_fixtures():
+def create_fixtures(remove_duplicates=True):
     """
     create a new fixture if the db has changed
     :return:
@@ -59,19 +59,20 @@ def create_fixtures():
     fixture_filename = os.path.join(BACKUP_DIR, "{0}_{1}.json".format(BACKUP_PREFIX, timestamp))
     call_command("dumpdata", args=ordered_models, format="json", indent=4, output=fixture_filename)
 
-    # but immediately delete those fixtures if they aren't any different from the last time this fn ran...
-    fixtures = get_sorted_fixtures()
-    try:
-        with open(fixtures[-1], "r") as f1:
-            newest_fixtures = json.load(f1)
-        f1.closed
-        with open(fixtures[-2], "r") as f2:
-            next_newest_fixtures = json.load(f2)
-        f2.closed
-        if newest_fixtures == next_newest_fixtures:
-            os.remove(fixture_filename)
-    except IndexError:
-        pass
+    if remove_duplicates:
+        # but immediately delete those fixtures if they aren't any different from the last time this fn ran...
+        fixtures = get_sorted_fixtures()
+        try:
+            with open(fixtures[-1], "r") as f1:
+                newest_fixtures = json.load(f1)
+            f1.closed
+            with open(fixtures[-2], "r") as f2:
+                next_newest_fixtures = json.load(f2)
+            f2.closed
+            if newest_fixtures == next_newest_fixtures:
+                os.remove(fixture_filename)
+        except IndexError:
+            pass
 
 
 @shared_task
@@ -86,3 +87,14 @@ def cull_fixtures():
     if n_fixtures > BACKUP_EXTENT:
         for f in fixtures[:n_fixtures - BACKUP_EXTENT]:
             os.remove(f)
+
+
+@shared_task
+def log_message(msg):
+    """
+    adds a message to the log; this is just used for testing out the task queue
+    :param msg:
+    :return:
+    """
+    assert msg is not None
+    q_logger.info(msg)
