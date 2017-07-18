@@ -16,13 +16,13 @@ from Q.questionnaire.models.models_references import QReference, QReferenceMap
 
 # this is a bit of a strange serializer b/c the representation is necessarily a simple JSON array
 # (b/c it comes from the ES-DOC search API)
-# it and must therefore be converted to the sort of content expected by rest_framework
+# it and must therefore be converted to the sort of dictionary content expected by rest_framework
 
 
 class QReferenceListSerializer(ListSerializer):
 
-    # TODO: NOT SURE WHY I HAVE TO OVERWRITE "to_internal_value" ON THE LIST CLASS
-    # TODO: BUT I HAVE TO OVERWRITE "to_representation" ON THE DETAIL CLASS
+    # TODO: NOT SURE WHY I HAD TO OVERWRITE "to_internal_value" ON THE LIST CLASS
+    # TODO: BUT I HAD TO OVERWRITE "to_representation" ON THE DETAIL CLASS
 
     def to_internal_value(self, data):
         actual_data = [d for d in data if any(d)]  # exclude empty references
@@ -56,8 +56,8 @@ class QReferenceListSerializer(ListSerializer):
 
 class QReferenceSerializer(ModelSerializer):
 
-    # TODO: NOT SURE WHY I HAVE TO OVERWRITE "to_internal_value" ON THE LIST CLASS
-    # TODO: BUT I HAVE TO OVERWRITE "to_representation" ON THE DETAIL CLASS
+    # TODO: NOT SURE WHY I HAD TO OVERWRITE "to_internal_value" ON THE LIST CLASS
+    # TODO: BUT I HAD TO OVERWRITE "to_representation" ON THE DETAIL CLASS
 
     class Meta:
         model = QReference

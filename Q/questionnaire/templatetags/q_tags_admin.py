@@ -17,14 +17,15 @@ defines custom template tags for use in custom Q admin
 
 from django import template
 from django.core.urlresolvers import reverse
-from Q.questionnaire.models.models_proxies import QModelProxy, QCategoryProxy, QPropertyProxy
+from Q.questionnaire.models.models_proxies import QModelProxy
 from Q.questionnaire import APP_LABEL
 
 
-register = template.Library()
-
 MODEL_PROPERTY = QModelProxy.property_proxies.through
 MODEL_CATEGORY = QModelProxy.category_proxies.through
+
+register = template.Library()
+
 
 @register.filter
 def get_object_name(obj):

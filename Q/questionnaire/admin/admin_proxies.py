@@ -78,7 +78,7 @@ class QModelCategoryProxyInline(admin.StackedInline):
     """
     model = QModelProxy.category_proxies.through
     form = QCategoryProxyInlineForm
-    verbose_name = "categories:"
+    verbose_name_plural = "categories:"
     template = "questionnaire/admin/q_stacked.html"
     show_change_link = True
     extra = 0
