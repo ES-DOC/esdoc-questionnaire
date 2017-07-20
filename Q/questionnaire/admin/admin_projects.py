@@ -19,7 +19,7 @@ from django.conf import settings
 from django.contrib import admin
 from django.core.exceptions import ValidationError
 from django.core.files import File
-from django.forms import ModelForm
+from django.forms import ModelForm, ChoiceField
 from PIL import Image
 import os
 
@@ -33,6 +33,7 @@ class QProjectAdminForm(ModelForm):
             "name",
             "title",
             "description",
+            "order",
             "email",
             "url",
             "logo",
@@ -71,6 +72,26 @@ class QProjectAdminForm(ModelForm):
         return project
 
 
+class QProjectChangeForm(ModelForm):
+    """
+    This form is used on the "change" template rather than the "detail" template;
+    I customize it only to change the widget used by the "order" field;
+    See "QProjectAdmin.get_changelist_form()" below.
+    """
+    class Meta:
+        model = QProject
+        fields = [
+            "name",
+            "order",
+        ]
+
+    def __init__(self, *args, **kwargs):
+        super(QProjectChangeForm, self).__init__(*args, **kwargs)
+        self.fields["order"] = ChoiceField(
+            choices=[(i, str(i)) for i in range(QProject.objects.count())],
+        )
+
+
 class QProjectOntologyInline(admin.TabularInline):
     model = QProjectOntology
     extra = 1
@@ -83,5 +104,12 @@ class QrojectAdmin(admin.ModelAdmin):
     """
     inlines = (QProjectOntologyInline,)
     form = QProjectAdminForm
+    list_display = ("__str__", "order",)
+    list_editable = ("order",)
+    readonly_fields = ("order",)
+
+    def get_changelist_form(self, request, **kwargs):
+        return QProjectChangeForm
+
 
 admin.site.register(QProject, QrojectAdmin)

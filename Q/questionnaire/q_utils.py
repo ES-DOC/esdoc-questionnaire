@@ -716,6 +716,7 @@ class ValidateNoProfanities(QValidator):
 
 validate_no_profanities = ValidateNoProfanities()
 
+
 # these next validators just use simple fns
 # (therefore they don't work w/ client-side validation)
 
@@ -728,6 +729,12 @@ def validate_password(value):
     if not (re.match(r'^.*[A-Za-z]', value) and
             re.match(r'^.*[0-9!@#$%^&*()\-_=+.,?:;></\\\[\]\{\}]', value)):
         raise ValidationError("A password must contain both letters and non-letters.  ")
+
+
+def validate_in_range(value, valid_range):
+    valid_min, valid_max = valid_range
+    if value < valid_min or value > valid_max:
+        raise ValidationError("Value is outside permitted range ({0} to {1}).  ".format(valid_min, valid_max))
 
 
 def validate_file_extension(value, valid_extensions):

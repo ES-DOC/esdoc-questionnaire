@@ -10,7 +10,7 @@
 
 from django.contrib.auth.models import Group, Permission, User
 from django.contrib.contenttypes.models import ContentType
-from django.db.models.signals import post_save, pre_delete
+from django.db.models.signals import post_save, pre_delete, post_delete
 
 from Q.questionnaire.models.models_projects import QProject, QProjectOntology, GROUP_PERMISSIONS
 from Q.questionnaire import APP_LABEL
@@ -77,6 +77,27 @@ pre_delete.connect(
     dispatch_uid="pre_delete_project_handler"
 )
 
+
+def post_delete_project_handler(sender, **kwargs):
+    """
+    fn that gets called after a QProject is deleted;
+    the order of all other projects may need to be updated
+    :param sender:
+    :param kwargs:
+    :return:
+    """
+    project = kwargs.pop("instance", None)
+    if project:
+        for p in QProject.objects.filter(order__gt=project.order):
+            p.order -= 1
+            p.save()
+
+
+post_delete.connect(
+    post_delete_project_handler,
+    sender=QProject,
+    dispatch_uid="post_delete_project_handler"
+)
 
 # I originally wanted to use the standard m2m_changed signal
 # to track when QOntologies are added/removed to/from QProjects

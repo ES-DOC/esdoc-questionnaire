@@ -38,8 +38,7 @@ class QProjectList(generics.ListAPIView):
     filter_backends = (filters.DjangoFilterBackend, filters.OrderingFilter)
     filter_fields = ('name', 'is_active', 'is_displayed', "is_legacy")
     filter_class = QProjectFilter
-    ordering_fields = ('name', 'title')
-    ordering = "name"
+    ordering_fields = ('name', 'title', 'order')
 
 
 class QProjectDetail(APIView):

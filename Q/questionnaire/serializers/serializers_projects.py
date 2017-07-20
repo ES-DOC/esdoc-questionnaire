@@ -14,7 +14,7 @@ from rest_framework import serializers
 
 from Q.questionnaire.models.models_projects import QProject
 
-# just using the standard ModleSerializer for these classes
+# just using the standard ModelSerializer for these classes
 # no need to inherit from QSerializer; no need for recursion
 # ...nothing fancy to see here
 
@@ -50,6 +50,7 @@ class QProjectSerializer(serializers.ModelSerializer):
             'name',
             'title',
             'description',
+            'order',
             'email',
             'url',
             'ontologies',

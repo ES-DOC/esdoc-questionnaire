@@ -15,7 +15,7 @@ import os
 
 from Q.questionnaire import APP_LABEL
 from Q.questionnaire.q_fields import OverwriteStorage
-from Q.questionnaire.q_utils import validate_no_spaces, validate_no_bad_chars, validate_no_reserved_words, validate_no_profanities
+from Q.questionnaire.q_utils import validate_no_spaces, validate_no_bad_chars, validate_no_reserved_words, validate_no_profanities, validate_in_range
 from Q.questionnaire.q_constants import *
 
 # this is the set of groups & corresponding permissions that every project has...
@@ -30,6 +30,14 @@ GROUP_PERMISSIONS = {
 def generate_upload_to(instance, filename):
     # file will be uploaded to MEDIA_ROOT/<APP_LABEL>/projects/<project_name>/<filename>
     return os.path.join(APP_LABEL, "projects", instance.name, filename)
+
+
+def validate_in_project_range(value):
+    n_projects = QProject.objects.count()
+    if n_projects:
+        validate_in_range(value, [0, n_projects])
+    else:
+        validate_in_range(value, [0, 1])
 
 
 class QProjectQuerySet(models.QuerySet):
@@ -67,6 +75,12 @@ class QProject(models.Model):
     # )
     title = models.CharField(max_length=LIL_STRING, blank=False, validators=[validate_no_profanities])
     description = models.TextField(blank=True)
+    order = models.PositiveIntegerField(blank=False, validators=[validate_in_project_range])
+    order.help_text = _(
+        "What order should this project be presented in the index page?"
+        "  This can be changed in the admin page listing <i>all</i> QProjects."
+
+    )
     email = models.EmailField(blank=False, verbose_name="Contact Email")
     email.help_text = _(
         "Point of contact for this project."
@@ -102,6 +116,11 @@ class QProject(models.Model):
 
     def __str__(self):
         return "{0}".format(self.name)
+
+    def __init__(self, *args, **kwargs):
+        super(QProject, self).__init__(*args, **kwargs)
+        if self.pk is None:
+            self.order = QProject.objects.count()
 
     def clean(self):
         # force name to be lowercase

@@ -38,7 +38,7 @@
         var index_controller = this;
         index_controller.projects = []; // initial data
 
-        $http.get("/api/projects/?is_active=true&is_displayed=true&ordering=title", {format: "json"})
+        $http.get("/api/projects/?is_active=true&is_displayed=true&ordering=order", {format: "json"})
             .success(function(data) {
                 index_controller.projects = data.results;
 
