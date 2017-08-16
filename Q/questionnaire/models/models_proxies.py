@@ -32,9 +32,9 @@ class ProxyType(EnumeratedType):
         return "{0}".format(self.get_name())
 
 ProxyTypes = EnumeratedTypeList([
-    ProxyType("MODEL", "Model Realization"),
-    ProxyType("CATEGORY", "Category Realization"),
-    ProxyType("PROPERTY", "Property Realization"),
+    ProxyType("MODEL", "Model Proxy"),
+    ProxyType("CATEGORY", "Category Proxy"),
+    ProxyType("PROPERTY", "Property Proxy"),
 ])
 
 ###################
